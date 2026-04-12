@@ -5,360 +5,152 @@ using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
 using Platform.ServiceDefaults.Models;
-using Platform.ApiService.Extensions;
 
 namespace Platform.ApiService.Controllers;
 
-/// <summary>
-/// 物联网平台控制器 - 处理设备接入、数据采集和管理
-/// </summary>
 [ApiController]
 [Route("api/iot")]
-
 [RequireMenu("iot-platform")]
 public class IoTController : BaseApiController
 {
     private readonly IIoTService _iotService;
-    private readonly ILogger<IoTController> _logger;
 
-    /// <summary>
-    /// 初始化 IoTController 实例
-    /// </summary>
-    /// <param name="iotService">物联网服务接口</param>
-    /// <param name="logger">日志记录器</param>
-    public IoTController(IIoTService iotService, ILogger<IoTController> logger)
+    public IoTController(IIoTService iotService)
     {
-        _iotService = iotService ?? throw new ArgumentNullException(nameof(iotService));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _iotService = iotService;
     }
 
-    #region Gateway Endpoints
+    #region Gateway
 
-    /// <summary>
-    /// 创建网关
-    /// </summary>
-    /// <param name="request">创建网关请求模型</param>
-    /// <returns>创建成功的网关信息</returns>
     [HttpPost("gateways")]
     public async Task<IActionResult> CreateGateway([FromBody] CreateIoTGatewayRequest request)
-    {
-        var gateway = await _iotService.CreateGatewayAsync(request);
-        return Success(gateway);
-    }
+        => Success(await _iotService.CreateGatewayAsync(request));
 
-    /// <summary>
-    /// 获取网关列表
-    /// </summary>
-    /// <param name="status">对网关状态筛选</param>
-    /// <returns>分页网关列表</returns>
-    /// <param name="request">分页请求参数</param>
     [HttpGet("gateways")]
-    public async Task<IActionResult> GetGateways([FromQuery] Platform.ServiceDefaults.Models.PageParams request, [FromQuery] IoTDeviceStatus? status = null)
-    {
-        var result = await _iotService.GetGatewaysAsync(request, status);
-        return Success(result);
-    }
+    public async Task<IActionResult> GetGateways([FromQuery] PageParams request, [FromQuery] IoTDeviceStatus? status = null)
+        => Success(await _iotService.GetGatewaysAsync(request, status));
 
-    /// <summary>
-    /// 获取网关详情
-    /// </summary>
-    /// <param name="id">网关ID</param>
-    /// <returns>网关详情</returns>
     [HttpGet("gateways/{id}")]
     public async Task<IActionResult> GetGateway(string id)
-    {
-        var gateway = await _iotService.GetGatewayByIdAsync(id);
-        return Success(gateway);
-    }
+        => Success(await _iotService.GetGatewayByIdAsync(id));
 
-    /// <summary>
-    /// 更新网关
-    /// </summary>
-    /// <param name="id">网关ID</param>
-    /// <param name="request">更新网关请求模型</param>
-    /// <returns>更新后的网关信息</returns>
     [HttpPut("gateways/{id}")]
     public async Task<IActionResult> UpdateGateway(string id, [FromBody] UpdateIoTGatewayRequest request)
-    {
-        var gateway = await _iotService.UpdateGatewayAsync(id, request);
-        return Success(gateway);
-    }
+        => Success(await _iotService.UpdateGatewayAsync(id, request));
 
-    /// <summary>
-    /// 删除网关
-    /// </summary>
-    /// <param name="id">网关ID</param>
-    /// <returns>操作结果</returns>
     [HttpDelete("gateways/{id}")]
     public async Task<IActionResult> DeleteGateway(string id)
     {
         var result = await _iotService.DeleteGatewayAsync(id);
-        if (!result)
-            throw new ArgumentException("Gateway {id} 不存在");
-
-        return Success(null, "模拟：网关已重写");
+        if (!result) throw new ArgumentException("网关不存在");
+        return Success(null, "网关已删除");
     }
 
-    /// <summary>
-    /// 获取网关统计信息
-    /// </summary>
-    /// <param name="gatewayId">网关ID</param>
-    /// <returns>网关统计</returns>
     [HttpGet("gateways/{gatewayId}/statistics")]
     public async Task<IActionResult> GetGatewayStatistics(string gatewayId)
-    {
-        var stats = await _iotService.GetGatewayStatisticsAsync(gatewayId);
-        return Success(stats);
-    }
+        => Success(await _iotService.GetGatewayStatisticsAsync(gatewayId));
 
     #endregion
 
-    #region Device Endpoints
+    #region Device
 
-    /// <summary>
-    /// 创建设备
-    /// </summary>
-    /// <param name="request">创建设备请求模型</param>
-    /// <returns>创建成功的设备信息</returns>
     [HttpPost("devices")]
     public async Task<IActionResult> CreateDevice([FromBody] CreateIoTDeviceRequest request)
-    {
-        var device = await _iotService.CreateDeviceAsync(request);
-        return Success(device);
-    }
+        => Success(await _iotService.CreateDeviceAsync(request));
 
-    /// <summary>
-    /// 获取设备列表
-    /// </summary>
-    /// <param name="gatewayId">网关ID</param>
-    /// <returns>分页设备列表</returns>
-    /// <param name="request">分页请求参数</param>
     [HttpGet("devices")]
-    public async Task<IActionResult> GetDevices([FromQuery] Platform.ServiceDefaults.Models.PageParams request, [FromQuery] string? gatewayId = null)
-    {
-        var result = await _iotService.GetDevicesAsync(request, gatewayId);
-        return Success(result);
-    }
+    public async Task<IActionResult> GetDevices([FromQuery] PageParams request, [FromQuery] string? gatewayId = null)
+        => Success(await _iotService.GetDevicesAsync(request, gatewayId));
 
-    /// <summary>
-    /// 获取设备详情
-    /// </summary>
-    /// <param name="id">设备ID</param>
-    /// <returns>设备详情</returns>
     [HttpGet("devices/{id}")]
     public async Task<IActionResult> GetDevice(string id)
-    {
-        var device = await _iotService.GetDeviceByIdAsync(id);
-        return Success(device);
-    }
+        => Success(await _iotService.GetDeviceByIdAsync(id));
 
-    /// <summary>
-    /// 更新设备
-    /// </summary>
-    /// <param name="id">设备ID</param>
-    /// <param name="request">更新设备请求模型</param>
-    /// <returns>更新后的设备信息</returns>
     [HttpPut("devices/{id}")]
     public async Task<IActionResult> UpdateDevice(string id, [FromBody] UpdateIoTDeviceRequest request)
-    {
-        var device = await _iotService.UpdateDeviceAsync(id, request);
-        return Success(device);
-    }
+        => Success(await _iotService.UpdateDeviceAsync(id, request));
 
-    /// <summary>
-    /// 删除设备
-    /// </summary>
-    /// <param name="id">设备ID</param>
-    /// <returns>操作结果</returns>
     [HttpDelete("devices/{id}")]
     public async Task<IActionResult> DeleteDevice(string id)
     {
         var result = await _iotService.DeleteDeviceAsync(id);
-        if (!result)
-            throw new ArgumentException("Device {id} 不存在");
-
-        return Success(null, "Device deleted successfully");
+        if (!result) throw new ArgumentException("设备不存在");
+        return Success(null, "设备已删除");
     }
 
-    /// <summary>
-    /// 批量删除设备
-    /// </summary>
-    /// <param name="ids">设备 ID 列表</param>
-    /// <returns>成功删除的数量</returns>
     [HttpDelete("devices")]
     public async Task<IActionResult> BatchDeleteDevices([FromBody] List<string> ids)
     {
         if (ids == null || ids.Count == 0)
-            return BadRequest(new { message = "ID 列表不能为空" });
-
+            return BadRequest(new { message = "ID列表不能为空" });
         var deletedCount = await _iotService.BatchDeleteDevicesAsync(ids);
         return Success(new { deletedCount, total = ids.Count });
     }
 
-    /// <summary>
-    /// 处理设备连接
-    /// </summary>
-    /// <remarks>
-    /// 此端点允许匿名访问，因为 IoT 设备可能没有用户认证。
-    /// 安全措施：
-    /// - 通过 DeviceId 验证设备是否存在
-    /// - 输入验证（DeviceId 格式检查）
-    /// - TODO: 建议添加速率限制以防止滥用
-    /// - TODO: 建议添加 API Key 验证或设备密钥验证
-    /// </remarks>
     [HttpPost("devices/connect")]
     [AllowAnonymous]
     public async Task<IActionResult> HandleDeviceConnect([FromBody] DeviceConnectRequest request)
     {
         var result = await _iotService.HandleDeviceConnectAsync(request);
-        if (!result)
-            throw new ArgumentException("Device not found");
-
-        return Success(null, "Device connected successfully");
+        if (!result) throw new ArgumentException("设备不存在");
+        return Success(null, "设备已连接");
     }
 
-    /// <summary>
-    /// 处理设备断开连接
-    /// </summary>
-    /// <remarks>
-    /// 此端点允许匿名访问，因为 IoT 设备可能没有用户认证。
-    /// 安全措施：
-    /// - 通过 DeviceId 验证设备是否存在
-    /// - 输入验证（DeviceId 格式检查）
-    /// - TODO: 建议添加速率限制以防止滥用
-    /// - TODO: 建议添加 API Key 验证或设备密钥验证
-    /// </remarks>
     [HttpPost("devices/disconnect")]
     [AllowAnonymous]
     public async Task<IActionResult> HandleDeviceDisconnect([FromBody] DeviceDisconnectRequest request)
     {
         var result = await _iotService.HandleDeviceDisconnectAsync(request);
-        if (!result)
-            throw new ArgumentException("Device not found");
-
-        return Success(null, "Device disconnected successfully");
+        if (!result) throw new ArgumentException("设备不存在");
+        return Success(null, "设备已断开");
     }
 
-    /// <summary>
-    /// 获取设备统计信息
-    /// </summary>
-    /// <param name="deviceId">设备ID</param>
-    /// <returns>设备统计数据</returns>
     [HttpGet("devices/{deviceId}/statistics")]
     public async Task<IActionResult> GetDeviceStatistics(string deviceId)
-    {
-        var stats = await _iotService.GetDeviceStatisticsAsync(deviceId);
-        return Success(stats);
-    }
+        => Success(await _iotService.GetDeviceStatisticsAsync(deviceId));
 
     #endregion
 
-    #region DataPoint Endpoints
+    #region DataPoint
 
-    /// <summary>
-    /// 创建数据点
-    /// </summary>
-    /// <param name="request">创建数据点请求</param>
-    /// <returns>创建的数据点信息</returns>
     [HttpPost("datapoints")]
     public async Task<IActionResult> CreateDataPoint([FromBody] CreateIoTDataPointRequest request)
-    {
-        var dataPoint = await _iotService.CreateDataPointAsync(request);
-        return Success(dataPoint);
-    }
+        => Success(await _iotService.CreateDataPointAsync(request));
 
-    /// <summary>
-    /// 获取数据点列表
-    /// </summary>
-    /// <param name="deviceId">设备ID（可选）</param>
-    /// <returns>分页数据点列表</returns>
-    /// <param name="request">分页请求参数</param>
     [HttpGet("datapoints")]
-    public async Task<IActionResult> GetDataPoints([FromQuery] Platform.ServiceDefaults.Models.PageParams request, [FromQuery] string? deviceId = null)
-    {
-        var result = await _iotService.GetDataPointsAsync(request, deviceId);
-        return Success(result);
-    }
+    public async Task<IActionResult> GetDataPoints([FromQuery] PageParams request, [FromQuery] string? deviceId = null)
+        => Success(await _iotService.GetDataPointsAsync(request, deviceId));
 
-    /// <summary>
-    /// 获取数据点详情
-    /// </summary>
-    /// <param name="id">数据点ID</param>
-    /// <returns>数据点详情</returns>
     [HttpGet("datapoints/{id}")]
     public async Task<IActionResult> GetDataPoint(string id)
-    {
-        var dataPoint = await _iotService.GetDataPointByIdAsync(id);
-        return Success(dataPoint);
-    }
+        => Success(await _iotService.GetDataPointByIdAsync(id));
 
-    /// <summary>
-    /// 更新数据点
-    /// </summary>
-    /// <param name="id">数据点ID</param>
-    /// <param name="request">更新请求</param>
-    /// <returns>更新后的数据点</returns>
     [HttpPut("datapoints/{id}")]
     public async Task<IActionResult> UpdateDataPoint(string id, [FromBody] UpdateIoTDataPointRequest request)
-    {
-        var dataPoint = await _iotService.UpdateDataPointAsync(id, request);
-        return Success(dataPoint);
-    }
+        => Success(await _iotService.UpdateDataPointAsync(id, request));
 
-    /// <summary>
-    /// 删除数据点
-    /// </summary>
-    /// <param name="id">数据点ID</param>
-    /// <returns>操作结果</returns>
     [HttpDelete("datapoints/{id}")]
     public async Task<IActionResult> DeleteDataPoint(string id)
     {
         var result = await _iotService.DeleteDataPointAsync(id);
-        if (!result)
-            throw new ArgumentException("DataPoint {id} 不存在");
-
-        return Success(null, "DataPoint deleted successfully");
+        if (!result) throw new ArgumentException("数据点不存在");
+        return Success(null, "数据点已删除");
     }
 
     #endregion
 
-    #region Data Record Endpoints
+    #region Data Record
 
-    /// <summary>
-    /// 上报单条设备数据
-    /// </summary>
-    /// <param name="request">数据上报请求</param>
-    /// <returns>操作结果</returns>
     [HttpPost("data/report")]
     [AllowAnonymous]
     public async Task<IActionResult> ReportData([FromBody] ReportIoTDataRequest request)
-    {
-        var record = await _iotService.ReportDataAsync(request);
-        return Success(record);
-    }
+        => Success(await _iotService.ReportDataAsync(request));
 
-    /// <summary>
-    /// 批量上报设备数据
-    /// </summary>
-    /// <param name="request">批量数据上报请求</param>
-    /// <returns>操作结果</returns>
     [HttpPost("data/batch-report")]
     [AllowAnonymous]
     public async Task<IActionResult> BatchReportData([FromBody] BatchReportIoTDataRequest request)
-    {
-        var records = await _iotService.BatchReportDataAsync(request);
-        return Success(records);
-    }
+        => Success(await _iotService.BatchReportDataAsync(request));
 
-    /// <summary>
-    /// 查询设备历史数据记录
-    /// </summary>
-    /// <param name="request">分页请求参数</param>
-    /// <param name="deviceId">设备ID</param>
-    /// <param name="dataPointId">数据点ID</param>
-    /// <param name="startTime">开始时间</param>
-    /// <param name="endTime">结束时间</param>
-    /// <returns>历史数据列表</returns>
     [HttpGet("data/query")]
     public async Task<IActionResult> QueryDataRecords(
         [FromQuery] PageParams request,
@@ -366,59 +158,24 @@ public class IoTController : BaseApiController
         [FromQuery] string? dataPointId = null,
         [FromQuery] DateTime? startTime = null,
         [FromQuery] DateTime? endTime = null)
-    {
-        var result = await _iotService.QueryDataRecordsAsync(request, deviceId, dataPointId, startTime, endTime);
-        return Success(result);
-    }
+        => Success(await _iotService.QueryDataRecordsAsync(request, deviceId, dataPointId, startTime, endTime));
 
-    /// <summary>
-    /// 获取指定数据点的最新值
-    /// </summary>
-    /// <param name="dataPointId">数据点ID</param>
-    /// <returns>最新数据记录</returns>
     [HttpGet("data/latest/{dataPointId}")]
     public async Task<IActionResult> GetLatestData(string dataPointId)
-    {
-        var record = await _iotService.GetLatestDataAsync(dataPointId);
-        return Success(record);
-    }
+        => Success(await _iotService.GetLatestDataAsync(dataPointId));
 
-    /// <summary>
-    /// 获取数据统计
-    /// </summary>
     [HttpGet("data/statistics/{dataPointId}")]
     public async Task<IActionResult> GetDataStatistics(string dataPointId, [FromQuery] DateTime startTime, [FromQuery] DateTime endTime)
     {
-        try
-        {
-            var stats = await _iotService.GetDataStatisticsAsync(dataPointId, startTime, endTime);
-            if (stats == null)
-                throw new ArgumentException("Data {dataPointId} 不存在");
-
-            return Success(stats);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting data statistics");
-            throw new ArgumentException(ex.Message);
-        }
+        var stats = await _iotService.GetDataStatisticsAsync(dataPointId, startTime, endTime);
+        if (stats == null) throw new ArgumentException("数据点不存在");
+        return Success(stats);
     }
 
     #endregion
 
-    #region Event Endpoints
+    #region Events
 
-    /// <summary>
-    /// 查询设备事件
-    /// </summary>
-    /// <param name="request">分页请求参数</param>
-    /// <param name="deviceId">设备ID</param>
-    /// <param name="eventType">事件类型</param>
-    /// <param name="level">级别</param>
-    /// <param name="isHandled">是否已处理</param>
-    /// <param name="startTime">开始时间</param>
-    /// <param name="endTime">结束时间</param>
-    /// <returns>事件分页列表</returns>
     [HttpGet("events/query")]
     public async Task<IActionResult> QueryEvents(
         [FromQuery] PageParams request,
@@ -428,85 +185,40 @@ public class IoTController : BaseApiController
         [FromQuery] bool? isHandled = null,
         [FromQuery] DateTime? startTime = null,
         [FromQuery] DateTime? endTime = null)
-    {
-        var result = await _iotService.QueryEventsAsync(request, deviceId, eventType, level, isHandled, startTime, endTime);
-        return Success(result);
-    }
+        => Success(await _iotService.QueryEventsAsync(request, deviceId, eventType, level, isHandled, startTime, endTime));
 
-    /// <summary>
-    /// 处理指定的事件
-    /// </summary>
-    /// <param name="eventId">事件ID</param>
-    /// <param name="request">处理请求</param>
-    /// <returns>操作结果</returns>
     [HttpPost("events/{eventId}/handle")]
     public async Task<IActionResult> HandleEvent(string eventId, [FromBody] HandleEventRequest request)
     {
         var result = await _iotService.HandleEventAsync(eventId, request.Remarks ?? "");
-        if (!result)
-            throw new ArgumentException("Event {eventId} 不存在");
-
-        return Success(null, "Event handled successfully");
+        if (!result) throw new ArgumentException("事件不存在");
+        return Success(null, "事件已处理");
     }
 
-    /// <summary>
-    /// 获取未处理事件数量
-    /// </summary>
-    /// <param name="deviceId">指定设备ID（可选）</param>
-    /// <returns>未处理事件数量</returns>
     [HttpGet("events/unhandled-count")]
     public async Task<IActionResult> GetUnhandledEventCount([FromQuery] string? deviceId = null)
-    {
-        var count = await _iotService.GetUnhandledEventCountAsync(deviceId);
-        return Success(new { Count = count });
-    }
+        => Success(new { Count = await _iotService.GetUnhandledEventCountAsync(deviceId) });
 
     #endregion
 
-    #region Statistics Endpoints
+    #region Statistics
 
-    /// <summary>
-    /// 获取平台总体统计信息
-    /// </summary>
-    /// <returns>平台统计数据</returns>
     [HttpGet("statistics/platform")]
     public async Task<IActionResult> GetPlatformStatistics()
-    {
-        var stats = await _iotService.GetPlatformStatisticsAsync();
-        return Success(stats);
-    }
+        => Success(await _iotService.GetPlatformStatisticsAsync());
 
-    /// <summary>
-    /// 获取所有设备的状态分布统计
-    /// </summary>
-    /// <returns>状态统计数据</returns>
     [HttpGet("statistics/device-status")]
     public async Task<IActionResult> GetDeviceStatusStatistics()
-    {
-        var stats = await _iotService.GetDeviceStatusStatisticsAsync();
-        return Success(stats);
-    }
+        => Success(await _iotService.GetDeviceStatusStatisticsAsync());
 
     #endregion
 
     #region Device Twin
 
-    /// <summary>
-    /// 获取设备孪生（不存在时自动初始化）
-    /// </summary>
-    /// <param name="deviceId">设备 DeviceId</param>
     [HttpGet("devices/{deviceId}/twin")]
     public async Task<IActionResult> GetDeviceTwin(string deviceId)
-    {
-        var twin = await _iotService.GetOrCreateDeviceTwinAsync(deviceId);
-        return Success(twin);
-    }
+        => Success(await _iotService.GetOrCreateDeviceTwinAsync(deviceId));
 
-    /// <summary>
-    /// 更新设备期望属性（管理端写入）
-    /// </summary>
-    /// <param name="deviceId">设备 DeviceId</param>
-    /// <param name="request">期望属性补丁（null 值表示删除该键）</param>
     [HttpPatch("devices/{deviceId}/twin/desired")]
     public async Task<IActionResult> UpdateDesiredProperties(string deviceId, [FromBody] UpdateDesiredPropertiesRequest request)
     {
@@ -515,98 +227,40 @@ public class IoTController : BaseApiController
         return Success(twin);
     }
 
-    /// <summary>
-    /// 设备上报实际属性（设备端调用，需 ApiKey 认证）
-    /// </summary>
-    /// <param name="deviceId">设备 DeviceId</param>
-    /// <param name="request">上报属性和 ApiKey</param>
     [HttpPatch("devices/{deviceId}/twin/reported")]
     [AllowAnonymous]
     public async Task<IActionResult> ReportProperties(string deviceId, [FromBody] ReportPropertiesRequest request)
     {
-        try
-        {
-            var twin = await _iotService.ReportPropertiesAsync(deviceId, request.ApiKey, request.Properties);
-            if (twin == null) return NotFound();
-            return Success(twin);
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Unauthorized();
-        }
+        var twin = await _iotService.ReportPropertiesAsync(deviceId, request.ApiKey, request.Properties);
+        if (twin == null) return NotFound();
+        return Success(twin);
     }
 
     #endregion
 
-    #region C2D Commands
+    #region Commands
 
-    /// <summary>
-    /// 发送云到设备命令（管理端）
-    /// </summary>
-    /// <param name="deviceId">目标设备 DeviceId</param>
-    /// <param name="request">命令请求</param>
     [HttpPost("devices/{deviceId}/commands")]
     public async Task<IActionResult> SendCommand(string deviceId, [FromBody] SendCommandRequest request)
-    {
-        var command = await _iotService.SendCommandAsync(deviceId, request);
-        return Success(command);
-    }
+        => Success(await _iotService.SendCommandAsync(deviceId, request));
 
-    /// <summary>
-    /// 设备轮询待执行命令（设备端，需 ApiKey 认证）
-    /// </summary>
-    /// <param name="deviceId">设备 DeviceId</param>
-    /// <param name="apiKey">设备 ApiKey</param>
     [HttpGet("devices/{deviceId}/commands/pending")]
     [AllowAnonymous]
     public async Task<IActionResult> GetPendingCommands(string deviceId, [FromQuery] string apiKey)
-    {
-        try
-        {
-            var commands = await _iotService.GetPendingCommandsAsync(deviceId, apiKey);
-            return Success(commands);
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Unauthorized();
-        }
-    }
+        => Success(await _iotService.GetPendingCommandsAsync(deviceId, apiKey));
 
-    /// <summary>
-    /// 设备确认命令执行结果（设备端，需 ApiKey 认证）
-    /// </summary>
-    /// <param name="commandId">命令 ID</param>
-    /// <param name="request">执行结果和 ApiKey</param>
     [HttpPost("commands/{commandId}/ack")]
     [AllowAnonymous]
     public async Task<IActionResult> AckCommand(string commandId, [FromBody] AckCommandRequest request)
     {
-        try
-        {
-            var ok = await _iotService.AckCommandAsync(commandId, request);
-            if (!ok) return NotFound();
-            return Success(ok);
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Unauthorized();
-        }
+        var ok = await _iotService.AckCommandAsync(commandId, request);
+        if (!ok) return NotFound();
+        return Success(ok);
     }
 
-    #endregion
-
-    #region ApiKey Management
-
-    /// <summary>
-    /// 生成/重置设备 ApiKey（管理端，明文仅返回一次）
-    /// </summary>
-    /// <param name="deviceId">设备 DeviceId</param>
     [HttpPost("devices/{deviceId}/apikey")]
     public async Task<IActionResult> GenerateApiKey(string deviceId)
-    {
-        var result = await _iotService.GenerateApiKeyAsync(deviceId);
-        return Success(result);
-    }
+        => Success(await _iotService.GenerateApiKeyAsync(deviceId));
 
     #endregion
 }

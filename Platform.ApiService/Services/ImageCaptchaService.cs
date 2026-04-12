@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using SixLabors.ImageSharp;
@@ -8,29 +7,6 @@ using System.Text;
 using Color = SixLabors.ImageSharp.Color;
 
 namespace Platform.ApiService.Services;
-
-/// <summary>
-/// 图形验证码服务接口
-/// </summary>
-public interface IImageCaptchaService
-{
-    /// <summary>
-    /// 生成图形验证码
-    /// </summary>
-    /// <param name="type">验证码类型（login, register）</param>
-    /// <param name="clientIp">客户端IP</param>
-    /// <returns>验证码结果，包含验证码ID和图片数据</returns>
-    Task<CaptchaImageResult> GenerateCaptchaAsync(string type = "login", string? clientIp = null);
-
-    /// <summary>
-    /// 验证图形验证码
-    /// </summary>
-    /// <param name="captchaId">验证码ID</param>
-    /// <param name="answer">用户输入的答案</param>
-    /// <param name="type">验证码类型</param>
-    /// <returns>如果验证成功返回 true，否则返回 false</returns>
-    Task<bool> ValidateCaptchaAsync(string captchaId, string answer, string type = "login");
-}
 
 /// <summary>
 /// 图形验证码服务实现
@@ -50,12 +26,8 @@ public class ImageCaptchaService : IImageCaptchaService
 
     private string EncryptionKey => _configuration["Captcha:EncryptionKey"] ?? GenerateFallbackKey();
 
-    // 验证码字符集（全数字）
     private static readonly string[] CHARACTERS = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
-    /// <summary>
-    /// 初始化图形验证码服务
-    /// </summary>
     public ImageCaptchaService(DbContext context, IConfiguration configuration)
     {
         _context = context;
@@ -67,9 +39,6 @@ public class ImageCaptchaService : IImageCaptchaService
         return Convert.ToBase64String(Guid.NewGuid().ToByteArray())[..16];
     }
 
-    /// <summary>
-    /// 生成图形验证码
-    /// </summary>
     public async Task<CaptchaImageResult> GenerateCaptchaAsync(string type = "login", string? clientIp = null)
     {
         var answer = GenerateRandomAnswer();
@@ -78,7 +47,6 @@ public class ImageCaptchaService : IImageCaptchaService
         var encryptedAnswer = EncryptAnswer(answer, EncryptionKey);
         var expiresAt = DateTime.UtcNow.AddMinutes(EXPIRATION_MINUTES);
 
-        // Try to find existing captcha for this type and client IP
         var existingCaptchas = await _context.Set<CaptchaImage>().IgnoreQueryFilters().Where(x => x.IsDeleted != true).Where(
             c => c.IsUsed == false && c.Type == type && (string.IsNullOrEmpty(clientIp) || c.ClientIp == clientIp))
             .Take(1).ToListAsync();
@@ -86,25 +54,21 @@ public class ImageCaptchaService : IImageCaptchaService
         CaptchaImage captcha;
         if (existingCaptchas.Any())
         {
-            // Update existing captcha
             captcha = existingCaptchas.First();
             var entity = await _context.Set<CaptchaImage>().FirstOrDefaultAsync(x => x.Id == captcha.Id);
-        if (entity != null)
-        {
-    
+            if (entity != null)
+            {
                 entity.CaptchaId = captchaId;
                 entity.Answer = encryptedAnswer;
                 entity.ExpiresAt = expiresAt;
                 entity.Type = type;
                 entity.ClientIp = clientIp!;
                 entity.IsUsed = false;
-            await _context.SaveChangesAsync();
-        }
-
+                await _context.SaveChangesAsync();
+            }
         }
         else
         {
-            // Create new captcha
             captcha = new CaptchaImage
             {
                 CaptchaId = captchaId,
@@ -115,7 +79,7 @@ public class ImageCaptchaService : IImageCaptchaService
                 IsUsed = false
             };
             await _context.Set<CaptchaImage>().AddAsync(captcha);
-        await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
         }
 
         return new CaptchaImageResult
@@ -126,9 +90,6 @@ public class ImageCaptchaService : IImageCaptchaService
         };
     }
 
-    /// <summary>
-    /// 验证图形验证码
-    /// </summary>
     public async Task<bool> ValidateCaptchaAsync(string captchaId, string answer, string type = "login")
     {
         if (string.IsNullOrWhiteSpace(captchaId) || string.IsNullOrWhiteSpace(answer))
@@ -146,7 +107,6 @@ public class ImageCaptchaService : IImageCaptchaService
             return false;
         }
 
-        // Mark as used
         var entity = await _context.Set<CaptchaImage>().FirstOrDefaultAsync(x => x.Id == result.Id);
         if (entity != null)
         {
@@ -154,18 +114,14 @@ public class ImageCaptchaService : IImageCaptchaService
             await _context.SaveChangesAsync();
         }
 
-
         var decryptedAnswer = DecryptAnswer(result.Answer, EncryptionKey);
         return string.Equals(decryptedAnswer, answer.Trim(), StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>
-    /// 生成随机验证码答案
-    /// </summary>
     private static string GenerateRandomAnswer()
     {
         var random = Random.Shared;
-        var length = 5; // 固定5位验证码
+        var length = 5;
         var answer = new StringBuilder(length);
 
         for (int i = 0; i < length; i++)
@@ -176,9 +132,6 @@ public class ImageCaptchaService : IImageCaptchaService
         return answer.ToString();
     }
 
-    /// <summary>
-    /// 生成验证码图片（使用几何线条绘制，不依赖字体）
-    /// </summary>
     private static string GenerateCaptchaImage(string answer)
     {
         var random = Random.Shared;
@@ -193,9 +146,6 @@ public class ImageCaptchaService : IImageCaptchaService
         return Convert.ToBase64String(ms.ToArray());
     }
 
-    /// <summary>
-    /// 添加干扰线
-    /// </summary>
     private static void AddNoiseLines(Image<Rgba32> image, Random random)
     {
         for (int i = 0; i < NOISE_LINES; i++)
@@ -215,9 +165,6 @@ public class ImageCaptchaService : IImageCaptchaService
         }
     }
 
-    /// <summary>
-    /// 添加干扰点
-    /// </summary>
     private static void AddNoiseDots(Image<Rgba32> image, Random random)
     {
         for (int i = 0; i < NOISE_DOTS; i++)
@@ -235,9 +182,6 @@ public class ImageCaptchaService : IImageCaptchaService
         }
     }
 
-    /// <summary>
-    /// 绘制验证码文字（使用几何线条绘制，不依赖字体）
-    /// </summary>
     private static void DrawCaptchaText(Image<Rgba32> image, string answer, Random random)
     {
         for (int i = 0; i < answer.Length; i++)
@@ -254,9 +198,6 @@ public class ImageCaptchaService : IImageCaptchaService
         }
     }
 
-    /// <summary>
-    /// 绘制单个字符（使用几何线条，不依赖字体）
-    /// </summary>
     private static void DrawCharacter(Image<Rgba32> image, char ch, int x, int y, Color color, Random random)
     {
         x += random.Next(-1, 1);
@@ -264,153 +205,12 @@ public class ImageCaptchaService : IImageCaptchaService
 
         switch (ch)
         {
-            case 'A':
-                DrawLine(image, x + 2, y + CHAR_HEIGHT - 2, x + CHAR_WIDTH / 2, y + 2, color);
-                DrawLine(image, x + CHAR_WIDTH / 2, y + 2, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 2, color);
-                DrawLine(image, x + 3, y + CHAR_HEIGHT / 2, x + CHAR_WIDTH - 3, y + CHAR_HEIGHT / 2, color);
-                break;
-            case 'B':
-                DrawLine(image, x + 2, y + 2, x + 2, y + CHAR_HEIGHT - 2, color);
-                DrawLine(image, x + 2, y + 2, x + CHAR_WIDTH - 3, y + 2, color);
-                DrawLine(image, x + 2, y + CHAR_HEIGHT / 2, x + CHAR_WIDTH - 3, y + CHAR_HEIGHT / 2, color);
-                DrawLine(image, x + 2, y + CHAR_HEIGHT - 2, x + CHAR_WIDTH - 3, y + CHAR_HEIGHT - 2, color);
-                DrawLine(image, x + CHAR_WIDTH - 3, y + 2, x + CHAR_WIDTH - 3, y + CHAR_HEIGHT / 2, color);
-                DrawLine(image, x + CHAR_WIDTH - 3, y + CHAR_HEIGHT / 2, x + CHAR_WIDTH - 3, y + CHAR_HEIGHT - 2, color);
-                break;
-            case 'C':
-                DrawLine(image, x + CHAR_WIDTH - 2, y + 3, x + CHAR_WIDTH / 2, y + 2, color);
-                DrawLine(image, x + CHAR_WIDTH / 2, y + 2, x + 2, y + 3, color);
-                DrawLine(image, x + 2, y + 3, x + 2, y + CHAR_HEIGHT - 3, color);
-                DrawLine(image, x + 2, y + CHAR_HEIGHT - 3, x + CHAR_WIDTH / 2, y + CHAR_HEIGHT - 2, color);
-                DrawLine(image, x + CHAR_WIDTH / 2, y + CHAR_HEIGHT - 2, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 3, color);
-                break;
-            case 'D':
-                DrawLine(image, x + 2, y + 2, x + 2, y + CHAR_HEIGHT - 2, color);
-                DrawLine(image, x + 2, y + 2, x + CHAR_WIDTH - 4, y + 2, color);
-                DrawLine(image, x + 2, y + CHAR_HEIGHT - 2, x + CHAR_WIDTH - 4, y + CHAR_HEIGHT - 2, color);
-                DrawLine(image, x + CHAR_WIDTH - 4, y + 2, x + CHAR_WIDTH - 2, y + 4, color);
-                DrawLine(image, x + CHAR_WIDTH - 2, y + 4, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 4, color);
-                DrawLine(image, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 4, x + CHAR_WIDTH - 4, y + CHAR_HEIGHT - 2, color);
-                break;
-            case 'E':
-                DrawLine(image, x + 2, y + 2, x + 2, y + CHAR_HEIGHT - 2, color);
-                DrawLine(image, x + 2, y + 2, x + CHAR_WIDTH - 2, y + 2, color);
-                DrawLine(image, x + 2, y + CHAR_HEIGHT / 2, x + CHAR_WIDTH - 3, y + CHAR_HEIGHT / 2, color);
-                DrawLine(image, x + 2, y + CHAR_HEIGHT - 2, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 2, color);
-                break;
-            case 'F':
-                DrawLine(image, x + 2, y + 2, x + 2, y + CHAR_HEIGHT - 2, color);
-                DrawLine(image, x + 2, y + 2, x + CHAR_WIDTH - 2, y + 2, color);
-                DrawLine(image, x + 2, y + CHAR_HEIGHT / 2, x + CHAR_WIDTH - 3, y + CHAR_HEIGHT / 2, color);
-                break;
-            case 'G':
-                DrawLine(image, x + CHAR_WIDTH - 2, y + 3, x + CHAR_WIDTH / 2, y + 2, color);
-                DrawLine(image, x + CHAR_WIDTH / 2, y + 2, x + 2, y + 3, color);
-                DrawLine(image, x + 2, y + 3, x + 2, y + CHAR_HEIGHT - 3, color);
-                DrawLine(image, x + 2, y + CHAR_HEIGHT - 3, x + CHAR_WIDTH / 2, y + CHAR_HEIGHT - 2, color);
-                DrawLine(image, x + CHAR_WIDTH / 2, y + CHAR_HEIGHT - 2, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 3, color);
-                DrawLine(image, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT / 2, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 3, color);
-                DrawLine(image, x + CHAR_WIDTH / 2, y + CHAR_HEIGHT / 2, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT / 2, color);
-                break;
-            case 'H':
-                DrawLine(image, x + 2, y + 2, x + 2, y + CHAR_HEIGHT - 2, color);
-                DrawLine(image, x + CHAR_WIDTH - 2, y + 2, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 2, color);
-                DrawLine(image, x + 2, y + CHAR_HEIGHT / 2, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT / 2, color);
-                break;
-            case 'J':
-                DrawLine(image, x + CHAR_WIDTH / 2, y + 2, x + CHAR_WIDTH - 2, y + 2, color);
-                DrawLine(image, x + CHAR_WIDTH - 2, y + 2, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 4, color);
-                DrawLine(image, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 4, x + CHAR_WIDTH / 2, y + CHAR_HEIGHT - 2, color);
-                DrawLine(image, x + CHAR_WIDTH / 2, y + CHAR_HEIGHT - 2, x + 2, y + CHAR_HEIGHT - 4, color);
-                break;
-            case 'K':
-                DrawLine(image, x + 2, y + 2, x + 2, y + CHAR_HEIGHT - 2, color);
-                DrawLine(image, x + 2, y + CHAR_HEIGHT / 2, x + CHAR_WIDTH - 3, y + 2, color);
-                DrawLine(image, x + 2, y + CHAR_HEIGHT / 2, x + CHAR_WIDTH - 3, y + CHAR_HEIGHT - 2, color);
-                break;
-            case 'L':
-                DrawLine(image, x + 2, y + 2, x + 2, y + CHAR_HEIGHT - 2, color);
-                DrawLine(image, x + 2, y + CHAR_HEIGHT - 2, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 2, color);
-                break;
-            case 'M':
-                DrawLine(image, x + 2, y + CHAR_HEIGHT - 2, x + 2, y + 2, color);
-                DrawLine(image, x + 2, y + 2, x + CHAR_WIDTH / 2, y + CHAR_HEIGHT / 2, color);
-                DrawLine(image, x + CHAR_WIDTH / 2, y + CHAR_HEIGHT / 2, x + CHAR_WIDTH - 2, y + 2, color);
-                DrawLine(image, x + CHAR_WIDTH - 2, y + 2, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 2, color);
-                break;
-            case 'N':
-                DrawLine(image, x + 2, y + CHAR_HEIGHT - 2, x + 2, y + 2, color);
-                DrawLine(image, x + 2, y + 2, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 2, color);
-                DrawLine(image, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 2, x + CHAR_WIDTH - 2, y + 2, color);
-                break;
-            case 'P':
-                DrawLine(image, x + 2, y + 2, x + 2, y + CHAR_HEIGHT - 2, color);
-                DrawLine(image, x + 2, y + 2, x + CHAR_WIDTH - 3, y + 2, color);
-                DrawLine(image, x + 2, y + CHAR_HEIGHT / 2, x + CHAR_WIDTH - 3, y + CHAR_HEIGHT / 2, color);
-                DrawLine(image, x + CHAR_WIDTH - 3, y + 2, x + CHAR_WIDTH - 3, y + CHAR_HEIGHT / 2, color);
-                break;
-            case 'Q':
-                DrawLine(image, x + 3, y + 2, x + CHAR_WIDTH - 3, y + 2, color);
-                DrawLine(image, x + CHAR_WIDTH - 3, y + 2, x + CHAR_WIDTH - 3, y + CHAR_HEIGHT - 4, color);
-                DrawLine(image, x + CHAR_WIDTH - 3, y + CHAR_HEIGHT - 4, x + 3, y + CHAR_HEIGHT - 4, color);
-                DrawLine(image, x + 3, y + CHAR_HEIGHT - 4, x + 3, y + 2, color);
-                DrawLine(image, x + CHAR_WIDTH / 2, y + CHAR_HEIGHT / 2, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 2, color);
-                break;
-            case 'R':
-                DrawLine(image, x + 2, y + 2, x + 2, y + CHAR_HEIGHT - 2, color);
-                DrawLine(image, x + 2, y + 2, x + CHAR_WIDTH - 3, y + 2, color);
-                DrawLine(image, x + 2, y + CHAR_HEIGHT / 2, x + CHAR_WIDTH - 3, y + CHAR_HEIGHT / 2, color);
-                DrawLine(image, x + CHAR_WIDTH - 3, y + 2, x + CHAR_WIDTH - 3, y + CHAR_HEIGHT / 2, color);
-                DrawLine(image, x + 2, y + CHAR_HEIGHT / 2, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 2, color);
-                break;
-            case 'S':
-                DrawLine(image, x + 3, y + 2, x + CHAR_WIDTH - 3, y + 2, color);
-                DrawLine(image, x + 3, y + 2, x + 2, y + 4, color);
-                DrawLine(image, x + 2, y + 4, x + CHAR_WIDTH - 3, y + CHAR_HEIGHT / 2, color);
-                DrawLine(image, x + CHAR_WIDTH - 3, y + CHAR_HEIGHT / 2, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 4, color);
-                DrawLine(image, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 4, x + 3, y + CHAR_HEIGHT - 2, color);
-                DrawLine(image, x + 3, y + CHAR_HEIGHT - 2, x + CHAR_WIDTH - 3, y + CHAR_HEIGHT - 2, color);
-                break;
-            case 'T':
-                DrawLine(image, x + 2, y + 2, x + CHAR_WIDTH - 2, y + 2, color);
-                DrawLine(image, x + CHAR_WIDTH / 2, y + 2, x + CHAR_WIDTH / 2, y + CHAR_HEIGHT - 2, color);
-                break;
-            case 'U':
-                DrawLine(image, x + 2, y + 2, x + 2, y + CHAR_HEIGHT - 4, color);
-                DrawLine(image, x + 2, y + CHAR_HEIGHT - 4, x + CHAR_WIDTH / 2, y + CHAR_HEIGHT - 2, color);
-                DrawLine(image, x + CHAR_WIDTH / 2, y + CHAR_HEIGHT - 2, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 4, color);
-                DrawLine(image, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 4, x + CHAR_WIDTH - 2, y + 2, color);
-                break;
-            case 'V':
-                DrawLine(image, x + 2, y + 2, x + CHAR_WIDTH / 2, y + CHAR_HEIGHT - 2, color);
-                DrawLine(image, x + CHAR_WIDTH / 2, y + CHAR_HEIGHT - 2, x + CHAR_WIDTH - 2, y + 2, color);
-                break;
-            case 'W':
-                DrawLine(image, x + 2, y + 2, x + 2, y + CHAR_HEIGHT - 2, color);
-                DrawLine(image, x + 2, y + CHAR_HEIGHT - 2, x + CHAR_WIDTH / 2, y + CHAR_HEIGHT / 2, color);
-                DrawLine(image, x + CHAR_WIDTH / 2, y + CHAR_HEIGHT / 2, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 2, color);
-                DrawLine(image, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 2, x + CHAR_WIDTH - 2, y + 2, color);
-                break;
-            case 'X':
-                DrawLine(image, x + 2, y + 2, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 2, color);
-                DrawLine(image, x + CHAR_WIDTH - 2, y + 2, x + 2, y + CHAR_HEIGHT - 2, color);
-                break;
-            case 'Y':
-                DrawLine(image, x + 2, y + 2, x + CHAR_WIDTH / 2, y + CHAR_HEIGHT / 2, color);
-                DrawLine(image, x + CHAR_WIDTH - 2, y + 2, x + CHAR_WIDTH / 2, y + CHAR_HEIGHT / 2, color);
-                DrawLine(image, x + CHAR_WIDTH / 2, y + CHAR_HEIGHT / 2, x + CHAR_WIDTH / 2, y + CHAR_HEIGHT - 2, color);
-                break;
-            case 'Z':
-                DrawLine(image, x + 2, y + 2, x + CHAR_WIDTH - 2, y + 2, color);
-                DrawLine(image, x + CHAR_WIDTH - 2, y + 2, x + 2, y + CHAR_HEIGHT - 2, color);
-                DrawLine(image, x + 2, y + CHAR_HEIGHT - 2, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 2, color);
-                break;
             case '0':
                 DrawLine(image, x + 2, y + 2, x + CHAR_WIDTH - 2, y + 2, color);
                 DrawLine(image, x + 2, y + 2, x + 2, y + CHAR_HEIGHT - 2, color);
                 DrawLine(image, x + CHAR_WIDTH - 2, y + 2, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 2, color);
                 DrawLine(image, x + 2, y + CHAR_HEIGHT - 2, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 2, color);
-                DrawLine(image, x + CHAR_WIDTH - 2, y + 2, x + 2, y + CHAR_HEIGHT - 2, color); // diagonal for better readability
+                DrawLine(image, x + CHAR_WIDTH - 2, y + 2, x + 2, y + CHAR_HEIGHT - 2, color);
                 break;
             case '1':
                 DrawLine(image, x + CHAR_WIDTH / 2, y + 2, x + CHAR_WIDTH / 2, y + CHAR_HEIGHT - 2, color);
@@ -470,9 +270,6 @@ public class ImageCaptchaService : IImageCaptchaService
         }
     }
 
-    /// <summary>
-    /// 绘制直线（Bresenham算法）
-    /// </summary>
     private static void DrawLine(Image<Rgba32> image, int x0, int y0, int x1, int y1, Color color)
     {
         var dx = Math.Abs(x1 - x0);
@@ -503,9 +300,6 @@ public class ImageCaptchaService : IImageCaptchaService
         }
     }
 
-    /// <summary>
-    /// 加密验证码答案
-    /// </summary>
     private static string EncryptAnswer(string answer, string key)
     {
         var result = new StringBuilder(answer.Length);
@@ -518,9 +312,6 @@ public class ImageCaptchaService : IImageCaptchaService
         return Convert.ToBase64String(Encoding.UTF8.GetBytes(result.ToString()));
     }
 
-    /// <summary>
-    /// 解密验证码答案
-    /// </summary>
     private static string DecryptAnswer(string encryptedAnswer, string key)
     {
         try

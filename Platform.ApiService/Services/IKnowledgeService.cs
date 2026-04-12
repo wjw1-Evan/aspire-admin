@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
 using System.Linq.Dynamic.Core;
 
@@ -15,16 +14,12 @@ public interface IKnowledgeService
     /// <summary>
     /// 检索相关文档片段
     /// </summary>
-    /// <param name="query">查询关键词</param>
-    /// <param name="knowledgeBaseIds">知识库ID列表</param>
-    /// <param name="topK">返回结果数量</param>
-    /// <returns>相关文档片段列表</returns>
     Task<List<KnowledgeSnippet>> SearchAsync(string query, List<string> knowledgeBaseIds, int topK = 3);
 
     /// <summary>
     /// 分页获取知识库列表
     /// </summary>
-    Task<System.Linq.Dynamic.Core.PagedResult<KnowledgeBase>> GetKnowledgeBasesAsync(Platform.ServiceDefaults.Models.PageParams request);
+    Task<PagedResult<KnowledgeBase>> GetKnowledgeBasesAsync(Platform.ServiceDefaults.Models.PageParams request);
 
     /// <summary>
     /// 获取知识库详情
@@ -52,18 +47,12 @@ public interface IKnowledgeService
 /// </summary>
 public class KnowledgeSnippet
 {
-    /// <summary>
-    /// 内容
-    /// </summary>
+    /// <summary>内容</summary>
     public string Content { get; set; } = string.Empty;
 
-    /// <summary>
-    /// 来源
-    /// </summary>
+    /// <summary>来源</summary>
     public string Source { get; set; } = string.Empty;
 
-    /// <summary>
-    /// 分数
-    /// </summary>
+    /// <summary>分数</summary>
     public double Score { get; set; }
 }

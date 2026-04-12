@@ -1,4 +1,5 @@
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
 using System.Linq.Dynamic.Core;
 
 namespace Platform.ApiService.Services;
@@ -48,17 +49,8 @@ public interface IFileShareService
     /// <summary>
     /// 获取我创建的分享列表
     /// </summary>
-    /// <param name="pageParams">分页参数</param>
-    /// <param name="type">分享类型筛选</param>
-    /// <param name="permission">分享权限筛选</param>
-    /// <param name="isActive">是否激活筛选</param>
-    /// <param name="createdAfter">创建时间范围（开始）</param>
-    /// <param name="createdBefore">创建时间范围（结束）</param>
-    /// <param name="expiresAfter">过期时间范围（开始）</param>
-    /// <param name="expiresBefore">过期时间范围（结束）</param>
-    /// <returns>分享列表</returns>
-    Task<System.Linq.Dynamic.Core.PagedResult<Models.FileShare>> GetMySharesAsync(
-        Platform.ServiceDefaults.Models.PageParams pageParams,
+    Task<PagedResult<Models.FileShare>> GetMySharesAsync(
+        PageParams pageParams,
         ShareType? type = null,
         SharePermission? permission = null,
         bool? isActive = null,
@@ -70,15 +62,8 @@ public interface IFileShareService
     /// <summary>
     /// 获取分享给我的文件列表
     /// </summary>
-    /// <param name="pageParams">分页参数</param>
-    /// <param name="permission">分享权限筛选</param>
-    /// <param name="createdAfter">创建时间范围（开始）</param>
-    /// <param name="createdBefore">创建时间范围（结束）</param>
-    /// <param name="expiresAfter">过期时间范围（开始）</param>
-    /// <param name="expiresBefore">过期时间范围（结束）</param>
-    /// <returns>分享文件列表</returns>
-    Task<System.Linq.Dynamic.Core.PagedResult<Models.FileShare>> GetSharedWithMeAsync(
-        Platform.ServiceDefaults.Models.PageParams pageParams,
+    Task<PagedResult<Models.FileShare>> GetSharedWithMeAsync(
+        PageParams pageParams,
         SharePermission? permission = null,
         DateTime? createdAfter = null,
         DateTime? createdBefore = null,
@@ -88,40 +73,26 @@ public interface IFileShareService
     /// <summary>
     /// 验证分享访问权限
     /// </summary>
-    /// <param name="shareToken">分享令牌</param>
-    /// <param name="password">分享密码（可选）</param>
-    /// <returns>是否有访问权限</returns>
     Task<bool> ValidateShareAccessAsync(string shareToken, string? password = null);
 
     /// <summary>
     /// 记录分享访问日志
     /// </summary>
-    /// <param name="shareToken">分享令牌</param>
-    /// <param name="accessorInfo">访问者信息（可选）</param>
-    /// <returns>记录操作结果</returns>
     Task RecordShareAccessAsync(string shareToken, string? accessorInfo = null);
 
     /// <summary>
     /// 获取分享的文件内容
     /// </summary>
-    /// <param name="shareToken">分享令牌</param>
-    /// <param name="password">分享密码（可选）</param>
-    /// <returns>文件流</returns>
     Task<Stream> GetSharedFileContentAsync(string shareToken, string? password = null);
 
     /// <summary>
     /// 获取分享的文件信息
     /// </summary>
-    /// <param name="shareToken">分享令牌</param>
-    /// <param name="password">分享密码（可选）</param>
-    /// <returns>文件信息</returns>
     Task<FileItem?> GetSharedFileInfoAsync(string shareToken, string? password = null);
 
     /// <summary>
     /// 批量删除分享
     /// </summary>
-    /// <param name="ids">分享ID列表</param>
-    /// <returns>删除结果</returns>
     Task<BatchOperationResult> BatchDeleteSharesAsync(List<string> ids);
 }
 
@@ -172,4 +143,3 @@ public class UpdateShareRequest
     /// <summary>分享设置</summary>
     public Dictionary<string, object>? Settings { get; set; }
 }
-

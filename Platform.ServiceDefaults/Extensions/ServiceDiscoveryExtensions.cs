@@ -57,7 +57,10 @@ public static class ServiceDiscoveryExtensions
             : ServiceLifetime.Scoped;
 
         var interfaces = type.GetInterfaces()
-            .Where(i => i.Namespace?.StartsWith("Platform") == true && !i.Name.Contains("Dependency"))
+            .Where(i => i.Namespace?.StartsWith("Platform") == true && 
+                        !i.Name.Equals("ISingletonDependency") && 
+                        !i.Name.Equals("ITransientDependency") && 
+                        !i.Name.Equals("IScopedDependency"))
             .ToList();
 
         if (interfaces.Count > 0)

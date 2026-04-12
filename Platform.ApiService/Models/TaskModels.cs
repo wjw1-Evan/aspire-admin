@@ -297,14 +297,14 @@ public class CreateTaskRequest
 {
     /// <summary>任务名称</summary>
     [Required]
-    public string TaskName { get; set; }
+    public string TaskName { get; set; } = string.Empty;
 
     /// <summary>任务描述</summary>
     public string? Description { get; set; }
 
     /// <summary>任务类型</summary>
     [Required]
-    public string TaskType { get; set; }
+    public string TaskType { get; set; } = string.Empty;
 
     /// <summary>优先级</summary>
     public int Priority { get; set; } = (int)TaskPriority.Medium;

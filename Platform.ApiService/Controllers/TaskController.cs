@@ -65,7 +65,8 @@ public class TaskController : BaseApiController
         return Success(task);
     }
 
-    [HttpGet("list")]
+    /// <summary>
+    /// 获取任务列表
     /// </summary>
     /// <param name="request">查询请求</param>
     /// <remarks>
@@ -77,6 +78,7 @@ public class TaskController : BaseApiController
     /// <response code="200">成功获取任务列表</response>
     /// <response code="400">请求参数错误</response>
     /// <response code="401">未授权，需要登录</response>
+    [HttpGet("list")]
     [HttpGet("query")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> QueryTasks([FromQuery] Platform.ServiceDefaults.Models.PageParams request)

@@ -483,7 +483,7 @@ public class WorkflowController : BaseApiController
         if (!string.IsNullOrEmpty(snapshot?.FormDefinitionJson))
             form = JsonSerializer.Deserialize<FormDefinition>(snapshot.FormDefinitionJson);
 
-        form ??= await _formDefinitionService.GetFormByIdAsync(binding.FormDefinitionId)
+        form ??= await _formDefinitionService.GetFormByIdAsync(binding.FormDefinitionId ?? string.Empty)
             ?? throw new ArgumentException($"表单定义 {binding.FormDefinitionId} 不存在");
 
         if (binding.Required && (values == null || values.Count == 0))
@@ -799,9 +799,11 @@ public class WorkflowController : BaseApiController
         return Success(null, "批量操作已取消");
     }
 
-    [HttpGet("bulk-operations/{operationId}")]
+    /// <summary>
     /// 获取批量操作状态
     /// </summary>
+    /// <param name="operationId">操作ID</param>
+    /// <returns>批量操作状态</returns>
     [HttpGet("bulk-operations/{operationId}")]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> GetBulkOperation(string operationId)

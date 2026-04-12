@@ -29,7 +29,7 @@ public class CompanyQuotaService : ICompanyQuotaService
             .Select(uc => uc.UserId).ToListAsync();
 
         var quotas = await _context.Set<StorageQuota>().Where(q => companyUserIds.Contains(q.UserId)).ToListAsync();
-        var files = await _context.Set<FileItem>().Where(f => companyUserIds.Contains(f.CreatedBy) && f.Status == FileStatus.Active).ToListAsync();
+        var files = await _context.Set<FileItem>().Where(f => f.CreatedBy != null && companyUserIds.Contains(f.CreatedBy) && f.Status == FileStatus.Active).ToListAsync();
 
         return new CompanyStorageStatistics
         {

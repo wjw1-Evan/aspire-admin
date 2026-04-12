@@ -12,6 +12,7 @@ using Platform.ApiService.Options;
 using Platform.ApiService.Services;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Middleware;
+using Platform.ServiceDefaults.Extensions;
 using Platform.ServiceDefaults.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -158,7 +159,7 @@ builder.Services.AddOpenApi(options =>
 // 6. 业务服务注册 (全自动扫描)
 // ──────────────────────────────────────────────
 
-builder.Services.AddPlatformDiscovery(builder.Configuration);
+builder.Services.AddServiceDiscovery(builder.Configuration, ["Platform.ApiService.Services", "Platform.ApiService.BackgroundServices"]);
 
 builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection("Smtp"));
 builder.Services.AddSingleton<IEmailBackgroundQueue, EmailBackgroundQueue>();

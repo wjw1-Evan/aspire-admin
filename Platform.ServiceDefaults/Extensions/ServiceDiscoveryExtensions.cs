@@ -4,25 +4,25 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Platform.ServiceDefaults.Services;
 
-namespace Platform.ApiService.Extensions;
+namespace Platform.ServiceDefaults.Extensions;
 
-public static class ServiceRegistrationExtensions
+public static class ServiceDiscoveryExtensions
 {
-    private static readonly string[] Namespaces = ["Platform.ApiService.Services", "Platform.ApiService.BackgroundServices"];
-
     private static readonly MethodInfo ConfigureMethod = typeof(OptionsConfigurationServiceCollectionExtensions)
         .GetMethod("Configure", [typeof(IServiceCollection), typeof(IConfigurationSection)])!;
 
-    public static IServiceCollection AddPlatformDiscovery(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddServiceDiscovery(this IServiceCollection services, IConfiguration configuration, string[]? namespaces = null)
     {
-        var types = typeof(ServiceRegistrationExtensions).Assembly.GetTypes()
+        namespaces ??= [];
+
+        var types = typeof(ServiceDiscoveryExtensions).Assembly.GetTypes()
             .Where(t => t.IsClass && !t.IsAbstract && !t.IsNested);
 
         foreach (var type in types)
         {
             if (TryConfigureOptions(type, services, configuration)) continue;
             if (TryRegisterHostedService(type, services)) continue;
-            RegisterService(type, services);
+            RegisterService(type, services, namespaces);
         }
 
         return services;
@@ -47,9 +47,9 @@ public static class ServiceRegistrationExtensions
         return true;
     }
 
-    private static void RegisterService(Type type, IServiceCollection services)
+    private static void RegisterService(Type type, IServiceCollection services, string[] namespaces)
     {
-        if (!Namespaces.Any(ns => type.Namespace?.StartsWith(ns) == true) || typeof(IHostedService).IsAssignableFrom(type))
+        if (!namespaces.Any(ns => type.Namespace?.StartsWith(ns) == true) || typeof(IHostedService).IsAssignableFrom(type))
             return;
 
         var lifetime = typeof(ISingletonDependency).IsAssignableFrom(type) ? ServiceLifetime.Singleton

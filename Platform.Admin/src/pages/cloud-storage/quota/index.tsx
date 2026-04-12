@@ -222,7 +222,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                 ]} />
             </ProCard>
 
-            <Drawer title={intl.formatMessage({ id: 'pages.cloud-storage.quota.drawer.title' })} placement="right" onClose={(open) => { if (!open) set({ detailVisible: false }); }} open={state.detailVisible} width={isMobile ? 'default' : 'large'}>
+            <Drawer title={intl.formatMessage({ id: 'pages.cloud-storage.quota.drawer.title' })} placement="right" onClose={() => set({ detailVisible: false })} open={state.detailVisible} width={isMobile ? 'default' : 'large'}>
                 <Spin spinning={!state.viewingQuota}>
                     {state.viewingQuota && (<ProCard title={intl.formatMessage({ id: 'pages.cloud-storage.quota.drawer.basicInfo' })} className={styles.card} style={{ marginBottom: 16 }}>
                         <Row gutter={[16, 16]}>

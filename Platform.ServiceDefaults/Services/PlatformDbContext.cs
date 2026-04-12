@@ -3,34 +3,24 @@ using MongoDB.EntityFrameworkCore.Extensions;
 using Platform.ServiceDefaults.Models;
 using System.Reflection;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.AspNetCore.Http;
 
 namespace Platform.ServiceDefaults.Services;
 
 public class PlatformDbContext : DbContext
 {
-    private readonly IHttpContextAccessor? _httpContextAccessor;
+    private readonly ITenantContext? _tenantContext;
 
     public PlatformDbContext(
         DbContextOptions<PlatformDbContext> options,
-        IHttpContextAccessor? httpContextAccessor = null)
+        ITenantContext? tenantContext = null)
         : base(options)
     {
-        _httpContextAccessor = httpContextAccessor;
+        _tenantContext = tenantContext;
         Database.AutoTransactionBehavior = AutoTransactionBehavior.Never;
     }
 
-    private ITenantContext? TenantContext
-    {
-        get
-        {
-            if (_httpContextAccessor?.HttpContext == null) return null;
-            return _httpContextAccessor.HttpContext.RequestServices.GetService(typeof(ITenantContext)) as ITenantContext;
-        }
-    }
-
-    protected string? CurrentUserId => TenantContext?.GetCurrentUserId();
-    protected string? CurrentCompanyId => TenantContext?.GetCurrentCompanyIdAsync().GetAwaiter().GetResult();
+    protected string? CurrentUserId => _tenantContext?.GetCurrentUserId();
+    protected string? CurrentCompanyId => _tenantContext?.GetCurrentCompanyIdAsync().GetAwaiter().GetResult();
 
     private static List<Type>? _cachedEntityTypes;
 

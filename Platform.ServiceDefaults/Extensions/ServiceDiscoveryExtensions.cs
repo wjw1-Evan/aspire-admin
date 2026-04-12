@@ -60,7 +60,9 @@ public static class ServiceDiscoveryExtensions
             .Where(i => i.Namespace?.StartsWith("Platform") == true && !i.Name.Contains("Dependency"))
             .ToList();
 
-        var descriptor = interfaces.Count > 0 ? new ServiceDescriptor(interfaces[0], type, lifetime) : new ServiceDescriptor(type, type, lifetime);
-        services.Add(descriptor);
+        if (interfaces.Count > 0)
+            foreach (var i in interfaces) services.Add(new ServiceDescriptor(i, type, lifetime));
+        else
+            services.Add(new ServiceDescriptor(type, type, lifetime));
     }
 }

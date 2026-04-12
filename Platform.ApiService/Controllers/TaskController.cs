@@ -51,53 +51,21 @@ public class TaskController : BaseApiController
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> CreateTask([FromBody] CreateTaskRequest request)
     {
-        if (string.IsNullOrEmpty(request.TaskName))
-            throw new ArgumentException("任务名称不能为空");
-
-        try
-        {
-            var task = await _taskService.CreateTaskAsync(request);
-            return Success(task);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+      
+        return Success(await _taskService.CreateTaskAsync(request));
     }
 
-    /// <summary>
-    /// 获取任务详情
-    /// </summary>
-    /// <param name="taskId">任务ID</param>
-    /// <remarks>
-    /// 获取指定任务的详细信息，包括任务的所有属性、参与者、附件等。
-    ///
-    /// 权限要求：需要 project-management-task 菜单权限
-    /// </remarks>
-    /// <returns>任务详情</returns>
-    /// <response code="200">成功获取任务详情</response>
-    /// <response code="401">未授权，需要登录</response>
-    /// <response code="404">任务不存在</response>
     [HttpGet("{taskId}")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> GetTask(string taskId)
     {
-        try
-        {
-            var task = await _taskService.GetTaskByIdAsync(taskId);
-            if (task == null)
-                throw new ArgumentException("任务 {taskId} 不存在");
-
-            return Success(task);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        var task = await _taskService.GetTaskByIdAsync(taskId);
+        if (task == null)
+            throw new ArgumentException($"任务 {taskId} 不存在");
+        return Success(task);
     }
 
-    /// <summary>
-    /// 查询任务列表
+    [HttpGet("list")]
     /// </summary>
     /// <param name="request">查询请求</param>
     /// <remarks>
@@ -145,40 +113,10 @@ public class TaskController : BaseApiController
         if (string.IsNullOrEmpty(request.TaskId))
             throw new ArgumentException("任务ID不能为空");
 
-        try
-        {
-            var userId = RequiredUserId;
-            var task = await _taskService.UpdateTaskAsync(request, userId);
-            return Success(task);
-        }
-        catch (KeyNotFoundException)
-        {
-            throw new ArgumentException("任务 {request.TaskId} 不存在");
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        var task = await _taskService.UpdateTaskAsync(request, RequiredUserId);
+        return Success(task);
     }
 
-    /// <summary>
-    /// 分配任务
-    /// </summary>
-    /// <param name="request">分配请求</param>
-    /// <remarks>
-    /// 将任务分配给指定的用户。分配后任务状态变为"已分配"。
-    ///
-    /// 权限要求：需要 project-management-task 菜单权限
-    /// </remarks>
-    /// <returns>分配后的任务</returns>
-    /// <response code="200">成功分配任务</response>
-    /// <response code="400">请求参数错误</response>
-    /// <response code="401">未授权，需要登录</response>
-    /// <response code="404">任务或用户不存在</response>
     [HttpPost("assign")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> AssignTask([FromBody] AssignTaskRequest request)
@@ -186,35 +124,9 @@ public class TaskController : BaseApiController
         if (string.IsNullOrEmpty(request.TaskId) || string.IsNullOrEmpty(request.AssignedTo))
             throw new ArgumentException("任务ID和分配用户不能为空");
 
-        try
-        {
-            var task = await _taskService.AssignTaskAsync(request);
-            return Success(task);
-        }
-        catch (KeyNotFoundException)
-        {
-            throw new ArgumentException("任务 {request.TaskId} 不存在");
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        return Success(await _taskService.AssignTaskAsync(request));
     }
 
-    /// <summary>
-    /// 执行任务
-    /// </summary>
-    /// <param name="request">执行请求</param>
-    /// <remarks>
-    /// 更新任务的执行状态和进度。通常用于标记任务为"执行中"或更新进度。
-    ///
-    /// 权限要求：需要 project-management-task 菜单权限
-    /// </remarks>
-    /// <returns>执行后的任务</returns>
-    /// <response code="200">成功执行任务</response>
-    /// <response code="400">请求参数错误</response>
-    /// <response code="401">未授权，需要登录</response>
-    /// <response code="404">任务不存在</response>
     [HttpPost("execute")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> ExecuteTask([FromBody] ExecuteTaskRequest request)
@@ -222,120 +134,31 @@ public class TaskController : BaseApiController
         if (string.IsNullOrEmpty(request.TaskId))
             throw new ArgumentException("任务ID不能为空");
 
-        try
-        {
-            var task = await _taskService.ExecuteTaskAsync(request);
-            return Success(task);
-        }
-        catch (KeyNotFoundException)
-        {
-            throw new ArgumentException("任务 {request.TaskId} 不存在");
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        return Success(await _taskService.ExecuteTaskAsync(request));
     }
 
-    /// <summary>
-    /// 完成任务
-    /// </summary>
-    /// <param name="request">完成请求</param>
-    /// <remarks>
-    /// 标记任务为已完成。需要指定执行结果（成功/失败/超时等）。
-    ///
-    /// 权限要求：需要 project-management-task 菜单权限
-    /// </remarks>
-    /// <returns>完成后的任务</returns>
-    /// <response code="200">成功完成任务</response>
-    /// <response code="400">请求参数错误</response>
-    /// <response code="401">未授权，需要登录</response>
-    /// <response code="404">任务不存在</response>
     [HttpPost("complete")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> CompleteTask([FromBody] CompleteTaskRequest request)
     {
         if (string.IsNullOrEmpty(request.TaskId))
             throw new ArgumentException("任务ID不能为空");
-
-        try
-        {
-            var task = await _taskService.CompleteTaskAsync(request);
-            return Success(task);
-        }
-        catch (KeyNotFoundException)
-        {
-            throw new ArgumentException("任务 {request.TaskId} 不存在");
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        return Success(await _taskService.CompleteTaskAsync(request));
     }
 
-    /// <summary>
-    /// 取消任务
-    /// </summary>
-    /// <param name="taskId">任务ID</param>
-    /// <param name="remarks">取消备注</param>
-    /// <remarks>
-    /// 取消指定的任务。任务状态变为"已取消"。
-    ///
-    /// 权限要求：需要 project-management-task 菜单权限
-    /// </remarks>
-    /// <returns>取消后的任务</returns>
-    /// <response code="200">成功取消任务</response>
-    /// <response code="401">未授权，需要登录</response>
-    /// <response code="404">任务不存在</response>
     [HttpPost("{taskId}/cancel")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> CancelTask(string taskId, [FromQuery] string? remarks = null)
-    {
-        try
-        {
-            var task = await _taskService.CancelTaskAsync(taskId, remarks);
-            return Success(task);
-        }
-        catch (KeyNotFoundException)
-        {
-            throw new ArgumentException("任务 {taskId} 不存在");
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
-    }
+        => Success(await _taskService.CancelTaskAsync(taskId, remarks));
 
-    /// <summary>
-    /// 删除任务
-    /// </summary>
-    /// <param name="taskId">任务ID</param>
-    /// <remarks>
-    /// 删除指定的任务。这是软删除，任务数据仍保留在数据库中。
-    ///
-    /// 权限要求：需要 project-management-task 菜单权限
-    /// </remarks>
-    /// <returns>删除结果</returns>
-    /// <response code="200">成功删除任务</response>
-    /// <response code="401">未授权，需要登录</response>
-    /// <response code="404">任务不存在</response>
     [HttpDelete("{taskId}")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> DeleteTask(string taskId)
     {
-        try
-        {
-            var userId = RequiredUserId;
-            var result = await _taskService.DeleteTaskAsync(taskId, userId);
-            if (!result)
-                throw new ArgumentException("任务 {taskId} 不存在");
-
-            return Success(new { message = "任务已删除" });
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        var result = await _taskService.DeleteTaskAsync(taskId, RequiredUserId);
+        if (!result)
+            throw new ArgumentException($"任务 {taskId} 不存在");
+        return Success(new { message = "任务已删除" });
     }
 
     /// <summary>
@@ -401,73 +224,18 @@ public class TaskController : BaseApiController
     [HttpGet("my/todo")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> GetMyTodoTasks()
-    {
-        try
-        {
-            var userId = RequiredUserId;
-            var tasks = await _taskService.GetUserTodoTasksAsync(userId);
-            return Success(tasks);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
-    }
+        => Success(await _taskService.GetUserTodoTasksAsync(RequiredUserId));
 
-    /// <summary>
-    /// 获取用户创建的任务
-    /// </summary>
-    /// <param name="request">分页参数</param>
-    /// <returns>用户创建的任务列表</returns>
     [HttpPost("created")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> GetUserCreatedTasks([FromBody] Platform.ServiceDefaults.Models.PageParams request)
-    {
-        try
-        {
-            var userId = RequiredUserId;
-            var result = await _taskService.GetUserCreatedTasksAsync(userId, request);
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
-    }
+        => Success(await _taskService.GetUserCreatedTasksAsync(RequiredUserId, request));
 
-    /// <summary>
-    /// 获取用户创建的任务
-    /// </summary>
-    /// <remarks>
-    /// 获取当前用户创建的任务列表。
-    ///
-    /// 权限要求：需要 project-management-task 菜单权限
-    /// </remarks>
-    /// <returns>创建的任务列表</returns>
-    /// <response code="200">成功获取创建的任务</response>
-    /// <response code="401">未授权，需要登录</response>
     [HttpPost("my/created")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> GetMyCreatedTasks([FromBody] Platform.ServiceDefaults.Models.PageParams request)
-    {
-        var userId = RequiredUserId;
-        var result = await _taskService.GetUserCreatedTasksAsync(userId, request);
-        return Success(result);
-    }
+        => Success(await _taskService.GetUserCreatedTasksAsync(RequiredUserId, request));
 
-    /// <summary>
-    /// 批量更新任务状态
-    /// </summary>
-    /// <param name="request">批量更新任务状态请求</param>
-    /// <remarks>
-    /// 批量更新多个任务的状态。
-    ///
-    /// 权限要求：需要 project-management-task 菜单权限
-    /// </remarks>
-    /// <returns>更新的任务数量</returns>
-    /// <response code="200">成功更新任务状态</response>
-    /// <response code="400">请求参数错误</response>
-    /// <response code="401">未授权，需要登录</response>
     [HttpPost("batch-update-status")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> BatchUpdateTaskStatus([FromBody] BatchUpdateTaskStatusRequest request)
@@ -495,150 +263,44 @@ public class TaskController : BaseApiController
     [HttpGet("project/{projectId}")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> GetTasksByProjectId(string projectId)
-    {
-        try
-        {
-            var tasks = await _taskService.GetTasksByProjectIdAsync(projectId);
-            return Success(tasks);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
-    }
+        => Success(await _taskService.GetTasksByProjectIdAsync(projectId));
 
-    /// <summary>
-    /// 获取任务树（支持按项目过滤）
-    /// </summary>
     [HttpGet("tree")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> GetTaskTree([FromQuery] string? projectId = null)
-    {
-        try
-        {
-            var tasks = await _taskService.GetTaskTreeAsync(projectId);
-            return Success(tasks);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
-    }
+        => Success(await _taskService.GetTaskTreeAsync(projectId));
 
-    /// <summary>
-    /// 更新任务进度
-    /// </summary>
     [HttpPut("{id}/progress")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> UpdateTaskProgress(string id, [FromBody] UpdateTaskProgressRequest request)
-    {
-        try
-        {
-            var task = await _taskService.UpdateTaskProgressAsync(id, request.Progress);
-            return Success(task);
-        }
-        catch (KeyNotFoundException)
-        {
-            throw new ArgumentException("任务 {id} 不存在");
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
-    }
+        => Success(await _taskService.UpdateTaskProgressAsync(id, request.Progress));
 
-    /// <summary>
-    /// 添加任务依赖
-    /// </summary>
     [HttpPost("dependency")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> AddTaskDependency([FromBody] AddTaskDependencyRequest request)
     {
-        var validationResult = ValidateModelState();
-        if (validationResult != null)
-            return validationResult;
+        if (ValidateModelState() is { } validationError)
+            return validationError;
 
-        try
-        {
-            var dependencyId = await _taskService.AddTaskDependencyAsync(
-                request.PredecessorTaskId,
-                request.SuccessorTaskId,
-                request.DependencyType,
-                request.LagDays);
-
-            return Success(new { id = dependencyId });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            // 根据异常消息确定是前置任务还是后续任务不存在
-            // 异常消息格式："前置任务 {taskId} 不存在" 或 "后续任务 {taskId} 不存在"
-            var message = ex.Message;
-            string taskId;
-
-            if (message.Contains("前置任务"))
-            {
-                taskId = request.PredecessorTaskId;
-            }
-            else if (message.Contains("后续任务"))
-            {
-                taskId = request.SuccessorTaskId;
-            }
-            else
-            {
-                // 如果无法确定，默认使用前置任务ID
-                taskId = request.PredecessorTaskId;
-            }
-
-            throw new ArgumentException("任务 {taskId} 不存在");
-        }
-        catch (InvalidOperationException ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        var dependencyId = await _taskService.AddTaskDependencyAsync(
+            request.PredecessorTaskId, request.SuccessorTaskId, request.DependencyType, request.LagDays);
+        return Success(new { id = dependencyId });
     }
 
-    /// <summary>
-    /// 移除任务依赖
-    /// </summary>
     [HttpDelete("dependency/{id}")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> RemoveTaskDependency(string id)
     {
-        try
-        {
-            var removed = await _taskService.RemoveTaskDependencyAsync(id);
-            if (!removed)
-                throw new ArgumentException("依赖关系 {id} 不存在");
-
-            return Success(null, "依赖关系已移除");
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        var removed = await _taskService.RemoveTaskDependencyAsync(id);
+        if (!removed)
+            throw new ArgumentException($"依赖关系 {id} 不存在");
+        return Success(null, "依赖关系已移除");
     }
 
-    /// <summary>
-    /// 获取任务依赖关系
-    /// </summary>
     [HttpGet("{taskId}/dependencies")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> GetTaskDependencies(string taskId)
-    {
-        try
-        {
-            var dependencies = await _taskService.GetTaskDependenciesAsync(taskId);
-            return Success(dependencies);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
-    }
+        => Success(await _taskService.GetTaskDependenciesAsync(taskId));
 
     /// <summary>
     /// 计算关键路径

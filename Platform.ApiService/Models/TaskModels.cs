@@ -4,6 +4,7 @@ using Platform.ServiceDefaults.Attributes;
 using Platform.ServiceDefaults.Models;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace Platform.ApiService.Models;
 
@@ -295,13 +296,15 @@ public class TaskStatistics
 public class CreateTaskRequest
 {
     /// <summary>任务名称</summary>
-    public string TaskName { get; set; } = string.Empty;
+    [Required]
+    public string TaskName { get; set; }
 
     /// <summary>任务描述</summary>
     public string? Description { get; set; }
 
     /// <summary>任务类型</summary>
-    public string TaskType { get; set; } = string.Empty;
+    [Required]
+    public string TaskType { get; set; }
 
     /// <summary>优先级</summary>
     public int Priority { get; set; } = (int)TaskPriority.Medium;

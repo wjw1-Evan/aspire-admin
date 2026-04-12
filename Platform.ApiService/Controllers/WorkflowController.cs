@@ -97,21 +97,7 @@ public class WorkflowController : BaseApiController
     [HttpGet]
     [RequireMenu("workflow-list", "workflow-monitor")]
     public async Task<IActionResult> GetWorkflows([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
-    {
-        try
-        {
-            var result = await _workflowQueryService.GetWorkflowsAsync(request);
-            return Success(result);
-        }
-        catch (ArgumentException ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException($"获取流程定义列表失败: {ex.Message}");
-        }
-    }
+        => Success(await _workflowQueryService.GetWorkflowsAsync(request));
 
     /// <summary>
     /// 获取流程定义详情
@@ -120,20 +106,10 @@ public class WorkflowController : BaseApiController
     [RequireMenu("workflow-list", "workflow-monitor", "document-list", "document-approval")]
     public async Task<IActionResult> GetWorkflow(string id)
     {
-        try
-        {
-            var workflow = await _workflowQueryService.GetWorkflowByIdAsync(id);
-            if (workflow == null)
-            {
-                throw new ArgumentException("流程定义 {id} 不存在");
-            }
-
-            return Success(workflow);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        var workflow = await _workflowQueryService.GetWorkflowByIdAsync(id);
+        if (workflow == null)
+            throw new ArgumentException($"流程定义 {id} 不存在");
+        return Success(workflow);
     }
 
     /// <summary>
@@ -143,41 +119,27 @@ public class WorkflowController : BaseApiController
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> CreateWorkflow([FromBody] CreateWorkflowRequest request)
     {
-        try
+        if (string.IsNullOrEmpty(request.Name))
+            throw new ArgumentException("流程名称不能为空");
+
+        if (request.Graph == null || request.Graph.Nodes == null || !request.Graph.Nodes.Any())
+            throw new ArgumentException("流程图形定义不能为空");
+
+        var (isGraphValid, graphError) = _graphValidator.Validate(request.Graph);
+        if (!isGraphValid)
+            throw new ArgumentException($"流程图形定义不合法: {graphError}");
+
+        var workflow = new WorkflowDefinition
         {
-            if (string.IsNullOrEmpty(request.Name))
-            {
-                throw new ArgumentException("流程名称不能为空");
-            }
+            Name = request.Name,
+            Description = request.Description,
+            Category = request.Category ?? string.Empty,
+            Version = new WorkflowVersion { Major = 1, Minor = 0, CreatedAt = DateTime.UtcNow },
+            Graph = request.Graph,
+            IsActive = request.IsActive ?? true
+        };
 
-            if (request.Graph == null || request.Graph.Nodes == null || !request.Graph.Nodes.Any())
-            {
-                throw new ArgumentException("流程图形定义不能为空");
-            }
-
-            var (isGraphValid, graphError) = _graphValidator.Validate(request.Graph);
-            if (!isGraphValid)
-            {
-                throw new ArgumentException($"流程图形定义不合法: {graphError}");
-            }
-
-            var workflow = new WorkflowDefinition
-            {
-                Name = request.Name,
-                Description = request.Description,
-                Category = request.Category ?? string.Empty,
-                Version = new WorkflowVersion { Major = 1, Minor = 0, CreatedAt = DateTime.UtcNow },
-                Graph = request.Graph,
-                IsActive = request.IsActive ?? true
-            };
-
-            var result = await _workflowDefinitionService.CreateWorkflowAsync(workflow);
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        return Success(await _workflowDefinitionService.CreateWorkflowAsync(workflow));
     }
 
     /// <summary>
@@ -187,40 +149,24 @@ public class WorkflowController : BaseApiController
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> UpdateWorkflow(string id, [FromBody] UpdateWorkflowRequest request)
     {
-        try
-        {
-            var existing = await _workflowQueryService.GetWorkflowByIdAsync(id);
-            if (existing == null)
-            {
-                throw new ArgumentException("流程定义 {id} 不存在");
-            }
+        var existing = await _workflowQueryService.GetWorkflowByIdAsync(id);
+        if (existing == null)
+            throw new ArgumentException($"流程定义 {id} 不存在");
 
-            if (request.Graph != null)
-            {
-                var (isGraphValid, graphError) = _graphValidator.Validate(request.Graph);
-                if (!isGraphValid)
-                {
-                    throw new ArgumentException($"流程图形定义不合法: {graphError}");
-                }
-            }
-
-            if (!string.IsNullOrEmpty(request.Name)) existing.Name = request.Name;
-            if (request.Description != null) existing.Description = request.Description;
-            if (!string.IsNullOrEmpty(request.Category)) existing.Category = request.Category;
-            if (request.Graph != null) existing.Graph = request.Graph;
-            if (request.IsActive.HasValue) existing.IsActive = request.IsActive.Value;
-
-            var result = await _workflowDefinitionService.UpdateWorkflowAsync(id, existing);
-            return Success(result);
-        }
-        catch (ArgumentException ex)
+        if (request.Graph != null)
         {
-            throw new ArgumentException(ex.Message);
+            var (isGraphValid, graphError) = _graphValidator.Validate(request.Graph);
+            if (!isGraphValid)
+                throw new ArgumentException($"流程图形定义不合法: {graphError}");
         }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+
+        if (!string.IsNullOrEmpty(request.Name)) existing.Name = request.Name;
+        if (request.Description != null) existing.Description = request.Description;
+        if (!string.IsNullOrEmpty(request.Category)) existing.Category = request.Category;
+        if (request.Graph != null) existing.Graph = request.Graph;
+        if (request.IsActive.HasValue) existing.IsActive = request.IsActive.Value;
+
+        return Success(await _workflowDefinitionService.UpdateWorkflowAsync(id, existing));
     }
 
     /// <summary>
@@ -230,20 +176,10 @@ public class WorkflowController : BaseApiController
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> DeleteWorkflow(string id)
     {
-        try
-        {
-            var result = await _workflowDefinitionService.DeleteWorkflowAsync(id);
-            if (!result)
-            {
-                throw new ArgumentException("流程定义 {id} 不存在");
-            }
-
-            return Success(null, "流程定义已删除");
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        var result = await _workflowDefinitionService.DeleteWorkflowAsync(id);
+        if (!result)
+            throw new ArgumentException($"流程定义 {id} 不存在");
+        return Success(null, "流程定义已删除");
     }
 
     /// <summary>
@@ -253,39 +189,30 @@ public class WorkflowController : BaseApiController
     [RequireMenu("workflow-list", "document-list")]
     public async Task<IActionResult> StartWorkflow(string id, [FromBody] StartWorkflowRequest request)
     {
+        var userId = RequiredUserId;
+        Dictionary<string, object?>? sanitizedVars = null;
+
+        if (request.Variables != null)
+        {
+            try
+            {
+                sanitizedVars = (Dictionary<string, object?>)(object)SerializationExtensions.SanitizeDictionary(request.Variables);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "变量清洗失败: WorkflowId={WorkflowId}", id);
+                throw new ArgumentException("流程变量处理失败，请检查变量格式");
+            }
+        }
+
         try
         {
-            var userId = RequiredUserId;
-            Dictionary<string, object?>? sanitizedVars = null;
-
-            if (request.Variables != null)
-            {
-                try
-                {
-                    sanitizedVars = (Dictionary<string, object?>)(object)Platform.ApiService.Extensions.SerializationExtensions.SanitizeDictionary(request.Variables);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "变量清洗失败: WorkflowId={WorkflowId}, Variables={Variables}",
-                        id, System.Text.Json.JsonSerializer.Serialize(request.Variables));
-                    throw new ArgumentException("流程变量处理失败，请检查变量格式");
-                }
-            }
-
-            var instance = await _workflowEngine.StartWorkflowAsync(id, request.DocumentId, userId, sanitizedVars);
-            return Success(instance);
+            return Success(await _workflowEngine.StartWorkflowAsync(id, request.DocumentId, userId, sanitizedVars));
         }
         catch (InvalidOperationException ex)
         {
-            _logger.LogWarning(ex, "启动流程失败: WorkflowId={WorkflowId}, DocumentId={DocumentId}",
-                id, request.DocumentId);
+            _logger.LogWarning(ex, "启动流程失败: WorkflowId={WorkflowId}, DocumentId={DocumentId}", id, request.DocumentId);
             throw new ArgumentException(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "启动流程时发生未预期错误: WorkflowId={WorkflowId}, DocumentId={DocumentId}",
-                id, request.DocumentId);
-            throw new ArgumentException("启动流程时发生错误，请稍后重试");
         }
     }
 
@@ -294,28 +221,19 @@ public class WorkflowController : BaseApiController
     /// </summary>
     [HttpPost("{id}/instances")]
     [RequireMenu("workflow-list", "document-list")]
-    public async Task<IActionResult> StartWorkflowInstance(string id, [FromBody] StartWorkflowRequest request)
-    {
-        return await StartWorkflow(id, request);
-    }
+    public Task<IActionResult> StartWorkflowInstance(string id, [FromBody] StartWorkflowRequest request)
+        => StartWorkflow(id, request);
 
     /// <summary>
     /// 获取流程实例列表
     /// </summary>
     [HttpGet("instances")]
     [RequireMenu("workflow-monitor")]
-    public async Task<IActionResult> GetInstances([FromQuery] Platform.ServiceDefaults.Models.PageParams request, [FromQuery] string? workflowDefinitionId = null, [FromQuery] WorkflowStatus? status = null)
-    {
-        try
-        {
-            var result = await _workflowInstanceQueryService.GetInstancesAsync(request, workflowDefinitionId, status);
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
-    }
+    public async Task<IActionResult> GetInstances(
+        [FromQuery] Platform.ServiceDefaults.Models.PageParams request,
+        [FromQuery] string? workflowDefinitionId = null,
+        [FromQuery] WorkflowStatus? status = null)
+        => Success(await _workflowInstanceQueryService.GetInstancesAsync(request, workflowDefinitionId, status));
 
     /// <summary>
     /// 获取用于创建公文的自定义表单（优先使用起始节点绑定的文档表单；若无，则取第一个绑定文档表单的节点）
@@ -343,31 +261,22 @@ public class WorkflowController : BaseApiController
             }
 
             if (binding == null || string.IsNullOrEmpty(binding.FormDefinitionId))
-            {
                 return Success(new { form = (FormDefinition?)null, dataScopeKey = (string?)null, initialValues = (object?)null });
-            }
 
             var form = await _formDefinitionService.GetFormByIdAsync(binding.FormDefinitionId);
-
             if (form == null)
-            {
-                throw new ArgumentException("表单定义 {binding.FormDefinitionId} 不存在");
-            }
+                throw new ArgumentException($"表单定义 {binding.FormDefinitionId} 不存在");
 
             var initialValues = new Dictionary<string, object>();
             foreach (var field in form.Fields)
             {
                 if (field.DefaultValue != null && !string.IsNullOrEmpty(field.DataKey))
-                {
                     initialValues[field.DataKey] = field.DefaultValue;
-                }
             }
 
             var titleField = form.Fields.FirstOrDefault(f => string.Equals(f.DataKey, "title", StringComparison.OrdinalIgnoreCase));
             if (titleField != null && !initialValues.ContainsKey("title"))
-            {
                 initialValues["title"] = definition.Name;
-            }
 
             return Success(new { form, dataScopeKey = binding.DataScopeKey, initialValues });
         }
@@ -377,117 +286,59 @@ public class WorkflowController : BaseApiController
         }
     }
 
-    /// <summary>
-    /// 获取流程中使用的所有表单及其字段（用于条件组件的二级联动选择）
-    /// </summary>
-    /// <remarks>
-    /// 返回流程定义中所有节点绑定的表单及其字段列表
-    /// 用于条件组件的二级联动选择：第一级为表单，第二级为字段
-    /// </remarks>
     [HttpGet("{id}/forms-and-fields")]
     [RequireMenu("workflow-list", "document-list")]
     public async Task<IActionResult> GetWorkflowFormsAndFields(string id)
     {
-        try
+        var definition = await _workflowQueryService.GetWorkflowByIdAsync(id);
+        if (definition == null)
+            throw new ArgumentException($"流程定义 {id} 不存在");
+
+        var formBindings = definition.Graph.Nodes
+            .Where(n => n.Data.Config?.Form != null && !string.IsNullOrEmpty(n.Data.Config!.Form!.FormDefinitionId))
+            .Select(n => n.Data.Config!.Form!)
+            .DistinctBy(b => b.FormDefinitionId)
+            .ToList();
+
+        if (formBindings.Count == 0)
+            return Success(new { forms = new List<object>() });
+
+        var formIds = formBindings.Select(b => b.FormDefinitionId!).ToList();
+        var forms = await _formDefinitionService.GetFormsByIdsAsync(formIds);
+
+        var result = forms.Select(form => new
         {
-            var definition = await _workflowQueryService.GetWorkflowByIdAsync(id);
-            if (definition == null)
+            Id = form.Id,
+            Name = form.Name,
+            Key = form.Key,
+            Fields = form.Fields?.Select(field => new
             {
-                throw new ArgumentException("流程定义 {id} 不存在");
-            }
+                Id = field.Id,
+                Label = field.Label,
+                DataKey = field.DataKey,
+                Type = field.Type,
+                Required = field.Required
+            }).ToList<object>() ?? new List<object>()
+        }).ToList<object>();
 
-            // 收集流程中所有节点绑定的表单
-            var formBindings = new Dictionary<string, FormBinding>();
-            foreach (var node in definition.Graph.Nodes)
-            {
-                var binding = node.Data.Config?.Form;
-                if (binding != null && !string.IsNullOrEmpty(binding.FormDefinitionId))
-                {
-                    if (!formBindings.ContainsKey(binding.FormDefinitionId))
-                    {
-                        formBindings[binding.FormDefinitionId] = binding;
-                    }
-                }
-            }
-
-            if (formBindings.Count == 0)
-            {
-                return Success(new { forms = new List<object>() });
-            }
-
-            // 获取所有表单定义
-            var formIds = formBindings.Keys.ToList();
-            var forms = await _formDefinitionService.GetFormsByIdsAsync(formIds);
-
-            // 构建返回数据：表单列表，每个表单包含其字段
-            var result = forms.Select(form => new
-            {
-                form.Id,
-                form.Name,
-                form.Key,
-                Fields = form.Fields == null ? new List<dynamic>() : form.Fields.Select(field => new
-                {
-                    field.Id,
-                    field.Label,
-                    field.DataKey,
-                    field.Type,
-                    field.Required
-                }).Cast<dynamic>().ToList()
-            }).ToList();
-
-            return Success(new { forms = result });
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        return Success(new { forms = result });
     }
 
-    /// <summary>
-    /// 获取当前用户待办的流程实例
-    /// </summary>
     [HttpGet("instances/todo")]
     [RequireMenu("document-approval")]
     public async Task<IActionResult> GetTodoInstances([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
-    {
-        try
-        {
-            var userId = RequiredUserId;
-            var result = await _workflowTodoService.GetTodoInstancesAsync(userId, request);
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
-    }
+        => Success(await _workflowTodoService.GetTodoInstancesAsync(RequiredUserId, request));
 
-    /// <summary>
-    /// 获取流程实例详情
-    /// </summary>
     [HttpGet("instances/{id}")]
     [RequireMenu("workflow-monitor", "document-approval", "document-list")]
     public async Task<IActionResult> GetInstance(string id)
     {
-        try
-        {
-            var instance = await _workflowEngine.GetInstanceAsync(id);
-            if (instance == null)
-            {
-                throw new ArgumentException("流程实例 {id} 不存在");
-            }
-
-            return Success(instance);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        var instance = await _workflowEngine.GetInstanceAsync(id);
+        if (instance == null)
+            throw new ArgumentException($"流程实例 {id} 不存在");
+        return Success(instance);
     }
 
-    /// <summary>
-    /// 获取审批历史
-    /// </summary>
     [HttpGet("instances/{id}/history")]
     [RequireMenu("workflow-monitor", "document-approval", "document-list")]
     public async Task<IActionResult> GetApprovalHistory(string id)
@@ -609,243 +460,151 @@ public class WorkflowController : BaseApiController
         }
     }
 
-    /// <summary>
-    /// 提交节点表单数据
-    /// </summary>
     [HttpPost("instances/{id}/nodes/{nodeId}/form")]
     [RequireMenu("workflow-list", "document-approval")]
     public async Task<IActionResult> SubmitNodeForm(string id, string nodeId, [FromBody] Dictionary<string, object> values)
     {
-        try
+        var instance = await _workflowEngine.GetInstanceAsync(id);
+        if (instance == null)
+            throw new ArgumentException($"流程实例 {id} 不存在");
+
+        var definition = instance.WorkflowDefinitionSnapshot
+            ?? await _workflowQueryService.GetWorkflowByIdAsync(instance.WorkflowDefinitionId)
+            ?? throw new ArgumentException($"流程定义 {instance.WorkflowDefinitionId} 不存在");
+
+        var node = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId)
+            ?? throw new ArgumentException("节点不存在");
+
+        var binding = node.Data.Config?.Form
+            ?? throw new ArgumentException("该节点未绑定完整表单定义");
+
+        FormDefinition? form = null;
+        var snapshot = instance.FormDefinitionSnapshots?.FirstOrDefault(s => s.NodeId == nodeId);
+        if (!string.IsNullOrEmpty(snapshot?.FormDefinitionJson))
+            form = JsonSerializer.Deserialize<FormDefinition>(snapshot.FormDefinitionJson);
+
+        form ??= await _formDefinitionService.GetFormByIdAsync(binding.FormDefinitionId)
+            ?? throw new ArgumentException($"表单定义 {binding.FormDefinitionId} 不存在");
+
+        if (binding.Required && (values == null || values.Count == 0))
+            throw new ArgumentException("表单数据不能为空");
+
+        if (values?.Any() == true)
         {
-            var instance = await _workflowEngine.GetInstanceAsync(id);
-            if (instance == null)
-            {
-                throw new ArgumentException("流程实例 {id} 不存在");
-            }
-
-            WorkflowDefinition? definition = instance.WorkflowDefinitionSnapshot;
-            if (definition == null)
-            {
-                definition = await _workflowQueryService.GetWorkflowByIdAsync(instance.WorkflowDefinitionId);
-                if (definition == null)
-                {
-                    throw new ArgumentException("流程定义 {instance.WorkflowDefinitionId} 不存在");
-                }
-            }
-
-            var node = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
-            if (node == null)
-            {
-                throw new ArgumentException("节点不存在");
-            }
-
-            var binding = node.Data.Config?.Form;
-
-            if (binding == null || string.IsNullOrEmpty(binding.FormDefinitionId))
-            {
-                throw new ArgumentException("该节点未绑定完整表单定义");
-            }
-
-            FormDefinition? form = null;
-            var snapshot = instance.FormDefinitionSnapshots?.FirstOrDefault(s => s.NodeId == nodeId);
-            if (!string.IsNullOrEmpty(snapshot?.FormDefinitionJson))
-            {
-                form = JsonSerializer.Deserialize<FormDefinition>(snapshot.FormDefinitionJson);
-            }
-
-            if (form == null)
-            {
-                form = await _formDefinitionService.GetFormByIdAsync(binding.FormDefinitionId);
-                if (form == null)
-                {
-                    throw new ArgumentException("表单定义 {binding.FormDefinitionId} 不存在");
-                }
-            }
-
-            if (binding.Required && (values == null || values.Count == 0))
-            {
-                throw new ArgumentException("表单数据不能为空");
-            }
-
-            if (values != null && values.Any())
-            {
-                var validationErrors = _fieldValidationService.ValidateFormData(form, values);
-                if (validationErrors.Any())
-                {
-                    throw new ArgumentException(string.Join("; ", validationErrors));
-                }
-            }
-
-            var sanitizedValues = Platform.ApiService.Extensions.SerializationExtensions.SanitizeDictionary(values ?? new Dictionary<string, object>());
-            var valuesWithNulls = (Dictionary<string, object?>)(object)sanitizedValues;
-
-            if (binding.Target == FormTarget.Document)
-            {
-                if (string.IsNullOrEmpty(instance.DocumentId)) throw new ArgumentException("当前实例未关联公文");
-                // Bug 15 修复：提前 await 获取 document，避免 GetAwaiter().GetResult() 同步阻塞
-                var existingDoc = await _documentService.GetDocumentAsync(instance.DocumentId);
-                Action<Document> updateAction = d =>
-                {
-                    if (!string.IsNullOrWhiteSpace(binding.DataScopeKey))
-                    {
-                        var formData = d.FormData ?? new Dictionary<string, object>();
-                        formData[binding.DataScopeKey] = sanitizedValues;
-                        d.FormData = formData;
-                    }
-                    else
-                    {
-                        var existingFormData = d.FormData ?? new Dictionary<string, object>();
-                        foreach (var kvp in sanitizedValues)
-                        {
-                            existingFormData[kvp.Key] = kvp.Value;
-                        }
-                        d.FormData = existingFormData;
-                    }
-                };
-
-                if (existingDoc != null)
-                {
-                    updateAction(existingDoc);
-                    await _documentService.UpdateDocumentAsync(existingDoc);
-                }
-                return Success(existingDoc?.FormData ?? (object)sanitizedValues);
-            }
-            else
-            {
-                Action<WorkflowInstance> updateAction = i =>
-                {
-                    if (!string.IsNullOrWhiteSpace(binding.DataScopeKey))
-                    {
-                        i.SetVariable(binding.DataScopeKey, valuesWithNulls);
-                    }
-                    else
-                    {
-                        i.ResetVariables(valuesWithNulls);
-                    }
-                };
-
-                updateAction(instance);
-                await _workflowInstanceService.SaveChangesAsync();
-                return Success(instance.GetVariablesDict() ?? valuesWithNulls);
-            }
+            var validationErrors = _fieldValidationService.ValidateFormData(form, values);
+            if (validationErrors.Any())
+                throw new ArgumentException(string.Join("; ", validationErrors));
         }
-        catch (Exception ex)
+
+        var sanitizedValues = SerializationExtensions.SanitizeDictionary(values ?? new Dictionary<string, object>());
+        var valuesWithNulls = (Dictionary<string, object?>)(object)sanitizedValues;
+
+        if (binding.Target == FormTarget.Document)
         {
-            throw new ArgumentException($"提交表单数据失败: {ex.Message}");
+            if (string.IsNullOrEmpty(instance.DocumentId))
+                throw new ArgumentException("当前实例未关联公文");
+
+            var existingDoc = await _documentService.GetDocumentAsync(instance.DocumentId);
+            if (existingDoc != null)
+            {
+                if (!string.IsNullOrWhiteSpace(binding.DataScopeKey))
+                {
+                    var formData = existingDoc.FormData ?? new Dictionary<string, object>();
+                    formData[binding.DataScopeKey] = sanitizedValues;
+                    existingDoc.FormData = formData;
+                }
+                else
+                {
+                    var existingFormData = existingDoc.FormData ?? new Dictionary<string, object>();
+                    foreach (var kvp in sanitizedValues)
+                        existingFormData[kvp.Key] = kvp.Value;
+                    existingDoc.FormData = existingFormData;
+                }
+                await _documentService.UpdateDocumentAsync(existingDoc);
+            }
+            return Success(existingDoc?.FormData ?? (object)sanitizedValues);
+        }
+        else
+        {
+            if (!string.IsNullOrWhiteSpace(binding.DataScopeKey))
+                instance.SetVariable(binding.DataScopeKey, valuesWithNulls);
+            else
+                instance.ResetVariables(valuesWithNulls);
+
+            await _workflowInstanceService.SaveChangesAsync();
+            return Success(instance.GetVariablesDict() ?? valuesWithNulls);
         }
     }
 
-    /// <summary>
-    /// 对流程实例节点执行审批/退回/转办
-    /// </summary>
     [HttpPost("instances/{id}/nodes/{nodeId}/action")]
     [RequireMenu("workflow-list", "document-approval")]
     public async Task<IActionResult> ExecuteNodeAction(string id, string nodeId, [FromBody] WorkflowActionRequest request)
     {
-        try
+        var userId = RequiredUserId;
+
+        if (string.IsNullOrWhiteSpace(request.Action))
+            throw new ArgumentException("操作类型不能为空");
+
+        if (request.FormData != null && request.FormData.Any())
         {
-            var userId = RequiredUserId;
-
-            if (string.IsNullOrWhiteSpace(request.Action))
-            {
-                throw new ArgumentException("操作类型不能为空");
-            }
-
-            if (request.FormData != null && request.FormData.Any())
-            {
-                var submitResult = await SubmitNodeForm(id, nodeId, request.FormData);
-                if (submitResult is ObjectResult obj && obj.StatusCode != 200)
-                {
-                    return submitResult;
-                }
-            }
-
-            var action = request.Action.Trim().ToLowerInvariant();
-
-            switch (action)
-            {
-                case "approve":
-                    await _workflowEngine.ProcessApprovalAsync(id, nodeId, ApprovalAction.Approve, userId, request.Comment);
-                    return Success(null, "审批通过");
-
-                case "reject":
-                    if (string.IsNullOrWhiteSpace(request.Comment))
-                    {
-                        throw new ArgumentException("拒绝原因不能为空");
-                    }
-                    await _workflowEngine.ProcessApprovalAsync(id, nodeId, ApprovalAction.Reject, userId, request.Comment);
-                    return Success(null, "审批已拒绝");
-
-                case "return":
-                    if (string.IsNullOrEmpty(request.TargetNodeId))
-                    {
-                        throw new ArgumentException("退回目标节点不能为空");
-                    }
-                    if (string.IsNullOrWhiteSpace(request.Comment))
-                    {
-                        throw new ArgumentException("退回原因不能为空");
-                    }
-                    await _workflowEngine.ReturnToNodeAsync(id, request.TargetNodeId, request.Comment, userId);
-                    return Success(null, "已退回");
-
-                case "delegate":
-                    if (string.IsNullOrEmpty(request.DelegateToUserId))
-                    {
-                        throw new ArgumentException("转办目标用户不能为空");
-                    }
-                    await _workflowEngine.ProcessApprovalAsync(id, nodeId, ApprovalAction.Delegate, userId, request.Comment, request.DelegateToUserId);
-                    return Success(null, "已转办");
-
-                default:
-                    throw new ArgumentException("不支持的操作类型");
-            }
+            var submitResult = await SubmitNodeForm(id, nodeId, request.FormData);
+            if (submitResult is ObjectResult obj && obj.StatusCode != 200)
+                return submitResult;
         }
-        catch (Exception ex)
+
+        var action = request.Action.Trim().ToLowerInvariant();
+
+        switch (action)
         {
-            throw new ArgumentException(ex.Message);
+            case "approve":
+                await _workflowEngine.ProcessApprovalAsync(id, nodeId, ApprovalAction.Approve, userId, request.Comment);
+                return Success(null, "审批通过");
+
+            case "reject":
+                if (string.IsNullOrWhiteSpace(request.Comment))
+                    throw new ArgumentException("拒绝原因不能为空");
+                await _workflowEngine.ProcessApprovalAsync(id, nodeId, ApprovalAction.Reject, userId, request.Comment);
+                return Success(null, "审批已拒绝");
+
+            case "return":
+                if (string.IsNullOrEmpty(request.TargetNodeId))
+                    throw new ArgumentException("退回目标节点不能为空");
+                if (string.IsNullOrWhiteSpace(request.Comment))
+                    throw new ArgumentException("退回原因不能为空");
+                await _workflowEngine.ReturnToNodeAsync(id, request.TargetNodeId, request.Comment, userId);
+                return Success(null, "已退回");
+
+            case "delegate":
+                if (string.IsNullOrEmpty(request.DelegateToUserId))
+                    throw new ArgumentException("转办目标用户不能为空");
+                await _workflowEngine.ProcessApprovalAsync(id, nodeId, ApprovalAction.Delegate, userId, request.Comment, request.DelegateToUserId);
+                return Success(null, "已转办");
+
+            default:
+                throw new ArgumentException("不支持的操作类型");
         }
     }
 
-    /// <summary>
-    /// 发起人撤回流程
-    /// </summary>
     [HttpPost("instances/{id}/withdraw")]
     [RequireMenu("workflow-list", "document-list")]
     public async Task<IActionResult> WithdrawInstance(string id, [FromBody] WithdrawWorkflowRequest? request)
     {
-        try
-        {
-            var instance = await _workflowEngine.GetInstanceAsync(id);
-            if (instance == null)
-            {
-                throw new ArgumentException("流程实例 {id} 不存在");
-            }
+        var instance = await _workflowEngine.GetInstanceAsync(id)
+            ?? throw new ArgumentException($"流程实例 {id} 不存在");
 
-            if (instance.Status != WorkflowStatus.Running && instance.Status != WorkflowStatus.Waiting)
-            {
-                throw new ArgumentException("仅运行中或等待审批的流程可以撤回");
-            }
+        if (instance.Status != WorkflowStatus.Running && instance.Status != WorkflowStatus.Waiting)
+            throw new ArgumentException("仅运行中或等待审批的流程可以撤回");
 
-            var userId = RequiredUserId;
-            if (!string.Equals(instance.StartedBy, userId, StringComparison.OrdinalIgnoreCase))
-            {
-                throw new ArgumentException("仅流程发起人可以撤回");
-            }
+        var userId = RequiredUserId;
+        if (!string.Equals(instance.StartedBy, userId, StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("仅流程发起人可以撤回");
 
-            var reason = string.IsNullOrWhiteSpace(request?.Reason) ? "发起人撤回" : request!.Reason!;
-            await _workflowEngine.CancelWorkflowAsync(id, reason);
-            return Success(null, "流程已撤回");
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        var reason = string.IsNullOrWhiteSpace(request?.Reason) ? "发起人撤回" : request!.Reason!;
+        await _workflowEngine.CancelWorkflowAsync(id, reason);
+        return Success(null, "流程已撤回");
     }
 
-    /// <summary>
-    /// 按流程的创建表单创建公文（草稿），仅保存数据不启动流程
-    /// </summary>
+    [HttpPost("instances/{id}/document")]
     [HttpPost("{id}/documents")]
     [RequireMenu("document-list")]
     public async Task<IActionResult> CreateDocumentByWorkflow(string id, [FromBody] CreateWorkflowDocumentRequest request)
@@ -946,8 +705,7 @@ public class WorkflowController : BaseApiController
             var filterConfig = request.FilterConfig ?? existing.FilterConfig;
             var isDefault = request.IsDefault ?? existing.IsDefault;
 
-            var result = await _filterPreferenceService.UpdatePreferenceAsync(id, name, filterConfig, isDefault);
-            return Success(result);
+            return Success(await _filterPreferenceService.UpdatePreferenceAsync(id, name, filterConfig, isDefault));
         }
         catch (ArgumentException ex)
         {
@@ -959,185 +717,89 @@ public class WorkflowController : BaseApiController
         }
     }
 
-    /// <summary>
-    /// 删除用户工作流过滤器偏好
-    /// </summary>
     [HttpDelete("filter-preferences/{id}")]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> DeleteFilterPreference(string id)
     {
-        try
-        {
-            var userId = RequiredUserId;
+        var userId = RequiredUserId;
+        var preference = await _filterPreferenceService.GetPreferenceByIdAsync(id);
+        if (preference == null || preference.UserId != userId)
+            throw new ArgumentException("过滤器偏好不存在");
 
-            var preference = await _filterPreferenceService.GetPreferenceByIdAsync(id);
-            if (preference == null || preference.UserId != userId)
-            {
-                throw new ArgumentException("过滤器偏好 {id} 不存在");
-            }
+        var result = await _filterPreferenceService.DeletePreferenceAsync(id);
+        if (!result)
+            throw new ArgumentException("过滤器偏好不存在");
 
-            var result = await _filterPreferenceService.DeletePreferenceAsync(id);
-            if (!result)
-            {
-                throw new ArgumentException("过滤器偏好 {id} 不存在");
-            }
-
-            return Success(null, "过滤器偏好已删除");
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException($"删除过滤器偏好失败: {ex.Message}");
-        }
+        return Success(null, "过滤器偏好已删除");
     }
 
-    /// <summary>
-    /// 获取用户默认过滤器偏好
-    /// </summary>
     [HttpGet("filter-preferences/default")]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> GetDefaultFilterPreference()
-    {
-        try
-        {
-            var userId = RequiredUserId;
+        => Success(await _filterPreferenceService.GetDefaultPreferenceAsync(RequiredUserId));
 
-            var preference = await _filterPreferenceService.GetDefaultPreferenceAsync(userId);
-            return Success(preference);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException($"获取默认过滤器偏好失败: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// 创建公文并直接启动流程（一步到位）
-    /// </summary>
     [HttpPost("{id}/documents/start")]
     [RequireMenu("document-list")]
     public async Task<IActionResult> CreateAndStartDocumentWorkflow(string id, [FromBody] CreateAndStartWorkflowDocumentRequest request)
     {
-        try
+        var userId = RequiredUserId;
+        var docService = HttpContext.RequestServices.GetRequiredService<IDocumentService>();
+        var document = await docService.CreateDocumentForWorkflowAsync(id, request.Values ?? new Dictionary<string, object>(), request.AttachmentIds);
+
+        var mergedVariables = request.Variables != null
+            ? SerializationExtensions.SanitizeDictionary(request.Variables)
+            : new Dictionary<string, object>();
+
+        if (request.Values != null)
         {
-            var userId = RequiredUserId;
-            var docService = HttpContext.RequestServices.GetRequiredService<IDocumentService>();
-            var document = await docService.CreateDocumentForWorkflowAsync(id, request.Values ?? new Dictionary<string, object>(), request.AttachmentIds);
-
-            var mergedVariables = request.Variables != null
-                ? Platform.ApiService.Extensions.SerializationExtensions.SanitizeDictionary(request.Variables)
-                : new Dictionary<string, object>();
-
-            if (request.Values != null)
+            foreach (var kv in request.Values)
             {
-                foreach (var kv in request.Values)
-                {
-                    if (!mergedVariables.ContainsKey(kv.Key))
-                        mergedVariables[kv.Key] = kv.Value;
-                }
+                if (!mergedVariables.ContainsKey(kv.Key))
+                    mergedVariables[kv.Key] = kv.Value;
             }
-
-            var instance = await _workflowEngine.StartWorkflowAsync(id, document.Id, userId, (Dictionary<string, object?>)(object)mergedVariables);
-
-            return Success(new { document, workflowInstance = instance });
         }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+
+        var instance = await _workflowEngine.StartWorkflowAsync(id, document.Id, userId, (Dictionary<string, object?>)(object)mergedVariables);
+        return Success(new { document, workflowInstance = instance });
     }
 
-    /// <summary>
-    /// 创建批量操作
-    /// </summary>
     [HttpPost("bulk-operations")]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> CreateBulkOperation([FromBody] CreateBulkOperationRequest request)
     {
-        try
-        {
-            if (request.WorkflowIds == null || request.WorkflowIds.Count == 0)
-            {
-                throw new ArgumentException("工作流ID列表不能为空");
-            }
+        if (request.WorkflowIds == null || request.WorkflowIds.Count == 0)
+            throw new ArgumentException("工作流ID列表不能为空");
 
-            if (request.WorkflowIds.Count > 100)
-            {
-                throw new ArgumentException("批量操作最多支持100个工作流");
-            }
+        if (request.WorkflowIds.Count > 100)
+            throw new ArgumentException("批量操作最多支持100个工作流");
 
-            var bulkService = HttpContext.RequestServices.GetRequiredService<IBulkOperationService>();
-            var operation = await bulkService.CreateBulkOperationAsync(
-                request.OperationType,
-                request.WorkflowIds,
-                request.Parameters);
-
-            return Success(operation);
-        }
-        catch (ArgumentException ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException($"创建批量操作失败: {ex.Message}");
-        }
+        var bulkService = HttpContext.RequestServices.GetRequiredService<IBulkOperationService>();
+        return Success(await bulkService.CreateBulkOperationAsync(request.OperationType, request.WorkflowIds, request.Parameters));
     }
 
-    /// <summary>
-    /// 执行批量操作
-    /// </summary>
     [HttpPost("bulk-operations/{operationId}/execute")]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> ExecuteBulkOperation(string operationId)
     {
-        try
-        {
-            var bulkService = HttpContext.RequestServices.GetRequiredService<IBulkOperationService>();
-            var success = await bulkService.ExecuteBulkOperationAsync(operationId);
-
-            if (success)
-            {
-                return Success(null, "批量操作已开始执行");
-            }
-            else
-            {
-                throw new ArgumentException("批量操作执行失败，请检查操作状态");
-            }
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException($"执行批量操作失败: {ex.Message}");
-        }
+        var bulkService = HttpContext.RequestServices.GetRequiredService<IBulkOperationService>();
+        var success = await bulkService.ExecuteBulkOperationAsync(operationId);
+        if (!success)
+            throw new ArgumentException("批量操作执行失败，请检查操作状态");
+        return Success(null, "批量操作已开始执行");
     }
 
-    /// <summary>
-    /// 取消批量操作
-    /// </summary>
     [HttpPost("bulk-operations/{operationId}/cancel")]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> CancelBulkOperation(string operationId)
     {
-        try
-        {
-            var bulkService = HttpContext.RequestServices.GetRequiredService<IBulkOperationService>();
-            var success = await bulkService.CancelBulkOperationAsync(operationId);
-
-            if (success)
-            {
-                return Success(null, "批量操作已取消");
-            }
-            else
-            {
-                throw new ArgumentException("无法取消该批量操作");
-            }
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException($"取消批量操作失败: {ex.Message}");
-        }
+        var bulkService = HttpContext.RequestServices.GetRequiredService<IBulkOperationService>();
+        var success = await bulkService.CancelBulkOperationAsync(operationId);
+        if (!success)
+            throw new ArgumentException("无法取消该批量操作");
+        return Success(null, "批量操作已取消");
     }
 
-    /// <summary>
+    [HttpGet("bulk-operations/{operationId}")]
     /// 获取批量操作状态
     /// </summary>
     [HttpGet("bulk-operations/{operationId}")]
@@ -1187,136 +849,63 @@ public class WorkflowController : BaseApiController
         }
     }
 
-    /// <summary>
-    /// 导出过滤结果
-    /// </summary>
     [HttpPost("export-filtered")]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> ExportFilteredWorkflows([FromBody] ExportFilteredWorkflowsRequest request)
     {
-        try
-        {
-            var fileContent = await _exportImportService.ExportFilteredWorkflowsAsync(request.Filters, request.Config ?? new WorkflowExportConfig());
-            var fileName = $"workflows_export_filtered_{DateTime.Now:yyyyMMddHHmmss}.{(request.Config?.Format == ExportFormat.Json ? "json" : "csv")}";
-
-            return File(fileContent, "application/octet-stream", fileName);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException($"导出过滤结果失败: {ex.Message}");
-        }
+        var fileContent = await _exportImportService.ExportFilteredWorkflowsAsync(request.Filters, request.Config ?? new WorkflowExportConfig());
+        var fileName = $"workflows_export_filtered_{DateTime.Now:yyyyMMddHHmmss}.{(request.Config?.Format == ExportFormat.Json ? "json" : "csv")}";
+        return File(fileContent, "application/octet-stream", fileName);
     }
 
-    /// <summary>
-    /// 验证导入文件
-    /// </summary>
     [HttpPost("import/validate")]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> ValidateImportFile([FromForm] ValidateImportFileRequest request)
     {
-        try
-        {
-            if (request.File == null || request.File.Length == 0)
-            {
-                throw new ArgumentException("导入文件不能为空");
-            }
+        if (request.File == null || request.File.Length == 0)
+            throw new ArgumentException("导入文件不能为空");
 
-            using var memoryStream = new MemoryStream();
-            await request.File.CopyToAsync(memoryStream);
-            var fileContent = memoryStream.ToArray();
-
-            var result = await _exportImportService.ValidateImportFileAsync(fileContent, request.File.FileName);
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException($"验证导入文件失败: {ex.Message}");
-        }
+        using var memoryStream = new MemoryStream();
+        await request.File.CopyToAsync(memoryStream);
+        return Success(await _exportImportService.ValidateImportFileAsync(memoryStream.ToArray(), request.File.FileName));
     }
 
-    /// <summary>
-    /// 导入工作流
-    /// </summary>
     [HttpPost("import")]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> ImportWorkflows([FromForm] ImportWorkflowsRequest request)
     {
-        try
-        {
-            if (request.File == null || request.File.Length == 0)
-            {
-                throw new ArgumentException("导入文件不能为空");
-            }
+        if (request.File == null || request.File.Length == 0)
+            throw new ArgumentException("导入文件不能为空");
 
-            using var memoryStream = new MemoryStream();
-            await request.File.CopyToAsync(memoryStream);
-            var fileContent = memoryStream.ToArray();
-
-            var result = await _exportImportService.ImportWorkflowsAsync(fileContent, request.File.FileName, request.OverwriteExisting);
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException($"导入工作流失败: {ex.Message}");
-        }
+        using var memoryStream = new MemoryStream();
+        await request.File.CopyToAsync(memoryStream);
+        return Success(await _exportImportService.ImportWorkflowsAsync(memoryStream.ToArray(), request.File.FileName, request.OverwriteExisting));
     }
 
-    /// <summary>
-    /// 预览导入
-    /// </summary>
     [HttpPost("import/preview")]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> PreviewImport([FromForm] PreviewImportRequest request)
     {
-        try
-        {
-            if (request.File == null || request.File.Length == 0)
-            {
-                throw new ArgumentException("导入文件不能为空");
-            }
+        if (request.File == null || request.File.Length == 0)
+            throw new ArgumentException("导入文件不能为空");
 
-            using var memoryStream = new MemoryStream();
-            await request.File.CopyToAsync(memoryStream);
-            var fileContent = memoryStream.ToArray();
-
-            var result = await _exportImportService.PreviewImportAsync(fileContent, request.File.FileName);
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException($"预览导入失败: {ex.Message}");
-        }
+        using var memoryStream = new MemoryStream();
+        await request.File.CopyToAsync(memoryStream);
+        return Success(await _exportImportService.PreviewImportAsync(memoryStream.ToArray(), request.File.FileName));
     }
 
-    /// <summary>
-    /// 解决导入冲突
-    /// </summary>
     [HttpPost("import/resolve-conflicts")]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> ResolveImportConflicts([FromForm] ResolveImportConflictsRequest request)
     {
-        try
-        {
-            if (request.File == null || request.File.Length == 0)
-            {
-                throw new ArgumentException("导入文件不能为空");
-            }
+        if (request.File == null || request.File.Length == 0)
+            throw new ArgumentException("导入文件不能为空");
 
-            if (request.Resolutions == null || request.Resolutions.Count == 0)
-            {
-                throw new ArgumentException("冲突解决方案不能为空");
-            }
+        if (request.Resolutions == null || request.Resolutions.Count == 0)
+            throw new ArgumentException("冲突解决方案不能为空");
 
-            using var memoryStream = new MemoryStream();
-            await request.File.CopyToAsync(memoryStream);
-            var fileContent = memoryStream.ToArray();
-
-            var result = await _exportImportService.ResolveImportConflictsAsync(fileContent, request.File.FileName, request.Resolutions);
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException($"解决导入冲突失败: {ex.Message}");
-        }
+        using var memoryStream = new MemoryStream();
+        await request.File.CopyToAsync(memoryStream);
+        return Success(await _exportImportService.ResolveImportConflictsAsync(memoryStream.ToArray(), request.File.FileName, request.Resolutions));
     }
 }

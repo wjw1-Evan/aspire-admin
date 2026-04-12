@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using System.Collections.Concurrent;
 
@@ -9,7 +8,6 @@ public interface ITenantContext
 {
     string? GetCurrentUserId();
     Task<string?> GetCurrentCompanyIdAsync();
-    bool IsSystemContext { get; }
     void ClearUserCache(string userId);
 }
 
@@ -21,13 +19,10 @@ internal class TenantCache
 
 public class TenantContext(
     IHttpContextAccessor httpContextAccessor,
-    IMongoDatabase database,
-    ILogger<TenantContext> logger) : ITenantContext
+    IMongoDatabase database) : ITenantContext
 {
     private static readonly ConcurrentDictionary<string, TenantCache> _caches = new();
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> _userLocks = new();
-
-    public bool IsSystemContext => httpContextAccessor.HttpContext == null;
 
     private string? GetCachedUserId()
     {
@@ -41,21 +36,12 @@ public class TenantContext(
         }
     }
 
-    public string? GetCurrentUserId()
-    {
-        return GetCachedUserId();
-    }
+    public string? GetCurrentUserId() => GetCachedUserId();
 
     public async Task<string?> GetCurrentCompanyIdAsync()
     {
         var userId = GetCachedUserId();
-        if (string.IsNullOrEmpty(userId))
-        {
-            logger.LogWarning("【TenantContext】GetCurrentCompanyIdAsync: userId is null or empty");
-            return null;
-        }
-
-        logger.LogInformation("【TenantContext】GetCurrentCompanyIdAsync: userId = {UserId}", userId);
+        if (string.IsNullOrEmpty(userId)) return null;
 
         if (!_caches.TryGetValue(userId, out var cache))
         {
@@ -63,40 +49,23 @@ public class TenantContext(
             _caches.TryAdd(userId, cache);
         }
 
-        if (cache.CompanyLoaded) 
-        {
-            logger.LogInformation("【TenantContext】GetCurrentCompanyIdAsync: cache hit, companyId = {CompanyId}", cache.CompanyId);
-            return cache.CompanyId;
-        }
+        if (cache.CompanyLoaded) return cache.CompanyId;
 
         var userLock = _userLocks.GetOrAdd(userId, _ => new SemaphoreSlim(1, 1));
         await userLock.WaitAsync();
         try
         {
-            if (cache.CompanyLoaded)
-            {
-                logger.LogInformation("【TenantContext】GetCurrentCompanyIdAsync: cache hit after lock, companyId = {CompanyId}", cache.CompanyId);
-                return cache.CompanyId;
-            }
+            if (cache.CompanyLoaded) return cache.CompanyId;
 
             cache.CompanyId = await LoadCompanyIdAsync(userId);
-            
-            if (cache.CompanyId != null)
-            {
-                cache.CompanyLoaded = true;
-                logger.LogInformation("【TenantContext】GetCurrentCompanyIdAsync: loaded companyId = {CompanyId}", cache.CompanyId);
-            }
-            else
-            {
-                logger.LogWarning("【TenantContext】GetCurrentCompanyIdAsync: companyId is null, will retry on next request");
-            }
+            if (cache.CompanyId != null) cache.CompanyLoaded = true;
         }
         finally
         {
             userLock.Release();
             _userLocks.TryRemove(userId, out _);
         }
-        
+
         return cache.CompanyId;
     }
 
@@ -118,20 +87,9 @@ public class TenantContext(
             .Include("isActive").Include("currentCompanyId").Include("personalCompanyId");
 
         var userDoc = await collection.Find(filter).Project(projection).FirstOrDefaultAsync();
+        if (userDoc == null) return null;
 
-        if (userDoc == null)
-        {
-            logger.LogWarning("【TenantContext】LoadCompanyIdAsync: user not found, userId = {UserId}, parsed as ObjectId: {IsObjectId}", 
-                userId, 
-                MongoDB.Bson.ObjectId.TryParse(userId, out _));
-            return null;
-        }
-
-        if (!userDoc.GetValue("isActive", false).AsBoolean)
-        {
-            logger.LogWarning("【TenantContext】LoadCompanyIdAsync: user is not active, userId = {UserId}", userId);
-            return null;
-        }
+        if (!userDoc.GetValue("isActive", false).AsBoolean) return null;
 
         string? GetId(string field)
         {
@@ -146,9 +104,6 @@ public class TenantContext(
 
         var currentCompanyId = GetId("currentCompanyId");
         var personalCompanyId = GetId("personalCompanyId");
-        
-        logger.LogInformation("【TenantContext】LoadCompanyIdAsync: currentCompanyId = {CurrentCompanyId}, personalCompanyId = {PersonalCompanyId}", 
-            currentCompanyId, personalCompanyId);
 
         return currentCompanyId ?? personalCompanyId;
     }

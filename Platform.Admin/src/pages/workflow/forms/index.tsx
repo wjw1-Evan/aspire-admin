@@ -9,11 +9,11 @@ interface FormDefinition { id?: string; name: string; key: string; version?: num
 interface FormStatistics { totalForms: number; activeForms: number; }
 
 const api = {
-    list: (params: PageParams) => request<ApiResponse<PagedResult<FormDefinition>>>('/apiservice/api/form-definition', { params }),
-    create: (data: Partial<FormDefinition>) => request<ApiResponse<FormDefinition>>('/apiservice/api/form-definition', { method: 'POST', data }),
-    update: (id: string, data: Partial<FormDefinition>) => request<ApiResponse<boolean>>(`/apiservice/api/form-definition/${id}`, { method: 'PUT', data }),
-    delete: (id: string) => request<ApiResponse<boolean>>(`/apiservice/api/form-definition/${id}`, { method: 'DELETE' }),
-    statistics: () => request<ApiResponse<FormStatistics>>('/apiservice/api/form-definition/statistics'),
+    list: (params: PageParams) => request<ApiResponse<PagedResult<FormDefinition>>>('/apiservice/api/forms', { params }),
+    create: (data: Partial<FormDefinition>) => request<ApiResponse<FormDefinition>>('/apiservice/api/forms', { method: 'POST', data }),
+    update: (id: string, data: Partial<FormDefinition>) => request<ApiResponse<boolean>>(`/apiservice/api/forms/${id}`, { method: 'PUT', data }),
+    delete: (id: string) => request<ApiResponse<boolean>>(`/apiservice/api/forms/${id}`, { method: 'DELETE' }),
+    statistics: () => request<ApiResponse<FormStatistics>>('/apiservice/api/forms/statistics'),
 };
 
 const FormDefinitionManagement: React.FC = () => {

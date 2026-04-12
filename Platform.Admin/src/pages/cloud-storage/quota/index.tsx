@@ -25,7 +25,7 @@ const api = {
     updateUserQuota: (userId: string, data: any) => request<ApiResponse<void>>(`/apiservice/api/storage-quota/user/${userId}`, { method: 'PUT', data }),
     getUsageStats: () => request<ApiResponse<QuotaUsageStats>>('/apiservice/api/storage-quota/usage-stats'),
     getWarnings: (companyId?: string) => request<ApiResponse<PagedResult<QuotaWarning>>>('/apiservice/api/storage-quota/warnings', { params: { companyId } }),
-    setUserQuota: (data: { userId: string; totalQuota: number; warningThreshold?: number; isEnabled?: boolean }) => request<ApiResponse<void>>('/apiservice/api/storage-quota/user', { method: 'POST', data }),
+    setUserQuota: (data: { userId: string; totalQuota: number; warningThreshold?: number; isEnabled?: boolean }) => request<ApiResponse<void>>(`/apiservice/api/storage-quota/user/${data.userId}`, { method: 'PUT', data }),
     deleteUserQuota: (userId: string) => request<ApiResponse<void>>(`/apiservice/api/storage-quota/user/${userId}`, { method: 'DELETE' }),
 };
 

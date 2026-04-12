@@ -287,7 +287,7 @@ public class TaskController : BaseApiController
     /// <response code="200">成功取消任务</response>
     /// <response code="401">未授权，需要登录</response>
     /// <response code="404">任务不存在</response>
-    [HttpDelete("{taskId}/cancel")]
+    [HttpPost("{taskId}/cancel")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> CancelTask(string taskId, [FromQuery] string? remarks = null)
     {

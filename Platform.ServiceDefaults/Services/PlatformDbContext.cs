@@ -29,26 +29,8 @@ public class PlatformDbContext : DbContext
         }
     }
 
-    protected string? CurrentUserId => _httpContextAccessor?.HttpContext?.Items["UserId"] as string;
-    protected string? CurrentCompanyId
-    {
-        get
-        {
-            var companyId = _httpContextAccessor?.HttpContext?.Items["CompanyId"] as string;
-            if (string.IsNullOrEmpty(companyId))
-            {
-                companyId = TenantContext?.GetCurrentCompanyIdAsync().GetAwaiter().GetResult();
-                if (!string.IsNullOrEmpty(companyId))
-                {
-                    _httpContextAccessor!.HttpContext!.Items["CompanyId"] = companyId;
-                }
-            }
-            return companyId;
-        }
-    }
-
-    public Task<string> GetCurrentCompanyIdAsync()
-        => Task.FromResult(CurrentCompanyId ?? string.Empty);
+    protected string? CurrentUserId => TenantContext?.GetCurrentUserId();
+    protected string? CurrentCompanyId => TenantContext?.GetCurrentCompanyIdAsync().GetAwaiter().GetResult();
 
     private static List<Type>? _cachedEntityTypes;
 
@@ -146,11 +128,11 @@ public class PlatformDbContext : DbContext
 
     private void ApplyQueryFilter<TEntity>(ModelBuilder modelBuilder) where TEntity : class
     {
-        if (typeof(IMultiTenant).IsAssignableFrom(typeof(TEntity)) 
+        if (typeof(IMultiTenant).IsAssignableFrom(typeof(TEntity))
             && typeof(ISoftDeletable).IsAssignableFrom(typeof(TEntity)))
         {
             modelBuilder.Entity<TEntity>().HasQueryFilter(
-                e => ((IMultiTenant)e).CompanyId == CurrentCompanyId 
+                e => ((IMultiTenant)e).CompanyId == CurrentCompanyId
                     && ((ISoftDeletable)e).IsDeleted != true);
         }
         else if (typeof(IMultiTenant).IsAssignableFrom(typeof(TEntity)))

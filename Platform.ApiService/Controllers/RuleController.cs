@@ -102,6 +102,5 @@ public class RuleController : BaseApiController
 
         var deleted = await _ruleService.DeleteRulesAsync(new List<int> { request.Key.Value });
         return Success(true);
-        return Success(true);
     }
 }

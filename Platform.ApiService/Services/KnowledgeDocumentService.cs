@@ -7,14 +7,13 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Platform.ApiService.Models.Workflow;
 using Platform.ServiceDefaults.Extensions;
-using Platform.ServiceDefaults.Services;
 
 namespace Platform.ApiService.Services;
 
 /// <summary>
 /// 知识库文档服务实现
 /// </summary>
-public class KnowledgeDocumentService : IKnowledgeDocumentService, IScopedDependency
+public class KnowledgeDocumentService : IKnowledgeDocumentService
 {
     private readonly DbContext _context;
 

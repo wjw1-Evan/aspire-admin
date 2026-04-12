@@ -4,16 +4,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
-using Platform.ServiceDefaults.Extensions;
-using Platform.ServiceDefaults.Services;
 using Platform.ApiService.Models.Workflow;
+using Platform.ServiceDefaults.Extensions;
 
 namespace Platform.ApiService.Services;
 
 /// <summary>
 /// 知识库服务实现
 /// </summary>
-public class KnowledgeService : IKnowledgeService, IScopedDependency
+public class KnowledgeService : IKnowledgeService
 {
     private readonly DbContext _context;
 

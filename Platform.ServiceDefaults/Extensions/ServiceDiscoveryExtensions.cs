@@ -2,7 +2,6 @@ using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Platform.ServiceDefaults.Services;
 
 namespace Platform.ServiceDefaults.Extensions;
 
@@ -52,15 +51,13 @@ public static class ServiceDiscoveryExtensions
         if (!type.Namespace?.StartsWith("Platform") == true || typeof(IHostedService).IsAssignableFrom(type))
             return;
 
-        var lifetime = typeof(ISingletonDependency).IsAssignableFrom(type) ? ServiceLifetime.Singleton
-            : typeof(ITransientDependency).IsAssignableFrom(type) ? ServiceLifetime.Transient
+        // 生命周期命名约定：Singleton* = 单例，Transient* = 瞬态，默认 = Scoped
+        var lifetime = type.Name.StartsWith("Singleton") ? ServiceLifetime.Singleton
+            : type.Name.StartsWith("Transient") ? ServiceLifetime.Transient
             : ServiceLifetime.Scoped;
 
         var interfaces = type.GetInterfaces()
-            .Where(i => i.Namespace?.StartsWith("Platform") == true && 
-                        !i.Name.Equals("ISingletonDependency") && 
-                        !i.Name.Equals("ITransientDependency") && 
-                        !i.Name.Equals("IScopedDependency"))
+            .Where(i => i.Namespace?.StartsWith("Platform") == true)
             .ToList();
 
         if (interfaces.Count > 0)

@@ -8,12 +8,12 @@ using System.Threading.Tasks;
 
 namespace Platform.ApiService.Services;
 
-public class TaskDependencyService : ITaskDependencyService
+public class TaskRelationService : ITaskRelationService
 {
     private readonly DbContext _context;
     private readonly ITaskCrudService _taskCrudService;
 
-    public TaskDependencyService(DbContext context, ITaskCrudService taskCrudService)
+    public TaskRelationService(DbContext context, ITaskCrudService taskCrudService)
     {
         _context = context;
         _taskCrudService = taskCrudService;

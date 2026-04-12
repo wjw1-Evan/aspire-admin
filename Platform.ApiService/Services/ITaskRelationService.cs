@@ -2,7 +2,7 @@ using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Services;
 
-public interface ITaskDependencyService
+public interface ITaskRelationService
 {
     Task<string> AddTaskDependencyAsync(string predecessorTaskId, string successorTaskId, int dependencyType, int lagDays);
     Task<bool> RemoveTaskDependencyAsync(string dependencyId);

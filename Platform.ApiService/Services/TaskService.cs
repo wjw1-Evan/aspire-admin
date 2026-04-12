@@ -8,18 +8,18 @@ public class TaskService : ITaskService
 {
     private readonly ITaskCrudService _crudService;
     private readonly ITaskExecutionService _executionService;
-    private readonly ITaskDependencyService _dependencyService;
+    private readonly ITaskRelationService _relationService;
     private readonly ITaskStatisticsService _statisticsService;
 
     public TaskService(
         ITaskCrudService crudService,
         ITaskExecutionService executionService,
-        ITaskDependencyService dependencyService,
+        ITaskRelationService relationService,
         ITaskStatisticsService statisticsService)
     {
         _crudService = crudService;
         _executionService = executionService;
-        _dependencyService = dependencyService;
+        _relationService = relationService;
         _statisticsService = statisticsService;
     }
 
@@ -39,10 +39,10 @@ public class TaskService : ITaskService
     public Task<TaskDto> UpdateTaskProgressAsync(string taskId, int progress) => _executionService.UpdateTaskProgressAsync(taskId, progress);
 
     public Task<string> AddTaskDependencyAsync(string predecessorTaskId, string successorTaskId, int dependencyType, int lagDays) =>
-        _dependencyService.AddTaskDependencyAsync(predecessorTaskId, successorTaskId, dependencyType, lagDays);
-    public Task<bool> RemoveTaskDependencyAsync(string dependencyId) => _dependencyService.RemoveTaskDependencyAsync(dependencyId);
-    public Task<List<TaskDependencyDto>> GetTaskDependenciesAsync(string taskId) => _dependencyService.GetTaskDependenciesAsync(taskId);
-    public Task<List<string>> CalculateCriticalPathAsync(string projectId) => _dependencyService.CalculateCriticalPathAsync(projectId);
+        _relationService.AddTaskDependencyAsync(predecessorTaskId, successorTaskId, dependencyType, lagDays);
+    public Task<bool> RemoveTaskDependencyAsync(string dependencyId) => _relationService.RemoveTaskDependencyAsync(dependencyId);
+    public Task<List<TaskDependencyDto>> GetTaskDependenciesAsync(string taskId) => _relationService.GetTaskDependenciesAsync(taskId);
+    public Task<List<string>> CalculateCriticalPathAsync(string projectId) => _relationService.CalculateCriticalPathAsync(projectId);
 
     public Task<TaskStatistics> GetTaskStatisticsAsync(string? userId = null) => _statisticsService.GetTaskStatisticsAsync(userId);
     public Task<System.Linq.Dynamic.Core.PagedResult<TaskExecutionLogDto>> GetTaskExecutionLogsAsync(string taskId, ServiceDefaults.Models.PageParams request) =>

@@ -11,10 +11,13 @@ public static class ServiceDiscoveryExtensions
     private static readonly MethodInfo ConfigureMethod = typeof(OptionsConfigurationServiceCollectionExtensions)
         .GetMethod("Configure", [typeof(IServiceCollection), typeof(IConfigurationSection)])!;
 
+    public static IServiceCollection AddServiceDiscovery(this IServiceCollection services, IConfiguration configuration)
+        => AddServiceDiscovery(services, configuration, null, null);
+
     public static IServiceCollection AddServiceDiscovery(
         this IServiceCollection services,
         IConfiguration configuration,
-        Assembly[]? assemblies = null,
+        Assembly[]? assemblies,
         string[]? namespaces = null)
     {
         namespaces ??= [];

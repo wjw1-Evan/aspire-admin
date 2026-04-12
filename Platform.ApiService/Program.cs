@@ -159,8 +159,7 @@ builder.Services.AddOpenApi(options =>
 // 6. 业务服务注册 (全自动扫描)
 // ──────────────────────────────────────────────
 
-var apiServiceAssembly = typeof(Platform.ApiService.Services.UserService).Assembly;
-builder.Services.AddServiceDiscovery(builder.Configuration, [apiServiceAssembly], ["Platform.ApiService.Services", "Platform.ApiService.BackgroundServices"]);
+builder.Services.AddServiceDiscovery(builder.Configuration);
 
 // ──────────────────────────────────────────────
 

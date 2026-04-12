@@ -71,7 +71,7 @@ const DataCenter = React.forwardRef<DataCenterRef, any>((props, ref) => {
         ]}
       />
 
-      <Drawer title="数据记录详情" placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingRecord: null })} size={isMobile ? 'large' : 800}>
+      <Drawer title="数据记录详情" placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingRecord: null })} size="large">
         {state.viewingRecord && (
           <>
             <ProCard title="基本信息" style={{ marginBottom: 16 }}>

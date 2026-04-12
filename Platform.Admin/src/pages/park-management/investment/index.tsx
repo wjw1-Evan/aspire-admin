@@ -138,7 +138,7 @@ const InvestmentManagement: React.FC = () => {
                 <ProFormTextArea name="notes" label="备注" placeholder="请输入备注" />
             </ModalForm>
 
-            <Drawer title="线索详情" width={600} open={state.leadDetailVisible} onClose={() => set({ leadDetailVisible: false, currentLead: null })}>
+            <Drawer title="线索详情" placement="right" size="large" open={state.leadDetailVisible} onClose={() => set({ leadDetailVisible: false, currentLead: null })}>
                 {state.currentLead && (<ProDescriptions column={1} bordered size="small">
                     <ProDescriptions.Item label="企业名称">{state.currentLead.companyName}</ProDescriptions.Item>
                     <ProDescriptions.Item label="行业">{state.currentLead.industry || '-'}</ProDescriptions.Item>
@@ -154,7 +154,7 @@ const InvestmentManagement: React.FC = () => {
                 </ProDescriptions>)}
             </Drawer>
 
-            <Drawer title="项目详情" width={600} open={state.projectDetailVisible} onClose={() => set({ projectDetailVisible: false, currentProject: null })}>
+            <Drawer title="项目详情" placement="right" size="large" open={state.projectDetailVisible} onClose={() => set({ projectDetailVisible: false, currentProject: null })}>
                 {state.currentProject && (<ProDescriptions column={1} bordered size="small">
                     <ProDescriptions.Item label="项目名称">{state.currentProject.projectName}</ProDescriptions.Item>
                     <ProDescriptions.Item label="企业名称">{state.currentProject.companyName}</ProDescriptions.Item>

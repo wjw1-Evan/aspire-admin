@@ -6,8 +6,7 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
-import { Grid, App, Button, Tag, Space, Breadcrumb, Dropdown, Image, Input, Modal, Popconfirm, Card } from 'antd';
-import { Drawer as AntDrawer } from 'antd';
+import { App, Button, Tag, Space, Breadcrumb, Dropdown, Image, Input, Modal, Popconfirm, Card, Drawer } from 'antd';
 import { ProDescriptions, ProCard } from '@ant-design/pro-components';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormDatePicker, ProFormSelect, ProFormDigit } from '@ant-design/pro-form';
@@ -68,8 +67,6 @@ const CloudStorageFilesPage: React.FC = () => {
     const { message } = App.useApp();
     const actionRef = useRef<ActionType>(null!);
     const currentParentIdRef = useRef<string | undefined>(undefined);
-    const screens = Grid.useBreakpoint();
-    const isMobile = !screens.md;
 
     const [state, setState] = useState({
         data: [] as FileItem[], loading: false,
@@ -286,7 +283,7 @@ const CloudStorageFilesPage: React.FC = () => {
 
             {/* 文件详情 */}
             {state.detailVisible && state.viewingFile && (
-                <AntDrawer title={state.viewingFile.name} placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingFile: null, previewUrl: '', officeContent: null, markdownContent: null })} width={isMobile ? 'default' : 'large'}>
+                <Drawer title={state.viewingFile.name} placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingFile: null, previewUrl: '', officeContent: null, markdownContent: null })} size="large">
                     <ProDescriptions column={1} size="small" bordered>
                         <ProDescriptions.Item label="名称">{state.viewingFile.name}</ProDescriptions.Item>
                         <ProDescriptions.Item label="类型">{state.viewingFile.isFolder ? '文件夹' : state.viewingFile.mimeType}</ProDescriptions.Item>
@@ -322,7 +319,7 @@ const CloudStorageFilesPage: React.FC = () => {
                             )}
                         </>
                     )}
-                </AntDrawer>
+                </Drawer>
             )}
 
             {/* 图片预览 */}

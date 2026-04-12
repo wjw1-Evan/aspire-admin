@@ -138,7 +138,7 @@ const GatewayManagement = React.forwardRef<GatewayManagementRef, any>((props, re
         <ProFormText name="remarks" label="备注" placeholder="请输入备注" />
       </ModalForm>
 
-      <Drawer title="网关详情" placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingGateway: null, gatewayStats: null })} size={isMobile ? 'large' : 800}>
+      <Drawer title="网关详情" placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingGateway: null, gatewayStats: null })} size="large">
         {state.viewingGateway && (
           <>
             <ProCard title="基本信息" style={{ marginBottom: 16 }}>

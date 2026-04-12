@@ -216,7 +216,7 @@ const DeviceManagement = React.forwardRef<DeviceManagementRef, any>((props, ref)
         )}
       </Modal>
 
-      <Drawer title={<Space><DesktopOutlined />设备详情 — {state.viewingDevice?.title}</Space>} placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingDevice: null, deviceStatistics: null })} size={isMobile ? '100%' : 900}>
+      <Drawer title={<Space><DesktopOutlined />设备详情 — {state.viewingDevice?.title}</Space>} placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingDevice: null, deviceStatistics: null })} size="large">
         {state.viewingDevice && (
           <Tabs defaultActiveKey="info" items={[
             { key: 'info', label: <><DesktopOutlined /> 基本信息</>, children: (

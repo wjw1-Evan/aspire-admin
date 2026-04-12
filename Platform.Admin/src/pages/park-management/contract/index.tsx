@@ -182,7 +182,7 @@ const ContractManagement: React.FC = () => {
                 <ProFormText name="terms" label="条款备注" placeholder="备注信息" />
             </ModalForm>
 
-            <Drawer title={state.currentContract?.contractNumber || '合同详情'} open={state.detailDrawerVisible} onClose={() => { set({ detailDrawerVisible: false, currentContract: null }); }} width={640} loading={state.detailLoading}>
+            <Drawer title={state.currentContract?.contractNumber || '合同详情'} open={state.detailDrawerVisible} onClose={() => { set({ detailDrawerVisible: false, currentContract: null }); }} size="large" loading={state.detailLoading}>
                 {state.currentContract && (<div style={{ padding: '0 8px' }}>
                     <ProDescriptions bordered column={2} size="small">
                         <ProDescriptions.Item label="合同编号" span={2}>{state.currentContract.contractNumber}</ProDescriptions.Item>

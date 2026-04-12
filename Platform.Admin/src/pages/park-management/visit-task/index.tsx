@@ -149,7 +149,7 @@ const VisitTaskPage: React.FC = () => {
                 {state.editingTask && (<><Row gutter={16}><Col span={12}><ProFormSelect name="status" label="任务状态" options={[{ value: 'Pending', label: '待派发' }, { value: 'InProgress', label: '进行中' }, { value: 'Completed', label: '已完成' }, { value: 'Cancelled', label: '已取消' }]} /></Col></Row><ProFormText name="content" label="走访纪要" placeholder="详细记录走访沟通内容" /><ProFormText name="feedback" label="企业诉求/反馈" placeholder="企业提出的问题或建议" /></>)}
             </ModalForm>
 
-            <Drawer title="走访任务详情" placement="right" open={state.detailVisible} onClose={() => { set({ detailVisible: false, selectedTask: null }); }} width={640} loading={state.detailLoading}
+            <Drawer title="走访任务详情" placement="right" open={state.detailVisible} onClose={() => { set({ detailVisible: false, selectedTask: null }); }} size="large" loading={state.detailLoading}
                 extra={<Space><Button onClick={() => set({ detailVisible: false })}>关闭</Button><Button type="primary" icon={<EditOutlined />} onClick={() => { set({ detailVisible: false, editingTask: state.selectedTask, formVisible: true }); }}>编辑</Button></Space>}>
                 {state.selectedTask ? (<Space orientation="vertical" size="large" style={{ width: '100%' }}>
                     <ProDescriptions title="基本信息" bordered column={2}>

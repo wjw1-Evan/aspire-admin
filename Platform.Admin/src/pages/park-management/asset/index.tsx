@@ -236,7 +236,7 @@ const AssetManagement: React.FC = () => {
                 </div>
             </ModalForm>
 
-            <Drawer title={buildingState.currentBuilding?.name || intl.formatMessage({ id: 'pages.park.asset.buildingDetail', defaultMessage: '楼宇详情' })} open={buildingState.detailVisible} onClose={() => { setBuilding({ detailVisible: false, currentBuilding: null }); }} width={640} loading={buildingState.detailLoading}>
+            <Drawer title={buildingState.currentBuilding?.name || intl.formatMessage({ id: 'pages.park.asset.buildingDetail', defaultMessage: '楼宇详情' })} open={buildingState.detailVisible} onClose={() => { setBuilding({ detailVisible: false, currentBuilding: null }); }} size="large" loading={buildingState.detailLoading}>
                 {buildingState.currentBuilding && (<div>
                     <ProDescriptions bordered column={2} size="small" style={{ marginBottom: 24 }}>
                         <ProDescriptions.Item label="楼宇名称">{buildingState.currentBuilding.name}</ProDescriptions.Item>
@@ -256,7 +256,7 @@ const AssetManagement: React.FC = () => {
                 </div>)}
             </Drawer>
 
-            <Drawer title={unitState.currentUnit?.unitNumber || intl.formatMessage({ id: 'pages.park.asset.unitDetail', defaultMessage: '房源详情' })} open={unitState.detailVisible} onClose={() => { setUnit({ detailVisible: false, currentUnit: null }); }} width={720} loading={unitState.detailLoading}>
+            <Drawer title={unitState.currentUnit?.unitNumber || intl.formatMessage({ id: 'pages.park.asset.unitDetail', defaultMessage: '房源详情' })} open={unitState.detailVisible} onClose={() => { setUnit({ detailVisible: false, currentUnit: null }); }} size="large" loading={unitState.detailLoading}>
                 {unitState.currentUnit && (<Space orientation="vertical" style={{ width: '100%' }} size={24}>
                     <div>
                         <Title level={5} style={{ marginBottom: 16 }}>基本信息</Title>

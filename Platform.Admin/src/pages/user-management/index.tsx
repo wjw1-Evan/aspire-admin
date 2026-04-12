@@ -216,7 +216,7 @@ const UserManagement: React.FC = () => {
           <ProFormSwitch name="isActive" label="企业内启用" checkedChildren="启用" unCheckedChildren="禁用" />
           <ProFormText name="remark" label="备注" placeholder="请输入备注" />
         </ModalForm>
-        <Drawer title={intl.formatMessage({ id: 'pages.userDetail.title' })} placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingUser: null })} width={600} destroyOnClose>
+        <Drawer title={intl.formatMessage({ id: 'pages.userDetail.title' })} placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingUser: null })} size="large" destroyOnClose>
           <React.Suspense fallback={<div style={{ textAlign: 'center', padding: '20px' }}><Spin /></div>}>{state.viewingUser && <UserDetail user={state.viewingUser} onClose={() => set({ detailVisible: false, viewingUser: null })} />}</React.Suspense>
         </Drawer>
     </PageContainer>

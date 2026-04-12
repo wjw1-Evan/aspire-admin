@@ -136,7 +136,7 @@ const LogDetailDrawer: React.FC<{ open: boolean; logId?: string; fetchFromApi?: 
   if (!open) return null;
 
   return (
-    <Drawer title="日志详情" placement="right" open={open} onClose={onClose} styles={{ wrapper: { width: 600 } }}>
+    <Drawer title="日志详情" placement="right" open={open} onClose={onClose} size="large">
       {loading ? <div>加载中...</div> : log ? (
         <ProDescriptions column={1} size="small" bordered>
           <ProDescriptions.Item label="操作">{getActionText(log.action)}</ProDescriptions.Item>

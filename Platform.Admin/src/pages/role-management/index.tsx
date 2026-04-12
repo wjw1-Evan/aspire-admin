@@ -156,7 +156,7 @@ const RoleManagement: React.FC = () => {
         <div style={{ marginTop: 16 }}><Switch checked={formState.checkedKeys.length > 0} disabled /> <span style={{ marginLeft: 8 }}>{intl.formatMessage({ id: 'pages.roleForm.menuCount' }, { count: formState.checkedKeys.length })}</span></div>
       </ModalForm>
 
-      <Drawer title={state.viewingRole ? `${intl.formatMessage({ id: 'pages.roleManagement.title' })} - ${state.viewingRole.name}` : intl.formatMessage({ id: 'pages.roleManagement.title' })} open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingRole: null })} styles={{ wrapper: { width: 600 } }}>
+      <Drawer title={state.viewingRole ? `${intl.formatMessage({ id: 'pages.roleManagement.title' })} - ${state.viewingRole.name}` : intl.formatMessage({ id: 'pages.roleManagement.title' })} open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingRole: null })} size="large">
         {state.viewingRole && <ProDescriptions column={1} bordered size="small">
           <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.table.roleName' })}>{state.viewingRole.name}</ProDescriptions.Item>
           <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.table.description' })}>{state.viewingRole.description || '-'}</ProDescriptions.Item>

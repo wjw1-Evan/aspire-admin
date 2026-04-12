@@ -166,7 +166,7 @@ const DataPointManagement = React.forwardRef<DataPointManagementRef, any>((props
         <ProFormTextArea name="remarks" label="备注" placeholder="请输入备注" />
       </ModalForm>
 
-      <Drawer title="数据点详情" placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingDataPoint: null })} size={isMobile ? 'large' : 800}>
+      <Drawer title="数据点详情" placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingDataPoint: null })} size="large">
         {state.viewingDataPoint && (
           <>
             <ProCard title="基本信息" style={{ marginBottom: 16 }}>

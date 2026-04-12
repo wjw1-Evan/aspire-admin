@@ -122,7 +122,7 @@ const VisitKnowledgeBase: React.FC = () => {
                 <ProFormSwitch name="isFrequentlyUsed" label="标记为常用" />
             </ModalForm>
 
-            <Drawer title="问题详情" open={state.detailVisible} onClose={() => set({ detailVisible: false, selectedQuestion: null })} size={640} extra={<Button onClick={() => set({ detailVisible: false })}>关闭</Button>}>
+            <Drawer title="问题详情" placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, selectedQuestion: null })} size="large" extra={<Button onClick={() => set({ detailVisible: false })}>关闭</Button>}>
                 {state.selectedQuestion ? (
                     <Space orientation="vertical" size="large" style={{ width: '100%' }}>
                         <ProDescriptions title="基本信息" bordered column={1}>

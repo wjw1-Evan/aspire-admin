@@ -143,7 +143,7 @@ const EnterpriseService: React.FC = () => {
                 <ProFormTextArea name="feedback" label="反馈意见" placeholder="请输入您的反馈意见" />
             </ModalForm>
 
-            <Drawer title={editingState.currentRequest?.title || '申请详情'} open={modalState.detailVisible} onClose={() => setModal({ detailVisible: false })} width={640}>
+            <Drawer title={editingState.currentRequest?.title || '申请详情'} open={modalState.detailVisible} onClose={() => setModal({ detailVisible: false })} placement="right" size="large">
                 {editingState.currentRequest && (<ProDescriptions bordered column={2} size="small">
                     <ProDescriptions.Item label="服务标题" span={2}>{editingState.currentRequest.title}</ProDescriptions.Item>
                     <ProDescriptions.Item label="所属租户">{editingState.currentRequest.tenantName || '-'}</ProDescriptions.Item>

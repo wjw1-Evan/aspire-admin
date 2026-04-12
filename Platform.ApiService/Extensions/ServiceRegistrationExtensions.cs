@@ -35,9 +35,10 @@ public static class ServiceRegistrationExtensions
                     var sectionName = sectionField.GetRawConstantValue()?.ToString();
                     if (!string.IsNullOrEmpty(sectionName))
                     {
-                        var method = typeof(OptionsConfigurationServiceCollectionExtensions).GetMethods()
-                            .First(m => m.Name == "Configure" && m.GetParameters().Length == 2).MakeGenericMethod(type);
-                        method.Invoke(null, [services, configuration.GetSection(sectionName)]);
+                        var configureMethod = typeof(OptionsConfigurationServiceCollectionExtensions)
+                            .GetMethod("Configure", [typeof(IServiceCollection), typeof(IConfigurationSection)])!
+                            .MakeGenericMethod(type);
+                        configureMethod.Invoke(null, [services, configuration.GetSection(sectionName)]);
                     }
                 }
             }

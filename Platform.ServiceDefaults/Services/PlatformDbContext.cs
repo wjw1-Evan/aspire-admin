@@ -71,41 +71,53 @@ public class PlatformDbContext : DbContext
         var userId = CurrentUserId;
         var companyId = CurrentCompanyId;
 
-        foreach (var entry in ChangeTracker.Entries()
-            .Where(e => e.State is EntityState.Added or EntityState.Modified))
+        foreach (var entry in ChangeTracker.Entries())
         {
             var entity = entry.Entity;
-            var isAdded = entry.State == EntityState.Added;
+            var state = entry.State;
 
-            if (entity is ITimestamped { } timestamped)
+            if (state is EntityState.Added or EntityState.Modified)
             {
-                if (isAdded) timestamped.CreatedAt = now;
-                timestamped.UpdatedAt = now;
+                var isAdded = state == EntityState.Added;
+
+                if (entity is ITimestamped { } timestamped)
+                {
+                    if (isAdded) timestamped.CreatedAt = now;
+                    timestamped.UpdatedAt = now;
+                }
+
+                if (entity is IOperationTrackable { } trackable)
+                {
+                    trackable.UpdatedBy = userId;
+                    trackable.LastOperationAt = now;
+                    if (isAdded) trackable.CreatedBy ??= userId;
+                }
+
+                if (isAdded && entity is IMultiTenant { CompanyId: "" or null } tenant)
+                    tenant.CompanyId = companyId ?? string.Empty;
+
+                if (!isAdded && entity is ISoftDeletable { } softDeletable &&
+                    entry.Property(nameof(ISoftDeletable.IsDeleted)).IsModified)
+                {
+                    if (softDeletable.IsDeleted == true)
+                    {
+                        softDeletable.DeletedAt ??= now;
+                        softDeletable.DeletedBy ??= userId;
+                    }
+                    else
+                    {
+                        softDeletable.DeletedAt = null;
+                        softDeletable.DeletedBy = null;
+                    }
+                }
             }
 
-            if (entity is IOperationTrackable { } trackable)
+            if (state == EntityState.Deleted && entity is ISoftDeletable { } deletable)
             {
-                trackable.UpdatedBy = userId;
-                trackable.LastOperationAt = now;
-                if (isAdded) trackable.CreatedBy ??= userId;
-            }
-
-            if (isAdded && entity is IMultiTenant { CompanyId: "" or null } tenant)
-                tenant.CompanyId = companyId ?? string.Empty;
-
-            if (!isAdded && entity is ISoftDeletable { } softDeletable &&
-                entry.Property(nameof(ISoftDeletable.IsDeleted)).IsModified)
-            {
-                if (softDeletable.IsDeleted == true)
-                {
-                    softDeletable.DeletedAt ??= now;
-                    softDeletable.DeletedBy ??= userId;
-                }
-                else
-                {
-                    softDeletable.DeletedAt = null;
-                    softDeletable.DeletedBy = null;
-                }
+                entry.State = EntityState.Modified;
+                deletable.IsDeleted = true;
+                deletable.DeletedAt = now;
+                deletable.DeletedBy = userId;
             }
         }
     }
@@ -135,7 +147,27 @@ public class PlatformDbContext : DbContext
 
     private void ApplyQueryFilter<TEntity>(ModelBuilder modelBuilder) where TEntity : class
     {
-        modelBuilder.Entity<TEntity>().HasQueryFilter(e => IsSystemContext || ((IMultiTenant)e).CompanyId == CurrentCompanyId);
+        // 多租户实体 + 软删除实体：同时过滤租户和软删除
+        if (typeof(IMultiTenant).IsAssignableFrom(typeof(TEntity)) 
+            && typeof(ISoftDeletable).IsAssignableFrom(typeof(TEntity)))
+        {
+            modelBuilder.Entity<TEntity>().HasQueryFilter(
+                e => IsSystemContext 
+                    || (((IMultiTenant)e).CompanyId == CurrentCompanyId 
+                        && ((ISoftDeletable)e).IsDeleted != true));
+        }
+        // 仅多租户实体：只过滤租户
+        else if (typeof(IMultiTenant).IsAssignableFrom(typeof(TEntity)))
+        {
+            modelBuilder.Entity<TEntity>().HasQueryFilter(
+                e => IsSystemContext || ((IMultiTenant)e).CompanyId == CurrentCompanyId);
+        }
+        // 仅软删除实体：只过滤软删除
+        else if (typeof(ISoftDeletable).IsAssignableFrom(typeof(TEntity)))
+        {
+            modelBuilder.Entity<TEntity>().HasQueryFilter(
+                e => ((ISoftDeletable)e).IsDeleted != true);
+        }
     }
 
     private static List<Type> GetEntityTypes()

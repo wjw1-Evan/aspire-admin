@@ -8,7 +8,7 @@ namespace Platform.ServiceDefaults.Extensions;
 
 public static class ServiceDiscoveryExtensions
 {
-    private static readonly MethodInfo ConfigureMethod = typeof(OptionsConfigurationServiceCollectionExtensions)
+private static readonly MethodInfo ConfigureMethod = typeof(OptionsConfigurationServiceCollectionExtensions)
         .GetMethod("Configure", [typeof(IServiceCollection), typeof(IConfigurationSection)])!;
 
     public static IServiceCollection AddServiceDiscovery(this IServiceCollection services, IConfiguration configuration)

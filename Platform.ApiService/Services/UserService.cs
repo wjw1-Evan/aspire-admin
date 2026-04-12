@@ -184,8 +184,7 @@ public class UserService : IUserService
                 CompanyId = companyId,
                 RoleIds = roleIds,
                 IsAdmin = false,
-                Status = SystemConstants.UserStatus.Active,
-                JoinedAt = DateTime.UtcNow
+                Status = SystemConstants.UserStatus.Active
             };
             await _context.Set<UserCompany>().AddAsync(userCompany);
 
@@ -264,8 +263,7 @@ public class UserService : IUserService
                     CompanyId = companyId,
                     RoleIds = request.RoleIds,
                     IsAdmin = false,
-                    Status = SystemConstants.UserStatus.Active,
-                    JoinedAt = DateTime.UtcNow
+                    Status = SystemConstants.UserStatus.Active
                 };
                 await _context.Set<UserCompany>().AddAsync(newUserCompany);
             }

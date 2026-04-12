@@ -286,7 +286,7 @@ const CloudStorageFilesPage: React.FC = () => {
 
             {/* 文件详情 */}
             {state.detailVisible && state.viewingFile && (
-                <AntDrawer title={state.viewingFile.name} placement="right" open={state.detailVisible} onClose={(open) => { if (!open) set({ detailVisible: false, viewingFile: null, previewUrl: '', officeContent: null, markdownContent: null }); }} width={isMobile ? 'default' : 'large'}>
+                <AntDrawer title={state.viewingFile.name} placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingFile: null, previewUrl: '', officeContent: null, markdownContent: null })} width={isMobile ? 'default' : 'large'}>
                     <ProDescriptions column={1} size="small" bordered>
                         <ProDescriptions.Item label="名称">{state.viewingFile.name}</ProDescriptions.Item>
                         <ProDescriptions.Item label="类型">{state.viewingFile.isFolder ? '文件夹' : state.viewingFile.mimeType}</ProDescriptions.Item>

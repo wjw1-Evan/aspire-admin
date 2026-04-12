@@ -89,7 +89,7 @@ const VisitAssessmentList: React.FC = () => {
                 ]}
             />
 
-            <Drawer title={intl.formatMessage({ id: 'pages.park.visit.assessmentDetail', defaultMessage: '走访评价详情' })} placement="right" open={state.detailVisible} onClose={(open) => { if (!open) set({ detailVisible: false, selectedAssessment: null }); }} width={500}>
+            <Drawer title={intl.formatMessage({ id: 'pages.park.visit.assessmentDetail', defaultMessage: '走访评价详情' })} placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, selectedAssessment: null })} width={500}>
                 {state.selectedAssessment && <div style={{ padding: '0 4px' }}>
                     <div style={{ textAlign: 'center', marginBottom: 24 }}><Text type="secondary">{intl.formatMessage({ id: 'pages.park.visit.score', defaultMessage: '总体满意程度' })}</Text><div style={{ marginTop: 8 }}><Rate disabled value={state.selectedAssessment.score} style={{ fontSize: 24 }} /></div></div>
                     <Divider />

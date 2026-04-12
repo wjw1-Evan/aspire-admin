@@ -13,7 +13,9 @@ public static class ServiceDiscoveryExtensions
 
     public static IServiceCollection AddServiceDiscovery(this IServiceCollection services, IConfiguration configuration)
     {
-        var types = typeof(ServiceDiscoveryExtensions).Assembly.GetTypes()
+        var assemblies = AppDomain.CurrentDomain.GetAssemblies()
+            .Where(a => a.FullName?.StartsWith("Platform") == true);
+        var types = assemblies.SelectMany(a => a.GetTypes())
             .Where(t => t.IsClass && !t.IsAbstract && !t.IsNested);
 
         foreach (var type in types)

@@ -69,7 +69,7 @@ const TaskDetail: React.FC<{ id: string; onClose: () => void; open: boolean; isM
   };
 
   return (
-    <Drawer title={intl.formatMessage({ id: 'pages.taskManagement.detail.title' })} placement="right" open={open} onClose={() => onClose()} width={720}>
+    <Drawer title={intl.formatMessage({ id: 'pages.taskManagement.detail.title' })} placement="right" open={open} onClose={() => onClose()} size="large">
       <Spin spinning={loading}>
         {taskDetail ? (
           <>

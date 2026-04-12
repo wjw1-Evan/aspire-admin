@@ -129,7 +129,7 @@ const TenantManagement: React.FC = () => {
                 <ProFormText name="notes" label="备注" placeholder="备注信息" />
             </ModalForm>
 
-            <Drawer title={state.viewingTenant?.tenantName || '租户详情'} open={state.detailVisible} onClose={() => { set({ detailVisible: false, viewingTenant: null }); }} width={720} loading={state.detailLoading}>
+            <Drawer title={state.viewingTenant?.tenantName || '租户详情'} open={state.detailVisible} onClose={() => { set({ detailVisible: false, viewingTenant: null }); }} size="large" loading={state.detailLoading}>
                 {state.viewingTenant && <div>
                     <Typography.Text strong style={{ fontSize: 16, marginBottom: 12, display: 'block' }}>基本信息</Typography.Text>
                     <ProDescriptions column={2} bordered size="small" style={{ marginBottom: 24 }}>

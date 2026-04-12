@@ -1,7 +1,7 @@
-import { App, Button, Tree, Spin, Divider, Form } from 'antd';
+import { App, Button, Form, Tree, Spin, Divider } from 'antd';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useIntl } from '@umijs/max';
-import { ModalForm, ProFormText, ProFormTextArea, ProFormSwitch } from '@ant-design/pro-components';
+import { ModalForm, ProFormText, ProFormTextArea, ProFormSwitch, ProForm } from '@ant-design/pro-components';
 import { createRole, updateRole, getRoleMenus } from '@/services/role/api';
 import { getMenuTree } from '@/services/menu/api';
 import type {
@@ -27,7 +27,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
 }) => {
   const intl = useIntl();
   const { message } = App.useApp();
-  const [form] = Form.useForm();
+  const [form] = ProForm.useForm();
   const [loading, setLoading] = useState(false);
   const [menuLoading, setMenuLoading] = useState(false);
   const [menuTree, setMenuTree] = useState<DataNode[]>([]);

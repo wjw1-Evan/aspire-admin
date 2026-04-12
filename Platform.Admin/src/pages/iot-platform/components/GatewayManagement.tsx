@@ -2,7 +2,9 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useIntl } from '@umijs/max';
 import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect } from '@ant-design/pro-components';
-import { Button, Col, Drawer, Form, Grid, Input, Row, Space, Tag, message, Popconfirm } from 'antd';
+import { Button, Col, Form, Grid, Input, Row, Space, Tag, message, Popconfirm } from 'antd';
+import { ProForm } from '@ant-design/pro-components';
+import { Drawer } from 'antd';
 import { ProCard, ProDescriptions } from '@ant-design/pro-components';
 import { PlusOutlined, EditOutlined, DeleteOutlined, CloudServerOutlined, CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -23,7 +25,7 @@ const GatewayManagement = React.forwardRef<GatewayManagementRef, any>((props, re
   const screens = useBreakpoint();
   const isMobile = !screens.md;
   const actionRef = useRef<ActionType | undefined>(undefined);
-  const [form] = Form.useForm();
+  const [form] = ProForm.useForm();
 
   const [state, setState] = useState({
     statistics: null as { total: number; online: number; offline: number; fault: number } | null,

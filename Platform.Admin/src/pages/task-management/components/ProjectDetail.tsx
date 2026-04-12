@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Tag, Progress, Tabs, Space, Grid, Empty, Spin, Tooltip } from 'antd';
-import { Drawer as AntDrawer } from 'antd';
+import { Drawer } from 'antd';
 import { ProDescriptions } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 
@@ -192,7 +192,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
   const priorityInfo = priorityMap[project.priority] || { color: 'default', text: intl.formatMessage({ id: 'pages.table.unknown' }) };
 
   return (
-    <AntDrawer
+    <Drawer
       title={
         <Space>
           <ProjectOutlined />
@@ -258,7 +258,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
           },
         ]}
       />
-    </AntDrawer>
+    </Drawer>
   );
 };
 

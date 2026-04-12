@@ -1,4 +1,5 @@
-import { theme, Drawer, Space, Badge } from 'antd';
+import { theme, Space, Badge } from 'antd';
+import { Drawer } from 'antd';
 import { useIntl } from '@umijs/max';
 import UnifiedNotificationList from './UnifiedNotificationList';
 

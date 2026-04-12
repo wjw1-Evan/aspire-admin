@@ -2,7 +2,8 @@ import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import { PageContainer } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
-import { Tag, Space, Drawer, Input } from 'antd';
+import { Tag, Space, Input } from 'antd';
+import { Drawer } from 'antd';
 import { ProDescriptions } from '@ant-design/pro-components';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { HistoryOutlined, CheckCircleOutlined, CloseCircleOutlined, ThunderboltOutlined, SearchOutlined } from '@ant-design/icons';

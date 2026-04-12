@@ -1,5 +1,6 @@
 import React from 'react';
-import { Drawer, Avatar, Tag, Space } from 'antd';
+import { Avatar, Tag, Space } from 'antd';
+import { Drawer } from 'antd';
 import { ProDescriptions } from '@ant-design/pro-components';
 import { UserOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';

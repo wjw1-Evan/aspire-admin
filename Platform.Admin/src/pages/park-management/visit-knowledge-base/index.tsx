@@ -1,7 +1,8 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { request } from '@umijs/max';
-import { Tag, Space, Button, Input, App, Typography, Drawer, Empty, Popconfirm, Spin } from 'antd';
+import { Tag, Space, Button, Input, App, Typography, Empty, Popconfirm, Spin } from 'antd';
+import { Drawer } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormTextArea, ProFormSelect, ProFormSwitch, ProForm } from '@ant-design/pro-form';
 import { PlusOutlined, ReloadOutlined, QuestionCircleOutlined, StarOutlined, StarFilled, EditOutlined, DeleteOutlined, EyeOutlined, SearchOutlined, BookOutlined, RobotOutlined } from '@ant-design/icons';

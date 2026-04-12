@@ -2,7 +2,8 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useIntl } from '@umijs/max';
 import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
 import { ModalForm, ProFormTextArea } from '@ant-design/pro-components';
-import { Button, Form, Grid, Input, Space, Tag, message } from 'antd';
+import { Button, Grid, Input, Space, Tag, message } from 'antd';
+import { ProForm } from '@ant-design/pro-components';
 import { CheckOutlined, AlertOutlined, CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { iotService, IoTDeviceEvent, IoTDevice } from '@/services/iotService';
@@ -18,7 +19,7 @@ const EventManagement = React.forwardRef<EventManagementRef, any>((props, ref) =
   const screens = useBreakpoint();
   const isMobile = !screens.md;
   const actionRef = useRef<ActionType | undefined>(undefined);
-  const [form] = Form.useForm();
+  const [form] = ProForm.useForm();
 
   const [state, setState] = useState({
     devices: [] as IoTDevice[],

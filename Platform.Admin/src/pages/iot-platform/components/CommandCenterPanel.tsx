@@ -15,6 +15,7 @@ import {
     InputNumber,
     Empty,
 } from 'antd';
+import { ProForm } from '@ant-design/pro-components';
 import {
     SendOutlined,
     CheckCircleOutlined,
@@ -54,7 +55,7 @@ interface CommandCenterPanelProps {
 }
 
 const CommandCenterPanel: React.FC<CommandCenterPanelProps> = ({ deviceId }) => {
-    const [form] = Form.useForm();
+    const [form] = ProForm.useForm();
     const [sending, setSending] = useState(false);
     const [history, setHistory] = useState<IoTDeviceCommand[]>([]);
     const [payloadText, setPayloadText] = useState('{}');

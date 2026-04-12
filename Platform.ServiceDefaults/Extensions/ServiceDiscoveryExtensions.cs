@@ -8,31 +8,19 @@ namespace Platform.ServiceDefaults.Extensions;
 
 public static class ServiceDiscoveryExtensions
 {
-private static readonly MethodInfo ConfigureMethod = typeof(OptionsConfigurationServiceCollectionExtensions)
+    private static readonly MethodInfo ConfigureMethod = typeof(OptionsConfigurationServiceCollectionExtensions)
         .GetMethod("Configure", [typeof(IServiceCollection), typeof(IConfigurationSection)])!;
 
     public static IServiceCollection AddServiceDiscovery(this IServiceCollection services, IConfiguration configuration)
-        => AddServiceDiscovery(services, configuration, null, null);
-
-    public static IServiceCollection AddServiceDiscovery(
-        this IServiceCollection services,
-        IConfiguration configuration,
-        Assembly[]? assemblies,
-        string[]? namespaces = null)
     {
-        namespaces ??= [];
-        assemblies ??= [typeof(ServiceDiscoveryExtensions).Assembly];
+        var types = typeof(ServiceDiscoveryExtensions).Assembly.GetTypes()
+            .Where(t => t.IsClass && !t.IsAbstract && !t.IsNested);
 
-        foreach (var assembly in assemblies)
+        foreach (var type in types)
         {
-            var types = assembly.GetTypes().Where(t => t.IsClass && !t.IsAbstract && !t.IsNested);
-
-            foreach (var type in types)
-            {
-                if (TryConfigureOptions(type, services, configuration)) continue;
-                if (TryRegisterHostedService(type, services)) continue;
-                RegisterService(type, services, namespaces);
-            }
+            if (TryConfigureOptions(type, services, configuration)) continue;
+            if (TryRegisterHostedService(type, services)) continue;
+            RegisterService(type, services);
         }
 
         return services;
@@ -57,9 +45,9 @@ private static readonly MethodInfo ConfigureMethod = typeof(OptionsConfiguration
         return true;
     }
 
-    private static void RegisterService(Type type, IServiceCollection services, string[] namespaces)
+    private static void RegisterService(Type type, IServiceCollection services)
     {
-        if (!namespaces.Any(ns => type.Namespace?.StartsWith(ns) == true) || typeof(IHostedService).IsAssignableFrom(type))
+        if (!type.Namespace?.StartsWith("Platform") == true || typeof(IHostedService).IsAssignableFrom(type))
             return;
 
         var lifetime = typeof(ISingletonDependency).IsAssignableFrom(type) ? ServiceLifetime.Singleton

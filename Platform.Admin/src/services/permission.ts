@@ -4,18 +4,19 @@ import type { ApiResponse } from '@/types';
 /**
  * 用户权限信息
  */
-interface UserPermissions {
+export interface UserPermissions {
   allPermissionCodes?: string[];
-  [key: string]: any;
+  permissionCodes?: string[];
+  menuCodes?: string[];
+  [key: string]: unknown;
 }
 
 /**
  * 获取当前用户的权限信息
  */
-export async function getMyPermissions(options?: Record<string, any>) {
+export async function getMyPermissions() {
   return request<ApiResponse<UserPermissions>>('/apiservice/api/users/me/permissions', {
     method: 'GET',
-    ...(options || {}),
   });
 }
 
@@ -23,10 +24,9 @@ export async function getMyPermissions(options?: Record<string, any>) {
  * 获取指定用户的权限信息
  * @param userId 用户ID
  */
-export async function getUserPermissions(userId: string, options?: Record<string, any>) {
+export async function getUserPermissions(userId: string) {
   return request<ApiResponse<UserPermissions>>(`/apiservice/api/users/${userId}/permissions`, {
     method: 'GET',
-    ...(options || {}),
   });
 }
 
@@ -37,12 +37,10 @@ export async function getUserPermissions(userId: string, options?: Record<string
  */
 export async function assignUserPermissions(
   userId: string,
-  permissions: any,
-  options?: Record<string, any>,
+  permissions: UserPermissions,
 ) {
   return request<ApiResponse<boolean>>(`/apiservice/api/users/${userId}/custom-permissions`, {
     method: 'POST',
     data: permissions,
-    ...(options || {}),
   });
 }

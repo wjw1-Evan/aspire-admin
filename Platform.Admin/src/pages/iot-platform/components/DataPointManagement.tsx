@@ -142,7 +142,7 @@ const DataPointManagement = React.forwardRef<DataPointManagementRef, any>((props
         ]}
       />
 
-      <ModalForm title={state.editingDataPoint ? '编辑数据点' : '新建数据点'} open={state.formVisible} onOpenChange={(open) => { if (!open) set({ formVisible: false, editingDataPoint: null }); }}
+      <ModalForm key={state.editingDataPoint?.id || 'create'} title={state.editingDataPoint ? '编辑数据点' : '新建数据点'} open={state.formVisible} onOpenChange={(open) => { if (!open) set({ formVisible: false, editingDataPoint: null }); }}
         form={form} onFinish={handleSubmit} width={isMobile ? '100%' : 700}
       >
         <Row gutter={12}>

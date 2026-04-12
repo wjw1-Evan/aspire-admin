@@ -96,12 +96,13 @@ const EventManagement = React.forwardRef<EventManagementRef, any>((props, ref) =
             value={state.search}
             onChange={(e) => set({ search: e.target.value })}
             onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
-            style={{ width: 260 }}
+            style={{ width: 260, marginRight: 8 }}
+            prefix={<SearchOutlined />}
           />,
         ]}
       />
 
-      <ModalForm title="处理事件" open={state.formVisible} onOpenChange={(open) => { if (!open) set({ formVisible: false, editingEvent: null }); }}
+      <ModalForm key={state.editingEvent?.id || 'handle'} title="处理事件" open={state.formVisible} onOpenChange={(open) => { if (!open) set({ formVisible: false, editingEvent: null }); }}
         form={form} onFinish={handleSubmit} width={isMobile ? '100%' : 600}
       >
         {state.editingEvent && (

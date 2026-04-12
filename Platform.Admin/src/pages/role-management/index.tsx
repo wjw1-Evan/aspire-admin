@@ -18,6 +18,7 @@ interface RoleStatistics { totalRoles: number; activeRoles: number; totalUsers: 
 interface CreateRoleRequest { name: string; description?: string; menuIds: string[]; isActive: boolean; }
 interface UpdateRoleRequest { name?: string; description?: string; menuIds?: string[]; isActive?: boolean; }
 interface MenuTreeNode { id?: string; name?: string; title?: string; children?: MenuTreeNode[]; }
+interface TreeNode { key: string; title: string; children?: TreeNode[]; }
 
 // ==================== API ====================
 const api = {
@@ -45,7 +46,7 @@ const RoleManagement: React.FC = () => {
     search: '',
   });
   const [formState, setFormState] = useState({
-    menuTree: [] as any[],
+    menuTree: [] as TreeNode[],
     checkedKeys: [] as string[],
     expandedKeys: [] as string[],
     menuLoading: false,
@@ -75,8 +76,8 @@ const RoleManagement: React.FC = () => {
     ) },
   ];
 
-  const convertToTreeData = (menus: MenuTreeNode[]): any[] => menus.filter((m): m is MenuTreeNode & { id: string } => Boolean(m.id)).map(m => ({ key: m.id, title: m.title || m.name, children: m.children ? convertToTreeData(m.children) : [] }));
-  const getAllKeys = (menus: any[]): string[] => { let keys: string[] = []; menus.forEach(m => { if (m.key) keys.push(m.key); if (m.children?.length) keys = keys.concat(getAllKeys(m.children)); }); return keys; };
+  const convertToTreeData = (menus: MenuTreeNode[]): TreeNode[] => menus.filter((m): m is MenuTreeNode & { id: string } => Boolean(m.id)).map(m => ({ key: m.id, title: m.title || m.name || '', children: m.children ? convertToTreeData(m.children) : [] }));
+  const getAllKeys = (menus: TreeNode[]): string[] => { let keys: string[] = []; menus.forEach(m => { if (m.key) keys.push(m.key); if (m.children?.length) keys = keys.concat(getAllKeys(m.children)); }); return keys; };
 
   return (
     <PageContainer>
@@ -98,7 +99,7 @@ const RoleManagement: React.FC = () => {
             </Space>
           </Space>
         }
-        onChange={(_, __, s: any) => set({ sorter: s?.order ? { sortBy: s.field as string, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
+        onChange={(_p, _f, s) => set({ sorter: Array.isArray(s) ? undefined : s?.order ? { sortBy: (s as { field?: string }).field || '', sortOrder: (s as { order?: 'ascend' | 'descend' }).order === 'ascend' ? 'asc' : 'desc' } : undefined })}
         scroll={{ x: 'max-content' }}
         toolBarRender={() => [
           <Input.Search
@@ -153,7 +154,7 @@ const RoleManagement: React.FC = () => {
             {formState.checkedKeys.length === getAllKeys(formState.menuTree).length ? intl.formatMessage({ id: 'pages.roleForm.deselectAll' }) : intl.formatMessage({ id: 'pages.roleForm.selectAll' })}
           </Button>
         </div>
-        {formState.menuLoading ? <div style={{ textAlign: 'center', padding: '40px 0' }}><Spin /></div> : <Tree checkable checkStrictly defaultExpandAll treeData={formState.menuTree} checkedKeys={formState.checkedKeys} expandedKeys={formState.expandedKeys} onExpand={(keys: any) => setFormState(p => ({ ...p, expandedKeys: keys.map(String) }))} onCheck={(checked: any) => setFormState(p => ({ ...p, checkedKeys: Array.isArray(checked) ? checked : checked.checked }))} />}
+        {formState.menuLoading ? <div style={{ textAlign: 'center', padding: '40px 0' }}><Spin /></div> : <Tree checkable checkStrictly defaultExpandAll treeData={formState.menuTree} checkedKeys={formState.checkedKeys} expandedKeys={formState.expandedKeys} onExpand={(keys) => setFormState(p => ({ ...p, expandedKeys: keys.map(String) }))} onCheck={(checked) => setFormState(p => ({ ...p, checkedKeys: Array.isArray(checked) ? checked as string[] : (checked as { checked: string[] }).checked }))} />}
         <div style={{ marginTop: 16 }}><Switch checked={formState.checkedKeys.length > 0} disabled /> <span style={{ marginLeft: 8 }}>{intl.formatMessage({ id: 'pages.roleForm.menuCount' }, { count: formState.checkedKeys.length })}</span></div>
       </ModalForm>
 

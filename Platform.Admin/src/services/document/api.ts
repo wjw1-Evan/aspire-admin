@@ -36,7 +36,7 @@ export interface Document {
   status: DocumentStatus;
   createdBy: string;
   attachmentIds: string[];
-  formData: Record<string, any>;
+  formData: Record<string, unknown>;
   companyId: string;
   createdAt: string;
   updatedAt: string;
@@ -51,7 +51,7 @@ export interface CreateDocumentRequest {
   documentType: string;
   category?: string;
   attachmentIds?: string[];
-  formData?: Record<string, any>;
+  formData?: Record<string, unknown>;
 }
 
 export interface DocumentAttachmentUploadResponse {
@@ -94,7 +94,7 @@ export interface DocumentQueryParams {
  */
 export interface SubmitDocumentRequest {
   workflowDefinitionId: string;
-  variables?: Record<string, any>;
+  variables?: Record<string, unknown>;
 }
 
 /**

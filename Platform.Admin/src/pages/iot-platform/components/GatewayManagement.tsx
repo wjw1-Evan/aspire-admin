@@ -123,7 +123,7 @@ const GatewayManagement = React.forwardRef<GatewayManagementRef, any>((props, re
         ]}
       />
 
-      <ModalForm title={state.editingGateway ? '编辑网关' : '新建网关'} open={state.formVisible} onOpenChange={(open) => { if (!open) set({ formVisible: false, editingGateway: null }); }}
+      <ModalForm key={state.editingGateway?.id || 'create'} title={state.editingGateway ? '编辑网关' : '新建网关'} open={state.formVisible} onOpenChange={(open) => { if (!open) set({ formVisible: false, editingGateway: null }); }}
         form={form} onFinish={handleSubmit} width={isMobile ? '100%' : 600}
       >
         <ProFormText name="title" label="网关名称" rules={[{ required: true, message: '请输入网关名称' }]} placeholder="请输入网关名称" />

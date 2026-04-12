@@ -26,7 +26,7 @@ export interface IoTGateway {
   status: IoTDeviceStatus;
   lastConnectedAt?: string;
   deviceCount: number;
-  config?: Record<string, any>;
+  config?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 }
@@ -106,7 +106,7 @@ export interface IoTDeviceEvent {
   eventType: string;
   level: string;
   description?: string;
-  eventData?: Record<string, any>;
+  eventData?: Record<string, unknown>;
   occurredAt: string;
   isHandled: boolean;
   handledRemarks?: string;
@@ -118,9 +118,9 @@ export interface IoTDeviceTwin {
   id: string;
   deviceId: string;
   /** 云端期望状态（管理端可编辑） */
-  desiredProperties: Record<string, any>;
+  desiredProperties: Record<string, unknown>;
   /** 设备实际上报的状态（只读） */
-  reportedProperties: Record<string, any>;
+  reportedProperties: Record<string, unknown>;
   desiredVersion: number;
   reportedVersion: number;
   etag: string;
@@ -133,12 +133,12 @@ export interface IoTDeviceCommand {
   id: string;
   deviceId: string;
   commandName: string;
-  payload?: Record<string, any>;
+  payload?: Record<string, unknown>;
   status: CommandStatus;
   expiresAt: string;
   deliveredAt?: string;
   executedAt?: string;
-  responsePayload?: Record<string, any>;
+  responsePayload?: Record<string, unknown>;
   errorMessage?: string;
   createdAt: string;
 }

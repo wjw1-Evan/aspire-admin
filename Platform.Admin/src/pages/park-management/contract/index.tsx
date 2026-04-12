@@ -205,7 +205,7 @@ const ContractManagement: React.FC = () => {
                 </div>)}
             </Drawer>
 
-            <ModalForm title="添加付款记录" open={state.paymentModalVisible} onOpenChange={(open) => { if (!open) set({ paymentModalVisible: false }); }}
+            <ModalForm key={state.currentContract?.id || 'new'} title="添加付款记录" open={state.paymentModalVisible} onOpenChange={(open) => { if (!open) set({ paymentModalVisible: false }); }}
                 onFinish={async (values) => {
                     if (!state.currentContract) return false;
                     const paymentDateVal = values.paymentDate?.toISOString ? values.paymentDate.toISOString() : values.paymentDate;

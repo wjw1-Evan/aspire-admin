@@ -51,27 +51,21 @@ export interface UpdateProfileRequest {
   age?: number;
 }
 
-export async function getAllUsers(options?: Record<string, any>) {
+export async function getAllUsers() {
   return request<ApiResponse<AppUser[]>>('/apiservice/api/users/all', {
     method: 'GET',
-    ...(options || {}),
   });
 }
 
-export async function getUserById(id: string, options?: Record<string, any>) {
+export async function getUserById(id: string) {
   return request<ApiResponse<AppUser>>(`/apiservice/api/users/${id}`, {
     method: 'GET',
-    ...(options || {}),
   });
 }
 
-export async function getUserList(
-  params: PageParams,
-  options?: Record<string, any>,
-) {
+export async function getUserList(params: PageParams) {
   return request<ApiResponse<PagedResult<AppUser>>>('/apiservice/api/users/list', {
     params,
-    ...(options || {}),
   });
 }
 

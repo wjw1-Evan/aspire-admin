@@ -182,7 +182,7 @@ const DeviceManagement = React.forwardRef<DeviceManagementRef, any>((props, ref)
         ]}
       />
 
-      <ModalForm title={state.editingDevice ? '编辑设备' : '新建设备'} open={state.formVisible} onOpenChange={(open) => { if (!open) set({ formVisible: false, editingDevice: null }); }}
+      <ModalForm key={state.editingDevice?.id || 'create'} title={state.editingDevice ? '编辑设备' : '新建设备'} open={state.formVisible} onOpenChange={(open) => { if (!open) set({ formVisible: false, editingDevice: null }); }}
         form={form} onFinish={handleSubmit} width={isMobile ? '100%' : 640}
       >
         <Row gutter={12}>

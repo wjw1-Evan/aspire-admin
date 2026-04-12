@@ -28,7 +28,7 @@ export interface BulkOperation {
   id: string;
   operationType: BulkOperationType;
   workflowIds: string[];
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   status: BulkOperationStatus;
   totalCount: number;
   processedCount: number;
@@ -47,7 +47,7 @@ export interface BulkOperation {
 export interface CreateBulkOperationRequest {
   operationType: BulkOperationType;
   workflowIds: string[];
-  parameters?: Record<string, any>;
+  parameters?: Record<string, unknown>;
 }
 
 /**

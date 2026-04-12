@@ -167,16 +167,16 @@ const TaskManagement: React.FC = () => {
   }, [loadStatistics]);
 
   const columns: ProColumns<TaskDto>[] = useMemo(() => [
-    { title: intl.formatMessage({ id: 'pages.taskManagement.table.name' }), dataIndex: 'taskName', key: 'taskName', width: 200, sorter: true, render: (_: any, r: TaskDto) => <a onClick={() => set({ viewingTask: r, detailVisible: true })}>{r.taskName}</a> },
-    { title: intl.formatMessage({ id: 'pages.taskManagement.table.type' }), dataIndex: 'taskType', key: 'taskType', width: 100, sorter: true, render: (_: any, r: TaskDto) => r.taskType ? <Tag>{r.taskType}</Tag> : '-' },
-    { title: intl.formatMessage({ id: 'pages.taskManagement.table.projectName' }), dataIndex: 'projectName', key: 'projectName', width: 150, sorter: true, render: (_: any, r: TaskDto) => r.projectName || '-' },
-    { title: intl.formatMessage({ id: 'pages.taskManagement.table.status' }), dataIndex: 'statusName', key: 'status', width: 100, sorter: true, render: (_: any, r: TaskDto) => <Tag color={getTaskStatusColor(r.status)}>{r.statusName}</Tag> },
-    { title: intl.formatMessage({ id: 'pages.taskManagement.table.priority' }), dataIndex: 'priorityName', key: 'priority', width: 80, sorter: true, render: (_: any, r: TaskDto) => <Tag color={getTaskPriorityColor(r.priority)}>{r.priorityName}</Tag> },
-    { title: intl.formatMessage({ id: 'pages.taskManagement.table.progress' }), dataIndex: 'completionPercentage', key: 'completionPercentage', width: 120, sorter: true, render: (_: any, r: TaskDto) => <Progress percent={r.completionPercentage} size="small" status={r.completionPercentage === 100 ? 'success' : r.status === TaskStatusEnum.Failed ? 'exception' : 'active'} /> },
-    { title: intl.formatMessage({ id: 'pages.taskManagement.table.assignedTo' }), dataIndex: 'assignedToName', key: 'assignedTo', width: 100, sorter: true, render: (_: any, r: TaskDto) => r.assignedToName || '-' },
-    { title: intl.formatMessage({ id: 'pages.taskManagement.table.createdBy' }), dataIndex: 'createdByName', key: 'createdBy', width: 100, sorter: true, render: (_: any, r: TaskDto) => r.createdByName || '-' },
-    { title: intl.formatMessage({ id: 'pages.taskManagement.table.plannedEnd' }), dataIndex: 'plannedEndTime', key: 'plannedEndTime', width: 150, sorter: true, render: (_: any, r: TaskDto) => r.plannedEndTime ? dayjs(r.plannedEndTime).format('YYYY-MM-DD HH:mm') : '-' },
-    { title: intl.formatMessage({ id: 'pages.taskManagement.table.createdAt' }), dataIndex: 'createdAt', key: 'createdAt', width: 150, sorter: true, render: (_: any, r: TaskDto) => r.createdAt ? dayjs(r.createdAt).format('YYYY-MM-DD HH:mm') : '-' },
+    { title: intl.formatMessage({ id: 'pages.taskManagement.table.name' }), dataIndex: 'taskName', key: 'taskName', width: 200, sorter: true, render: (_: unknown, r: TaskDto) => <a onClick={() => set({ viewingTask: r, detailVisible: true })}>{r.taskName}</a> },
+    { title: intl.formatMessage({ id: 'pages.taskManagement.table.type' }), dataIndex: 'taskType', key: 'taskType', width: 100, sorter: true, render: (_: unknown, r: TaskDto) => r.taskType ? <Tag>{r.taskType}</Tag> : '-' },
+    { title: intl.formatMessage({ id: 'pages.taskManagement.table.projectName' }), dataIndex: 'projectName', key: 'projectName', width: 150, sorter: true, render: (_: unknown, r: TaskDto) => r.projectName || '-' },
+    { title: intl.formatMessage({ id: 'pages.taskManagement.table.status' }), dataIndex: 'statusName', key: 'status', width: 100, sorter: true, render: (_: unknown, r: TaskDto) => <Tag color={getTaskStatusColor(r.status)}>{r.statusName}</Tag> },
+    { title: intl.formatMessage({ id: 'pages.taskManagement.table.priority' }), dataIndex: 'priorityName', key: 'priority', width: 80, sorter: true, render: (_: unknown, r: TaskDto) => <Tag color={getTaskPriorityColor(r.priority)}>{r.priorityName}</Tag> },
+    { title: intl.formatMessage({ id: 'pages.taskManagement.table.progress' }), dataIndex: 'completionPercentage', key: 'completionPercentage', width: 120, sorter: true, render: (_: unknown, r: TaskDto) => <Progress percent={r.completionPercentage} size="small" status={r.completionPercentage === 100 ? 'success' : r.status === TaskStatusEnum.Failed ? 'exception' : 'active'} /> },
+    { title: intl.formatMessage({ id: 'pages.taskManagement.table.assignedTo' }), dataIndex: 'assignedToName', key: 'assignedTo', width: 100, sorter: true, render: (_: unknown, r: TaskDto) => r.assignedToName || '-' },
+    { title: intl.formatMessage({ id: 'pages.taskManagement.table.createdBy' }), dataIndex: 'createdByName', key: 'createdBy', width: 100, sorter: true, render: (_: unknown, r: TaskDto) => r.createdByName || '-' },
+    { title: intl.formatMessage({ id: 'pages.taskManagement.table.plannedEnd' }), dataIndex: 'plannedEndTime', key: 'plannedEndTime', width: 150, sorter: true, render: (_: unknown, r: TaskDto) => r.plannedEndTime ? dayjs(r.plannedEndTime).format('YYYY-MM-DD HH:mm') : '-' },
+    { title: intl.formatMessage({ id: 'pages.taskManagement.table.createdAt' }), dataIndex: 'createdAt', key: 'createdAt', width: 150, sorter: true, render: (_: unknown, r: TaskDto) => r.createdAt ? dayjs(r.createdAt).format('YYYY-MM-DD HH:mm') : '-' },
     { title: intl.formatMessage({ id: 'pages.table.action' }), key: 'action', valueType: 'option', fixed: 'right', width: 180, render: (_: React.ReactNode, r: TaskDto) => (
       <Space size={4}>
         <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingTask: r, formVisible: true })}>{intl.formatMessage({ id: 'pages.taskManagement.action.edit' })}</Button>
@@ -197,13 +197,14 @@ const TaskManagement: React.FC = () => {
 
   return (
     <PageContainer>
-      <ProTable actionRef={actionRef} request={async (params: Record<string, any>) => {
+      <ProTable actionRef={actionRef} request={async (params: { current?: number; pageSize?: number; [key: string]: unknown }) => {
         const { current, pageSize } = params;
         const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
         const res = await api.list({ page: current, pageSize, search: state.search, ...sortParams });
         loadStatistics();
         return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
       }} columns={columns} rowKey="id" search={false}
+        onChange={(_p, _f, s) => set({ sorter: Array.isArray(s) ? (s[0] as { field?: string; order?: 'ascend' | 'descend' })?.order ? { sortBy: (s[0] as { field?: string }).field || '', sortOrder: (s[0] as { order?: 'ascend' | 'descend' }).order === 'ascend' ? 'asc' : 'desc' } : undefined : s?.order ? { sortBy: (s as { field?: string }).field || '', sortOrder: (s as { order?: 'ascend' | 'descend' }).order === 'ascend' ? 'asc' : 'desc' } : undefined })}
         headerTitle={
           <Space size={24}>
             <Space><ProjectOutlined />任务管理</Space>
@@ -215,7 +216,6 @@ const TaskManagement: React.FC = () => {
             </Space>
           </Space>
         }
-        onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
         scroll={{ x: 'max-content' }}
         toolBarRender={() => [
           <Input.Search

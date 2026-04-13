@@ -9,7 +9,7 @@ import dayjs from 'dayjs';
 import { request } from '@umijs/max';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 
-interface FileShare { id: string; fileId: string; fileName: string; shareToken: string; shareType: 'internal' | 'external'; accessType: 'view' | 'download' | 'edit'; password: string; expiresAt?: string; maxDownloads?: number; downloadCount: number; accessCount: number; isEnabled: boolean; createdAt: string; createdBy?: string; createdByName?: string; }
+interface FileShare { id: string; fileId: string; fileName: string; shareToken: string; shareType: 'internal' | 'external'; accessType: 'view' | 'download' | 'edit'; password: string; expiresAt?: string; maxDownloads?: number; isEnabled: boolean; createdAt: string; createdBy?: string; createdByName?: string; }
 
 const api = {
     getMyShares: (params: PageParams) => request<ApiResponse<PagedResult<any>>>('/apiservice/api/file-share/my-shares', { params }),
@@ -52,7 +52,6 @@ const CloudStorageSharedPage: React.FC = () => {
         shareToken: item.shareToken, shareType: mapShareType(item.type), accessType: mapAccessType(item.permission),
         password: item.password || '', expiresAt: item.expiresAt,
         maxDownloads: typeof item.settings?.maxDownloads === 'number' ? item.settings.maxDownloads : (typeof item.maxDownloads === 'number' ? item.maxDownloads : undefined),
-        downloadCount: item.downloadCount || item.accessCount || 0, accessCount: item.accessCount || 0,
         isEnabled: item.isActive !== undefined ? item.isActive : item.isEnabled,
         createdAt: item.createdAt, createdBy: item.createdBy, createdByName: item.createdByName || item.createdByUsername || '',
     });
@@ -72,8 +71,7 @@ const CloudStorageSharedPage: React.FC = () => {
             if (r.expiresAt && dayjs(r.expiresAt).isBefore(dayjs())) return <Tag color="red">已过期</Tag>;
             return <Tag color="green">有效</Tag>;
         }},
-        { title: '访问次数', dataIndex: 'accessCount', key: 'accessCount', valueType: 'digit', sorter: true },
-        { title: '下载次数', dataIndex: 'downloadCount', key: 'downloadCount', valueType: 'digit', sorter: true },
+        { title: '下载次数限制', dataIndex: 'maxDownloads', key: 'maxDownloads', valueType: 'digit', sorter: true },
         { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', valueType: 'dateTime', sorter: true },
         {
             title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 180,

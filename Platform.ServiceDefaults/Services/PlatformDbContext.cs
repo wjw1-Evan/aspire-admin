@@ -116,19 +116,24 @@ public class PlatformDbContext : DbContext
 
     private void ApplyQueryFilter<TEntity>(ModelBuilder modelBuilder) where TEntity : class
     {
-        if (typeof(IMultiTenant).IsAssignableFrom(typeof(TEntity))
-            && typeof(ISoftDeletable).IsAssignableFrom(typeof(TEntity)))
+        var entityType = typeof(TEntity);
+        var hasCompanyIdProperty = entityType.GetProperty("CompanyId") != null;
+
+        if (!hasCompanyIdProperty) return;
+
+        if (typeof(IMultiTenant).IsAssignableFrom(entityType)
+            && typeof(ISoftDeletable).IsAssignableFrom(entityType))
         {
             modelBuilder.Entity<TEntity>().HasQueryFilter(
                 e => ((IMultiTenant)e).CompanyId == CurrentCompanyId
                     && ((ISoftDeletable)e).IsDeleted != true);
         }
-        else if (typeof(IMultiTenant).IsAssignableFrom(typeof(TEntity)))
+        else if (typeof(IMultiTenant).IsAssignableFrom(entityType))
         {
             modelBuilder.Entity<TEntity>().HasQueryFilter(
                 e => ((IMultiTenant)e).CompanyId == CurrentCompanyId);
         }
-        else if (typeof(ISoftDeletable).IsAssignableFrom(typeof(TEntity)))
+        else if (typeof(ISoftDeletable).IsAssignableFrom(entityType))
         {
             modelBuilder.Entity<TEntity>().HasQueryFilter(
                 e => ((ISoftDeletable)e).IsDeleted != true);

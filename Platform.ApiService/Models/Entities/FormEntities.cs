@@ -9,44 +9,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Platform.ApiService.Models;
 
 /// <summary>
-/// 表单字段类型
-/// </summary>
-public enum FormFieldType
-{
-    /// <summary>文本</summary>
-    Text,
-    /// <summary>多行文本</summary>
-    TextArea,
-    /// <summary>数字</summary>
-    Number,
-    /// <summary>日期</summary>
-    Date,
-    /// <summary>日期时间</summary>
-    DateTime,
-    /// <summary>下拉选择</summary>
-    Select,
-    /// <summary>单选</summary>
-    Radio,
-    /// <summary>复选框</summary>
-    Checkbox,
-    /// <summary>开关</summary>
-    Switch,
-    /// <summary>附件</summary>
-    Attachment
-}
-
-/// <summary>
-/// 表单目标（数据存储位置）
-/// </summary>
-public enum FormTarget
-{
-    /// <summary>文档数据</summary>
-    Document,
-    /// <summary>实例变量</summary>
-    Instance
-}
-
-/// <summary>
 /// 表单定义实体
 /// </summary>
 public class FormDefinition : MultiTenantEntity

@@ -113,34 +113,3 @@ public class NoticeIconItem : MultiTenantEntity
     public string? ActionType { get; set; }
 }
 
-/// <summary>
-/// 通知类型枚举
-/// </summary>
-public enum NoticeIconItemType
-{
-    /// <summary>
-    /// 通知
-    /// </summary>
-    Notification,
-
-    /// <summary>
-    /// 消息
-    /// </summary>
-    Message,
-
-    /// <summary>
-    /// 事件/待办
-    /// </summary>
-    Event,
-
-    /// <summary>
-    /// 任务相关
-    /// </summary>
-    Task,
-
-    /// <summary>
-    /// 系统消息
-    /// </summary>
-    System
-}
-

@@ -8,32 +8,6 @@ using Platform.ServiceDefaults.Models;
 namespace Platform.ApiService.Models;
 
 /// <summary>
-/// 聊天消息类型
-/// </summary>
-public enum ChatMessageType
-{
-    /// <summary>
-    /// 文本消息
-    /// </summary>
-    Text,
-
-    /// <summary>
-    /// 图片附件
-    /// </summary>
-    Image,
-
-    /// <summary>
-    /// 文件附件
-    /// </summary>
-    File,
-
-    /// <summary>
-    /// 系统消息
-    /// </summary>
-    System
-}
-
-/// <summary>
 /// 聊天附件信息
 /// </summary>
 public class ChatAttachmentInfo

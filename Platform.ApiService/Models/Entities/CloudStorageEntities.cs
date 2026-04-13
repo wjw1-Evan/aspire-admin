@@ -8,66 +8,6 @@ using Platform.ServiceDefaults.Models;
 namespace Platform.ApiService.Models;
 
 /// <summary>
-/// 文件项类型枚举
-/// </summary>
-public enum FileItemType
-{
-    /// <summary>文件</summary>
-    File = 0,
-
-    /// <summary>文件夹</summary>
-    Folder = 1
-}
-
-/// <summary>
-/// 文件状态枚举
-/// </summary>
-public enum FileStatus
-{
-    /// <summary>活跃状态</summary>
-    Active = 0,
-
-    /// <summary>在回收站中</summary>
-    InRecycleBin = 1,
-
-    /// <summary>已删除</summary>
-    Deleted = 2
-}
-
-/// <summary>
-/// 分享类型枚举
-/// </summary>
-public enum ShareType
-{
-    /// <summary>链接分享</summary>
-    Link = 0,
-
-    /// <summary>企业内部分享</summary>
-    Internal = 1,
-
-    /// <summary>公开分享</summary>
-    Public = 2
-}
-
-/// <summary>
-/// 分享权限枚举
-/// </summary>
-public enum SharePermission
-{
-    /// <summary>仅查看</summary>
-    View = 0,
-
-    /// <summary>查看和下载</summary>
-    Download = 1,
-
-    /// <summary>编辑权限</summary>
-    Edit = 2,
-
-    /// <summary>完全控制</summary>
-    Full = 3
-}
-
-/// <summary>
 /// 文件项实体模型（文件和文件夹）
 /// </summary>
 public class FileItem : MultiTenantEntity

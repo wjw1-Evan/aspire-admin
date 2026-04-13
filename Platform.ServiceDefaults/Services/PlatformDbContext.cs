@@ -101,6 +101,9 @@ public class PlatformDbContext : DbContext
         {
             modelBuilder.Entity(type);
 
+            var tableName = type.Name.ToLowerInvariant();
+            modelBuilder.Entity(type).ToCollection(tableName);
+
             if (typeof(IMultiTenant).IsAssignableFrom(type))
             {
                 typeof(PlatformDbContext)

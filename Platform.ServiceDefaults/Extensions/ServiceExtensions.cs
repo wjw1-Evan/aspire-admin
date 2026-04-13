@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using MongoDB.EntityFrameworkCore.Extensions;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using Microsoft.Extensions.Hosting;

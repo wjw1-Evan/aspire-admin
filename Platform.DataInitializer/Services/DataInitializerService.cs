@@ -41,7 +41,7 @@ public class DataInitializerService(
     private async Task SyncMenusAsync()
     {
         _logger.LogInformation("开始同步系统菜单...");
-        var menusCollection = _database.GetCollection<Menu>("menu");
+        var menusCollection = _database.GetCollection<Menu>("Menu");
 
         // 加载 JSON 数据
         var jsonPath = Path.Combine(AppContext.BaseDirectory, "Menus.json");

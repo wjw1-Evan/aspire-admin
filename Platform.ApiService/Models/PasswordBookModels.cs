@@ -1,6 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using Platform.ServiceDefaults.Attributes;
+
 using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
@@ -27,7 +27,6 @@ public enum PasswordStrengthLevel
 /// 密码本条目实体
 /// </summary>
 [BsonIgnoreExtraElements]
-[BsonCollectionName("passwordBookEntries")]
 public class PasswordBookEntry : MultiTenantEntity
 {
     /// <summary>平台名称</summary>

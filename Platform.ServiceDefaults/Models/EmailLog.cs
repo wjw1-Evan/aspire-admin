@@ -1,5 +1,4 @@
 using MongoDB.Bson.Serialization.Attributes;
-using Platform.ServiceDefaults.Attributes;
 
 namespace Platform.ServiceDefaults.Models;
 
@@ -17,7 +16,6 @@ public enum EmailStatus
 /// <summary>
 /// 邮件发送日志
 /// </summary>
-[BsonCollectionName("emaillogs")]
 public class EmailLog : BaseEntity
 {
     /// <summary>

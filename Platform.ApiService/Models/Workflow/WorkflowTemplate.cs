@@ -1,6 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using Platform.ServiceDefaults.Attributes;
+
 using Platform.ServiceDefaults.Models;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -10,7 +10,6 @@ namespace Platform.ApiService.Models.Workflow;
 /// 工作流模板
 /// </summary>
 [BsonIgnoreExtraElements]
-[BsonCollectionName("workflow_templates")]
 public class WorkflowTemplate : MultiTenantEntity
 {
     /// <summary>

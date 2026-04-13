@@ -1,6 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using Platform.ServiceDefaults.Attributes;
+
 using Platform.ServiceDefaults.Models;
 using System;
 using System.Collections.Generic;
@@ -78,7 +78,6 @@ public enum TaskExecutionResult
 /// 任务实体模型
 /// </summary>
 [BsonIgnoreExtraElements]
-[BsonCollectionName("tasks")]
 public class WorkTask : MultiTenantEntity
 {
     /// <summary>任务名称</summary>
@@ -215,7 +214,6 @@ public class TaskAttachment
 /// 任务执行日志模型
 /// </summary>
 [BsonIgnoreExtraElements]
-[BsonCollectionName("task_execution_logs")]
 public class TaskExecutionLog : MultiTenantEntity
 {
     /// <summary>任务ID</summary>

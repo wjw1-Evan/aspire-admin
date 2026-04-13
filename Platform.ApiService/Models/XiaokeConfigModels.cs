@@ -1,6 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using Platform.ServiceDefaults.Attributes;
+
 using Platform.ServiceDefaults.Models;
 using System.ComponentModel.DataAnnotations;
 
@@ -9,7 +9,6 @@ namespace Platform.ApiService.Models;
 /// <summary>
 /// 小科配置实体
 /// </summary>
-[BsonCollectionName("xiaokeConfigs")]
 public class XiaokeConfig : MultiTenantEntity
 {
     /// <summary>

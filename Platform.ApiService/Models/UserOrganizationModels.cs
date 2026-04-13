@@ -1,5 +1,5 @@
 using MongoDB.Bson.Serialization.Attributes;
-using Platform.ServiceDefaults.Attributes;
+
 using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
@@ -8,7 +8,6 @@ namespace Platform.ApiService.Models;
 /// 用户与组织架构的隶属关系（多租户隔离）
 /// </summary>
 [BsonIgnoreExtraElements]
-[BsonCollectionName("user_organizations")]
 public class UserOrganization : MultiTenantEntity
 {
     /// <summary>

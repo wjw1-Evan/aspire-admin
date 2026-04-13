@@ -1,7 +1,7 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using Platform.ServiceDefaults.Models;
-using Platform.ServiceDefaults.Attributes;
+
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Platform.ApiService.Models.Workflow;
@@ -10,7 +10,6 @@ namespace Platform.ApiService.Models.Workflow;
 /// 批量操作记录
 /// </summary>
 [BsonIgnoreExtraElements]
-[BsonCollectionName("bulk_operations")]
 public class BulkOperation : MultiTenantEntity
 {
     /// <summary>

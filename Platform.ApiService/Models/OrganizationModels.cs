@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using MongoDB.Bson.Serialization.Attributes;
-using Platform.ServiceDefaults.Attributes;
+
 using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
@@ -10,7 +10,6 @@ namespace Platform.ApiService.Models;
 /// 组织架构节点实体
 /// </summary>
 [BsonIgnoreExtraElements]
-[BsonCollectionName("organization_units")]
 public class OrganizationUnit : MultiTenantEntity
 {
     /// <summary>

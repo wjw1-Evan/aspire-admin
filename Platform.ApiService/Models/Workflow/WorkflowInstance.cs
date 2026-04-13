@@ -1,6 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using Platform.ServiceDefaults.Attributes;
+
 using Platform.ServiceDefaults.Models;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
@@ -11,7 +11,6 @@ namespace Platform.ApiService.Models.Workflow;
 /// 工作流实例实体
 /// </summary>
 [BsonIgnoreExtraElements]
-[BsonCollectionName("workflow_instances")]
 public class WorkflowInstance : MultiTenantEntity
 {
     // 门面属性和辅助方法（不持久化，用于代码适配）

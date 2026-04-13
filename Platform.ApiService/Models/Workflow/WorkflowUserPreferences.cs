@@ -1,6 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using Platform.ServiceDefaults.Attributes;
+
 using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models.Workflow;
@@ -9,7 +9,6 @@ namespace Platform.ApiService.Models.Workflow;
 /// 用户工作流过滤器偏好
 /// </summary>
 [BsonIgnoreExtraElements]
-[BsonCollectionName("user_workflow_filter_preferences")]
 public class UserWorkflowFilterPreference : MultiTenantEntity
 {
     /// <summary>

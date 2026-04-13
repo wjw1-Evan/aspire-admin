@@ -99,13 +99,6 @@ public class PlatformDbContext : DbContext
 
         foreach (var type in GetEntityTypes())
         {
-            var entityBuilder = modelBuilder.Entity(type);
-            var collectionName = type.GetCustomAttribute<Attributes.BsonCollectionNameAttribute>()?.Name
-                              ?? type.GetCustomAttribute<TableAttribute>()?.Name
-                              ?? $"{type.Name.ToLowerInvariant()}s";
-
-            entityBuilder.ToCollection(collectionName);
-
             if (typeof(IMultiTenant).IsAssignableFrom(type))
             {
                 typeof(PlatformDbContext)

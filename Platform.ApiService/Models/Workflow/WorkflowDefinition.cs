@@ -1,6 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using Platform.ServiceDefaults.Attributes;
+
 using Platform.ServiceDefaults.Models;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -318,7 +318,6 @@ public class ConditionRule
 
 
 [BsonIgnoreExtraElements]
-[BsonCollectionName("workflow_definitions")]
 public class WorkflowDefinition : MultiTenantEntity
 {
     [BsonElement("name")]

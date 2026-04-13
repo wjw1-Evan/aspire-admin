@@ -1,6 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using Platform.ServiceDefaults.Attributes;
+
 using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models.Workflow;
@@ -8,7 +8,6 @@ namespace Platform.ApiService.Models.Workflow;
 /// <summary>
 /// 知识库文档 - 用户录入的具体内容
 /// </summary>
-[BsonCollectionName("knowledge_documents")]
 public class KnowledgeDocument : MultiTenantEntity
 {
     [BsonElement("knowledgeBaseId")]

@@ -1,6 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using Platform.ServiceDefaults.Attributes;
+
 using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
@@ -13,7 +13,6 @@ namespace Platform.ApiService.Models;
 /// 注意：不实现 IMultiTenant，因为 CompanyId 是业务字段（表示用户所属的企业），不是多租户隔离字段
 /// 用户需要能够访问自己所在的所有企业，不应该被当前企业的多租户机制限制
 /// </summary>
-[BsonCollectionName("user_companies")]
 public class UserCompany : BaseEntity
 {
     /// <summary>

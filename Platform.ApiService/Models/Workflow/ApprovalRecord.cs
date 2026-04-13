@@ -1,6 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using Platform.ServiceDefaults.Attributes;
+
 using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models.Workflow;
@@ -9,7 +9,6 @@ namespace Platform.ApiService.Models.Workflow;
 /// 审批记录实体
 /// </summary>
 [BsonIgnoreExtraElements]
-[BsonCollectionName("approval_records")]
 public class ApprovalRecord : MultiTenantEntity
 {
     /// <summary>

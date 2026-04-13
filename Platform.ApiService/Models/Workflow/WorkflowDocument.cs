@@ -1,6 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using Platform.ServiceDefaults.Attributes;
+
 using Platform.ServiceDefaults.Models;
 using System.Text.Json.Serialization;
 
@@ -28,7 +28,6 @@ public enum DocumentStatus
 /// 公文实体
 /// </summary>
 [BsonIgnoreExtraElements]
-[BsonCollectionName("documents")]
 public class Document : MultiTenantEntity
 {
     /// <summary>

@@ -1,6 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using Platform.ServiceDefaults.Attributes;
+
 using Platform.ServiceDefaults.Models;
 using System;
 using System.Collections.Generic;
@@ -50,7 +50,6 @@ public enum FormTarget
 /// 表单定义实体
 /// </summary>
 [BsonIgnoreExtraElements]
-[BsonCollectionName("form_definitions")]
 public class FormDefinition : MultiTenantEntity
 {
     /// <summary>表单名称</summary>

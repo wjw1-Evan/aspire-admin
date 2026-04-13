@@ -16,10 +16,10 @@ import { SelectLang } from '@/components';
 import { App, Button, Form, Input, Space } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { createStyles } from 'antd-style';
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState } from 'react';
 import { Footer } from '@/components';
 import ImageCaptcha, { type ImageCaptchaRef } from '@/components/ImageCaptcha';
-import { checkUsernameExists, register, isCaptchaRequired } from '@/services/ant-design-pro/api';
+import { checkUsernameExists, register } from '@/services/ant-design-pro/api';
 import { PasswordEncryption } from '@/utils/encryption';
 import Settings from '../../../../config/defaultSettings';
 import { REGISTER_KNOWN_ERRORS, CAPTCHA_INVALID, CAPTCHA_REQUIRED } from '@/constants/errorCodes';
@@ -191,7 +191,6 @@ export default function Register() {
   const { styles } = useStyles();
   const [captchaId, setCaptchaId] = useState<string>('');
   const [captchaAnswer, setCaptchaAnswer] = useState<string>('');
-  const [showCaptcha, setShowCaptcha] = useState<boolean>(false); // 控制验证码显示
   const captchaRef = useRef<ImageCaptchaRef>(null);
 
   // 用户名检测状态
@@ -202,25 +201,6 @@ export default function Register() {
   const [usernameValue, setUsernameValue] = useState<string>('');
 
   const pageTitle = `${intl.formatMessage({ id: 'pages.register.title' })} - ${Settings.title}`;
-
-  // 检查是否需要验证码
-  useEffect(() => {
-    const checkCaptchaRequired = async () => {
-      try {
-        const response = await isCaptchaRequired('register');
-        if (response.success && response.data?.required) {
-          setShowCaptcha(true);
-          // 刷新验证码
-          if (captchaRef.current) {
-            captchaRef.current.refresh();
-          }
-        }
-      } catch (error) {
-        console.error('检查验证码需求失败:', error);
-      }
-    };
-    checkCaptchaRequired();
-  }, []);
 
   const handleSubmit = async (values: API.RegisterParams) => {
     try {
@@ -251,25 +231,13 @@ export default function Register() {
       const errorCode = response.code;
       const errorMsg = response.message || intl.formatMessage({ id: 'pages.login.failure' });
 
-      // 注册失败后显示验证码（业务逻辑）
+      // 注册失败后刷新验证码
       if (REGISTER_KNOWN_ERRORS.includes(errorCode as any)) {
-        setShowCaptcha(true);
         if ([CAPTCHA_INVALID, CAPTCHA_REQUIRED].includes(errorCode as any)) {
           if (captchaRef.current) {
             await captchaRef.current.refresh();
           }
         }
-      } else {
-        // 注册失败后也检查是否需要验证码
-        try {
-          const captchaRes = await isCaptchaRequired('register');
-          if (captchaRes.success && captchaRes.data?.required) {
-            setShowCaptcha(true);
-            if (captchaRef.current) {
-              captchaRef.current.refresh();
-            }
-          }
-        } catch {}
       }
 
       // 抛出错误，由全局错误处理统一显示错误提示
@@ -281,25 +249,13 @@ export default function Register() {
         error?.code ||
         error?.response?.data?.code;
 
-      // 注册失败后显示验证码（业务逻辑）
+      // 注册失败后刷新验证码
       if (REGISTER_KNOWN_ERRORS.includes(errorCode as any)) {
-        setShowCaptcha(true);
         if ([CAPTCHA_INVALID, CAPTCHA_REQUIRED].includes(errorCode as any)) {
           if (captchaRef.current) {
             await captchaRef.current.refresh();
           }
         }
-      } else {
-        // 注册失败后也检查是否需要验证码
-        try {
-          const captchaRes = await isCaptchaRequired('register');
-          if (captchaRes.success && captchaRes.data?.required) {
-            setShowCaptcha(true);
-            if (captchaRef.current) {
-              captchaRef.current.refresh();
-            }
-          }
-        } catch {}
       }
 
       // 不再重新抛出错误，避免触发 Unhandled Rejection Overlay
@@ -532,8 +488,7 @@ export default function Register() {
                   />
                 </Form.Item>
 
-                {showCaptcha && (
-                  <ImageCaptcha
+                <ImageCaptcha
                     ref={captchaRef}
                     value={captchaAnswer}
                     onChange={setCaptchaAnswer}
@@ -544,7 +499,6 @@ export default function Register() {
                     })}
                     size="large"
                   />
-                )}
 
                 <div className={styles.infoBox}>
                   <div className="info-title">

@@ -18,7 +18,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { flushSync } from 'react-dom';
 import { Footer } from '@/components';
 import ImageCaptcha, { type ImageCaptchaRef } from '@/components/ImageCaptcha';
-import { login, isCaptchaRequired } from '@/services/ant-design-pro/api';
+import { login } from '@/services/ant-design-pro/api';
 import { tokenUtils } from '@/utils/token';
 import { PasswordEncryption } from '@/utils/encryption';
 import Settings from '../../../../config/defaultSettings';
@@ -184,31 +184,12 @@ const Login: React.FC = () => {
   const type = 'account'; // 仅保留账号模式
   const [captchaId, setCaptchaId] = useState<string>('');
   const [captchaAnswer, setCaptchaAnswer] = useState<string>('');
-  const [showCaptcha, setShowCaptcha] = useState<boolean>(false); // 控制验证码显示
+  const [showCaptcha] = useState<boolean>(true); // 始终显示验证码
   const captchaRef = useRef<ImageCaptchaRef>(null);
   const { initialState, setInitialState } = useModel('@@initialState');
   const { styles } = useStyles();
   const { message } = App.useApp();
   const intl = useIntl();
-
-  // 检查是否需要验证码
-  useEffect(() => {
-    const checkCaptchaRequired = async () => {
-      try {
-        const response = await isCaptchaRequired('login');
-        if (response.success && response.data?.required) {
-          setShowCaptcha(true);
-          // 刷新验证码
-          if (captchaRef.current) {
-            captchaRef.current.refresh();
-          }
-        }
-      } catch (error) {
-        console.error('检查验证码需求失败:', error);
-      }
-    };
-    checkCaptchaRequired();
-  }, []);
 
   const fetchUserInfo = async () => {
     const userInfo = await initialState?.fetchUserInfo?.();
@@ -292,26 +273,14 @@ const Login: React.FC = () => {
         errorMsg = intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' });
       }
 
-      // 登录失败后显示验证码（业务逻辑）
+      // 登录失败后显示验证码
       const captchaErrors = [INVALID_CREDENTIALS, CAPTCHA_INVALID, CAPTCHA_REQUIRED, CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN];
       if (captchaErrors.includes(errorCode as any)) {
-        setShowCaptcha(true);
         if ([CAPTCHA_INVALID, CAPTCHA_REQUIRED, CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN].includes(errorCode as any)) {
           if (captchaRef.current) {
             await captchaRef.current.refresh();
           }
         }
-      } else {
-        // 登录失败后也检查是否需要验证码（可能因失败次数达到阈值）
-        try {
-          const captchaRes = await isCaptchaRequired('login');
-          if (captchaRes.success && captchaRes.data?.required) {
-            setShowCaptcha(true);
-            if (captchaRef.current) {
-              captchaRef.current.refresh();
-            }
-          }
-        } catch {}
       }
 
       // 设置错误状态（用于表单显示）
@@ -347,26 +316,14 @@ const Login: React.FC = () => {
       }
       setUserLoginState({ status: 'error', message: errorMsg });
 
-      // 登录失败后显示验证码（业务逻辑）
+      // 登录失败后刷新验证码
       const captchaErrors = [INVALID_CREDENTIALS, CAPTCHA_INVALID, CAPTCHA_REQUIRED, CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN];
       if (captchaErrors.includes(errorCode as any)) {
-        setShowCaptcha(true);
         if ([CAPTCHA_INVALID, CAPTCHA_REQUIRED, CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN].includes(errorCode as any)) {
           if (captchaRef.current) {
             await captchaRef.current.refresh();
           }
         }
-      } else {
-        // 登录失败后也检查是否需要验证码
-        try {
-          const captchaRes = await isCaptchaRequired('login');
-          if (captchaRes.success && captchaRes.data?.required) {
-            setShowCaptcha(true);
-            if (captchaRef.current) {
-              captchaRef.current.refresh();
-            }
-          }
-        } catch {}
       }
 
       // 显示友好的错误提示，不再抛出错误，避免显示技术性错误页面

@@ -296,14 +296,6 @@ public class FileShareController : BaseApiController
             if (share == null || fileInfo == null)
                 throw new ArgumentException("分享文件 {shareToken} 不存在");
 
-            // 记录访问日志
-            var ip = Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim()
-            ?? Request.Headers["X-Real-IP"].FirstOrDefault()
-            ?? HttpContext.Connection.RemoteIpAddress?.ToString()
-            ?? "Unknown";
-            var accessorInfo = $"IP: {ip}, UserAgent: {Request.Headers["User-Agent"].FirstOrDefault() ?? "Unknown"}";
-            await _fileShareService.RecordShareAccessAsync(shareToken, accessorInfo);
-
             // 包含权限信息，便于前端判断下载/预览能力
             var accessType = share.Permission switch
             {
@@ -372,14 +364,6 @@ public class FileShareController : BaseApiController
             // 获取文件流
             var stream = await _fileShareService.GetSharedFileContentAsync(shareToken, password);
 
-            // 记录访问日志
-            var ip = Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim()
-            ?? Request.Headers["X-Real-IP"].FirstOrDefault()
-            ?? HttpContext.Connection.RemoteIpAddress?.ToString()
-            ?? "Unknown";
-            var accessorInfo = $"IP: {ip}, UserAgent: {Request.Headers["User-Agent"].FirstOrDefault() ?? "Unknown"}, Action: Download";
-            await _fileShareService.RecordShareAccessAsync(shareToken, accessorInfo);
-
             return File(stream, fileInfo.MimeType, fileInfo.Name);
         }
         catch (ArgumentException ex)
@@ -423,13 +407,6 @@ public class FileShareController : BaseApiController
                 throw new ArgumentException("分享文件 {shareToken} 不存在");
 
             // 记录访问日志
-            var ip = Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim()
-            ?? Request.Headers["X-Real-IP"].FirstOrDefault()
-            ?? HttpContext.Connection.RemoteIpAddress?.ToString()
-            ?? "Unknown";
-            var accessorInfo = $"IP: {ip}, UserAgent: {Request.Headers["User-Agent"].FirstOrDefault() ?? "Unknown"}, Action: Preview";
-            await _fileShareService.RecordShareAccessAsync(shareToken, accessorInfo);
-
             // 构建预览信息
             var previewInfo = new
             {

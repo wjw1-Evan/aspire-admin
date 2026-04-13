@@ -76,11 +76,6 @@ public interface IFileShareService
     Task<bool> ValidateShareAccessAsync(string shareToken, string? password = null);
 
     /// <summary>
-    /// 记录分享访问日志
-    /// </summary>
-    Task RecordShareAccessAsync(string shareToken, string? accessorInfo = null);
-
-    /// <summary>
     /// 获取分享的文件内容
     /// </summary>
     Task<Stream> GetSharedFileContentAsync(string shareToken, string? password = null);

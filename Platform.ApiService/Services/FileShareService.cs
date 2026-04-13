@@ -292,23 +292,6 @@ public class FileShareService : IFileShareService
     }
 
     /// <summary>
-    /// 记录分享访问日志
-    /// </summary>
-    public async Task RecordShareAccessAsync(string shareToken, string? accessorInfo = null)
-    {
-        var share = await GetShareAsync(shareToken);
-        if (share == null)
-            return;
-
-        share.AccessCount++;
-        share.LastAccessedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
-
-        _logger.LogInformation("Recorded access for share {ShareId} with token {ShareToken}, accessor: {AccessorInfo}",
-            share.Id, shareToken, accessorInfo ?? "anonymous");
-    }
-
-    /// <summary>
     /// 获取分享的文件内容
     /// </summary>
     public async Task<Stream> GetSharedFileContentAsync(string shareToken, string? password = null)
@@ -324,9 +307,6 @@ public class FileShareService : IFileShareService
         // 检查权限是否允许下载
         if (share.Permission == SharePermission.View)
             throw new UnauthorizedAccessException("此分享仅允许查看，不允许下载");
-
-        // 记录访问日志
-        await RecordShareAccessAsync(shareToken);
 
         // 获取文件内容
         return await _cloudStorageService.DownloadFileAsync(share.FileItemId);
@@ -344,9 +324,6 @@ public class FileShareService : IFileShareService
         var share = await GetShareAsync(shareToken);
         if (share == null)
             return null;
-
-        // 记录访问日志
-        await RecordShareAccessAsync(shareToken);
 
         // 获取文件信息
         return await _cloudStorageService.GetFileItemAsync(share.FileItemId);

@@ -46,19 +46,19 @@ public class TenantContext(
 
         var filter = MongoDB.Driver.Builders<MongoDB.Bson.BsonDocument>.Filter.And(
             MongoDB.Driver.Builders<MongoDB.Bson.BsonDocument>.Filter.Eq("_id", MongoDB.Bson.ObjectId.TryParse(userId, out var oid) ? (object)oid : userId),
-            MongoDB.Driver.Builders<MongoDB.Bson.BsonDocument>.Filter.Ne("isDeleted", true)
+            MongoDB.Driver.Builders<MongoDB.Bson.BsonDocument>.Filter.Ne("IsDeleted", true)
         );
 
         var projection = MongoDB.Driver.Builders<MongoDB.Bson.BsonDocument>.Projection
-            .Include("isActive").Include("currentCompanyId").Include("personalCompanyId");
+            .Include("IsActive").Include("CurrentCompanyId").Include("PersonalCompanyId");
 
         var userDoc = await collection.Find(filter).Project(projection).FirstOrDefaultAsync();
         if (userDoc == null) return null;
 
-        if (!userDoc.GetValue("isActive", false).AsBoolean) return null;
+        if (!userDoc.GetValue("IsActive", false).AsBoolean) return null;
 
-        var currentCompanyId = userDoc.GetValue("currentCompanyId", MongoDB.Bson.BsonNull.Value);
-        var personalCompanyId = userDoc.GetValue("personalCompanyId", MongoDB.Bson.BsonNull.Value);
+        var currentCompanyId = userDoc.GetValue("CurrentCompanyId", MongoDB.Bson.BsonNull.Value);
+        var personalCompanyId = userDoc.GetValue("PersonalCompanyId", MongoDB.Bson.BsonNull.Value);
 
         return currentCompanyId.AsString ?? (personalCompanyId.IsObjectId ? personalCompanyId.AsObjectId.ToString() : null);
     }

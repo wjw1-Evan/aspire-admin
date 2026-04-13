@@ -33,16 +33,7 @@ public static class ServiceExtensions
         builder.AddMongoDBClient(connectionName);
         builder.AddMongoDbContext<PlatformDbContext>(connectionName);
 
-        // ── MongoDB 全局约定 ─────────────────────────────
-        // 集中在此注册，确保所有微服务行为一致
-        MongoDB.Bson.Serialization.Conventions.ConventionRegistry.Register(
-            "PlatformConventions",
-            new MongoDB.Bson.Serialization.Conventions.ConventionPack
-            {
-                new MongoDB.Bson.Serialization.Conventions.IgnoreExtraElementsConvention(true),
-                new MongoDB.Bson.Serialization.Conventions.CamelCaseElementNameConvention()
-            },
-            _ => true);
+
 
         // ── EF Core 基类注册 ──────────────────────────────
         // 确保所有注入 DbContext 的服务都能获取到 PlatformDbContext 实例

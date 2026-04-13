@@ -246,7 +246,7 @@ public class AuthController : BaseApiController
     /// <returns>是否需要验证码</returns>
     [HttpGet("captcha/required")]
     [AllowAnonymous]
-    public async Task<IActionResult> IsCaptchaRequired([FromQuery] string type = "login")
+    public async Task<IActionResult> IsCaptchaRequired([FromQuery] string type = "login", [FromQuery] string? username = null)
     {
         if (type != "login" && type != "register")
         {
@@ -254,7 +254,7 @@ public class AuthController : BaseApiController
         }
 
         var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString();
-        var required = await _imageCaptchaService.IsCaptchaRequiredAsync(type, clientIp);
+        var required = await _imageCaptchaService.IsCaptchaRequiredAsync(type, clientIp, username);
 
         return Success(new { required });
     }

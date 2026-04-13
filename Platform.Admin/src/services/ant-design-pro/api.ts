@@ -93,8 +93,10 @@ export async function verifyImageCaptcha(captchaId: string, captchaCode: string,
   return request('/apiservice/api/auth/captcha/verify-image', { method: 'POST', data: { captchaId, answer: captchaCode, type } });
 }
 
-export async function isCaptchaRequired(type?: 'login' | 'register'): Promise<ApiResponse<{ required: boolean }>> {
-  return request('/apiservice/api/auth/captcha/required', { method: 'GET', params: { type } });
+export async function isCaptchaRequired(type?: 'login' | 'register', username?: string): Promise<ApiResponse<{ required: boolean }>> {
+  const params: Record<string, string> = { type: type || 'login' };
+  if (username) params.username = username;
+  return request('/apiservice/api/auth/captcha/required', { method: 'GET', params });
 }
 
 export async function refreshToken(body: { refreshToken: string }): Promise<ApiResponse<LoginResult>> {

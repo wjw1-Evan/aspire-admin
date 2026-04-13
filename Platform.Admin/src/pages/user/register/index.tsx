@@ -262,7 +262,8 @@ export default function Register() {
       } else {
         // 注册失败后也检查是否需要验证码
         try {
-          const captchaRes = await isCaptchaRequired('register');
+          const username = (values as any).username || (values as any).Username;
+          const captchaRes = await isCaptchaRequired('register', username);
           if (captchaRes.success && captchaRes.data?.required) {
             setShowCaptcha(true);
             if (captchaRef.current) {
@@ -292,7 +293,8 @@ export default function Register() {
       } else {
         // 注册失败后也检查是否需要验证码
         try {
-          const captchaRes = await isCaptchaRequired('register');
+          const username = (values as any).username || (values as any).Username;
+          const captchaRes = await isCaptchaRequired('register', username);
           if (captchaRes.success && captchaRes.data?.required) {
             setShowCaptcha(true);
             if (captchaRef.current) {

@@ -304,7 +304,8 @@ const Login: React.FC = () => {
       } else {
         // 登录失败后也检查是否需要验证码（可能因失败次数达到阈值）
         try {
-          const captchaRes = await isCaptchaRequired('login');
+          const username = (values as any).username || (values as any).Username;
+          const captchaRes = await isCaptchaRequired('login', undefined, username);
           if (captchaRes.success && captchaRes.data?.required) {
             setShowCaptcha(true);
             if (captchaRef.current) {
@@ -357,9 +358,9 @@ const Login: React.FC = () => {
           }
         }
       } else {
-        // 登录失败后也检查是否需要验证码
+        // 登录失败后也检查是否需要验证码（可能因失败次数达到阈值）
         try {
-          const captchaRes = await isCaptchaRequired('login');
+          const captchaRes = await isCaptchaRequired('login', undefined);
           if (captchaRes.success && captchaRes.data?.required) {
             setShowCaptcha(true);
             if (captchaRef.current) {

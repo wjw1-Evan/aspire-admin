@@ -21,5 +21,5 @@ public interface IImageCaptchaService
     /// <summary>
     /// 检查是否需要验证码（根据失败次数）
     /// </summary>
-    Task<bool> IsCaptchaRequiredAsync(string type = "login", string? clientIp = null);
+    Task<bool> IsCaptchaRequiredAsync(string type = "login", string? clientIp = null, string? username = null);
 }

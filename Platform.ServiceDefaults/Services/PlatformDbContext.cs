@@ -104,7 +104,7 @@ public class PlatformDbContext : DbContext
             var tableName = type.Name.ToLowerInvariant();
             modelBuilder.Entity(type).ToCollection(tableName);
 
-            if (typeof(IMultiTenant).IsAssignableFrom(type))
+            if (typeof(IMultiTenant).IsAssignableFrom(type) || typeof(ISoftDeletable).IsAssignableFrom(type))
             {
                 typeof(PlatformDbContext)
                     .GetMethod(nameof(ApplyQueryFilter), BindingFlags.NonPublic | BindingFlags.Instance)!

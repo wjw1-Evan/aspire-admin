@@ -15,7 +15,6 @@ namespace Platform.ApiService.Services;
 public class RegistrationService : IRegistrationService
 {
     private readonly DbContext _context;
-    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IUserService _userService;
     private readonly IUniquenessChecker _uniquenessChecker;
     private readonly IFieldValidationService _validationService;
@@ -26,7 +25,6 @@ public class RegistrationService : IRegistrationService
 
     public RegistrationService(
         DbContext context,
-        IHttpContextAccessor httpContextAccessor,
         IUserService userService,
         IUniquenessChecker uniquenessChecker,
         IFieldValidationService validationService,
@@ -36,7 +34,6 @@ public class RegistrationService : IRegistrationService
         ILogger<RegistrationService> logger)
     {
         _context = context;
-        _httpContextAccessor = httpContextAccessor;
         _userService = userService;
         _uniquenessChecker = uniquenessChecker;
         _validationService = validationService;
@@ -44,72 +41,6 @@ public class RegistrationService : IRegistrationService
         _imageCaptchaService = imageCaptchaService;
         _encryptionService = encryptionService;
         _logger = logger;
-    }
-
-    private string GetClientIdentifier(string? username = null)
-    {
-        if (!string.IsNullOrEmpty(username))
-        {
-            return username.ToLowerInvariant();
-        }
-        var httpContext = _httpContextAccessor.HttpContext;
-        return httpContext?.Connection?.RemoteIpAddress?.ToString() ?? "unknown";
-    }
-
-    private async Task<int> GetFailureCountAsync(string clientId, string type)
-    {
-        var record = await _context.Set<LoginFailureRecord>()
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(r =>
-                r.ClientId == clientId &&
-                r.Type == type &&
-                r.ExpiresAt > DateTime.UtcNow);
-        return record?.FailureCount ?? 0;
-    }
-
-    private async Task RecordFailureAsync(string clientId, string type)
-    {
-        var existingRecord = await _context.Set<LoginFailureRecord>()
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(r =>
-                r.ClientId == clientId &&
-                r.Type == type);
-
-        if (existingRecord != null)
-        {
-            existingRecord.FailureCount++;
-            existingRecord.LastFailureAt = DateTime.UtcNow;
-            existingRecord.ExpiresAt = DateTime.UtcNow.AddMinutes(AuthConstants.LoginFailureExpiresMinutes);
-        }
-        else
-        {
-            var newRecord = new LoginFailureRecord
-            {
-                ClientId = clientId,
-                Type = type,
-                FailureCount = 1,
-                LastFailureAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(AuthConstants.LoginFailureExpiresMinutes)
-            };
-            await _context.Set<LoginFailureRecord>().AddAsync(newRecord);
-        }
-
-        await _context.SaveChangesAsync();
-    }
-
-    private async Task ClearFailureAsync(string clientId, string type)
-    {
-        var record = await _context.Set<LoginFailureRecord>()
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(r =>
-                r.ClientId == clientId &&
-                r.Type == type &&
-                r.IsDeleted != true);
-        if (record != null)
-        {
-            _context.Set<LoginFailureRecord>().Remove(record);
-            await _context.SaveChangesAsync();
-        }
     }
 
     /// <inheritdoc/>

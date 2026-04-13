@@ -47,68 +47,6 @@ public class LoginService : ILoginService
         _validationService = validationService;
     }
 
-    private async Task<int> GetFailureCountAsync(string clientId, string type)
-    {
-        var record = await _context.Set<LoginFailureRecord>()
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(r =>
-                r.ClientId == clientId &&
-                r.Type == type &&
-                r.ExpiresAt > DateTime.UtcNow);
-        return record?.FailureCount ?? 0;
-    }
-
-    private async Task RecordFailureAsync(string clientId, string type)
-    {
-        var existingRecord = await _context.Set<LoginFailureRecord>()
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(r =>
-                r.ClientId == clientId &&
-                r.Type == type);
-
-        if (existingRecord != null)
-        {
-            existingRecord.FailureCount++;
-            existingRecord.LastFailureAt = DateTime.UtcNow;
-            existingRecord.ExpiresAt = DateTime.UtcNow.AddMinutes(AuthConstants.LoginFailureExpiresMinutes);
-        }
-        else
-        {
-            var newRecord = new LoginFailureRecord
-            {
-                ClientId = clientId,
-                Type = type,
-                FailureCount = 1,
-                LastFailureAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(AuthConstants.LoginFailureExpiresMinutes)
-            };
-            await _context.Set<LoginFailureRecord>().AddAsync(newRecord);
-        }
-
-        await _context.SaveChangesAsync();
-    }
-
-    private async Task ClearFailureAsync(string clientId, string type)
-    {
-        var record = await _context.Set<LoginFailureRecord>()
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(r =>
-                r.ClientId == clientId &&
-                r.Type == type &&
-                r.IsDeleted != true);
-        if (record != null)
-        {
-            _context.Set<LoginFailureRecord>().Remove(record);
-            await _context.SaveChangesAsync();
-        }
-    }
-
-    private string GetClientIdentifier(string? username = null)
-    {
-        var httpContext = _httpContextAccessor.HttpContext;
-        return httpContext?.Connection?.RemoteIpAddress?.ToString() ?? "unknown";
-    }
-
     public async Task<LoginData> LoginAsync(LoginRequest request)
     {
         if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))

@@ -259,6 +259,17 @@ export default function Register() {
             await captchaRef.current.refresh();
           }
         }
+      } else {
+        // 注册失败后也检查是否需要验证码
+        try {
+          const captchaRes = await isCaptchaRequired('register');
+          if (captchaRes.success && captchaRes.data?.required) {
+            setShowCaptcha(true);
+            if (captchaRef.current) {
+              captchaRef.current.refresh();
+            }
+          }
+        } catch {}
       }
 
       // 抛出错误，由全局错误处理统一显示错误提示
@@ -278,6 +289,17 @@ export default function Register() {
             await captchaRef.current.refresh();
           }
         }
+      } else {
+        // 注册失败后也检查是否需要验证码
+        try {
+          const captchaRes = await isCaptchaRequired('register');
+          if (captchaRes.success && captchaRes.data?.required) {
+            setShowCaptcha(true);
+            if (captchaRef.current) {
+              captchaRef.current.refresh();
+            }
+          }
+        } catch {}
       }
 
       // 不再重新抛出错误，避免触发 Unhandled Rejection Overlay

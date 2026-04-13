@@ -294,10 +294,9 @@ const Login: React.FC = () => {
 
       // 登录失败后显示验证码（业务逻辑）
       const captchaErrors = [INVALID_CREDENTIALS, CAPTCHA_INVALID, CAPTCHA_REQUIRED, CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN];
-      const needsCaptchaByMessage = backendMessage === '需要验证码';
-      if (captchaErrors.includes(errorCode as any) || needsCaptchaByMessage) {
+      if (captchaErrors.includes(errorCode as any)) {
         setShowCaptcha(true);
-        if (needsCaptchaByMessage || [CAPTCHA_INVALID, CAPTCHA_REQUIRED, CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN].includes(errorCode as any)) {
+        if ([CAPTCHA_INVALID, CAPTCHA_REQUIRED, CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN].includes(errorCode as any)) {
           if (captchaRef.current) {
             await captchaRef.current.refresh();
           }
@@ -339,10 +338,9 @@ const Login: React.FC = () => {
 
       // 登录失败后显示验证码（业务逻辑）
       const captchaErrors = [INVALID_CREDENTIALS, CAPTCHA_INVALID, CAPTCHA_REQUIRED, CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN];
-      const needsCaptchaByMessage = backendMessage === '需要验证码';
-      if (captchaErrors.includes(errorCode as any) || needsCaptchaByMessage) {
+      if (captchaErrors.includes(errorCode as any)) {
         setShowCaptcha(true);
-        if (needsCaptchaByMessage || [CAPTCHA_INVALID, CAPTCHA_REQUIRED, CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN].includes(errorCode as any)) {
+        if ([CAPTCHA_INVALID, CAPTCHA_REQUIRED, CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN].includes(errorCode as any)) {
           if (captchaRef.current) {
             await captchaRef.current.refresh();
           }

@@ -7,7 +7,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Platform.ApiService.Models;
 
 
-
 /// <summary>
 /// 应用用户实体（多企业模型）
 /// v3.1: 用户与企业是多对多关系，通过 UserCompany 中间表管理
@@ -71,7 +70,7 @@ public class AppUser : BaseEntity
 
     /// <summary>
     /// 个人企业ID（注册时自动创建，v3.1新增）
-    /// 用户永远拥有的默认“个人空间”企业 ID。当 CurrentCompanyId 丢失时作为最终后备。
+    /// 用户永远拥有的默认"个人空间"企业 ID。当 CurrentCompanyId 丢失时作为最终后备。
     /// ⚠️ 请勿将其与用户自身的 ID (Id) 混淆。
     /// </summary>
     [StringLength(50)]
@@ -172,51 +171,4 @@ public class RefreshToken : BaseEntity
     /// 撤销原因
     /// </summary>
     public string? RevokedReason { get; set; }
-}
-
-/// <summary>
-/// 发送重置密码验证码请求
-/// </summary>
-public class SendResetCodeRequest
-{
-    /// <summary>
-    /// 邮箱地址
-    /// </summary>
-    [Required(ErrorMessage = "邮箱不能为空")]
-    [EmailAddress(ErrorMessage = "邮箱格式不正确")]
-    public string Email { get; set; } = string.Empty;
-}
-
-/// <summary>
-/// 重置密码请求
-/// </summary>
-public class ResetPasswordRequest
-{
-    /// <summary>
-    /// 邮箱地址
-    /// </summary>
-    [Required(ErrorMessage = "邮箱不能为空")]
-    [EmailAddress(ErrorMessage = "邮箱格式不正确")]
-    public string Email { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 验证码
-    /// </summary>
-    [Required(ErrorMessage = "验证码不能为空")]
-    [StringLength(6, MinimumLength = 6, ErrorMessage = "验证码必须为6位")]
-    public string Code { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 新密码
-    /// </summary>
-    [Required(ErrorMessage = "新密码不能为空")]
-    [StringLength(2000, MinimumLength = 6, ErrorMessage = "新密码长度不符合要求")]
-    public string NewPassword { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 确认密码
-    /// </summary>
-    [Required(ErrorMessage = "确认密码不能为空")]
-    [Compare("NewPassword", ErrorMessage = "新密码和确认密码不一致")]
-    public string ConfirmPassword { get; set; } = string.Empty;
 }

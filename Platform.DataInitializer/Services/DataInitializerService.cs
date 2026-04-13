@@ -1,7 +1,6 @@
 using System.Text.Json;
 using MongoDB.Driver;
 using Platform.ServiceDefaults.Models;
-using Platform.DataInitializer.Scripts;
 
 namespace Platform.DataInitializer.Services;
 
@@ -28,10 +27,6 @@ public class DataInitializerService(
         _logger.LogInformation("========== 开始数据初始化 ==========");
         try
         {
-            // 1. 创建索引
-            await new CreateAllIndexes(_database, _loggerFactory.CreateLogger<CreateAllIndexes>()).ExecuteAsync();
-
-            // 2. 同步菜单
             await SyncMenusAsync();
 
             _logger.LogInformation("========== 数据初始化完成 ==========");
@@ -46,7 +41,7 @@ public class DataInitializerService(
     private async Task SyncMenusAsync()
     {
         _logger.LogInformation("开始同步系统菜单...");
-        var menusCollection = _database.GetCollection<Menu>("menus");
+        var menusCollection = _database.GetCollection<Menu>("menu");
 
         // 加载 JSON 数据
         var jsonPath = Path.Combine(AppContext.BaseDirectory, "Menus.json");
@@ -69,7 +64,7 @@ public class DataInitializerService(
             var existing = await menusCollection.Find(m => m.Name == menu.Name && m.IsDeleted != true).FirstOrDefaultAsync();
             if (existing == null)
             {
-                menu.CreatedAt =  now;
+                menu.CreatedAt = now;
                 await menusCollection.InsertOneAsync(menu);
                 menuMap[menu.Name] = menu.Id;
                 _logger.LogInformation("✅ 创建菜单: {Title}", menu.Title);

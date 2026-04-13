@@ -42,7 +42,7 @@ public class TenantContext(
 
     private async Task<string?> LoadCompanyIdAsync(string userId)
     {
-        var collection = database.GetCollection<MongoDB.Bson.BsonDocument>("appusers");
+        var collection = database.GetCollection<MongoDB.Bson.BsonDocument>("appuser");
 
         var filter = MongoDB.Driver.Builders<MongoDB.Bson.BsonDocument>.Filter.And(
             MongoDB.Driver.Builders<MongoDB.Bson.BsonDocument>.Filter.Eq("_id", MongoDB.Bson.ObjectId.TryParse(userId, out var oid) ? (object)oid : userId),

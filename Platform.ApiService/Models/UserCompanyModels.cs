@@ -18,49 +18,41 @@ public class UserCompany : BaseEntity
     /// <summary>
     /// 用户ID
     /// </summary>
-    [BsonElement("userId")]
     public string UserId { get; set; } = string.Empty;
 
     /// <summary>
     /// 企业ID
     /// </summary>
-    [BsonElement("companyId")]
     public string CompanyId { get; set; } = string.Empty;
 
     /// <summary>
     /// 用户在该企业的角色列表
     /// </summary>
-    [BsonElement("roleIds")]
     public List<string> RoleIds { get; set; } = new();
 
     /// <summary>
     /// 是否是该企业的管理员
     /// </summary>
-    [BsonElement("isAdmin")]
     public bool IsAdmin { get; set; } = false;
 
     /// <summary>
     /// 成员状态：active, pending, rejected, inactive
     /// </summary>
-    [BsonElement("status")]
     public string Status { get; set; } = "active";
 
     /// <summary>
     /// 加入时间
     /// </summary>
-    [BsonElement("joinedAt")]
     public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
     /// 审核人ID（管理员）
     /// </summary>
-    [BsonElement("approvedBy")]
     public string? ApprovedBy { get; set; }
 
     /// <summary>
     /// 审核时间
     /// </summary>
-    [BsonElement("approvedAt")]
     public DateTime? ApprovedAt { get; set; }
 
 }
@@ -74,43 +66,36 @@ public class CompanyJoinRequest : BaseEntity
     /// <summary>
     /// 申请人用户ID
     /// </summary>
-    [BsonElement("userId")]
     public string UserId { get; set; } = string.Empty;
 
     /// <summary>
     /// 目标企业ID
     /// </summary>
-    [BsonElement("companyId")]
     public string CompanyId { get; set; } = string.Empty;
 
     /// <summary>
     /// 申请状态：pending, approved, rejected, cancelled
     /// </summary>
-    [BsonElement("status")]
     public string Status { get; set; } = "pending";
 
     /// <summary>
     /// 申请理由
     /// </summary>
-    [BsonElement("reason")]
     public string? Reason { get; set; }
 
     /// <summary>
     /// 审核人ID（管理员）
     /// </summary>
-    [BsonElement("reviewedBy")]
     public string? ReviewedBy { get; set; }
 
     /// <summary>
     /// 审核时间
     /// </summary>
-    [BsonElement("reviewedAt")]
     public DateTime? ReviewedAt { get; set; }
 
     /// <summary>
     /// 拒绝原因
     /// </summary>
-    [BsonElement("rejectReason")]
     public string? RejectReason { get; set; }
 
 }
@@ -154,31 +139,26 @@ public class CompanySearchResult
     /// <summary>
     /// 成员状态（如果已加入）
     /// </summary>
-    [System.Text.Json.Serialization.JsonPropertyName("memberStatus")]
     public string? MemberStatus { get; set; }
 
     /// <summary>
     /// 企业成员数量
     /// </summary>
-    [System.Text.Json.Serialization.JsonPropertyName("memberCount")]
     public int MemberCount { get; set; }
 
     /// <summary>
     /// 待处理申请的ID（如果有）
     /// </summary>
-    [System.Text.Json.Serialization.JsonPropertyName("requestId")]
     public string? RequestId { get; set; }
 
     /// <summary>
     /// 是否是该企业的创建者
     /// </summary>
-    [System.Text.Json.Serialization.JsonPropertyName("isCreator")]
     public bool IsCreator { get; set; }
 
     /// <summary>
     /// 创建人姓名
     /// </summary>
-    [System.Text.Json.Serialization.JsonPropertyName("creatorName")]
     public string? CreatorName { get; set; }
 }
 

@@ -13,7 +13,6 @@ public class UserLocationBeacon : MultiTenantEntity
     /// <summary>
     /// 用户标识。
     /// </summary>
-    [BsonElement("userId")]
     [BsonRepresentation(BsonType.ObjectId)]
     [Required]
     public string UserId { get; set; } = string.Empty;
@@ -21,58 +20,49 @@ public class UserLocationBeacon : MultiTenantEntity
     /// <summary>
     /// 纬度（单位：度）。
     /// </summary>
-    [BsonElement("latitude")]
     [Range(-90, 90)]
     public double Latitude { get; set; }
 
     /// <summary>
     /// 经度（单位：度）。
     /// </summary>
-    [BsonElement("longitude")]
     [Range(-180, 180)]
     public double Longitude { get; set; }
 
     /// <summary>
     /// 定位精度（单位：米）。
     /// </summary>
-    [BsonElement("accuracy")]
     [Range(0, 10000)]
     public double? Accuracy { get; set; }
 
     /// <summary>
     /// 海拔高度（单位：米）。
     /// </summary>
-    [BsonElement("altitude")]
     public double? Altitude { get; set; }
 
     /// <summary>
     /// 航向角（单位：度）。
     /// </summary>
-    [BsonElement("heading")]
     public double? Heading { get; set; }
 
     /// <summary>
     /// 移动速度（单位：米/秒）。
     /// </summary>
-    [BsonElement("speed")]
     public double? Speed { get; set; }
 
     /// <summary>
     /// 最近一次上报时间（UTC）。
     /// </summary>
-    [BsonElement("lastSeenAt")]
     public DateTime LastSeenAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
     /// 所在城市（通过逆地理编码获取）。
     /// </summary>
-    [BsonElement("city")]
     public string? City { get; set; }
 
     /// <summary>
     /// 所在国家（通过逆地理编码获取）。
     /// </summary>
-    [BsonElement("country")]
     public string? Country { get; set; }
 }
 

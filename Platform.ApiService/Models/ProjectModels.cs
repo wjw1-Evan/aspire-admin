@@ -95,57 +95,38 @@ public enum MilestoneStatus
 /// 项目实体模型
 /// </summary>
 [BsonIgnoreExtraElements]
-[Table("projects")]
 public class Project : MultiTenantEntity
 {
     /// <summary>项目名称</summary>
     [Required]
     [StringLength(200)]
-    [Column("name")]
-    [BsonElement("name")]
     public string Name { get; set; } = string.Empty;
 
     /// <summary>项目描述</summary>
     [StringLength(2000)]
-    [Column("description")]
-    [BsonElement("description")]
     public string? Description { get; set; }
 
     /// <summary>项目状态</summary>
-    [Column("status")]
-    [BsonElement("status")]
     [BsonRepresentation(BsonType.Int32)]
     public ProjectStatus Status { get; set; } = ProjectStatus.Planning;
 
     /// <summary>开始日期</summary>
-    [Column("startDate")]
-    [BsonElement("startDate")]
     public DateTime? StartDate { get; set; }
 
     /// <summary>结束日期</summary>
-    [Column("endDate")]
-    [BsonElement("endDate")]
     public DateTime? EndDate { get; set; }
 
     /// <summary>进度百分比（0-100，自动计算）</summary>
     [Range(0, 100)]
-    [Column("progress")]
-    [BsonElement("progress")]
     public int Progress { get; set; } = 0;
 
     /// <summary>项目成员ID列表</summary>
-    [Column("memberIds")]
-    [BsonElement("memberIds")]
     public List<string>? MemberIds { get; set; } = new();
 
     /// <summary>预算（可选）</summary>
-    [Column("budget")]
-    [BsonElement("budget")]
     public decimal? Budget { get; set; }
 
     /// <summary>优先级</summary>
-    [Column("priority")]
-    [BsonElement("priority")]
     [BsonRepresentation(BsonType.Int32)]
     public ProjectPriority Priority { get; set; } = ProjectPriority.Medium;
 }
@@ -154,33 +135,24 @@ public class Project : MultiTenantEntity
 /// 任务依赖实体模型
 /// </summary>
 [BsonIgnoreExtraElements]
-[Table("taskDependencies")]
 public class TaskDependency : MultiTenantEntity
 {
     /// <summary>前置任务ID</summary>
     [Required]
     [StringLength(100)]
-    [Column("predecessorTaskId")]
-    [BsonElement("predecessorTaskId")]
     public string PredecessorTaskId { get; set; } = string.Empty;
 
     /// <summary>后续任务ID</summary>
     [Required]
     [StringLength(100)]
-    [Column("successorTaskId")]
-    [BsonElement("successorTaskId")]
     public string SuccessorTaskId { get; set; } = string.Empty;
 
     /// <summary>依赖类型</summary>
-    [Column("dependencyType")]
-    [BsonElement("dependencyType")]
     [BsonRepresentation(BsonType.Int32)]
     public TaskDependencyType DependencyType { get; set; } = TaskDependencyType.FinishToStart;
 
     /// <summary>延迟天数</summary>
     [Range(0, 365)]
-    [Column("lagDays")]
-    [BsonElement("lagDays")]
     public int LagDays { get; set; } = 0;
 }
 
@@ -188,33 +160,24 @@ public class TaskDependency : MultiTenantEntity
 /// 项目成员实体模型
 /// </summary>
 [BsonIgnoreExtraElements]
-[Table("projectMembers")]
 public class ProjectMember : MultiTenantEntity
 {
     /// <summary>项目ID</summary>
     [Required]
     [StringLength(100)]
-    [Column("projectId")]
-    [BsonElement("projectId")]
     public string ProjectId { get; set; } = string.Empty;
 
     /// <summary>用户ID</summary>
     [Required]
     [StringLength(100)]
-    [Column("userId")]
-    [BsonElement("userId")]
     public string UserId { get; set; } = string.Empty;
 
     /// <summary>角色</summary>
-    [Column("role")]
-    [BsonElement("role")]
     [BsonRepresentation(BsonType.Int32)]
     public ProjectMemberRole Role { get; set; } = ProjectMemberRole.Member;
 
     /// <summary>资源分配百分比（0-100）</summary>
     [Range(0, 100)]
-    [Column("allocation")]
-    [BsonElement("allocation")]
     public int Allocation { get; set; } = 100;
 }
 
@@ -222,39 +185,28 @@ public class ProjectMember : MultiTenantEntity
 /// 项目里程碑实体模型
 /// </summary>
 [BsonIgnoreExtraElements]
-[Table("milestones")]
 public class Milestone : MultiTenantEntity
 {
     /// <summary>项目ID</summary>
     [Required]
     [StringLength(100)]
-    [Column("projectId")]
-    [BsonElement("projectId")]
     public string ProjectId { get; set; } = string.Empty;
 
     /// <summary>里程碑名称</summary>
     [Required]
     [StringLength(200)]
-    [Column("name")]
-    [BsonElement("name")]
     public string Name { get; set; } = string.Empty;
 
     /// <summary>目标日期</summary>
     [Required]
-    [Column("targetDate")]
-    [BsonElement("targetDate")]
     public DateTime TargetDate { get; set; }
 
     /// <summary>状态</summary>
-    [Column("status")]
-    [BsonElement("status")]
     [BsonRepresentation(BsonType.Int32)]
     public MilestoneStatus Status { get; set; } = MilestoneStatus.Pending;
 
     /// <summary>描述</summary>
     [StringLength(1000)]
-    [Column("description")]
-    [BsonElement("description")]
     public string? Description { get; set; }
 }
 

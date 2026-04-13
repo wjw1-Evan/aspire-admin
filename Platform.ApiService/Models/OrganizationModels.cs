@@ -15,37 +15,31 @@ public class OrganizationUnit : MultiTenantEntity
     /// <summary>
     /// 节点名称
     /// </summary>
-    [BsonElement("name")]
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
     /// 节点编码（可选）
     /// </summary>
-    [BsonElement("code")]
     public string? Code { get; set; }
 
     /// <summary>
     /// 父级节点ID（根节点为空）
     /// </summary>
-    [BsonElement("parentId")]
     public string? ParentId { get; set; }
 
     /// <summary>
     /// 描述
     /// </summary>
-    [BsonElement("description")]
     public string? Description { get; set; }
 
     /// <summary>
     /// 排序值（数字越小越靠前）
     /// </summary>
-    [BsonElement("sortOrder")]
     public int SortOrder { get; set; } = 1;
 
     /// <summary>
     /// 负责人用户ID（可选）
     /// </summary>
-    [BsonElement("managerUserId")]
     public string? ManagerUserId { get; set; }
 }
 

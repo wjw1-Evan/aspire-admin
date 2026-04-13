@@ -30,43 +30,33 @@ public enum PasswordStrengthLevel
 public class PasswordBookEntry : MultiTenantEntity
 {
     /// <summary>平台名称</summary>
-    [BsonElement("platform")]
     public string Platform { get; set; } = string.Empty;
 
     /// <summary>账号</summary>
-    [BsonElement("account")]
     public string Account { get; set; } = string.Empty;
 
     /// <summary>加密后的密码</summary>
-    [BsonElement("encryptedPassword")]
     public string EncryptedPassword { get; set; } = string.Empty;
 
     /// <summary>网址</summary>
-    [BsonElement("url")]
     public string? Url { get; set; }
 
     /// <summary>分类</summary>
-    [BsonElement("category")]
     public string? Category { get; set; }
 
     /// <summary>标签列表</summary>
-    [BsonElement("tags")]
     public List<string> Tags { get; set; } = new();
 
     /// <summary>备注</summary>
-    [BsonElement("notes")]
     public string? Notes { get; set; }
 
     /// <summary>最后使用时间</summary>
-    [BsonElement("lastUsedAt")]
     public DateTime? LastUsedAt { get; set; }
 
     /// <summary>创建者用户ID（用于加密密钥派生）</summary>
-    [BsonElement("userId")]
     public string UserId { get; set; } = string.Empty;
 
     /// <summary>是否公有（true: 企业内可见, false: 仅自己可见）</summary>
-    [BsonElement("isPublic")]
     public bool IsPublic { get; set; } = false;
 }
 

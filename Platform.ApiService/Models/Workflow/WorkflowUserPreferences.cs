@@ -14,25 +14,21 @@ public class UserWorkflowFilterPreference : MultiTenantEntity
     /// <summary>
     /// 用户ID
     /// </summary>
-    [BsonElement("userId")]
     public string UserId { get; set; } = string.Empty;
 
     /// <summary>
     /// 偏好名称
     /// </summary>
-    [BsonElement("name")]
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
     /// 是否为默认偏好
     /// </summary>
-    [BsonElement("isDefault")]
     public bool IsDefault { get; set; } = false;
 
     /// <summary>
     /// 过滤器配置
     /// </summary>
-    [BsonElement("filterConfig")]
     public WorkflowFilterConfig FilterConfig { get; set; } = new();
 }
 
@@ -44,49 +40,41 @@ public class WorkflowFilterConfig
     /// <summary>
     /// 关键词搜索
     /// </summary>
-    [BsonElement("keyword")]
     public string? Keyword { get; set; }
 
     /// <summary>
     /// 类别列表
     /// </summary>
-    [BsonElement("categories")]
     public List<string> Categories { get; set; } = new();
 
     /// <summary>
     /// 状态列表
     /// </summary>
-    [BsonElement("statuses")]
     public List<string> Statuses { get; set; } = new();
 
     /// <summary>
     /// 日期范围过滤
     /// </summary>
-    [BsonElement("dateRange")]
     public DateRangeFilter? DateRange { get; set; }
 
     /// <summary>
     /// 使用次数范围
     /// </summary>
-    [BsonElement("usageRange")]
     public UsageRangeFilter? UsageRange { get; set; }
 
     /// <summary>
     /// 创建者ID列表
     /// </summary>
-    [BsonElement("createdBy")]
     public List<string> CreatedBy { get; set; } = new();
 
     /// <summary>
     /// 排序字段
     /// </summary>
-    [BsonElement("sortBy")]
     public string? SortBy { get; set; }
 
     /// <summary>
     /// 排序方向
     /// </summary>
-    [BsonElement("sortOrder")]
     public string? SortOrder { get; set; }
 }
 

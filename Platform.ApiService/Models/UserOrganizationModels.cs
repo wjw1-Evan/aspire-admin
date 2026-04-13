@@ -13,19 +13,16 @@ public class UserOrganization : MultiTenantEntity
     /// <summary>
     /// 用户ID
     /// </summary>
-    [BsonElement("userId")]
     public string UserId { get; set; } = string.Empty;
 
     /// <summary>
     /// 组织节点ID
     /// </summary>
-    [BsonElement("organizationUnitId")]
     public string OrganizationUnitId { get; set; } = string.Empty;
 
     /// <summary>
     /// 是否为主要组织（可选）
     /// </summary>
-    [BsonElement("isPrimary")]
     public bool IsPrimary { get; set; } = false;
 }
 

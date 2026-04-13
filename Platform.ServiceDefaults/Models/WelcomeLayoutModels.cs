@@ -10,19 +10,16 @@ public class WelcomeLayout : MultiTenantEntity
     /// <summary>
     /// 用户ID
     /// </summary>
-    [BsonElement("userId")]
     public string UserId { get; set; } = string.Empty;
 
     /// <summary>
     /// 布局配置 - JSON 格式存储
     /// </summary>
-    [BsonElement("layoutConfig")]
     public string LayoutConfig { get; set; } = string.Empty;
 
     /// <summary>
     /// 是否为默认布局
     /// </summary>
-    [BsonElement("isDefault")]
     public bool IsDefault { get; set; } = false;
 }
 

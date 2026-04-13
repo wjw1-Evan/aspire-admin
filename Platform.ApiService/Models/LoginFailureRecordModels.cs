@@ -15,30 +15,25 @@ public class LoginFailureRecord : BaseEntity
     /// <summary>
     /// 客户端标识（用户名或IP地址）
     /// </summary>
-    [BsonElement("clientId")]
     public string ClientId { get; set; } = string.Empty;
 
     /// <summary>
     /// 失败类型（login 或 register）
     /// </summary>
-    [BsonElement("type")]
     public string Type { get; set; } = "login";
 
     /// <summary>
     /// 失败次数
     /// </summary>
-    [BsonElement("failureCount")]
     public int FailureCount { get; set; } = 1;
 
     /// <summary>
     /// 过期时间（用于 TTL 索引，30分钟后过期）
     /// </summary>
-    [BsonElement("expiresAt")]
     public DateTime ExpiresAt { get; set; }
 
     /// <summary>
     /// 最后失败时间
     /// </summary>
-    [BsonElement("lastFailureAt")]
     public DateTime LastFailureAt { get; set; } = DateTime.UtcNow;
 }

@@ -14,67 +14,56 @@ public class Menu : BaseEntity
     /// <summary>
     /// 菜单名称（全局唯一）
     /// </summary>
-    [BsonElement("name")]
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
     /// 菜单标题
     /// </summary>
-    [BsonElement("title")]
     public string Title { get; set; } = string.Empty;
 
     /// <summary>
     /// 路由路径
     /// </summary>
-    [BsonElement("path")]
     public string Path { get; set; } = string.Empty;
 
     /// <summary>
     /// 组件路径
     /// </summary>
-    [BsonElement("component")]
     public string? Component { get; set; }
 
     /// <summary>
     /// 图标
     /// </summary>
-    [BsonElement("icon")]
     public string? Icon { get; set; }
 
     /// <summary>
     /// 排序顺序
     /// </summary>
-    [BsonElement("sortOrder")]
     public int SortOrder { get; set; }
 
     /// <summary>
     /// 是否启用
     /// </summary>
-    [BsonElement("isEnabled")]
     public bool IsEnabled { get; set; } = true;
 
     /// <summary>
     /// 是否为外部链接
     /// </summary>
-    [BsonElement("isExternal")]
     public bool IsExternal { get; set; } = false;
 
     /// <summary>
     /// 是否在新标签页打开
     /// </summary>
-    [BsonElement("openInNewTab")]
     public bool OpenInNewTab { get; set; } = false;
 
     /// <summary>
     /// 是否在菜单中隐藏
     /// </summary>
-    [BsonElement("hideInMenu")]
     public bool HideInMenu { get; set; } = false;
 
     /// <summary>
     /// 父菜单ID
     /// </summary>
-    [BsonElement("parentId")]
     [BsonRepresentation(BsonType.ObjectId)]
     public string? ParentId { get; set; }
 }

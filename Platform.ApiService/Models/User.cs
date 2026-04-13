@@ -371,75 +371,61 @@ public class UserActivityLog : MultiTenantEntity
     /// <summary>
     /// 操作类型（"login", "logout", "update_profile" 等）
     /// </summary>
-    [BsonElement("action")]
     public string Action { get; set; } = string.Empty;
 
     /// <summary>
     /// 操作描述
     /// </summary>
-    [BsonElement("description")]
     public string Description { get; set; } = string.Empty;
 
     /// <summary>
     /// IP地址
     /// </summary>
-    [BsonElement("ipAddress")]
     public string? IpAddress { get; set; }
 
     /// <summary>
     /// 用户代理（User Agent）
     /// </summary>
-    [BsonElement("userAgent")]
     public string? UserAgent { get; set; }
 
     /// <summary>
     /// HTTP方法
     /// </summary>
-    [BsonElement("httpMethod")]
     public string? HttpMethod { get; set; }
 
     /// <summary>
     /// 请求路径
     /// </summary>
-    [BsonElement("path")]
     public string? Path { get; set; }
 
     /// <summary>
     /// 查询字符串
     /// </summary>
-    [BsonElement("queryString")]
     public string? QueryString { get; set; }
 
     /// <summary>
     /// 完整URL（path + queryString）
     /// </summary>
-    [BsonElement("fullUrl")]
     public string? FullUrl { get; set; }
 
     /// <summary>
     /// HTTP状态码
     /// </summary>
-    [BsonElement("statusCode")]
     public int? StatusCode { get; set; }
 
     /// <summary>
     /// 请求持续时间（毫秒）
     /// </summary>
-    [BsonElement("duration")]
     public long? Duration { get; set; }
 
     /// <summary>
     /// 响应内容（JSON字符串，已截断）
     /// </summary>
-    [BsonElement("responseBody")]
-    [JsonPropertyName("responseBody")]
     public string? ResponseBody { get; set; }
 
     /// <summary>
     /// 操作元数据（用于云存储等特殊操作的额外信息）
     /// </summary>
-    [BsonElement("metadata")]
-    [JsonPropertyName("metadata")]
     public Dictionary<string, object> Metadata { get; set; } = new();
 }
 

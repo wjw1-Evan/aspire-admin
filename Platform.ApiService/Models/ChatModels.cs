@@ -42,8 +42,6 @@ public class ChatAttachmentInfo
     /// 附件标识
     /// </summary>
     [StringLength(100)]
-    [Column("id")]
-    [BsonElement("id")]
     public string Id { get; set; } = string.Empty;
 
     /// <summary>
@@ -51,15 +49,11 @@ public class ChatAttachmentInfo
     /// </summary>
     [Required]
     [StringLength(255)]
-    [Column("name")]
-    [BsonElement("name")]
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
     /// 附件大小（单位：字节）
     /// </summary>
-    [Column("size")]
-    [BsonElement("size")]
     public long Size { get; set; } = 0;
 
     /// <summary>
@@ -67,8 +61,6 @@ public class ChatAttachmentInfo
     /// </summary>
     [Required]
     [StringLength(100)]
-    [Column("mimeType")]
-    [BsonElement("mimeType")]
     public string MimeType { get; set; } = string.Empty;
 
     /// <summary>
@@ -76,16 +68,12 @@ public class ChatAttachmentInfo
     /// </summary>
     [Required]
     [StringLength(2000)]
-    [Column("url")]
-    [BsonElement("url")]
     public string Url { get; set; } = string.Empty;
 
     /// <summary>
     /// 缩略图地址（可选）
     /// </summary>
     [StringLength(2000)]
-    [Column("thumbnailUrl")]
-    [BsonElement("thumbnailUrl")]
     public string? ThumbnailUrl { get; set; }
 }
 
@@ -93,7 +81,6 @@ public class ChatAttachmentInfo
 /// 聊天附件实体
 /// </summary>
 [BsonIgnoreExtraElements]
-[Table("chatAttachments")]
 public class ChatAttachment : MultiTenantEntity
 {
     /// <summary>
@@ -101,8 +88,6 @@ public class ChatAttachment : MultiTenantEntity
     /// </summary>
     [Required]
     [StringLength(100)]
-    [Column("sessionId")]
-    [BsonElement("sessionId")]
     [BsonRepresentation(BsonType.ObjectId)]
     public string SessionId { get; set; } = string.Empty;
 
@@ -110,8 +95,6 @@ public class ChatAttachment : MultiTenantEntity
     /// 关联消息标识
     /// </summary>
     [StringLength(100)]
-    [Column("messageId")]
-    [BsonElement("messageId")]
     [BsonRepresentation(BsonType.ObjectId)]
     public string? MessageId { get; set; }
 
@@ -120,8 +103,6 @@ public class ChatAttachment : MultiTenantEntity
     /// </summary>
     [Required]
     [StringLength(100)]
-    [Column("uploaderId")]
-    [BsonElement("uploaderId")]
     public string UploaderId { get; set; } = string.Empty;
 
     /// <summary>
@@ -129,15 +110,11 @@ public class ChatAttachment : MultiTenantEntity
     /// </summary>
     [Required]
     [StringLength(255)]
-    [Column("name")]
-    [BsonElement("name")]
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
     /// 文件大小（字节）
     /// </summary>
-    [Column("size")]
-    [BsonElement("size")]
     public long Size { get; set; } = 0;
 
     /// <summary>
@@ -145,8 +122,6 @@ public class ChatAttachment : MultiTenantEntity
     /// </summary>
     [Required]
     [StringLength(100)]
-    [Column("mimeType")]
-    [BsonElement("mimeType")]
     public string MimeType { get; set; } = string.Empty;
 
     /// <summary>
@@ -154,8 +129,6 @@ public class ChatAttachment : MultiTenantEntity
     /// </summary>
     [Required]
     [StringLength(255)]
-    [Column("storageObjectId")]
-    [BsonElement("storageObjectId")]
     public string StorageObjectId { get; set; } = string.Empty;
 
     /// <summary>
@@ -163,24 +136,18 @@ public class ChatAttachment : MultiTenantEntity
     /// </summary>
     [Required]
     [StringLength(2000)]
-    [Column("downloadUrl")]
-    [BsonElement("downloadUrl")]
     public string DownloadUrl { get; set; } = string.Empty;
 
     /// <summary>
     /// 附件校验摘要（可选）
     /// </summary>
     [StringLength(128)]
-    [Column("checksum")]
-    [BsonElement("checksum")]
     public string? Checksum { get; set; }
 
     /// <summary>
     /// 缩略图地址（可选）
     /// </summary>
     [StringLength(2000)]
-    [Column("thumbnailUrl")]
-    [BsonElement("thumbnailUrl")]
     public string? ThumbnailUrl { get; set; }
 }
 
@@ -188,80 +155,59 @@ public class ChatAttachment : MultiTenantEntity
 /// 聊天会话实体
 /// </summary>
 [BsonIgnoreExtraElements]
-[Table("chatSessions")]
 public class ChatSession : MultiTenantEntity
 {
     /// <summary>
     /// 会话参与用户标识集合
     /// </summary>
     [Required]
-    [Column("participants")]
-    [BsonElement("participants")]
     public List<string> Participants { get; set; } = new();
 
     /// <summary>
     /// 参与人昵称映射（可选）
     /// </summary>
-    [Column("participantNames")]
-    [BsonElement("participantNames")]
     public Dictionary<string, string> ParticipantNames { get; set; } = new();
 
     /// <summary>
     /// 参与人头像映射（可选）。
     /// </summary>
-    [Column("participantAvatars")]
-    [BsonElement("participantAvatars")]
     public Dictionary<string, string>? ParticipantAvatars { get; set; } = new();
 
     /// <summary>
     /// 最后一条消息内容摘要
     /// </summary>
     [StringLength(500)]
-    [Column("lastMessageExcerpt")]
-    [BsonElement("lastMessageExcerpt")]
     public string? LastMessageExcerpt { get; set; }
 
     /// <summary>
     /// 最后一条消息标识
     /// </summary>
     [StringLength(100)]
-    [Column("lastMessageId")]
-    [BsonElement("lastMessageId")]
     public string? LastMessageId { get; set; }
 
     /// <summary>
     /// 最后一条消息时间（UTC）
     /// </summary>
-    [Column("lastMessageAt")]
-    [BsonElement("lastMessageAt")]
     public DateTime? LastMessageAt { get; set; }
 
     /// <summary>
     /// 每位参与者的未读计数
     /// </summary>
-    [Column("unreadCounts")]
-    [BsonElement("unreadCounts")]
     public Dictionary<string, int> UnreadCounts { get; set; } = new();
 
     /// <summary>
     /// 每位参与者的最后已读消息标识
     /// </summary>
-    [Column("lastReadMessageIds")]
-    [BsonElement("lastReadMessageIds")]
     public Dictionary<string, string> LastReadMessageIds { get; set; } = new();
 
     /// <summary>
     /// 会话标签/主题
     /// </summary>
-    [Column("topicTags")]
-    [BsonElement("topicTags")]
     public List<string> TopicTags { get; set; } = new();
 
     /// <summary>
     /// 是否静音
     /// </summary>
-    [Column("isMuted")]
-    [BsonElement("isMuted")]
     public bool IsMuted { get; set; } = false;
 }
 
@@ -269,7 +215,6 @@ public class ChatSession : MultiTenantEntity
 /// 聊天消息实体
 /// </summary>
 [BsonIgnoreExtraElements]
-[Table("chatMessages")]
 public class ChatMessage : MultiTenantEntity
 {
     /// <summary>
@@ -277,8 +222,6 @@ public class ChatMessage : MultiTenantEntity
     /// </summary>
     [Required]
     [StringLength(100)]
-    [Column("sessionId")]
-    [BsonElement("sessionId")]
     [BsonRepresentation(BsonType.ObjectId)]
     public string SessionId { get; set; } = string.Empty;
 
@@ -287,31 +230,23 @@ public class ChatMessage : MultiTenantEntity
     /// </summary>
     [Required]
     [StringLength(100)]
-    [Column("senderId")]
-    [BsonElement("senderId")]
     public string SenderId { get; set; } = string.Empty;
 
     /// <summary>
     /// 发送方显示名称
     /// </summary>
     [StringLength(100)]
-    [Column("senderName")]
-    [BsonElement("senderName")]
     public string? SenderName { get; set; }
 
     /// <summary>
     /// 接收方用户标识（私聊场景可用）
     /// </summary>
     [StringLength(100)]
-    [Column("recipientId")]
-    [BsonElement("recipientId")]
     public string? RecipientId { get; set; }
 
     /// <summary>
     /// 消息类型
     /// </summary>
-    [Column("type")]
-    [BsonElement("type")]
     [BsonRepresentation(BsonType.String)]
     public ChatMessageType Type { get; set; } = ChatMessageType.Text;
 
@@ -319,37 +254,27 @@ public class ChatMessage : MultiTenantEntity
     /// 文本内容
     /// </summary>
     [StringLength(4000)]
-    [Column("content")]
-    [BsonElement("content")]
     public string? Content { get; set; }
 
     /// <summary>
     /// 附件信息
     /// </summary>
-    [Column("attachment")]
-    [BsonElement("attachment")]
     public ChatAttachmentInfo? Attachment { get; set; }
 
     /// <summary>
     /// 扩展元数据
     /// </summary>
-    [Column("metadata")]
-    [BsonElement("metadata")]
     public Dictionary<string, object> Metadata { get; set; } = new();
 
     /// <summary>
     /// 消息是否被撤回
     /// </summary>
-    [Column("isRecalled")]
-    [BsonElement("isRecalled")]
     public bool IsRecalled { get; set; } = false;
 
     /// <summary>
     /// 客户端生成的消息标识，用于去重和状态同步。
     /// </summary>
     [StringLength(100)]
-    [Column("clientMessageId")]
-    [BsonElement("clientMessageId")]
     public string? ClientMessageId { get; set; }
 }
 

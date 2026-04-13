@@ -16,37 +16,31 @@ public class CaptchaImage : BaseEntity
     /// <summary>
     /// 验证码ID（用作唯一标识）
     /// </summary>
-    [BsonElement("captchaId")]
     public string CaptchaId { get; set; } = string.Empty;
 
     /// <summary>
     /// 验证码答案（加密存储）
     /// </summary>
-    [BsonElement("answer")]
     public string Answer { get; set; } = string.Empty;
 
     /// <summary>
     /// 过期时间（用于 TTL 索引）
     /// </summary>
-    [BsonElement("expiresAt")]
     public DateTime ExpiresAt { get; set; }
 
     /// <summary>
     /// 是否已使用
     /// </summary>
-    [BsonElement("isUsed")]
     public bool IsUsed { get; set; } = false;
 
     /// <summary>
     /// 验证码类型（login, register）
     /// </summary>
-    [BsonElement("type")]
     public string Type { get; set; } = "login";
 
     /// <summary>
     /// 客户端IP（用于防刷）
     /// </summary>
-    [BsonElement("clientIp")]
     public string? ClientIp { get; set; }
 
 }

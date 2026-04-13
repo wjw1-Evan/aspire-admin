@@ -12,67 +12,56 @@ public class RuleListItem : MultiTenantEntity
     /// <summary>
     /// 规则键（唯一标识）
     /// </summary>
-    [BsonElement("key")]
     public int Key { get; set; }
 
     /// <summary>
     /// 是否禁用
     /// </summary>
-    [BsonElement("disabled")]
     public bool Disabled { get; set; }
 
     /// <summary>
     /// 链接地址
     /// </summary>
-    [BsonElement("href")]
     public string? Href { get; set; }
 
     /// <summary>
     /// 头像URL
     /// </summary>
-    [BsonElement("avatar")]
     public string? Avatar { get; set; }
 
     /// <summary>
     /// 规则名称
     /// </summary>
-    [BsonElement("name")]
     public string? Name { get; set; }
 
     /// <summary>
     /// 所有者
     /// </summary>
-    [BsonElement("owner")]
     public string? Owner { get; set; }
 
     /// <summary>
     /// 描述
     /// </summary>
-    [BsonElement("desc")]
     public string? Desc { get; set; }
 
     /// <summary>
     /// 调用次数
     /// </summary>
-    [BsonElement("callNo")]
     public int CallNo { get; set; }
 
     /// <summary>
     /// 状态
     /// </summary>
-    [BsonElement("status")]
     public int Status { get; set; }
 
     /// <summary>
     /// 进度
     /// </summary>
-    [BsonElement("progress")]
     public int Progress { get; set; }
 
     /// <summary>
     /// MCP 相关配置
     /// </summary>
-    [BsonElement("mcpConfig")]
     public McpRuleConfig? McpConfig { get; set; }
 }
 
@@ -84,73 +73,61 @@ public class McpRuleConfig
     /// <summary>
     /// 是否启用 MCP 集成
     /// </summary>
-    [BsonElement("enabled")]
     public bool Enabled { get; set; } = false;
 
     /// <summary>
     /// MCP 工具名称
     /// </summary>
-    [BsonElement("toolName")]
     public string? ToolName { get; set; }
 
     /// <summary>
     /// MCP 工具描述
     /// </summary>
-    [BsonElement("toolDescription")]
     public string? ToolDescription { get; set; }
 
     /// <summary>
     /// MCP 工具参数模式（JSON Schema）
     /// </summary>
-    [BsonElement("inputSchema")]
     public Dictionary<string, object>? InputSchema { get; set; }
 
     /// <summary>
     /// 是否为 MCP 资源
     /// </summary>
-    [BsonElement("isResource")]
     public bool IsResource { get; set; } = false;
 
     /// <summary>
     /// MCP 资源 URI
     /// </summary>
-    [BsonElement("resourceUri")]
     public string? ResourceUri { get; set; }
 
     /// <summary>
     /// MCP 资源 MIME 类型
     /// </summary>
-    [BsonElement("resourceMimeType")]
     public string? ResourceMimeType { get; set; }
 
     /// <summary>
     /// 是否为 MCP 提示词
     /// </summary>
-    [BsonElement("isPrompt")]
     public bool IsPrompt { get; set; } = false;
 
     /// <summary>
     /// MCP 提示词参数定义
     /// </summary>
-    [BsonElement("promptArguments")]
     public Dictionary<string, object>? PromptArguments { get; set; }
 
     /// <summary>
     /// MCP 提示词内容模板
     /// </summary>
-    [BsonElement("promptTemplate")]
     public string? PromptTemplate { get; set; }
 
     /// <summary>
     /// 创建时间
     /// </summary>
-    [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
     /// 更新时间
     /// </summary>
-    [BsonElement("updatedAt")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
 

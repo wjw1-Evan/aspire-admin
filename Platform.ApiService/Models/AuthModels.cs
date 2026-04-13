@@ -22,103 +22,81 @@ public class CurrentUser
     /// <summary>
     /// 用户名（对应 AppUser.Username）
     /// </summary>
-    [BsonElement("username")]
     public string Username { get; set; } = string.Empty;
 
     /// <summary>
     /// 显示名称（对应 AppUser.Name）
     /// </summary>
-    [BsonElement("displayName")]
-    [System.Text.Json.Serialization.JsonPropertyName("name")]
     public string? DisplayName { get; set; }
 
     /// <summary>
     /// 头像
     /// </summary>
-    [BsonElement("avatar")]
     public string? Avatar { get; set; }
 
     /// <summary>
     /// 邮箱
     /// </summary>
-    [BsonElement("email")]
     public string? Email { get; set; }
 
     /// <summary>
     /// 标签
     /// </summary>
-    [BsonElement("tags")]
     public List<UserTag>? Tags { get; set; }
 
     /// <summary>
     /// 角色列表
     /// </summary>
-    [BsonElement("roles")]
     public List<string> Roles { get; set; } = new();
 
     /// <summary>
     /// 电话号码
     /// </summary>
-    [BsonElement("phone")]
-    [System.Text.Json.Serialization.JsonPropertyName("phone")]
     public string? Phone { get; set; }
 
     /// <summary>
     /// 年龄
     /// </summary>
-    [BsonElement("age")]
     public int? Age { get; set; }
 
     /// <summary>
     /// 是否已登录
     /// </summary>
-    [BsonElement("isLogin")]
     public bool IsLogin { get; set; } = true;
 
     /// <summary>
     /// 当前企业ID
     /// </summary>
-    [BsonElement("currentCompanyId")]
     public string? CurrentCompanyId { get; set; }
 
     /// <summary>
     /// 创建时间
     /// </summary>
-    [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
     /// 更新时间
     /// </summary>
-    [BsonElement("updatedAt")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
     /// 所在城市（从最后一次保存的位置信标中获取）
     /// </summary>
-    [BsonElement("city")]
-    [System.Text.Json.Serialization.JsonPropertyName("city")]
     public string? City { get; set; }
 
     /// <summary>
     /// 当前企业显示名称
     /// </summary>
-    [BsonElement("currentCompanyDisplayName")]
-    [System.Text.Json.Serialization.JsonPropertyName("currentCompanyDisplayName")]
     public string? CurrentCompanyDisplayName { get; set; }
 
     /// <summary>
     /// 当前企业正式名称（作为后备）
     /// </summary>
-    [BsonElement("currentCompanyName")]
-    [System.Text.Json.Serialization.JsonPropertyName("currentCompanyName")]
     public string? CurrentCompanyName { get; set; }
 
     /// <summary>
     /// 当前企业Logo
     /// </summary>
-    [BsonElement("currentCompanyLogo")]
-    [System.Text.Json.Serialization.JsonPropertyName("currentCompanyLogo")]
     public string? CurrentCompanyLogo { get; set; }
 }
 
@@ -130,13 +108,11 @@ public class UserTag
     /// <summary>
     /// 标签键
     /// </summary>
-    [BsonElement("key")]
     public string? Key { get; set; }
 
     /// <summary>
     /// 标签显示名称
     /// </summary>
-    [BsonElement("label")]
     public string? Label { get; set; }
 }
 
@@ -254,7 +230,6 @@ public class LoginData
 /// 注意：AppUser 不支持 IMultiTenant，因为它是多企业模型，使用 CurrentCompanyId 进行过滤
 /// </summary>
 [BsonIgnoreExtraElements]
-[Table("appusers")]
 public class AppUser : BaseEntity
 {
     /// <summary>
@@ -262,23 +237,17 @@ public class AppUser : BaseEntity
     /// </summary>
     [Required]
     [StringLength(50)]
-    [Column("username")]
-    [BsonElement("username")]
     public string Username { get; set; } = string.Empty;
 
     /// <summary>
     /// 显示名称
     /// </summary>
     [StringLength(100)]
-    [Column("name")]
-    [BsonElement("name")]
     public string? Name { get; set; }
 
     /// <summary>
     /// 年龄
     /// </summary>
-    [Column("age")]
-    [BsonElement("age")]
     public int? Age { get; set; }
 
     /// <summary>
@@ -286,8 +255,6 @@ public class AppUser : BaseEntity
     /// </summary>
     [Required]
     [StringLength(255)]
-    [Column("passwordHash")]
-    [BsonElement("passwordHash")]
     public string PasswordHash { get; set; } = string.Empty;
 
     /// <summary>
@@ -295,16 +262,12 @@ public class AppUser : BaseEntity
     /// </summary>
     [EmailAddress]
     [StringLength(255)]
-    [Column("email")]
-    [BsonElement("email")]
     public string? Email { get; set; }
 
     /// <summary>
     /// 头像地址
     /// </summary>
     [StringLength(500)]
-    [Column("avatar")]
-    [BsonElement("avatar")]
     public string? Avatar { get; set; }
 
     /// <summary>
@@ -312,8 +275,6 @@ public class AppUser : BaseEntity
     /// </summary>
     [Phone]
     [StringLength(20)]
-    [Column("phone")]
-    [BsonElement("phone")]
     public string? PhoneNumber { get; set; }
 
     /// <summary>
@@ -322,8 +283,6 @@ public class AppUser : BaseEntity
     /// 示例：69895113d644cf046d97904a
     /// </summary>
     [StringLength(50)]
-    [Column("currentCompanyId")]
-    [BsonElement("currentCompanyId")]
     public string? CurrentCompanyId { get; set; }
 
     /// <summary>
@@ -332,29 +291,21 @@ public class AppUser : BaseEntity
     /// ⚠️ 请勿将其与用户自身的 ID (Id) 混淆。
     /// </summary>
     [StringLength(50)]
-    [Column("personalCompanyId")]
-    [BsonElement("personalCompanyId")]
     public string? PersonalCompanyId { get; set; }
 
     /// <summary>
     /// 是否活跃
     /// </summary>
-    [Column("isActive")]
-    [BsonElement("isActive")]
     public bool IsActive { get; set; } = true;
 
     /// <summary>
     /// 最后登录时间
     /// </summary>
-    [Column("lastLoginAt")]
-    [BsonElement("lastLoginAt")]
     public DateTime? LastLoginAt { get; set; }
 
     /// <summary>
     /// 兴趣标签列表
     /// </summary>
-    [Column("tags")]
-    [BsonElement("tags")]
     public List<UserTag>? Tags { get; set; }
 
 
@@ -363,23 +314,17 @@ public class AppUser : BaseEntity
     /// 备注
     /// </summary>
     [StringLength(500)]
-    [Column("remark")]
-    [BsonElement("remark")]
     public string? Remark { get; set; }
 
     /// <summary>
     /// AI 助手"小科"的角色定义（用户自定义）
     /// </summary>
     [StringLength(2000)]
-    [Column("aiRoleDefinition")]
-    [BsonElement("aiRoleDefinition")]
     public string? AiRoleDefinition { get; set; }
 
     /// <summary>
     /// 欢迎页面布局配置（JSON 格式）
     /// </summary>
-    [Column("welcomeLayoutConfig")]
-    [BsonElement("welcomeLayoutConfig")]
     public string? WelcomeLayoutConfig { get; set; }
 }
 
@@ -511,64 +456,54 @@ public class RefreshToken : BaseEntity
     /// <summary>
     /// 用户ID
     /// </summary>
-    [BsonElement("userId")]
     [Required]
     public string UserId { get; set; } = string.Empty;
 
     /// <summary>
     /// 当前有效的刷新 Token
     /// </summary>
-    [BsonElement("token")]
     [Required]
     public string Token { get; set; } = string.Empty;
 
     /// <summary>
     /// 上一次的刷新 Token（用于轮换检测）
     /// </summary>
-    [BsonElement("previousToken")]
     public string? PreviousToken { get; set; }
 
     /// <summary>
     /// Token 过期时间
     /// </summary>
-    [BsonElement("expiresAt")]
     [Required]
     public DateTime ExpiresAt { get; set; }
 
     /// <summary>
     /// 最后使用时间
     /// </summary>
-    [BsonElement("lastUsedAt")]
     public DateTime? LastUsedAt { get; set; }
 
     /// <summary>
     /// 创建时的 IP 地址
     /// </summary>
-    [BsonElement("ipAddress")]
     public string? IpAddress { get; set; }
 
     /// <summary>
     /// 创建时的 User-Agent
     /// </summary>
-    [BsonElement("userAgent")]
     public string? UserAgent { get; set; }
 
     /// <summary>
     /// 是否已被撤销
     /// </summary>
-    [BsonElement("isRevoked")]
     public bool IsRevoked { get; set; } = false;
 
     /// <summary>
     /// 撤销时间
     /// </summary>
-    [BsonElement("revokedAt")]
     public DateTime? RevokedAt { get; set; }
 
     /// <summary>
     /// 撤销原因
     /// </summary>
-    [BsonElement("revokedReason")]
     public string? RevokedReason { get; set; }
 }
 

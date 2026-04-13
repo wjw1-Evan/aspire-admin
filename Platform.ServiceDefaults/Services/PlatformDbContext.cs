@@ -101,7 +101,7 @@ public class PlatformDbContext : DbContext
         {
             modelBuilder.Entity(type);
 
-            var tableName = type.Name.ToLowerInvariant();
+            var tableName = type.Name;
             modelBuilder.Entity(type).ToCollection(tableName);
 
             if (typeof(IMultiTenant).IsAssignableFrom(type) || typeof(ISoftDeletable).IsAssignableFrom(type))

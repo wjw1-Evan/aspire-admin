@@ -80,7 +80,6 @@ public class ChatAttachmentInfo
 /// <summary>
 /// 聊天附件实体
 /// </summary>
-[BsonIgnoreExtraElements]
 public class ChatAttachment : MultiTenantEntity
 {
     /// <summary>
@@ -154,7 +153,6 @@ public class ChatAttachment : MultiTenantEntity
 /// <summary>
 /// 聊天会话实体
 /// </summary>
-[BsonIgnoreExtraElements]
 public class ChatSession : MultiTenantEntity
 {
     /// <summary>
@@ -214,7 +212,6 @@ public class ChatSession : MultiTenantEntity
 /// <summary>
 /// 聊天消息实体
 /// </summary>
-[BsonIgnoreExtraElements]
 public class ChatMessage : MultiTenantEntity
 {
     /// <summary>

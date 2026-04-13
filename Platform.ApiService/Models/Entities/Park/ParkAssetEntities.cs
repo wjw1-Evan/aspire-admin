@@ -6,7 +6,6 @@ using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
 
-[BsonIgnoreExtraElements]
 public class Building : MultiTenantEntity
 {
     [Required]
@@ -44,7 +43,6 @@ public class Building : MultiTenantEntity
     public List<string>? Attachments { get; set; }
 }
 
-[BsonIgnoreExtraElements]
 public class PropertyUnit : MultiTenantEntity
 {
     [Required]

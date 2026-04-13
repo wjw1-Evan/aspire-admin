@@ -70,7 +70,6 @@ public enum SharePermission
 /// <summary>
 /// 文件项实体模型（文件和文件夹）
 /// </summary>
-[BsonIgnoreExtraElements]
 public class FileItem : MultiTenantEntity
 {
     /// <summary>文件/文件夹名称</summary>
@@ -142,7 +141,6 @@ public class FileItem : MultiTenantEntity
 /// <summary>
 /// 文件分享实体模型
 /// </summary>
-[BsonIgnoreExtraElements]
 public class FileShare : MultiTenantEntity
 {
     /// <summary>被分享的文件项ID</summary>
@@ -189,7 +187,6 @@ public class FileShare : MultiTenantEntity
 /// <summary>
 /// 文件版本实体模型
 /// </summary>
-[BsonIgnoreExtraElements]
 public class FileVersion : MultiTenantEntity
 {
     /// <summary>文件项ID</summary>
@@ -225,7 +222,6 @@ public class FileVersion : MultiTenantEntity
 /// <summary>
 /// 存储配额实体模型
 /// </summary>
-[BsonIgnoreExtraElements]
 public class StorageQuota : MultiTenantEntity
 {
     /// <summary>用户ID</summary>

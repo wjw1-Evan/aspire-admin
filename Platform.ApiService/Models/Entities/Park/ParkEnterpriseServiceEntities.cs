@@ -6,7 +6,6 @@ using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
 
-[BsonIgnoreExtraElements]
 public class ServiceCategory : MultiTenantEntity
 {
     [Required]
@@ -24,7 +23,6 @@ public class ServiceCategory : MultiTenantEntity
     public bool IsActive { get; set; } = true;
 }
 
-[BsonIgnoreExtraElements]
 public class ServiceRequest : MultiTenantEntity
 {
     [Required]

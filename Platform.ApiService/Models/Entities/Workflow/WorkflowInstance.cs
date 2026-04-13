@@ -10,7 +10,6 @@ namespace Platform.ApiService.Models.Workflow;
 /// <summary>
 /// 工作流实例实体
 /// </summary>
-[BsonIgnoreExtraElements]
 public class WorkflowInstance : MultiTenantEntity
 {
     // 门面属性和辅助方法（不持久化，用于代码适配）

@@ -8,7 +8,6 @@ namespace Platform.ApiService.Models;
 /// <summary>
 /// 通知图标项实体
 /// </summary>
-[BsonIgnoreExtraElements]
 public class NoticeIconItem : MultiTenantEntity
 {
     /// <summary>

@@ -6,7 +6,6 @@ using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
 
-[BsonIgnoreExtraElements]
 public class ParkTenant : MultiTenantEntity
 {
     [Required]
@@ -45,7 +44,6 @@ public class ParkTenant : MultiTenantEntity
     public string? Notes { get; set; }
 }
 
-[BsonIgnoreExtraElements]
 public class LeaseContract : MultiTenantEntity
 {
     [Required]
@@ -92,7 +90,6 @@ public class LeaseContract : MultiTenantEntity
     public List<string>? Attachments { get; set; }
 }
 
-[BsonIgnoreExtraElements]
 public class LeasePaymentRecord : MultiTenantEntity
 {
     [Required]
@@ -124,7 +121,6 @@ public class LeasePaymentRecord : MultiTenantEntity
     public string? HandledBy { get; set; }
 }
 
-[BsonIgnoreExtraElements]
 public class RentBill : MultiTenantEntity
 {
     [Required]

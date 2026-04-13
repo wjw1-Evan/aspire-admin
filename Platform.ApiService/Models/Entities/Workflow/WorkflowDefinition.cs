@@ -234,7 +234,6 @@ public class ConditionRule
 
 
 
-[BsonIgnoreExtraElements]
 public class WorkflowDefinition : MultiTenantEntity
 {
     public string Name { get; set; } = string.Empty;

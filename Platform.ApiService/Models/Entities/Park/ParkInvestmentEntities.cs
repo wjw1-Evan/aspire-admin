@@ -6,7 +6,6 @@ using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
 
-[BsonIgnoreExtraElements]
 public class InvestmentLead : MultiTenantEntity
 {
     [Required]
@@ -51,7 +50,6 @@ public class InvestmentLead : MultiTenantEntity
     public DateTime? NextFollowUpDate { get; set; }
 }
 
-[BsonIgnoreExtraElements]
 public class InvestmentProject : MultiTenantEntity
 {
     [StringLength(100)]
@@ -91,7 +89,6 @@ public class InvestmentProject : MultiTenantEntity
     public string? AssignedTo { get; set; }
 }
 
-[BsonIgnoreExtraElements]
 public class InvestmentFollowUp : MultiTenantEntity
 {
     [StringLength(100)]

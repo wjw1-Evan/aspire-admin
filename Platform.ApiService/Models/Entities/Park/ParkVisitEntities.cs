@@ -6,7 +6,6 @@ using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
 
-[BsonIgnoreExtraElements]
 public class VisitTask : MultiTenantEntity
 {
     [Required]
@@ -69,7 +68,6 @@ public class VisitTask : MultiTenantEntity
     public string? Feedback { get; set; }
 }
 
-[BsonIgnoreExtraElements]
 public class VisitAssessment : MultiTenantEntity
 {
     [Required]
@@ -99,7 +97,6 @@ public class VisitAssessment : MultiTenantEntity
     public string? Comments { get; set; }
 }
 
-[BsonIgnoreExtraElements]
 public class VisitQuestion : MultiTenantEntity
 {
     [Required]
@@ -116,7 +113,6 @@ public class VisitQuestion : MultiTenantEntity
     public bool? IsFrequentlyUsed { get; set; }
 }
 
-[BsonIgnoreExtraElements]
 public class VisitQuestionnaire : MultiTenantEntity
 {
     [Required]

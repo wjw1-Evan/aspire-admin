@@ -49,7 +49,6 @@ public enum FormTarget
 /// <summary>
 /// 表单定义实体
 /// </summary>
-[BsonIgnoreExtraElements]
 public class FormDefinition : MultiTenantEntity
 {
     /// <summary>表单名称</summary>

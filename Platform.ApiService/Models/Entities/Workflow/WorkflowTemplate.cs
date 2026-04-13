@@ -9,7 +9,6 @@ namespace Platform.ApiService.Models.Workflow;
 /// <summary>
 /// 工作流模板
 /// </summary>
-[BsonIgnoreExtraElements]
 public class WorkflowTemplate : MultiTenantEntity
 {
     /// <summary>

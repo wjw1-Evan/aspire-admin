@@ -56,7 +56,6 @@ public enum DataPointType
 /// <summary>
 /// 物联网网关 - 用于设备接入和数据收集
 /// </summary>
-[BsonIgnoreExtraElements]
 public class IoTGateway : MultiTenantEntity
 {
     /// <summary>网关名称</summary>
@@ -109,7 +108,6 @@ public class IoTGateway : MultiTenantEntity
 /// <summary>
 /// 物联网设备 - 表示接入平台的物理设备
 /// </summary>
-[BsonIgnoreExtraElements]
 public class IoTDevice : MultiTenantEntity
 {
     /// <summary>设备名称</summary>
@@ -167,7 +165,6 @@ public class IoTDevice : MultiTenantEntity
 /// <summary>
 /// 数据点 - 表示设备的一个数据采集点
 /// </summary>
-[BsonIgnoreExtraElements]
 public class IoTDataPoint : MultiTenantEntity
 {
     /// <summary>数据点名称</summary>
@@ -243,7 +240,6 @@ public class AlarmConfig
 /// <summary>
 /// 物联网数据记录 - 存储设备上报的数据
 /// </summary>
-[BsonIgnoreExtraElements]
 public class IoTDataRecord : MultiTenantEntity
 {
     /// <summary>所属设备ID</summary>
@@ -282,7 +278,6 @@ public class IoTDataRecord : MultiTenantEntity
 /// <summary>
 /// 物联网设备事件 - 记录设备的重要事件
 /// </summary>
-[BsonIgnoreExtraElements]
 public class IoTDeviceEvent : MultiTenantEntity
 {
     /// <summary>所属设备ID</summary>
@@ -339,7 +334,6 @@ public enum CommandStatus
 /// 设备孪生 - 对标 Azure IoT Hub Device Twin
 /// 存储云端期望状态（Desired）和设备实际状态（Reported）
 /// </summary>
-[BsonIgnoreExtraElements]
 public class IoTDeviceTwin : MultiTenantEntity
 {
     /// <summary>关联设备 ID</summary>
@@ -375,7 +369,6 @@ public class IoTDeviceTwin : MultiTenantEntity
 /// <summary>
 /// 云到设备命令 - 对标 Azure IoT Hub Direct Method / C2D Messages
 /// </summary>
-[BsonIgnoreExtraElements]
 public class IoTDeviceCommand : MultiTenantEntity
 {
     /// <summary>目标设备 ID</summary>

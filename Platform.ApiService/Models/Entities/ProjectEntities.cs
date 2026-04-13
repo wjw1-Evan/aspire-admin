@@ -94,7 +94,6 @@ public enum MilestoneStatus
 /// <summary>
 /// 项目实体模型
 /// </summary>
-[BsonIgnoreExtraElements]
 public class Project : MultiTenantEntity
 {
     /// <summary>项目名称</summary>
@@ -134,7 +133,6 @@ public class Project : MultiTenantEntity
 /// <summary>
 /// 任务依赖实体模型
 /// </summary>
-[BsonIgnoreExtraElements]
 public class TaskDependency : MultiTenantEntity
 {
     /// <summary>前置任务ID</summary>
@@ -159,7 +157,6 @@ public class TaskDependency : MultiTenantEntity
 /// <summary>
 /// 项目成员实体模型
 /// </summary>
-[BsonIgnoreExtraElements]
 public class ProjectMember : MultiTenantEntity
 {
     /// <summary>项目ID</summary>
@@ -184,7 +181,6 @@ public class ProjectMember : MultiTenantEntity
 /// <summary>
 /// 项目里程碑实体模型
 /// </summary>
-[BsonIgnoreExtraElements]
 public class Milestone : MultiTenantEntity
 {
     /// <summary>项目ID</summary>

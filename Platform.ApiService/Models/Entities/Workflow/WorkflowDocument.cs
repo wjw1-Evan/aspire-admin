@@ -27,7 +27,6 @@ public enum DocumentStatus
 /// <summary>
 /// 公文实体
 /// </summary>
-[BsonIgnoreExtraElements]
 public class Document : MultiTenantEntity
 {
     /// <summary>

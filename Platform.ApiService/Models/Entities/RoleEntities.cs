@@ -9,7 +9,6 @@ namespace Platform.ApiService.Models;
 /// <summary>
 /// 角色实体 (EFCore + MongoDB 兼容)
 /// </summary>
-[BsonIgnoreExtraElements]
 public class Role : MultiTenantEntity
 {
     /// <summary>

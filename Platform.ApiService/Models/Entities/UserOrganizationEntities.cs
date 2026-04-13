@@ -7,7 +7,6 @@ namespace Platform.ApiService.Models;
 /// <summary>
 /// 用户与组织架构的隶属关系（多租户隔离）
 /// </summary>
-[BsonIgnoreExtraElements]
 public class UserOrganization : MultiTenantEntity
 {
     /// <summary>

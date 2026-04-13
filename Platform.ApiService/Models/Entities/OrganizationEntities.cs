@@ -9,7 +9,6 @@ namespace Platform.ApiService.Models;
 /// <summary>
 /// 组织架构节点实体
 /// </summary>
-[BsonIgnoreExtraElements]
 public class OrganizationUnit : MultiTenantEntity
 {
     /// <summary>

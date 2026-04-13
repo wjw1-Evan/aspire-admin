@@ -9,7 +9,6 @@ namespace Platform.ApiService.Models.Workflow;
 /// <summary>
 /// 批量操作记录
 /// </summary>
-[BsonIgnoreExtraElements]
 public class BulkOperation : MultiTenantEntity
 {
     /// <summary>

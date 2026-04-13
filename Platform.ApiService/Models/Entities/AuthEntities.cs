@@ -229,7 +229,6 @@ public class LoginData
 /// 用户实体 - 支持多企业登录 (EFCore + MongoDB 兼容)
 /// 注意：AppUser 不支持 IMultiTenant，因为它是多企业模型，使用 CurrentCompanyId 进行过滤
 /// </summary>
-[BsonIgnoreExtraElements]
 public class AppUser : BaseEntity
 {
     /// <summary>
@@ -450,7 +449,6 @@ public class RefreshTokenResult
 /// 刷新 Token 实体
 /// 用于存储和管理刷新令牌，支持 Token 轮换检测和安全撤销
 /// </summary>
-[BsonIgnoreExtraElements]
 public class RefreshToken : BaseEntity
 {
     /// <summary>

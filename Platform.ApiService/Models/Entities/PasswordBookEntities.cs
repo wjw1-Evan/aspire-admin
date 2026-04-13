@@ -26,7 +26,6 @@ public enum PasswordStrengthLevel
 /// <summary>
 /// 密码本条目实体
 /// </summary>
-[BsonIgnoreExtraElements]
 public class PasswordBookEntry : MultiTenantEntity
 {
     /// <summary>平台名称</summary>

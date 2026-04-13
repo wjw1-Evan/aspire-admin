@@ -8,7 +8,6 @@ namespace Platform.ApiService.Models.Workflow;
 /// <summary>
 /// 用户工作流过滤器偏好
 /// </summary>
-[BsonIgnoreExtraElements]
 public class UserWorkflowFilterPreference : MultiTenantEntity
 {
     /// <summary>

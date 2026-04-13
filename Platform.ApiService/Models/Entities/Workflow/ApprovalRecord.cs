@@ -8,7 +8,6 @@ namespace Platform.ApiService.Models.Workflow;
 /// <summary>
 /// 审批记录实体
 /// </summary>
-[BsonIgnoreExtraElements]
 public class ApprovalRecord : MultiTenantEntity
 {
     /// <summary>

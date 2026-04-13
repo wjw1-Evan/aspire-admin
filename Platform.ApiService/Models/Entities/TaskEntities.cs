@@ -77,7 +77,6 @@ public enum TaskExecutionResult
 /// <summary>
 /// 任务实体模型
 /// </summary>
-[BsonIgnoreExtraElements]
 public class WorkTask : MultiTenantEntity
 {
     /// <summary>任务名称</summary>
@@ -159,7 +158,6 @@ public class WorkTask : MultiTenantEntity
 /// <summary>
 /// 任务附件模型
 /// </summary>
-[BsonIgnoreExtraElements]
 public class TaskAttachment
 {
     /// <summary>附件ID</summary>
@@ -184,7 +182,6 @@ public class TaskAttachment
 /// <summary>
 /// 任务执行日志模型
 /// </summary>
-[BsonIgnoreExtraElements]
 public class TaskExecutionLog : MultiTenantEntity
 {
     /// <summary>任务ID</summary>

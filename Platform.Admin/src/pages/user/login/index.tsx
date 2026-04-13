@@ -262,14 +262,9 @@ const Login: React.FC = () => {
         errorMsg = intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' });
       }
 
-      // 登录失败后显示验证码
-      const captchaErrors = [INVALID_CREDENTIALS, CAPTCHA_INVALID, CAPTCHA_REQUIRED, CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN];
-      if (captchaErrors.includes(errorCode as any)) {
-        if ([CAPTCHA_INVALID, CAPTCHA_REQUIRED, CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN].includes(errorCode as any)) {
-          if (captchaRef.current) {
-            await captchaRef.current.refresh();
-          }
-        }
+      // 登录失败后刷新验证码
+      if (captchaRef.current) {
+        await captchaRef.current.refresh();
       }
 
       // 设置错误状态（用于表单显示）
@@ -306,13 +301,8 @@ const Login: React.FC = () => {
       setUserLoginState({ status: 'error', message: errorMsg });
 
       // 登录失败后刷新验证码
-      const captchaErrors = [INVALID_CREDENTIALS, CAPTCHA_INVALID, CAPTCHA_REQUIRED, CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN];
-      if (captchaErrors.includes(errorCode as any)) {
-        if ([CAPTCHA_INVALID, CAPTCHA_REQUIRED, CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN].includes(errorCode as any)) {
-          if (captchaRef.current) {
-            await captchaRef.current.refresh();
-          }
-        }
+      if (captchaRef.current) {
+        await captchaRef.current.refresh();
       }
 
       // 显示友好的错误提示，不再抛出错误，避免显示技术性错误页面

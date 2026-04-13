@@ -59,5 +59,4 @@
 
 ---
 相关文档：
-- [MCP 服务简化版本说明](../../Platform.ApiService/docs/MCP服务简化版本说明.md)
 - [SSE 实时通信指南](SSE-REALTIME-COMMUNICATION.md)

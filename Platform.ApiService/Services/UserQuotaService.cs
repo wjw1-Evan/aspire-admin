@@ -112,7 +112,7 @@ public class UserQuotaService : IUserQuotaService
         return quota;
     }
 
-    public async Task<BatchOperationResult> BatchSetUserQuotasAsync(List<UserQuotaSetting> quotaSettings)
+    public async Task<BatchOperationResult> BatchSetUserQuotasAsync(List<UserQuotaSettingDto> quotaSettings)
     {
         var result = new BatchOperationResult { Total = quotaSettings.Count, StartTime = DateTime.UtcNow };
         foreach (var setting in quotaSettings)

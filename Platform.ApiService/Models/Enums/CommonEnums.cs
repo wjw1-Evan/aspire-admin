@@ -20,19 +20,9 @@ public enum NoticeIconItemType
 public enum PasswordStrengthLevel
 {
     Weak = 0,
-    Fair = 1,
-    Good = 2,
-    Strong = 3,
-    VeryStrong = 4
-}
-
-public enum DocumentStatus
-{
-    Draft = 0,
-    Pending = 1,
-    Approved = 2,
-    Rejected = 3,
-    Archived = 4
+    Medium = 1,
+    Strong = 2,
+    VeryStrong = 3
 }
 
 public enum FormFieldType

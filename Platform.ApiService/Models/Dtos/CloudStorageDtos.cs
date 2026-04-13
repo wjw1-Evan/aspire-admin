@@ -1,4 +1,15 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Platform.ApiService.Models;
+
+public class UserQuotaSettingDto
+{
+    public string UserId { get; set; } = string.Empty;
+    public string Username { get; set; } = string.Empty;
+    public long TotalQuota { get; set; } = 0;
+    public int? WarningThreshold { get; set; }
+    public bool? IsEnabled { get; set; }
+}
 
 public class FilePreviewInfo
 {
@@ -257,7 +268,7 @@ public class SetQuotaRequest
 
 public class BatchSetQuotasRequest
 {
-    public List<UserQuotaSetting> QuotaSettings { get; set; } = [];
+    public List<UserQuotaSettingDto> QuotaSettings { get; set; } = [];
 }
 
 public class UpdateStorageUsageRequest

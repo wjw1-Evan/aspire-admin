@@ -10,7 +10,7 @@ public interface IUserQuotaService
     Task<StorageQuota> UpdateStorageUsageAsync(string userId, long sizeChange);
     Task<bool> CheckStorageAvailabilityAsync(string userId, long requiredSize);
     Task<StorageQuota> RecalculateUserStorageAsync(string userId);
-    Task<BatchOperationResult> BatchSetUserQuotasAsync(List<UserQuotaSetting> quotaSettings);
+    Task<BatchOperationResult> BatchSetUserQuotasAsync(List<UserQuotaSettingDto> quotaSettings);
 }
 
 public interface ICompanyQuotaService

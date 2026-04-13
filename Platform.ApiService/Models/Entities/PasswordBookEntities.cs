@@ -6,24 +6,6 @@ using Platform.ServiceDefaults.Models;
 namespace Platform.ApiService.Models;
 
 /// <summary>
-/// 密码强度等级枚举
-/// </summary>
-public enum PasswordStrengthLevel
-{
-    /// <summary>弱</summary>
-    Weak = 0,
-    
-    /// <summary>中</summary>
-    Medium = 1,
-    
-    /// <summary>强</summary>
-    Strong = 2,
-    
-    /// <summary>非常强</summary>
-    VeryStrong = 3
-}
-
-/// <summary>
 /// 密码本条目实体
 /// </summary>
 public class PasswordBookEntry : MultiTenantEntity

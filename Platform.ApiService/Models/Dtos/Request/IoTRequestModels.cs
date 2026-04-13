@@ -294,4 +294,9 @@ public class GenerateApiKeyResult
     public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
 }
 
+public class HandleEventRequest
+{
+    public string? Remarks { get; set; }
+}
+
 #endregion

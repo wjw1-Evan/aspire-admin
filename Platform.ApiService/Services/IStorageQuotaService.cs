@@ -42,7 +42,7 @@ public interface IStorageQuotaService
     /// <summary>
     /// 批量设置用户配额
     /// </summary>
-    Task<BatchOperationResult> BatchSetUserQuotasAsync(List<UserQuotaSetting> quotaSettings);
+    Task<BatchOperationResult> BatchSetUserQuotasAsync(List<UserQuotaSettingDto> quotaSettings);
 
     /// <summary>
     /// 获取存储使用量排行榜

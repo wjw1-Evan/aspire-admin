@@ -2,6 +2,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Collections.Generic;
 
 namespace Platform.ApiService.Models;
 
@@ -177,4 +178,19 @@ public class ResetPasswordRequest
     [Required(ErrorMessage = "确认密码不能为空")]
     [Compare("NewPassword", ErrorMessage = "新密码和确认密码不一致")]
     public string ConfirmPassword { get; set; } = string.Empty;
+}
+
+public class SwitchCompanyRequest
+{
+    public string TargetCompanyId { get; set; } = string.Empty;
+}
+
+public class UpdateMemberRolesRequest
+{
+    public List<string> RoleIds { get; set; } = new();
+}
+
+public class SetAdminRequest
+{
+    public bool IsAdmin { get; set; }
 }

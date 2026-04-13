@@ -24,7 +24,8 @@ public enum TaskExecutionResult
     NotExecuted = 0,
     Success = 1,
     Failed = 2,
-    Timeout = 3
+    Timeout = 3,
+    Interrupted = 4
 }
 
 public enum TaskDependencyType

@@ -299,7 +299,7 @@ public class StorageQuotaService : IStorageQuotaService
     /// <summary>
     /// 批量设置用户配额
     /// </summary>
-    public async Task<BatchOperationResult> BatchSetUserQuotasAsync(List<UserQuotaSetting> quotaSettings)
+    public async Task<BatchOperationResult> BatchSetUserQuotasAsync(List<UserQuotaSettingDto> quotaSettings)
     {
         var result = new BatchOperationResult
         {

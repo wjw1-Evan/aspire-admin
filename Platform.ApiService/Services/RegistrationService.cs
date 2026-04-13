@@ -307,7 +307,7 @@ public class RegistrationService : IRegistrationService
             await _context.SaveChangesAsync();
             _logger.LogInformation("创建个人企业: {CompanyName} ({CompanyCode}), CreatedBy: {CreatedBy}", company.Name, company.Code, company.CreatedBy);
 
-            var allMenus = await _context.Set<Menu>().Where(m => m.IsEnabled == true).ToListAsync();
+            var allMenus = await _context.Set<Menu>().IgnoreQueryFilters().Where(m => m.IsEnabled == true).ToListAsync();
             var allMenuIds = allMenus.Select(m => m.Id!).ToList();
             _logger.LogInformation("获取 {Count} 个全局菜单", allMenuIds.Count);
 

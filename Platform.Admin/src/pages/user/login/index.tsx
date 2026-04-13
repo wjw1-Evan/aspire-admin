@@ -430,44 +430,32 @@ const Login: React.FC = () => {
                     {showCaptcha && (
                       <Form.Item
                         name="captchaAnswer"
-                        dependencies={['captchaAnswer']}
-                        noStyle
-                        shouldUpdate={(prevValues, curValues) => prevValues.captchaAnswer !== curValues.captchaAnswer}
+                        validateTrigger="onBlur"
+                        rules={[
+                          {
+                            required: true,
+                            message: intl.formatMessage({
+                              id: 'pages.login.imageCaptcha.required',
+                              defaultMessage: '请输入图形验证码',
+                            }),
+                          },
+                        ]}
                       >
-                        {({ getFieldValue, submit }) => (
-                          <Form.Item
-                            name="captchaAnswer"
-                            rules={[
-                              {
-                                validator: async () => {
-                                  const value = getFieldValue('captchaAnswer');
-                                  if (!value || value.trim() === '') {
-                                    throw new Error(intl.formatMessage({
-                                      id: 'pages.login.imageCaptcha.required',
-                                      defaultMessage: '请输入图形验证码',
-                                    }));
-                                  }
-                                },
-                              },
-                            ]}
-                          >
-                            <ImageCaptcha
-                              ref={captchaRef}
-                              value={captchaAnswer}
-                              onChange={(value) => {
-                                setCaptchaAnswer(value);
-                                form.setFieldValue('captchaAnswer', value);
-                              }}
-                              onCaptchaIdChange={setCaptchaId}
-                              type="login"
-                              placeholder={intl.formatMessage({
-                                id: 'pages.login.imageCaptcha.placeholder',
-                                defaultMessage: '请输入图形验证码',
-                              })}
-                              size="large"
-                            />
-                          </Form.Item>
-                        )}
+                        <ImageCaptcha
+                          ref={captchaRef}
+                          value={captchaAnswer}
+                          onChange={(value) => {
+                            setCaptchaAnswer(value);
+                            form.setFieldValue('captchaAnswer', value);
+                          }}
+                          onCaptchaIdChange={setCaptchaId}
+                          type="login"
+                          placeholder={intl.formatMessage({
+                            id: 'pages.login.imageCaptcha.placeholder',
+                            defaultMessage: '请输入图形验证码',
+                          })}
+                          size="large"
+                        />
                       </Form.Item>
                     )}
                   </>

@@ -105,10 +105,6 @@ public class LoginService : ILoginService
 
     private string GetClientIdentifier(string? username = null)
     {
-        if (!string.IsNullOrEmpty(username))
-        {
-            return username.ToLowerInvariant();
-        }
         var httpContext = _httpContextAccessor.HttpContext;
         return httpContext?.Connection?.RemoteIpAddress?.ToString() ?? "unknown";
     }

@@ -111,30 +111,21 @@ public class LoginService : ILoginService
 
     public async Task<LoginData> LoginAsync(LoginRequest request)
     {
-        var clientId = GetClientIdentifier(request.Username);
-        var failureCount = await GetFailureCountAsync(clientId, "login");
-        var requiresCaptcha = failureCount >= 1;
-
-        if (requiresCaptcha || !string.IsNullOrEmpty(request.CaptchaId))
+        if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
         {
-            if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
-            {
-                throw new ArgumentException("需要验证码");
-            }
+            throw new ArgumentException("请输入图形验证码");
+        }
 
-            var captchaValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.CaptchaAnswer, "login");
-            if (!captchaValid)
-            {
-                await RecordFailureAsync(clientId, "login");
-                throw new ArgumentException("验证码无效");
-            }
+        var captchaValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.CaptchaAnswer, "login");
+        if (!captchaValid)
+        {
+            throw new ArgumentException("验证码无效");
         }
 
         var user = await _context.Set<AppUser>().FirstOrDefaultAsync(u => u.Username == request.Username && u.IsActive == true);
 
         if (user == null)
         {
-            await RecordFailureAsync(clientId, "login");
             throw new ArgumentException("用户名或密码错误");
         }
 
@@ -142,11 +133,8 @@ public class LoginService : ILoginService
 
         if (!_passwordHasher.VerifyPassword(rawPassword, user.PasswordHash))
         {
-            await RecordFailureAsync(clientId, "login");
             throw new ArgumentException("用户名或密码错误");
         }
-
-        await ClearFailureAsync(clientId, "login");
 
         bool shouldClearInvalidCompanyId = false;
         if (!string.IsNullOrEmpty(user.CurrentCompanyId))

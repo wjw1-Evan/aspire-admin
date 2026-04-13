@@ -115,23 +115,15 @@ public class RegistrationService : IRegistrationService
     /// <inheritdoc/>
     public async Task<User> RegisterAsync(RegisterRequest request)
     {
-        var clientId = GetClientIdentifier(request.Username);
-        var failureCount = await GetFailureCountAsync(clientId, "register");
-        var requiresCaptcha = failureCount >= 1;
-
-        if (requiresCaptcha || !string.IsNullOrEmpty(request.CaptchaId))
+        if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
         {
-            if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
-            {
-                throw new ArgumentException("需要验证码");
-            }
+            throw new ArgumentException("请输入图形验证码");
+        }
 
-            var captchaValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.CaptchaAnswer, "register");
-            if (!captchaValid)
-            {
-                await RecordFailureAsync(clientId, "register");
-                throw new ArgumentException("验证码无效");
-            }
+        var captchaValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.CaptchaAnswer, "register");
+        if (!captchaValid)
+        {
+            throw new ArgumentException("验证码无效");
         }
 
         _validationService.ValidateUsername(request.Username);
@@ -144,7 +136,6 @@ public class RegistrationService : IRegistrationService
         }
         catch (InvalidOperationException)
         {
-            await RecordFailureAsync(clientId, "register");
             throw;
         }
 
@@ -156,7 +147,6 @@ public class RegistrationService : IRegistrationService
             }
             catch (InvalidOperationException)
             {
-                await RecordFailureAsync(clientId, "register");
                 throw;
             }
         }
@@ -169,7 +159,6 @@ public class RegistrationService : IRegistrationService
             }
             catch (InvalidOperationException)
             {
-                await RecordFailureAsync(clientId, "register");
                 throw;
             }
         }
@@ -218,26 +207,21 @@ public class RegistrationService : IRegistrationService
 
             _logger.LogInformation("用户 {Username} 注册完成，个人企业: {CompanyName}", user.Username, personalCompany.Name);
 
-            await ClearFailureAsync(clientId, "register");
-
             return user;
         }
         catch (ArgumentException ex)
         {
             await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
-            await RecordFailureAsync(clientId, "register");
             throw new ArgumentException(ex.Message);
         }
         catch (InvalidOperationException ex)
         {
             await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
-            await RecordFailureAsync(clientId, "register");
             throw new ArgumentException(ex.Message);
         }
         catch (Exception ex)
         {
             await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
-            await RecordFailureAsync(clientId, "register");
             _logger.LogError(ex, "用户注册失败，已执行回滚操作");
             throw new ArgumentException($"注册失败: {ex.Message}");
         }

@@ -133,7 +133,7 @@ public class ImageCaptchaService : IImageCaptchaService
     private static string GenerateRandomAnswer()
     {
         var random = Random.Shared;
-        var length = 5;
+        var length = 4;
         var answer = new StringBuilder(length);
 
         for (int i = 0; i < length; i++)

@@ -127,7 +127,7 @@ public class ImageCaptchaService : IImageCaptchaService
                 r.ClientId == ip &&
                 r.Type == type &&
                 r.ExpiresAt > DateTime.UtcNow);
-        return (record?.FailureCount ?? 0) > 0;
+        return (record?.FailureCount ?? 0) >= 1;
     }
 
     private static string GenerateRandomAnswer()

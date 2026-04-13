@@ -117,9 +117,9 @@ public class RegistrationService : IRegistrationService
     {
         var clientId = GetClientIdentifier(request.Username);
         var failureCount = await GetFailureCountAsync(clientId, "register");
-        var requiresCaptcha = failureCount > 0;
+        var requiresCaptcha = failureCount >= 1;
 
-        if (requiresCaptcha)
+        if (requiresCaptcha || !string.IsNullOrEmpty(request.CaptchaId))
         {
             if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
             {

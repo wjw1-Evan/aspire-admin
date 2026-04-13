@@ -120,13 +120,16 @@ public class ImageCaptchaService : IImageCaptchaService
 
     public async Task<bool> IsCaptchaRequiredAsync(string type = "login", string? clientIp = null)
     {
-        var ip = clientIp ?? "unknown";
-        var record = await _context.Set<LoginFailureRecord>()
+        var query = _context.Set<LoginFailureRecord>()
             .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(r =>
-                r.ClientId == ip &&
-                r.Type == type &&
-                r.ExpiresAt > DateTime.UtcNow);
+            .Where(r => r.Type == type && r.ExpiresAt > DateTime.UtcNow);
+
+        if (!string.IsNullOrEmpty(clientIp) && clientIp != "unknown")
+        {
+            query = query.Where(r => r.ClientId == clientIp);
+        }
+
+        var record = await query.FirstOrDefaultAsync();
         return (record?.FailureCount ?? 0) >= 1;
     }
 

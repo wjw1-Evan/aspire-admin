@@ -120,29 +120,14 @@ public class ImageCaptchaService : IImageCaptchaService
 
     public async Task<bool> IsCaptchaRequiredAsync(string type = "login", string? clientIp = null, string? username = null)
     {
-        var records = await _context.Set<LoginFailureRecord>()
+        var ip = clientIp ?? "unknown";
+        var record = await _context.Set<LoginFailureRecord>()
             .IgnoreQueryFilters()
-            .Where(r => r.Type == type && r.ExpiresAt > DateTime.UtcNow)
-            .ToListAsync();
-
-        if (!string.IsNullOrEmpty(username))
-        {
-            var usernameKey = username.ToLowerInvariant();
-            if (records.Any(r => r.ClientId == usernameKey))
-            {
-                return (records.First(r => r.ClientId == usernameKey).FailureCount) >= 1;
-            }
-        }
-
-        if (!string.IsNullOrEmpty(clientIp) && clientIp != "unknown")
-        {
-            if (records.Any(r => r.ClientId == clientIp))
-            {
-                return (records.First(r => r.ClientId == clientIp).FailureCount) >= 1;
-            }
-        }
-
-        return false;
+            .FirstOrDefaultAsync(r =>
+                r.ClientId == ip &&
+                r.Type == type &&
+                r.ExpiresAt > DateTime.UtcNow);
+        return (record?.FailureCount ?? 0) >= 1;
     }
 
     private static string GenerateRandomAnswer()

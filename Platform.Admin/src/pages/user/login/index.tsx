@@ -209,17 +209,6 @@ const Login: React.FC = () => {
         ? await PasswordEncryption.encrypt(values.password)
         : undefined;
 
-      // 如果显示了验证码但未填写，提示用户
-      if (showCaptcha && !captchaAnswer) {
-        message.error(
-          intl.formatMessage({
-            id: 'pages.login.imageCaptcha.required',
-            defaultMessage: '请输入图形验证码',
-          })
-        );
-        return;
-      }
-
       // 登录
       const loginData = {
         ...values,
@@ -439,22 +428,46 @@ const Login: React.FC = () => {
                       />
                     </Form.Item>
                     {showCaptcha && (
-                      <Form.Item name="captchaAnswer">
-                        <ImageCaptcha
-                          ref={captchaRef}
-                          value={captchaAnswer}
-                          onChange={(value) => {
-                            setCaptchaAnswer(value);
-                            form.setFieldValue('captchaAnswer', value);
-                          }}
-                          onCaptchaIdChange={setCaptchaId}
-                          type="login"
-                          placeholder={intl.formatMessage({
-                            id: 'pages.login.imageCaptcha.placeholder',
-                            defaultMessage: '请输入图形验证码',
-                          })}
-                          size="large"
-                        />
+                      <Form.Item
+                        name="captchaAnswer"
+                        dependencies={['captchaAnswer']}
+                        noStyle
+                        shouldUpdate={(prevValues, curValues) => prevValues.captchaAnswer !== curValues.captchaAnswer}
+                      >
+                        {({ getFieldValue, submit }) => (
+                          <Form.Item
+                            name="captchaAnswer"
+                            rules={[
+                              {
+                                validator: async () => {
+                                  const value = getFieldValue('captchaAnswer');
+                                  if (!value || value.trim() === '') {
+                                    throw new Error(intl.formatMessage({
+                                      id: 'pages.login.imageCaptcha.required',
+                                      defaultMessage: '请输入图形验证码',
+                                    }));
+                                  }
+                                },
+                              },
+                            ]}
+                          >
+                            <ImageCaptcha
+                              ref={captchaRef}
+                              value={captchaAnswer}
+                              onChange={(value) => {
+                                setCaptchaAnswer(value);
+                                form.setFieldValue('captchaAnswer', value);
+                              }}
+                              onCaptchaIdChange={setCaptchaId}
+                              type="login"
+                              placeholder={intl.formatMessage({
+                                id: 'pages.login.imageCaptcha.placeholder',
+                                defaultMessage: '请输入图形验证码',
+                              })}
+                              size="large"
+                            />
+                          </Form.Item>
+                        )}
                       </Form.Item>
                     )}
                   </>

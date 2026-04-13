@@ -42,12 +42,6 @@ public abstract class BaseApiController : ControllerBase
         return null;
     }
 
-    protected string GetClientIpAddress()
-        => Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim()
-        ?? Request.Headers["X-Real-IP"].FirstOrDefault()
-        ?? HttpContext.Connection.RemoteIpAddress?.ToString()
-        ?? "Unknown";
-
     private ApiResponse CreateResponse(bool success, string? message, object? data)
         => new(success, message, data, HttpContext.TraceIdentifier);
 }

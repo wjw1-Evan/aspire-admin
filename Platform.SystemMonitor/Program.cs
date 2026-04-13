@@ -1,11 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Platform.ServiceDefaults.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
-builder.AddSatelliteJwtAndInternalKeyAuthentication();
 
 builder.Services.AddControllers();
 

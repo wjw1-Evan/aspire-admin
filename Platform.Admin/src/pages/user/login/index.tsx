@@ -301,6 +301,17 @@ const Login: React.FC = () => {
             await captchaRef.current.refresh();
           }
         }
+      } else {
+        // 登录失败后也检查是否需要验证码（可能因失败次数达到阈值）
+        try {
+          const captchaRes = await isCaptchaRequired('login');
+          if (captchaRes.success && captchaRes.data?.required) {
+            setShowCaptcha(true);
+            if (captchaRef.current) {
+              captchaRef.current.refresh();
+            }
+          }
+        } catch {}
       }
 
       // 设置错误状态（用于表单显示）
@@ -345,6 +356,17 @@ const Login: React.FC = () => {
             await captchaRef.current.refresh();
           }
         }
+      } else {
+        // 登录失败后也检查是否需要验证码
+        try {
+          const captchaRes = await isCaptchaRequired('login');
+          if (captchaRes.success && captchaRes.data?.required) {
+            setShowCaptcha(true);
+            if (captchaRef.current) {
+              captchaRef.current.refresh();
+            }
+          }
+        } catch {}
       }
 
       // 显示友好的错误提示，不再抛出错误，避免显示技术性错误页面

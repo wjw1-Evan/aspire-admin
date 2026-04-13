@@ -240,6 +240,26 @@ public class AuthController : BaseApiController
     }
 
     /// <summary>
+    /// 检查是否需要验证码
+    /// </summary>
+    /// <param name="type">验证码类型（login/register）</param>
+    /// <returns>是否需要验证码</returns>
+    [HttpGet("captcha/required")]
+    [AllowAnonymous]
+    public async Task<IActionResult> IsCaptchaRequired([FromQuery] string type = "login")
+    {
+        if (type != "login" && type != "register")
+        {
+            throw new ArgumentException("验证码类型只能是 login 或 register");
+        }
+
+        var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var required = await _imageCaptchaService.IsCaptchaRequiredAsync(type, clientIp);
+
+        return Success(new { required });
+    }
+
+    /// <summary>
     /// 验证图形验证码
     /// </summary>
     /// <param name="request">图形验证码验证请求</param>

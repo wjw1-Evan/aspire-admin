@@ -14,11 +14,11 @@ import { SelectLang } from '@/components';
 import { Alert, App, Button, Tabs, Form, Input, Checkbox, Space } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { createStyles } from 'antd-style';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { flushSync } from 'react-dom';
 import { Footer } from '@/components';
 import ImageCaptcha, { type ImageCaptchaRef } from '@/components/ImageCaptcha';
-import { login } from '@/services/ant-design-pro/api';
+import { login, isCaptchaRequired } from '@/services/ant-design-pro/api';
 import { tokenUtils } from '@/utils/token';
 import { PasswordEncryption } from '@/utils/encryption';
 import Settings from '../../../../config/defaultSettings';
@@ -190,6 +190,25 @@ const Login: React.FC = () => {
   const { styles } = useStyles();
   const { message } = App.useApp();
   const intl = useIntl();
+
+  // 检查是否需要验证码
+  useEffect(() => {
+    const checkCaptchaRequired = async () => {
+      try {
+        const response = await isCaptchaRequired('login');
+        if (response.success && response.data?.required) {
+          setShowCaptcha(true);
+          // 刷新验证码
+          if (captchaRef.current) {
+            captchaRef.current.refresh();
+          }
+        }
+      } catch (error) {
+        console.error('检查验证码需求失败:', error);
+      }
+    };
+    checkCaptchaRequired();
+  }, []);
 
   const fetchUserInfo = async () => {
     const userInfo = await initialState?.fetchUserInfo?.();

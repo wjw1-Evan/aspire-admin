@@ -118,6 +118,18 @@ public class ImageCaptchaService : IImageCaptchaService
         return string.Equals(decryptedAnswer, answer.Trim(), StringComparison.OrdinalIgnoreCase);
     }
 
+    public async Task<bool> IsCaptchaRequiredAsync(string type = "login", string? clientIp = null)
+    {
+        var ip = clientIp ?? "unknown";
+        var record = await _context.Set<LoginFailureRecord>()
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(r =>
+                r.ClientId == ip &&
+                r.Type == type &&
+                r.ExpiresAt > DateTime.UtcNow);
+        return (record?.FailureCount ?? 0) > 0;
+    }
+
     private static string GenerateRandomAnswer()
     {
         var random = Random.Shared;

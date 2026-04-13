@@ -16,10 +16,10 @@ import { SelectLang } from '@/components';
 import { App, Button, Form, Input, Space } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { createStyles } from 'antd-style';
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Footer } from '@/components';
 import ImageCaptcha, { type ImageCaptchaRef } from '@/components/ImageCaptcha';
-import { checkUsernameExists, register } from '@/services/ant-design-pro/api';
+import { checkUsernameExists, register, isCaptchaRequired } from '@/services/ant-design-pro/api';
 import { PasswordEncryption } from '@/utils/encryption';
 import Settings from '../../../../config/defaultSettings';
 import { REGISTER_KNOWN_ERRORS, CAPTCHA_INVALID, CAPTCHA_REQUIRED } from '@/constants/errorCodes';
@@ -202,6 +202,25 @@ export default function Register() {
   const [usernameValue, setUsernameValue] = useState<string>('');
 
   const pageTitle = `${intl.formatMessage({ id: 'pages.register.title' })} - ${Settings.title}`;
+
+  // 检查是否需要验证码
+  useEffect(() => {
+    const checkCaptchaRequired = async () => {
+      try {
+        const response = await isCaptchaRequired('register');
+        if (response.success && response.data?.required) {
+          setShowCaptcha(true);
+          // 刷新验证码
+          if (captchaRef.current) {
+            captchaRef.current.refresh();
+          }
+        }
+      } catch (error) {
+        console.error('检查验证码需求失败:', error);
+      }
+    };
+    checkCaptchaRequired();
+  }, []);
 
   const handleSubmit = async (values: API.RegisterParams) => {
     try {

@@ -439,20 +439,7 @@ const Login: React.FC = () => {
                       />
                     </Form.Item>
                     {showCaptcha && (
-                      <Form.Item
-                        name="captchaAnswer"
-                        rules={[
-                          {
-                            required: true,
-                            message: (
-                              <FormattedMessage
-                                id="pages.login.imageCaptcha.required"
-                                defaultMessage="请输入图形验证码"
-                              />
-                            ),
-                          },
-                        ]}
-                      >
+                      <Form.Item name="captchaAnswer">
                         <ImageCaptcha
                           ref={captchaRef}
                           value={captchaAnswer}

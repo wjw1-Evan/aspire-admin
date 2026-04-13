@@ -249,3 +249,26 @@ public class TaskStatistics
 
     public Dictionary<string, int> TasksByStatus { get; set; } = new();
 }
+
+public class BatchUpdateTaskStatusRequest
+{
+    public List<string> TaskIds { get; set; } = new();
+
+    public int Status { get; set; }
+}
+
+public class UpdateTaskProgressRequest
+{
+    public int Progress { get; set; }
+}
+
+public class AddTaskDependencyRequest
+{
+    public string PredecessorTaskId { get; set; } = string.Empty;
+
+    public string SuccessorTaskId { get; set; } = string.Empty;
+
+    public int DependencyType { get; set; } = (int)TaskDependencyType.FinishToStart;
+
+    public int LagDays { get; set; } = 0;
+}

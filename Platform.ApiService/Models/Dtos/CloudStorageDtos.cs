@@ -158,3 +158,109 @@ public class TopUserItem
 
     public double UsagePercentage { get; set; } = 0;
 }
+
+public class CreateFolderRequest
+{
+    public string Name { get; set; } = string.Empty;
+
+    public string ParentId { get; set; } = string.Empty;
+}
+
+public class UploadFileRequest
+{
+    public IFormFile File { get; set; } = null!;
+
+    public string ParentId { get; set; } = string.Empty;
+
+    public bool Overwrite { get; set; } = false;
+}
+
+public class RenameRequest
+{
+    public string NewName { get; set; } = string.Empty;
+}
+
+public class MoveRequest
+{
+    public string NewParentId { get; set; } = string.Empty;
+}
+
+public class CopyRequest
+{
+    public string NewParentId { get; set; } = string.Empty;
+
+    public string? NewName { get; set; }
+}
+
+public class RestoreRequest
+{
+    public string? NewParentId { get; set; }
+}
+
+public class BatchOperationRequest
+{
+    public List<string> Ids { get; set; } = [];
+}
+
+public class BatchMoveRequest
+{
+    public List<string> Ids { get; set; } = [];
+
+    public string TargetParentId { get; set; } = string.Empty;
+}
+
+public class BatchCopyRequest
+{
+    public List<string> Ids { get; set; } = [];
+
+    public string TargetParentId { get; set; } = string.Empty;
+}
+
+public class BatchDeleteSharesRequest
+{
+    public List<string> Ids { get; set; } = new();
+}
+
+public class CreateVersionRequest
+{
+    public IFormFile File { get; set; } = null!;
+
+    public string? Comment { get; set; }
+}
+
+public class BatchDeleteVersionsRequest
+{
+    public List<string> VersionIds { get; set; } = [];
+}
+
+public class DeleteRequest
+{
+    public string? Reason { get; set; }
+}
+
+public class BulkDeleteRequest
+{
+    public List<string> Ids { get; set; } = new();
+
+    public string? Reason { get; set; }
+}
+
+public class SetQuotaRequest
+{
+    public long TotalQuota { get; set; }
+
+    [Range(0, 100)]
+    public int? WarningThreshold { get; set; }
+
+    public bool? IsEnabled { get; set; }
+}
+
+public class BatchSetQuotasRequest
+{
+    public List<UserQuotaSetting> QuotaSettings { get; set; } = [];
+}
+
+public class UpdateStorageUsageRequest
+{
+    public long SizeChange { get; set; }
+}

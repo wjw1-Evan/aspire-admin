@@ -99,6 +99,8 @@ public class PlatformDbContext : DbContext
 
         foreach (var type in GetEntityTypes())
         {
+            modelBuilder.Entity(type);
+
             if (typeof(IMultiTenant).IsAssignableFrom(type))
             {
                 typeof(PlatformDbContext)

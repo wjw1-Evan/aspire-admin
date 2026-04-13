@@ -90,7 +90,7 @@ export async function getImageCaptcha(type?: 'login' | 'register'): Promise<ApiR
 }
 
 export async function verifyImageCaptcha(captchaId: string, captchaCode: string, type?: 'login' | 'register'): Promise<ApiResponse<{ valid: boolean }>> {
-  return request('/apiservice/api/auth/captcha/verify-image', { method: 'POST', data: { captchaId, captchaCode, type } });
+  return request('/apiservice/api/auth/captcha/verify-image', { method: 'POST', data: { captchaId, answer: captchaCode, type } });
 }
 
 export async function refreshToken(body: { refreshToken: string }): Promise<ApiResponse<LoginResult>> {

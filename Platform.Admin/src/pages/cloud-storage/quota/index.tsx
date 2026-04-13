@@ -20,9 +20,13 @@ interface StorageQuota { userId: string; totalQuota: number; usedQuota: number; 
 interface QuotaUsageStats { totalUsers: number; totalQuota: number; totalUsed: number; averageUsage: number; usageDistribution: { range: string; count: number; percentage: number }[]; topUsers: { userId: string; userDisplayName?: string; username?: string; usedQuota: number; usagePercentage: number }[]; }
 interface QuotaWarning { userId: string; userDisplayName?: string; username?: string; warningType: string; usedQuota: number; totalQuota: number; usagePercentage: number; createdAt: string; }
 
+interface UserQuotaResponse { userId: string; totalQuota: number; usedQuota: number; }
+interface UpdateQuotaRequest { totalQuota?: number; warningThreshold?: number; isEnabled?: boolean; }
+interface QuotaFormValues { userId?: string; totalQuota: number; warningThreshold?: number; isEnabled?: boolean; }
+
 const api = {
-    getUserQuota: (userId: string) => request<ApiResponse<any>>(`/apiservice/api/storage-quota/user/${userId}`),
-    updateUserQuota: (userId: string, data: any) => request<ApiResponse<void>>(`/apiservice/api/storage-quota/user/${userId}`, { method: 'PUT', data }),
+    getUserQuota: (userId: string) => request<ApiResponse<UserQuotaResponse>>(`/apiservice/api/storage-quota/user/${userId}`),
+    updateUserQuota: (userId: string, data: UpdateQuotaRequest) => request<ApiResponse<void>>(`/apiservice/api/storage-quota/user/${userId}`, { method: 'PUT', data }),
     getUsageStats: () => request<ApiResponse<QuotaUsageStats>>('/apiservice/api/storage-quota/usage-stats'),
     getWarnings: (companyId?: string) => request<ApiResponse<PagedResult<QuotaWarning>>>('/apiservice/api/storage-quota/warnings', { params: { companyId } }),
     setUserQuota: (data: { userId: string; totalQuota: number; warningThreshold?: number; isEnabled?: boolean }) => request<ApiResponse<void>>(`/apiservice/api/storage-quota/user/${data.userId}`, { method: 'PUT', data }),
@@ -90,10 +94,11 @@ const CloudStorageQuotaPage: React.FC = () => {
 
     const handleEdit = useCallback((quota: StorageQuota) => { set({ editingQuota: quota, editQuotaVisible: true }); }, []);
 
-    const handleEditSubmit = useCallback(async (values: any) => {
+    const handleEditSubmit = useCallback(async (values: QuotaFormValues) => {
         if (!state.editingQuota) return false;
         try {
-            await api.updateUserQuota(state.editingQuota.userId, { ...values, totalQuota: values.totalQuota !== undefined ? gbToBytes(values.totalQuota) : undefined });
+            const totalQuota = values.totalQuota !== undefined ? gbToBytes(values.totalQuota) : undefined;
+            await api.updateUserQuota(state.editingQuota.userId, { totalQuota, warningThreshold: values.warningThreshold, isEnabled: values.isEnabled });
             message.success('更新配额成功');
             set({ editQuotaVisible: false, editingQuota: null });
             refreshAll();
@@ -113,7 +118,7 @@ const CloudStorageQuotaPage: React.FC = () => {
 
     useEffect(() => { if (state.addQuotaVisible) loadUserOptions(); }, [state.addQuotaVisible, loadUserOptions]);
 
-    const handleAddSubmit = useCallback(async (values: any) => {
+    const handleAddSubmit = useCallback(async (values: QuotaFormValues) => {
         if (!values.userId) { message.error(intl.formatMessage({ id: 'pages.cloud-storage.quota.message.selectUser' })); return false; }
         set({ submitLoading: true });
         try {

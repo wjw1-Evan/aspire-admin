@@ -22,8 +22,10 @@ interface StorageStatistics { totalFiles: number; totalFolders: number; totalSiz
 interface FileVersion { id: string; fileId: string; version: number; versionNumber?: number; size: number; createdByName: string; createdAt: string; comment?: string; }
 interface AppUser { id: string; name: string; username: string; email?: string; }
 interface PathHistoryItem { id?: string; name: string; path: string; }
+interface ShareRequest { fileId: string; shareType: string; expiresAt?: string; maxDownloads?: number; allowedUserIds?: string[]; }
+interface ShareResponse { shareLink?: string; expiresAt?: string; }
+interface ShareFormValues { shareType: string; expiresAt?: string; maxDownloads?: number; allowedUserIds?: string[]; }
 
-// ==================== API ====================
 const api = {
     list: (params: PageParams & { parentId?: string }) => request<ApiResponse<PagedResult<FileItem>>>('/apiservice/api/cloud-storage/list', { params }),
     search: (params: PageParams & { keyword: string }) => request<ApiResponse<PagedResult<FileItem>>>('/apiservice/api/cloud-storage/search', { params }),
@@ -35,7 +37,7 @@ const api = {
     statistics: () => request<ApiResponse<StorageStatistics>>('/apiservice/api/cloud-storage/statistics'),
     versions: (fileId: string, page: number, pageSize: number) => request<ApiResponse<PagedResult<FileVersion>>>('/apiservice/api/file-version/list', { params: { fileId, page, pageSize } }),
     restoreVersion: (fileId: string, versionNumber: number) => request<ApiResponse<void>>(`/apiservice/api/file-version/${fileId}/versions/${versionNumber}/restore`, { method: 'POST' }),
-    share: (data: { fileId: string; shareType: string; expiresAt?: string; maxDownloads?: number; allowedUserIds?: string[] }) => request<ApiResponse<any>>(`/apiservice/api/file-share/${data.fileId}`, { method: 'POST', data }),
+    share: (data: ShareRequest) => request<ApiResponse<ShareResponse>>(`/apiservice/api/file-share/${data.fileId}`, { method: 'POST', data }),
     users: () => request<ApiResponse<AppUser[]>>('/apiservice/api/users/all'),
 };
 
@@ -193,7 +195,7 @@ const CloudStorageFilesPage: React.FC = () => {
         finally { set({ userLoading: false }); }
     }, [message, intl]);
 
-    const handleShareSubmit = useCallback(async (values: any) => {
+    const handleShareSubmit = useCallback(async (values: ShareFormValues) => {
         if (!state.sharingFile) return false;
         try {
             await api.share({ fileId: state.sharingFile.id, shareType: values.shareType, expiresAt: values.expiresAt ? dayjs(values.expiresAt).toISOString() : undefined, maxDownloads: values.maxDownloads ? Number(values.maxDownloads) : undefined, allowedUserIds: values.shareType === 'internal' ? values.allowedUserIds || [] : undefined });
@@ -210,11 +212,11 @@ const CloudStorageFilesPage: React.FC = () => {
     }, [state.viewingFile]);
 
     const columns: ProColumns<FileItem>[] = [
-        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.field.name' }), dataIndex: 'name', key: 'name', sorter: true, render: (dom: any, record) => (<Space>{getFileIcon(record)}<a onClick={() => record.isFolder ? handleFolderClick(record) : handleView(record)} style={{ cursor: 'pointer' }}>{dom}</a></Space>) },
-        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.field.size' }), dataIndex: 'size', key: 'size', sorter: true, render: (_: any, r) => r.isFolder ? '-' : formatFileSize(r.size || 0) },
-        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.field.updatedAt' }), dataIndex: 'updatedAt', key: 'updatedAt', sorter: true, render: (dom: any) => dom ? dayjs(dom).format('YYYY-MM-DD HH:mm:ss') : '-' },
+        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.field.name' }), dataIndex: 'name', key: 'name', sorter: true, render: (dom, record) => (<Space>{getFileIcon(record)}<a onClick={() => record.isFolder ? handleFolderClick(record) : handleView(record)} style={{ cursor: 'pointer' }}>{dom}</a></Space>) },
+        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.field.size' }), dataIndex: 'size', key: 'size', sorter: true, render: (_, r) => r.isFolder ? '-' : formatFileSize(r.size || 0) },
+        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.field.updatedAt' }), dataIndex: 'updatedAt', key: 'updatedAt', sorter: true, render: (dom) => dom && typeof dom === 'string' ? dayjs(dom).format('YYYY-MM-DD HH:mm:ss') : '-' },
         { title: intl.formatMessage({ id: 'pages.cloud-storage.files.field.creator' }), dataIndex: 'createdByName', key: 'createdByName' },
-        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.field.action' }), key: 'action', fixed: 'right', render: (_: any, record) => (<Space>
+        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.field.action' }), key: 'action', fixed: 'right', render: (_, record) => (<Space>
             <Button type="link" size="small" icon={<ShareAltOutlined />} onClick={() => set({ sharingFile: record, shareVisible: true })}>{intl.formatMessage({ id: 'pages.cloud-storage.files.action.share' })}</Button>
             <Button type="link" size="small" icon={<DownloadOutlined />} onClick={() => handleDownload(record)}>{intl.formatMessage({ id: 'pages.cloud-storage.files.action.download' })}</Button>
             <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ renamingFile: record, renameVisible: true })}>{intl.formatMessage({ id: 'pages.cloud-storage.files.action.rename' })}</Button>

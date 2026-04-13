@@ -19,16 +19,20 @@ const { Search } = Input;
 interface OrgNode { id?: string; name: string; code?: string; parentId?: string; description?: string; sortOrder?: number; managerUserId?: string; createdAt?: string; updatedAt?: string; children?: OrgNode[]; }
 interface OrgMember { userId: string; username: string; email?: string; organizationUnitId: string; organizationUnitName?: string; }
 interface AvailableUser { value: string; label: string; }
+interface CreateOrgRequest { name: string; code?: string; parentId?: string; description?: string; sortOrder?: number; managerUserId?: string; }
+interface UpdateOrgRequest extends CreateOrgRequest {}
+interface ReorderItem { id: string; sortOrder: number; }
+interface AssignUserRequest { userId: string; organizationUnitId: string; }
 
 // ==================== API ====================
 const api = {
   tree: () => request<ApiResponse<OrgNode[]>>('/apiservice/api/organization/tree'),
-  create: (data: any) => request<ApiResponse<OrgNode>>('/apiservice/api/organization', { method: 'POST', data }),
-  update: (id: string, data: any) => request<ApiResponse<boolean>>(`/apiservice/api/organization/${id}`, { method: 'PUT', data }),
+  create: (data: CreateOrgRequest) => request<ApiResponse<OrgNode>>('/apiservice/api/organization', { method: 'POST', data }),
+  update: (id: string, data: UpdateOrgRequest) => request<ApiResponse<boolean>>(`/apiservice/api/organization/${id}`, { method: 'PUT', data }),
   delete: (id: string) => request<ApiResponse<boolean>>(`/apiservice/api/organization/${id}`, { method: 'DELETE' }),
-  reorder: (items: any[]) => request<ApiResponse<boolean>>('/apiservice/api/organization/reorder', { method: 'POST', data: items }),
+  reorder: (items: ReorderItem[]) => request<ApiResponse<boolean>>('/apiservice/api/organization/reorder', { method: 'POST', data: items }),
   members: (orgId: string) => request<ApiResponse<OrgMember[]>>(`/apiservice/api/organization/${orgId}/members`),
-  assignUser: (data: any) => request<ApiResponse<boolean>>('/apiservice/api/organization/assign-user', { method: 'POST', data }),
+  assignUser: (data: AssignUserRequest) => request<ApiResponse<boolean>>('/apiservice/api/organization/assign-user', { method: 'POST', data }),
   removeUser: (data: { userId: string; organizationUnitId: string }) => request<ApiResponse<boolean>>('/apiservice/api/organization/remove-user', { method: 'POST', data }),
   availableUsers: (orgId: string, query?: string) => request<ApiResponse<AvailableUser[]>>('/apiservice/api/organization/available-users', { params: { organizationUnitId: orgId, ...(query ? { query } : {}) } }),
 };
@@ -180,7 +184,8 @@ const OrganizationPage: React.FC = () => {
     return map;
   }, [state.tree]);
 
-  const handleDrop = async (info: { dragNode?: { key?: string }; node?: { key?: string }; dropToGap?: boolean }) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleDrop = async (info: any) => {
     const dragId = String(info.dragNode?.key);
     const targetId = String(info.node?.key);
     const dropToGap = !!info.dropToGap;
@@ -277,8 +282,8 @@ const OrganizationPage: React.FC = () => {
         onFinish={async (values) => {
           set({ submitLoading: true });
           try {
-            if (state.editingNode?.id) { await api.update(state.editingNode.id, values); message.success('更新成功'); }
-            else { const res = await api.create(values); message.success('创建成功'); if (res.success && res.data?.id) set({ selectedId: res.data.id }); }
+            if (state.editingNode?.id) { await api.update(state.editingNode.id, values as UpdateOrgRequest); message.success('更新成功'); }
+            else { const res = await api.create(values as CreateOrgRequest); message.success('创建成功'); if (res.success && res.data?.id) set({ selectedId: res.data.id }); }
             set({ formOpen: false, editingNode: null });
             await refreshTree();
             return true;

@@ -117,9 +117,7 @@ public class PlatformDbContext : DbContext
     private void ApplyQueryFilter<TEntity>(ModelBuilder modelBuilder) where TEntity : class
     {
         var entityType = typeof(TEntity);
-        var hasCompanyIdProperty = entityType.GetProperty("CompanyId") != null;
 
-        if (!hasCompanyIdProperty) return;
 
         if (typeof(IMultiTenant).IsAssignableFrom(entityType)
             && typeof(ISoftDeletable).IsAssignableFrom(entityType))

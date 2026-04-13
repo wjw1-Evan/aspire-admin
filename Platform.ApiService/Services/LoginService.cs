@@ -134,7 +134,7 @@ public class LoginService : ILoginService
             }
         }
 
-        var user = await _context.Set<AppUser>().FirstOrDefaultAsync(u => u.Username == request.Username && u.IsActive == true);
+        var user = await _context.Set<AppUser>().FirstOrDefaultAsync(u => u.Username == request.Username && u.IsActive == true && u.IsDeleted != true);
 
         if (user == null)
         {

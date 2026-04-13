@@ -230,16 +230,13 @@ export default function Register() {
 
       // 注册失败，处理业务逻辑（显示验证码），然后抛出错误让全局错误处理显示错误提示
       const errorCode = response.code;
-      const errorMsg = response.message || intl.formatMessage({ id: 'pages.login.failure' }); // Using existing login failure as fallback or add new one
+      const errorMsg = response.message || intl.formatMessage({ id: 'pages.login.failure' });
 
       // 注册失败后显示验证码（业务逻辑）
-      if (REGISTER_KNOWN_ERRORS.includes(errorCode as any)) {
+      const needsCaptchaByMessage = errorMsg === '需要验证码';
+      if (REGISTER_KNOWN_ERRORS.includes(errorCode as any) || needsCaptchaByMessage) {
         setShowCaptcha(true);
-        if ([CAPTCHA_INVALID, CAPTCHA_REQUIRED].includes(errorCode as any)) {
-          if (captchaRef.current) {
-            await captchaRef.current.refresh();
-          }
-        } else {
+        if (needsCaptchaByMessage || [CAPTCHA_INVALID, CAPTCHA_REQUIRED].includes(errorCode as any)) {
           if (captchaRef.current) {
             await captchaRef.current.refresh();
           }
@@ -255,14 +252,14 @@ export default function Register() {
         error?.code ||
         error?.response?.data?.code;
 
+      // 检查错误消息是否为 "需要验证码"
+      const backendMessage = error?.response?.data?.message || error?.info?.message || error?.message;
+      const needsCaptchaByMessage = backendMessage === '需要验证码';
+
       // 注册失败后显示验证码（业务逻辑）
-      if (REGISTER_KNOWN_ERRORS.includes(errorCode as any)) {
+      if (REGISTER_KNOWN_ERRORS.includes(errorCode as any) || needsCaptchaByMessage) {
         setShowCaptcha(true);
-        if ([CAPTCHA_INVALID, CAPTCHA_REQUIRED].includes(errorCode as any)) {
-          if (captchaRef.current) {
-            await captchaRef.current.refresh();
-          }
-        } else {
+        if (needsCaptchaByMessage || [CAPTCHA_INVALID, CAPTCHA_REQUIRED].includes(errorCode as any)) {
           if (captchaRef.current) {
             await captchaRef.current.refresh();
           }

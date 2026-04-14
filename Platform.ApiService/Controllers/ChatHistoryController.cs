@@ -23,6 +23,11 @@ public class ChatHistoryController : BaseApiController
         _chatHistoryService = chatHistoryService;
     }
 
+    /// <summary>
+    /// 获取聊天历史列表
+    /// </summary>
+    /// <param name="request">分页参数</param>
+    /// <returns>聊天历史列表</returns>
     [HttpGet("list")]
     [RequireMenu("xiaoke-management-chat-history")]
     public async Task<IActionResult> GetChatHistory([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
@@ -38,6 +43,11 @@ public class ChatHistoryController : BaseApiController
         }
     }
 
+    /// <summary>
+    /// 获取聊天历史详情
+    /// </summary>
+    /// <param name="sessionId">会话ID</param>
+    /// <returns>聊天历史详情</returns>
     [HttpGet("{sessionId}")]
     [RequireMenu("xiaoke-management-chat-history")]
     public async Task<IActionResult> GetChatHistoryDetail(string sessionId)
@@ -58,6 +68,11 @@ public class ChatHistoryController : BaseApiController
         }
     }
 
+    /// <summary>
+    /// 删除聊天历史
+    /// </summary>
+    /// <param name="sessionId">会话ID</param>
+    /// <returns>操作结果</returns>
     [HttpDelete("{sessionId}")]
     [RequireMenu("xiaoke-management-chat-history")]
     public async Task<IActionResult> DeleteChatHistory(string sessionId)

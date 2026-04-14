@@ -55,6 +55,9 @@ public class TaskController : BaseApiController
         return Success(await _taskService.CreateTaskAsync(request));
     }
 
+    /// <summary>
+    /// 获取任务详情
+    /// </summary>
     [HttpGet("{taskId}")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> GetTask(string taskId)
@@ -119,6 +122,9 @@ public class TaskController : BaseApiController
         return Success(task);
     }
 
+    /// <summary>
+    /// 分配任务
+    /// </summary>
     [HttpPost("assign")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> AssignTask([FromBody] AssignTaskRequest request)
@@ -129,6 +135,9 @@ public class TaskController : BaseApiController
         return Success(await _taskService.AssignTaskAsync(request));
     }
 
+    /// <summary>
+    /// 执行任务
+    /// </summary>
     [HttpPost("execute")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> ExecuteTask([FromBody] ExecuteTaskRequest request)
@@ -139,6 +148,9 @@ public class TaskController : BaseApiController
         return Success(await _taskService.ExecuteTaskAsync(request));
     }
 
+    /// <summary>
+    /// 完成任务
+    /// </summary>
     [HttpPost("complete")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> CompleteTask([FromBody] CompleteTaskRequest request)
@@ -148,11 +160,17 @@ public class TaskController : BaseApiController
         return Success(await _taskService.CompleteTaskAsync(request));
     }
 
+    /// <summary>
+    /// 取消任务
+    /// </summary>
     [HttpPost("{taskId}/cancel")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> CancelTask(string taskId, [FromQuery] string? remarks = null)
         => Success(await _taskService.CancelTaskAsync(taskId, remarks));
 
+    /// <summary>
+    /// 删除任务
+    /// </summary>
     [HttpDelete("{taskId}")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> DeleteTask(string taskId)
@@ -228,16 +246,25 @@ public class TaskController : BaseApiController
     public async Task<IActionResult> GetMyTodoTasks()
         => Success(await _taskService.GetUserTodoTasksAsync(RequiredUserId));
 
+    /// <summary>
+    /// 获取用户创建的任务
+    /// </summary>
     [HttpPost("created")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> GetUserCreatedTasks([FromBody] Platform.ServiceDefaults.Models.PageParams request)
         => Success(await _taskService.GetUserCreatedTasksAsync(RequiredUserId, request));
 
+    /// <summary>
+    /// 获取我创建的任务
+    /// </summary>
     [HttpPost("my/created")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> GetMyCreatedTasks([FromBody] Platform.ServiceDefaults.Models.PageParams request)
         => Success(await _taskService.GetUserCreatedTasksAsync(RequiredUserId, request));
 
+    /// <summary>
+    /// 批量更新任务状态
+    /// </summary>
     [HttpPost("batch-update-status")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> BatchUpdateTaskStatus([FromBody] BatchUpdateTaskStatusRequest request)
@@ -267,16 +294,25 @@ public class TaskController : BaseApiController
     public async Task<IActionResult> GetTasksByProjectId(string projectId)
         => Success(await _taskService.GetTasksByProjectIdAsync(projectId));
 
+    /// <summary>
+    /// 获取任务树
+    /// </summary>
     [HttpGet("tree")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> GetTaskTree([FromQuery] string? projectId = null)
         => Success(await _taskService.GetTaskTreeAsync(projectId));
 
+    /// <summary>
+    /// 更新任务进度
+    /// </summary>
     [HttpPut("{id}/progress")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> UpdateTaskProgress(string id, [FromBody] UpdateTaskProgressRequest request)
         => Success(await _taskService.UpdateTaskProgressAsync(id, request.Progress));
 
+    /// <summary>
+    /// 添加任务依赖
+    /// </summary>
     [HttpPost("dependency")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> AddTaskDependency([FromBody] AddTaskDependencyRequest request)
@@ -289,6 +325,9 @@ public class TaskController : BaseApiController
         return Success(new { id = dependencyId });
     }
 
+    /// <summary>
+    /// 移除任务依赖
+    /// </summary>
     [HttpDelete("dependency/{id}")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> RemoveTaskDependency(string id)
@@ -299,6 +338,9 @@ public class TaskController : BaseApiController
         return Success(null, "依赖关系已移除");
     }
 
+    /// <summary>
+    /// 获取任务依赖
+    /// </summary>
     [HttpGet("{taskId}/dependencies")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> GetTaskDependencies(string taskId)

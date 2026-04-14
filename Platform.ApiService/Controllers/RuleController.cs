@@ -34,6 +34,7 @@ public class RuleController : BaseApiController
     /// <param name="name">规则名称</param>
     /// <param name="sorter">排序字段</param>
     /// <param name="filter">过滤条件</param>
+    /// <returns>规则列表</returns>
     [HttpGet]
     public async Task<IActionResult> GetRules(
         [FromQuery] int page = 1,
@@ -57,6 +58,7 @@ public class RuleController : BaseApiController
     /// 根据ID获取规则
     /// </summary>
     /// <param name="id">规则ID</param>
+    /// <returns>规则详情</returns>
     [HttpGet("{id}")]
     public async Task<IActionResult> GetRuleById(string id)
     {
@@ -68,6 +70,7 @@ public class RuleController : BaseApiController
     /// 创建规则
     /// </summary>
     /// <param name="request">创建规则请求</param>
+    /// <returns>创建的规则</returns>
     [HttpPost]
     public async Task<IActionResult> CreateRule([FromBody] CreateRuleRequest request)
     {
@@ -79,6 +82,7 @@ public class RuleController : BaseApiController
     /// 更新规则
     /// </summary>
     /// <param name="request">更新规则请求</param>
+    /// <returns>更新后的规则</returns>
     [HttpPut]
     public async Task<IActionResult> UpdateRule([FromBody] UpdateRuleRequest request)
     {
@@ -94,6 +98,7 @@ public class RuleController : BaseApiController
     /// 删除规则
     /// </summary>
     /// <param name="request">删除规则请求</param>
+    /// <returns>删除结果</returns>
     [HttpDelete]
     public async Task<IActionResult> DeleteRule([FromBody] DeleteRuleRequest request)
     {

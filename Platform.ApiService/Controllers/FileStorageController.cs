@@ -25,6 +25,9 @@ public class FileStorageController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary>
+    /// 上传文件
+    /// </summary>
     [HttpPost("upload")]
     public async Task<IActionResult> Upload(IFormFile file, [FromForm] string? bucketName = "default")
     {
@@ -47,6 +50,9 @@ public class FileStorageController : ControllerBase
         return Ok(new { id = fileId, name = fileName });
     }
 
+    /// <summary>
+    /// 下载文件
+    /// </summary>
     [HttpGet("{fileId}")]
     public async Task<IActionResult> Download(string fileId, [FromQuery] string? bucketName = "default")
     {
@@ -67,6 +73,9 @@ public class FileStorageController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// 获取文件信息
+    /// </summary>
     [HttpGet("{fileId}/info")]
     public async Task<IActionResult> GetFileInfo(string fileId, [FromQuery] string? bucketName = "default")
     {
@@ -86,6 +95,9 @@ public class FileStorageController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// 删除文件
+    /// </summary>
     [HttpDelete("{fileId}")]
     public async Task<IActionResult> Delete(string fileId, [FromQuery] string? bucketName = "default")
     {
@@ -105,6 +117,9 @@ public class FileStorageController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// 重命名文件
+    /// </summary>
     [HttpPost("{fileId}/rename")]
     public async Task<IActionResult> Rename(string fileId, [FromBody] RenameRequest request, [FromQuery] string? bucketName = "default")
     {
@@ -124,6 +139,9 @@ public class FileStorageController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// 更新文件元数据
+    /// </summary>
     [HttpPost("{fileId}/metadata")]
     public async Task<IActionResult> UpdateMetadata(string fileId, [FromBody] Dictionary<string, object> metadata, [FromQuery] string? bucketName = "default")
     {
@@ -143,6 +161,9 @@ public class FileStorageController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// 获取存储统计
+    /// </summary>
     [HttpGet("stats")]
     public async Task<IActionResult> GetStats([FromQuery] string? bucketName = null)
     {
@@ -150,6 +171,9 @@ public class FileStorageController : ControllerBase
         return Ok(stats);
     }
 
+    /// <summary>
+    /// 搜索文件（按MD5或文件名）
+    /// </summary>
     [HttpGet("search")]
     public async Task<IActionResult> SearchByHash([FromQuery] string? md5, [FromQuery] string? fileName, [FromQuery] string? bucketName = "default")
     {
@@ -172,6 +196,9 @@ public class FileStorageController : ControllerBase
         return Ok(fileInfo);
     }
 
+    /// <summary>
+    /// 检查文件是否存在
+    /// </summary>
     [HttpHead("{fileId}")]
     public async Task<IActionResult> Exists(string fileId, [FromQuery] string? bucketName = "default")
     {

@@ -33,6 +33,9 @@ public class UserController : BaseApiController
 
     #region User Management
 
+    /// <summary>
+    /// 获取用户详情
+    /// </summary>
     [HttpGet("{id}")]
     public async Task<IActionResult> GetUserById(string id)
     {
@@ -40,16 +43,25 @@ public class UserController : BaseApiController
         return Success(await _userService.GetUserByIdAsync(id));
     }
 
+    /// <summary>
+    /// 创建用户
+    /// </summary>
     [HttpPost]
     [RequireMenu(SystemConstants.Permissions.UserManagement)]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserManagementRequest request)
         => Success(await _userService.CreateUserManagementAsync(request), ErrorMessages.CreateSuccess);
 
+    /// <summary>
+    /// 更新用户
+    /// </summary>
     [HttpPut("{id}")]
     [RequireMenu(SystemConstants.Permissions.UserManagement)]
     public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateUserManagementRequest request)
         => Success(await _userService.UpdateUserManagementAsync(id, request), ErrorMessages.UpdateSuccess);
 
+    /// <summary>
+    /// 删除用户
+    /// </summary>
     [HttpDelete("{id}")]
     [RequireMenu(SystemConstants.Permissions.UserManagement)]
     public async Task<IActionResult> DeleteUser(string id, [FromQuery] string? reason = null)
@@ -61,10 +73,16 @@ public class UserController : BaseApiController
         return NoContent();
     }
 
+    /// <summary>
+    /// 获取用户列表
+    /// </summary>
     [HttpGet("list")]
     public async Task<IActionResult> GetUsersList([FromQuery] PageParams request)
         => Success(await _userService.GetUsersWithRolesAsync(request));
 
+    /// <summary>
+    /// 获取所有用户
+    /// </summary>
     [HttpGet("all")]
     public async Task<IActionResult> GetAllUsers()
     {
@@ -72,11 +90,17 @@ public class UserController : BaseApiController
         return Success(new { users, total = users.Count });
     }
 
+    /// <summary>
+    /// 获取用户统计信息
+    /// </summary>
     [HttpGet("statistics")]
     [RequireMenu(SystemConstants.Permissions.UserManagement)]
     public async Task<IActionResult> GetUserStatistics()
         => Success(await _userService.GetUserStatisticsAsync());
 
+    /// <summary>
+    /// 批量操作用户
+    /// </summary>
     [HttpPost("bulk")]
     [RequireMenu(SystemConstants.Permissions.UserManagement)]
     public async Task<IActionResult> BulkUserAction([FromBody] BulkUserActionRequest request)
@@ -86,11 +110,17 @@ public class UserController : BaseApiController
         return Success(null, ErrorMessages.OperationSuccess);
     }
 
+    /// <summary>
+    /// 启用用户
+    /// </summary>
     [HttpPut("{id}/activate")]
     [RequireMenu(SystemConstants.Permissions.UserManagement)]
     public async Task<IActionResult> ActivateUser(string id)
         => Success(null, "用户已启用");
 
+    /// <summary>
+    /// 禁用用户
+    /// </summary>
     [HttpPut("{id}/deactivate")]
     [RequireMenu(SystemConstants.Permissions.UserManagement)]
     public async Task<IActionResult> DeactivateUser(string id)
@@ -100,11 +130,17 @@ public class UserController : BaseApiController
 
     #region Validation
 
+    /// <summary>
+    /// 检查邮箱是否存在
+    /// </summary>
     [HttpGet("check-email")]
     [AllowAnonymous]
     public async Task<IActionResult> CheckEmailExists([FromQuery] string email, [FromQuery] string? excludeUserId = null)
         => Success(new { exists = await _userService.CheckEmailExistsAsync(email, excludeUserId) });
 
+    /// <summary>
+    /// 检查用户名是否存在
+    /// </summary>
     [HttpGet("check-username")]
     [AllowAnonymous]
     public async Task<IActionResult> CheckUsernameExists([FromQuery] string username, [FromQuery] string? excludeUserId = null)
@@ -114,6 +150,9 @@ public class UserController : BaseApiController
 
     #region Activity Logs
 
+    /// <summary>
+    /// 获取用户活动日志
+    /// </summary>
     [HttpGet("{id}/activity-logs")]
     public async Task<IActionResult> GetUserActivityLogs(string id, [FromQuery] int limit = 50)
     {
@@ -122,16 +161,25 @@ public class UserController : BaseApiController
         return Success(await _activityLogService.GetUserActivityLogsAsync(id, limit));
     }
 
+    /// <summary>
+    /// 获取所有活动日志
+    /// </summary>
     [HttpGet("activity-logs")]
     [RequireMenu("user-log")]
     public async Task<IActionResult> GetAllActivityLogs([FromQuery] PageParams query)
         => Success(await _activityLogService.GetAllActivityLogsWithUsersAsync(query));
 
+    /// <summary>
+    /// 获取活动日志统计
+    /// </summary>
     [HttpGet("activity-logs/statistics")]
     [RequireMenu("user-log")]
     public async Task<IActionResult> GetActivityLogStatistics()
         => Success(await _activityLogService.GetActivityLogStatisticsAsync());
 
+    /// <summary>
+    /// 获取活动日志详情
+    /// </summary>
     [HttpGet("activity-logs/{logId}")]
     [RequireMenu("user-log")]
     public async Task<IActionResult> GetActivityLogById(string logId)
@@ -145,10 +193,16 @@ public class UserController : BaseApiController
 
     #region Profile
 
+    /// <summary>
+    /// 获取当前用户资料
+    /// </summary>
     [HttpGet("me")]
     public async Task<IActionResult> GetCurrentUserProfile()
         => Success(await _authService.GetCurrentUserAsync());
 
+    /// <summary>
+    /// 更新当前用户资料
+    /// </summary>
     [HttpPut("me")]
     public async Task<IActionResult> UpdateCurrentUserProfile([FromBody] UpdateProfileRequest request)
     {
@@ -162,6 +216,9 @@ public class UserController : BaseApiController
         return Success(await _authService.GetCurrentUserAsync());
     }
 
+    /// <summary>
+    /// 修改当前用户密码
+    /// </summary>
     [HttpPut("me/password")]
     public async Task<IActionResult> ChangeCurrentUserPassword([FromBody] ChangePasswordRequest request)
     {
@@ -170,10 +227,16 @@ public class UserController : BaseApiController
         return Success(null, "密码修改成功");
     }
 
+    /// <summary>
+    /// 获取当前用户活动日志
+    /// </summary>
     [HttpGet("me/activity-logs")]
     public async Task<IActionResult> GetCurrentUserActivityLogs([FromQuery] int limit = 20)
         => Success(await _userService.GetUserActivityLogsAsync(RequiredUserId, limit));
 
+    /// <summary>
+    /// 获取当前用户活动日志（分页）
+    /// </summary>
     [HttpGet("me/activity-logs-paged")]
     public async Task<IActionResult> GetCurrentUserActivityLogsPaged(
         [FromQuery] PageParams request,
@@ -189,6 +252,9 @@ public class UserController : BaseApiController
         return Success(await _activityLogService.GetCurrentUserActivityLogsAsync(request, action, httpMethod, statusCode, ipAddress, startDate, endDate));
     }
 
+    /// <summary>
+    /// 获取当前用户活动日志统计
+    /// </summary>
     [HttpGet("me/activity-logs/statistics")]
     public async Task<IActionResult> GetCurrentUserActivityLogStatistics(
         [FromQuery] string? action = null,
@@ -199,6 +265,9 @@ public class UserController : BaseApiController
         [FromQuery] DateTime? endDate = null)
         => Success(await _activityLogService.GetCurrentUserActivityLogStatisticsAsync(action, httpMethod, statusCode, ipAddress, startDate, endDate));
 
+    /// <summary>
+    /// 获取当前用户活动日志详情
+    /// </summary>
     [HttpGet("me/activity-logs/{logId}")]
     public async Task<IActionResult> GetCurrentUserActivityLogById(string logId)
     {
@@ -209,6 +278,9 @@ public class UserController : BaseApiController
         return Success(log);
     }
 
+    /// <summary>
+    /// 获取我的权限
+    /// </summary>
     [HttpGet("me/permissions")]
     public async Task<IActionResult> GetMyPermissions()
         => Success(await _userService.GetUserPermissionsAsync(RequiredUserId));
@@ -217,6 +289,9 @@ public class UserController : BaseApiController
 
     #region AI & Layout
 
+    /// <summary>
+    /// 获取AI角色定义
+    /// </summary>
     [HttpGet("me/ai-role-definition")]
     public async Task<IActionResult> GetAiRoleDefinition()
     {
@@ -226,6 +301,9 @@ public class UserController : BaseApiController
         return Success(roleDefinition);
     }
 
+    /// <summary>
+    /// 更新AI角色定义
+    /// </summary>
     [HttpPut("me/ai-role-definition")]
     public async Task<IActionResult> UpdateAiRoleDefinition([FromBody] UpdateAiRoleDefinitionRequest request)
     {
@@ -236,10 +314,16 @@ public class UserController : BaseApiController
         return Success(null, "角色定义更新成功");
     }
 
+    /// <summary>
+    /// 获取欢迎页面布局
+    /// </summary>
     [HttpGet("welcome-layout")]
     public async Task<IActionResult> GetWelcomeLayout()
         => Success(await _userService.GetWelcomeLayoutAsync(RequiredUserId));
 
+    /// <summary>
+    /// 保存欢迎页面布局
+    /// </summary>
     [HttpPost("welcome-layout")]
     public async Task<IActionResult> SaveWelcomeLayout([FromBody] SaveWelcomeLayoutRequest request)
     {

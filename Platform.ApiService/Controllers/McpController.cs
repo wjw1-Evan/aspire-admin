@@ -28,6 +28,8 @@ public class McpController : BaseApiController
     /// <summary>
     /// 初始化 MCP 服务器
     /// </summary>
+    /// <param name="request">初始化请求</param>
+    /// <returns>初始化响应</returns>
     [HttpPost("initialize")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> Initialize([FromBody] McpInitializeRequest request)
@@ -39,6 +41,7 @@ public class McpController : BaseApiController
     /// <summary>
     /// 列出所有可用工具
     /// </summary>
+    /// <returns>工具列表</returns>
     [HttpPost("tools/list")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListTools()
@@ -50,6 +53,8 @@ public class McpController : BaseApiController
     /// <summary>
     /// 调用工具
     /// </summary>
+    /// <param name="request">工具调用请求</param>
+    /// <returns>工具调用响应</returns>
     [HttpPost("tools/call")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> CallTool([FromBody] McpCallToolRequest request)

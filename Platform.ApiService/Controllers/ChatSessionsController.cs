@@ -28,6 +28,11 @@ public class ChatSessionsController : BaseApiController
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>
+    /// 获取聊天会话列表
+    /// </summary>
+    /// <param name="request">分页参数</param>
+    /// <returns>会话列表</returns>
     [HttpGet]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetSessions([FromQuery] Platform.ServiceDefaults.Models.PageParams request)

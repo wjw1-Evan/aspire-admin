@@ -20,6 +20,9 @@ public class FormController : BaseApiController
         _formService = formService;
     }
 
+    /// <summary>
+    /// 获取表单定义列表
+    /// </summary>
     [HttpGet]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> GetForms([FromQuery] Platform.ServiceDefaults.Models.PageParams request, [FromQuery] bool? isActive = null)
@@ -35,6 +38,9 @@ public class FormController : BaseApiController
         }
     }
 
+    /// <summary>
+    /// 获取表单定义详情
+    /// </summary>
     [HttpGet("{id}")]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> GetForm(string id)
@@ -55,6 +61,9 @@ public class FormController : BaseApiController
         }
     }
 
+    /// <summary>
+    /// 创建表单定义
+    /// </summary>
     [HttpPost]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> CreateForm([FromBody] FormDefinition form)
@@ -74,6 +83,9 @@ public class FormController : BaseApiController
         }
     }
 
+    /// <summary>
+    /// 更新表单定义
+    /// </summary>
     [HttpPut("{id}")]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> UpdateForm(string id, [FromBody] FormDefinition form)
@@ -94,6 +106,9 @@ public class FormController : BaseApiController
         }
     }
 
+    /// <summary>
+    /// 删除表单定义
+    /// </summary>
     [HttpDelete("{id}")]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> DeleteForm(string id)

@@ -33,6 +33,10 @@ public class SystemMonitorController : BaseApiController
     private static readonly TimeSpan _resourceCacheDuration = TimeSpan.FromSeconds(2);
     private static readonly object _resourceLock = new object();
 
+    /// <summary>
+    /// 获取系统资源使用情况
+    /// </summary>
+    /// <returns>系统资源信息</returns>
     [HttpGet("resources")]
     public IActionResult GetSystemResources()
     {

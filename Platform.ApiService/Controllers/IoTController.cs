@@ -26,22 +26,37 @@ public class IoTController : BaseApiController
 
     #region Gateway
 
+    /// <summary>
+    /// 创建网关
+    /// </summary>
     [HttpPost("gateways")]
     public async Task<IActionResult> CreateGateway([FromBody] CreateIoTGatewayRequest request)
         => Success(await _iotService.CreateGatewayAsync(request));
 
+    /// <summary>
+    /// 获取网关列表
+    /// </summary>
     [HttpGet("gateways")]
     public async Task<IActionResult> GetGateways([FromQuery] PageParams request, [FromQuery] IoTDeviceStatus? status = null)
         => Success(await _iotService.GetGatewaysAsync(request, status));
 
+    /// <summary>
+    /// 获取网关详情
+    /// </summary>
     [HttpGet("gateways/{id}")]
     public async Task<IActionResult> GetGateway(string id)
         => Success(await _iotService.GetGatewayByIdAsync(id));
 
+    /// <summary>
+    /// 更新网关
+    /// </summary>
     [HttpPut("gateways/{id}")]
     public async Task<IActionResult> UpdateGateway(string id, [FromBody] UpdateIoTGatewayRequest request)
         => Success(await _iotService.UpdateGatewayAsync(id, request));
 
+    /// <summary>
+    /// 删除网关
+    /// </summary>
     [HttpDelete("gateways/{id}")]
     public async Task<IActionResult> DeleteGateway(string id)
     {
@@ -50,6 +65,9 @@ public class IoTController : BaseApiController
         return Success(null, "网关已删除");
     }
 
+    /// <summary>
+    /// 获取网关统计
+    /// </summary>
     [HttpGet("gateways/{gatewayId}/statistics")]
     public async Task<IActionResult> GetGatewayStatistics(string gatewayId)
         => Success(await _iotService.GetGatewayStatisticsAsync(gatewayId));
@@ -58,22 +76,37 @@ public class IoTController : BaseApiController
 
     #region Device
 
+    /// <summary>
+    /// 创建设备
+    /// </summary>
     [HttpPost("devices")]
     public async Task<IActionResult> CreateDevice([FromBody] CreateIoTDeviceRequest request)
         => Success(await _iotService.CreateDeviceAsync(request));
 
+    /// <summary>
+    /// 获取设备列表
+    /// </summary>
     [HttpGet("devices")]
     public async Task<IActionResult> GetDevices([FromQuery] PageParams request, [FromQuery] string? gatewayId = null)
         => Success(await _iotService.GetDevicesAsync(request, gatewayId));
 
+    /// <summary>
+    /// 获取设备详情
+    /// </summary>
     [HttpGet("devices/{id}")]
     public async Task<IActionResult> GetDevice(string id)
         => Success(await _iotService.GetDeviceByIdAsync(id));
 
+    /// <summary>
+    /// 更新设备
+    /// </summary>
     [HttpPut("devices/{id}")]
     public async Task<IActionResult> UpdateDevice(string id, [FromBody] UpdateIoTDeviceRequest request)
         => Success(await _iotService.UpdateDeviceAsync(id, request));
 
+    /// <summary>
+    /// 删除设备
+    /// </summary>
     [HttpDelete("devices/{id}")]
     public async Task<IActionResult> DeleteDevice(string id)
     {
@@ -82,6 +115,9 @@ public class IoTController : BaseApiController
         return Success(null, "设备已删除");
     }
 
+    /// <summary>
+    /// 批量删除设备
+    /// </summary>
     [HttpDelete("devices")]
     public async Task<IActionResult> BatchDeleteDevices([FromBody] List<string> ids)
     {
@@ -91,6 +127,9 @@ public class IoTController : BaseApiController
         return Success(new { deletedCount, total = ids.Count });
     }
 
+    /// <summary>
+    /// 处理设备连接
+    /// </summary>
     [HttpPost("devices/connect")]
     [AllowAnonymous]
     public async Task<IActionResult> HandleDeviceConnect([FromBody] DeviceConnectRequest request)
@@ -100,6 +139,9 @@ public class IoTController : BaseApiController
         return Success(null, "设备已连接");
     }
 
+    /// <summary>
+    /// 处理设备断开
+    /// </summary>
     [HttpPost("devices/disconnect")]
     [AllowAnonymous]
     public async Task<IActionResult> HandleDeviceDisconnect([FromBody] DeviceDisconnectRequest request)
@@ -109,6 +151,9 @@ public class IoTController : BaseApiController
         return Success(null, "设备已断开");
     }
 
+    /// <summary>
+    /// 获取设备统计
+    /// </summary>
     [HttpGet("devices/{deviceId}/statistics")]
     public async Task<IActionResult> GetDeviceStatistics(string deviceId)
         => Success(await _iotService.GetDeviceStatisticsAsync(deviceId));
@@ -117,22 +162,37 @@ public class IoTController : BaseApiController
 
     #region DataPoint
 
+    /// <summary>
+    /// 创建数据点
+    /// </summary>
     [HttpPost("datapoints")]
     public async Task<IActionResult> CreateDataPoint([FromBody] CreateIoTDataPointRequest request)
         => Success(await _iotService.CreateDataPointAsync(request));
 
+    /// <summary>
+    /// 获取数据点列表
+    /// </summary>
     [HttpGet("datapoints")]
     public async Task<IActionResult> GetDataPoints([FromQuery] PageParams request, [FromQuery] string? deviceId = null)
         => Success(await _iotService.GetDataPointsAsync(request, deviceId));
 
+    /// <summary>
+    /// 获取数据点详情
+    /// </summary>
     [HttpGet("datapoints/{id}")]
     public async Task<IActionResult> GetDataPoint(string id)
         => Success(await _iotService.GetDataPointByIdAsync(id));
 
+    /// <summary>
+    /// 更新数据点
+    /// </summary>
     [HttpPut("datapoints/{id}")]
     public async Task<IActionResult> UpdateDataPoint(string id, [FromBody] UpdateIoTDataPointRequest request)
         => Success(await _iotService.UpdateDataPointAsync(id, request));
 
+    /// <summary>
+    /// 删除数据点
+    /// </summary>
     [HttpDelete("datapoints/{id}")]
     public async Task<IActionResult> DeleteDataPoint(string id)
     {

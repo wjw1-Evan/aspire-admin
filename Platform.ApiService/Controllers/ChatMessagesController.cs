@@ -33,6 +33,12 @@ public class ChatMessagesController : BaseApiController
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>
+    /// 获取会话消息列表
+    /// </summary>
+    /// <param name="sessionId">会话ID</param>
+    /// <param name="request">消息查询参数</param>
+    /// <returns>消息列表</returns>
     [HttpGet("{sessionId}")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMessages(string sessionId, [FromQuery] ChatMessageListRequest request)
@@ -48,6 +54,12 @@ public class ChatMessagesController : BaseApiController
         return Success(response);
     }
 
+    /// <summary>
+    /// 发送聊天消息
+    /// </summary>
+    /// <param name="request">消息内容</param>
+    /// <param name="stream">是否使用流式响应</param>
+    /// <returns>发送的消息</returns>
     [HttpPost]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> SendMessage([FromBody] SendChatMessageRequest request, [FromQuery] bool stream = false)
@@ -158,6 +170,12 @@ public class ChatMessagesController : BaseApiController
         }
     }
 
+    /// <summary>
+    /// 上传会话附件
+    /// </summary>
+    /// <param name="sessionId">会话ID</param>
+    /// <param name="file">附件文件</param>
+    /// <returns>附件信息</returns>
     [HttpPost("{sessionId}/attachments")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> UploadAttachment(string sessionId, [FromForm] IFormFile file)
@@ -166,6 +184,12 @@ public class ChatMessagesController : BaseApiController
         return Success(new UploadAttachmentResponse { Attachment = attachment });
     }
 
+    /// <summary>
+    /// 下载会话附件
+    /// </summary>
+    /// <param name="sessionId">会话ID</param>
+    /// <param name="storageObjectId">存储对象ID</param>
+    /// <returns>附件文件流</returns>
     [HttpGet("{sessionId}/attachments/{storageObjectId}")]
     [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
     public async Task<IActionResult> DownloadAttachment(string sessionId, string storageObjectId)
@@ -182,6 +206,12 @@ public class ChatMessagesController : BaseApiController
         return File(result.Content, result.ContentType, result.FileName, enableRangeProcessing: true);
     }
 
+    /// <summary>
+    /// 标记会话为已读
+    /// </summary>
+    /// <param name="sessionId">会话ID</param>
+    /// <param name="request">已读请求</param>
+    /// <returns>操作结果</returns>
     [HttpPost("{sessionId}/read")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> MarkRead(string sessionId, [FromBody] MarkSessionReadRequest request)
@@ -190,6 +220,12 @@ public class ChatMessagesController : BaseApiController
         return Success(null, "已更新会话已读状态");
     }
 
+    /// <summary>
+    /// 删除会话消息
+    /// </summary>
+    /// <param name="sessionId">会话ID</param>
+    /// <param name="messageId">消息ID</param>
+    /// <returns>操作结果</returns>
     [HttpDelete("{sessionId}/{messageId}")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> DeleteMessage(string sessionId, string messageId)

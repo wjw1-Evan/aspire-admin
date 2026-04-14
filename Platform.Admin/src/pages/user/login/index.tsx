@@ -292,6 +292,21 @@ const Login: React.FC = () => {
         error?.info?.code ||
         error?.code;
 
+      // 检测是否是验证错误（HTTP 400 with errors）
+      const validationErrors = error?.response?.data?.errors;
+      const isValidationError = error?.response?.status === 400 && validationErrors;
+
+      // 处理验证错误
+      if (isValidationError) {
+        const firstError = Object.values(validationErrors).flat().find((msg: any) => msg);
+        if (firstError) {
+          message.error(firstError);
+        } else {
+          message.error(intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }));
+        }
+        return;
+      }
+
       // 设置错误状态（用于表单显示）
       const backendMessage = error?.response?.data?.message || error?.info?.message || error?.message;
 

@@ -304,6 +304,10 @@ const Login: React.FC = () => {
         } else {
           message.error(intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }));
         }
+        // 登录失败后刷新验证码
+        if (captchaRef.current) {
+          await captchaRef.current.refresh();
+        }
         return;
       }
 

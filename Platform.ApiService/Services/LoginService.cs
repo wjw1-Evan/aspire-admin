@@ -51,27 +51,27 @@ public class LoginService : ILoginService
     {
         if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
         {
-            throw new ArgumentException("请输入图形验证码");
+            throw new ArgumentException("LOGIN_ERROR:CAPTCHA_REQUIRED");
         }
 
         var captchaValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.CaptchaAnswer, "login");
         if (!captchaValid)
         {
-            throw new ArgumentException("验证码无效");
+            throw new ArgumentException("LOGIN_ERROR:CAPTCHA_INVALID");
         }
 
         var user = await _context.Set<AppUser>().FirstOrDefaultAsync(u => u.Username == request.Username && u.IsActive == true);
 
         if (user == null)
         {
-            throw new ArgumentException("用户名或密码错误");
+            throw new ArgumentException("LOGIN_ERROR:INVALID_CREDENTIALS");
         }
 
         var rawPassword = _encryptionService.TryDecryptPassword(request.Password ?? string.Empty);
 
         if (!_passwordHasher.VerifyPassword(rawPassword, user.PasswordHash))
         {
-            throw new ArgumentException("用户名或密码错误");
+            throw new ArgumentException("LOGIN_ERROR:INVALID_CREDENTIALS");
         }
 
         bool shouldClearInvalidCompanyId = false;

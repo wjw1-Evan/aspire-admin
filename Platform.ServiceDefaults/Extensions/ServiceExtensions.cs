@@ -46,6 +46,7 @@ public static class ServiceExtensions
         // ── 国密安全支持 ─────────────────────────────────
         builder.Services.AddSingleton<ISM4EncryptionProvider, SM4EncryptionProvider>();
         builder.Services.AddSingleton<IPasswordHasher, SM3PasswordHasher>();
+        builder.Services.AddSingleton<ISM3HmacProvider, SM3HmacProvider>();
 
         return builder;
     }

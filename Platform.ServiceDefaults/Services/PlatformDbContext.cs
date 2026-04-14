@@ -9,13 +9,16 @@ namespace Platform.ServiceDefaults.Services;
 public class PlatformDbContext : DbContext
 {
     private readonly ITenantContext? _tenantContext;
+    private readonly ISM3HmacProvider? _hmacProvider;
 
     public PlatformDbContext(
         DbContextOptions<PlatformDbContext> options,
-        ITenantContext? tenantContext = null)
+        ITenantContext? tenantContext = null,
+        ISM3HmacProvider? hmacProvider = null)
         : base(options)
     {
         _tenantContext = tenantContext;
+        _hmacProvider = hmacProvider;
         Database.AutoTransactionBehavior = AutoTransactionBehavior.Never;
     }
 
@@ -66,6 +69,13 @@ public class PlatformDbContext : DbContext
 
                 if (isAdded && entity is IMultiTenant { CompanyId: "" or null } tenant)
                     tenant.CompanyId = companyId ?? string.Empty;
+
+                if (entity is IIntegrityTrackable && _hmacProvider != null)
+                {
+                    var keyFields = ExtractKeyFields(entity);
+                    var hmac = _hmacProvider.ComputeHmac(keyFields, companyId);
+                    ((IIntegrityTrackable)entity).IntegrityHash = hmac;
+                }
 
                 if (!isAdded && entity is ISoftDeletable { } softDeletable &&
                     entry.Property(nameof(ISoftDeletable.IsDeleted)).IsModified)
@@ -157,5 +167,27 @@ public class PlatformDbContext : DbContext
     {
         try { return a.GetTypes(); }
         catch { return []; }
+    }
+
+    private static string ExtractKeyFields(object entity)
+    {
+        var type = entity.GetType();
+        var sb = new System.Text.StringBuilder();
+
+        var props = type.GetProperties()
+            .Where(p => p.CanRead && p.GetIndexParameters().Length == 0)
+            .Where(p => p.Name != nameof(IEntity.Id) && p.Name != nameof(IIntegrityTrackable.IntegrityHash));
+
+        foreach (var prop in props)
+        {
+            var value = prop.GetValue(entity);
+            if (value != null)
+            {
+                sb.Append(value.ToString());
+                sb.Append("|");
+            }
+        }
+
+        return sb.ToString().TrimEnd('|');
     }
 }

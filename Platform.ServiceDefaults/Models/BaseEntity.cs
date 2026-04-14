@@ -8,7 +8,7 @@ namespace Platform.ServiceDefaults.Models;
 /// 基础实体类 - 所有微服务通用 (EFCore + MongoDB 兼容)
 /// </summary>
 [BsonIgnoreExtraElements]
-public abstract class BaseEntity : IEntity, ISoftDeletable, ITimestamped, IOperationTrackable
+public abstract class BaseEntity : IEntity, ISoftDeletable, ITimestamped, IOperationTrackable, IIntegrityTrackable
 {
     /// <summary>
     /// 主键ID - MongoDB 自动生成
@@ -60,6 +60,11 @@ public abstract class BaseEntity : IEntity, ISoftDeletable, ITimestamped, IOpera
     /// 最后操作时间
     /// </summary>
     public DateTime? LastOperationAt { get; set; }
+
+    /// <summary>
+    /// 防篡改指纹 (SM3-HMAC) - 用于数据完整性校验
+    /// </summary>
+    public string? IntegrityHash { get; set; }
 
     /// <summary>
     /// 构造函数 - 生成新的ObjectId
@@ -122,4 +127,13 @@ public interface ITimestamped
 public interface IMultiTenant
 {
     string CompanyId { get; set; }
+}
+
+/// <summary>
+/// 防篡改接口 - 提供数据完整性保护（国密 SM3-HMAC）
+/// </summary>
+public interface IIntegrityTrackable
+{
+    /// 防篡改指纹 (SM3-HMAC)
+    string? IntegrityHash { get; set; }
 }

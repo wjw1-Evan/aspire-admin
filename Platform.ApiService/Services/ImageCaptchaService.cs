@@ -115,7 +115,7 @@ public class ImageCaptchaService : IImageCaptchaService
         }
 
         var decryptedAnswer = DecryptAnswer(result.Answer, EncryptionKey);
-        return string.Equals(decryptedAnswer, answer.Trim(), StringComparison.OrdinalIgnoreCase);
+        return string.Equals(decryptedAnswer, answer, StringComparison.OrdinalIgnoreCase);
     }
 
     public async Task<bool> IsCaptchaRequiredAsync(string type = "login", string? clientIp = null, string? username = null)

@@ -181,6 +181,7 @@ const LoginMessage: React.FC<{
 
 const Login: React.FC = () => {
   const [userLoginState, setUserLoginState] = useState<API.LoginResult>({});
+  const [loading, setLoading] = useState(false);
   const type = 'account'; // 仅保留账号模式
   const [captchaId, setCaptchaId] = useState<string>('');
   const [captchaAnswer, setCaptchaAnswer] = useState<string>('');
@@ -203,6 +204,7 @@ const Login: React.FC = () => {
     }
   };
   const handleSubmit = async (values: API.LoginParams) => {
+    setLoading(true);
     try {
       // 🔒 安全增强：在发送前加密密码
       const encryptedPassword = values.password
@@ -215,7 +217,7 @@ const Login: React.FC = () => {
         password: encryptedPassword,
         type,
         captchaId: captchaId || undefined,
-        captchaAnswer: captchaAnswer || undefined,
+        captchaAnswer: (captchaAnswer || '').trim() || undefined,
       };
       const response = await login(loginData);
 
@@ -245,12 +247,15 @@ const Login: React.FC = () => {
         const urlParams = new URL(window.location.href).searchParams;
         const redirect = urlParams.get('redirect');
         history.push(redirect || '/');
+        setLoading(false);
         return;
       }
 
       // 如果失败，处理业务逻辑（显示验证码），然后显示友好的错误提示
       const errorCode = response.code;
       const backendMessage = response.message;
+
+      setLoading(false);
 
       let errorMsg = backendMessage;
       if (errorCode && LOGIN_KNOWN_ERRORS.includes(errorCode as any)) {
@@ -278,6 +283,7 @@ const Login: React.FC = () => {
     } catch (error: any) {
       // 标记错误已被登录页面处理
       error.skipGlobalHandler = true;
+      setLoading(false);
 
       // 从错误对象中提取 errorCode
       // 优先从 error.response.data 获取（HTTP 错误响应）
@@ -476,7 +482,7 @@ const Login: React.FC = () => {
                   </Link>
                 </div>
                 <Form.Item>
-                  <Button type="primary" htmlType="submit" size="large" block>
+                  <Button type="primary" htmlType="submit" size="large" block loading={loading}>
                     <FormattedMessage
                       id="pages.login.submit"
                       defaultMessage="登录"

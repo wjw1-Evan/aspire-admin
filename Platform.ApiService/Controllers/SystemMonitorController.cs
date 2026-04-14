@@ -8,6 +8,10 @@ using System.Globalization;
 
 namespace Platform.ApiService.Controllers;
 
+/// <summary>
+/// 系统监控控制器
+/// 系统资源监控、进程信息、性能指标
+/// </summary>
 [ApiController]
 [Route("api/system-monitor")]
 public class SystemMonitorController : BaseApiController

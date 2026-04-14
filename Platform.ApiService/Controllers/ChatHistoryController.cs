@@ -9,6 +9,9 @@ using Platform.ServiceDefaults.Services;
 
 namespace Platform.ApiService.Controllers;
 
+/// <summary>
+/// 小科聊天历史控制器
+/// </summary>
 [ApiController]
 [Route("api/xiaoke/chat-history")]
 public class ChatHistoryController : BaseApiController

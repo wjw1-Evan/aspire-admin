@@ -14,6 +14,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Platform.ApiService.Controllers;
 
+/// <summary>
+/// 聊天消息控制器
+/// </summary>
 [ApiController]
 [Route("api/chat/messages")]
 public class ChatMessagesController : BaseApiController

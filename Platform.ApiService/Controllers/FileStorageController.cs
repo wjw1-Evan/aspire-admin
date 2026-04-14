@@ -5,6 +5,10 @@ using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Controllers;
 
+/// <summary>
+/// 文件存储控制器
+/// GridFS 文件上传、下载、删除等操作
+/// </summary>
 [Authorize]
 [Route("api/files")]
 [ApiController]

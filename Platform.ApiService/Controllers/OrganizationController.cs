@@ -10,7 +10,8 @@ using Platform.ServiceDefaults.Controllers;
 namespace Platform.ApiService.Controllers;
 
 /// <summary>
-/// 组织架构管理
+/// 组织架构管理控制器
+/// 部门、岗位、人员关系等组织架构管理
 /// </summary>
 [ApiController]
 [Route("api/organization")]

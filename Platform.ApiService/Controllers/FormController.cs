@@ -6,6 +6,9 @@ using Platform.ServiceDefaults.Controllers;
 
 namespace Platform.ApiService.Controllers;
 
+/// <summary>
+/// 表单管理控制器
+/// </summary>
 [ApiController]
 [Route("api/forms")]
 public class FormController : BaseApiController

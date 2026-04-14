@@ -8,6 +8,10 @@ using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Controllers;
 
+/// <summary>
+/// 物联网控制器
+/// 网关、设备、数据点、告警等 IoT 平台管理
+/// </summary>
 [ApiController]
 [Route("api/iot")]
 [RequireMenu("iot-platform")]

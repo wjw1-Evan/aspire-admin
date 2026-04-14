@@ -9,6 +9,9 @@ using Platform.ServiceDefaults.Services;
 
 namespace Platform.ApiService.Controllers;
 
+/// <summary>
+/// 聊天会话控制器
+/// </summary>
 [ApiController]
 [Route("api/chat/sessions")]
 public class ChatSessionsController : BaseApiController

@@ -10,6 +10,9 @@ using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Controllers;
 
+/// <summary>
+/// 用户管理控制器 - 处理用户注册、信息修改、头像管理等操作
+/// </summary>
 [ApiController]
 [Route("api/users")]
 public class UserController : BaseApiController

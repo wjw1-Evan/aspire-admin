@@ -286,6 +286,9 @@ public class WorkflowController : BaseApiController
         }
     }
 
+    /// <summary>
+    /// 获取工作流的表单和字段信息
+    /// </summary>
     [HttpGet("{id}/forms-and-fields")]
     [RequireMenu("workflow-list", "document-list")]
     public async Task<IActionResult> GetWorkflowFormsAndFields(string id)
@@ -324,11 +327,17 @@ public class WorkflowController : BaseApiController
         return Success(new { forms = result });
     }
 
+    /// <summary>
+    /// 获取待办工作流实例列表
+    /// </summary>
     [HttpGet("instances/todo")]
     [RequireMenu("document-approval")]
     public async Task<IActionResult> GetTodoInstances([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
         => Success(await _workflowTodoService.GetTodoInstancesAsync(RequiredUserId, request));
 
+    /// <summary>
+    /// 获取工作流实例详情
+    /// </summary>
     [HttpGet("instances/{id}")]
     [RequireMenu("workflow-monitor", "document-approval", "document-list")]
     public async Task<IActionResult> GetInstance(string id)
@@ -339,6 +348,9 @@ public class WorkflowController : BaseApiController
         return Success(instance);
     }
 
+    /// <summary>
+    /// 获取实例审批历史
+    /// </summary>
     [HttpGet("instances/{id}/history")]
     [RequireMenu("workflow-monitor", "document-approval", "document-list")]
     public async Task<IActionResult> GetApprovalHistory(string id)
@@ -460,6 +472,9 @@ public class WorkflowController : BaseApiController
         }
     }
 
+    /// <summary>
+    /// 提交节点表单数据
+    /// </summary>
     [HttpPost("instances/{id}/nodes/{nodeId}/form")]
     [RequireMenu("workflow-list", "document-approval")]
     public async Task<IActionResult> SubmitNodeForm(string id, string nodeId, [FromBody] Dictionary<string, object> values)
@@ -536,6 +551,9 @@ public class WorkflowController : BaseApiController
         }
     }
 
+    /// <summary>
+    /// 执行节点操作（通过/拒绝/转交等）
+    /// </summary>
     [HttpPost("instances/{id}/nodes/{nodeId}/action")]
     [RequireMenu("workflow-list", "document-approval")]
     public async Task<IActionResult> ExecuteNodeAction(string id, string nodeId, [FromBody] WorkflowActionRequest request)
@@ -585,6 +603,9 @@ public class WorkflowController : BaseApiController
         }
     }
 
+    /// <summary>
+    /// 撤回工作流实例
+    /// </summary>
     [HttpPost("instances/{id}/withdraw")]
     [RequireMenu("workflow-list", "document-list")]
     public async Task<IActionResult> WithdrawInstance(string id, [FromBody] WithdrawWorkflowRequest? request)
@@ -604,6 +625,9 @@ public class WorkflowController : BaseApiController
         return Success(null, "流程已撤回");
     }
 
+    /// <summary>
+    /// 根据工作流创建公文
+    /// </summary>
     [HttpPost("instances/{id}/document")]
     [HttpPost("{id}/documents")]
     [RequireMenu("document-list")]
@@ -717,6 +741,9 @@ public class WorkflowController : BaseApiController
         }
     }
 
+    /// <summary>
+    /// 删除过滤器偏好
+    /// </summary>
     [HttpDelete("filter-preferences/{id}")]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> DeleteFilterPreference(string id)
@@ -733,11 +760,17 @@ public class WorkflowController : BaseApiController
         return Success(null, "过滤器偏好已删除");
     }
 
+    /// <summary>
+    /// 获取默认过滤器偏好
+    /// </summary>
     [HttpGet("filter-preferences/default")]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> GetDefaultFilterPreference()
         => Success(await _filterPreferenceService.GetDefaultPreferenceAsync(RequiredUserId));
 
+    /// <summary>
+    /// 创建并启动公文工作流
+    /// </summary>
     [HttpPost("{id}/documents/start")]
     [RequireMenu("document-list")]
     public async Task<IActionResult> CreateAndStartDocumentWorkflow(string id, [FromBody] CreateAndStartWorkflowDocumentRequest request)
@@ -763,6 +796,9 @@ public class WorkflowController : BaseApiController
         return Success(new { document, workflowInstance = instance });
     }
 
+    /// <summary>
+    /// 批量创建工作流操作
+    /// </summary>
     [HttpPost("bulk-operations")]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> CreateBulkOperation([FromBody] CreateBulkOperationRequest request)
@@ -777,6 +813,9 @@ public class WorkflowController : BaseApiController
         return Success(await bulkService.CreateBulkOperationAsync(request.OperationType, request.WorkflowIds, request.Parameters));
     }
 
+    /// <summary>
+    /// 执行批量工作流操作
+    /// </summary>
     [HttpPost("bulk-operations/{operationId}/execute")]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> ExecuteBulkOperation(string operationId)
@@ -788,6 +827,9 @@ public class WorkflowController : BaseApiController
         return Success(null, "批量操作已开始执行");
     }
 
+    /// <summary>
+    /// 取消批量工作流操作
+    /// </summary>
     [HttpPost("bulk-operations/{operationId}/cancel")]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> CancelBulkOperation(string operationId)
@@ -851,6 +893,9 @@ public class WorkflowController : BaseApiController
         }
     }
 
+    /// <summary>
+    /// 导出过滤后的工作流
+    /// </summary>
     [HttpPost("export-filtered")]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> ExportFilteredWorkflows([FromBody] ExportFilteredWorkflowsRequest request)
@@ -860,6 +905,9 @@ public class WorkflowController : BaseApiController
         return File(fileContent, "application/octet-stream", fileName);
     }
 
+    /// <summary>
+    /// 验证导入文件
+    /// </summary>
     [HttpPost("import/validate")]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> ValidateImportFile([FromForm] ValidateImportFileRequest request)
@@ -884,6 +932,9 @@ public class WorkflowController : BaseApiController
         return Success(await _exportImportService.ImportWorkflowsAsync(memoryStream.ToArray(), request.File.FileName, request.OverwriteExisting));
     }
 
+    /// <summary>
+    /// 预览导入的工作流
+    /// </summary>
     [HttpPost("import/preview")]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> PreviewImport([FromForm] PreviewImportRequest request)

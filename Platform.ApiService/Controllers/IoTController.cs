@@ -203,19 +203,28 @@ public class IoTController : BaseApiController
 
     #endregion
 
-    #region Data Record
+#region Data Record
 
-    [HttpPost("data/report")]
+    /// <summary>
+    /// 上报设备数据
+    /// </summary>
+    [HttpPost]
     [AllowAnonymous]
     public async Task<IActionResult> ReportData([FromBody] ReportIoTDataRequest request)
         => Success(await _iotService.ReportDataAsync(request));
 
-    [HttpPost("data/batch-report")]
+    /// <summary>
+    /// 批量上报设备数据
+    /// </summary>
+    [HttpPost]
     [AllowAnonymous]
     public async Task<IActionResult> BatchReportData([FromBody] BatchReportIoTDataRequest request)
         => Success(await _iotService.BatchReportDataAsync(request));
 
-    [HttpGet("data/query")]
+    /// <summary>
+    /// 查询数据记录
+    /// </summary>
+    [HttpGet]
     public async Task<IActionResult> QueryDataRecords(
         [FromQuery] PageParams request,
         [FromQuery] string? deviceId = null,
@@ -240,6 +249,9 @@ public class IoTController : BaseApiController
 
     #region Events
 
+    /// <summary>
+    /// 查询告警事件列表
+    /// </summary>
     [HttpGet("events/query")]
     public async Task<IActionResult> QueryEvents(
         [FromQuery] PageParams request,
@@ -251,6 +263,9 @@ public class IoTController : BaseApiController
         [FromQuery] DateTime? endTime = null)
         => Success(await _iotService.QueryEventsAsync(request, deviceId, eventType, level, isHandled, startTime, endTime));
 
+    /// <summary>
+    /// 处理告警事件
+    /// </summary>
     [HttpPost("events/{eventId}/handle")]
     public async Task<IActionResult> HandleEvent(string eventId, [FromBody] HandleEventRequest request)
     {
@@ -259,6 +274,9 @@ public class IoTController : BaseApiController
         return Success(null, "事件已处理");
     }
 
+    /// <summary>
+    /// 获取未处理告警事件数量
+    /// </summary>
     [HttpGet("events/unhandled-count")]
     public async Task<IActionResult> GetUnhandledEventCount([FromQuery] string? deviceId = null)
         => Success(new { Count = await _iotService.GetUnhandledEventCountAsync(deviceId) });
@@ -267,10 +285,16 @@ public class IoTController : BaseApiController
 
     #region Statistics
 
+    /// <summary>
+    /// 获取平台统计信息
+    /// </summary>
     [HttpGet("statistics/platform")]
     public async Task<IActionResult> GetPlatformStatistics()
         => Success(await _iotService.GetPlatformStatisticsAsync());
 
+    /// <summary>
+    /// 获取设备状态统计
+    /// </summary>
     [HttpGet("statistics/device-status")]
     public async Task<IActionResult> GetDeviceStatusStatistics()
         => Success(await _iotService.GetDeviceStatusStatisticsAsync());
@@ -279,10 +303,16 @@ public class IoTController : BaseApiController
 
     #region Device Twin
 
+    /// <summary>
+    /// 获取设备数字孪生
+    /// </summary>
     [HttpGet("devices/{deviceId}/twin")]
     public async Task<IActionResult> GetDeviceTwin(string deviceId)
         => Success(await _iotService.GetOrCreateDeviceTwinAsync(deviceId));
 
+    /// <summary>
+    /// 更新设备期望属性
+    /// </summary>
     [HttpPatch("devices/{deviceId}/twin/desired")]
     public async Task<IActionResult> UpdateDesiredProperties(string deviceId, [FromBody] UpdateDesiredPropertiesRequest request)
     {
@@ -291,6 +321,9 @@ public class IoTController : BaseApiController
         return Success(twin);
     }
 
+    /// <summary>
+    /// 上报设备属性
+    /// </summary>
     [HttpPatch("devices/{deviceId}/twin/reported")]
     [AllowAnonymous]
     public async Task<IActionResult> ReportProperties(string deviceId, [FromBody] ReportPropertiesRequest request)
@@ -304,15 +337,24 @@ public class IoTController : BaseApiController
 
     #region Commands
 
+    /// <summary>
+    /// 发送指令到设备
+    /// </summary>
     [HttpPost("devices/{deviceId}/commands")]
     public async Task<IActionResult> SendCommand(string deviceId, [FromBody] SendCommandRequest request)
         => Success(await _iotService.SendCommandAsync(deviceId, request));
 
+    /// <summary>
+    /// 获取设备待执行指令
+    /// </summary>
     [HttpGet("devices/{deviceId}/commands/pending")]
     [AllowAnonymous]
     public async Task<IActionResult> GetPendingCommands(string deviceId, [FromQuery] string apiKey)
         => Success(await _iotService.GetPendingCommandsAsync(deviceId, apiKey));
 
+    /// <summary>
+    /// 确认设备指令
+    /// </summary>
     [HttpPost("commands/{commandId}/ack")]
     [AllowAnonymous]
     public async Task<IActionResult> AckCommand(string commandId, [FromBody] AckCommandRequest request)
@@ -322,6 +364,9 @@ public class IoTController : BaseApiController
         return Success(ok);
     }
 
+    /// <summary>
+    /// 生成设备 API Key
+    /// </summary>
     [HttpPost("devices/{deviceId}/apikey")]
     public async Task<IActionResult> GenerateApiKey(string deviceId)
         => Success(await _iotService.GenerateApiKeyAsync(deviceId));

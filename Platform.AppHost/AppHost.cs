@@ -46,11 +46,7 @@ var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("dat
      service.Name = "datainitializer";
  });
 
-var systemMonitor = builder.AddProject<Projects.Platform_SystemMonitor>("systemmonitor")
-    .WithHttpEndpoint(port: 15020)
-    .WithHttpHealthCheck("/health")
-    .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
-    .WithEnvironment("InternalService__ApiKey", internalServiceApiKey);
+// 系统监控功能已迁移到 Platform.ApiService (路由: /api/system-monitor)
 
 var smtpConfig = builder.Configuration.GetSection("Smtp");
 var smtpHost = smtpConfig["Host"];
@@ -80,8 +76,7 @@ if (!string.IsNullOrEmpty(smtpHost))
 
 var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDiscovery>>
 {
-    ["apiservice"] = apiService,
-    ["systemmonitor"] = systemMonitor
+    ["apiservice"] = apiService
 };
 
 var yarp = builder.AddYarp("apigateway")

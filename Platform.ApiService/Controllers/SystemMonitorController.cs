@@ -1,20 +1,13 @@
 using System.Diagnostics;
 using System.Management;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ServiceDefaults.Controllers;
-using Platform.ServiceDefaults.Models;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Globalization;
-using System.Linq;
 
-namespace Platform.SystemMonitor.Controllers;
+namespace Platform.ApiService.Controllers;
 
-/// <summary>
-/// 系统监控控制器
-/// </summary>
-[Authorize]
 [ApiController]
 [Route("api/system-monitor")]
 public class SystemMonitorController : BaseApiController
@@ -36,9 +29,6 @@ public class SystemMonitorController : BaseApiController
     private static readonly TimeSpan _resourceCacheDuration = TimeSpan.FromSeconds(2);
     private static readonly object _resourceLock = new object();
 
-    /// <summary>
-    /// 获取系统资源使用情况
-    /// </summary>
     [HttpGet("resources")]
     public IActionResult GetSystemResources()
     {
@@ -70,9 +60,6 @@ public class SystemMonitorController : BaseApiController
         }
     }
 
-    /// <summary>
-    /// 获取内存使用情况
-    /// </summary>
     private object GetMemoryInfo(Process process)
     {
         try
@@ -114,9 +101,6 @@ public class SystemMonitorController : BaseApiController
         }
     }
 
-    /// <summary>
-    /// 获取系统总内存
-    /// </summary>
     private long GetSystemTotalMemory()
     {
         try
@@ -147,9 +131,6 @@ public class SystemMonitorController : BaseApiController
         }
     }
 
-    /// <summary>
-    /// 获取Unix系统（macOS/Linux）的总内存
-    /// </summary>
     private long GetUnixSystemTotalMemory()
     {
         try
@@ -212,9 +193,6 @@ public class SystemMonitorController : BaseApiController
         }
     }
 
-    /// <summary>
-    /// 获取系统可用内存
-    /// </summary>
     private long GetSystemAvailableMemory()
     {
         try
@@ -245,9 +223,6 @@ public class SystemMonitorController : BaseApiController
         }
     }
 
-    /// <summary>
-    /// 获取Unix系统（macOS/Linux）的可用内存
-    /// </summary>
     private long GetUnixSystemAvailableMemory()
     {
         try
@@ -370,9 +345,6 @@ public class SystemMonitorController : BaseApiController
         }
     }
 
-    /// <summary>
-    /// 获取 CPU 使用情况
-    /// </summary>
     private object GetCpuInfo()
     {
         try
@@ -440,9 +412,6 @@ public class SystemMonitorController : BaseApiController
         }
     }
 
-    /// <summary>
-    /// 获取系统整体 CPU 使用率
-    /// </summary>
     private double GetSystemCpuUsage()
     {
         try
@@ -468,9 +437,6 @@ public class SystemMonitorController : BaseApiController
         return 0;
     }
 
-    /// <summary>
-    /// 获取 Unix 系统整体 CPU 使用率
-    /// </summary>
     private double GetUnixSystemCpuUsage()
     {
         try
@@ -478,7 +444,7 @@ public class SystemMonitorController : BaseApiController
             var isMac = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
             var startInfo = new ProcessStartInfo
             {
-                FileName = isMac ? "top" : "top",
+                FileName = "top",
                 Arguments = isMac ? "-l 1 -n 0" : "-bn1",
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
@@ -517,9 +483,6 @@ public class SystemMonitorController : BaseApiController
         return 0;
     }
 
-    /// <summary>
-    /// 获取磁盘使用情况
-    /// </summary>
     private object GetDiskInfo()
     {
         try
@@ -561,9 +524,6 @@ public class SystemMonitorController : BaseApiController
         }
     }
 
-    /// <summary>
-    /// 获取系统信息
-    /// </summary>
     private object GetSystemInfo()
     {
         try

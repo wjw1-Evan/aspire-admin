@@ -113,9 +113,8 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
 
   // 处理回车键
   const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && value) {
-      await verifyCaptcha(value);
-    }
+    // 回车时直接让表单提交，不再单独验证验证码
+    // 验证码会在登录时由后端统一验证
   };
 
   // 组件挂载时获取验证码

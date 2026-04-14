@@ -65,13 +65,15 @@ builder.Services.AddControllers(options =>
                 .Where(e => e.Value?.Errors.Count > 0)
                 .ToDictionary(
                     kvp => string.IsNullOrEmpty(kvp.Key) ? "error" : char.ToLowerInvariant(kvp.Key[0]) + kvp.Key[1..],
-                    kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+                    kvp => kvp.Value!.Errors.Select(e => ConvertToErrorCode(e.ErrorMessage, kvp.Key)).ToArray()
                 );
+
+            var firstError = errors.Values.FirstOrDefault()?.FirstOrDefault() ?? "请求参数验证失败";
+            var errorCode = ExtractErrorCode(firstError);
 
             var errorResponse = new ApiResponse(
                 success: false,
-
-                message: errors.Values.FirstOrDefault()?.FirstOrDefault() ?? "请求参数验证失败",
+                message: errorCode ?? firstError,
                 traceId: context.HttpContext.TraceIdentifier,
                 errors: errors
             );
@@ -271,5 +273,28 @@ app.MapControllers();
 app.MapOpenApi();
 app.MapDefaultEndpoints();
 
+// 验证错误码转换辅助方法
+static string ConvertToErrorCode(string errorMessage, string fieldName)
+{
+    if (string.IsNullOrEmpty(errorMessage)) return errorMessage;
+
+    var field = fieldName.ToLowerInvariant();
+    if (errorMessage.Contains("不能为空") || errorMessage.Contains("required", StringComparison.OrdinalIgnoreCase))
+        return $"VALIDATION:{field}:required";
+    if (errorMessage.Contains("长度必须") || errorMessage.Contains("length", StringComparison.OrdinalIgnoreCase))
+        return $"VALIDATION:{field}:length";
+    if (errorMessage.Contains("格式不正确") || errorMessage.Contains("format", StringComparison.OrdinalIgnoreCase))
+        return $"VALIDATION:{field}:format";
+    if (errorMessage.Contains("无效") || errorMessage.Contains("invalid", StringComparison.OrdinalIgnoreCase))
+        return $"VALIDATION:{field}:invalid";
+
+    return $"VALIDATION:{field}:{errorMessage}";
+}
+
+static string? ExtractErrorCode(string? message)
+{
+    if (string.IsNullOrEmpty(message)) return null;
+    return message.StartsWith("VALIDATION:") ? message : null;
+}
 
 await app.RunAsync();

@@ -85,3 +85,21 @@ public class PageResult
     public bool Success { get; set; }
     public string? Error { get; set; }
 }
+
+public class WebScrapingResult : MultiTenantEntity
+{
+    public string TaskId { get; set; } = string.Empty;
+    public string TaskName { get; set; } = string.Empty;
+    public string LogId { get; set; } = string.Empty;
+    public string Url { get; set; } = string.Empty;
+    public int Level { get; set; }
+    public string? Title { get; set; }
+    public string? Content { get; set; }
+    public List<string> Images { get; set; } = new();
+    public List<string> Links { get; set; } = new();
+    public bool Success { get; set; }
+    public string? Error { get; set; }
+    public int ContentLength { get; set; }
+    public int ImageCount { get; set; }
+    public int LinkCount { get; set; }
+}

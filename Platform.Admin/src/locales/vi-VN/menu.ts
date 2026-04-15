@@ -72,6 +72,8 @@ export default {
   'menu.password-book.desc': 'Lưu trữ và quản lý mật khẩu tài khoản an toàn',
   'menu.web-scraper': 'Web Scraper',
   'menu.web-scraper.desc': 'Scrape web content with depth crawling and scheduled tasks',
+  'menu.web-scraper.results': 'Scrape Results',
+  'menu.web-scraper.logs': 'Scrape Logs',
 
   'menu.company-search': 'Tìm kiếm công ty',
   'menu.my-join-requests': 'Yêu cầu gia nhập của tôi',

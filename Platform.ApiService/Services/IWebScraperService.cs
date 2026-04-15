@@ -20,5 +20,8 @@ public interface IWebScraperService
     Task<PagedResult<WebScrapingLog>> GetLogsAsync(PageParams pageParams, string userId, string? taskId = null);
     Task<WebScrapingLog?> GetLogByIdAsync(string id, string userId);
 
+    Task<PagedResult<WebScrapingResult>> GetResultsAsync(PageParams pageParams, string userId, string? taskId = null, string? logId = null);
+    Task<WebScrapingResult?> GetResultByIdAsync(string id, string userId);
+
     Task UpdateScheduledTasksAsync();
 }

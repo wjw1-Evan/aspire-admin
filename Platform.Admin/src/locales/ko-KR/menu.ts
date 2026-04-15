@@ -68,6 +68,8 @@ export default {
   'menu.password-book.desc': '계정 암호의 안전한 저장 및 관리',
   'menu.web-scraper': 'Web Scraper',
   'menu.web-scraper.desc': 'Scrape web content with depth crawling and scheduled tasks',
+  'menu.web-scraper.results': 'Scrape Results',
+  'menu.web-scraper.logs': 'Scrape Logs',
   'menu.account': '개인 페이지',
   'menu.account.center': '개인 센터',
   'menu.account.center.desc': '개인 정보 및 설정 관리',

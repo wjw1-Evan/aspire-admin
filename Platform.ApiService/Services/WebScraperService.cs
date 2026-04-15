@@ -195,6 +195,29 @@ public class WebScraperService : IWebScraperService
             await _context.Set<WebScrapingLog>().AddAsync(log);
             await _context.SaveChangesAsync();
 
+            foreach (var page in result.Pages)
+            {
+                var scrapingResult = new WebScrapingResult
+                {
+                    TaskId = task.Id,
+                    TaskName = task.Name,
+                    LogId = log.Id,
+                    Url = page.Url,
+                    Level = page.Level,
+                    Title = page.Title,
+                    Content = page.Content,
+                    Images = page.Images,
+                    Links = page.Links,
+                    Success = page.Success,
+                    Error = page.Error,
+                    ContentLength = page.Content?.Length ?? 0,
+                    ImageCount = page.Images?.Count ?? 0,
+                    LinkCount = page.Links?.Count ?? 0
+                };
+                await _context.Set<WebScrapingResult>().AddAsync(scrapingResult);
+            }
+            await _context.SaveChangesAsync();
+
             return new ScrapeResultDto
             {
                 Success = true,
@@ -320,6 +343,56 @@ public class WebScraperService : IWebScraperService
             .FirstOrDefaultAsync(t => t.Id == log.TaskId && t.UserId == userId);
 
         return task != null ? log : null;
+    }
+
+    public async Task<PagedResult<WebScrapingResult>> GetResultsAsync(
+        PageParams pageParams, string userId, string? taskId = null, string? logId = null)
+    {
+        var query = _context.Set<WebScrapingResult>().AsQueryable();
+
+        if (!string.IsNullOrEmpty(taskId))
+        {
+            query = query.Where(r => r.TaskId == taskId);
+        }
+
+        if (!string.IsNullOrEmpty(logId))
+        {
+            query = query.Where(r => r.LogId == logId);
+        }
+
+        var taskIds = await _context.Set<WebScrapingTask>()
+            .Where(t => t.UserId == userId)
+            .Select(t => t.Id)
+            .ToListAsync();
+
+        query = query.Where(r => taskIds.Contains(r.TaskId));
+
+        var total = await query.CountAsync();
+        var items = await query
+            .OrderByDescending(r => r.CreatedAt)
+            .Skip((pageParams.Page - 1) * pageParams.PageSize)
+            .Take(pageParams.PageSize)
+            .ToListAsync();
+
+        return new PagedResult<WebScrapingResult>
+        {
+            Queryable = items.AsQueryable(),
+            CurrentPage = pageParams.Page,
+            PageSize = pageParams.PageSize,
+            RowCount = total,
+            PageCount = (int)Math.Ceiling(total / (double)pageParams.PageSize)
+        };
+    }
+
+    public async Task<WebScrapingResult?> GetResultByIdAsync(string id, string userId)
+    {
+        var result = await _context.Set<WebScrapingResult>().FirstOrDefaultAsync(r => r.Id == id);
+        if (result == null) return null;
+
+        var task = await _context.Set<WebScrapingTask>()
+            .FirstOrDefaultAsync(t => t.Id == result.TaskId && t.UserId == userId);
+
+        return task != null ? result : null;
     }
 
     public async Task UpdateScheduledTasksAsync()

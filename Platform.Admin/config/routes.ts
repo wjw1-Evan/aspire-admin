@@ -169,8 +169,20 @@ export default [
   },
   {
     path: '/web-scraper',
-    component: './web-scraper',
-    hideInMenu: true,
+    routes: [
+      {
+        path: '/web-scraper/tasks',
+        component: './web-scraper',
+      },
+      {
+        path: '/web-scraper/results',
+        component: './web-scraper/results',
+      },
+      {
+        path: '/web-scraper/logs',
+        component: './web-scraper/logs',
+      },
+    ],
   },
   {
     path: '/workflow',

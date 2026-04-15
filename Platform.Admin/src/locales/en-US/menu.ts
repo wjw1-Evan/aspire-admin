@@ -67,6 +67,8 @@ export default {
   'menu.password-book.desc': 'Securely save and manage account passwords',
   'menu.web-scraper': 'Web Scraper',
   'menu.web-scraper.desc': 'Scrape web content with depth crawling and scheduled tasks',
+  'menu.web-scraper.results': 'Scrape Results',
+  'menu.web-scraper.logs': 'Scrape Logs',
   'menu.company-search': 'Company Search',
   'menu.my-join-requests': 'My Join Requests',
   'menu.account': 'Account',

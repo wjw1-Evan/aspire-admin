@@ -164,4 +164,31 @@ public class WebScraperController : BaseApiController
 
         return Success(log);
     }
+
+    [HttpGet("results")]
+    public async Task<IActionResult> GetResults(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? taskId = null,
+        [FromQuery] string? logId = null)
+    {
+        var pageParams = new Platform.ServiceDefaults.Models.PageParams
+        {
+            Page = page,
+            PageSize = pageSize
+        };
+
+        var result = await _webScraperService.GetResultsAsync(pageParams, RequiredUserId, taskId, logId);
+        return Success(result);
+    }
+
+    [HttpGet("results/{id}")]
+    public async Task<IActionResult> GetResult(string id)
+    {
+        var result = await _webScraperService.GetResultByIdAsync(id, RequiredUserId);
+        if (result == null)
+            return NotFound(new { message = "结果不存在" });
+
+        return Success(result);
+    }
 }

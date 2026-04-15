@@ -79,10 +79,28 @@
     {
         "Name": "web-scraper",
         "Title": "网页抓取",
-        "Path": "/web-scraper",
+        "Path": "/web-scraper/tasks",
         "Component": "./web-scraper",
         "Icon": "global",
         "SortOrder": 8
+    },
+    {
+        "Name": "web-scraper-results",
+        "Title": "抓取结果",
+        "Path": "/web-scraper/results",
+        "Component": "./web-scraper/results",
+        "Icon": "file-search",
+        "ParentId": "web-scraper",
+        "SortOrder": 1
+    },
+    {
+        "Name": "web-scraper-logs",
+        "Title": "抓取日志",
+        "Path": "/web-scraper/logs",
+        "Component": "./web-scraper/logs",
+        "Icon": "history",
+        "ParentId": "web-scraper",
+        "SortOrder": 2
     },
     {
         "Name": "project-management",

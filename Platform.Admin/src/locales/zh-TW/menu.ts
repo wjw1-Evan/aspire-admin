@@ -65,6 +65,8 @@ export default {
   'menu.password-book.desc': '安全保存和管理賬號密碼',
   'menu.web-scraper': 'Web Scraper',
   'menu.web-scraper.desc': 'Scrape web content with depth crawling and scheduled tasks',
+  'menu.web-scraper.results': 'Scrape Results',
+  'menu.web-scraper.logs': 'Scrape Logs',
   'menu.company-search': '企業搜索',
   'menu.my-join-requests': '我的加入申請',
   'menu.pending-join-requests': '待審批申請',

@@ -7,7 +7,7 @@
       "description": "自动提交 Git"
     },
     "build-frontend": {
-      "template": "编译前端并修复错误：\n1. 进入 Platform.Admin 目录\n2. 运行 npm run tsc 检查 TypeScript 错误\n3. 分析错误输出，定位问题文件\n4. 修复类型错误和其他问题\n5. 重新运行检查直到无错误\n\n规则：\n- 使用简体中文\n- 优先修复 TypeScript 错误\n- 如需决策，询问用户",
+      "template": "编译前端并修复错误：\n1. 进入 Platform.Admin 目录\n2. 运行 npm run lint（包含 npm run tsc）检查代码\n3. 分析错误输出，定位问题文件\n4. 修复 TypeScript 错误和其他 lint 问题\n5. 重新运行 npm run lint 直到无错误\n\n规则：\n- 使用简体中文\n- 优先修复 TypeScript 错误\n- 如需决策，询问用户",
       "description": "编译前端并修复错误"
     },
     "build-fix": {

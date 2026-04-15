@@ -20,7 +20,7 @@ const useStyles = createStyles(({ token }) => ({
 }));
 
 interface UserProfile {
-  id: string; username: string; name?: string; email?: string; phoneNumber?: string;
+  id: string; username: string; name?: string; displayName?: string; email?: string; phoneNumber?: string;
   age?: number; avatar?: string; role: string; isActive: boolean;
   createdAt: string; updatedAt: string; lastLoginAt?: string;
 }
@@ -47,7 +47,8 @@ const UserCenter: React.FC = () => {
         const profile: UserProfile = {
           id: apiUser.id || apiUser.userid || '',
           username: apiUser.username || '',
-          name: apiUser.name || apiUser.username || '',
+          name: apiUser.name || apiUser.displayName || apiUser.username || '',
+          displayName: apiUser.displayName,
           email: apiUser.email,
           phoneNumber: apiUser.phoneNumber || apiUser.phone,
           age: apiUser.age || 18,
@@ -189,7 +190,7 @@ const UserCenter: React.FC = () => {
               <Avatar size={80} src={getUserAvatar(userProfile?.avatar)} icon={<UserOutlined />} />
             )}
             <div style={{ marginTop: '16px' }}>
-              <Title level={4}>{userProfile.name || userProfile.username}</Title>
+              <Title level={4}>{userProfile.name || userProfile.displayName || userProfile.username}</Title>
               <Tag color={getRoleTagColor(userProfile.role)}>
                 {userProfile.role === 'admin' ? <FormattedMessage id="pages.account.center.admin" defaultMessage="管理员" /> : <FormattedMessage id="pages.account.center.user" defaultMessage="普通用户" />}
               </Tag>

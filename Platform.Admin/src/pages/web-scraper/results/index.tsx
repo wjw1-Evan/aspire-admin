@@ -74,20 +74,17 @@ const WebScraperResults: React.FC = () => {
     {
       title: '任务名称',
       dataIndex: 'taskName',
-      width: 150,
       ellipsis: true,
       render: (_, record) => <Tag color="blue">{record.taskName}</Tag>,
     },
     {
       title: '层级',
       dataIndex: 'level',
-      width: 80,
       render: (level) => <Tag>第{level}层</Tag>,
     },
     {
       title: 'URL',
       dataIndex: 'url',
-      width: 200,
       ellipsis: true,
       render: (_: any, record: WebScrapingResult) => (
         <a href={record.url} target="_blank" rel="noopener noreferrer">
@@ -98,13 +95,11 @@ const WebScraperResults: React.FC = () => {
     {
       title: '标题',
       dataIndex: 'title',
-      width: 150,
       ellipsis: true,
     },
     {
       title: '状态',
       dataIndex: 'success',
-      width: 80,
       render: (success) => (
         <Tag color={success ? 'success' : 'error'}>{success ? '成功' : '失败'}</Tag>
       ),
@@ -112,28 +107,25 @@ const WebScraperResults: React.FC = () => {
     {
       title: '内容长度',
       dataIndex: 'contentLength',
-      width: 100,
       render: (_: any, record: WebScrapingResult) => `${(record.contentLength / 1024).toFixed(2)} KB`,
     },
     {
       title: '图片数',
       dataIndex: 'imageCount',
-      width: 80,
     },
     {
       title: '链接数',
       dataIndex: 'linkCount',
-      width: 80,
     },
     {
       title: '抓取时间',
       dataIndex: 'createdAt',
-      width: 160,
       render: (_: any, record: WebScrapingResult) => record.createdAt ? new Date(record.createdAt).toLocaleString() : '-',
     },
     {
       title: '操作',
       key: 'action',
+      fixed: 'right',
       width: 100,
       render: (_, record) => (
         <Button
@@ -188,6 +180,7 @@ const WebScraperResults: React.FC = () => {
           />,
         ]}
         columns={columns}
+        scroll={{ x: 'max-content' }}
       />
 
       <Modal

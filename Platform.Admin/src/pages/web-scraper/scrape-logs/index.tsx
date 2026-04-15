@@ -91,32 +91,27 @@ const WebScraperLogs: React.FC = () => {
     {
       title: '任务名称',
       dataIndex: 'taskName',
-      width: 150,
       ellipsis: true,
       render: (_, record) => <Tag color="blue">{record.taskName}</Tag>,
     },
     {
       title: '状态',
       dataIndex: 'status',
-      width: 120,
       render: (status) => statusIcons[status as keyof typeof statusIcons] || status,
     },
     {
       title: '开始时间',
       dataIndex: 'startTime',
-      width: 160,
       render: (_: any, record: WebScrapingLog) => record.startTime ? new Date(record.startTime).toLocaleString() : '-',
     },
     {
       title: '持续时间',
       dataIndex: 'duration',
-      width: 100,
       render: (_: any, record: WebScrapingLog) => formatDuration(record.duration),
     },
     {
       title: '抓取进度',
       dataIndex: 'pagesCrawled',
-      width: 200,
       render: (pages, record) => {
         const total = record.successCount + record.failedCount;
         const successRate = total > 0 ? (record.successCount / total) * 100 : 0;
@@ -135,7 +130,6 @@ const WebScraperLogs: React.FC = () => {
     {
       title: '成功/失败',
       dataIndex: 'successCount',
-      width: 120,
       render: (_, record) => (
         <Space>
           <Tag color="success">{record.successCount} 成功</Tag>
@@ -146,6 +140,7 @@ const WebScraperLogs: React.FC = () => {
     {
       title: '操作',
       key: 'action',
+      fixed: 'right',
       width: 100,
       render: (_, record) => (
         <Button
@@ -191,6 +186,7 @@ const WebScraperLogs: React.FC = () => {
           />,
         ]}
         columns={columns}
+        scroll={{ x: 'max-content' }}
       />
 
       <Modal

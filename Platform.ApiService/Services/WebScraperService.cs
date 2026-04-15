@@ -101,7 +101,13 @@ public class WebScraperService : IWebScraperService
     {
         _logger.LogInformation("[Service UpdateTaskAsync] request.ScheduleCron={SC}", request.ScheduleCron);
         var task = await GetTaskByIdAsync(id, userId);
-        _logger.LogInformation("[Service UpdateTaskAsync] task.NextRunAt before={NRA}", task?.NextRunAt);
+        if (task == null)
+        {
+            _logger.LogWarning("[Service UpdateTaskAsync] 任务未找到, id={Id}", id);
+            return null;
+        }
+
+        _logger.LogInformation("[Service UpdateTaskAsync] task.NextRunAt before={NRA}", task.NextRunAt);
 
         if (request.Name != null) task.Name = request.Name;
         if (request.TargetUrl != null) task.TargetUrl = request.TargetUrl;

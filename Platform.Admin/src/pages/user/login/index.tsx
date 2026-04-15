@@ -298,9 +298,9 @@ const Login: React.FC = () => {
 
       // 处理验证错误
       if (isValidationError) {
-        const firstError = Object.values(validationErrors).flat().find((msg: any) => msg);
+        const firstError = Object.values(validationErrors).flat().find((msg: any) => msg) as string | undefined;
         if (firstError) {
-          message.error(firstError);
+          message.error(firstError as string);
         } else {
           message.error(intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }));
         }

@@ -53,7 +53,7 @@ const GatewayManagement = React.forwardRef<GatewayManagementRef, any>((props, re
   const columns: ProColumns<IoTGateway>[] = [
     { title: '网关名称', dataIndex: 'title', sorter: true, render: (dom, record) => <a onClick={() => set({ viewingGateway: record, detailVisible: true })}>{dom}</a> },
     { title: '协议类型', dataIndex: 'protocolType', sorter: true },
-    { title: '请求方式', dataIndex: ['config', 'httpMethod'], render: (_, record) => <Tag color="blue">{record?.config?.httpMethod || '-'}</Tag> },
+    { title: '请求方式', render: (_, record) => <Tag color="blue">{(record?.config?.httpMethod as string) || '-'}</Tag> },
     { title: '地址', dataIndex: 'address', sorter: true },
     { title: '状态', dataIndex: 'status', sorter: true, render: (dom) => { const normalized = normalizeStatus(dom as string); const config = statusMap[normalized] || { color: 'default', label: (dom as string) || '未知' }; return <Tag color={config.color}>{config.label}</Tag>; } },
     { title: '设备数', dataIndex: 'deviceCount', sorter: true, align: 'center' },

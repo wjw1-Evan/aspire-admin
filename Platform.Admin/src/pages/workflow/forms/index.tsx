@@ -17,7 +17,7 @@ const api = {
 };
 
 const FormDefinitionManagement: React.FC = () => {
-    const actionRef = useRef<ActionType>();
+    const actionRef = useRef<ActionType | undefined>(undefined);
     const [state, setState] = useState({
         statistics: null as FormStatistics | null,
         editingForm: null as FormDefinition | null,
@@ -67,7 +67,10 @@ const FormDefinitionManagement: React.FC = () => {
                     return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
                 }}
                 columns={columns}
-                onChange={(_, __, s) => set({ sorter: s?.order ? { sortBy: s.field as string, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
+                onChange={(_, __, s) => {
+                    const sorter = Array.isArray(s) ? s[0] : s;
+                    set({ sorter: sorter?.order ? { sortBy: sorter.field as string, sortOrder: sorter.order === 'ascend' ? 'asc' : 'desc' } : undefined });
+                }}
                 toolBarRender={() => [
                     <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingForm: null, formVisible: true })}>新建表单</Button>,
                 ]}

@@ -30,7 +30,7 @@ export type GlobalHeaderRightProps = {
 export const AvatarName = () => {
   const { initialState } = useModel('@@initialState');
   const { currentUser } = initialState || {};
-  return <span>{currentUser?.name || currentUser?.displayName || currentUser?.username}</span>;
+  return <span>{currentUser?.name || currentUser?.username}</span>;
 };
 
 export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
@@ -155,7 +155,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
     history.push(`/account/${key}`);
   };
 
-  if (!currentUser?.username && !currentUser?.name && !currentUser?.displayName) {
+  if (!currentUser?.username && !currentUser?.name) {
     return (
       <span className={headerStyles.headerActionButton}>
         <Spin size="small" />

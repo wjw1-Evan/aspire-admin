@@ -26,46 +26,22 @@ public class HtmlScraper
             var doc = new HtmlDocument();
             doc.LoadHtml(html);
 
-            if (!string.IsNullOrEmpty(config.TitleSelector))
+            var titleNode = doc.DocumentNode.SelectSingleNode("//title");
+            result.Title = titleNode?.InnerText?.Trim();
+
+            var bodyNode = doc.DocumentNode.SelectSingleNode("//body");
+            if (bodyNode != null)
             {
-                var titleNode = doc.QuerySelector(config.TitleSelector);
-                result.Title = titleNode?.InnerText?.Trim();
+                result.Content = bodyNode.InnerText?.Trim();
             }
             else
             {
-                var titleNode = doc.QuerySelector("title");
-                result.Title = titleNode?.InnerText?.Trim();
+                result.Content = doc.DocumentNode.InnerText?.Trim();
             }
 
-            if (!string.IsNullOrEmpty(config.ContentSelector))
+            var imgNodes = doc.DocumentNode.SelectNodes("//img[@src]");
+            if (imgNodes != null)
             {
-                var contentNode = doc.QuerySelector(config.ContentSelector);
-                result.Content = contentNode?.InnerText?.Trim();
-            }
-            else
-            {
-                var bodyNode = doc.QuerySelector("body");
-                result.Content = bodyNode?.InnerText?.Trim();
-            }
-
-            if (config.ImageSelectors != null && config.ImageSelectors.Count > 0)
-            {
-                foreach (var selector in config.ImageSelectors)
-                {
-                    var imageNodes = doc.QuerySelectorAll(selector);
-                    foreach (var node in imageNodes)
-                    {
-                        var src = node.GetAttributeValue("src", "");
-                        if (!string.IsNullOrEmpty(src))
-                        {
-                            result.Images.Add(AbsoluteUrl(url, src));
-                        }
-                    }
-                }
-            }
-            else
-            {
-                var imgNodes = doc.QuerySelectorAll("img[src]");
                 foreach (var node in imgNodes)
                 {
                     var src = node.GetAttributeValue("src", "");
@@ -76,16 +52,19 @@ public class HtmlScraper
                 }
             }
 
-            var linkNodes = doc.QuerySelectorAll("a[href]");
-            foreach (var node in linkNodes)
+            var linkNodes = doc.DocumentNode.SelectNodes("//a[@href]");
+            if (linkNodes != null)
             {
-                var href = node.GetAttributeValue("href", "");
-                if (!string.IsNullOrEmpty(href))
+                foreach (var node in linkNodes)
                 {
-                    var absoluteUrl = AbsoluteUrl(url, href);
-                    if (IsValidUrl(absoluteUrl))
+                    var href = node.GetAttributeValue("href", "");
+                    if (!string.IsNullOrEmpty(href))
                     {
-                        result.Links.Add(absoluteUrl);
+                        var absoluteUrl = AbsoluteUrl(url, href);
+                        if (IsValidUrl(absoluteUrl))
+                        {
+                            result.Links.Add(absoluteUrl);
+                        }
                     }
                 }
             }

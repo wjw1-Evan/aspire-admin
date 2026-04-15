@@ -116,33 +116,15 @@ const WebScraper: React.FC = () => {
   }, []);
 
   const handleExecute = useCallback(async (record: WebScrapingTask) => {
-    message.loading({ content: '抓取中...', key: 'scrape' });
     try {
       const res = await api.execute(record.id);
       if (res.success) {
-        let attempts = 0;
-        const maxAttempts = 60;
-        const pollStatus = async () => {
-          attempts++;
-          const taskRes = await api.get(record.id);
-          if (taskRes.success && taskRes.data) {
-            const status = taskRes.data.lastStatus;
-            if (status === 'Running') {
-              if (attempts < maxAttempts) {
-                setTimeout(pollStatus, 2000);
-              }
-            } else {
-              actionRef.current?.reload();
-              message.success({ content: res.message || '抓取完成', key: 'scrape' });
-            }
-          }
-        };
-        setTimeout(pollStatus, 1000);
+        message.success(res.message || '抓取任务已启动');
       } else {
-        message.error({ content: res.message || '抓取失败', key: 'scrape' });
+        message.error(res.message || '抓取失败');
       }
     } catch {
-      message.error({ content: '抓取失败', key: 'scrape' });
+      message.error('抓取失败');
     }
   }, []);
 

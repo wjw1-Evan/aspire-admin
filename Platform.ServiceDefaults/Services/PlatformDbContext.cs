@@ -23,22 +23,8 @@ public class PlatformDbContext : DbContext
     }
 
     protected string? CurrentUserId => _tenantContext?.GetCurrentUserId();
-    
-    protected string? CurrentCompanyId
-    {
-        get
-        {
-            if (_tenantContext == null) return null;
-            
-            // 直接从 TenantContext 获取，不缓存
-            if (_tenantContext is TenantContext tc)
-            {
-                return tc.GetCurrentCompanyId();
-            }
-            
-            return _tenantContext.GetCurrentCompanyIdAsync().GetAwaiter().GetResult();
-        }
-    }
+
+    protected string? CurrentCompanyId => _tenantContext?.GetCurrentCompanyIdAsync().GetAwaiter().GetResult();
 
     private static List<Type>? _cachedEntityTypes;
 

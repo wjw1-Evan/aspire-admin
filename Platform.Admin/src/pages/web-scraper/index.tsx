@@ -189,6 +189,45 @@ const WebScraper: React.FC = () => {
       render: (dom) => `${dom} 页`,
     },
     {
+      title: '抓取深度',
+      dataIndex: 'crawlDepth',
+      key: 'crawlDepth',
+      width: 100,
+      render: (dom) => `深度${dom}`,
+      hideInSearch: true,
+    },
+    {
+      title: '每层最大',
+      dataIndex: 'maxPagesPerLevel',
+      key: 'maxPagesPerLevel',
+      width: 100,
+      render: (dom) => `${dom} 页`,
+      hideInSearch: true,
+    },
+    {
+      title: '抓取模式',
+      dataIndex: 'mode',
+      key: 'mode',
+      width: 100,
+      render: (dom) => {
+        const modeText: Record<string, string> = {
+          SinglePage: '单页',
+          DepthFirst: '深度优先',
+          BreadthFirst: '广度优先',
+        };
+        return modeText[dom as string] || dom;
+      },
+      hideInSearch: true,
+    },
+    {
+      title: '定时',
+      dataIndex: 'scheduleCron',
+      key: 'scheduleCron',
+      width: 120,
+      render: (dom) => dom ? <Tag color="orange">{dom}</Tag> : '-',
+      hideInSearch: true,
+    },
+    {
       title: '最后执行',
       dataIndex: 'lastRunAt',
       key: 'lastRunAt',

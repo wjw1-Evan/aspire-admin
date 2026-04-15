@@ -77,6 +77,14 @@
         "SortOrder": 7
     },
     {
+        "Name": "web-scraper",
+        "Title": "网页抓取",
+        "Path": "/web-scraper",
+        "Component": "./web-scraper",
+        "Icon": "global",
+        "SortOrder": 8
+    },
+    {
         "Name": "project-management",
         "Title": "项目管理",
         "Path": "/project-management",

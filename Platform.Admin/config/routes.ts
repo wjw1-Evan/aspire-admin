@@ -165,7 +165,12 @@ export default [
   {
     path: '/password-book',
     component: './password-book',
-    hideInMenu: true, // 使用数据库菜单
+    hideInMenu: true,
+  },
+  {
+    path: '/web-scraper',
+    component: './web-scraper',
+    hideInMenu: true,
   },
   {
     path: '/workflow',

@@ -49,6 +49,8 @@ public class WebScraperService : IWebScraperService
             LastStatus = ScrapingStatus.Idle
         };
 
+        _logger.LogInformation("[CreateTask] ScheduleCron={Cron}, NextRunAt={NextRun}", request.ScheduleCron, task.NextRunAt);
+
         await _context.Set<WebScrapingTask>().AddAsync(task);
         await _context.SaveChangesAsync();
 
@@ -113,9 +115,17 @@ public class WebScraperService : IWebScraperService
         if (request.ScheduleCron != null)
         {
             task.ScheduleCron = request.ScheduleCron;
-            task.NextRunAt = !string.IsNullOrEmpty(request.ScheduleCron)
-                ? CronExpressionParser.ParseNext(request.ScheduleCron, DateTime.UtcNow)
-                : null;
+            var cronVal = request.ScheduleCron;
+            if (!string.IsNullOrEmpty(cronVal))
+            {
+                var nextRun = CronExpressionParser.ParseNext(cronVal, DateTime.UtcNow);
+                task.NextRunAt = nextRun;
+                _logger.LogInformation("[UpdateTask] ScheduleCron={Cron}, NextRunAt={NextRun}", cronVal, nextRun);
+            }
+            else
+            {
+                task.NextRunAt = null;
+            }
         }
         if (request.IsEnabled.HasValue) task.IsEnabled = request.IsEnabled.Value;
         if (request.IsPublic.HasValue) task.IsPublic = request.IsPublic.Value;

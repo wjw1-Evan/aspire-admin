@@ -67,7 +67,7 @@ const PasswordBook: React.FC = () => {
   };
 
   const columns: ProColumns<Entry>[] = [
-    { title: '平台', dataIndex: 'platform', key: 'platform', sorter: true, render: (dom, r) => <a onClick={() => handleView(r.id)}>{dom}</a> },
+    { title: '平台', dataIndex: 'platform', key: 'platform', sorter: true },
     { title: '账号', dataIndex: 'account', key: 'account', sorter: true },
     { title: '网址', dataIndex: 'url', key: 'url', sorter: true, render: (dom) => dom ? <a href={dom as string} target="_blank">{dom}</a> : '-' },
     { title: '分类', dataIndex: 'category', key: 'category', sorter: true, render: (dom) => dom ? <Tag color="blue">{dom as string}</Tag> : '-' },

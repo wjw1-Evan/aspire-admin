@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Extensions;
 using Platform.ApiService.Services.WebScraper;
 using System.Linq.Dynamic.Core;
 using System.Text.Json;
@@ -64,37 +65,21 @@ public class WebScraperService : IWebScraperService
     {
         var query = _context.Set<WebScrapingTask>().AsQueryable();
 
-        var searchKeyword = keyword ?? pageParams.Search;
-        if (!string.IsNullOrEmpty(searchKeyword))
-        {
-            query = query.Where(t => t.Name.Contains(searchKeyword) || t.TargetUrl.Contains(searchKeyword));
-        }
-
         if (status.HasValue)
         {
             query = query.Where(t => t.LastStatus == status.Value);
         }
 
-        var total = await query.CountAsync();
-
-        var sortBy = pageParams.SortBy ?? "CreatedAt";
-        var sortOrder = pageParams.SortOrder?.ToLower() == "asc" ? "asc" : "desc";
-        var orderedQuery = sortOrder == "asc"
-            ? query.OrderBy($"{sortBy} ascending")
-            : query.OrderBy($"{sortBy} descending");
-
-        var items = await orderedQuery
-            .Skip((pageParams.Page - 1) * pageParams.PageSize)
-            .Take(pageParams.PageSize)
-            .ToListAsync();
+        var pagedResult = query.ToPagedList(pageParams);
+        var items = await pagedResult.Queryable.ToListAsync();
 
         return new PagedResult<WebScrapingTask>
         {
             Queryable = items.AsQueryable(),
-            CurrentPage = pageParams.Page,
-            PageSize = pageParams.PageSize,
-            RowCount = total,
-            PageCount = (int)Math.Ceiling(total / (double)pageParams.PageSize)
+            CurrentPage = pagedResult.CurrentPage,
+            PageSize = pagedResult.PageSize,
+            RowCount = pagedResult.RowCount,
+            PageCount = pagedResult.PageCount
         };
     }
 
@@ -375,45 +360,29 @@ public class WebScraperService : IWebScraperService
     public async Task<PagedResult<WebScrapingLog>> GetLogsAsync(
         PageParams pageParams, string userId, string? taskId = null)
     {
-        var query = _context.Set<WebScrapingLog>().AsQueryable();
+        var taskIds = await _context.Set<WebScrapingTask>()
+            .Where(t => t.UserId == userId)
+            .Select(t => t.Id)
+            .ToListAsync();
+
+        var query = _context.Set<WebScrapingLog>()
+            .Where(l => taskIds.Contains(l.TaskId));
 
         if (!string.IsNullOrEmpty(taskId))
         {
             query = query.Where(l => l.TaskId == taskId);
         }
 
-        var taskIds = await _context.Set<WebScrapingTask>()
-            .Where(t => t.UserId == userId)
-            .Select(t => t.Id)
-            .ToListAsync();
-
-        query = query.Where(l => taskIds.Contains(l.TaskId));
-
-        if (!string.IsNullOrEmpty(pageParams.Search))
-        {
-            query = query.Where(l => l.TaskName.Contains(pageParams.Search));
-        }
-
-        var total = await query.CountAsync();
-
-        var sortBy = pageParams.SortBy ?? "StartTime";
-        var sortOrder = pageParams.SortOrder?.ToLower() == "asc" ? "asc" : "desc";
-        var orderedQuery = sortOrder == "asc"
-            ? query.OrderBy($"{sortBy} ascending")
-            : query.OrderBy($"{sortBy} descending");
-
-        var items = await orderedQuery
-            .Skip((pageParams.Page - 1) * pageParams.PageSize)
-            .Take(pageParams.PageSize)
-            .ToListAsync();
+        var pagedResult = query.ToPagedList(pageParams);
+        var items = await pagedResult.Queryable.ToListAsync();
 
         return new PagedResult<WebScrapingLog>
         {
             Queryable = items.AsQueryable(),
-            CurrentPage = pageParams.Page,
-            PageSize = pageParams.PageSize,
-            RowCount = total,
-            PageCount = (int)Math.Ceiling(total / (double)pageParams.PageSize)
+            CurrentPage = pagedResult.CurrentPage,
+            PageSize = pagedResult.PageSize,
+            RowCount = pagedResult.RowCount,
+            PageCount = pagedResult.PageCount
         };
     }
 
@@ -431,7 +400,13 @@ public class WebScraperService : IWebScraperService
     public async Task<PagedResult<WebScrapingResult>> GetResultsAsync(
         PageParams pageParams, string userId, string? taskId = null, string? logId = null)
     {
-        var query = _context.Set<WebScrapingResult>().AsQueryable();
+        var taskIds = await _context.Set<WebScrapingTask>()
+            .Where(t => t.UserId == userId || t.IsPublic)
+            .Select(t => t.Id)
+            .ToListAsync();
+
+        var query = _context.Set<WebScrapingResult>()
+            .Where(r => taskIds.Contains(r.TaskId));
 
         if (!string.IsNullOrEmpty(taskId))
         {
@@ -443,40 +418,16 @@ public class WebScraperService : IWebScraperService
             query = query.Where(r => r.LogId == logId);
         }
 
-        var taskIds = await _context.Set<WebScrapingTask>()
-            .Where(t => t.UserId == userId || t.IsPublic)
-            .Select(t => t.Id)
-            .ToListAsync();
-
-        query = query.Where(r => taskIds.Contains(r.TaskId));
-
-        if (!string.IsNullOrEmpty(pageParams.Search))
-        {
-            query = query.Where(r => r.TaskName.Contains(pageParams.Search) 
-                || r.Url.Contains(pageParams.Search) 
-                || (r.Title != null && r.Title.Contains(pageParams.Search)));
-        }
-
-        var total = await query.CountAsync();
-
-        var sortBy = pageParams.SortBy ?? "CreatedAt";
-        var sortOrder = pageParams.SortOrder?.ToLower() == "asc" ? "asc" : "desc";
-        var orderedQuery = sortOrder == "asc"
-            ? query.OrderBy($"{sortBy} ascending")
-            : query.OrderBy($"{sortBy} descending");
-
-        var items = await orderedQuery
-            .Skip((pageParams.Page - 1) * pageParams.PageSize)
-            .Take(pageParams.PageSize)
-            .ToListAsync();
+        var pagedResult = query.ToPagedList(pageParams);
+        var items = await pagedResult.Queryable.ToListAsync();
 
         return new PagedResult<WebScrapingResult>
         {
             Queryable = items.AsQueryable(),
-            CurrentPage = pageParams.Page,
-            PageSize = pageParams.PageSize,
-            RowCount = total,
-            PageCount = (int)Math.Ceiling(total / (double)pageParams.PageSize)
+            CurrentPage = pagedResult.CurrentPage,
+            PageSize = pagedResult.PageSize,
+            RowCount = pagedResult.RowCount,
+            PageCount = pagedResult.PageCount
         };
     }
 

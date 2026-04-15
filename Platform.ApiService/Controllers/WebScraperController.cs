@@ -64,6 +64,7 @@ public class WebScraperController : BaseApiController
     [HttpPut("tasks/{id}")]
     public async Task<IActionResult> UpdateTask(string id, [FromBody] UpdateWebScrapingTaskRequest request)
     {
+        _logger.LogInformation("[Controller UpdateTask] id={Id}, ScheduleCron={ScheduleCron}", id, request.ScheduleCron);
         var task = await _webScraperService.UpdateTaskAsync(id, request, RequiredUserId);
         if (task == null)
             return NotFound(new { message = "任务不存在" });

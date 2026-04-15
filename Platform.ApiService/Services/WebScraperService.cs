@@ -97,8 +97,9 @@ public class WebScraperService : IWebScraperService
 
     public async Task<WebScrapingTask?> UpdateTaskAsync(string id, UpdateWebScrapingTaskRequest request, string userId)
     {
+        _logger.LogInformation("[Service UpdateTaskAsync] request.ScheduleCron={SC}", request.ScheduleCron);
         var task = await GetTaskByIdAsync(id, userId);
-        if (task == null) return null;
+        _logger.LogInformation("[Service UpdateTaskAsync] task.NextRunAt before={NRA}", task?.NextRunAt);
 
         if (request.Name != null) task.Name = request.Name;
         if (request.TargetUrl != null) task.TargetUrl = request.TargetUrl;

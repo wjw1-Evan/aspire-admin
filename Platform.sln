@@ -8,8 +8,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Platform.ServiceDefaults", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Platform.ApiService", "Platform.ApiService\Platform.ApiService.csproj", "{A3A0E8DE-17F4-4A79-BAA1-D1072EBF0864}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Platform.SystemMonitor", "Platform.SystemMonitor\Platform.SystemMonitor.csproj", "{B8C91D32-4A5E-4B89-C123-D45678EF9012}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Platform.DataInitializer", "Platform.DataInitializer\Platform.DataInitializer.csproj", "{750AC0BC-C1E9-8E56-4D9F-F471C8C1FA69}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Platform.AppHost.Tests", "Platform.AppHost.Tests\Platform.AppHost.Tests.csproj", "{D3E76650-0AC4-41FC-B85A-B384BCC81589}"

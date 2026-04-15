@@ -172,6 +172,7 @@ public class WebScraperService : IWebScraperService
 
         _logger.LogInformation("[ExecuteTaskAsync] 任务已找到: {TaskName}, CompanyId={CompanyId}", task.Name, task.CompanyId);
 
+        var taskCompanyId = task.CompanyId;
         task.LastStatus = ScrapingStatus.Running;
         await _context.SaveChangesAsync();
 
@@ -181,7 +182,8 @@ public class WebScraperService : IWebScraperService
             TaskId = task.Id,
             TaskName = task.Name,
             StartTime = startTime,
-            Status = ScrapingStatus.Running
+            Status = ScrapingStatus.Running,
+            CompanyId = taskCompanyId
         };
 
         try
@@ -241,11 +243,13 @@ public class WebScraperService : IWebScraperService
                     Error = page.Error,
                     ContentLength = page.Content?.Length ?? 0,
                     ImageCount = page.Images?.Count ?? 0,
-                    LinkCount = page.Links?.Count ?? 0
+                    LinkCount = page.Links?.Count ?? 0,
+                    CompanyId = taskCompanyId
                 };
                 await _context.Set<WebScrapingResult>().AddAsync(scrapingResult);
             }
             await _context.SaveChangesAsync();
+            _logger.LogInformation("[ExecuteTaskAsync] 保存{ResultCount}条结果, LogId={LogId}, CompanyId={CompanyId}", result.TotalPages, log.Id, taskCompanyId);
 
             return new ScrapeResultDto
             {

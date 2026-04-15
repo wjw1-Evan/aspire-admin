@@ -241,8 +241,7 @@ const WebScraper: React.FC = () => {
       dataIndex: 'lastRunAt',
       key: 'lastRunAt',
       sorter: true,
-      valueType: 'dateTime',
-      render: (dom) => dom ? dayjs(dom as string).format('YYYY-MM-DD HH:mm:ss') : '-',
+      render: (dom) => dom ? dayjs(String(dom)).format('YYYY-MM-DD HH:mm:ss') : '-',
     },
     {
       title: '耗时',

@@ -49,13 +49,43 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
         var context = scope.ServiceProvider.GetRequiredService<PlatformDbContext>();
 
         var now = DateTime.UtcNow;
-        var dueTasks = await context.Set<WebScrapingTask>()
+        _logger.LogDebug("[定时任务] 开始检查到期任务，当前时间: {Now}", now);
+
+        var allEnabledTasks = await context.Set<WebScrapingTask>()
             .IgnoreQueryFilters()
-            .Where(t => t.IsEnabled
-                     && !string.IsNullOrEmpty(t.ScheduleCron)
-                     && t.NextRunAt != null
-                     && t.NextRunAt <= now)
+            .Where(t => t.IsEnabled && !string.IsNullOrEmpty(t.ScheduleCron))
             .ToListAsync(stoppingToken);
+
+        _logger.LogDebug("[定时任务] 查询到 {Count} 个启用了定时表达式的任务", allEnabledTasks.Count);
+
+        if (allEnabledTasks.Count == 0)
+        {
+            _logger.LogWarning("[定时任务] 未查询到任何启用了定时表达式的任务，请检查数据");
+            var totalTaskCount = await context.Set<WebScrapingTask>().IgnoreQueryFilters().CountAsync(stoppingToken);
+            _logger.LogWarning("[定时任务] 数据库中WebScrapingTask总数: {Count}", totalTaskCount);
+        }
+
+        var nullNextRunTasks = allEnabledTasks.Where(t => t.NextRunAt == null).ToList();
+        if (nullNextRunTasks.Any())
+        {
+            _logger.LogWarning("[定时任务] 有 {Count} 个任务的NextRunAt为null（这些任务不会执行）:", nullNextRunTasks.Count);
+            foreach (var t in nullNextRunTasks)
+            {
+                _logger.LogWarning("  - {TaskName}, ScheduleCron={Cron}", t.Name, t.ScheduleCron);
+            }
+        }
+
+        foreach (var t in allEnabledTasks.Where(t => t.NextRunAt != null))
+        {
+            _logger.LogDebug("[定时任务] 任务 {TaskName}, NextRunAt={NextRunAt}, IsEnabled={IsEnabled}, ScheduleCron={Cron}",
+                t.Name, t.NextRunAt, t.IsEnabled, t.ScheduleCron);
+        }
+
+        var dueTasks = allEnabledTasks
+            .Where(t => t.NextRunAt != null && t.NextRunAt <= now)
+            .ToList();
+
+        _logger.LogInformation("[定时任务] 到期任务数量: {Count}", dueTasks.Count);
 
         foreach (var task in dueTasks)
         {
@@ -97,12 +127,18 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
 
     private async Task ExecuteTaskInTenantScopeAsync(WebScrapingTask task, CancellationToken stoppingToken)
     {
+        _logger.LogInformation("[定时任务] 开始执行任务: {TaskName}, CompanyId={CompanyId}, CreatedBy={CreatedBy}",
+            task.Name, task.CompanyId, task.CreatedBy);
+
         using var taskScope = _serviceProvider.CreateScope();
         var tenantSetter = taskScope.ServiceProvider.GetRequiredService<ITenantContextSetter>();
         tenantSetter.SetContext(task.CompanyId, task.CreatedBy);
+        _logger.LogDebug("[定时任务] 租户上下文已设置: CompanyId={CompanyId}", task.CompanyId);
 
         var webScraperService = taskScope.ServiceProvider.GetRequiredService<IWebScraperService>();
+        _logger.LogInformation("[定时任务] 调用ExecuteTaskAsync: TaskId={TaskId}", task.Id);
         await webScraperService.ExecuteTaskAsync(task.Id, task.CreatedBy ?? task.UserId);
+        _logger.LogInformation("[定时任务] ExecuteTaskAsync完成: TaskName={TaskName}", task.Name);
 
         using var updateScope = _serviceProvider.CreateScope();
         var updateTenantSetter = updateScope.ServiceProvider.GetRequiredService<ITenantContextSetter>();

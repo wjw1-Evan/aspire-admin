@@ -72,15 +72,10 @@ public class WebScraperService : IWebScraperService
 
         var pagedResult = query.ToPagedList(pageParams);
         var items = await pagedResult.Queryable.ToListAsync();
-
-        return new PagedResult<WebScrapingTask>
-        {
-            Queryable = items.AsQueryable(),
-            CurrentPage = pagedResult.CurrentPage,
-            PageSize = pagedResult.PageSize,
-            RowCount = pagedResult.RowCount,
-            PageCount = pagedResult.PageCount
-        };
+        
+        pagedResult.Queryable = items.AsQueryable();
+        
+        return pagedResult;
     }
 
     public async Task<WebScrapingTask?> GetTaskByIdAsync(string id, string userId)
@@ -375,15 +370,10 @@ public class WebScraperService : IWebScraperService
 
         var pagedResult = query.ToPagedList(pageParams);
         var items = await pagedResult.Queryable.ToListAsync();
-
-        return new PagedResult<WebScrapingLog>
-        {
-            Queryable = items.AsQueryable(),
-            CurrentPage = pagedResult.CurrentPage,
-            PageSize = pagedResult.PageSize,
-            RowCount = pagedResult.RowCount,
-            PageCount = pagedResult.PageCount
-        };
+        
+        pagedResult.Queryable = items.AsQueryable();
+        
+        return pagedResult;
     }
 
     public async Task<WebScrapingLog?> GetLogByIdAsync(string id, string userId)
@@ -420,15 +410,10 @@ public class WebScraperService : IWebScraperService
 
         var pagedResult = query.ToPagedList(pageParams);
         var items = await pagedResult.Queryable.ToListAsync();
-
-        return new PagedResult<WebScrapingResult>
-        {
-            Queryable = items.AsQueryable(),
-            CurrentPage = pagedResult.CurrentPage,
-            PageSize = pagedResult.PageSize,
-            RowCount = pagedResult.RowCount,
-            PageCount = pagedResult.PageCount
-        };
+        
+        pagedResult.Queryable = items.AsQueryable();
+        
+        return pagedResult;
     }
 
     public async Task<WebScrapingResult?> GetResultByIdAsync(string id, string userId)

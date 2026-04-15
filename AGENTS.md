@@ -393,23 +393,7 @@ export async function getUsers(params: PageParams) {
 }
 ```
 
-### 7.3 类型安全
-
-**[强制]** 禁止使用 `any` 类型：
-
-```typescript
-// ❌ 禁止
-const handleSubmit = (values: any) => {};
-
-// ✅ 正确
-interface TaskFormValues {
-  taskName: string;
-  priority?: number;
-}
-const handleSubmit = (values: TaskFormValues) => {};
-```
-
-### 7.4 统一 API 响应类型
+### 7.3 统一 API 响应类型
 
 所有 API 相关类型统一定义在 `@/types/api-response.ts`：
 
@@ -430,7 +414,7 @@ export interface PagedResult<T> {
 }
 ```
 
-### 7.5 页面风格
+### 7.4 页面风格
 
 #### 列表页面结构
 ```tsx
@@ -454,7 +438,7 @@ export interface PagedResult<T> {
 />
 ```
 
-### 7.6 分页与前端行为
+### 7.5 分页与前端行为
 
 | 参数 | 后端默认值 | 前端行为 |
 |------|-----------|----------|
@@ -472,7 +456,7 @@ await getUserList({ page: 2 })
 await getUserList({ page: 1, pageSize: 10 })
 ```
 
-### 7.7 前端开发标准（密码本模块）
+### 7.6 前端开发标准（密码本模块）
 
 `src/pages/password-book` 是所有列表页面的**开发标准参考**：
 

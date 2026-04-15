@@ -37,14 +37,16 @@ public class WebScraperController : BaseApiController
     [HttpGet("tasks")]
     public async Task<IActionResult> GetTasks(
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10,
         [FromQuery] string? keyword = null,
-        [FromQuery] ScrapingStatus? status = null)
+        [FromQuery] ScrapingStatus? status = null,
+        [FromQuery] string? sortBy = null,
+        [FromQuery] string? sortOrder = null)
     {
         var pageParams = new Platform.ServiceDefaults.Models.PageParams
         {
             Page = page,
-            PageSize = pageSize
+            SortBy = sortBy,
+            SortOrder = sortOrder
         };
 
         var result = await _webScraperService.GetTasksAsync(pageParams, RequiredUserId, keyword, status);
@@ -143,13 +145,15 @@ public class WebScraperController : BaseApiController
     [HttpGet("logs")]
     public async Task<IActionResult> GetLogs(
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10,
-        [FromQuery] string? taskId = null)
+        [FromQuery] string? taskId = null,
+        [FromQuery] string? sortBy = null,
+        [FromQuery] string? sortOrder = null)
     {
         var pageParams = new Platform.ServiceDefaults.Models.PageParams
         {
             Page = page,
-            PageSize = pageSize
+            SortBy = sortBy,
+            SortOrder = sortOrder
         };
 
         var result = await _webScraperService.GetLogsAsync(pageParams, RequiredUserId, taskId);
@@ -169,14 +173,16 @@ public class WebScraperController : BaseApiController
     [HttpGet("results")]
     public async Task<IActionResult> GetResults(
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10,
         [FromQuery] string? taskId = null,
-        [FromQuery] string? logId = null)
+        [FromQuery] string? logId = null,
+        [FromQuery] string? sortBy = null,
+        [FromQuery] string? sortOrder = null)
     {
         var pageParams = new Platform.ServiceDefaults.Models.PageParams
         {
             Page = page,
-            PageSize = pageSize
+            SortBy = sortBy,
+            SortOrder = sortOrder
         };
 
         var result = await _webScraperService.GetResultsAsync(pageParams, RequiredUserId, taskId, logId);

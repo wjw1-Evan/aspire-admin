@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Modal, Form, Input, InputNumber, Switch, Select, message } from 'antd';
+import { Modal, Form, Input, InputNumber, Switch, Select, message, Radio } from 'antd';
 import { ModalForm, ProFormText, ProFormTextArea, ProFormSelect, ProFormDigit } from '@ant-design/pro-components';
 import { request } from '@umijs/max';
 import { ApiResponse } from '@/types';
@@ -147,12 +147,13 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onCancel, onSuccess 
         tooltip="每层最多抓取的页面数量限制"
       />
 
-      <ProFormSelect
-        name="mode"
-        label="抓取模式"
-        options={modeOptions}
-        initialValue="breadthfirst"
-      />
+      <Form.Item label="抓取模式" name="mode" initialValue="breadthfirst">
+        <Radio.Group>
+          <Radio.Button value="singlepage">仅当前页</Radio.Button>
+          <Radio.Button value="depthfirst">深度优先</Radio.Button>
+          <Radio.Button value="breadthfirst">广度优先</Radio.Button>
+        </Radio.Group>
+      </Form.Item>
 
       <ProFormText
         name="urlFilterPattern"

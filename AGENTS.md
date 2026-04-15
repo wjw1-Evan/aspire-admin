@@ -161,7 +161,7 @@ public class UserService
 - **多租户过滤**：查询时由 `PlatformDbContext` 全局查询过滤器自动过滤 `CompanyId` 和 `IsDeleted=false`。
 - **审计字段**：`CreatedAt/UpdatedAt/CreatedBy/UpdatedBy` 由 `PlatformDbContext` 在 `SaveChangesAsync()` 时自动维护。
 
-### 🏢 多租户���上下文安全
+### 🏢 多租户与上下文安全
 - 除了用户身份主键 `userId` 以外，任何企业级上下文（企业的 `companyId` / 用户拥有的菜单权限 / 角色），**严禁**直接从 JWT claim 中读取解包。
 - **正确获取方式**：统一通过注入 `ITenantContext` 读取当前操作人在当前企业下的属性约束。
 
@@ -273,7 +273,7 @@ public class UserService
 
 #### 权限注解标准
 - **[强制]** 所有敏感操作必须添加 `[RequireMenu("menu-action")]` 注解。
-- 菜单名称统一用连��符 `-` 分隔，格式为 `模块-资源`。
+- 菜单名称统一用连字符 `-` 分隔，格式为 `模块-资源`。
 
 ```csharp
 // ✅ 正确：使用 RequireMenu
@@ -405,7 +405,7 @@ foreach (var task in tasks)
 
 ### 6.7 类型命名规范
 
-#### 禁���使��� "Dependency" 单词
+#### 禁止使用 "Dependency" 单词
 ```csharp
 // ❌ 错误：名称包含 Dependency
 public interface ITaskDependencyService { }

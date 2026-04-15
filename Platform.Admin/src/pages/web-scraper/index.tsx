@@ -119,6 +119,7 @@ const WebScraper: React.FC = () => {
   const [previewData, setPreviewData] = useState<CrawlResult | null | undefined>(null);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
+  const [sorter, setSorter] = useState<{ sortBy: string; sortOrder: string } | undefined>(undefined);
 
   const handleEdit = useCallback((record: WebScrapingTask) => {
     setEditingTask(record);
@@ -162,6 +163,7 @@ const WebScraper: React.FC = () => {
       title: '任务名称',
       dataIndex: 'name',
       key: 'name',
+      sorter: true,
       render: (dom, record) => (
         <a onClick={() => handleEdit(record)}>{dom}</a>
       ),
@@ -171,6 +173,7 @@ const WebScraper: React.FC = () => {
       dataIndex: 'targetUrl',
       key: 'targetUrl',
       ellipsis: true,
+      sorter: true,
       render: (dom) => (
         <a href={dom as string} target="_blank" rel="noopener noreferrer">
           {dom}
@@ -181,6 +184,7 @@ const WebScraper: React.FC = () => {
       title: '状态',
       dataIndex: 'lastStatus',
       key: 'lastStatus',
+      sorter: true,
       render: (dom) => (
         <Tag color={statusColors[dom as string]}>{statusText[dom as string]}</Tag>
       ),
@@ -189,6 +193,7 @@ const WebScraper: React.FC = () => {
       title: '已抓取',
       dataIndex: 'totalPagesCrawled',
       key: 'totalPagesCrawled',
+      sorter: true,
       render: (dom) => `${dom} 页`,
     },
     {
@@ -235,12 +240,15 @@ const WebScraper: React.FC = () => {
       title: '最后执行',
       dataIndex: 'lastRunAt',
       key: 'lastRunAt',
+      sorter: true,
+      valueType: 'dateTime',
       render: (dom) => dom ? dayjs(dom as string).format('YYYY-MM-DD HH:mm:ss') : '-',
     },
     {
       title: '耗时',
       dataIndex: 'lastDuration',
       key: 'lastDuration',
+      sorter: true,
       render: (dom) => dom ? `${Math.round((dom as number) / 1000)}s` : '-',
     },
     {
@@ -298,16 +306,23 @@ const WebScraper: React.FC = () => {
         rowKey="id"
         search={false}
         request={async (params: any) => {
+          const sortParams = sorter?.sortBy && sorter?.sortOrder ? sorter : undefined;
           const res = await api.list({
             page: params.current || 1,
             pageSize: params.pageSize || 10,
             keyword: search,
+            sortBy: sortParams?.sortBy,
+            sortOrder: sortParams?.sortOrder,
           });
           return {
             data: res.data?.queryable || [],
             success: res.success,
             total: res.data?.rowCount || 0,
           };
+        }}
+        onChange={(_, __, s) => {
+          const sorterData = Array.isArray(s) ? s[0] : s;
+          setSorter(sorterData?.order ? { sortBy: sorterData.field as string, sortOrder: sorterData.order === 'ascend' ? 'asc' : 'desc' } : undefined);
         }}
         toolBarRender={() => [
           <Input.Search

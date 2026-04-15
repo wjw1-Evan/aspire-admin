@@ -75,8 +75,14 @@ public class WebScraperService : IWebScraperService
         }
 
         var total = await query.CountAsync();
-        var items = await query
-            .OrderByDescending(t => t.CreatedAt)
+
+        var sortBy = pageParams.SortBy ?? "CreatedAt";
+        var sortOrder = pageParams.SortOrder?.ToLower() == "asc" ? "asc" : "desc";
+        var orderedQuery = sortOrder == "asc"
+            ? query.OrderBy($"{sortBy} ascending")
+            : query.OrderBy($"{sortBy} descending");
+
+        var items = await orderedQuery
             .Skip((pageParams.Page - 1) * pageParams.PageSize)
             .Take(pageParams.PageSize)
             .ToListAsync();

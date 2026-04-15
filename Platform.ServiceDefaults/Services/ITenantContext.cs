@@ -9,17 +9,35 @@ public interface ITenantContext
     Task<string?> GetCurrentCompanyIdAsync();
 }
 
-public class TenantContext(
-    IHttpContextAccessor httpContextAccessor,
-    IMongoDatabase database) : ITenantContext
+public interface ITenantContextSetter
 {
-    private string? _cachedCompanyId;
+    void SetContext(string companyId, string? userId);
+}
 
-    private string? GetCachedUserId()
+public class TenantContext : ITenantContext, ITenantContextSetter
+{
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IMongoDatabase _database;
+    private string? _cachedCompanyId;
+    private string? _overrideCompanyId;
+    private string? _overrideUserId;
+    private bool _isOverridden;
+
+    public TenantContext(
+        IHttpContextAccessor httpContextAccessor,
+        IMongoDatabase database)
     {
+        _httpContextAccessor = httpContextAccessor;
+        _database = database;
+    }
+
+    public string? GetCurrentUserId()
+    {
+        if (_isOverridden) return _overrideUserId;
+
         try
         {
-            return httpContextAccessor.HttpContext?.Items["UserId"] as string;
+            return _httpContextAccessor.HttpContext?.Items["UserId"] as string;
         }
         catch (ObjectDisposedException)
         {
@@ -27,29 +45,36 @@ public class TenantContext(
         }
     }
 
-    public string? GetCurrentUserId() => GetCachedUserId();
-
     public async Task<string?> GetCurrentCompanyIdAsync()
     {
+        if (_isOverridden) return _overrideCompanyId;
+
         if (_cachedCompanyId != null) return _cachedCompanyId;
 
-        var userId = GetCachedUserId();
+        var userId = GetCurrentUserId();
         if (string.IsNullOrEmpty(userId)) return null;
 
         _cachedCompanyId = await LoadCompanyIdAsync(userId);
         return _cachedCompanyId;
     }
 
+    public void SetContext(string companyId, string? userId)
+    {
+        _overrideCompanyId = companyId;
+        _overrideUserId = userId;
+        _isOverridden = true;
+    }
+
     private async Task<string?> LoadCompanyIdAsync(string userId)
     {
-        var collection = database.GetCollection<MongoDB.Bson.BsonDocument>("AppUser");
+        var collection = _database.GetCollection<MongoDB.Bson.BsonDocument>("AppUser");
 
-        var filter = MongoDB.Driver.Builders<MongoDB.Bson.BsonDocument>.Filter.And(
-            MongoDB.Driver.Builders<MongoDB.Bson.BsonDocument>.Filter.Eq("_id", MongoDB.Bson.ObjectId.TryParse(userId, out var oid) ? (object)oid : userId),
-            MongoDB.Driver.Builders<MongoDB.Bson.BsonDocument>.Filter.Ne("IsDeleted", true)
+        var filter = Builders<MongoDB.Bson.BsonDocument>.Filter.And(
+            Builders<MongoDB.Bson.BsonDocument>.Filter.Eq("_id", MongoDB.Bson.ObjectId.TryParse(userId, out var oid) ? (object)oid : userId),
+            Builders<MongoDB.Bson.BsonDocument>.Filter.Ne("IsDeleted", true)
         );
 
-        var projection = MongoDB.Driver.Builders<MongoDB.Bson.BsonDocument>.Projection
+        var projection = Builders<MongoDB.Bson.BsonDocument>.Projection
             .Include("IsActive").Include("CurrentCompanyId").Include("PersonalCompanyId");
 
         var userDoc = await collection.Find(filter).Project(projection).FirstOrDefaultAsync();

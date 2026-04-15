@@ -42,6 +42,8 @@ public static class ServiceExtensions
         // ── 基础设施服务 ─────────────────────────────────
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddScoped<ITenantContext, TenantContext>();
+        builder.Services.AddScoped<ITenantContextSetter>(sp => sp.GetRequiredService<ITenantContext>() as TenantContext 
+            ?? throw new InvalidOperationException("ITenantContext must be TenantContext"));
 
         // ── 国密安全支持 ─────────────────────────────────
         builder.Services.AddSingleton<ISM4EncryptionProvider, SM4EncryptionProvider>();

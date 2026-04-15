@@ -1,6 +1,6 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { request } from '@umijs/max';
-import { Tag, Space, Button, Popconfirm, Modal, message, Switch } from 'antd';
+import { Tag, Space, Button, Popconfirm, Modal, message, Switch, Input } from 'antd';
 import { PageContainer, ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { PlusOutlined, PlayCircleOutlined, DeleteOutlined, EyeOutlined, PauseCircleOutlined } from '@ant-design/icons';
@@ -96,6 +96,7 @@ const WebScraper: React.FC = () => {
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewData, setPreviewData] = useState<CrawlResult | null | undefined>(null);
   const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('');
 
   const handleEdit = useCallback((record: WebScrapingTask) => {
     setEditingTask(record);
@@ -249,14 +250,12 @@ const WebScraper: React.FC = () => {
         headerTitle="网页抓取任务"
         actionRef={actionRef}
         rowKey="id"
-        search={{
-          labelWidth: 'auto',
-        }}
+        search={false}
         request={async (params: any) => {
           const res = await api.list({
             page: params.current || 1,
             pageSize: params.pageSize || 10,
-            keyword: params.keyword,
+            keyword: search,
           });
           return {
             data: res.data?.queryable || [],
@@ -265,6 +264,15 @@ const WebScraper: React.FC = () => {
           };
         }}
         toolBarRender={() => [
+          <Input.Search
+            key="search"
+            placeholder="搜索任务名称或URL..."
+            allowClear
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onSearch={(value) => { setSearch(value); actionRef.current?.reload(); }}
+            style={{ width: 260, marginRight: 8 }}
+          />,
           <Button
             key="create"
             type="primary"

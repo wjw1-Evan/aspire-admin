@@ -107,6 +107,12 @@ public class ImageCaptchaService : IImageCaptchaService
             return false;
         }
 
+        var decryptedAnswer = DecryptAnswer(result.Answer, EncryptionKey);
+        if (!string.Equals(decryptedAnswer, answer, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
         var entity = await _context.Set<CaptchaImage>().FirstOrDefaultAsync(x => x.Id == result.Id);
         if (entity != null)
         {
@@ -114,8 +120,7 @@ public class ImageCaptchaService : IImageCaptchaService
             await _context.SaveChangesAsync();
         }
 
-        var decryptedAnswer = DecryptAnswer(result.Answer, EncryptionKey);
-        return string.Equals(decryptedAnswer, answer, StringComparison.OrdinalIgnoreCase);
+        return true;
     }
 
     public async Task<bool> IsCaptchaRequiredAsync(string type = "login", string? clientIp = null, string? username = null)

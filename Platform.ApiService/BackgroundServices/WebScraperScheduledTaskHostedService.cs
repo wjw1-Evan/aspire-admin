@@ -84,7 +84,7 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
         }
 
         var dueTasks = allEnabledTasks
-            .Where(t => t.NextRunAt != null && t.NextRunAt <= now)
+            .Where(t => t.NextRunAt != null && t.NextRunAt <= now && t.LastStatus != ScrapingStatus.Running)
             .ToList();
 
         _logger.LogInformation("[定时任务] 到期任务数量: {Count}", dueTasks.Count);

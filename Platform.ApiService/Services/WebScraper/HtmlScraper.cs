@@ -86,7 +86,7 @@ public class HtmlScraper
         request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36");
         request.Headers.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8");
         request.Headers.Add("Accept-Language", "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7");
-        request.Headers.Add("Accept-Encoding", "gzip, deflate, br");
+
         request.Headers.Add("sec-ch-ua", "\"Chromium\";v=\"123\", \"Not:A-Brand\";v=\"8\"");
         request.Headers.Add("sec-ch-ua-mobile", "?0");
         request.Headers.Add("sec-ch-ua-platform", "\"Windows\"");

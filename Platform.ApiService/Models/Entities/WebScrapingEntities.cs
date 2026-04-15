@@ -1,4 +1,5 @@
 using Platform.ServiceDefaults.Models;
+using System.Text.Json.Serialization;
 
 namespace Platform.ApiService.Models;
 
@@ -56,6 +57,7 @@ public enum CrawlMode
     BreadthFirst
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter<ScrapingStatus>))]
 public enum ScrapingStatus
 {
     Idle,

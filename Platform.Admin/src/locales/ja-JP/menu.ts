@@ -73,9 +73,9 @@ export default {
   'menu.password-book.desc': 'アカウントとパスワードの安全な保存と管理',
   'menu.web-scraper': 'ウェブスクレイピング',
   'menu.web-scraper.desc': '深さスクレイピングとスケジュールタスクでウェブコンテンツをスクレイピング',
-  'menu.web-scraper.results': 'Scrape Results',
-  'menu.web-scraper.tasks': 'Scraping Tasks',
-  'menu.web-scraper.logs': 'Scrape Logs',
+  'menu.web-scraper-results': 'Scrape Results',
+  'menu.web-scraper-tasks': 'Scraping Tasks',
+  'menu.web-scraper-logs': 'Scrape Logs',
 
   'menu.account': 'アカウント',
   'menu.account.center': 'アカウントセンター',

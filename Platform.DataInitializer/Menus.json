@@ -88,7 +88,7 @@
         "Title": "抓取任务",
         "Path": "/web-scraper/tasks",
         "Component": "./web-scraper",
-        "Icon": "api",
+        "Icon": "cloud-server",
         "ParentId": "web-scraper",
         "SortOrder": 1
     },

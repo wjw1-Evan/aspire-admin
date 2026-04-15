@@ -631,11 +631,16 @@ public class CloudStorageService : ICloudStorageService
     }
 
     /// <inheritdoc/>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<FileItem>> GetRecycleBinItemsAsync(Platform.ServiceDefaults.Models.PageParams query)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<FileItem>> GetRecycleBinItemsAsync(Platform.ServiceDefaults.Models.PageParams query, FileItemType? type = null)
     {
-        var q = _context.Set<FileItem>().Where(x => x.Status == FileStatus.InRecycleBin);
+        var queryable = _context.Set<FileItem>().Where(x => x.Status == FileStatus.InRecycleBin);
 
-        return q.ToPagedList(query);
+        if (type.HasValue)
+        {
+            queryable = queryable.Where(x => x.Type == type.Value);
+        }
+
+        return queryable.ToPagedList(query);
     }
 
     /// <inheritdoc/>

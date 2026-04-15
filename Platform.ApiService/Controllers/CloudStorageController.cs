@@ -5,6 +5,7 @@ using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Controllers;
 
@@ -343,29 +344,16 @@ public class CloudStorageController : BaseApiController
     /// <summary>
     /// 获取回收站项目列表
     /// </summary>
-    /// <param name="page">页码</param>
-    /// <param name="pageSize">每页大小</param>
-    /// <param name="sortBy">排序字段</param>
-    /// <param name="sortOrder">排序顺序</param>
+    /// <param name="request">分页参数</param>
     /// <param name="type">文件类型筛选</param>
     /// <returns>分页回收站项目列表</returns>
     [HttpGet("recycle")]
     [RequireMenu("cloud-storage-recycle")]
     public async Task<IActionResult> GetRecycleItems(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20,
-        [FromQuery] string sortBy = "deletedAt",
-        [FromQuery] string sortOrder = "desc",
+        [FromQuery] PageParams request,
         [FromQuery] FileItemType? type = null)
     {
-        var query = new Platform.ServiceDefaults.Models.PageParams
-        {
-            Page = page,
-            PageSize = pageSize,
-            SortBy = sortBy,
-            SortOrder = sortOrder
-        };
-        var result = await _cloudStorageService.GetRecycleBinItemsAsync(query);
+        var result = await _cloudStorageService.GetRecycleBinItemsAsync(request, type);
         return Success(result);
     }
 

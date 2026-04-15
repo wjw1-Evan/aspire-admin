@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Extensions;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 
@@ -49,15 +50,7 @@ public class QuotaWarningService : IQuotaWarningService
         PageParams pageParams, double warningThreshold = 0.8)
     {
         var warnings = await GetQuotaWarningsAsync(warningThreshold);
-        var paged = warnings.Skip((pageParams.Page - 1) * pageParams.PageSize).Take(pageParams.PageSize).ToList();
-        return new System.Linq.Dynamic.Core.PagedResult<StorageQuotaWarning>
-        {
-            Queryable = paged.AsQueryable(),
-            CurrentPage = pageParams.Page,
-            PageSize = pageParams.PageSize,
-            RowCount = warnings.Count,
-            PageCount = (int)Math.Ceiling((double)warnings.Count / pageParams.PageSize)
-        };
+        return warnings.ToList().AsQueryable().ToPagedList(pageParams);
     }
 
     public async Task<BatchOperationResult> CleanupUnusedQuotasAsync()

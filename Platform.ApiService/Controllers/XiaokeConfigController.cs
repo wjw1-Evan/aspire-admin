@@ -4,6 +4,7 @@ using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Controllers;
 
@@ -28,28 +29,16 @@ public class XiaokeConfigController : BaseApiController
     /// <summary>
     /// 获取配置列表
     /// </summary>
-    /// <param name="page">当前页码</param>
-    /// <param name="pageSize">页面大小</param>
-    /// <param name="name">配置名称（搜索关键词）</param>
+    /// <param name="request">分页参数</param>
     /// <param name="isEnabled">是否启用（筛选）</param>
-    /// <param name="sorter">排序字段</param>
+    /// <returns>配置列表</returns>
     [HttpGet]
     [RequireMenu("xiaoke-management-config")]
     public async Task<IActionResult> GetConfigs(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10,
-        [FromQuery] string? name = null,
-        [FromQuery] bool? isEnabled = null,
-        [FromQuery] string? sorter = null)
+        [FromQuery] PageParams request,
+        [FromQuery] bool? isEnabled = null)
     {
-        var queryParams = new Platform.ServiceDefaults.Models.PageParams
-        {
-            Page = page,
-            PageSize = pageSize,
-            Search = name
-        };
-
-        var result = await _xiaokeConfigService.GetConfigsAsync(queryParams);
+        var result = await _xiaokeConfigService.GetConfigsAsync(request, isEnabled);
         return Success(result);
     }
 

@@ -4,6 +4,7 @@ using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Controllers;
 
@@ -29,28 +30,12 @@ public class RuleController : BaseApiController
     /// <summary>
     /// 获取规则列表
     /// </summary>
-    /// <param name="page">当前页码</param>
-    /// <param name="pageSize">页面大小</param>
-    /// <param name="name">规则名称</param>
-    /// <param name="sorter">排序字段</param>
-    /// <param name="filter">过滤条件</param>
+    /// <param name="request">分页参数</param>
     /// <returns>规则列表</returns>
     [HttpGet]
-    public async Task<IActionResult> GetRules(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10,
-        [FromQuery] string? name = null,
-        [FromQuery] string? sorter = null,
-        [FromQuery] string? filter = null)
+    public async Task<IActionResult> GetRules([FromQuery] PageParams request)
     {
-        var queryParams = new Platform.ServiceDefaults.Models.PageParams
-        {
-            Page = page,
-            PageSize = pageSize,
-            Search = name
-        };
-
-        var result = await _ruleService.GetRulesAsync(queryParams);
+        var result = await _ruleService.GetRulesAsync(request);
         return Success(result);
     }
 

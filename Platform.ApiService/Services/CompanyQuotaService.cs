@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Extensions;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 
@@ -136,16 +137,7 @@ public class CompanyQuotaService : ICompanyQuotaService
             Status = q.IsEnabled ? "Active" : "Disabled"
         }).ToList();
 
-        var sortedItems = items.OrderByDescending(item => item.UsedSpace).Skip((pageParams.Page - 1) * pageParams.PageSize).Take(pageParams.PageSize).ToList();
-
-        return new System.Linq.Dynamic.Core.PagedResult<StorageQuotaListItem>
-        {
-            Queryable = sortedItems.AsQueryable(),
-            CurrentPage = pageParams.Page,
-            PageSize = pageParams.PageSize,
-            RowCount = items.Count,
-            PageCount = (int)Math.Ceiling((double)items.Count / pageParams.PageSize)
-        };
+        return items.OrderByDescending(item => item.UsedSpace).ToList().AsQueryable().ToPagedList(pageParams);
     }
 
     private static string GetFileTypeCategory(string? mimeType)

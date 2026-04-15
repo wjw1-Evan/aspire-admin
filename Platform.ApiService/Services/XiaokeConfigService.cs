@@ -25,7 +25,7 @@ public class XiaokeConfigService : IXiaokeConfigService
         ITenantContext tenantContext
     ) {
         _context = context;
-        
+
         _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
     }
 
@@ -58,9 +58,16 @@ public class XiaokeConfigService : IXiaokeConfigService
     }
 
     /// <inheritdoc/>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<XiaokeConfigDto>> GetConfigsAsync(Platform.ServiceDefaults.Models.PageParams queryParams)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<XiaokeConfigDto>> GetConfigsAsync(Platform.ServiceDefaults.Models.PageParams queryParams, bool? isEnabled = null)
     {
-        var pagedResult = _context.Set<XiaokeConfig>().ToPagedList(queryParams);
+        var query = _context.Set<XiaokeConfig>().AsQueryable();
+
+        if (isEnabled.HasValue)
+        {
+            query = query.Where(x => x.IsEnabled == isEnabled.Value);
+        }
+
+        var pagedResult = query.ToPagedList(queryParams);
         var configs = await pagedResult.Queryable.ToListAsync();
 
         return new System.Linq.Dynamic.Core.PagedResult<XiaokeConfigDto>

@@ -151,8 +151,9 @@ public interface ICloudStorageService
     /// 获取回收站文件列表
     /// </summary>
     /// <param name="query">查询参数</param>
+    /// <param name="type">文件类型筛选</param>
     /// <returns>回收站文件列表</returns>
-        Task<System.Linq.Dynamic.Core.PagedResult<FileItem>> GetRecycleBinItemsAsync(Platform.ServiceDefaults.Models.PageParams query);
+    Task<System.Linq.Dynamic.Core.PagedResult<FileItem>> GetRecycleBinItemsAsync(Platform.ServiceDefaults.Models.PageParams query, FileItemType? type = null);
 
     /// <summary>
     /// 清空回收站

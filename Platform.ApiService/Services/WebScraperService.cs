@@ -15,18 +15,15 @@ public class WebScraperService : IWebScraperService
     private readonly DbContext _context;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<WebScraperService> _logger;
-    private readonly ITenantContextSetter _tenantContextSetter;
 
     public WebScraperService(
         DbContext context,
         IHttpClientFactory httpClientFactory,
-        ILogger<WebScraperService> logger,
-        ITenantContextSetter tenantContextSetter)
+        ILogger<WebScraperService> logger)
     {
         _context = context;
         _httpClientFactory = httpClientFactory;
         _logger = logger;
-        _tenantContextSetter = tenantContextSetter;
     }
 
     public async Task<WebScrapingTask> CreateTaskAsync(CreateWebScrapingTaskRequest request, string userId)
@@ -218,66 +215,30 @@ public class WebScraperService : IWebScraperService
             await _context.Set<WebScrapingLog>().AddAsync(log);
             await _context.SaveChangesAsync();
 
-            // 设置租户上下文，确保查询能检测到已存在的记录
-            _tenantContextSetter.SetContext(taskCompanyId, task.UserId);
-            _logger.LogInformation("[ExecuteTaskAsync] SetContext: CompanyId={CompanyId}, UserId={UserId}", taskCompanyId, task.UserId);
-
-            var urls = result.Pages.Select(p => p.Url).ToList();
-            _logger.LogInformation("[ExecuteTaskAsync] 共{UrlCount}个URL，TaskId={TaskId}, CompanyId={CompanyId}", urls.Count, task.Id, taskCompanyId);
-            
-            var urlSet = new HashSet<string>(urls);
-            var existingResults = await _context.Set<WebScrapingResult>()
-                .Where(r => r.TaskId == task.Id && urlSet.Contains(r.Url))
-                .ToDictionaryAsync(r => r.Url, r => r);
-            
-            _logger.LogInformation("[ExecuteTaskAsync] 已存在{Ecount}条相同URL记录", existingResults.Count);
-
-            int updateCount = 0;
-            int insertCount = 0;
-            
             foreach (var page in result.Pages)
             {
-                if (existingResults.TryGetValue(page.Url, out var existing))
+                var scrapingResult = new WebScrapingResult
                 {
-                    existing.LogId = log.Id;
-                    existing.Title = page.Title;
-                    existing.Content = page.Content;
-                    existing.Images = page.Images ?? new List<string>();
-                    existing.Links = page.Links ?? new List<string>();
-                    existing.Success = page.Success;
-                    existing.Error = page.Error;
-                    existing.ContentLength = page.Content?.Length ?? 0;
-                    existing.ImageCount = page.Images?.Count ?? 0;
-                    existing.LinkCount = page.Links?.Count ?? 0;
-                    existing.UpdatedAt = DateTime.UtcNow;
-                    updateCount++;
-                }
-                else
-                {
-                    var scrapingResult = new WebScrapingResult
-                    {
-                        TaskId = task.Id,
-                        TaskName = task.Name,
-                        LogId = log.Id,
-                        Url = page.Url,
-                        Level = page.Level,
-                        Title = page.Title,
-                        Content = page.Content,
-                        Images = page.Images ?? new List<string>(),
-                        Links = page.Links ?? new List<string>(),
-                        Success = page.Success,
-                        Error = page.Error,
-                        ContentLength = page.Content?.Length ?? 0,
-                        ImageCount = page.Images?.Count ?? 0,
-                        LinkCount = page.Links?.Count ?? 0,
-                        CompanyId = taskCompanyId
-                    };
-                    await _context.Set<WebScrapingResult>().AddAsync(scrapingResult);
-                    insertCount++;
-                }
+                    TaskId = task.Id,
+                    TaskName = task.Name,
+                    LogId = log.Id,
+                    Url = page.Url,
+                    Level = page.Level,
+                    Title = page.Title,
+                    Content = page.Content,
+                    Images = page.Images ?? new List<string>(),
+                    Links = page.Links ?? new List<string>(),
+                    Success = page.Success,
+                    Error = page.Error,
+                    ContentLength = page.Content?.Length ?? 0,
+                    ImageCount = page.Images?.Count ?? 0,
+                    LinkCount = page.Links?.Count ?? 0,
+                    CompanyId = taskCompanyId
+                };
+                await _context.Set<WebScrapingResult>().AddAsync(scrapingResult);
             }
             await _context.SaveChangesAsync();
-            _logger.LogInformation("[ExecuteTaskAsync] 保存完成: 更新{UpdateCount}条, 新增{InsertCount}条, LogId={LogId}, CompanyId={CompanyId}", updateCount, insertCount, log.Id, taskCompanyId);
+            _logger.LogInformation("[ExecuteTaskAsync] 保存{ResultCount}条结果, LogId={LogId}, CompanyId={CompanyId}", result.TotalPages, log.Id, taskCompanyId);
 
             task.NextRunAt = CronExpressionParser.ParseNext(task.ScheduleCron!, DateTime.UtcNow);
             await _context.SaveChangesAsync();

@@ -310,6 +310,7 @@ const WebScraper: React.FC = () => {
           const res = await api.list({
             page: params.current,
             keyword: search,
+            search: search,
             sortBy: sortParams?.sortBy,
             sortOrder: sortParams?.sortOrder,
           });

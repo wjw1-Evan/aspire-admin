@@ -64,9 +64,10 @@ public class WebScraperService : IWebScraperService
     {
         var query = _context.Set<WebScrapingTask>().AsQueryable();
 
-        if (!string.IsNullOrEmpty(keyword))
+        var searchKeyword = keyword ?? pageParams.Search;
+        if (!string.IsNullOrEmpty(searchKeyword))
         {
-            query = query.Where(t => t.Name.Contains(keyword) || t.TargetUrl.Contains(keyword));
+            query = query.Where(t => t.Name.Contains(searchKeyword) || t.TargetUrl.Contains(searchKeyword));
         }
 
         if (status.HasValue)
@@ -388,6 +389,11 @@ public class WebScraperService : IWebScraperService
 
         query = query.Where(l => taskIds.Contains(l.TaskId));
 
+        if (!string.IsNullOrEmpty(pageParams.Search))
+        {
+            query = query.Where(l => l.TaskName.Contains(pageParams.Search));
+        }
+
         var total = await query.CountAsync();
 
         var sortBy = pageParams.SortBy ?? "StartTime";
@@ -443,6 +449,13 @@ public class WebScraperService : IWebScraperService
             .ToListAsync();
 
         query = query.Where(r => taskIds.Contains(r.TaskId));
+
+        if (!string.IsNullOrEmpty(pageParams.Search))
+        {
+            query = query.Where(r => r.TaskName.Contains(pageParams.Search) 
+                || r.Url.Contains(pageParams.Search) 
+                || (r.Title != null && r.Title.Contains(pageParams.Search)));
+        }
 
         var total = await query.CountAsync();
 

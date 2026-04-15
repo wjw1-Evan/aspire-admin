@@ -172,6 +172,7 @@ const WebScraperResults: React.FC = () => {
           const res = await api.list({
             page: params.current,
             taskId: taskId,
+            search: search,
             sortBy: sortParams?.sortBy,
             sortOrder: sortParams?.sortOrder,
           });

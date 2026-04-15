@@ -220,6 +220,7 @@ public class WebScraperService : IWebScraperService
             
             var urlSet = new HashSet<string>(urls);
             var existingResults = await _context.Set<WebScrapingResult>()
+                .IgnoreQueryFilters()
                 .Where(r => r.TaskId == task.Id && r.CompanyId == taskCompanyId && urlSet.Contains(r.Url))
                 .ToDictionaryAsync(r => r.Url, r => r);
             

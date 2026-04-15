@@ -220,13 +220,14 @@ public class WebScraperService : IWebScraperService
 
             // 设置租户上下文，确保查询能检测到已存在的记录
             _tenantContextSetter.SetContext(taskCompanyId, task.UserId);
+            _logger.LogInformation("[ExecuteTaskAsync] SetContext: CompanyId={CompanyId}, UserId={UserId}", taskCompanyId, task.UserId);
 
             var urls = result.Pages.Select(p => p.Url).ToList();
             _logger.LogInformation("[ExecuteTaskAsync] 共{UrlCount}个URL，TaskId={TaskId}, CompanyId={CompanyId}", urls.Count, task.Id, taskCompanyId);
             
             var urlSet = new HashSet<string>(urls);
             var existingResults = await _context.Set<WebScrapingResult>()
-                .Where(r => r.TaskId == task.Id && r.CompanyId == taskCompanyId && urlSet.Contains(r.Url))
+                .Where(r => r.TaskId == task.Id && urlSet.Contains(r.Url))
                 .ToDictionaryAsync(r => r.Url, r => r);
             
             _logger.LogInformation("[ExecuteTaskAsync] 已存在{Ecount}条相同URL记录", existingResults.Count);

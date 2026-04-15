@@ -101,82 +101,40 @@ git push origin main
 
 ## 3. 后端开发强制红线 (Backend Redlines)
 
-### 🗄️ 数据库操作：DbContext 注入规范
-- **严禁**直接注入或操作 `IMongoCollection<T>` 或 `IMongoDatabase`。
-- 业务服务层进行所有数据的新增、查询、修改、删除时，**必须**通过注入 `DbContext` 来完成。由于我们在 `ServiceExtensions.cs` 中已经将底层的 `PlatformDbContext` 注册为 `DbContext`，使用基类注入即可。
-- **原因**：底层的 `PlatformDbContext` 封装了多租户（`CompanyId`）自动过滤、`CreatedAt/UpdatedAt` 等审计字段的自动填充。服务层使用 `DbContext` 与 `_context.Set<T>()` 能自动享受这些机制。如果绕过上下文直接操作 MongoDB 的集合，将导致数据污染或跨租户越权。
+> 以下规则为强制禁止，违反将导致数据污染、跨租户越权或系统安全隐患。
 
-**使用示例：**
-```csharp
-// ✅ 正确：直接注入 DbContext 并使用 Set<T>() 操作
-using Microsoft.EntityFrameworkCore;
+### 🗄️ 数据库操作
+- 严禁直接注入或操作 `IMongoCollection<T>` 或 `IMongoDatabase`
+- 严禁绕过 `DbContext` 直接操作 MongoDB 集合
+- 业务层必须通过注入 `DbContext` 并使用 `_context.Set<T>()` 进行数据操作
 
-public class UserService
-{
-    private readonly DbContext _context;
-
-    public UserService(DbContext context)
-    {
-        _context = context;
-    }
-
-    // 查询
-    public async Task<User?> GetUserAsync(string id)
-        => await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == id);
-
-    // 创建
-    public async Task<User> CreateUserAsync(User user)
-    {
-        await _context.Set<User>().AddAsync(user);
-        await _context.SaveChangesAsync();
-        return user;
-    }
-
-    // 更新
-    public async Task<User?> UpdateUserAsync(string id, Action<User> updateAction)
-    {
-        var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == id);
-        if (user == null) return null;
-
-        updateAction(user);
-        await _context.SaveChangesAsync();
-        return user;
-    }
-
-    // 删除 （PlatformDbContext自动实现软删除）
-    public async Task<bool> DeleteUserAsync(string id)
-    {
-        var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == id);
-        if (user == null) return false;
-
-        _context.Set<User>().Remove(user);
-        await _context.SaveChangesAsync();
-        return true;
-    }
-}
-```
-
-### 📊 审计字段与软删除（自动处理）
-- **软删除**：调用 `DbContext.Remove()` 时，`PlatformDbContext` 自动转换为软删除（设置 `IsDeleted=true`、`DeletedAt`、`DeletedBy`）。
-- **多租户过滤**：查询时由 `PlatformDbContext` 全局查询过滤器自动过滤 `CompanyId` 和 `IsDeleted=false`。
-- **审计字段**：`CreatedAt/UpdatedAt/CreatedBy/UpdatedBy` 由 `PlatformDbContext` 在 `SaveChangesAsync()` 时自动维护。
+### 📊 审计与软删除
+- 严禁手动设置 `CreatedAt/UpdatedAt/CreatedBy/UpdatedBy` 审计字段
+- 严禁手动设置 `IsDeleted` 实现软删除
+- 调用 `DbContext.Remove()` 时，`PlatformDbContext` 自动处理软删除
 
 ### 🏢 多租户与上下文安全
-- 除了用户身份主键 `userId` 以外，任何企业级上下文（企业的 `companyId` / 用户拥有的菜单权限 / 角色），**严禁**直接从 JWT claim 中读取解包。
-- **正确获取方式**：统一通过注入 `ITenantContext` 读取当前操作人在当前企业下的属性约束。
+- 严禁直接从 JWT claim 中读取解包 `companyId`、`roles` 等字段
+- 企业上下文必须通过 `ITenantContext` 读取
 
-### 🔐 鉴权策略
-- **移除旧版判断**：禁止在控制器层再使用过时的 `HasPermission()` 等方法。
-- **唯一正确手段**：全部 API 操作需打上 `[RequireMenu("menu-action-name")]` 属性（来自 `Platform.ApiService.Attributes`）来进行基于菜单按钮层级的鉴权。
+### 🔐 权限控制
+- 严禁使用过时的 `HasPermission()` 方法
+- 所有敏感操作必须添加 `[RequireMenu("menu-action")]` 注解
 
-### 📡 接口与实时通信
-- 所有常规 HTTP 接口返回数据，必须被包装为 `ApiResponse<T>`，并默认开启 camelCase （首字母小写）且忽略 Null 返回。
-- 后端不再向前端使用 SignalR 发送实时数据或通知事件，必须改为使用 **SSE (Server-Sent Events)** 推送（连接管理器为 `IChatSseConnectionManager`）。对于 SSE 响应管道，需注意跳过中间件格式化。
+### 📡 接口响应
+- 严禁返回裸 JSON，必须包装为 `ApiResponse<T>`
+- 严禁使用 SignalR 推送实时数据，必须使用 SSE
 
-### 🚫 N+1 查询防护
-- **严禁**在循环内调用单条查询方法（如 `_userService.GetUserByIdAsync()`）。
-- **必须**使用批量查询方法（如 `_userService.GetUsersByIdsAsync()`）。
-- DTO 转换应先批量收集 ID，再批量查询，最后内存映射。
+### 🚫 N+1 查询
+- 严禁在循环内调用单条查询方法
+- 严禁手动 `.Skip()` `.Take()` 实现分页，必须使用 `ToPagedList()`
+
+### 🧹 代码整洁
+- 严禁使用 `using Xxx = Yyy.Zzz` 类型别名
+- 严禁在类型/接口名称中使用 "Dependency" 单词
+- 严禁手写 BsonDocument，必须使用 LINQ 构建器
+
+---
 
 ## 4. MCP 服务与 AI 能力整合
 
@@ -214,30 +172,7 @@ public class UserService
 
 ### 核心架构原则
 
-#### 数据操作规范
-- **全面注入 DbContext**：所有数据操作（含查询、更新、删除、跨租户操作）必须通过注入 `DbContext`（基类）完成。
-- **严禁直接访问数据库驱动**：禁止注入或使用 `IMongoCollection<T>` / `IMongoDatabase`。
-- **多租户自动过滤**：实现 `IMultiTenant` 的实体由 `PlatformDbContext` 自动附加 `CompanyId` 过滤，**业务代码无需手动添加过滤条件**。
-- **软删除自动处理**：调用 `DbContext.Remove()` 删除实体时，`PlatformDbContext` 自动转换为软删除（设置 `IsDeleted=true`、`DeletedAt`、`DeletedBy`），**业务代码无需手动设置**。
-
-#### 企业上下文唯一入口
-- 除 `userId`（JWT claim）外，企业/角色/权限信息统一通过 `ITenantContext` 读取。
-- 禁止从 JWT 直接取 `companyId`、`roles` 等字段。
-
-#### 菜单级权限
-- 后端统一使用 `[RequireMenu("menu-name")]`（`Platform.ApiService.Attributes.RequireMenuAttribute`）做鉴权。
-- 禁止旧的 `HasPermission()` / `RequirePermission()`。
-- 前端不隐藏按钮实现防护，真实授权以后端判定为准。
-
-#### 统一响应格式
-- HTTP API 必须返回 `ApiResponse<T>`。
-- JSON 采用 camelCase 命名策略、忽略 null 字段、枚举序列化为字符串。
-
-### 代码洁癖
-
-> 代码是写给人看的，顺带能在机器上运行。干净的代码减少认知负担，降低 bug 概率，提高可维护性。
-
-#### 核心原则
+> 数据操作、权限控制、响应格式等详细规范见第 3 章强制红线与第 6 章开发规范。
 
 | 原则 | 说明 |
 |------|------|
@@ -248,7 +183,7 @@ public class UserService
 | **删除而非注释** | 不用的代码直接删除，不要注释掉 |
 | **文档同步** | 注释/文档与代码保持一致 |
 
-#### 禁止模式
+### 禁止模式速查
 
 | 禁用项 | 正确做法 |
 |--------|----------|
@@ -256,11 +191,9 @@ public class UserService
 | 硬编码企业 ID | 必须通过 `ITenantContext` |
 | 同步等待异步 | 使用 `await` |
 | 缺失权限检查 | 必须使用 `[RequireMenu]` |
-| 暴露底层异常 | 统一错误码与错误消息 |
-| 手写 BsonDocument | 必须使用 LINQ 构建器 |
-| 手动设置审计字段 | 由 PlatformDbContext 自动维护 |
-| `using Xxx = Yyy.Zzz` 别名 | 必须直接使用完整类型名 |
 | 循环内调用单条查询 | 必须使用批量查询方法 |
+
+---
 
 ## 6. 后端开发规范
 

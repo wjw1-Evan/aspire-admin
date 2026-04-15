@@ -40,6 +40,9 @@ public class WebScraperService : IWebScraperService
             Deduplicate = request.Deduplicate,
             Mode = request.Mode,
             ScheduleCron = request.ScheduleCron,
+            NextRunAt = !string.IsNullOrEmpty(request.ScheduleCron)
+                ? CronExpressionParser.ParseNext(request.ScheduleCron, DateTime.UtcNow)
+                : null,
             IsEnabled = request.IsEnabled,
             IsPublic = request.IsPublic,
             UserId = userId,
@@ -107,7 +110,13 @@ public class WebScraperService : IWebScraperService
         if (request.FollowExternalLinks.HasValue) task.FollowExternalLinks = request.FollowExternalLinks.Value;
         if (request.Deduplicate.HasValue) task.Deduplicate = request.Deduplicate.Value;
         if (request.Mode.HasValue) task.Mode = request.Mode.Value;
-        if (request.ScheduleCron != null) task.ScheduleCron = request.ScheduleCron;
+        if (request.ScheduleCron != null)
+        {
+            task.ScheduleCron = request.ScheduleCron;
+            task.NextRunAt = !string.IsNullOrEmpty(request.ScheduleCron)
+                ? CronExpressionParser.ParseNext(request.ScheduleCron, DateTime.UtcNow)
+                : null;
+        }
         if (request.IsEnabled.HasValue) task.IsEnabled = request.IsEnabled.Value;
         if (request.IsPublic.HasValue) task.IsPublic = request.IsPublic.Value;
 

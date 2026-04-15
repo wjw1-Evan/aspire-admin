@@ -65,14 +65,16 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
             _logger.LogWarning("[定时任务] 数据库中WebScrapingTask总数: {Count}", totalTaskCount);
         }
 
-        var nullNextRunTasks = allEnabledTasks.Where(t => t.NextRunAt == null).ToList();
-        if (nullNextRunTasks.Any())
+        // 自动修复 NextRunAt 为 null 的任务
+        foreach (var t in allEnabledTasks.Where(t => t.NextRunAt == null && !string.IsNullOrEmpty(t.ScheduleCron)))
         {
-            _logger.LogWarning("[定时任务] 有 {Count} 个任务的NextRunAt为null（这些任务不会执行）:", nullNextRunTasks.Count);
-            foreach (var t in nullNextRunTasks)
-            {
-                _logger.LogWarning("  - {TaskName}, ScheduleCron={Cron}", t.Name, t.ScheduleCron);
-            }
+            var nextRun = WebScraperCron.ParseNext(t.ScheduleCron!, now);
+            _logger.LogWarning("[定时任务] 修复任务 {TaskName} 的NextRunAt: null -> {NextRun}", t.Name, nextRun);
+            t.NextRunAt = nextRun;
+        }
+        if (allEnabledTasks.Any(t => t.NextRunAt != null))
+        {
+            await context.SaveChangesAsync(stoppingToken);
         }
 
         foreach (var t in allEnabledTasks.Where(t => t.NextRunAt != null))

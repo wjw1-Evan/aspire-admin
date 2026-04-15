@@ -216,9 +216,13 @@ public class WebScraperService : IWebScraperService
             await _context.SaveChangesAsync();
 
             var urls = result.Pages.Select(p => p.Url).ToList();
+            _logger.LogInformation("[ExecuteTaskAsync] 共{UrlCount}个URL，TaskId={TaskId}, CompanyId={CompanyId}", urls.Count, task.Id, taskCompanyId);
+            
             var existingResults = await _context.Set<WebScrapingResult>()
-                .Where(r => r.TaskId == task.Id && urls.Contains(r.Url))
+                .Where(r => r.TaskId == task.Id && r.CompanyId == taskCompanyId && urls.Contains(r.Url))
                 .ToDictionaryAsync(r => r.Url, r => r);
+            
+            _logger.LogInformation("[ExecuteTaskAsync] 已存在{Ecount}条相同URL记录", existingResults.Count);
 
             foreach (var page in result.Pages)
             {
@@ -398,10 +402,6 @@ public class WebScraperService : IWebScraperService
         {
             query = query.Where(r => r.LogId == logId);
         }
-
-        // 按 TaskId + Url 去重，返回每个 URL 最新的一条记录
-        query = query.GroupBy(r => r.Url)
-            .Select(g => g.OrderByDescending(r => r.UpdatedAt).First());
 
         return query.ToPagedList(pageParams);
     }

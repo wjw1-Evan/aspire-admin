@@ -35,21 +35,13 @@ public class WebScraperController : BaseApiController
     }
 
     [HttpGet("tasks")]
+    [RequireMenu("web-scraper")]
     public async Task<IActionResult> GetTasks(
-        [FromQuery] int page = 1,
+        [FromQuery] Platform.ServiceDefaults.Models.PageParams request,
         [FromQuery] string? keyword = null,
-        [FromQuery] ScrapingStatus? status = null,
-        [FromQuery] string? sortBy = null,
-        [FromQuery] string? sortOrder = null)
+        [FromQuery] ScrapingStatus? status = null)
     {
-        var pageParams = new Platform.ServiceDefaults.Models.PageParams
-        {
-            Page = page,
-            SortBy = sortBy,
-            SortOrder = sortOrder
-        };
-
-        var result = await _webScraperService.GetTasksAsync(pageParams, RequiredUserId, keyword, status);
+        var result = await _webScraperService.GetTasksAsync(request, RequiredUserId, keyword, status);
         return Success(result);
     }
 
@@ -143,20 +135,12 @@ public class WebScraperController : BaseApiController
     }
 
     [HttpGet("logs")]
+    [RequireMenu("web-scraper")]
     public async Task<IActionResult> GetLogs(
-        [FromQuery] int page = 1,
-        [FromQuery] string? taskId = null,
-        [FromQuery] string? sortBy = null,
-        [FromQuery] string? sortOrder = null)
+        [FromQuery] Platform.ServiceDefaults.Models.PageParams request,
+        [FromQuery] string? taskId = null)
     {
-        var pageParams = new Platform.ServiceDefaults.Models.PageParams
-        {
-            Page = page,
-            SortBy = sortBy,
-            SortOrder = sortOrder
-        };
-
-        var result = await _webScraperService.GetLogsAsync(pageParams, RequiredUserId, taskId);
+        var result = await _webScraperService.GetLogsAsync(request, RequiredUserId, taskId);
         return Success(result);
     }
 
@@ -171,21 +155,13 @@ public class WebScraperController : BaseApiController
     }
 
     [HttpGet("results")]
+    [RequireMenu("web-scraper")]
     public async Task<IActionResult> GetResults(
-        [FromQuery] int page = 1,
+        [FromQuery] Platform.ServiceDefaults.Models.PageParams request,
         [FromQuery] string? taskId = null,
-        [FromQuery] string? logId = null,
-        [FromQuery] string? sortBy = null,
-        [FromQuery] string? sortOrder = null)
+        [FromQuery] string? logId = null)
     {
-        var pageParams = new Platform.ServiceDefaults.Models.PageParams
-        {
-            Page = page,
-            SortBy = sortBy,
-            SortOrder = sortOrder
-        };
-
-        var result = await _webScraperService.GetResultsAsync(pageParams, RequiredUserId, taskId, logId);
+        var result = await _webScraperService.GetResultsAsync(request, RequiredUserId, taskId, logId);
         return Success(result);
     }
 

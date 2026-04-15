@@ -210,12 +210,12 @@ const WebScraper: React.FC = () => {
       key: 'mode',
       width: 100,
       render: (dom) => {
-        const modeText: Record<string, string> = {
-          SinglePage: '单页',
-          DepthFirst: '深度优先',
-          BreadthFirst: '广度优先',
+        const modeMap: Record<string, string> = {
+          'singlepage': '单页',
+          'depthfirst': '深度优先',
+          'breadthfirst': '广度优先',
         };
-        return modeText[dom as string] || dom;
+        return modeMap[dom?.toString().toLowerCase() as string] || dom || '-';
       },
       hideInSearch: true,
     },

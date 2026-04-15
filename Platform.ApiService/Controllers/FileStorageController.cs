@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Services;
+using Platform.ServiceDefaults;
+using Platform.ServiceDefaults.Controllers;
 using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Controllers;
@@ -11,8 +13,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [Authorize]
 [Route("api/files")]
-[ApiController]
-public class FileStorageController : ControllerBase
+public class FileStorageController : BaseApiController
 {
     private readonly GridFSStorageService _storageService;
     private readonly ILogger<FileStorageController> _logger;

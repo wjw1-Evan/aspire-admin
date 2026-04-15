@@ -23,7 +23,22 @@ public class PlatformDbContext : DbContext
     }
 
     protected string? CurrentUserId => _tenantContext?.GetCurrentUserId();
-    protected string? CurrentCompanyId => _tenantContext?.GetCurrentCompanyIdAsync().GetAwaiter().GetResult();
+    
+    private string? _resolvedCompanyId;
+    
+    protected string? CurrentCompanyId
+    {
+        get
+        {
+            if (_resolvedCompanyId != null) return _resolvedCompanyId;
+            if (_tenantContext == null) return null;
+            
+            // 同步调用异步方法
+            var task = _tenantContext.GetCurrentCompanyIdAsync();
+            _resolvedCompanyId = task.IsCompleted ? task.Result : null;
+            return _resolvedCompanyId;
+        }
+    }
 
     private static List<Type>? _cachedEntityTypes;
 

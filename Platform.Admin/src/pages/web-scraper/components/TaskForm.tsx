@@ -28,6 +28,21 @@ interface TaskFormProps {
   onSuccess: () => void;
 }
 
+const modeOptions = [
+  { label: '仅当前页', value: 'SinglePage' },
+  { label: '深度优先', value: 'DepthFirst' },
+  { label: '广度优先', value: 'BreadthFirst' },
+];
+
+const normalizeMode = (mode?: string): string => {
+  if (!mode) return 'BreadthFirst';
+  const normalized = mode.charAt(0).toUpperCase() + mode.slice(1);
+  if (['Singlepage', 'Depthfirst', 'Breadthfirst'].includes(normalized)) {
+    return normalized.replace(/(\w)(\w*)/, (_, a, b) => a.toUpperCase() + b.toLowerCase());
+  }
+  return mode;
+};
+
 const api = {
   create: (data: TaskFormValues) =>
     request<ApiResponse<any>>('/apiservice/api/web-scraper/tasks', { method: 'POST', data }),
@@ -40,7 +55,10 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onCancel, onSuccess 
 
   useEffect(() => {
     if (visible && task) {
-      form.setFieldsValue(task);
+      form.setFieldsValue({
+        ...task,
+        mode: normalizeMode(task.mode),
+      });
     } else if (visible) {
       form.resetFields();
       form.setFieldsValue({
@@ -144,11 +162,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onCancel, onSuccess 
       <ProFormSelect
         name="mode"
         label="抓取模式"
-        options={[
-          { label: '仅当前页', value: 'SinglePage' },
-          { label: '深度优先', value: 'DepthFirst' },
-          { label: '广度优先', value: 'BreadthFirst' },
-        ]}
+        options={modeOptions}
         initialValue="BreadthFirst"
       />
 

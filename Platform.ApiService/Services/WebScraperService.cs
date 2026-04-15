@@ -218,12 +218,16 @@ public class WebScraperService : IWebScraperService
             var urls = result.Pages.Select(p => p.Url).ToList();
             _logger.LogInformation("[ExecuteTaskAsync] 共{UrlCount}个URL，TaskId={TaskId}, CompanyId={CompanyId}", urls.Count, task.Id, taskCompanyId);
             
+            var urlSet = new HashSet<string>(urls);
             var existingResults = await _context.Set<WebScrapingResult>()
-                .Where(r => r.TaskId == task.Id && r.CompanyId == taskCompanyId && urls.Contains(r.Url))
+                .Where(r => r.TaskId == task.Id && r.CompanyId == taskCompanyId && urlSet.Contains(r.Url))
                 .ToDictionaryAsync(r => r.Url, r => r);
             
             _logger.LogInformation("[ExecuteTaskAsync] 已存在{Ecount}条相同URL记录", existingResults.Count);
 
+            int updateCount = 0;
+            int insertCount = 0;
+            
             foreach (var page in result.Pages)
             {
                 if (existingResults.TryGetValue(page.Url, out var existing))
@@ -239,6 +243,7 @@ public class WebScraperService : IWebScraperService
                     existing.ImageCount = page.Images?.Count ?? 0;
                     existing.LinkCount = page.Links?.Count ?? 0;
                     existing.UpdatedAt = DateTime.UtcNow;
+                    updateCount++;
                 }
                 else
                 {
@@ -261,10 +266,11 @@ public class WebScraperService : IWebScraperService
                         CompanyId = taskCompanyId
                     };
                     await _context.Set<WebScrapingResult>().AddAsync(scrapingResult);
+                    insertCount++;
                 }
             }
             await _context.SaveChangesAsync();
-            _logger.LogInformation("[ExecuteTaskAsync] 保存{ResultCount}条结果, LogId={LogId}, CompanyId={CompanyId}", result.TotalPages, log.Id, taskCompanyId);
+            _logger.LogInformation("[ExecuteTaskAsync] 保存完成: 更新{UpdateCount}条, 新增{InsertCount}条, LogId={LogId}, CompanyId={CompanyId}", updateCount, insertCount, log.Id, taskCompanyId);
 
             task.NextRunAt = CronExpressionParser.ParseNext(task.ScheduleCron!, DateTime.UtcNow);
             await _context.SaveChangesAsync();

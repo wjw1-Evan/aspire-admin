@@ -567,95 +567,7 @@ await getUserList({ page: 1, pageSize: 10 })
 - 使用 React Context / Zustand
 - 数据持久化使用 AsyncStorage
 
-## 9. 通用开发规则汇总
-
-本节汇总项目代码中已形成的通用开发规范，AI 助手应遵循这些规则进行开发工作。
-
-### 9.1 架构分层规范
-
-#### 控制器层
-- **继承关系**：所有业务控制器必须继承 `BaseApiController`（当前 44/45 个控制器遵循此规范）
-- **职责边界**：控制器仅负责路由、参数校验、权限注解、调用服务层、返回统一响应
-- **禁止事项**：禁止在控制器层直接注入或操作 `DbContext`、`IMongoCollection`
-
-#### 服务层
-- **接口驱动**：所有服务均实现接口（如 `IUserService` → `UserService`），当前项目共有 83 个服务接口、92 个服务实现
-- **依赖注入**：通过构造函数注入 `DbContext`、`ITenantContext` 等基类服务
-- **数据操作**：统一使用 `_context.Set<T>()` 进行数据访问，共统计 916 处使用案例
-
-### 9.2 数据访问规范
-
-#### DbContext 使用
-- 所有数据操作必须通过注入的 `DbContext` 完成
-- 使用 `_context.Set<T>()` 获取集合进行 CRUD 操作
-- 禁止直接注入 `IMongoCollection<T>` 或 `IMongoDatabase`
-
-#### 分页实现
-- 统一使用 `ToPagedList()` 方法进行分页（共 57 处使用案例）
-- 参数命名：`page`（当前页码）、`pageSize`（每页数量）
-- 禁止手动 `.Skip()` `.Take()` 实现分页
-
-#### 审计字段
-- `CreatedAt/UpdatedAt/CreatedBy/UpdatedBy` 由 `PlatformDbContext` 自动维护
-- 禁止在业务代码中手动设置审计字段
-
-#### 软删除
-- 调用 `DbContext.Remove()` 时自动转换为软删除
-- 查询时由 `PlatformDbContext` 全局查询过滤器自动过滤 `IsDeleted=false`
-
-### 9.3 权限控制规范
-
-#### 菜单级权限
-- 所有敏感操作必须添加 `[RequireMenu("menu-action")]` 注解（当前 215 处使用）
-- 菜单名称统一用连字符 `-` 分隔，格式为 `模块-资源`
-- 禁止使用过时的 `HasPermission()` 方法
-
-#### 用户上下文
-- 企业级上下文（`companyId`、角色、权限）统一通过 `ITenantContext` 获取
-- 禁止直接从 JWT claim 中读取解包
-
-### 9.4 接口响应规范
-
-#### 统一响应格式
-- 所有 API 返回必须包装为 `ApiResponse<T>`
-- JSON 采用 camelCase 命名策略、忽略 null 字段
-
-#### 实时通信
-- 使用 SSE (Server-Sent Events) 推送实时数据
-- 连接管理器为 `IChatSseConnectionManager`
-
-### 9.5 代码风格规范
-
-#### 命名规范
-- 禁止在类型/接口名称中使用 "Dependency" 单词
-- 禁止使用 `using Xxx = Yyy.Zzz` 类型别名
-- 变量/方法名应清晰表达意图
-
-#### 禁止模式
-- 循环内调用单条查询（N+1 问题）
-- 直接访问 MongoDB 驱动
-- 硬编码企业 ID
-- 同步等待异步操作
-- 手写 BsonDocument
-
-### 9.6 前端开发规范
-
-#### 路由与菜单
-- 路由 name 必须与后端 RequireMenu 对应
-- 菜单翻译在 `src/locales/zh-CN/menu.ts`
-
-#### 服务层
-- HTTP 请求必须通过 `@umijs/max` 的 `request` 封装
-
-#### 类型安全
-- 禁止使用 `any` 类型
-- API 响应类型统一定义在 `@/types/api-response.ts`
-
-#### 页面风格
-- 列表页面使用 `ProTable` + `ModalForm` 组件
-- 分页：前端 `page` 显式传值，`pageSize` 禁止传值
-
-## 10. 相关代码位置
+## 9. 相关代码位置
 
 | 模块 | 位置 |
 |------|------|
@@ -665,7 +577,7 @@ await getUserList({ page: 1, pageSize: 10 })
 | 前端统一类型 | `Platform.Admin/src/types/api-response.ts` |
 | 页面开发标准 | `Platform.Admin/src/pages/password-book/index.tsx` |
 
-## 11. 变更与维护
+## 10. 变更与维护
 
 - **通用规则同步**：当项目代码修改时出现新的通用规则，需同步更新到 AGENTS.md。
 - 各子文档如有原则重复，优先合并至本规范。

@@ -232,27 +232,49 @@ public class WebScraperService : IWebScraperService
             await _context.Set<WebScrapingLog>().AddAsync(log);
             await _context.SaveChangesAsync();
 
+            var urls = result.Pages.Select(p => p.Url).ToList();
+            var existingResults = await _context.Set<WebScrapingResult>()
+                .Where(r => r.TaskId == task.Id && urls.Contains(r.Url))
+                .ToDictionaryAsync(r => r.Url, r => r);
+
             foreach (var page in result.Pages)
             {
-                var scrapingResult = new WebScrapingResult
+                if (existingResults.TryGetValue(page.Url, out var existing))
                 {
-                    TaskId = task.Id,
-                    TaskName = task.Name,
-                    LogId = log.Id,
-                    Url = page.Url,
-                    Level = page.Level,
-                    Title = page.Title,
-                    Content = page.Content,
-                    Images = page.Images ?? new List<string>(),
-                    Links = page.Links ?? new List<string>(),
-                    Success = page.Success,
-                    Error = page.Error,
-                    ContentLength = page.Content?.Length ?? 0,
-                    ImageCount = page.Images?.Count ?? 0,
-                    LinkCount = page.Links?.Count ?? 0,
-                    CompanyId = taskCompanyId
-                };
-                await _context.Set<WebScrapingResult>().AddAsync(scrapingResult);
+                    existing.LogId = log.Id;
+                    existing.Title = page.Title;
+                    existing.Content = page.Content;
+                    existing.Images = page.Images ?? new List<string>();
+                    existing.Links = page.Links ?? new List<string>();
+                    existing.Success = page.Success;
+                    existing.Error = page.Error;
+                    existing.ContentLength = page.Content?.Length ?? 0;
+                    existing.ImageCount = page.Images?.Count ?? 0;
+                    existing.LinkCount = page.Links?.Count ?? 0;
+                    existing.UpdatedAt = DateTime.UtcNow;
+                }
+                else
+                {
+                    var scrapingResult = new WebScrapingResult
+                    {
+                        TaskId = task.Id,
+                        TaskName = task.Name,
+                        LogId = log.Id,
+                        Url = page.Url,
+                        Level = page.Level,
+                        Title = page.Title,
+                        Content = page.Content,
+                        Images = page.Images ?? new List<string>(),
+                        Links = page.Links ?? new List<string>(),
+                        Success = page.Success,
+                        Error = page.Error,
+                        ContentLength = page.Content?.Length ?? 0,
+                        ImageCount = page.Images?.Count ?? 0,
+                        LinkCount = page.Links?.Count ?? 0,
+                        CompanyId = taskCompanyId
+                    };
+                    await _context.Set<WebScrapingResult>().AddAsync(scrapingResult);
+                }
             }
             await _context.SaveChangesAsync();
             _logger.LogInformation("[ExecuteTaskAsync] 保存{ResultCount}条结果, LogId={LogId}, CompanyId={CompanyId}", result.TotalPages, log.Id, taskCompanyId);

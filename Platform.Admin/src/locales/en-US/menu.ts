@@ -65,6 +65,8 @@ export default {
   'menu.xiaoke-management.chat-history.desc': 'View and manage chat history',
   'menu.password-book': 'Password Book',
   'menu.password-book.desc': 'Securely save and manage account passwords',
+  'menu.web-scraper': 'Web Scraper',
+  'menu.web-scraper.desc': 'Scrape web content with depth crawling and scheduled tasks',
   'menu.company-search': 'Company Search',
   'menu.my-join-requests': 'My Join Requests',
   'menu.account': 'Account',

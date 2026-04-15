@@ -63,6 +63,8 @@ export default {
   'menu.xiaoke-management.chat-history.desc': '查看和管理聊天記錄',
   'menu.password-book': '密碼本',
   'menu.password-book.desc': '安全保存和管理賬號密碼',
+  'menu.web-scraper': 'Web Scraper',
+  'menu.web-scraper.desc': 'Scrape web content with depth crawling and scheduled tasks',
   'menu.company-search': '企業搜索',
   'menu.my-join-requests': '我的加入申請',
   'menu.pending-join-requests': '待審批申請',

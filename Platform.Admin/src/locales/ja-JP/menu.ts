@@ -71,6 +71,8 @@ export default {
 
   'menu.password-book': 'パスワード帳',
   'menu.password-book.desc': 'アカウントとパスワードの安全な保存と管理',
+  'menu.web-scraper': 'ウェブスクレイピング',
+  'menu.web-scraper.desc': '深さスクレイピングとスケジュールタスクでウェブコンテンツをスクレイピング',
 
   'menu.account': 'アカウント',
   'menu.account.center': 'アカウントセンター',

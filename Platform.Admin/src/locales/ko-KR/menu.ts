@@ -66,6 +66,8 @@ export default {
   'menu.xiaoke-management.chat-history.desc': '채팅 이력 보기 및 관리',
   'menu.password-book': '암호 수첩',
   'menu.password-book.desc': '계정 암호의 안전한 저장 및 관리',
+  'menu.web-scraper': 'Web Scraper',
+  'menu.web-scraper.desc': 'Scrape web content with depth crawling and scheduled tasks',
   'menu.account': '개인 페이지',
   'menu.account.center': '개인 센터',
   'menu.account.center.desc': '개인 정보 및 설정 관리',

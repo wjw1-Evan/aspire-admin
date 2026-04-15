@@ -64,6 +64,8 @@ export default {
   'menu.xiaoke-management.chat-history.desc': '查看和管理聊天记录',
   'menu.password-book': '密码本',
   'menu.password-book.desc': '安全保存和管理账号密码',
+  'menu.web-scraper': '网页抓取',
+  'menu.web-scraper.desc': '抓取网页内容，支持深度抓取和定时任务',
   'menu.account': '个人页',
   'menu.account.center': '个人中心',
   'menu.account.center.desc': '管理个人信息和设置',

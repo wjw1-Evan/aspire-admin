@@ -193,11 +193,105 @@ export interface DataStatistics {
 }
 
 // ─────────────────────────────────────────────────────────────────
+// 请求类型定义
+// ─────────────────────────────────────────────────────────────────
+export interface CreateGatewayRequest {
+  name: string;
+  title: string;
+  description?: string;
+  gatewayId: string;
+  protocolType: string;
+  address: string;
+  username?: string;
+  isEnabled?: boolean;
+  config?: Record<string, unknown>;
+}
+
+export interface UpdateGatewayRequest {
+  name?: string;
+  title?: string;
+  description?: string;
+  protocolType?: string;
+  address?: string;
+  username?: string;
+  isEnabled?: boolean;
+  config?: Record<string, unknown>;
+}
+
+export interface CreateDeviceRequest {
+  name: string;
+  title: string;
+  deviceId: string;
+  gatewayId: string;
+  deviceType?: IoTDeviceType;
+  description?: string;
+  location?: string;
+  tags?: Record<string, string>;
+  isEnabled?: boolean;
+  retentionDays?: number;
+}
+
+export interface UpdateDeviceRequest {
+  name?: string;
+  title?: string;
+  deviceType?: IoTDeviceType;
+  description?: string;
+  location?: string;
+  tags?: Record<string, string>;
+  isEnabled?: boolean;
+  retentionDays?: number;
+}
+
+export interface CreateDataPointRequest {
+  name: string;
+  title: string;
+  deviceId: string;
+  dataPointId: string;
+  dataType: string;
+  unit?: string;
+  isReadOnly?: boolean;
+  samplingInterval?: number;
+  alarmConfig?: AlarmConfig;
+  minValue?: number;
+  maxValue?: number;
+  isEnabled?: boolean;
+}
+
+export interface UpdateDataPointRequest {
+  name?: string;
+  title?: string;
+  dataType?: string;
+  unit?: string;
+  isReadOnly?: boolean;
+  samplingInterval?: number;
+  alarmConfig?: AlarmConfig;
+  minValue?: number;
+  maxValue?: number;
+  isEnabled?: boolean;
+}
+
+export interface ReportDataRequest {
+  deviceId: string;
+  dataPointId: string;
+  value: string;
+  dataType: string;
+}
+
+export interface BatchReportDataRequest {
+  records: Array<{
+    deviceId: string;
+    dataPointId: string;
+    value: string;
+    dataType: string;
+  }>;
+}
+
+// ─────────────────────────────────────────────────────────────────
 // API 服务（统一使用 ApiResponse<T> 包装）
 // ─────────────────────────────────────────────────────────────────
 export const iotService = {
   // ── Gateway ──────────────────────────────────────────────────
-  createGateway: (data: any) =>
+  createGateway: (data: CreateGatewayRequest) =>
     request<ApiResponse<IoTGateway>>(`${API_PREFIX}/gateways`, {
       method: 'POST',
       data,
@@ -217,7 +311,7 @@ export const iotService = {
   getGateway: (id: string) =>
     request<ApiResponse<IoTGateway>>(`${API_PREFIX}/gateways/${id}`, { method: 'GET' }),
 
-  updateGateway: (id: string, data: any) =>
+  updateGateway: (id: string, data: UpdateGatewayRequest) =>
     request<ApiResponse<IoTGateway>>(`${API_PREFIX}/gateways/${id}`, { method: 'PUT', data }),
 
   deleteGateway: (id: string) =>
@@ -227,7 +321,7 @@ export const iotService = {
     request<ApiResponse<GatewayStatistics>>(`${API_PREFIX}/gateways/${gatewayId}/statistics`, { method: 'GET' }),
 
   // ── Device ───────────────────────────────────────────────────
-  createDevice: (data: any) =>
+  createDevice: (data: CreateDeviceRequest) =>
     request<ApiResponse<IoTDevice>>(`${API_PREFIX}/devices`, { method: 'POST', data }),
 
   getDevices: (params?: PageParams & { gatewayId?: string }) => {
@@ -244,7 +338,7 @@ export const iotService = {
   getDevice: (id: string) =>
     request<ApiResponse<IoTDevice>>(`${API_PREFIX}/devices/${id}`, { method: 'GET' }),
 
-  updateDevice: (id: string, data: any) =>
+  updateDevice: (id: string, data: UpdateDeviceRequest) =>
     request<ApiResponse<IoTDevice>>(`${API_PREFIX}/devices/${id}`, { method: 'PUT', data }),
 
   deleteDevice: (id: string) =>
@@ -297,7 +391,7 @@ export const iotService = {
     }),
 
   // ── DataPoint ─────────────────────────────────────────────────
-  createDataPoint: (data: any) =>
+  createDataPoint: (data: CreateDataPointRequest) =>
     request<ApiResponse<IoTDataPoint>>(`${API_PREFIX}/datapoints`, { method: 'POST', data }),
 
   getDataPoints: (params?: PageParams & { deviceId?: string }) => {
@@ -314,17 +408,17 @@ export const iotService = {
   getDataPoint: (id: string) =>
     request<ApiResponse<IoTDataPoint>>(`${API_PREFIX}/datapoints/${id}`, { method: 'GET' }),
 
-  updateDataPoint: (id: string, data: any) =>
+  updateDataPoint: (id: string, data: UpdateDataPointRequest) =>
     request<ApiResponse<IoTDataPoint>>(`${API_PREFIX}/datapoints/${id}`, { method: 'PUT', data }),
 
   deleteDataPoint: (id: string) =>
     request<ApiResponse<void>>(`${API_PREFIX}/datapoints/${id}`, { method: 'DELETE' }),
 
   // ── Data Records ──────────────────────────────────────────────
-  reportData: (data: any) =>
+  reportData: (data: ReportDataRequest) =>
     request<ApiResponse<IoTDataRecord>>(`${API_PREFIX}/data/report`, { method: 'POST', data }),
 
-  batchReportData: (data: any) =>
+  batchReportData: (data: BatchReportDataRequest) =>
     request<ApiResponse<IoTDataRecord[]>>(`${API_PREFIX}/data/batch-report`, { method: 'POST', data }),
 
   queryDataRecords: (params?: PageParams & { deviceId?: string; dataPointId?: string; startTime?: string; endTime?: string }) => {

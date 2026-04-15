@@ -29,19 +29,10 @@ interface TaskFormProps {
 }
 
 const modeOptions = [
-  { label: '仅当前页', value: 'SinglePage' },
-  { label: '深度优先', value: 'DepthFirst' },
-  { label: '广度优先', value: 'BreadthFirst' },
+  { label: '仅当前页', value: 'singlepage' },
+  { label: '深度优先', value: 'depthfirst' },
+  { label: '广度优先', value: 'breadthfirst' },
 ];
-
-const normalizeMode = (mode?: string): string => {
-  if (!mode) return 'BreadthFirst';
-  const normalized = mode.charAt(0).toUpperCase() + mode.slice(1);
-  if (['Singlepage', 'Depthfirst', 'Breadthfirst'].includes(normalized)) {
-    return normalized.replace(/(\w)(\w*)/, (_, a, b) => a.toUpperCase() + b.toLowerCase());
-  }
-  return mode;
-};
 
 const api = {
   create: (data: TaskFormValues) =>
@@ -55,10 +46,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onCancel, onSuccess 
 
   useEffect(() => {
     if (visible && task) {
-      form.setFieldsValue({
-        ...task,
-        mode: normalizeMode(task.mode),
-      });
+      form.setFieldsValue(task);
     } else if (visible) {
       form.resetFields();
       form.setFieldsValue({
@@ -67,7 +55,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onCancel, onSuccess 
         followExternalLinks: false,
         deduplicate: true,
         isEnabled: true,
-        mode: 'BreadthFirst',
+        mode: 'breadthfirst',
       });
     }
   }, [visible, task, form]);
@@ -163,7 +151,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onCancel, onSuccess 
         name="mode"
         label="抓取模式"
         options={modeOptions}
-        initialValue="BreadthFirst"
+        initialValue="breadthfirst"
       />
 
       <ProFormText

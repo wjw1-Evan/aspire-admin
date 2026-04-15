@@ -119,10 +119,8 @@ const WebScraper: React.FC = () => {
     setLoading(true);
     try {
       const res = await api.execute(record.id);
-      if (res.success && res.data) {
-        setPreviewData(res.data);
-        setPreviewVisible(true);
-        message.success(res.message || '抓取完成');
+      if (res.success) {
+        message.success(res.message || '抓取任务已启动');
       } else {
         message.error(res.message || '抓取失败');
       }

@@ -15,15 +15,18 @@ public class WebScraperService : IWebScraperService
     private readonly DbContext _context;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<WebScraperService> _logger;
+    private readonly ITenantContextSetter _tenantContextSetter;
 
     public WebScraperService(
         DbContext context,
         IHttpClientFactory httpClientFactory,
-        ILogger<WebScraperService> logger)
+        ILogger<WebScraperService> logger,
+        ITenantContextSetter tenantContextSetter)
     {
         _context = context;
         _httpClientFactory = httpClientFactory;
         _logger = logger;
+        _tenantContextSetter = tenantContextSetter;
     }
 
     public async Task<WebScrapingTask> CreateTaskAsync(CreateWebScrapingTaskRequest request, string userId)
@@ -215,12 +218,14 @@ public class WebScraperService : IWebScraperService
             await _context.Set<WebScrapingLog>().AddAsync(log);
             await _context.SaveChangesAsync();
 
+            // 设置租户上下文，确保查询能检测到已存在的记录
+            _tenantContextSetter.SetContext(taskCompanyId, task.UserId);
+
             var urls = result.Pages.Select(p => p.Url).ToList();
             _logger.LogInformation("[ExecuteTaskAsync] 共{UrlCount}个URL，TaskId={TaskId}, CompanyId={CompanyId}", urls.Count, task.Id, taskCompanyId);
             
             var urlSet = new HashSet<string>(urls);
             var existingResults = await _context.Set<WebScrapingResult>()
-                .IgnoreQueryFilters()
                 .Where(r => r.TaskId == task.Id && r.CompanyId == taskCompanyId && urlSet.Contains(r.Url))
                 .ToDictionaryAsync(r => r.Url, r => r);
             

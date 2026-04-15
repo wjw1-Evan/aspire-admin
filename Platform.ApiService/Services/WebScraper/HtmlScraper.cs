@@ -97,7 +97,8 @@ public class HtmlScraper
             throw new HttpRequestException($"HTTP {(int)response.StatusCode}: {response.ReasonPhrase} - {url}");
         }
 
-        var content = await response.Content.ReadAsStringAsync();
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+        var content = DecodeHtml(bytes, response.Content.Headers.ContentType?.CharSet);
 
         if (string.IsNullOrWhiteSpace(content) || content.Length < 100)
         {
@@ -110,6 +111,45 @@ public class HtmlScraper
         }
 
         return content;
+    }
+
+    private static string DecodeHtml(byte[] bytes, string? charset)
+    {
+        if (bytes.Length < 3) return System.Text.Encoding.UTF8.GetString(bytes);
+
+        if (bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF)
+            return System.Text.Encoding.UTF8.GetString(bytes, 3, bytes.Length - 3);
+
+        if (bytes[0] == 0xFF && bytes[1] == 0xFE)
+            return System.Text.Encoding.Unicode.GetString(bytes, 2, bytes.Length - 2);
+
+        if (bytes[0] == 0xFE && bytes[1] == 0xFF)
+            return System.Text.Encoding.BigEndianUnicode.GetString(bytes, 2, bytes.Length - 2);
+
+        if (!string.IsNullOrEmpty(charset))
+        {
+            try
+            {
+                var encoding = System.Text.Encoding.GetEncoding(charset.Replace("\"", "").Trim());
+                return encoding.GetString(bytes);
+            }
+            catch { }
+        }
+
+        var html = System.Text.Encoding.UTF8.GetString(bytes);
+        var metaCharset = System.Text.RegularExpressions.Regex.Match(html, @"charset=[""']?([^""'\s>]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        if (metaCharset.Success)
+        {
+            try
+            {
+                var metaEncoding = System.Text.Encoding.GetEncoding(metaCharset.Groups[1].Value);
+                if (metaEncoding != System.Text.Encoding.UTF8)
+                    return metaEncoding.GetString(bytes);
+            }
+            catch { }
+        }
+
+        return html;
     }
 
     private static string AbsoluteUrl(string baseUrl, string relativeUrl)

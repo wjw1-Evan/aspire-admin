@@ -3,7 +3,7 @@ import { request } from '@umijs/max';
 import { Tag, Space, Button, Input, Timeline, Card, Row, Col, Descriptions, Modal, Progress, Statistic } from 'antd';
 import { PageContainer, ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
-import { PlayCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, WarningOutlined, HistoryOutlined } from '@ant-design/icons';
+import { PlayCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, WarningOutlined, HistoryOutlined, FileTextOutlined } from '@ant-design/icons';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 
 interface WebScrapingLog {
@@ -151,6 +151,7 @@ const WebScraperLogs: React.FC = () => {
         <Button
           type="link"
           size="small"
+          icon={<FileTextOutlined />}
           onClick={() => handleViewDetail(record)}
         >
           详情

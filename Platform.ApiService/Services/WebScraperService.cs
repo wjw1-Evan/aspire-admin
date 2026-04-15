@@ -15,18 +15,18 @@ public class WebScraperService : IWebScraperService
     private readonly DbContext _context;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<WebScraperService> _logger;
-    private readonly TenantContext _tenantContext;
+    private readonly ITenantContextSetter _tenantContextSetter;
 
     public WebScraperService(
         DbContext context,
         IHttpClientFactory httpClientFactory,
         ILogger<WebScraperService> logger,
-        TenantContext tenantContext)
+        ITenantContextSetter tenantContextSetter)
     {
         _context = context;
         _httpClientFactory = httpClientFactory;
         _logger = logger;
-        _tenantContext = tenantContext;
+        _tenantContextSetter = tenantContextSetter;
     }
 
     public async Task<WebScrapingTask> CreateTaskAsync(CreateWebScrapingTaskRequest request, string userId)
@@ -219,7 +219,7 @@ public class WebScraperService : IWebScraperService
             await _context.SaveChangesAsync();
 
             // 设置租户上下文，确保查询能检测到已存在的记录
-            _tenantContext.SetContext(taskCompanyId, task.UserId);
+            _tenantContextSetter.SetContext(taskCompanyId, task.UserId);
             _logger.LogInformation("[ExecuteTaskAsync] SetContext: CompanyId={CompanyId}, UserId={UserId}", taskCompanyId, task.UserId);
 
             var urls = result.Pages.Select(p => p.Url).ToList();

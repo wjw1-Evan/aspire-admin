@@ -1,9 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
+using Platform.ServiceDefaults.Services;
 using Platform.ApiService.Services.WebScraper;
 using System.Linq.Dynamic.Core;
 using System.Text.Json;
+using System.Reflection;
 
 namespace Platform.ApiService.Services;
 
@@ -157,8 +159,11 @@ public class WebScraperService : IWebScraperService
 
     public async Task<ScrapeResultDto> ExecuteTaskAsync(string id, string userId)
     {
-        _logger.LogInformation("[ExecuteTaskAsync] 开始执行, id={Id}, userId={UserId}", id, userId);
-        var task = await _context.Set<WebScrapingTask>().FirstOrDefaultAsync(t => t.Id == id);
+        var dbContext = _context as PlatformDbContext;
+        var prop = dbContext?.GetType().BaseType?.GetProperty("CurrentCompanyId", BindingFlags.NonPublic | BindingFlags.Instance);
+        var companyId = prop?.GetValue(dbContext) as string;
+        _logger.LogInformation("[ExecuteTaskAsync] 开始执行, id={Id}, userId={UserId}, DbContextCompanyId={DbCompanyId}", id, userId, companyId);
+        var task = await _context.Set<WebScrapingTask>().IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == id);
         if (task == null)
         {
             _logger.LogWarning("[ExecuteTaskAsync] 任务未找到, id={Id}", id);

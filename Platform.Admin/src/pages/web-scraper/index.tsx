@@ -1,6 +1,6 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { request } from '@umijs/max';
-import { Tag, Space, Button, Popconfirm, Modal, message, Switch, Input, Tooltip } from 'antd';
+import { Tag, Space, Button, Popconfirm, Modal, message, Switch, Input } from 'antd';
 import { PageContainer, ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { PlusOutlined, PlayCircleOutlined, DeleteOutlined, EyeOutlined, PauseCircleOutlined } from '@ant-design/icons';
@@ -235,11 +235,12 @@ const WebScraper: React.FC = () => {
       title: '定时',
       dataIndex: 'scheduleCron',
       key: 'scheduleCron',
-      width: 160,
+      width: 200,
       render: (dom) => dom ? (
-        <Tooltip title={explainCron(dom as string)}>
+        <Space>
           <Tag color="orange">{dom}</Tag>
-        </Tooltip>
+          <span style={{ color: '#999', fontSize: 12 }}>({explainCron(dom as string)})</span>
+        </Space>
       ) : '-',
       hideInSearch: true,
     },

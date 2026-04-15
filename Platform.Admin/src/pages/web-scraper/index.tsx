@@ -1,6 +1,6 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { request } from '@umijs/max';
-import { Tag, Space, Button, Popconfirm, Modal, message, Switch, Input } from 'antd';
+import { Tag, Space, Button, Popconfirm, Modal, message, Switch, Input, Tooltip } from 'antd';
 import { PageContainer, ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { PlusOutlined, PlayCircleOutlined, DeleteOutlined, EyeOutlined, PauseCircleOutlined } from '@ant-design/icons';
@@ -97,6 +97,18 @@ const statusText: Record<string, string> = {
   failed: '失败',
   PartialSuccess: '部分成功',
   partialSuccess: '部分成功',
+};
+
+const explainCron = (cron: string): string => {
+  const parts = cron?.trim().split(/\s+/);
+  if (parts?.length !== 5) return cron;
+  const [min, hour, day, month, week] = parts;
+  if (min === '*' && hour === '*') return '每分钟执行';
+  if (min === '0' && hour === '*') return '每小时整点执行';
+  if (min === '0' && hour === '0' && day === '*') return '每天凌晨执行';
+  if (week === '1' && min === '0' && hour === '0') return '每周一执行';
+  if (day === '1' && month === '*' && min === '0' && hour === '0') return '每月1号执行';
+  return `${hour}:${min.padStart(2, '0')} 执行`;
 };
 
 const WebScraper: React.FC = () => {
@@ -223,8 +235,12 @@ const WebScraper: React.FC = () => {
       title: '定时',
       dataIndex: 'scheduleCron',
       key: 'scheduleCron',
-      width: 120,
-      render: (dom) => dom ? <Tag color="orange">{dom}</Tag> : '-',
+      width: 160,
+      render: (dom) => dom ? (
+        <Tooltip title={explainCron(dom as string)}>
+          <Tag color="orange">{dom}</Tag>
+        </Tooltip>
+      ) : '-',
       hideInSearch: true,
     },
     {

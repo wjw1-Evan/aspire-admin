@@ -399,6 +399,10 @@ public class WebScraperService : IWebScraperService
             query = query.Where(r => r.LogId == logId);
         }
 
+        // 按 TaskId + Url 去重，返回每个 URL 最新的一条记录
+        query = query.GroupBy(r => r.Url)
+            .Select(g => g.OrderByDescending(r => r.UpdatedAt).First());
+
         return query.ToPagedList(pageParams);
     }
 

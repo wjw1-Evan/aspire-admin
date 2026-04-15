@@ -114,16 +114,16 @@ using Microsoft.EntityFrameworkCore;
 public class UserService
 {
     private readonly DbContext _context;
-    
+
     public UserService(DbContext context)
     {
         _context = context;
     }
-    
+
     // 查询
     public async Task<User?> GetUserAsync(string id)
         => await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == id);
-    
+
     // 创建
     public async Task<User> CreateUserAsync(User user)
     {
@@ -131,24 +131,24 @@ public class UserService
         await _context.SaveChangesAsync();
         return user;
     }
-    
+
     // 更新
     public async Task<User?> UpdateUserAsync(string id, Action<User> updateAction)
     {
         var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == id);
         if (user == null) return null;
-        
+
         updateAction(user);
         await _context.SaveChangesAsync();
         return user;
     }
-    
+
     // 删除 （PlatformDbContext自动实现软删除）
     public async Task<bool> DeleteUserAsync(string id)
     {
         var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == id);
         if (user == null) return false;
-        
+
         _context.Set<User>().Remove(user);
         await _context.SaveChangesAsync();
         return true;
@@ -161,7 +161,7 @@ public class UserService
 - **多租户过滤**：查询时由 `PlatformDbContext` 全局查询过滤器自动过滤 `CompanyId` 和 `IsDeleted=false`。
 - **审计字段**：`CreatedAt/UpdatedAt/CreatedBy/UpdatedBy` 由 `PlatformDbContext` 在 `SaveChangesAsync()` 时自动维护。
 
-### 🏢 多租户与上下文安全
+### 🏢 多租户���上下文安全
 - 除了用户身份主键 `userId` 以外，任何企业级上下文（企业的 `companyId` / 用户拥有的菜单权限 / 角色），**严禁**直接从 JWT claim 中读取解包。
 - **正确获取方式**：统一通过注入 `ITenantContext` 读取当前操作人在当前企业下的属性约束。
 
@@ -210,16 +210,375 @@ public class UserService
 | StatisticsMcpToolHandler | 统计分析 |
 | SystemMcpToolHandler | 系统管理 |
 
-## 5. 更多领域专项规范参阅
+## 5. 通用开发原则
 
-如果需要深入到前端、微服务或移动端的开发，请务必提前通过工具读取 `docs/rules/` 目录下的规则卡片：
+### 核心架构原则
 
-| 分类 | 路径 | 说明 |
-|------|------|------|
-| 通用原则 | `docs/rules/00-通用原则.md` | 全局开发准则 |
-| 分页规范 | `docs/rules/00-分页规范.md` | 统一分页标准 |
-| 后端规范 | `docs/rules/backend/` | API 服务开发规范 |
-| Admin 前端 | `docs/rules/frontend-admin/` | React Admin 后台规范 |
-| 移动端 | `docs/rules/frontend-app/` | Expo 移动端规范 |
+#### 数据操作规范
+- **全面注入 DbContext**：所有数据操作（含查询、更新、删除、跨租户操作）必须通过注入 `DbContext`（基类）完成。
+- **严禁直接访问数据库驱动**：禁止注入或使用 `IMongoCollection<T>` / `IMongoDatabase`。
+- **多租户自动过滤**：实现 `IMultiTenant` 的实体由 `PlatformDbContext` 自动附加 `CompanyId` 过滤，**业务代码无需手动添加过滤条件**。
+- **软删除自动处理**：调用 `DbContext.Remove()` 删除实体时，`PlatformDbContext` 自动转换为软删除（设置 `IsDeleted=true`、`DeletedAt`、`DeletedBy`），**业务代码无需手动设置**。
 
-> 每次开展复杂的新功能迭代前，务必查阅上述规则卡以确保架构走向绝不偏离当前轨辙。
+#### 企业上下文唯一入口
+- 除 `userId`（JWT claim）外，企业/角色/权限信息统一通过 `ITenantContext` 读取。
+- 禁止从 JWT 直接取 `companyId`、`roles` 等字段。
+
+#### 菜单级权限
+- 后端统一使用 `[RequireMenu("menu-name")]`（`Platform.ApiService.Attributes.RequireMenuAttribute`）做鉴权。
+- 禁止旧的 `HasPermission()` / `RequirePermission()`。
+- 前端不隐藏按钮实现防护，真实授权以后端判定为准。
+
+#### 统一响应格式
+- HTTP API 必须返回 `ApiResponse<T>`。
+- JSON 采用 camelCase 命名策略、忽略 null 字段、枚举序列化为字符串。
+
+### 代码洁癖
+
+> 代码是写给人看的，顺带能在机器上运行。干净的代码减少认知负担，降低 bug 概率，提高可维护性。
+
+#### 核心原则
+
+| 原则 | 说明 |
+|------|------|
+| **零警告编译** | 任何警告都是代码"污染"，必须修复 |
+| **无冗余代码** | 删除不使用的变量/方法/参数 |
+| **DRY 原则** | 相同逻辑不重复，提取为公共方法 |
+| **命名即文档** | 变量/方法名清晰表达意图 |
+| **删除而非注释** | 不用的代码直接删除，不要注释掉 |
+| **文档同步** | 注释/文档与代码保持一致 |
+
+#### 禁止模式
+
+| 禁用项 | 正确做法 |
+|--------|----------|
+| 直接访问 MongoDB | 所有操作必须通过 DbContext |
+| 硬编码企业 ID | 必须通过 `ITenantContext` |
+| 同步等待异步 | 使用 `await` |
+| 缺失权限检查 | 必须使用 `[RequireMenu]` |
+| 暴露底层异常 | 统一错误码与错误消息 |
+| 手写 BsonDocument | 必须使用 LINQ 构建器 |
+| 手动设置审计字段 | 由 PlatformDbContext 自动维护 |
+| `using Xxx = Yyy.Zzz` 别名 | 必须直接使用完整类型名 |
+| 循环内调用单条查询 | 必须使用批量查询方法 |
+
+## 6. 后端开发规范
+
+### 6.1 控制器与权限
+
+#### 控制器分层与继承
+- **[强制]** 所有业务控制器必须继承 `BaseApiController`，禁止直接继承 `ControllerBase` 或返回裸 JSON。
+- 控制器层**只负责**路由、参数校验、权限注解 `[RequireMenu]`、调用服务层、返回统一响应。
+- **禁止**在控制器注入/操作 `DbContext`、`IMongoCollection`、`IMongoDatabase`，所有数据访问必须下沉到服务层。
+
+#### 权限注解标准
+- **[强制]** 所有敏感操作必须添加 `[RequireMenu("menu-action")]` 注解。
+- 菜单名称统一用连��符 `-` 分隔，格式为 `模块-资源`。
+
+```csharp
+// ✅ 正确：使用 RequireMenu
+[HttpPost("create")]
+[RequireMenu("task-management")]
+public async Task<IActionResult> CreateTask([FromBody] CreateTaskRequest request) { }
+
+// ✅ 正确：多个菜单，满足其一即可
+[HttpPost("list")]
+[RequireMenu("workflow-list", "workflow-monitor")]
+public async Task<IActionResult> GetWorkflows() { }
+```
+
+#### 用户上下文获取
+```csharp
+// ✅ 正确：使用基类提供的方法
+protected string? CurrentUserId => GetCurrentUserId();
+protected string GetRequiredUserId();
+protected Task<string?> GetCurrentCompanyIdAsync();
+
+// ✅ 正确：通过 ITenantContext 获取
+var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
+var isAdmin = await _tenantContext.IsAdminAsync();
+
+// ❌ 禁止：直读 JWT Claims
+var companyId = User.FindFirst("companyId")?.Value;
+```
+
+### 6.2 数据访问与审计
+
+#### 注入与使用方式
+通过 `ServiceExtensions.cs` 的 `builder.AddMongoDbContext<PlatformDbContext>(connectionName)` 注册底层 DbContext，业务层直接注入 `DbContext` 基类即可。
+
+```csharp
+// ✅ 正确：服务层注入 DbContext 并使用 Set<T>()
+public class UserService
+{
+    private readonly DbContext _context;
+    public UserService(DbContext context) => _context = context;
+
+    public async Task<List<User>> GetUsersAsync()
+        => await _context.Set<User>().ToListAsync();
+}
+```
+
+#### 禁止手动赋值
+**禁止**在控制器或服务中手动设置审计字段：
+```csharp
+// ❌ 禁止：手动设置
+entity.CreatedBy = _tenantContext.GetCurrentUserId();
+entity.CreatedAt = DateTime.UtcNow;
+
+// ✅ 正确：PlatformDbContext 自动维护
+await _context.Set<Entity>().AddAsync(entity);
+await _context.SaveChangesAsync();
+```
+
+### 6.3 中间件与响应
+
+#### 中间件顺序（固定）
+```
+UseExceptionHandler → UseCors → UseAuthentication → UseAuthorization → UseMiddleware<ActivityLogMiddleware> → UseMiddleware<ResponseFormattingMiddleware> → MapControllers
+```
+
+#### 统一响应格式
+```json
+{
+  "success": true,
+  "data": { ... },
+  "timestamp": 1680000000
+}
+```
+
+### 6.4 分页规范
+
+#### 统一参数命名
+
+| 参数 | 说明 | 禁止使用 |
+|------|------|----------|
+| `page` | 当前页码（从 1 开始） | `current`、`pageIndex` |
+| `pageSize` | 每页数量 | `limit`、`size` |
+
+#### 后端实现
+```csharp
+var pagedResult = _context.Set<User>()
+    .Where(u => u.IsActive)
+    .ToPagedList(request);  // 自动搜索 + 排序 + 分页
+```
+
+> **[强制]** 分页必须使用 `ToPagedList()`，禁止手动 `.PageResult()` 或手动 `Skip/Take`。
+
+### 6.5 实时通信 SSE
+
+#### SSE 连接建立
+```csharp
+[HttpGet("sse")]
+public async Task SseConnect()
+{
+    var userId = await _tenantContext.GetCurrentUserIdAsync();
+    var connectionId = Guid.NewGuid().ToString();
+    await _connectionManager.AddConnectionAsync(userId, connectionId);
+    Response.ContentType = "text/event-stream";
+    return new EmptyResult();
+}
+```
+
+#### 事件格式
+```
+event: Connected\ndata: {"connectionId":"xxx"}\n\n
+event: Message\ndata: {"content":"hello"}\n\n
+```
+
+### 6.6 批量查询规范（N+1 防护）
+
+**[强制]** 严禁在循环内调用单条查询，必须使用批量查询方法：
+
+```csharp
+// ✅ 正确：批量查询
+var allUserIds = tasks.SelectMany(t => new[] { t.CreatedBy, t.AssignedTo }).Distinct();
+var userMap = await _userService.GetUsersByIdsAsync(allUserIds);
+return tasks.Select(t => ConvertWithCache(t, userMap)).ToList();
+
+// ❌ 错误：N+1 查询
+foreach (var task in tasks)
+{
+    var user = await _userService.GetUserByIdAsync(task.CreatedBy);  // N 次查询
+}
+```
+
+### 6.7 类型命名规范
+
+#### 禁���使��� "Dependency" 单词
+```csharp
+// ❌ 错误：名称包含 Dependency
+public interface ITaskDependencyService { }
+
+// ✅ 正确：使用其他同义词
+public interface ITaskRelationService { }
+```
+
+#### 禁止 using 别名
+```csharp
+// ❌ 错误：类型别名
+using TaskModel = Platform.ApiService.Models.WorkTask;
+
+// ✅ 正确：直接使用完整类型名
+var tasks = await _context.Set<WorkTask>().ToListAsync();
+```
+
+## 7. 前端开发规范（Admin）
+
+### 7.1 路由与菜单
+
+#### 路由配置
+```typescript
+// config/routes.ts
+export default [
+  {
+    path: '/task-management',
+    name: 'task-management', // 必须与后端 RequireMenu 对应
+    component: './task-management',
+  },
+];
+```
+
+#### 菜单翻译
+```typescript
+// src/locales/zh-CN/menu.ts
+export default {
+  'menu.task-management': '任务管理',
+};
+```
+
+### 7.2 服务层封装
+
+**[强制]** 所有 HTTP 请求必须通过 `@umijs/max` 的 `request` 封装：
+
+```typescript
+import { request } from '@umijs/max';
+import type { ApiResponse, PagedResult, PageParams } from '@/types';
+
+export async function getUsers(params: PageParams) {
+  return request<ApiResponse<PagedResult<User>>>('/api/users', { params });
+}
+```
+
+### 7.3 类型安全
+
+**[强制]** 禁止使用 `any` 类型：
+
+```typescript
+// ❌ 禁止
+const handleSubmit = (values: any) => {};
+
+// ✅ 正确
+interface TaskFormValues {
+  taskName: string;
+  priority?: number;
+}
+const handleSubmit = (values: TaskFormValues) => {};
+```
+
+### 7.4 统一 API 响应类型
+
+所有 API 相关类型统一定义在 `@/types/api-response.ts`：
+
+```typescript
+export interface ApiResponse<T = any> {
+  success: boolean;
+  message?: string;
+  data?: T;
+  timestamp?: string;
+}
+
+export interface PagedResult<T> {
+  queryable: T[];
+  currentPage: number;
+  pageSize: number;
+  rowCount: number;
+  pageCount: number;
+}
+```
+
+### 7.5 页面风格
+
+#### 列表页面结构
+```tsx
+<PageContainer>
+  {/* 统计卡片 */}
+  <Card>...</Card>
+  {/* 数据表格 */}
+  <ProTable />
+</PageContainer>
+```
+
+#### ProTable 配置
+```tsx
+<ProTable
+  request={async (params) => {
+    const res = await api.list({ page: params.current, pageSize: params.pageSize });
+    return { data: res.data?.queryable || [], total: res.data?.rowCount || 0 };
+  }}
+  columns={columns}
+  scroll={{ x: 'max-content' }}
+/>
+```
+
+### 7.6 分页与前端行为
+
+| 参数 | 后端默认值 | 前端行为 |
+|------|-----------|----------|
+| `page` | `1` | **必须显式传值** |
+| `pageSize` | `10` | **禁止前端传值**，使用后端默认值 |
+
+```typescript
+// ✅ 正确：使用空对象
+await getUserList({})
+
+// ✅ 正确：只需指定 page
+await getUserList({ page: 2 })
+
+// ❌ 禁止：显式传 pageSize
+await getUserList({ page: 1, pageSize: 10 })
+```
+
+### 7.7 前端开发标准（密码本模块）
+
+`src/pages/password-book` 是所有列表页面的**开发标准参考**：
+
+- 使用 `ProTable` + `ModalForm` 组件
+- API 直接内联在页面中，不单独创建服务文件
+- 状态管理使用 `set()` 辅助函数
+- 编辑表单使用 `key` 强制重新挂载
+
+## 8. 移动端开发规范（Expo）
+
+### 8.1 路由与导航
+
+- 使用 React Navigation 进行路由管理
+- 路由配置文件：`app/(tabs)/_layout.tsx` 等
+- Tab 导航使用 `@ant-design/icons` 图标
+
+### 8.2 API 对接
+
+- 使用 `fetch` 或 `axios` 进行网络请求
+- 统一处理响应结构 `ApiResponse<T>`
+- 错误处理统一 message 提示
+
+### 8.3 状态管理
+
+- 使用 React Context / Zustand
+- 数据持久化使用 AsyncStorage
+
+## 9. 相关代码位置
+
+| 模块 | 位置 |
+|------|------|
+| 后端分页类型 | `Platform.ServiceDefaults/Models/PagedResult.cs` |
+| 后端分页扩展 | `Platform.ServiceDefaults/Extensions/QueryableExtensions.cs` |
+| DbContext | `Platform.ServiceDefaults/Services/PlatformDbContext.cs` |
+| 前端统一类型 | `Platform.Admin/src/types/api-response.ts` |
+| 页面开发标准 | `Platform.Admin/src/pages/password-book/index.tsx` |
+
+## 10. 变更与维护
+
+- 各子文档如有原则重复，优先合并至本规范。
+- 发现实现与本规范不符时，优先以 AGENTS.md 和本规范为准，及时修订文档与代码。
+- 所有新功能迭代前，务必查阅本规范以确保架构走向绝不偏离当前轨辙。

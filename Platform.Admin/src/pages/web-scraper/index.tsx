@@ -178,13 +178,6 @@ const WebScraper: React.FC = () => {
       ),
     },
     {
-      title: '抓取深度',
-      dataIndex: 'crawlDepth',
-      key: 'crawlDepth',
-      width: 100,
-      render: (dom) => `${dom}层`,
-    },
-    {
       title: '状态',
       dataIndex: 'lastStatus',
       key: 'lastStatus',

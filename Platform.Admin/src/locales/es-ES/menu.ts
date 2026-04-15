@@ -67,6 +67,7 @@ export default {
   'menu.web-scraper': 'Web Scraper',
   'menu.web-scraper.desc': 'Scrape web content with depth crawling and scheduled tasks',
   'menu.web-scraper.results': 'Scrape Results',
+  'menu.web-scraper.tasks': 'Scraping Tasks',
   'menu.web-scraper.logs': 'Scrape Logs',
   'menu.company-search': 'Company Search',
   'menu.my-join-requests': 'My Join Requests',

@@ -74,6 +74,7 @@ export default {
   'menu.web-scraper': 'ウェブスクレイピング',
   'menu.web-scraper.desc': '深さスクレイピングとスケジュールタスクでウェブコンテンツをスクレイピング',
   'menu.web-scraper.results': 'Scrape Results',
+  'menu.web-scraper.tasks': 'Scraping Tasks',
   'menu.web-scraper.logs': 'Scrape Logs',
 
   'menu.account': 'アカウント',

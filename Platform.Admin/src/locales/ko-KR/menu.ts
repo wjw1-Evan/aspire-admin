@@ -69,6 +69,7 @@ export default {
   'menu.web-scraper': 'Web Scraper',
   'menu.web-scraper.desc': 'Scrape web content with depth crawling and scheduled tasks',
   'menu.web-scraper.results': 'Scrape Results',
+  'menu.web-scraper.tasks': 'Scraping Tasks',
   'menu.web-scraper.logs': 'Scrape Logs',
   'menu.account': '개인 페이지',
   'menu.account.center': '개인 센터',

@@ -66,6 +66,7 @@ export default {
   'menu.password-book.desc': '安全保存和管理账号密码',
   'menu.web-scraper': '网页抓取',
   'menu.web-scraper.desc': '抓取网页内容，支持深度抓取和定时任务',
+  'menu.web-scraper.tasks': '抓取任务',
   'menu.web-scraper.results': '抓取结果',
   'menu.web-scraper.logs': '抓取日志',
   'menu.account': '个人页',

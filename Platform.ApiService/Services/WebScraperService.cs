@@ -70,12 +70,8 @@ public class WebScraperService : IWebScraperService
             query = query.Where(t => t.LastStatus == status.Value);
         }
 
-        var pagedResult = query.ToPagedList(pageParams);
-        var items = await pagedResult.Queryable.ToListAsync();
+        return  query.ToPagedList(pageParams);
         
-        pagedResult.Queryable = items.AsQueryable();
-        
-        return pagedResult;
     }
 
     public async Task<WebScrapingTask?> GetTaskByIdAsync(string id, string userId)
@@ -370,9 +366,9 @@ public class WebScraperService : IWebScraperService
 
         var pagedResult = query.ToPagedList(pageParams);
         var items = await pagedResult.Queryable.ToListAsync();
-        
+
         pagedResult.Queryable = items.AsQueryable();
-        
+
         return pagedResult;
     }
 
@@ -410,9 +406,9 @@ public class WebScraperService : IWebScraperService
 
         var pagedResult = query.ToPagedList(pageParams);
         var items = await pagedResult.Queryable.ToListAsync();
-        
+
         pagedResult.Queryable = items.AsQueryable();
-        
+
         return pagedResult;
     }
 

@@ -97,7 +97,7 @@
         "Name": "web-scraper-logs",
         "Title": "抓取日志",
         "Path": "/web-scraper/logs",
-        "Component": "./web-scraper/logs",
+        "Component": "./web-scraper/scrape-logs",
         "Icon": "history",
         "ParentId": "web-scraper",
         "SortOrder": 2

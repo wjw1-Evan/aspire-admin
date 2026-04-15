@@ -180,7 +180,7 @@ export default [
       },
       {
         path: '/web-scraper/logs',
-        component: './web-scraper/logs',
+        component: './web-scraper/scrape-logs',
       },
     ],
   },

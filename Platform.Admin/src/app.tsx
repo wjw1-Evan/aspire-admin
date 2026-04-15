@@ -610,6 +610,11 @@ export const request: RequestConfig = {
       if (tokenRefreshResult) {
         return tokenRefreshResult;
       }
+
+      // 标记已尝试过 token 刷新，让 errorHandler 知道不要清除 token
+      // 因为我们让 Promise reject，让调用方决定如何处理
+      error._tokenRefreshAttempted = true;
+
       throw error;
     },
   ],

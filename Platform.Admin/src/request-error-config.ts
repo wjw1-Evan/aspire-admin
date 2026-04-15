@@ -141,6 +141,18 @@ export const errorConfig: RequestConfig = {
       }
 
       if (isAuthError || isAuthErrorMessage || isMissingCurrentUser) {
+        // 检查是否已经尝试过 token 刷新（由 responseInterceptors 处理）
+        // 如果是，说明刷新失败了，跳转到登录页
+        if (error?._tokenRefreshAttempted) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Token refresh was attempted but failed, redirecting to login');
+          }
+          // 清除 token 并跳转登录页
+          tokenUtils.clearAllTokens();
+          AuthenticationService.redirectToLogin('Token refresh failed');
+          return;
+        }
+
         // 清除 token
         tokenUtils.clearAllTokens();
 

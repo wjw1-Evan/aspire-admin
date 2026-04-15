@@ -389,8 +389,14 @@ public class WebScraperService : IWebScraperService
         query = query.Where(l => taskIds.Contains(l.TaskId));
 
         var total = await query.CountAsync();
-        var items = await query
-            .OrderByDescending(l => l.StartTime)
+
+        var sortBy = pageParams.SortBy ?? "StartTime";
+        var sortOrder = pageParams.SortOrder?.ToLower() == "asc" ? "asc" : "desc";
+        var orderedQuery = sortOrder == "asc"
+            ? query.OrderBy($"{sortBy} ascending")
+            : query.OrderBy($"{sortBy} descending");
+
+        var items = await orderedQuery
             .Skip((pageParams.Page - 1) * pageParams.PageSize)
             .Take(pageParams.PageSize)
             .ToListAsync();
@@ -436,13 +442,17 @@ public class WebScraperService : IWebScraperService
             .Select(t => t.Id)
             .ToListAsync();
 
-        _logger.LogInformation("[GetResultsAsync] userId={UserId}, taskIds={TaskIds}, taskId={TaskId}", userId, string.Join(",", taskIds), taskId);
-
         query = query.Where(r => taskIds.Contains(r.TaskId));
 
         var total = await query.CountAsync();
-        var items = await query
-            .OrderByDescending(r => r.CreatedAt)
+
+        var sortBy = pageParams.SortBy ?? "CreatedAt";
+        var sortOrder = pageParams.SortOrder?.ToLower() == "asc" ? "asc" : "desc";
+        var orderedQuery = sortOrder == "asc"
+            ? query.OrderBy($"{sortBy} ascending")
+            : query.OrderBy($"{sortBy} descending");
+
+        var items = await orderedQuery
             .Skip((pageParams.Page - 1) * pageParams.PageSize)
             .Take(pageParams.PageSize)
             .ToListAsync();

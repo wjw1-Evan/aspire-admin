@@ -35,6 +35,7 @@ const WebScraperResults: React.FC = () => {
   const [detailVisible, setDetailVisible] = useState(false);
   const [currentResult, setCurrentResult] = useState<WebScrapingResult | null>(null);
   const [search, setSearch] = useState('');
+  const [sorter, setSorter] = useState<{ sortBy: string; sortOrder: string } | undefined>(undefined);
   const [taskId, setTaskId] = useState<string | undefined>();
   const [tasks, setTasks] = useState<TaskOption[]>([]);
   const [activeTab, setActiveTab] = useState('content');
@@ -75,17 +76,20 @@ const WebScraperResults: React.FC = () => {
       title: '任务名称',
       dataIndex: 'taskName',
       ellipsis: true,
+      sorter: true,
       render: (_, record) => <Tag color="blue">{record.taskName}</Tag>,
     },
     {
       title: '层级',
       dataIndex: 'level',
+      sorter: true,
       render: (level) => <Tag>第{level}层</Tag>,
     },
     {
       title: 'URL',
       dataIndex: 'url',
       ellipsis: true,
+      sorter: true,
       render: (_: any, record: WebScrapingResult) => (
         <a href={record.url} target="_blank" rel="noopener noreferrer">
           {record.url}
@@ -96,10 +100,12 @@ const WebScraperResults: React.FC = () => {
       title: '标题',
       dataIndex: 'title',
       ellipsis: true,
+      sorter: true,
     },
     {
       title: '状态',
       dataIndex: 'success',
+      sorter: true,
       render: (success) => (
         <Tag color={success ? 'success' : 'error'}>{success ? '成功' : '失败'}</Tag>
       ),
@@ -107,19 +113,24 @@ const WebScraperResults: React.FC = () => {
     {
       title: '内容长度',
       dataIndex: 'contentLength',
+      sorter: true,
       render: (_: any, record: WebScrapingResult) => `${(record.contentLength / 1024).toFixed(2)} KB`,
     },
     {
       title: '图片数',
       dataIndex: 'imageCount',
+      sorter: true,
     },
     {
       title: '链接数',
       dataIndex: 'linkCount',
+      sorter: true,
     },
     {
       title: '抓取时间',
       dataIndex: 'createdAt',
+      sorter: true,
+      valueType: 'dateTime',
       render: (_: any, record: WebScrapingResult) => record.createdAt ? new Date(record.createdAt).toLocaleString() : '-',
     },
     {
@@ -157,16 +168,23 @@ const WebScraperResults: React.FC = () => {
         rowKey="id"
         search={false}
         request={async (params: any) => {
+          const sortParams = sorter?.sortBy && sorter?.sortOrder ? sorter : undefined;
           const res = await api.list({
             page: params.current || 1,
             pageSize: params.pageSize || 10,
             taskId: taskId,
+            sortBy: sortParams?.sortBy,
+            sortOrder: sortParams?.sortOrder,
           });
           return {
             data: res.data?.queryable || [],
             success: res.success,
             total: res.data?.rowCount || 0,
           };
+        }}
+        onChange={(_, __, s) => {
+          const sorterData = Array.isArray(s) ? s[0] : s;
+          setSorter(sorterData?.order ? { sortBy: sorterData.field as string, sortOrder: sorterData.order === 'ascend' ? 'asc' : 'desc' } : undefined);
         }}
         toolBarRender={() => [
           <Input.Search

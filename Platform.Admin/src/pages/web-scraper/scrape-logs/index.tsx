@@ -46,6 +46,7 @@ const statusText = {
 const WebScraperLogs: React.FC = () => {
   const actionRef = useRef<ActionType | undefined>(undefined);
   const [search, setSearch] = useState('');
+  const [sorter, setSorter] = useState<{ sortBy: string; sortOrder: string } | undefined>(undefined);
   const [taskId, setTaskId] = useState<string | undefined>();
   const [tasks, setTasks] = useState<TaskOption[]>([]);
   const [detailVisible, setDetailVisible] = useState(false);
@@ -92,26 +93,32 @@ const WebScraperLogs: React.FC = () => {
       title: '任务名称',
       dataIndex: 'taskName',
       ellipsis: true,
+      sorter: true,
       render: (_, record) => <Tag color="blue">{record.taskName}</Tag>,
     },
     {
       title: '状态',
       dataIndex: 'status',
+      sorter: true,
       render: (status) => statusIcons[status as keyof typeof statusIcons] || status,
     },
     {
       title: '开始时间',
       dataIndex: 'startTime',
+      sorter: true,
+      valueType: 'dateTime',
       render: (_: any, record: WebScrapingLog) => record.startTime ? new Date(record.startTime).toLocaleString() : '-',
     },
     {
       title: '持续时间',
       dataIndex: 'duration',
+      sorter: true,
       render: (_: any, record: WebScrapingLog) => formatDuration(record.duration),
     },
     {
       title: '抓取进度',
       dataIndex: 'pagesCrawled',
+      sorter: true,
       render: (pages, record) => {
         const total = record.successCount + record.failedCount;
         const successRate = total > 0 ? (record.successCount / total) * 100 : 0;
@@ -130,6 +137,7 @@ const WebScraperLogs: React.FC = () => {
     {
       title: '成功/失败',
       dataIndex: 'successCount',
+      sorter: true,
       render: (_, record) => (
         <Space>
           <Tag color="success">{record.successCount} 成功</Tag>
@@ -163,16 +171,23 @@ const WebScraperLogs: React.FC = () => {
         rowKey="id"
         search={false}
         request={async (params: any) => {
+          const sortParams = sorter?.sortBy && sorter?.sortOrder ? sorter : undefined;
           const res = await api.list({
             page: params.current || 1,
             pageSize: params.pageSize || 10,
             taskId: taskId,
+            sortBy: sortParams?.sortBy,
+            sortOrder: sortParams?.sortOrder,
           });
           return {
             data: res.data?.queryable || [],
             success: res.success,
             total: res.data?.rowCount || 0,
           };
+        }}
+        onChange={(_, __, s) => {
+          const sorterData = Array.isArray(s) ? s[0] : s;
+          setSorter(sorterData?.order ? { sortBy: sorterData.field as string, sortOrder: sorterData.order === 'ascend' ? 'asc' : 'desc' } : undefined);
         }}
         toolBarRender={() => [
           <Input.Search

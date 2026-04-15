@@ -75,18 +75,28 @@ const api = {
 
 const statusColors: Record<string, string> = {
   Idle: 'default',
+  idle: 'default',
   Running: 'processing',
+  running: 'processing',
   Success: 'success',
+  success: 'success',
   Failed: 'error',
+  failed: 'error',
   PartialSuccess: 'warning',
+  partialSuccess: 'warning',
 };
 
 const statusText: Record<string, string> = {
   Idle: '空闲',
+  idle: '空闲',
   Running: '运行中',
+  running: '运行中',
   Success: '成功',
+  success: '成功',
   Failed: '失败',
+  failed: '失败',
   PartialSuccess: '部分成功',
+  partialSuccess: '部分成功',
 };
 
 const WebScraper: React.FC = () => {

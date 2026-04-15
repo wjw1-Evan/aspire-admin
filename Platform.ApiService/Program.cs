@@ -12,6 +12,7 @@ using Platform.ApiService.Options;
 using Platform.ApiService.Services;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Middleware;
+using Platform.ApiService.BackgroundServices;
 using Platform.ServiceDefaults.Extensions;
 using Platform.ServiceDefaults.Models;
 
@@ -160,6 +161,8 @@ builder.Services.AddOpenApi(options =>
 // ──────────────────────────────────────────────
 // 6. 业务服务注册 (全自动扫描)
 // ──────────────────────────────────────────────
+
+builder.Services.AddHostedService<WebScraperScheduledTaskHostedService>();
 
 builder.Services.AddServiceDiscovery(builder.Configuration);
 

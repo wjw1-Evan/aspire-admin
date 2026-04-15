@@ -138,7 +138,7 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
         _logger.LogDebug("[定时任务] 租户上下文已设置: CompanyId={CompanyId}", task.CompanyId);
 
         var webScraperService = taskScope.ServiceProvider.GetRequiredService<IWebScraperService>();
-        _logger.LogInformation("[定时任务] 调用ExecuteTaskAsync: TaskId={TaskId}", task.Id);
+        _logger.LogInformation("[定时任务] 调用ExecuteTaskAsync: TaskId={TaskId}, UserId={UserId}", task.Id, task.CreatedBy ?? task.UserId);
         await webScraperService.ExecuteTaskAsync(task.Id, task.CreatedBy ?? task.UserId);
         _logger.LogInformation("[定时任务] ExecuteTaskAsync完成: TaskName={TaskName}", task.Name);
 

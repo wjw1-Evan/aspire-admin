@@ -381,9 +381,11 @@ public class WebScraperService : IWebScraperService
         }
 
         var taskIds = await _context.Set<WebScrapingTask>()
-            .Where(t => t.UserId == userId)
+            .Where(t => t.UserId == userId || t.IsPublic)
             .Select(t => t.Id)
             .ToListAsync();
+
+        _logger.LogInformation("[GetResultsAsync] userId={UserId}, taskIds={TaskIds}, taskId={TaskId}", userId, string.Join(",", taskIds), taskId);
 
         query = query.Where(r => taskIds.Contains(r.TaskId));
 

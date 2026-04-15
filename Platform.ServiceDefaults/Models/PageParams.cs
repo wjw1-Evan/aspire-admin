@@ -13,7 +13,7 @@ public sealed class PageParams
     /// <summary>
     /// 每页大小
     /// </summary>
-    public int PageSize { get; set; } = 10;
+    public int PageSize { get; set; } = 20;
 
     /// <summary>
     /// 排序字段

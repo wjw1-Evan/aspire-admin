@@ -63,6 +63,7 @@ public class TenantContext : ITenantContext, ITenantContextSetter
         _overrideCompanyId = companyId;
         _overrideUserId = userId;
         _isOverridden = true;
+        _cachedCompanyId = null;  // 清除缓存
     }
 
     private async Task<string?> LoadCompanyIdAsync(string userId)

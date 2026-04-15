@@ -55,30 +55,30 @@ private readonly IMongoCollection<User> _collection;
 ### 分页处理必读
 
 ```csharp
-// ✅ 正确：服务层处理分页
-using System.Linq.Dynamic.Core;
+// ✅ 正确：控制器使用 PageParams
+using Platform.ServiceDefaults.Models;
 
-public async Task<PagedResult<FileItem>> GetFileItemsAsync(FileListQuery query)
+[HttpGet("list")]
+public async Task<IActionResult> GetUsers([FromQuery] PageParams request)
 {
-    var q = _context.Set<FileItem>().Where(x => x.Status == FileStatus.Active);
-    q = q.OrderByDescending(x => x.CreatedAt);  // 必须先排序
-    return q.PageResult(query.Page, query.PageSize);
+    var result = await _service.GetUsersAsync(request);
+    return Success(result);
 }
 
-// ✅ 正确：控制器直接调用服务层分页方法
-public async Task<IActionResult> GetFiles([FromQuery] FileListQuery query)
+// ✅ 正确：服务层使用 ToPagedList
+using Platform.ServiceDefaults.Extensions;
+
+public async Task<PagedResult<UserDto>> GetUsersAsync(PageParams request)
 {
-    var result = await _service.GetFileItemsAsync(query);
-    return Success(result);  // 直接返回 PagedResult
+    var query = _context.Set<User>().Where(u => u.IsActive);
+    return query.ToPagedList(request);  // 自动搜索 + 排序 + 分页
 }
 
-// ❌ 禁止：控制器中处理分页逻辑
-public async Task<IActionResult> GetFiles([FromQuery] FileListQuery query)
-{
-    var items = await _service.GetItemsAsync();  // 返回 List<T>
-    var pagedResult = items.AsQueryable().PageResult(page, pageSize);  // 不应在控制器中
-    return Success(pagedResult);
-}
+// ❌ 禁止：手动定义分页参数
+[HttpGet("list")]
+public async Task<IActionResult> GetUsers(
+    [FromQuery] int page = 1,
+    [FromQuery] int pageSize = 10)  // 不允许
 ```
 
 > **注意**：控制器层不应处理分页逻辑，分页应在服务层完成。

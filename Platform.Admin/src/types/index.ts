@@ -23,6 +23,7 @@ export interface CurrentUser {
   userId?: string;
   username?: string;
   name?: string;
+  displayName?: string;
   email?: string;
   phone?: string;
   phoneNumber?: string;

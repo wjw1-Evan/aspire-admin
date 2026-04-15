@@ -12,6 +12,7 @@ public interface ITenantContext
 public interface ITenantContextSetter
 {
     void SetContext(string companyId, string? userId);
+    string? GetCurrentCompanyId();  // 同步方法
 }
 
 public class TenantContext : ITenantContext, ITenantContextSetter
@@ -64,6 +65,12 @@ public class TenantContext : ITenantContext, ITenantContextSetter
         _overrideUserId = userId;
         _isOverridden = true;
         _cachedCompanyId = null;  // 清除缓存
+    }
+
+    public string? GetCurrentCompanyId()
+    {
+        if (_isOverridden) return _overrideCompanyId;
+        return _cachedCompanyId;
     }
 
     private async Task<string?> LoadCompanyIdAsync(string userId)

@@ -24,19 +24,19 @@ public class PlatformDbContext : DbContext
 
     protected string? CurrentUserId => _tenantContext?.GetCurrentUserId();
     
-    private string? _resolvedCompanyId;
-    
     protected string? CurrentCompanyId
     {
         get
         {
-            if (_resolvedCompanyId != null) return _resolvedCompanyId;
             if (_tenantContext == null) return null;
             
-            // 同步调用异步方法
-            var task = _tenantContext.GetCurrentCompanyIdAsync();
-            _resolvedCompanyId = task.IsCompleted ? task.Result : null;
-            return _resolvedCompanyId;
+            // 直接从 TenantContext 获取，不缓存
+            if (_tenantContext is TenantContext tc)
+            {
+                return tc.GetCurrentCompanyId();
+            }
+            
+            return _tenantContext.GetCurrentCompanyIdAsync().GetAwaiter().GetResult();
         }
     }
 

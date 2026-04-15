@@ -216,7 +216,7 @@ const WebScraper: React.FC = () => {
       key: 'action',
       valueType: 'option',
       fixed: 'right',
-      width: 180,
+      width: 240,
       render: (_, record) => (
         <Space size={4}>
           <Button

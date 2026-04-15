@@ -170,8 +170,7 @@ const WebScraperResults: React.FC = () => {
         request={async (params: any) => {
           const sortParams = sorter?.sortBy && sorter?.sortOrder ? sorter : undefined;
           const res = await api.list({
-            page: params.current || 1,
-            pageSize: params.pageSize || 10,
+            page: params.current,
             taskId: taskId,
             sortBy: sortParams?.sortBy,
             sortOrder: sortParams?.sortOrder,

@@ -86,7 +86,6 @@ public class HtmlScraper
         request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
         request.Headers.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
         request.Headers.Add("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8");
-        request.Headers.Add("Accept-Encoding", "gzip, deflate, br");
         request.Headers.Add("Cache-Control", "no-cache");
         request.Headers.Add("Pragma", "no-cache");
 
@@ -97,8 +96,7 @@ public class HtmlScraper
             throw new HttpRequestException($"HTTP {(int)response.StatusCode}: {response.ReasonPhrase} - {url}");
         }
 
-        var bytes = await response.Content.ReadAsByteArrayAsync();
-        var content = DecodeHtml(bytes, response.Content.Headers.ContentType?.CharSet);
+        var content = await response.Content.ReadAsStringAsync();
 
         if (string.IsNullOrWhiteSpace(content) || content.Length < 100)
         {
@@ -137,46 +135,21 @@ public class HtmlScraper
             catch { }
         }
 
-        var possibleEncodings = new[] {
-            "utf-8", "gb2312", "gbk", "gb18030", "big5", "shift_jis", "euc-jp", "euc-kr", "iso-8859-1"
-        };
-
+        var possibleEncodings = new[] { "utf-8", "gb2312", "gbk", "gb18030", "big5" };
         foreach (var encName in possibleEncodings)
         {
             try
             {
                 var encoding = System.Text.Encoding.GetEncoding(encName);
                 var decoded = encoding.GetString(bytes);
-                if (ContainsChineseChars(decoded) || IsValidHtml(decoded))
+                if (decoded.Contains("�")) continue;
+                if (decoded.Contains("<html") || decoded.Contains("<body"))
                     return decoded;
             }
             catch { }
         }
 
         return System.Text.Encoding.UTF8.GetString(bytes);
-    }
-
-    private static bool ContainsChineseChars(string text)
-    {
-        return text.Any(c => c >= 0x4E00 && c <= 0x9FFF);
-    }
-
-    private static bool IsValidHtml(string text)
-    {
-        var htmlIndicators = new[] { "<html", "<head", "<body", "<div", "<p>", "<span", "<title" };
-        var lower = text.ToLowerInvariant();
-        return htmlIndicators.Any(indicator => lower.Contains(indicator)) && !ContainsGarbledChars(text);
-    }
-
-    private static bool ContainsGarbledChars(string text)
-    {
-        int garbledCount = 0;
-        foreach (char c in text)
-        {
-            if (c == '�' || (c > 0 && c < 32 && c != '\t' && c != '\n' && c != '\r'))
-                garbledCount++;
-        }
-        return garbledCount > text.Length * 0.05;
     }
 
     private static string AbsoluteUrl(string baseUrl, string relativeUrl)

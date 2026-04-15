@@ -181,7 +181,6 @@ const WebScraper: React.FC = () => {
       title: '状态',
       dataIndex: 'lastStatus',
       key: 'lastStatus',
-      width: 100,
       render: (dom) => (
         <Tag color={statusColors[dom as string]}>{statusText[dom as string]}</Tag>
       ),
@@ -190,14 +189,12 @@ const WebScraper: React.FC = () => {
       title: '已抓取',
       dataIndex: 'totalPagesCrawled',
       key: 'totalPagesCrawled',
-      width: 100,
       render: (dom) => `${dom} 页`,
     },
     {
       title: '抓取深度',
       dataIndex: 'crawlDepth',
       key: 'crawlDepth',
-      width: 100,
       render: (dom) => `深度${dom}`,
       hideInSearch: true,
     },
@@ -205,7 +202,6 @@ const WebScraper: React.FC = () => {
       title: '每层最大',
       dataIndex: 'maxPagesPerLevel',
       key: 'maxPagesPerLevel',
-      width: 100,
       render: (dom) => `${dom} 页`,
       hideInSearch: true,
     },
@@ -213,7 +209,6 @@ const WebScraper: React.FC = () => {
       title: '抓取模式',
       dataIndex: 'mode',
       key: 'mode',
-      width: 100,
       render: (dom) => {
         const modeMap: Record<string, string> = {
           'singlepage': '单页',
@@ -228,7 +223,6 @@ const WebScraper: React.FC = () => {
       title: '定时',
       dataIndex: 'scheduleCron',
       key: 'scheduleCron',
-      width: 200,
       render: (dom) => dom ? (
         <Space>
           <Tag color="orange">{dom}</Tag>
@@ -241,21 +235,18 @@ const WebScraper: React.FC = () => {
       title: '最后执行',
       dataIndex: 'lastRunAt',
       key: 'lastRunAt',
-      width: 160,
       render: (dom) => dom ? dayjs(dom as string).format('YYYY-MM-DD HH:mm:ss') : '-',
     },
     {
       title: '耗时',
       dataIndex: 'lastDuration',
       key: 'lastDuration',
-      width: 100,
       render: (dom) => dom ? `${Math.round((dom as number) / 1000)}s` : '-',
     },
     {
       title: '启用',
       dataIndex: 'isEnabled',
       key: 'isEnabled',
-      width: 80,
       render: (dom, record) => (
         <Switch checked={dom as boolean} onChange={() => handleToggle(record)} />
       ),
@@ -341,6 +332,7 @@ const WebScraper: React.FC = () => {
           </Button>,
         ]}
         columns={columns}
+        scroll={{ x: 'max-content' }}
       />
 
       <TaskForm

@@ -111,9 +111,9 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
           </Descriptions>
         </TabPane>
 
-        <TabPane tab={`页面列表 (${data.pages.length})`} key="pages">
+        <TabPane tab={`页面列表 (${data.pages?.length || 0})`} key="pages">
           <Table
-            dataSource={data.pages}
+            dataSource={data.pages || []}
             columns={pageColumns}
             rowKey={(r, i) => `${r.url}-${i}`}
             pagination={{ pageSize: 10 }}
@@ -121,9 +121,9 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
           />
         </TabPane>
 
-        <TabPane tab={`链接 (${data.pages.reduce((acc, p) => acc + p.links.length, 0)})`} key="links">
+        <TabPane tab={`链接 (${(data.pages || []).reduce((acc, p) => acc + (p.links?.length || 0), 0)})`} key="links">
           <Table
-            dataSource={data.pages.flatMap((p) => p.links.map((l) => ({ url: l })))}
+            dataSource={(data.pages || []).flatMap((p) => (p.links || []).map((l) => ({ url: l })))}
             columns={linkColumns}
             rowKey="url"
             pagination={{ pageSize: 20 }}
@@ -131,9 +131,9 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
           />
         </TabPane>
 
-        <TabPane tab={`图片 (${data.pages.reduce((acc, p) => acc + p.images.length, 0)})`} key="images">
+        <TabPane tab={`图片 (${(data.pages || []).reduce((acc, p) => acc + (p.images?.length || 0), 0)})`} key="images">
           <Table
-            dataSource={data.pages.flatMap((p) => p.images.map((src) => ({ src })))}
+            dataSource={(data.pages || []).flatMap((p) => (p.images || []).map((src) => ({ src })))}
             columns={imageColumns}
             rowKey="src"
             pagination={{ pageSize: 20 }}
@@ -190,7 +190,7 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
               </Card>
             )}
 
-            {selectedPage.images.length > 0 && (
+            {(selectedPage.images?.length || 0) > 0 && (
               <Card title="图片" size="small">
                 <Space wrap>
                   {selectedPage.images.map((img, i) => (
@@ -200,7 +200,7 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
               </Card>
             )}
 
-            {selectedPage.links.length > 0 && (
+            {(selectedPage.links?.length || 0) > 0 && (
               <Card title={`链接 (${selectedPage.links.length})`} size="small">
                 <Space direction="vertical" style={{ width: '100%' }}>
                   {selectedPage.links.slice(0, 20).map((link, i) => (

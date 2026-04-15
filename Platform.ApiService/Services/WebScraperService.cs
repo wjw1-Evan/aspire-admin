@@ -10,16 +10,16 @@ namespace Platform.ApiService.Services;
 public class WebScraperService : IWebScraperService
 {
     private readonly DbContext _context;
-    private readonly HttpClient _httpClient;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<WebScraperService> _logger;
 
     public WebScraperService(
         DbContext context,
-        HttpClient httpClient,
+        IHttpClientFactory httpClientFactory,
         ILogger<WebScraperService> logger)
     {
         _context = context;
-        _httpClient = httpClient;
+        _httpClientFactory = httpClientFactory;
         _logger = logger;
     }
 
@@ -171,7 +171,7 @@ public class WebScraperService : IWebScraperService
                 Deduplicate = task.Deduplicate
             };
 
-            var scraper = new HtmlScraper(_httpClient);
+            var scraper = new HtmlScraper(_httpClientFactory.CreateClient());
             var crawler = new WebCrawler(scraper);
             var result = await crawler.CrawlAsync(task.TargetUrl, config);
 
@@ -261,7 +261,7 @@ public class WebScraperService : IWebScraperService
 
         try
         {
-            var scraper = new HtmlScraper(_httpClient);
+            var scraper = new HtmlScraper(_httpClientFactory.CreateClient());
             var crawler = new WebCrawler(scraper);
             var result = await crawler.CrawlAsync(request.Url, config);
 
@@ -293,7 +293,7 @@ public class WebScraperService : IWebScraperService
             FollowExternalLinks = request.FollowExternalLinks
         };
 
-        var scraper = new HtmlScraper(_httpClient);
+        var scraper = new HtmlScraper(_httpClientFactory.CreateClient());
         var crawler = new WebCrawler(scraper);
         var result = await crawler.CrawlAsync(request.Url, config);
 

@@ -452,7 +452,7 @@ public static class CronExpressionParser
     {
         try
         {
-            var parts = cron.Split(' ');
+            var parts = cron.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length < 5) return null;
 
             var minute = ParseCronPart(parts[0], 0, 59);
@@ -461,16 +461,19 @@ public static class CronExpressionParser
             var month = ParseCronPart(parts[3], 1, 12);
             var dayOfWeek = ParseCronPart(parts[4], 0, 6);
 
-            for (int i = 0; i < 366; i++)
-            {
-                var candidate = from.AddDays(i);
-                if (!month.Contains(candidate.Month)) continue;
-                if (!dayOfMonth.Contains(candidate.Day)) continue;
-                if (!dayOfWeek.Contains((int)candidate.DayOfWeek)) continue;
-                if (!hour.Contains(candidate.Hour)) continue;
-                if (!minute.Contains(candidate.Minute)) continue;
+            var current = from.AddMinutes(1).AddSeconds(-from.Second).AddMilliseconds(-from.Millisecond);
 
-                return new DateTime(candidate.Year, candidate.Month, candidate.Day, candidate.Hour, candidate.Minute, 0, DateTimeKind.Utc);
+            for (int i = 0; i < 60 * 24 * 366; i++)
+            {
+                if (month.Contains(current.Month)
+                    && dayOfMonth.Contains(current.Day)
+                    && dayOfWeek.Contains((int)current.DayOfWeek)
+                    && hour.Contains(current.Hour)
+                    && minute.Contains(current.Minute))
+                {
+                    return new DateTime(current.Year, current.Month, current.Day, current.Hour, current.Minute, 0, DateTimeKind.Utc);
+                }
+                current = current.AddMinutes(1);
             }
         }
         catch

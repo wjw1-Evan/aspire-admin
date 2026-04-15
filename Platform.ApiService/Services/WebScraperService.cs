@@ -251,6 +251,10 @@ public class WebScraperService : IWebScraperService
             await _context.SaveChangesAsync();
             _logger.LogInformation("[ExecuteTaskAsync] 保存{ResultCount}条结果, LogId={LogId}, CompanyId={CompanyId}", result.TotalPages, log.Id, taskCompanyId);
 
+            task.NextRunAt = CronExpressionParser.ParseNext(task.ScheduleCron!, DateTime.UtcNow);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("[ExecuteTaskAsync] NextRunAt更新为: {NextRunAt}", task.NextRunAt);
+
             return new ScrapeResultDto
             {
                 Success = true,

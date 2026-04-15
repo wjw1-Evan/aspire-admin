@@ -139,22 +139,9 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
 
         var webScraperService = taskScope.ServiceProvider.GetRequiredService<IWebScraperService>();
         _logger.LogInformation("[定时任务] 调用ExecuteTaskAsync: TaskId={TaskId}, UserId={UserId}", task.Id, task.CreatedBy ?? task.UserId);
-        await webScraperService.ExecuteTaskAsync(task.Id, task.CreatedBy ?? task.UserId);
-        _logger.LogInformation("[定时任务] ExecuteTaskAsync完成: TaskName={TaskName}", task.Name);
-
-        using var updateScope = _serviceProvider.CreateScope();
-        var updateTenantSetter = updateScope.ServiceProvider.GetRequiredService<ITenantContextSetter>();
-        updateTenantSetter.SetContext(task.CompanyId, task.CreatedBy);
-        var updateContext = updateScope.ServiceProvider.GetRequiredService<PlatformDbContext>();
-
-        var updateTask = await updateContext.Set<WebScrapingTask>()
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(t => t.Id == task.Id, stoppingToken);
-        if (updateTask != null)
-        {
-            updateTask.NextRunAt = WebScraperCron.ParseNext(task.ScheduleCron!, DateTime.UtcNow);
-            await updateContext.SaveChangesAsync(stoppingToken);
-        }
+        var result = await webScraperService.ExecuteTaskAsync(task.Id, task.CreatedBy ?? task.UserId);
+        _logger.LogInformation("[定时任务] ExecuteTaskAsync完成: TaskName={TaskName}, Success={Success}, Message={Message}",
+            task.Name, result.Success, result.Message);
 
         _logger.LogInformation("定时抓取任务完成: {TaskName}", task.Name);
     }

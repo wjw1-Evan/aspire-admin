@@ -171,7 +171,21 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onCancel, onSuccess 
         name="scheduleCron"
         label="定时表达式"
         placeholder="0 0 * * *"
-        tooltip="Cron表达式，用于定时执行，如每天凌晨执行: 0 0 * * *"
+        tooltip={
+          <div>
+            <p>Cron表达式，用于定时执行</p>
+            <p>格式：分 时 日 月 周</p>
+            <p>常用示例：</p>
+            <ul style={{ margin: '8px 0', paddingLeft: 16 }}>
+              <li>每分钟执行：<code>* * * * *</code></li>
+              <li>每小时执行：<code>0 * * * *</code></li>
+              <li>每天凌晨执行：<code>0 0 * * *</code></li>
+              <li>每天上午10点：<code>0 10 * * *</code></li>
+              <li>每周一执行：<code>0 0 * * 1</code></li>
+              <li>每月1号执行：<code>0 0 1 * *</code></li>
+            </ul>
+          </div>
+        }
       />
 
       <Form.Item label="启用任务" name="isEnabled" valuePropName="checked" initialValue={true}>

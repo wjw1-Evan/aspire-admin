@@ -157,11 +157,15 @@ public class WebScraperService : IWebScraperService
 
     public async Task<ScrapeResultDto> ExecuteTaskAsync(string id, string userId)
     {
+        _logger.LogInformation("[ExecuteTaskAsync] 开始执行, id={Id}, userId={UserId}", id, userId);
         var task = await GetTaskByIdAsync(id, userId);
         if (task == null)
         {
+            _logger.LogWarning("[ExecuteTaskAsync] 任务未找到, id={Id}, userId={UserId}", id, userId);
             return new ScrapeResultDto { Success = false, Message = "任务不存在" };
         }
+
+        _logger.LogInformation("[ExecuteTaskAsync] 任务已找到: {TaskName}, CompanyId={CompanyId}", task.Name, task.CompanyId);
 
         task.LastStatus = ScrapingStatus.Running;
         await _context.SaveChangesAsync();

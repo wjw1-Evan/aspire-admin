@@ -22,6 +22,10 @@ interface WebScrapingResult {
   contentLength: number;
   imageCount: number;
   linkCount: number;
+  isFiltered?: boolean;
+  isMatched?: boolean;
+  matchReason?: string;
+  relevanceScore?: number;
   createdAt: string;
 }
 
@@ -108,6 +112,18 @@ const WebScraperResults: React.FC = () => {
       sorter: true,
       render: (success) => (
         <Tag color={success ? 'success' : 'error'}>{success ? '成功' : '失败'}</Tag>
+      ),
+    },
+    {
+      title: '匹配',
+      key: 'matched',
+      sorter: true,
+      render: (_: any, record: WebScrapingResult) => (
+        record.isFiltered ? (
+          <Tag color={record.isMatched ? 'green' : 'default'}>
+            {record.isMatched ? `匹配 ${record.relevanceScore || 0}%` : '未匹配'}
+          </Tag>
+        ) : '-'
       ),
     },
     {
@@ -237,6 +253,22 @@ const WebScraperResults: React.FC = () => {
             {currentResult.error && (
               <Card title="错误信息" size="small" style={{ marginBottom: 16 }}>
                 <Tag color="error">{currentResult.error}</Tag>
+              </Card>
+            )}
+
+            {currentResult.isFiltered && (
+              <Card title="AI筛选结果" size="small" style={{ marginBottom: 16 }}>
+                <Space direction="vertical">
+                  <Space>
+                    <Tag color={currentResult.isMatched ? 'green' : 'default'}>
+                      {currentResult.isMatched ? '匹配' : '未匹配'}
+                    </Tag>
+                    <span>相关度：{currentResult.relevanceScore ?? 0}%</span>
+                  </Space>
+                  {currentResult.matchReason && (
+                    <span style={{ color: '#666' }}>原因：{currentResult.matchReason}</span>
+                  )}
+                </Space>
               </Card>
             )}
 

@@ -16,7 +16,7 @@ interface WebScrapingTask {
   description?: string;
   crawlDepth: number;
   maxPagesPerLevel: number;
-  lastStatus: 'Idle' | 'Running' | 'Success' | 'Failed' | 'PartialSuccess';
+  lastStatus: 'idle' | 'running' | 'success' | 'failed' | 'partialSuccess' | 'Idle' | 'Running' | 'Success' | 'Failed' | 'PartialSuccess';
   lastRunAt?: string;
   lastDuration?: number;
   lastError?: string;
@@ -295,7 +295,7 @@ const WebScraper: React.FC = () => {
       fixed: 'right',
       width: 240,
       render: (_, record) => {
-        const isRunning = record.lastStatus === 'Running';
+        const isRunning = record.lastStatus === 'Running' || record.lastStatus === 'running';
         return (
           <Space size={4}>
             {isRunning ? (

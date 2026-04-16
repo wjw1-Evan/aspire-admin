@@ -16,6 +16,7 @@ public class WebScraperService : IWebScraperService
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IContentFilterService _contentFilterService;
     private readonly ILogger<WebScraperService> _logger;
+    private static readonly Dictionary<string, CancellationTokenSource> _runningTasks = new();
 
     public WebScraperService(
         DbContext context,
@@ -153,159 +154,181 @@ public class WebScraperService : IWebScraperService
         return task;
     }
 
+    public Task<bool> StopTaskAsync(string id, string userId)
+    {
+        if (_runningTasks.TryGetValue(id, out var cts))
+        {
+            cts.Cancel();
+            _runningTasks.Remove(id);
+            _logger.LogInformation("[StopTaskAsync] 任务已停止, id={Id}", id);
+            return Task.FromResult(true);
+        }
+        return Task.FromResult(false);
+    }
+
     public async Task<ScrapeResultDto> ExecuteTaskAsync(string id, string userId)
     {
-        var dbContext = _context as PlatformDbContext;
-        var prop = dbContext?.GetType().BaseType?.GetProperty("CurrentCompanyId", BindingFlags.NonPublic | BindingFlags.Instance);
-        var companyId = prop?.GetValue(dbContext) as string;
-        _logger.LogInformation("[ExecuteTaskAsync] 开始执行, id={Id}, userId={UserId}, DbContextCompanyId={DbCompanyId}", id, userId, companyId);
-        var task = await _context.Set<WebScrapingTask>().IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == id);
-        if (task == null)
-        {
-            _logger.LogWarning("[ExecuteTaskAsync] 任务未找到, id={Id}", id);
-            return new ScrapeResultDto { Success = false, Message = "任务不存在" };
-        }
-
-        _logger.LogInformation("[ExecuteTaskAsync] 任务已找到: {TaskName}, CompanyId={CompanyId}", task.Name, task.CompanyId);
-
-        var taskCompanyId = task.CompanyId;
-        task.LastStatus = ScrapingStatus.Running;
-        await _context.SaveChangesAsync();
-
-        var startTime = DateTime.UtcNow;
-        var log = new WebScrapingLog
-        {
-            TaskId = task.Id,
-            TaskName = task.Name,
-            StartTime = startTime,
-            Status = ScrapingStatus.Running,
-            CompanyId = taskCompanyId
-        };
+        var cts = new CancellationTokenSource();
+        _runningTasks[id] = cts;
 
         try
         {
-            var config = new CrawlConfig
+            var dbContext = _context as PlatformDbContext;
+            var prop = dbContext?.GetType().BaseType?.GetProperty("CurrentCompanyId", BindingFlags.NonPublic | BindingFlags.Instance);
+            var companyId = prop?.GetValue(dbContext) as string;
+            _logger.LogInformation("[ExecuteTaskAsync] 开始执行, id={Id}, userId={UserId}, DbContextCompanyId={DbCompanyId}", id, userId, companyId);
+            var task = await _context.Set<WebScrapingTask>().IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == id);
+            if (task == null)
             {
-                StartUrl = task.TargetUrl,
-                TitleSelector = task.TitleSelector,
-                ContentSelector = task.ContentSelector,
-                ImageSelectors = task.ImageSelectors,
-                CrawlDepth = task.CrawlDepth,
-                MaxPagesPerLevel = task.MaxPagesPerLevel,
-                MaxTotalPages = task.MaxPagesPerLevel * (task.CrawlDepth + 1),
-                UrlFilterPattern = task.UrlFilterPattern,
-                FollowExternalLinks = task.FollowExternalLinks,
-                Deduplicate = task.Deduplicate
-            };
-
-            var scraper = new HtmlScraper(_httpClientFactory.CreateClient());
-            var crawler = new WebCrawler(scraper);
-            var result = await crawler.CrawlAsync(task.TargetUrl, config);
-
-            var filterStartTime = DateTime.UtcNow;
-            var matchedCount = 0;
-            if (task.EnableFilter == true && !string.IsNullOrWhiteSpace(task.FilterPrompt))
-            {
-                _logger.LogInformation("[ExecuteTaskAsync] 开始AI筛选, FilterPrompt={Filter}", task.FilterPrompt);
-                var filterResults = await _contentFilterService.FilterPagesAsync(task.FilterPrompt!, result.Pages);
-                for (int i = 0; i < result.Pages.Count; i++)
-                {
-                    if (result.Pages[i].Success)
-                    {
-                        result.Pages[i].IsFiltered = true;
-                        result.Pages[i].IsMatched = filterResults[i].IsMatched;
-                        result.Pages[i].MatchReason = filterResults[i].Reason;
-                        result.Pages[i].RelevanceScore = filterResults[i].Score;
-                        if (filterResults[i].IsMatched) matchedCount++;
-                    }
-                    else
-                    {
-                        result.Pages[i].IsFiltered = false;
-                    }
-                }
-                _logger.LogInformation("[ExecuteTaskAsync] AI筛选完成, 匹配={MatchedCount}", matchedCount);
+                _logger.LogWarning("[ExecuteTaskAsync] 任务未找到, id={Id}", id);
+                return new ScrapeResultDto { Success = false, Message = "任务不存在" };
             }
 
-            var endTime = DateTime.UtcNow;
-            log.EndTime = endTime;
-            log.Duration = (int)(endTime - startTime).TotalMilliseconds;
-            log.PagesCrawled = result.TotalPages;
-            log.SuccessCount = result.SuccessCount;
-            log.FailedCount = result.FailedCount;
-            log.MatchedCount = matchedCount;
-            log.Status = result.FailedCount == 0 ? ScrapingStatus.Success :
-                        result.SuccessCount == 0 ? ScrapingStatus.Failed : ScrapingStatus.PartialSuccess;
-            log.ExtractedData = JsonSerializer.Serialize(result);
+            _logger.LogInformation("[ExecuteTaskAsync] 任务已找到: {TaskName}, CompanyId={CompanyId}", task.Name, task.CompanyId);
 
-            task.LastStatus = log.Status;
-            task.LastRunAt = startTime;
-            task.LastDuration = log.Duration;
-            task.TotalPagesCrawled += result.TotalPages;
-            task.ResultCount += result.TotalPages;
-            task.MatchedCount = matchedCount;
-            task.LastError = null;
-
-            await _context.Set<WebScrapingLog>().AddAsync(log);
+            var taskCompanyId = task.CompanyId;
+            task.LastStatus = ScrapingStatus.Running;
             await _context.SaveChangesAsync();
 
-            foreach (var page in result.Pages)
+            var startTime = DateTime.UtcNow;
+            var log = new WebScrapingLog
             {
-                var scrapingResult = new WebScrapingResult
+                TaskId = task.Id,
+                TaskName = task.Name,
+                StartTime = startTime,
+                Status = ScrapingStatus.Running,
+                CompanyId = taskCompanyId
+            };
+
+            try
+            {
+                var config = new CrawlConfig
                 {
-                    TaskId = task.Id,
-                    TaskName = task.Name,
-                    LogId = log.Id,
-                    Url = page.Url,
-                    Level = page.Level,
-                    Title = page.Title,
-                    Content = page.Content,
-                    Images = page.Images ?? new List<string>(),
-                    Links = page.Links ?? new List<string>(),
-                    Success = page.Success,
-                    Error = page.Error,
-                    ContentLength = page.Content?.Length ?? 0,
-                    ImageCount = page.Images?.Count ?? 0,
-                    LinkCount = page.Links?.Count ?? 0,
-                    IsFiltered = page.IsFiltered,
-                    IsMatched = page.IsMatched,
-                    MatchReason = page.MatchReason,
-                    RelevanceScore = page.RelevanceScore,
-                    CompanyId = taskCompanyId
+                    StartUrl = task.TargetUrl,
+                    TitleSelector = task.TitleSelector,
+                    ContentSelector = task.ContentSelector,
+                    ImageSelectors = task.ImageSelectors,
+                    CrawlDepth = task.CrawlDepth,
+                    MaxPagesPerLevel = task.MaxPagesPerLevel,
+                    MaxTotalPages = task.MaxPagesPerLevel * (task.CrawlDepth + 1),
+                    UrlFilterPattern = task.UrlFilterPattern,
+                    FollowExternalLinks = task.FollowExternalLinks,
+                    Deduplicate = task.Deduplicate
                 };
-                await _context.Set<WebScrapingResult>().AddAsync(scrapingResult);
+
+                var scraper = new HtmlScraper(_httpClientFactory.CreateClient());
+                var crawler = new WebCrawler(scraper);
+                var result = await crawler.CrawlAsync(task.TargetUrl, config);
+
+                var filterStartTime = DateTime.UtcNow;
+                var matchedCount = 0;
+                if (task.EnableFilter == true && !string.IsNullOrWhiteSpace(task.FilterPrompt))
+                {
+                    _logger.LogInformation("[ExecuteTaskAsync] 开始AI筛选, FilterPrompt={Filter}", task.FilterPrompt);
+                    var filterResults = await _contentFilterService.FilterPagesAsync(task.FilterPrompt!, result.Pages);
+                    for (int i = 0; i < result.Pages.Count; i++)
+                    {
+                        if (result.Pages[i].Success)
+                        {
+                            result.Pages[i].IsFiltered = true;
+                            result.Pages[i].IsMatched = filterResults[i].IsMatched;
+                            result.Pages[i].MatchReason = filterResults[i].Reason;
+                            result.Pages[i].RelevanceScore = filterResults[i].Score;
+                            if (filterResults[i].IsMatched) matchedCount++;
+                        }
+                        else
+                        {
+                            result.Pages[i].IsFiltered = false;
+                        }
+                    }
+                    _logger.LogInformation("[ExecuteTaskAsync] AI筛选完成, 匹配={MatchedCount}", matchedCount);
+                }
+
+                var endTime = DateTime.UtcNow;
+                log.EndTime = endTime;
+                log.Duration = (int)(endTime - startTime).TotalMilliseconds;
+                log.PagesCrawled = result.TotalPages;
+                log.SuccessCount = result.SuccessCount;
+                log.FailedCount = result.FailedCount;
+                log.MatchedCount = matchedCount;
+                log.Status = result.FailedCount == 0 ? ScrapingStatus.Success :
+                            result.SuccessCount == 0 ? ScrapingStatus.Failed : ScrapingStatus.PartialSuccess;
+                log.ExtractedData = JsonSerializer.Serialize(result);
+
+                task.LastStatus = log.Status;
+                task.LastRunAt = startTime;
+                task.LastDuration = log.Duration;
+                task.TotalPagesCrawled += result.TotalPages;
+                task.ResultCount += result.TotalPages;
+                task.MatchedCount = matchedCount;
+                task.LastError = null;
+
+                await _context.Set<WebScrapingLog>().AddAsync(log);
+                await _context.SaveChangesAsync();
+
+                foreach (var page in result.Pages)
+                {
+                    var scrapingResult = new WebScrapingResult
+                    {
+                        TaskId = task.Id,
+                        TaskName = task.Name,
+                        LogId = log.Id,
+                        Url = page.Url,
+                        Level = page.Level,
+                        Title = page.Title,
+                        Content = page.Content,
+                        Images = page.Images ?? new List<string>(),
+                        Links = page.Links ?? new List<string>(),
+                        Success = page.Success,
+                        Error = page.Error,
+                        ContentLength = page.Content?.Length ?? 0,
+                        ImageCount = page.Images?.Count ?? 0,
+                        LinkCount = page.Links?.Count ?? 0,
+                        IsFiltered = page.IsFiltered,
+                        IsMatched = page.IsMatched,
+                        MatchReason = page.MatchReason,
+                        RelevanceScore = page.RelevanceScore,
+                        CompanyId = taskCompanyId
+                    };
+                    await _context.Set<WebScrapingResult>().AddAsync(scrapingResult);
+                }
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("[ExecuteTaskAsync] 保存{ResultCount}条结果, LogId={LogId}, CompanyId={CompanyId}", result.TotalPages, log.Id, taskCompanyId);
+
+                task.NextRunAt = CronExpressionParser.ParseNext(task.ScheduleCron!, DateTime.UtcNow);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("[ExecuteTaskAsync] NextRunAt更新为: {NextRunAt}", task.NextRunAt);
+
+                return new ScrapeResultDto
+                {
+                    Success = true,
+                    Message = $"抓取完成，共 {result.TotalPages} 页，成功 {result.SuccessCount} 页",
+                    Data = MapToCrawlResultDto(result)
+                };
             }
-            await _context.SaveChangesAsync();
-            _logger.LogInformation("[ExecuteTaskAsync] 保存{ResultCount}条结果, LogId={LogId}, CompanyId={CompanyId}", result.TotalPages, log.Id, taskCompanyId);
-
-            task.NextRunAt = CronExpressionParser.ParseNext(task.ScheduleCron!, DateTime.UtcNow);
-            await _context.SaveChangesAsync();
-            _logger.LogInformation("[ExecuteTaskAsync] NextRunAt更新为: {NextRunAt}", task.NextRunAt);
-
-            return new ScrapeResultDto
+            catch (Exception ex)
             {
-                Success = true,
-                Message = $"抓取完成，共 {result.TotalPages} 页，成功 {result.SuccessCount} 页",
-                Data = MapToCrawlResultDto(result)
-            };
+                _logger.LogError(ex, "执行抓取任务失败: {TaskId}", id);
+
+                log.EndTime = DateTime.UtcNow;
+                log.Status = ScrapingStatus.Failed;
+                log.ErrorMessage = ex.Message;
+                log.Duration = (int)(DateTime.UtcNow - startTime).TotalMilliseconds;
+
+                task.LastStatus = ScrapingStatus.Failed;
+                task.LastRunAt = startTime;
+                task.LastDuration = log.Duration;
+                task.LastError = ex.Message;
+
+                await _context.Set<WebScrapingLog>().AddAsync(log);
+                await _context.SaveChangesAsync();
+
+                return new ScrapeResultDto { Success = false, Message = ex.Message };
+            }
         }
-        catch (Exception ex)
+        finally
         {
-            _logger.LogError(ex, "执行抓取任务失败: {TaskId}", id);
-
-            log.EndTime = DateTime.UtcNow;
-            log.Status = ScrapingStatus.Failed;
-            log.ErrorMessage = ex.Message;
-            log.Duration = (int)(DateTime.UtcNow - startTime).TotalMilliseconds;
-
-            task.LastStatus = ScrapingStatus.Failed;
-            task.LastRunAt = startTime;
-            task.LastDuration = log.Duration;
-            task.LastError = ex.Message;
-
-            await _context.Set<WebScrapingLog>().AddAsync(log);
-            await _context.SaveChangesAsync();
-
-            return new ScrapeResultDto { Success = false, Message = ex.Message };
+            _runningTasks.Remove(id);
         }
     }
 

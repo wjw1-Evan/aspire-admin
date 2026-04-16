@@ -14,6 +14,7 @@ public interface IWebScraperService
     Task<WebScrapingTask?> ToggleTaskEnabledAsync(string id, string userId);
 
     Task<ScrapeResultDto> ExecuteTaskAsync(string id, string userId);
+    Task<bool> StopTaskAsync(string id, string userId);
     Task<ScrapeResultDto> ExecuteQuickScrapeAsync(QuickScrapeRequest request, string userId);
     Task<CrawlResultDto> PreviewScrapeAsync(ScrapePreviewRequest request, string userId);
 

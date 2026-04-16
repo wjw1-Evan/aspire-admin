@@ -100,6 +100,16 @@ public class WebScraperController : BaseApiController
         return Success(result);
     }
 
+    [HttpPost("tasks/{id}/stop")]
+    public async Task<IActionResult> StopTask(string id)
+    {
+        var result = await _webScraperService.StopTaskAsync(id, RequiredUserId);
+        if (!result)
+            return NotFound(new { message = "任务未在运行或不存在" });
+
+        return Success(new { message = "任务已停止" });
+    }
+
     [HttpPost("execute-quick")]
     public async Task<IActionResult> ExecuteQuickScrape([FromBody] QuickScrapeRequest request)
     {

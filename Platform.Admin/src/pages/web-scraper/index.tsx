@@ -74,6 +74,8 @@ const api = {
     request<ApiResponse<WebScrapingTask>>(`/apiservice/api/web-scraper/tasks/${id}/toggle`, { method: 'POST' }),
   execute: (id: string) =>
     request<ApiResponse<CrawlResult>>(`/apiservice/api/web-scraper/execute/${id}`, { method: 'POST' }),
+  stop: (id: string) =>
+    request<ApiResponse<void>>(`/apiservice/api/web-scraper/tasks/${id}/stop`, { method: 'POST' }),
 };
 
 const statusColors: Record<string, string> = {
@@ -151,6 +153,18 @@ const WebScraper: React.FC = () => {
       }
     } catch {
       message.error('抓取失败');
+    }
+  }, []);
+
+  const handleStop = useCallback(async (record: WebScrapingTask) => {
+    try {
+      const res = await api.stop(record.id);
+      if (res.success) {
+        message.success('任务已停止');
+        actionRef.current?.reload();
+      }
+    } catch {
+      message.error('停止失败');
     }
   }, []);
 
@@ -284,16 +298,28 @@ const WebScraper: React.FC = () => {
         const isRunning = record.lastStatus === 'Running';
         return (
           <Space size={4}>
-            <Button
-              type="link"
-              size="small"
-              icon={isRunning ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
-              disabled={isRunning}
-              onClick={() => handleExecute(record)}
-              loading={loading}
-            >
-              {isRunning ? '运行中' : '执行'}
-            </Button>
+            {isRunning ? (
+              <Button
+                type="link"
+                size="small"
+                icon={<PauseCircleOutlined />}
+                onClick={() => handleStop(record)}
+                loading={loading}
+                danger
+              >
+                停止
+              </Button>
+            ) : (
+              <Button
+                type="link"
+                size="small"
+                icon={<PlayCircleOutlined />}
+                onClick={() => handleExecute(record)}
+                loading={loading}
+              >
+                执行
+              </Button>
+            )}
             <Button
               type="link"
               size="small"

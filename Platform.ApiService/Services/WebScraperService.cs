@@ -210,11 +210,18 @@ public class WebScraperService : IWebScraperService
                 var filterResults = await _contentFilterService.FilterPagesAsync(task.FilterPrompt!, result.Pages);
                 for (int i = 0; i < result.Pages.Count; i++)
                 {
-                    result.Pages[i].IsFiltered = true;
-                    result.Pages[i].IsMatched = filterResults[i].IsMatched;
-                    result.Pages[i].MatchReason = filterResults[i].Reason;
-                    result.Pages[i].RelevanceScore = filterResults[i].Score;
-                    if (filterResults[i].IsMatched) matchedCount++;
+                    if (result.Pages[i].Success)
+                    {
+                        result.Pages[i].IsFiltered = true;
+                        result.Pages[i].IsMatched = filterResults[i].IsMatched;
+                        result.Pages[i].MatchReason = filterResults[i].Reason;
+                        result.Pages[i].RelevanceScore = filterResults[i].Score;
+                        if (filterResults[i].IsMatched) matchedCount++;
+                    }
+                    else
+                    {
+                        result.Pages[i].IsFiltered = false;
+                    }
                 }
                 _logger.LogInformation("[ExecuteTaskAsync] AI筛选完成, 匹配={MatchedCount}", matchedCount);
             }

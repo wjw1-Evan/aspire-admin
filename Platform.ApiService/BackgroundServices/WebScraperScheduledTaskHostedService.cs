@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
-using Platform.ServiceDefaults.Services;
 
 namespace Platform.ApiService.BackgroundServices;
 
@@ -47,7 +46,7 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
     private async Task CheckAndExecuteScheduledTasksAsync(CancellationToken stoppingToken)
     {
         using var scope = _serviceProvider.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<PlatformDbContext>();
+        var context = scope.ServiceProvider.GetRequiredService<DbContext>();
 
         var now = DateTime.UtcNow;
         var allEnabledTasks = await context.Set<WebScrapingTask>()
@@ -73,36 +72,10 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
         {
             if (stoppingToken.IsCancellationRequested) break;
 
-            var locked = await TryLockTaskAsync(task, context, stoppingToken);
-            if (!locked)
-            {
-                _logger.LogDebug("[定时任务] 任务 {TaskName} 已在执行中，跳过", task.Name);
-                continue;
-            }
-
-            try
-            {
-                // 通过 TaskLauncher 统一触发执行，确保与 API 手动执行路径一致性
-                _taskLauncher.LaunchAsync(task.Id, task.CreatedBy ?? task.UserId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "执行定时抓取任务失败: {TaskName}", task.Name);
-                task.LastStatus = ScrapingStatus.Failed;
-                task.LastError = ex.Message;
-                task.NextRunAt = WebScraperCron.ParseNext(task.ScheduleCron!, DateTime.UtcNow);
-                await context.SaveChangesAsync(stoppingToken);
-            }
+            task.LastStatus = ScrapingStatus.Running;
+            _taskLauncher.LaunchAsync(task.Id, task.CreatedBy ?? task.UserId);
         }
-    }
 
-    private async Task<bool> TryLockTaskAsync(WebScrapingTask task, PlatformDbContext context, CancellationToken stoppingToken)
-    {
-        var rowsAffected = await context.Set<WebScrapingTask>()
-            .IgnoreQueryFilters()
-            .Where(t => t.Id == task.Id && t.LastStatus != ScrapingStatus.Running)
-            .ExecuteUpdateAsync(s => s.SetProperty(t => t.LastStatus, ScrapingStatus.Running), stoppingToken);
-
-        return rowsAffected > 0;
+        await context.SaveChangesAsync(stoppingToken);
     }
 }

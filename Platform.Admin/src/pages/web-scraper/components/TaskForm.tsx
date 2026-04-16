@@ -174,19 +174,21 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onCancel, onSuccess 
       <ProFormText
         name="scheduleCron"
         label="定时表达式"
-        placeholder="0 0 * * *"
+        placeholder="0 */10 * * * *"
         tooltip={
           <div>
             <p>Cron表达式，用于定时执行</p>
-            <p>格式：分 时 日 月 周</p>
-            <p>常用示例：</p>
+            <p>格式：分 时 日 月 周（5位）或 分 时 日 月 周 秒（6位）</p>
+            <p>常用快捷示例：</p>
             <ul style={{ margin: '8px 0', paddingLeft: 16 }}>
-              <li>每分钟执行：<code>* * * * *</code></li>
-              <li>每小时执行：<code>0 * * * *</code></li>
-              <li>每天凌晨执行：<code>0 0 * * *</code></li>
+              <li>每分钟：<code>* * * * *</code></li>
+              <li>每10分钟：<code>*/10 * * * *</code></li>
+              <li>每30分钟：<code>*/30 * * * *</code></li>
+              <li>每小时：<code>0 * * * *</code></li>
+              <li>每天凌晨：<code>0 0 * * *</code></li>
               <li>每天上午10点：<code>0 10 * * *</code></li>
-              <li>每周一执行：<code>0 0 * * 1</code></li>
-              <li>每月1号执行：<code>0 0 1 * *</code></li>
+              <li>每周一：<code>0 0 * * 1</code></li>
+              <li>每月1号：<code>0 0 1 * *</code></li>
             </ul>
           </div>
         }

@@ -179,9 +179,6 @@ public class WebScraperService : IWebScraperService
 
         try
         {
-            var dbContext = _context as PlatformDbContext;
-            var prop = dbContext?.GetType().BaseType?.GetProperty("CurrentCompanyId", BindingFlags.NonPublic | BindingFlags.Instance);
-            var companyId = prop?.GetValue(dbContext) as string;
             var task = await _context.Set<WebScrapingTask>().IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == id);
             if (task == null)
             {

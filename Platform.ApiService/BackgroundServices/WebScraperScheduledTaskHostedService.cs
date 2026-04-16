@@ -15,13 +15,16 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<WebScraperScheduledTaskHostedService> _logger;
     private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(1);
+    private readonly Platform.ApiService.Services.ITaskLauncher _taskLauncher;
 
     public WebScraperScheduledTaskHostedService(
         IServiceProvider serviceProvider,
-        ILogger<WebScraperScheduledTaskHostedService> logger)
+        ILogger<WebScraperScheduledTaskHostedService> logger,
+        Platform.ApiService.Services.ITaskLauncher taskLauncher)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
+        _taskLauncher = taskLauncher;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -79,12 +82,8 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
 
             try
             {
-                using var taskScope = _serviceProvider.CreateScope();
-                var tenantSetter = taskScope.ServiceProvider.GetRequiredService<ITenantContextSetter>();
-                tenantSetter.SetContext(task.CompanyId, task.CreatedBy);
-
-                var webScraperService = taskScope.ServiceProvider.GetRequiredService<IWebScraperService>();
-                await webScraperService.ExecuteTaskAsync(task.Id, task.CreatedBy ?? task.UserId);
+                // 通过 TaskLauncher 统一触发执行，确保与 API 手动执行路径一致性
+                _taskLauncher.LaunchAsync(task.Id, task.CreatedBy ?? task.UserId);
             }
             catch (Exception ex)
             {

@@ -148,6 +148,7 @@ const WebScraper: React.FC = () => {
       const res = await api.execute(record.id);
       if (res.success) {
         message.success(res.message || '抓取任务已启动');
+        actionRef.current?.reload();
       } else {
         message.error(res.message || '抓取失败');
       }

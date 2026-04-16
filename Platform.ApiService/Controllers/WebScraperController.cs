@@ -88,14 +88,23 @@ public class WebScraperController : BaseApiController
     [HttpPost("execute/{id}")]
     public async Task<IActionResult> ExecuteTask(string id)
     {
-        var result = await _webScraperService.ExecuteTaskAsync(id, RequiredUserId);
-
-        if (!result.Success)
+        _ = Task.Run(async () =>
         {
-            _logger.LogWarning("抓取任务执行失败: {TaskId}, {Message}", id, result.Message);
-        }
+            try
+            {
+                var result = await _webScraperService.ExecuteTaskAsync(id, RequiredUserId);
+                if (!result.Success)
+                {
+                    _logger.LogWarning("抓取任务执行失败: {TaskId}, {Message}", id, result.Message);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "抓取任务执行异常: {TaskId}", id);
+            }
+        });
 
-        return Success(result);
+        return Success(new { message = "抓取任务已启动，请稍候查看结果" });
     }
 
     [HttpPost("tasks/{id}/stop")]

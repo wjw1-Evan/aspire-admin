@@ -280,36 +280,40 @@ const WebScraper: React.FC = () => {
       valueType: 'option',
       fixed: 'right',
       width: 240,
-      render: (_, record) => (
-        <Space size={4}>
-          <Button
-            type="link"
-            size="small"
-            icon={<PlayCircleOutlined />}
-            onClick={() => handleExecute(record)}
-            loading={loading}
-          >
-            执行
-          </Button>
-          <Button
-            type="link"
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => handleEdit(record)}
-          >
-            编辑
-          </Button>
-          <Popconfirm
-            title="确认删除"
-            description="删除后无法恢复"
-            onConfirm={() => handleDelete(record.id)}
-          >
-            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-              删除
+      render: (_, record) => {
+        const isRunning = record.lastStatus === 'Running';
+        return (
+          <Space size={4}>
+            <Button
+              type="link"
+              size="small"
+              icon={isRunning ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
+              disabled={isRunning}
+              onClick={() => handleExecute(record)}
+              loading={loading}
+            >
+              {isRunning ? '运行中' : '执行'}
             </Button>
-          </Popconfirm>
-        </Space>
-      ),
+            <Button
+              type="link"
+              size="small"
+              icon={<EyeOutlined />}
+              onClick={() => handleEdit(record)}
+            >
+              编辑
+            </Button>
+            <Popconfirm
+              title="确认删除"
+              description="删除后无法恢复"
+              onConfirm={() => handleDelete(record.id)}
+            >
+              <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+                删除
+              </Button>
+            </Popconfirm>
+          </Space>
+        );
+      },
     },
   ];
 

@@ -73,7 +73,7 @@ const api = {
   toggle: (id: string) =>
     request<ApiResponse<WebScrapingTask>>(`/apiservice/api/web-scraper/tasks/${id}/toggle`, { method: 'POST' }),
   execute: (id: string) =>
-    request<ApiResponse<CrawlResult>>(`/apiservice/api/web-scraper/execute/${id}`, { method: 'POST' }),
+    request<ApiResponse<any>>(`/apiservice/api/web-scraper/execute/${id}`, { method: 'POST' }),
   stop: (id: string) =>
     request<ApiResponse<void>>(`/apiservice/api/web-scraper/tasks/${id}/stop`, { method: 'POST' }),
 };
@@ -147,7 +147,7 @@ const WebScraper: React.FC = () => {
     try {
       const res = await api.execute(record.id);
       if (res.success) {
-        message.success(res.message || '抓取任务已启动');
+        message.success(res.data?.message || '抓取任务已启动');
         actionRef.current?.reload();
       } else {
         message.error(res.message || '抓取失败');

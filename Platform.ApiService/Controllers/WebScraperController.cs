@@ -50,7 +50,7 @@ public class WebScraperController : BaseApiController
     {
         var task = await _webScraperService.GetTaskByIdAsync(id, RequiredUserId);
         if (task == null)
-            return NotFound(new { message = "任务不存在" });
+            return Success(new { success = false, message = "任务不存在" });
 
         return Success(task);
     }
@@ -61,7 +61,7 @@ public class WebScraperController : BaseApiController
         _logger.LogInformation("[Controller UpdateTask] id={Id}, ScheduleCron={ScheduleCron}", id, request.ScheduleCron);
         var task = await _webScraperService.UpdateTaskAsync(id, request, RequiredUserId);
         if (task == null)
-            return NotFound(new { message = "任务不存在" });
+            return Success(new { success = false, message = "任务不存在" });
 
         return Success(task);
     }
@@ -71,9 +71,9 @@ public class WebScraperController : BaseApiController
     {
         var result = await _webScraperService.DeleteTaskAsync(id, RequiredUserId);
         if (!result)
-            return NotFound(new { message = "任务不存在" });
+            return Success(new { success = false, message = "任务不存在" });
 
-        return Success(new { message = "删除成功" });
+        return Success(new { success = true, message = "删除成功" });
     }
 
     [HttpPost("tasks/{id}/toggle")]
@@ -81,7 +81,7 @@ public class WebScraperController : BaseApiController
     {
         var task = await _webScraperService.ToggleTaskEnabledAsync(id, RequiredUserId);
         if (task == null)
-            return NotFound(new { message = "任务不存在" });
+            return Success(new { success = false, message = "任务不存在" });
 
         return Success(task);
     }
@@ -159,7 +159,7 @@ public class WebScraperController : BaseApiController
     {
         var log = await _webScraperService.GetLogByIdAsync(id, RequiredUserId);
         if (log == null)
-            return NotFound(new { message = "日志不存在" });
+            return Success(new { success = false, message = "日志不存在" });
 
         return Success(log);
     }
@@ -180,7 +180,7 @@ public class WebScraperController : BaseApiController
     {
         var result = await _webScraperService.GetResultByIdAsync(id, RequiredUserId);
         if (result == null)
-            return NotFound(new { message = "结果不存在" });
+            return Success(new { success = false, message = "结果不存在" });
 
         return Success(result);
     }

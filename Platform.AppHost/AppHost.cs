@@ -48,9 +48,6 @@ var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("dat
 
 // 系统监控功能已迁移到 Platform.ApiService (路由: /api/system-monitor)
 
-var smtpConfig = builder.Configuration.GetSection("Smtp");
-var smtpHost = smtpConfig["Host"];
-
 var apiService = builder.AddProject<Projects.Platform_ApiService>("apiservice")
     .WithReference(mongodb)
     .WaitFor(mongodb)
@@ -61,17 +58,6 @@ var apiService = builder.AddProject<Projects.Platform_ApiService>("apiservice")
     .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
     .WithEnvironment("InternalService__ApiKey", internalServiceApiKey)
     .WithReference(chat);
-if (!string.IsNullOrEmpty(smtpHost))
-{
-    // 如果 AppHost 配置了 SMTP，则使用配置的值
-    apiService.WithEnvironment("Smtp__Host", smtpHost)
-              .WithEnvironment("Smtp__Port", smtpConfig["Port"] ?? "25")
-              .WithEnvironment("Smtp__UserName", smtpConfig["UserName"] ?? "")
-              .WithEnvironment("Smtp__Password", smtpConfig["Password"] ?? "")
-              .WithEnvironment("Smtp__EnableSsl", smtpConfig["EnableSsl"] ?? "false")
-              .WithEnvironment("Smtp__DisplayName", smtpConfig["DisplayName"] ?? "Aspire Admin")
-              .WithEnvironment("Smtp__FromEmail", smtpConfig["FromEmail"] ?? "noreply@aspire-admin.com");
-}
 
 
 var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDiscovery>>

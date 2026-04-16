@@ -51,6 +51,7 @@
 | **任务项目** | Task/ProjectController | task-management/ | 任务创建分配、项目管理 |
 | **公文管理** | DocumentController | document/ | 公文创建、审批、归档 |
 | **小科 AI** | ChatAi/XiaokeConfigController | xiaoke-management/ | AI 对话、配置管理 |
+| **网页抓取** | WebScraperController | web-scraper/ | 网页内容抓取、深度爬取、定时任务 |
 
 ## 2. 交互与 Git 提交规范
 
@@ -143,7 +144,7 @@ git push origin main
 - **不要重复造轮子**：当面临读取【工作流进度】、【IoT设备状态】或【园区资产查询】等复杂任务时，AI 助手应优先分析项目中是否已有现成的 MCP Handlers 支持提取能力。
 - 本项目不仅是一个应用，它自身也是一个巨大的 AI 知识源提供者。
 
-### MCP Handler 完整列表 (21 个)
+### MCP Handler 完整列表 (22 个)
 
 | Handler | 功能领域 |
 |---------|---------|
@@ -167,6 +168,7 @@ git push origin main
 | JoinRequestMcpToolHandler | 加入申请 |
 | StatisticsMcpToolHandler | 统计分析 |
 | SystemMcpToolHandler | 系统管理 |
+| WebScraperMcpToolHandler | 网页抓取 |
 
 ## 5. 通用开发原则
 

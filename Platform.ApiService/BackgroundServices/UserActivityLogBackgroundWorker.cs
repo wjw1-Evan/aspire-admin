@@ -32,7 +32,6 @@ public class UserActivityLogBackgroundWorker : BackgroundService
     /// <returns>一个表示后台操作的 <see cref="Task"/>。</returns>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("用户活动日志后台处理程序已启动。");
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -62,6 +61,5 @@ public class UserActivityLogBackgroundWorker : BackgroundService
             }
         }
 
-        _logger.LogInformation("用户活动日志后台处理程序已停止。");
     }
 }

@@ -31,7 +31,6 @@ public class IoTDataCollectionHostedService : BackgroundService
         _optionsMonitor.OnChange(options =>
         {
             _cronExpression = CreateCron(options.Cron);
-            _logger.LogInformation("IoT data collection cron updated to {Cron}", options.Cron);
         });
     }
 
@@ -92,7 +91,6 @@ public class IoTDataCollectionHostedService : BackgroundService
             var collector = scope.ServiceProvider.GetRequiredService<IoTDataCollector>();
             await collector.CollectDataAsync(cancellationToken).ConfigureAwait(false);
 
-            _logger.LogInformation("IoT data collection finished.");
         }
         catch (OperationCanceledException)
         {

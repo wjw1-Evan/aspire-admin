@@ -68,16 +68,6 @@ public class ApiLoggingMiddleware
             var clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
 
             // 1. 输出到控制台（运维监控）
-            _logger.LogInformation(
-                "[API] {Method} {Path}{QueryString} {StatusCode} {Elapsed}ms - UserId:{UserId} - IP:{ClientIp}",
-                context.Request.Method,
-                context.Request.Path,
-                context.Request.QueryString,
-                context.Response.StatusCode,
-                stopwatch.ElapsedMilliseconds,
-                userId,
-                clientIp
-            );
 
             // 2. 保存到数据库（业务审计）
             if (!ShouldExclude(context.Request.Path))

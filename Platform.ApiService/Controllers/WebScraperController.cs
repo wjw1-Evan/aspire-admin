@@ -58,7 +58,6 @@ public class WebScraperController : BaseApiController
     [HttpPut("tasks/{id}")]
     public async Task<IActionResult> UpdateTask(string id, [FromBody] UpdateWebScrapingTaskRequest request)
     {
-        _logger.LogInformation("[Controller UpdateTask] id={Id}, ScheduleCron={ScheduleCron}", id, request.ScheduleCron);
         var task = await _webScraperService.UpdateTaskAsync(id, request, RequiredUserId);
         if (task == null)
             throw new ArgumentException("任务不存在");
@@ -89,7 +88,6 @@ public class WebScraperController : BaseApiController
     [HttpPost("execute/{id}")]
     public async Task<IActionResult> ExecuteTask(string id)
     {
-        _logger.LogInformation("开始执行抓取任务: {TaskId}", id);
         var result = await _webScraperService.ExecuteTaskAsync(id, RequiredUserId);
 
         if (!result.Success)

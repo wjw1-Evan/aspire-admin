@@ -134,7 +134,6 @@ public class FilePreviewService : IFilePreviewService
                 metadata,
                 "cloud_storage_thumbnails");
 
-            _logger.LogInformation("Generated thumbnail for file {FileItemId}: {ThumbnailId}", fileItemId, thumbnailGridFSId);
             return thumbnailGridFSId;
         }
         catch (Exception ex)

@@ -16,16 +16,11 @@ public class UserContextMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        _logger.LogInformation("【UserContext】Path: {Path}, IsAuthenticated: {IsAuth}, User: {User}", 
-            context.Request.Path, 
-            context.User?.Identity?.IsAuthenticated,
-            context.User?.Identity?.Name);
 
         var userId = GetUserIdFromToken(context.User);
         if (!string.IsNullOrEmpty(userId))
         {
             context.Items["UserId"] = userId;
-            _logger.LogInformation("【UserContext】设置 UserId 到 Items: {UserId}", userId);
         }
         else
         {

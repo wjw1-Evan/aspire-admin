@@ -70,8 +70,6 @@ public class FileShareService : IFileShareService
         await _context.Set<Models.FileShare>().AddAsync(share);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Created file share {ShareId} for file {FileItemId} with token {ShareToken}",
-            share.Id, fileItemId, shareToken);
 
         return share;
     }
@@ -129,7 +127,6 @@ public class FileShareService : IFileShareService
         if (request.Settings != null) share.Settings = request.Settings;
 
         await _context.SaveChangesAsync();
-        _logger.LogInformation("Updated share {ShareId}", id);
         return share;
     }
 
@@ -147,7 +144,6 @@ public class FileShareService : IFileShareService
 
         _context.Set<Models.FileShare>().Remove(share);
         await _context.SaveChangesAsync();
-        _logger.LogInformation("Deleted share {ShareId}", id);
     }
 
     /// <summary>

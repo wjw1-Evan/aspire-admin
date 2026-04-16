@@ -79,7 +79,6 @@ public class FileVersionController : BaseApiController
         try
         {
             var version = await _fileVersionService.CreateVersionAsync(fileId, request.File, request.Comment);
-            _logger.LogInformation("创建版本, VersionId: {VersionId}, FileId: {FileId}", version.Id, fileId);
             return Success(version, "版本创建成功");
         }
         catch (ArgumentException ex)
@@ -164,7 +163,6 @@ public class FileVersionController : BaseApiController
         try
         {
             var version = await _fileVersionService.RestoreVersionAsync(fileId, versionNumber);
-            _logger.LogInformation("恢复版本, FileId: {FileId}, Version: {VersionNumber}", fileId, versionNumber);
             return Success(version, "版本恢复成功");
         }
         catch (ArgumentException ex)
@@ -196,7 +194,6 @@ public class FileVersionController : BaseApiController
         try
         {
             await _fileVersionService.DeleteVersionAsync(versionId);
-            _logger.LogInformation("删除版本, VersionId: {VersionId}", versionId);
             return Success(null, "版本已删除");
         }
         catch (ArgumentException ex)
@@ -232,7 +229,6 @@ public class FileVersionController : BaseApiController
                 throw new ArgumentException("版本 {versionId} 不存在");
 
             var stream = await _fileVersionService.DownloadVersionAsync(versionId);
-            _logger.LogInformation("下载版本, VersionId: {VersionId}", versionId);
 
             var fileName = $"version_{version.VersionNumber}_{DateTime.Now:yyyyMMdd_HHmmss}";
             return File(stream, "application/octet-stream", fileName);
@@ -273,7 +269,6 @@ public class FileVersionController : BaseApiController
         try
         {
             var comparison = await _fileVersionService.CompareVersionsAsync(versionId1, versionId2);
-            _logger.LogInformation("比较版本, V1: {VersionId1}, V2: {VersionId2}", versionId1, versionId2);
             return Success(comparison);
         }
         catch (ArgumentException ex)
@@ -331,7 +326,6 @@ public class FileVersionController : BaseApiController
         try
         {
             var version = await _fileVersionService.SetAsCurrentVersionAsync(versionId);
-            _logger.LogInformation("设置当前版本, VersionId: {VersionId}", versionId);
             return Success(version, "已设置为当前版本");
         }
         catch (ArgumentException ex)
@@ -394,7 +388,6 @@ public class FileVersionController : BaseApiController
         try
         {
             var result = await _fileVersionService.CleanupOldVersionsAsync(fileId, keepCount);
-            _logger.LogInformation("清理旧版本, FileId: {FileId}, Keep: {KeepCount}", fileId, keepCount);
             return Success(result, $"清理完成，删除了 {result.SuccessCount} 个旧版本");
         }
         catch (Exception ex)
@@ -424,7 +417,6 @@ public class FileVersionController : BaseApiController
         try
         {
             var result = await _fileVersionService.BatchDeleteVersionsAsync(request.VersionIds);
-            _logger.LogInformation("批量删除版本, Count: {Count}, Success: {SuccessCount}", request.VersionIds.Count, result.SuccessCount);
             return Success(result, $"批量删除完成，成功 {result.SuccessCount} 个，失败 {result.FailureCount} 个");
         }
         catch (Exception ex)

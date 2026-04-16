@@ -112,7 +112,6 @@ public class StorageQuotaController : BaseApiController
                 request.TotalQuota,
                 request.WarningThreshold,
                 request.IsEnabled);
-            _logger.LogInformation("设置用户配额, UserId: {UserId}, TotalQuota: {TotalQuota}", userId, request.TotalQuota);
             return Success(quota, "配额设置成功");
         }
         catch (ArgumentException ex)
@@ -147,7 +146,6 @@ public class StorageQuotaController : BaseApiController
         try
         {
             var result = await _storageQuotaService.BatchSetUserQuotasAsync(request.QuotaSettings);
-            _logger.LogInformation("批量设置配额, Count: {Count}, Success: {SuccessCount}", request.QuotaSettings.Count, result.SuccessCount);
             return Success(result, $"批量设置完成，成功 {result.SuccessCount} 个，失败 {result.FailureCount} 个");
         }
         catch (Exception ex)
@@ -172,7 +170,6 @@ public class StorageQuotaController : BaseApiController
         try
         {
             var quota = await _storageQuotaService.RecalculateUserStorageAsync(userId);
-            _logger.LogInformation("重新计算用户存储, UserId: {UserId}", userId);
             return Success(quota, "存储使用量重新计算完成");
         }
         catch (ArgumentException ex)
@@ -207,7 +204,6 @@ public class StorageQuotaController : BaseApiController
             // 清除配额，恢复为未分配状态
             const long defaultQuota = 0;
             var quota = await _storageQuotaService.SetUserQuotaAsync(userId, defaultQuota, 0, false);
-            _logger.LogInformation("删除用户配额, UserId: {UserId}", userId);
             return Success(quota, "已清除用户配额，需管理员重新分配后才能使用网盘");
         }
         catch (ArgumentException ex)
@@ -370,7 +366,6 @@ public class StorageQuotaController : BaseApiController
         {
             var result = await _storageQuotaService.CleanupUnusedQuotasAsync();
             var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
-            _logger.LogInformation("清理未使用配额, CompanyId: {CompanyId}, Count: {Count}", companyId, result.SuccessCount);
             return Success(result, $"清理完成，删除了 {result.SuccessCount} 个未使用的配额记录");
         }
         catch (Exception ex)
@@ -441,7 +436,6 @@ public class StorageQuotaController : BaseApiController
         try
         {
             var quota = await _storageQuotaService.UpdateStorageUsageAsync(userId, request.SizeChange);
-            _logger.LogInformation("更新存储使用量, UserId: {UserId}, SizeChange: {SizeChange}", userId, request.SizeChange);
             return Success(quota, "存储使用量更新成功");
         }
         catch (ArgumentException ex)

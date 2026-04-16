@@ -68,11 +68,6 @@ public class GridFSStorageService
             options,
             cancellationToken);
 
-        _logger.LogInformation(
-            "Uploaded file {FileName} to GridFS bucket {BucketName} with ID {FileId}",
-            fileName,
-            bucketName,
-            objectId);
 
         return objectId.ToString();
     }
@@ -194,7 +189,6 @@ public class GridFSStorageService
         try
         {
             await bucket.DeleteAsync(objectId, cancellationToken);
-            _logger.LogInformation("Deleted file {FileId} from GridFS bucket {BucketName}", fileId, bucketName);
             return true;
         }
         catch (GridFSFileNotFoundException)
@@ -235,11 +229,6 @@ public class GridFSStorageService
         try
         {
             await bucket.RenameAsync(objectId, newFileName, cancellationToken: cancellationToken);
-            _logger.LogInformation(
-                "Renamed file {FileId} to {NewFileName} in bucket {BucketName}",
-                fileId,
-                newFileName,
-                bucketName);
             return true;
         }
         catch (GridFSFileNotFoundException)
@@ -270,11 +259,6 @@ public class GridFSStorageService
                 update,
                 cancellationToken: cancellationToken);
 
-            _logger.LogInformation(
-                "Updated metadata for file {FileId} in bucket {BucketName}: {Success}",
-                fileId,
-                bucketName,
-                result.ModifiedCount > 0);
 
             return result.ModifiedCount > 0;
         }

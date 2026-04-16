@@ -57,7 +57,6 @@ public class CloudStorageController : BaseApiController
     public async Task<IActionResult> CreateFolder([FromBody] CreateFolderRequest request)
     {
         var folder = await _cloudStorageService.CreateFolderAsync(request.Name, request.ParentId);
-        _logger.LogInformation("创建文件夹, FolderId: {FolderId}", folder.Id);
         return Success(folder, "文件夹创建成功");
     }
 
@@ -70,7 +69,6 @@ public class CloudStorageController : BaseApiController
     public async Task<IActionResult> UploadFile([FromForm] UploadFileRequest request)
     {
         var fileItem = await _cloudStorageService.UploadFileAsync(request.File, request.ParentId, request.Overwrite);
-        _logger.LogInformation("上传文件, FileId: {FileId}, FileName: {FileName}", fileItem.Id, request.File.FileName);
         return Success(fileItem, "文件上传成功");
     }
 
@@ -88,7 +86,6 @@ public class CloudStorageController : BaseApiController
             throw new ArgumentException("文件列表不能为空");
 
         var result = await _cloudStorageService.UploadMultipleFilesAsync(files, parentId ?? string.Empty);
-        _logger.LogInformation("批量上传文件, Count: {Count}", files.Count);
         return Success(result, "批量上传成功");
     }
 
@@ -139,7 +136,6 @@ public class CloudStorageController : BaseApiController
             throw new ArgumentException("文件项ID不能为空");
 
         var fileItem = await _cloudStorageService.RenameFileItemAsync(id, request.NewName);
-        _logger.LogInformation("重命名文件, Id: {Id}", id);
         return Success(fileItem, "重命名成功");
     }
 
@@ -157,7 +153,6 @@ public class CloudStorageController : BaseApiController
             throw new ArgumentException("文件项ID不能为空");
 
         var fileItem = await _cloudStorageService.MoveFileItemAsync(id, request.NewParentId);
-        _logger.LogInformation("移动文件, Id: {Id}", id);
         return Success(fileItem, "移动成功");
     }
 
@@ -175,7 +170,6 @@ public class CloudStorageController : BaseApiController
             throw new ArgumentException("文件项ID不能为空");
 
         var fileItem = await _cloudStorageService.CopyFileItemAsync(id, request.NewParentId, request.NewName);
-        _logger.LogInformation("复制文件, Id: {Id}", id);
         return Success(fileItem, "复制成功");
     }
 
@@ -192,7 +186,6 @@ public class CloudStorageController : BaseApiController
             throw new ArgumentException("文件项ID不能为空");
 
         await _cloudStorageService.DeleteFileItemAsync(id);
-        _logger.LogInformation("删除文件项 (移动到回收站), Id: {Id}", id);
         return Success(null, "已移动到回收站");
     }
 
@@ -216,7 +209,6 @@ public class CloudStorageController : BaseApiController
             throw new ArgumentException("文件 {id} 不存在");
 
         var stream = await _cloudStorageService.DownloadFileAsync(id);
-        _logger.LogInformation("下载文件, Id: {Id}", id);
 
         return File(stream, fileItem.MimeType, fileItem.Name);
     }
@@ -234,7 +226,6 @@ public class CloudStorageController : BaseApiController
             throw new ArgumentException("文件夹ID不能为空");
 
         var stream = await _cloudStorageService.DownloadFolderAsZipAsync(id);
-        _logger.LogInformation("下载文件夹ZIP, Id: {Id}", id);
         return File(stream, "application/zip", $"folder-{id}.zip");
     }
 
@@ -384,7 +375,6 @@ public class CloudStorageController : BaseApiController
             throw new ArgumentException("文件项ID不能为空");
 
         var fileItem = await _cloudStorageService.RestoreFileItemAsync(id, request?.NewParentId);
-        _logger.LogInformation("恢复文件, Id: {Id}", id);
         return Success(fileItem, "恢复成功");
     }
 
@@ -401,7 +391,6 @@ public class CloudStorageController : BaseApiController
             throw new ArgumentException("文件项ID不能为空");
 
         await _cloudStorageService.PermanentDeleteFileItemAsync(id);
-        _logger.LogInformation("永久删除文件, Id: {Id}", id);
         return Success(null, "文件已永久删除");
     }
 
@@ -414,7 +403,6 @@ public class CloudStorageController : BaseApiController
     public async Task<IActionResult> EmptyRecycleBin()
     {
         await _cloudStorageService.EmptyRecycleBinAsync();
-        _logger.LogInformation("清空回收站");
         return Success(null, "回收站已清空");
     }
 
@@ -429,7 +417,6 @@ public class CloudStorageController : BaseApiController
     {
         var days = expireDays ?? 30;
         var result = await _cloudStorageService.CleanupExpiredRecycleBinItemsAsync(days);
-        _logger.LogInformation("自动清理回收站, Days: {Days}, Deleted: {Count}", days, result.deletedCount);
         return Success(new { deletedCount = result.deletedCount, freedSpace = result.freedSpace },
             $"自动清理完成，删除 {result.deletedCount} 个文件，释放 {result.freedSpace} 字节");
     }
@@ -485,7 +472,6 @@ public class CloudStorageController : BaseApiController
             }
         }
 
-        _logger.LogInformation("批量永久删除, Success: {SuccessCount}, Failure: {FailureCount}", successCount, failureCount);
 
         return Success(new { successCount, failureCount, errors },
             $"批量永久删除完成，成功 {successCount} 个，失败 {failureCount} 个");
@@ -504,7 +490,6 @@ public class CloudStorageController : BaseApiController
             throw new ArgumentException("文件项ID列表不能为空");
 
         var result = await _cloudStorageService.BatchDeleteAsync(request.Ids);
-        _logger.LogInformation("批量删除, Success: {SuccessCount}, Failure: {FailureCount}", result.SuccessCount, result.FailureCount);
         return Success(result, $"批量删除完成，成功 {result.SuccessCount} 个，失败 {result.FailureCount} 个");
     }
 
@@ -521,7 +506,6 @@ public class CloudStorageController : BaseApiController
             throw new ArgumentException("文件项ID列表不能为空");
 
         var result = await _cloudStorageService.BatchMoveAsync(request.Ids, request.TargetParentId);
-        _logger.LogInformation("批量移动, Success: {SuccessCount}, Failure: {FailureCount}", result.SuccessCount, result.FailureCount);
         return Success(result, $"批量移动完成，成功 {result.SuccessCount} 个，失败 {result.FailureCount} 个");
     }
 
@@ -538,7 +522,6 @@ public class CloudStorageController : BaseApiController
             throw new ArgumentException("文件项ID列表不能为空");
 
         var result = await _cloudStorageService.BatchCopyAsync(request.Ids, request.TargetParentId);
-        _logger.LogInformation("批量复制, Success: {SuccessCount}, Failure: {FailureCount}", result.SuccessCount, result.FailureCount);
         return Success(null, $"批量复制完成，成功 {result.SuccessCount} 个，失败 {result.FailureCount} 个");
     }
 

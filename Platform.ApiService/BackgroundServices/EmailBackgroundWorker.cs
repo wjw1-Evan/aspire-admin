@@ -28,7 +28,6 @@ public class EmailBackgroundWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("邮件后台处理程序已启动。");
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -37,7 +36,6 @@ public class EmailBackgroundWorker : BackgroundService
             {
                 // 1. 从队列中获取任务
                 taskItem = await _queue.DequeueAsync(stoppingToken);
-                _logger.LogInformation("正在后台发送邮件：To={To}, Subject={Subject}", taskItem.ToEmail, taskItem.Subject);
 
                 using var scope = _serviceProvider.CreateScope();
                 var emailService = scope.ServiceProvider.GetRequiredService<ISmtpEmailService>();
@@ -64,7 +62,6 @@ public class EmailBackgroundWorker : BackgroundService
                         log2.SentAt = DateTime.UtcNow;
                         await dbContext.SaveChangesAsync();
                     }
-                    _logger.LogInformation("邮件后台发送成功：ID={LogId}", taskItem.LogId);
                 }
                 catch (Exception sendEx)
                 {
@@ -91,6 +88,5 @@ public class EmailBackgroundWorker : BackgroundService
             }
         }
 
-        _logger.LogInformation("邮件后台处理程序已停止。");
     }
 }

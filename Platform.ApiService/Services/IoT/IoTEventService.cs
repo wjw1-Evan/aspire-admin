@@ -36,7 +36,6 @@ public class IoTEventService
 
         await _context.Set<IoTDeviceEvent>().AddAsync(@event);
         await _context.SaveChangesAsync();
-        _logger.LogInformation("Event created: {EventType} for device {DeviceId}", eventType, deviceId);
         return @event;
     }
 

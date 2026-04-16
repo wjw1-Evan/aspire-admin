@@ -61,7 +61,6 @@ public class DocumentWorkflowService : IDocumentWorkflowService
             await _context.SaveChangesAsync();
         }
 
-        _logger.LogInformation("公文已提交: DocumentId={DocumentId}, WorkflowInstanceId={InstanceId}", documentId, instance.Id);
         return instance;
     }
 
@@ -122,7 +121,6 @@ public class DocumentWorkflowService : IDocumentWorkflowService
 
         await _context.Set<Document>().AddAsync(document);
         await _context.SaveChangesAsync();
-        _logger.LogInformation("基于流程表单创建公文: DocumentId={DocumentId}, WorkflowDefinitionId={DefinitionId}", document.Id, workflowDefinitionId);
         return document;
     }
 

@@ -41,8 +41,6 @@ public class WorkflowExportImportService : IWorkflowExportImportService
 
         try
         {
-            _logger.LogInformation("开始导出工作流: WorkflowCount={WorkflowCount}, Format={Format}",
-                workflowIds.Count, config.Format);
 
             // 获取工作流定义
             var workflows = await _context.Set<WorkflowDefinition>().Where(w => workflowIds.Contains(w.Id)).ToListAsync();
@@ -113,8 +111,6 @@ public class WorkflowExportImportService : IWorkflowExportImportService
     {
         try
         {
-            _logger.LogInformation("开始导出过滤结果: FilterCount={FilterCount}, Format={Format}",
-                filters.Count, config.Format);
 
             var filter = BuildFilterExpression(filters);
             var workflows = await _context.Set<WorkflowDefinition>().Where(filter).ToListAsync();
@@ -163,7 +159,6 @@ public class WorkflowExportImportService : IWorkflowExportImportService
     {
         try
         {
-            _logger.LogInformation("开始验证导入文件: FileName={FileName}, Size={Size}", fileName, fileContent.Length);
 
             var result = new WorkflowImportResult();
 
@@ -185,8 +180,6 @@ public class WorkflowExportImportService : IWorkflowExportImportService
                 await ValidateWorkflowForImportAsync(workflow, result);
             }
 
-            _logger.LogInformation("导入文件验证完成: FileName={FileName}, Conflicts={ConflictCount}, Errors={ErrorCount}",
-                fileName, result.Conflicts.Count, result.Errors.Count);
 
             return result;
         }
@@ -204,8 +197,6 @@ public class WorkflowExportImportService : IWorkflowExportImportService
     {
         try
         {
-            _logger.LogInformation("开始导入工作流: FileName={FileName}, OverwriteExisting={OverwriteExisting}",
-                fileName, overwriteExisting);
 
             var result = new WorkflowImportResult();
 
@@ -247,8 +238,6 @@ public class WorkflowExportImportService : IWorkflowExportImportService
                 }
             }
 
-            _logger.LogInformation("工作流导入完成: FileName={FileName}, Imported={ImportedCount}, Failed={FailedCount}",
-                fileName, result.ImportedCount, result.FailedCount);
 
             return result;
         }
@@ -275,8 +264,6 @@ public class WorkflowExportImportService : IWorkflowExportImportService
     {
         try
         {
-            _logger.LogInformation("开始解决导入冲突: FileName={FileName}, ResolutionCount={ResolutionCount}",
-                fileName, resolutions.Count);
 
             var result = new WorkflowImportResult();
 

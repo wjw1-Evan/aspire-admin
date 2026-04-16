@@ -79,7 +79,6 @@ public class JoinRequestService : IJoinRequestService
         await _context.Set<CompanyJoinRequest>().AddAsync(joinRequest);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("用户 {UserId} 申请加入企业 {CompanyId}", userId, companyId);
         await NotifyCompanyAdminsAsync(companyId, userId, company.Name, joinRequest.Id!);
 
         return joinRequest;
@@ -213,7 +212,6 @@ public class JoinRequestService : IJoinRequestService
         request.ReviewedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
-        _logger.LogInformation("管理员 {AdminId} 批准用户 {UserId} 加入企业 {CompanyId}", adminUserId, request.UserId, request.CompanyId);
         return true;
     }
 
@@ -243,7 +241,6 @@ public class JoinRequestService : IJoinRequestService
         request.RejectReason = rejectReason;
 
         await _context.SaveChangesAsync();
-        _logger.LogInformation("管理员 {AdminId} 拒绝用户 {UserId} 加入企业 {CompanyId}，原因: {Reason}", adminUserId, request.UserId, request.CompanyId, rejectReason);
         return true;
     }
 

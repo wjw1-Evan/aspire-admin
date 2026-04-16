@@ -80,7 +80,6 @@ public class AiAssistantCoordinator : IAiAssistantCoordinator
             return existing[0];
         }
 
-        _logger.LogInformation("未找到现有助手会话，正在为用户 {UserId} 创建新会话", user.Id);
 
         var participantNames = new Dictionary<string, string>
         {
@@ -113,7 +112,6 @@ public class AiAssistantCoordinator : IAiAssistantCoordinator
 
         await _context.Set<ChatSession>().AddAsync(session);
         await _context.SaveChangesAsync();
-        _logger.LogInformation("已为用户 {UserId} 创建 AI 助手会话 {SessionId}", user.Id, session.Id);
         return session;
     }
 }

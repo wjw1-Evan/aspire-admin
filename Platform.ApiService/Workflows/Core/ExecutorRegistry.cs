@@ -29,7 +29,6 @@ public class ExecutorRegistry : IExecutorRegistry
     public void Register(string nodeType, IExecutor executor)
     {
         _executors[nodeType] = executor;
-        _logger.LogInformation("Registered executor for node type: {NodeType}", nodeType);
     }
 
     public IExecutor GetExecutor(string nodeType)

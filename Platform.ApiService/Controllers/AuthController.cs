@@ -116,7 +116,6 @@ public class AuthController : BaseApiController
 
     public async Task<IActionResult> GetCurrentUser()
     {
-        _logger.LogInformation("【AuthController.GetCurrentUser】UserId: {UserId}", CurrentUserId);
 
         var user = await _authService.GetCurrentUserAsync();
         return Success(user);

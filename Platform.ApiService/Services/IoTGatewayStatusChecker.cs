@@ -57,11 +57,9 @@ public class IoTGatewayStatusChecker
                 {
                     await UpdateGatewayStatusAsync(gateway, newStatus, cancellationToken);
                     updatedCount++;
-                    _logger.LogInformation("Gateway {GatewayId} ({Address}) status updated: {OldStatus} -> {NewStatus} for company {CompanyId}", gateway.GatewayId, gateway.Address, gateway.Status, newStatus, companyId);
                 }
             }
         }
-        if (updatedCount > 0) _logger.LogInformation("Updated {UpdatedCount} gateway statuses across {TenantCount} tenants", updatedCount, gatewaysByTenant.Count);
     }
 
     private async Task<IoTDeviceStatus> PingGatewayAsync(IoTGateway gateway, CancellationToken cancellationToken)

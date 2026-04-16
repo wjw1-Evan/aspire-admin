@@ -70,8 +70,6 @@ public class BulkOperationService : IBulkOperationService
 
         await _context.Set<BulkOperation>().AddAsync(bulkOperation);
         await _context.SaveChangesAsync();
-        _logger.LogInformation("批量操作已创建: OperationId={OperationId}, Type={OperationType}, WorkflowCount={WorkflowCount}",
-            bulkOperation.Id, operationType, workflowIds.Count);
 
         return bulkOperation;
     }
@@ -101,7 +99,6 @@ public class BulkOperationService : IBulkOperationService
 
         try
         {
-            _logger.LogInformation("开始执行批量操作: OperationId={OperationId}, Type={OperationType}", operationId, operation.OperationType);
 
             switch (operation.OperationType)
             {
@@ -123,14 +120,11 @@ public class BulkOperationService : IBulkOperationService
 
             await UpdateOperationStatusAsync(operationId, BulkOperationStatus.Completed, null, DateTime.UtcNow);
 
-            _logger.LogInformation("批量操作执行完成: OperationId={OperationId}, Success={SuccessCount}, Failed={FailedCount}",
-                operationId, operation.SuccessCount, operation.FailureCount);
 
             return true;
         }
         catch (OperationCanceledException)
         {
-            _logger.LogInformation("批量操作被取消: OperationId={OperationId}", operationId);
             await UpdateOperationStatusAsync(operationId, BulkOperationStatus.Cancelled);
             return false;
         }
@@ -158,7 +152,6 @@ public class BulkOperationService : IBulkOperationService
         if (operation.Status == BulkOperationStatus.InProgress || operation.Status == BulkOperationStatus.Queued)
         {
             await UpdateOperationStatusAsync(operationId, BulkOperationStatus.Cancelled);
-            _logger.LogInformation("批量操作已取消: OperationId={OperationId}", operationId);
             return true;
         }
 
@@ -223,7 +216,6 @@ public class BulkOperationService : IBulkOperationService
             }
         }
 
-        _logger.LogInformation("清理已完成的批量操作: 删除数量={DeletedCount}", deletedCount);
         return deletedCount;
     }
 

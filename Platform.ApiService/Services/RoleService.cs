@@ -233,7 +233,6 @@ public class RoleService : IRoleService
         _context.Set<Role>().Remove(role);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("已删除角色: {RoleName} ({RoleId}), 原因: {Reason}", role.Name!, id, reason ?? "未提供");
         return true;
     }
 

@@ -40,7 +40,6 @@ public class McpService : IMcpService
     /// <returns>包含服务器功能和信息的响应</returns>
     public Task<McpInitializeResponse> InitializeAsync(McpInitializeRequest request)
     {
-        _logger.LogInformation("MCP 服务初始化，共 {Count} 个 Handler", _handlers.Count());
         return Task.FromResult(new McpInitializeResponse
         {
             ProtocolVersion = McpProtocolVersion.Version,
@@ -86,7 +85,6 @@ public class McpService : IMcpService
             var result = await handler.HandleAsync(toolName, arguments, currentUserId);
             stopwatch.Stop();
 
-            _logger.LogInformation("工具执行成功: {ToolName}, 耗时: {Ms}ms", toolName, stopwatch.ElapsedMilliseconds);
             return new McpCallToolResponse { Content = WrapResult(result) };
         }
         catch (Exception ex)
@@ -136,8 +134,6 @@ public class McpService : IMcpService
 
             if (!toolsToExecute.Any()) return null;
 
-            _logger.LogInformation("准备执行 {Count} 个工具: {Tools}",
-                toolsToExecute.Count, string.Join(", ", toolsToExecute.Select(t => t.Name)));
 
             // 3. 并行执行工具
             var tasks = toolsToExecute.Select(async tool =>

@@ -118,7 +118,6 @@ public class RegistrationService : IRegistrationService
 
             await _context.Set<User>().AddAsync(user);
             await _context.SaveChangesAsync();
-            _logger.LogInformation("用户注册成功: {Username} ({UserId})", user.Username, user.Id);
 
             var companyResult = await CreatePersonalCompanyWithDetailsAsync(user);
             personalCompany = companyResult.Company;
@@ -136,7 +135,6 @@ public class RegistrationService : IRegistrationService
             user.CurrentCompanyId = personalCompany.Id;
             user.PersonalCompanyId = personalCompany.Id;
 
-            _logger.LogInformation("用户 {Username} 注册完成，个人企业: {CompanyName}", user.Username, personalCompany.Name);
 
             return user;
         }
@@ -176,7 +174,6 @@ public class RegistrationService : IRegistrationService
                 {
                     var c = await _context.Set<Company>().FirstOrDefaultAsync(x => x.Id == company.Id!);
                     if (c != null) { _context.Set<Company>().Remove(c); await _context.SaveChangesAsync(); }
-                    _logger.LogInformation("回滚：删除企业 {CompanyId}", company.Id);
                 }
             }
 
@@ -184,10 +181,8 @@ public class RegistrationService : IRegistrationService
             {
                 var userToDelete = await _context.Set<User>().FirstOrDefaultAsync(x => x.Id == user.Id!);
                 if (userToDelete != null) { _context.Set<User>().Remove(userToDelete); await _context.SaveChangesAsync(); }
-                _logger.LogInformation("回滚：删除用户 {UserId}", user.Id);
             }
 
-            _logger.LogInformation("用户注册回滚完成");
         }
         catch (Exception ex)
         {
@@ -220,11 +215,9 @@ public class RegistrationService : IRegistrationService
 
             await _context.Set<Company>().AddAsync(company);
             await _context.SaveChangesAsync();
-            _logger.LogInformation("创建个人企业: {CompanyName} ({CompanyCode}), CreatedBy: {CreatedBy}", company.Name, company.Code, company.CreatedBy);
 
             var allMenus = await _context.Set<Menu>().IgnoreQueryFilters().Where(m => m.IsEnabled == true).ToListAsync();
             var allMenuIds = allMenus.Select(m => m.Id!).ToList();
-            _logger.LogInformation("获取 {Count} 个全局菜单", allMenuIds.Count);
 
             if (!allMenuIds.Any())
             {
@@ -243,7 +236,6 @@ public class RegistrationService : IRegistrationService
 
             await _context.Set<Role>().AddAsync(adminRole);
             await _context.SaveChangesAsync();
-            _logger.LogInformation("创建管理员角色: {RoleId}，分配 {MenuCount} 个菜单", adminRole.Id, allMenuIds.Count);
 
             userCompany = new UserCompany
             {
@@ -257,7 +249,6 @@ public class RegistrationService : IRegistrationService
 
             await _context.Set<UserCompany>().AddAsync(userCompany);
             await _context.SaveChangesAsync();
-            _logger.LogInformation("创建用户-企业关联: {UserId} -> {CompanyId}", user.Id, company.Id);
 
             return new CompanyCreationResult
             {

@@ -111,12 +111,8 @@ public class HttpIoTDataFetchClient : IIoTDataFetchClient
                     return Array.Empty<CollectedDataPointValue>();
                 }
 
-                _logger.LogInformation("Fetched data for device {DeviceId}: {KeyCount} keys in response: [{Keys}]", 
-                    device.DeviceId, payload.Count, string.Join(", ", payload.Keys));
                 
                 var mapped = MapToDataPoints(payload, dataPoints);
-                _logger.LogInformation("Mapped {MappedCount}/{TotalCount} data points for device {DeviceId}", 
-                    mapped.Count, dataPoints.Count, device.DeviceId);
                 
                 if (mapped.Count == 0 && dataPoints.Count > 0)
                 {

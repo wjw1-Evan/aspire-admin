@@ -164,7 +164,6 @@ public class WorkflowPerformanceService : IWorkflowPerformanceService
             bottlenecks.Add($"系统整体响应时间过长: {overallAvg:F2}秒");
         }
 
-        _logger.LogInformation("性能瓶颈检测完成: 发现{Count}个问题", bottlenecks.Count);
         
         return bottlenecks;
     }

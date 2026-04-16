@@ -38,7 +38,6 @@ public class SmtpEmailService : ISmtpEmailService
     /// </summary>
     public async Task SendEmailAsync(string toEmail, string subject, string htmlBody)
     {
-        _logger.LogInformation("正在入队异步邮件任务：To={To}, Subject={Subject}", toEmail, subject);
 
         // 1. 创建待发送日志
         var log = new EmailLog
@@ -100,7 +99,6 @@ public class SmtpEmailService : ISmtpEmailService
                 secureOption = SecureSocketOptions.StartTls;
             }
             
-            _logger.LogInformation("正在连接 SMTP 服务器：Host={Host}, Port={Port}, Option={Option}", _options.Host, _options.Port, secureOption);
             
             await client.ConnectAsync(_options.Host, _options.Port, secureOption);
 
@@ -112,7 +110,6 @@ public class SmtpEmailService : ISmtpEmailService
             await client.SendAsync(message);
             await client.DisconnectAsync(true);
             
-            _logger.LogInformation("MailKit 发送成功：To={To}", toEmail);
         }
         catch (Exception ex)
         {

@@ -51,7 +51,6 @@ public class FileShareController : BaseApiController
         try
         {
             var share = await _fileShareService.CreateShareAsync(fileItemId, request);
-            _logger.LogInformation("创建分享, ShareId: {ShareId}, FileItemId: {FileItemId}", share.Id, fileItemId);
             return Success(share, "分享创建成功");
         }
         catch (ArgumentException ex)
@@ -115,7 +114,6 @@ public class FileShareController : BaseApiController
         try
         {
             var share = await _fileShareService.UpdateShareAsync(id, request);
-            _logger.LogInformation("更新分享, ShareId: {ShareId}", id);
             return Success(share, "分享更新成功");
         }
         catch (ArgumentException ex)
@@ -148,7 +146,6 @@ public class FileShareController : BaseApiController
         try
         {
             await _fileShareService.DeleteShareAsync(id);
-            _logger.LogInformation("删除分享, ShareId: {ShareId}", id);
             return Success(null, "分享已删除");
         }
         catch (ArgumentException ex)
@@ -256,7 +253,6 @@ public class FileShareController : BaseApiController
         try
         {
             var result = await _fileShareService.BatchDeleteSharesAsync(request.Ids);
-            _logger.LogInformation("批量删除分享, Count: {Count}, Success: {SuccessCount}", request.Ids.Count, result.SuccessCount);
             return Success(result, $"批量删除完成，成功 {result.SuccessCount} 个，失败 {result.FailureCount} 个");
         }
         catch (Exception ex)

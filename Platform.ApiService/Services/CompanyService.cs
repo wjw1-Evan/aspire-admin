@@ -180,14 +180,12 @@ public class CompanyService : ICompanyService
 
             await _context.Set<Company>().AddAsync(company);
             await _context.SaveChangesAsync();
-            _logger.LogInformation("创建企业: {CompanyName} ({CompanyCode}), ID: {CompanyId}, CreatedBy: {CreatedBy}", company.Name, company.Code, company.Id, company.CreatedBy);
 
             // 2. 获取所有全局菜单ID（菜单是全局资源，所有企业共享）
             var allMenus = await _context.Set<Menu>()
                 .Where(m => m.IsEnabled == true)
                 .ToListAsync();
             var allMenuIds = allMenus.Select(m => m.Id!).ToList();
-            _logger.LogInformation("获取全局菜单: {Count} 个", allMenuIds.Count);
 
             // 验证菜单数据完整性
             if (!allMenuIds.Any())
@@ -209,7 +207,6 @@ public class CompanyService : ICompanyService
 
             await _context.Set<Role>().AddAsync(adminRole);
             await _context.SaveChangesAsync();
-            _logger.LogInformation("创建管理员角色: {RoleId}，分配 {MenuCount} 个菜单", adminRole.Id, allMenuIds.Count);
 
             // 4. 创建用户-企业关联（用户是管理员）
             userCompany = new UserCompany
@@ -225,8 +222,6 @@ public class CompanyService : ICompanyService
 
             await _context.Set<UserCompany>().AddAsync(userCompany);
             await _context.SaveChangesAsync();
-            _logger.LogInformation("创建用户-企业关联: {UserId} -> {CompanyId}，角色: {RoleId}",
-                currentUser.Id, company.Id, adminRole.Id);
 
             return company;
         }

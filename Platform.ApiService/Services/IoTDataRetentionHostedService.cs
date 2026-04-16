@@ -89,8 +89,5 @@ public class IoTDataRetentionHostedService : BackgroundService
         // 2. 过期 C2D 命令处理
         int expiredCommands = await iotService.ExpireCommandsAsync();
 
-        _logger.LogInformation(
-            "IoT data retention completed: deleted {Records} telemetry records, expired {Commands} commands",
-            deletedRecords, expiredCommands);
     }
 }

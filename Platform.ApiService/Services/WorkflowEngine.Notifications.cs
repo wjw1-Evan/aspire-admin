@@ -124,7 +124,6 @@ public partial class WorkflowEngine
                 ccUserIds,
                 ccMessage
             );
-            _logger.LogInformation("发送抄送通知成功: InstanceId={InstanceId}, CcUsers={CcUsers}", instanceId, string.Join(",", ccUserIds));
         }
     }
 }

@@ -182,7 +182,6 @@ public class GraphEngine : IGraphEngine
         var node = context.WorkflowDefinition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
         if (node == null) return context;
 
-        _logger.LogInformation("Executing node {NodeId} ({NodeType})", nodeId, node.Data.NodeType);
 
         await _eventBus.PublishAsync(new NodeRunStartedEvent
         {

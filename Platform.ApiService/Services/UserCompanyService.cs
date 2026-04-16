@@ -362,7 +362,6 @@ public class UserCompanyService : IUserCompanyService
                 var membershipToDelete = await _context.Set<UserCompany>().FirstOrDefaultAsync(x => x.Id == membership.Id!);
                 if (membershipToDelete != null) { _context.Set<UserCompany>().Remove(membershipToDelete); await _context.SaveChangesAsync(); }
 
-                _logger.LogInformation("由于申请状态变更为拒绝，已移除用户 {UserId} 在企业 {CompanyId} 的成员身份", request.UserId, request.CompanyId);
             }
         }
 
@@ -396,7 +395,6 @@ public class UserCompanyService : IUserCompanyService
                         existingMember.ApprovedAt = DateTime.UtcNow;
                         await _context.SaveChangesAsync();
 
-                    _logger.LogInformation("用户 {UserId} 的企业成员身份已恢复并更新角色", request.UserId);
                 }
                 else if (roleIds != null && roleIds.Any())
                 {

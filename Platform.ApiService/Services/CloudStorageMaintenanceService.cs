@@ -33,7 +33,6 @@ public class CloudStorageMaintenanceService : BackgroundService
     /// </summary>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Cloud Storage Maintenance Service is starting.");
 
         // 首次启动延迟 1 分钟，等待系统完全启动
         await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
@@ -42,7 +41,6 @@ public class CloudStorageMaintenanceService : BackgroundService
         {
             try
             {
-                _logger.LogInformation("Starting cloud storage maintenance tasks at: {Time}", DateTimeOffset.Now);
 
                 using (var scope = _serviceProvider.CreateScope())
                 {
@@ -58,7 +56,6 @@ public class CloudStorageMaintenanceService : BackgroundService
                     // await PerformQuotaCalibrationAsync(storageQuotaService);
                 }
 
-                _logger.LogInformation("Cloud storage maintenance tasks completed successfully.");
             }
             catch (Exception ex)
             {
@@ -69,16 +66,13 @@ public class CloudStorageMaintenanceService : BackgroundService
             await Task.Delay(_taskInterval, stoppingToken);
         }
 
-        _logger.LogInformation("Cloud Storage Maintenance Service is stopping.");
     }
 
     private async Task PerformRecycleBinCleanupAsync(ICloudStorageService cloudStorageService)
     {
         try
         {
-            _logger.LogInformation("Cleaning up expired recycle bin items...");
             var (deletedCount, freedSpace) = await cloudStorageService.CleanupExpiredRecycleBinItemsAsync(30);
-            _logger.LogInformation("Cleanup finished: deleted {Count} items, freed {Size} bytes.", deletedCount, freedSpace);
         }
         catch (Exception ex)
         {

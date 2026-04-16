@@ -58,7 +58,6 @@ public class WebScraperService : IWebScraperService
             LastStatus = ScrapingStatus.Idle
         };
 
-        _logger.LogInformation("[CreateTask] ScheduleCron={Cron}, NextRunAt={NextRun}", request.ScheduleCron, task.NextRunAt);
 
         await _context.Set<WebScrapingTask>().AddAsync(task);
         await _context.SaveChangesAsync();
@@ -88,7 +87,6 @@ public class WebScraperService : IWebScraperService
 
     public async Task<WebScrapingTask?> UpdateTaskAsync(string id, UpdateWebScrapingTaskRequest request, string userId)
     {
-        _logger.LogInformation("[Service UpdateTaskAsync] request.ScheduleCron={SC}", request.ScheduleCron);
         var task = await GetTaskByIdAsync(id, userId);
         if (task == null)
         {
@@ -96,7 +94,6 @@ public class WebScraperService : IWebScraperService
             return null;
         }
 
-        _logger.LogInformation("[Service UpdateTaskAsync] task.NextRunAt before={NRA}", task.NextRunAt);
 
         if (request.Name != null) task.Name = request.Name;
         if (request.TargetUrl != null) task.TargetUrl = request.TargetUrl;
@@ -118,7 +115,6 @@ public class WebScraperService : IWebScraperService
             {
                 var nextRun = CronExpressionParser.ParseNext(cronVal, DateTime.UtcNow);
                 task.NextRunAt = nextRun;
-                _logger.LogInformation("[UpdateTask] ScheduleCron={Cron}, NextRunAt={NextRun}", cronVal, nextRun);
             }
             else
             {
@@ -160,7 +156,6 @@ public class WebScraperService : IWebScraperService
         {
             cts.Cancel();
             _runningTasks.Remove(id);
-            _logger.LogInformation("[StopTaskAsync] 任务已停止, id={Id}", id);
             return true;
         }
 
@@ -171,7 +166,6 @@ public class WebScraperService : IWebScraperService
             task.LastError = "用户手动停止";
             task.LastRunAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
-            _logger.LogInformation("[StopTaskAsync] 强制重置任务状态, id={Id}", id);
             return true;
         }
 
@@ -188,7 +182,6 @@ public class WebScraperService : IWebScraperService
             var dbContext = _context as PlatformDbContext;
             var prop = dbContext?.GetType().BaseType?.GetProperty("CurrentCompanyId", BindingFlags.NonPublic | BindingFlags.Instance);
             var companyId = prop?.GetValue(dbContext) as string;
-            _logger.LogInformation("[ExecuteTaskAsync] 开始执行, id={Id}, userId={UserId}, DbContextCompanyId={DbCompanyId}", id, userId, companyId);
             var task = await _context.Set<WebScrapingTask>().IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == id);
             if (task == null)
             {
@@ -196,7 +189,6 @@ public class WebScraperService : IWebScraperService
                 return new ScrapeResultDto { Success = false, Message = "任务不存在" };
             }
 
-            _logger.LogInformation("[ExecuteTaskAsync] 任务已找到: {TaskName}, CompanyId={CompanyId}", task.Name, task.CompanyId);
 
             var taskCompanyId = task.CompanyId;
             task.LastStatus = ScrapingStatus.Running;
@@ -236,7 +228,6 @@ public class WebScraperService : IWebScraperService
                 var matchedCount = 0;
                 if (task.EnableFilter == true && !string.IsNullOrWhiteSpace(task.FilterPrompt))
                 {
-                    _logger.LogInformation("[ExecuteTaskAsync] 开始AI筛选, FilterPrompt={Filter}", task.FilterPrompt);
                     var filterResults = await _contentFilterService.FilterPagesAsync(task.FilterPrompt!, result.Pages);
                     for (int i = 0; i < result.Pages.Count; i++)
                     {
@@ -253,7 +244,6 @@ public class WebScraperService : IWebScraperService
                             result.Pages[i].IsFiltered = false;
                         }
                     }
-                    _logger.LogInformation("[ExecuteTaskAsync] AI筛选完成, 匹配={MatchedCount}", matchedCount);
                 }
 
                 var endTime = DateTime.UtcNow;
@@ -305,11 +295,9 @@ public class WebScraperService : IWebScraperService
                     await _context.Set<WebScrapingResult>().AddAsync(scrapingResult);
                 }
                 await _context.SaveChangesAsync();
-                _logger.LogInformation("[ExecuteTaskAsync] 保存{ResultCount}条结果, LogId={LogId}, CompanyId={CompanyId}", result.TotalPages, log.Id, taskCompanyId);
 
                 task.NextRunAt = CronExpressionParser.ParseNext(task.ScheduleCron!, DateTime.UtcNow);
                 await _context.SaveChangesAsync();
-                _logger.LogInformation("[ExecuteTaskAsync] NextRunAt更新为: {NextRunAt}", task.NextRunAt);
 
                 return new ScrapeResultDto
                 {

@@ -144,7 +144,6 @@ public class ParkVisitService : IParkVisitService
 
         await _context.Set<VisitTask>().AddAsync(task);
         await _context.SaveChangesAsync();
-        _logger.LogInformation("创建走访任务: {ManagerName}, ID: {Id}", task.ManagerName, task.Id);
 
         return (await GetVisitTaskByIdAsync(task.Id))!;
     }

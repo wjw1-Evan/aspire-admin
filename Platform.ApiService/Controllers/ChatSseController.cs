@@ -83,7 +83,6 @@ public class ChatSseController : BaseApiController
         Response.Headers["X-Accel-Buffering"] = "no"; // 禁用 Nginx 缓冲
 
         var connectionId = Guid.NewGuid().ToString();
-        _logger.LogInformation("SSE 连接建立: 连接 {ConnectionId} 用户 {UserId}", connectionId, userId);
 
         try
         {
@@ -132,7 +131,6 @@ public class ChatSseController : BaseApiController
             {
                 // 清理连接
                 await _connectionManager.UnregisterConnectionAsync(connectionId);
-                _logger.LogInformation("SSE 连接关闭: 连接 {ConnectionId} 用户 {UserId}", connectionId, userId);
             }
         }
         catch (Exception ex)

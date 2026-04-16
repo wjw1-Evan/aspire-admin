@@ -74,7 +74,6 @@ public class NotificationSseController : BaseApiController
         
         await _connectionManager.RegisterUserConnectionAsync(userId, connectionId, Response, cancellationToken);
 
-        _logger.LogInformation("通知 SSE 连接建立: 连接 {ConnectionId} 用户 {UserId}", connectionId, userId);
 
         try
         {
@@ -102,7 +101,6 @@ public class NotificationSseController : BaseApiController
         }
         catch (OperationCanceledException)
         {
-            _logger.LogInformation("通知 SSE 连接关闭: 连接 {ConnectionId} 用户 {UserId}", connectionId, userId);
         }
         catch (Exception ex)
         {

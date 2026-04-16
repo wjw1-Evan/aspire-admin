@@ -116,11 +116,6 @@ public class StorageQuotaService : IStorageQuotaService
         if (updatedQuota == null)
             throw new InvalidOperationException("更新配额失败");
 
-        _logger.LogInformation("Updated storage quota for user {UserId} to {TotalQuota} bytes (WarningThreshold: {WarningThreshold}, IsEnabled: {IsEnabled})",
-            userId,
-            totalQuota,
-            warningThreshold ?? updatedQuota.WarningThreshold,
-            isEnabled ?? updatedQuota.IsEnabled);
         return updatedQuota;
     }
 
@@ -181,7 +176,6 @@ public class StorageQuotaService : IStorageQuotaService
 
         // 2. 如果初步检查失败，极有可能是统计漂移（如回收站未同步）。
         // 强制执行一次实时重新计算，以确保给用户最后一次正确的判定机会。
-        _logger.LogInformation("Stored quota for user {UserId} shows insufficient space. Forcing real-time recalculation...", userId);
         quota = await RecalculateUserStorageAsync(userId);
 
         // 3. 最终判定：基于重新计算后的最准确数据
@@ -290,8 +284,6 @@ public class StorageQuotaService : IStorageQuotaService
         if (updatedQuota == null)
             throw new InvalidOperationException("重新计算存储使用量失败");
 
-        _logger.LogInformation("Recalculated storage usage for user {UserId}: {UsedSpace} bytes, {FileCount} files",
-            userId, actualUsedSpace, fileCount);
 
         return updatedQuota;
     }
@@ -488,7 +480,6 @@ public class StorageQuotaService : IStorageQuotaService
                 }
             }
 
-            _logger.LogInformation("Cleaned up {Count} unused storage quota records", result.SuccessCount);
         }
         catch (Exception ex)
         {
@@ -920,7 +911,6 @@ public class StorageQuotaService : IStorageQuotaService
 
         await _context.Set<StorageQuota>().AddAsync(quota);
         await _context.SaveChangesAsync();
-        _logger.LogInformation("Created storage quota for user {UserId}: {TotalQuota} bytes (IsEnabled: {IsEnabled})", userId, totalQuota, quota.IsEnabled);
         return quota;
     }
 

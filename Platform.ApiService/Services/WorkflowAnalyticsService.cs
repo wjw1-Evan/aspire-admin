@@ -286,7 +286,6 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
     {
         try
         {
-            _logger.LogInformation("开始批量更新工作流分析数据");
 
             Expression<Func<WorkflowDefinition, bool>> filter = w => w.IsDeleted != true;
 
@@ -310,7 +309,6 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
                 }
             }
 
-            _logger.LogInformation("批量更新工作流分析数据完成: 处理数量={WorkflowCount}", workflows.Count);
         }
         catch (Exception ex)
         {

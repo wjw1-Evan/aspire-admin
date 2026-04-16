@@ -39,7 +39,6 @@ public class IoTDataPointService
 
         await _context.Set<IoTDataPoint>().AddAsync(dataPoint);
         await _context.SaveChangesAsync();
-        _logger.LogInformation("DataPoint created: {DataPointId}", dataPoint.DataPointId);
         return dataPoint;
     }
 
@@ -90,7 +89,6 @@ public class IoTDataPointService
 
         _context.Set<IoTDataPoint>().Remove(dataPoint);
         await _context.SaveChangesAsync();
-        _logger.LogInformation("DataPoint deleted: {DataPointId}", dataPoint.DataPointId);
         return true;
     }
 

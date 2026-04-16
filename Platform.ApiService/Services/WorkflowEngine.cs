@@ -86,8 +86,6 @@ public partial class WorkflowEngine : IWorkflowEngine
             CompanyId = definition.CompanyId
         };
 
-        _logger.LogInformation("Creating workflow instance: DefinitionId={DefinitionId}, DocumentId={DocumentId}, StartedBy={StartedBy}",
-            instance.WorkflowDefinitionId, instance.DocumentId, startedBy);
 
         // 初始化变量
         instance.ResetVariables(variables ?? new Dictionary<string, object?>());

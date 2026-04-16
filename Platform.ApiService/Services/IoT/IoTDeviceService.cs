@@ -66,7 +66,6 @@ public class IoTDeviceService
         }
 
         await _context.SaveChangesAsync();
-        _logger.LogInformation("Device created: {DeviceId}", device.DeviceId);
         return device;
     }
 
@@ -121,7 +120,6 @@ public class IoTDeviceService
 
         _context.Set<IoTDevice>().Remove(device);
         await _context.SaveChangesAsync();
-        _logger.LogInformation("Device deleted: {DeviceId}", device.DeviceId);
         return true;
     }
 
@@ -140,7 +138,6 @@ public class IoTDeviceService
 
         _context.Set<IoTDevice>().RemoveRange(devices);
         await _context.SaveChangesAsync();
-        _logger.LogInformation("Batch deleted {Count} devices", devices.Count);
         return devices.Count;
     }
 
@@ -166,7 +163,6 @@ public class IoTDeviceService
 
         await _context.SaveChangesAsync();
         await createEventAsync(request.DeviceId, "Connected", "Info", "Device connected", null);
-        _logger.LogInformation("Device connected: {DeviceId}", request.DeviceId);
         return true;
     }
 
@@ -178,7 +174,6 @@ public class IoTDeviceService
         device.Status = IoTDeviceStatus.Offline;
         await _context.SaveChangesAsync();
         await createEventAsync(request.DeviceId, "Disconnected", "Warning", request.Reason ?? "Device disconnected", null);
-        _logger.LogInformation("Device disconnected: {DeviceId}", request.DeviceId);
         return true;
     }
 

@@ -116,7 +116,6 @@ public partial class WorkflowEngine
                 if (document.FormData != null && document.FormData.Count > 0)
                 {
                     _logger.LogDebug($": 注入公文表单数据到变量，共 {document.FormData.Count} 个字段");
-                    _logger.LogInformation(": 注入公文表单数据到变量，共 {Count} 个字段", document.FormData.Count);
 
                     foreach (var kv in document.FormData)
                     {
@@ -169,7 +168,6 @@ public partial class WorkflowEngine
             .Where(r => r.WorkflowInstanceId == instanceId)
             .OrderBy(r => r.Sequence)
             .ToListAsync();
-        _logger.LogInformation("获取实例 {InstanceId} 的审批历史, 发现 {Count} 条记录 (忽略租户过滤器)", instanceId, history.Count);
         return history;
     }
 
@@ -265,7 +263,6 @@ public partial class WorkflowEngine
         var instance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
         if (instance == null) return;
 
-        _logger.LogInformation(": Completing Workflow {InstanceId} with Status {Status}", instanceId, status);
 
         var workflowInstance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
         if (workflowInstance != null)

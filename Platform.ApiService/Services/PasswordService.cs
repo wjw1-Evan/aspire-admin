@@ -118,7 +118,6 @@ public class PasswordService : IPasswordService
         try
         {
             await _emailService.SendEmailAsync(request.Email, "找回密码验证码", htmlBody);
-            _logger.LogInformation("【重置密码】为用户 {Username}({Email}) 发送了验证码邮件: {Code}", user.Username, request.Email, code);
             return true;
         }
         catch (Exception ex)
@@ -150,7 +149,6 @@ public class PasswordService : IPasswordService
 
         _memoryCache.Remove(cacheKey);
 
-        _logger.LogInformation("用户 {Username} 通过邮箱找回密码成功", user.Username);
 
         return true;
     }

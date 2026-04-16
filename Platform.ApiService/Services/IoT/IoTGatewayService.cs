@@ -36,7 +36,6 @@ public class IoTGatewayService
 
         await _context.Set<IoTGateway>().AddAsync(gateway);
         await _context.SaveChangesAsync();
-        _logger.LogInformation("Gateway created: {GatewayId}", gateway.GatewayId);
         return gateway;
     }
 
@@ -90,7 +89,6 @@ public class IoTGatewayService
 
         _context.Set<IoTGateway>().Remove(gateway);
         await _context.SaveChangesAsync();
-        _logger.LogInformation("Gateway deleted: {GatewayId}", gateway.GatewayId);
         return true;
     }
 

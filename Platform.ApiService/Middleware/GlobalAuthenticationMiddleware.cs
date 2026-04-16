@@ -101,9 +101,6 @@ public class GlobalAuthenticationMiddleware
         // 检查是否已经有认证结果（来自UseAuthentication）
         if (context.User?.Identity?.IsAuthenticated == true)
         {
-            _logger.LogInformation("【GlobalAuth】UseAuthentication 已认证 User: {User}, Claims: {Claims}", 
-                context.User.Identity.Name,
-                string.Join(", ", context.User.Claims.Select(c => $"{c.Type}={c.Value}")));
             await _next(context);
             return;
         }

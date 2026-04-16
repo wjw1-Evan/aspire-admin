@@ -27,7 +27,6 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("网页抓取定时任务服务已启动");
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -96,7 +95,6 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
                 .Where(t => t.NextRunAt != null && t.NextRunAt <= now && t.LastStatus != ScrapingStatus.Running)
                 .ToList();
 
-            _logger.LogInformation("[定时任务] 到期任务数量: {Count}", dueTasks.Count);
 
             foreach (var task in dueTasks)
             {
@@ -143,8 +141,6 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
 
     private async Task ExecuteTaskInTenantScopeAsync(WebScrapingTask task, CancellationToken stoppingToken)
     {
-        _logger.LogInformation("[定时任务] 开始执行任务: {TaskName}, CompanyId={CompanyId}, CreatedBy={CreatedBy}",
-            task.Name, task.CompanyId, task.CreatedBy);
 
         using var taskScope = _serviceProvider.CreateScope();
         var tenantSetter = taskScope.ServiceProvider.GetRequiredService<ITenantContextSetter>();
@@ -152,11 +148,7 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
         _logger.LogDebug("[定时任务] 租户上下文已设置: CompanyId={CompanyId}", task.CompanyId);
 
         var webScraperService = taskScope.ServiceProvider.GetRequiredService<IWebScraperService>();
-        _logger.LogInformation("[定时任务] 调用ExecuteTaskAsync: TaskId={TaskId}, UserId={UserId}", task.Id, task.CreatedBy ?? task.UserId);
         var result = await webScraperService.ExecuteTaskAsync(task.Id, task.CreatedBy ?? task.UserId);
-        _logger.LogInformation("[定时任务] ExecuteTaskAsync完成: TaskName={TaskName}, Success={Success}, Message={Message}",
-            task.Name, result.Success, result.Message);
 
-        _logger.LogInformation("定时抓取任务完成: {TaskName}", task.Name);
     }
 }

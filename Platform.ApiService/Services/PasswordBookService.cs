@@ -63,7 +63,6 @@ public class PasswordBookService : IPasswordBookService
         await _context.Set<PasswordBookEntry>().AddAsync(entry);
         await _context.SaveChangesAsync();
         var result = entry;
-        _logger.LogInformation("Password book entry created: {EntryId} for user {UserId}", result.Id, userId);
         return result;
     }
 
@@ -108,7 +107,6 @@ public class PasswordBookService : IPasswordBookService
 
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Password book entry updated: {EntryId}", id);
         return entry;
     }
 
@@ -187,7 +185,6 @@ public class PasswordBookService : IPasswordBookService
         _context.Set<PasswordBookEntry>().Remove(entry);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Password book entry deleted: {EntryId} by user {UserId}", id, userId);
         return true;
     }
 

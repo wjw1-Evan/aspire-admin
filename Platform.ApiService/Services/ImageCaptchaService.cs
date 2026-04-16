@@ -24,19 +24,20 @@ public class ImageCaptchaService : IImageCaptchaService
     private const int NOISE_LINES = 5;
     private const int NOISE_DOTS = 50;
 
-    private string EncryptionKey => _configuration["Captcha:EncryptionKey"] ?? GenerateFallbackKey();
+    private static readonly string EncryptionKey;
 
     private static readonly string[] CHARACTERS = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+
+    static ImageCaptchaService()
+    {
+        var config = new ConfigurationBuilder().AddJsonFile("appsettings.json", optional: true).Build();
+        EncryptionKey = config["Captcha:EncryptionKey"] ?? throw new InvalidOperationException("Captcha:EncryptionKey must be configured in appsettings.json");
+    }
 
     public ImageCaptchaService(DbContext context, IConfiguration configuration)
     {
         _context = context;
         _configuration = configuration;
-    }
-
-    private static string GenerateFallbackKey()
-    {
-        return Convert.ToBase64String(Guid.NewGuid().ToByteArray())[..16];
     }
 
     public async Task<CaptchaImageResult> GenerateCaptchaAsync(string type = "login", string? clientIp = null)

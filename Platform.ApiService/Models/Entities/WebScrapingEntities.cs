@@ -116,8 +116,8 @@ public class WebScrapingResult : MultiTenantEntity
     public int ImageCount { get; set; }
     public int LinkCount { get; set; }
 
-    public bool IsFiltered { get; set; }
-    public bool IsMatched { get; set; }
+    public bool? IsFiltered { get; set; }
+    public bool? IsMatched { get; set; }
     public string? MatchReason { get; set; }
     public double? RelevanceScore { get; set; }
 }

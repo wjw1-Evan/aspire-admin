@@ -154,16 +154,28 @@ public class WebScraperService : IWebScraperService
         return task;
     }
 
-    public Task<bool> StopTaskAsync(string id, string userId)
+    public async Task<bool> StopTaskAsync(string id, string userId)
     {
         if (_runningTasks.TryGetValue(id, out var cts))
         {
             cts.Cancel();
             _runningTasks.Remove(id);
             _logger.LogInformation("[StopTaskAsync] 任务已停止, id={Id}", id);
-            return Task.FromResult(true);
+            return true;
         }
-        return Task.FromResult(false);
+
+        var task = await _context.Set<WebScrapingTask>().IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == id);
+        if (task != null && task.LastStatus == ScrapingStatus.Running)
+        {
+            task.LastStatus = ScrapingStatus.Failed;
+            task.LastError = "用户手动停止";
+            task.LastRunAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("[StopTaskAsync] 强制重置任务状态, id={Id}", id);
+            return true;
+        }
+
+        return false;
     }
 
     public async Task<ScrapeResultDto> ExecuteTaskAsync(string id, string userId)

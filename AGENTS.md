@@ -356,6 +356,40 @@ using TaskModel = Platform.ApiService.Models.WorkTask;
 var tasks = await _context.Set<WorkTask>().ToListAsync();
 ```
 
+### 6.8 异常处理规范
+
+**[强制]** 控制器和服务层出现错误时，**直接抛出异常**，禁止吞掉异常或手动返回错误响应：
+
+```csharp
+// ✅ 正确：直接抛出异常
+public async Task<User?> GetUserByIdAsync(string id)
+{
+    var user = await _context.Set<User>().FindAsync(id);
+    if (user == null)
+        throw new KeyNotFoundException($"用户 {id} 不存在");
+    return user;
+}
+
+// ❌ 禁止：手动返回错误响应或吞掉异常
+public async Task<IActionResult> GetUserById(string id)
+{
+    try
+    {
+        var user = await _userService.GetUserByIdAsync(id);
+        return Ok(user);
+    }
+    catch (Exception ex)
+    {
+        return BadRequest(new { message = ex.Message });  // ❌ 禁止
+    }
+}
+```
+
+**原因**：
+- 全局异常处理中间件 `UseExceptionHandler` 会统一捕获并格式化异常
+- 避免大量重复的 try-catch 代码
+- 保持控制器层职责单一
+
 ## 7. 前端开发规范（Admin）
 
 ### 7.1 路由与菜单

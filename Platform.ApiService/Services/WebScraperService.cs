@@ -204,10 +204,10 @@ public class WebScraperService : IWebScraperService
 
             var filterStartTime = DateTime.UtcNow;
             var matchedCount = 0;
-            if (task.EnableFilter && !string.IsNullOrWhiteSpace(task.FilterPrompt))
+            if (task.EnableFilter == true && !string.IsNullOrWhiteSpace(task.FilterPrompt))
             {
                 _logger.LogInformation("[ExecuteTaskAsync] 开始AI筛选, FilterPrompt={Filter}", task.FilterPrompt);
-                var filterResults = await _contentFilterService.FilterPagesAsync(task.FilterPrompt, result.Pages);
+                var filterResults = await _contentFilterService.FilterPagesAsync(task.FilterPrompt!, result.Pages);
                 for (int i = 0; i < result.Pages.Count; i++)
                 {
                     result.Pages[i].IsFiltered = true;

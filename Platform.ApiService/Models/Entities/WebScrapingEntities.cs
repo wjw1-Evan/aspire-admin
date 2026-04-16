@@ -30,13 +30,13 @@ public class WebScrapingTask : MultiTenantEntity
     public string? LastError { get; set; }
     public int TotalPagesCrawled { get; set; }
     public int ResultCount { get; set; }
-    public int MatchedCount { get; set; }
+    public int? MatchedCount { get; set; }
 
     public string UserId { get; set; } = string.Empty;
     public bool IsPublic { get; set; } = false;
 
     public string? FilterPrompt { get; set; }
-    public bool EnableFilter { get; set; } = false;
+    public bool? EnableFilter { get; set; }
 }
 
 public class WebScrapingLog : MultiTenantEntity

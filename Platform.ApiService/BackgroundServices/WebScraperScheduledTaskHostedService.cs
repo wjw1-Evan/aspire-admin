@@ -72,10 +72,15 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
         {
             if (stoppingToken.IsCancellationRequested) break;
 
+            if (task.LastStatus == ScrapingStatus.Running)
+            {
+                _logger.LogDebug("[定时任务] 任务 {TaskName} 正在执行中，跳过", task.Name);
+                continue;
+            }
+
             task.LastStatus = ScrapingStatus.Running;
+            await context.SaveChangesAsync(CancellationToken.None);
             _taskLauncher.LaunchAsync(task.Id, task.CreatedBy ?? task.UserId);
         }
-
-        await context.SaveChangesAsync(stoppingToken);
     }
 }

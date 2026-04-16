@@ -13,13 +13,19 @@ public class WebScraperController : BaseApiController
 {
     private readonly IWebScraperService _webScraperService;
     private readonly ILogger<WebScraperController> _logger;
+    private readonly IServiceProvider _serviceProvider;
+    private readonly Platform.ApiService.Services.ITaskLauncher _taskLauncher;
 
     public WebScraperController(
         IWebScraperService webScraperService,
-        ILogger<WebScraperController> logger)
+        ILogger<WebScraperController> logger,
+        IServiceProvider serviceProvider,
+        Platform.ApiService.Services.ITaskLauncher taskLauncher)
     {
         _webScraperService = webScraperService ?? throw new ArgumentNullException(nameof(webScraperService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+        _taskLauncher = taskLauncher ?? throw new ArgumentNullException(nameof(taskLauncher));
     }
 
     [HttpPost("tasks")]
@@ -86,24 +92,10 @@ public class WebScraperController : BaseApiController
     }
 
     [HttpPost("execute/{id}")]
-    public async Task<IActionResult> ExecuteTask(string id)
+    public IActionResult ExecuteTask(string id)
     {
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                var result = await _webScraperService.ExecuteTaskAsync(id, RequiredUserId);
-                if (!result.Success)
-                {
-                    _logger.LogWarning("抓取任务执行失败: {TaskId}, {Message}", id, result.Message);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "抓取任务执行异常: {TaskId}", id);
-            }
-        });
-
+        // 以 TaskLauncher 统一启动执行，异步返回前端反馈
+        _taskLauncher.LaunchAsync(id, RequiredUserId);
         return Success(new { message = "抓取任务已启动，请稍候查看结果" });
     }
 

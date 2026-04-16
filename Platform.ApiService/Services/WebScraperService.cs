@@ -14,15 +14,18 @@ public class WebScraperService : IWebScraperService
 {
     private readonly DbContext _context;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IContentFilterService _contentFilterService;
     private readonly ILogger<WebScraperService> _logger;
 
     public WebScraperService(
         DbContext context,
         IHttpClientFactory httpClientFactory,
+        IContentFilterService contentFilterService,
         ILogger<WebScraperService> logger)
     {
         _context = context;
         _httpClientFactory = httpClientFactory;
+        _contentFilterService = contentFilterService;
         _logger = logger;
     }
 
@@ -48,6 +51,8 @@ public class WebScraperService : IWebScraperService
                 : null,
             IsEnabled = request.IsEnabled,
             IsPublic = request.IsPublic,
+            FilterPrompt = request.FilterPrompt,
+            EnableFilter = request.EnableFilter,
             UserId = userId,
             LastStatus = ScrapingStatus.Idle
         };
@@ -121,6 +126,8 @@ public class WebScraperService : IWebScraperService
         }
         if (request.IsEnabled.HasValue) task.IsEnabled = request.IsEnabled.Value;
         if (request.IsPublic.HasValue) task.IsPublic = request.IsPublic.Value;
+        if (request.FilterPrompt != null) task.FilterPrompt = request.FilterPrompt;
+        if (request.EnableFilter.HasValue) task.EnableFilter = request.EnableFilter.Value;
 
         await _context.SaveChangesAsync();
         return task;
@@ -195,12 +202,30 @@ public class WebScraperService : IWebScraperService
             var crawler = new WebCrawler(scraper);
             var result = await crawler.CrawlAsync(task.TargetUrl, config);
 
+            var filterStartTime = DateTime.UtcNow;
+            var matchedCount = 0;
+            if (task.EnableFilter && !string.IsNullOrWhiteSpace(task.FilterPrompt))
+            {
+                _logger.LogInformation("[ExecuteTaskAsync] 开始AI筛选, FilterPrompt={Filter}", task.FilterPrompt);
+                var filterResults = await _contentFilterService.FilterPagesAsync(task.FilterPrompt, result.Pages);
+                for (int i = 0; i < result.Pages.Count; i++)
+                {
+                    result.Pages[i].IsFiltered = true;
+                    result.Pages[i].IsMatched = filterResults[i].IsMatched;
+                    result.Pages[i].MatchReason = filterResults[i].Reason;
+                    result.Pages[i].RelevanceScore = filterResults[i].Score;
+                    if (filterResults[i].IsMatched) matchedCount++;
+                }
+                _logger.LogInformation("[ExecuteTaskAsync] AI筛选完成, 匹配={MatchedCount}", matchedCount);
+            }
+
             var endTime = DateTime.UtcNow;
             log.EndTime = endTime;
             log.Duration = (int)(endTime - startTime).TotalMilliseconds;
             log.PagesCrawled = result.TotalPages;
             log.SuccessCount = result.SuccessCount;
             log.FailedCount = result.FailedCount;
+            log.MatchedCount = matchedCount;
             log.Status = result.FailedCount == 0 ? ScrapingStatus.Success :
                         result.SuccessCount == 0 ? ScrapingStatus.Failed : ScrapingStatus.PartialSuccess;
             log.ExtractedData = JsonSerializer.Serialize(result);
@@ -210,6 +235,7 @@ public class WebScraperService : IWebScraperService
             task.LastDuration = log.Duration;
             task.TotalPagesCrawled += result.TotalPages;
             task.ResultCount += result.TotalPages;
+            task.MatchedCount = matchedCount;
             task.LastError = null;
 
             await _context.Set<WebScrapingLog>().AddAsync(log);
@@ -233,6 +259,10 @@ public class WebScraperService : IWebScraperService
                     ContentLength = page.Content?.Length ?? 0,
                     ImageCount = page.Images?.Count ?? 0,
                     LinkCount = page.Links?.Count ?? 0,
+                    IsFiltered = page.IsFiltered,
+                    IsMatched = page.IsMatched,
+                    MatchReason = page.MatchReason,
+                    RelevanceScore = page.RelevanceScore,
                     CompanyId = taskCompanyId
                 };
                 await _context.Set<WebScrapingResult>().AddAsync(scrapingResult);
@@ -417,6 +447,8 @@ public class WebScraperService : IWebScraperService
             TotalPages = result.TotalPages,
             SuccessCount = result.SuccessCount,
             FailedCount = result.FailedCount,
+            MatchedCount = result.MatchedCount,
+            FilteredCount = result.FilteredCount,
             TotalDuration = result.TotalDuration.ToString(@"hh\:mm\:ss\.fff"),
             Pages = result.Pages.Select(p => new PageResultDto
             {
@@ -427,7 +459,11 @@ public class WebScraperService : IWebScraperService
                 Images = p.Images,
                 Links = p.Links,
                 Success = p.Success,
-                Error = p.Error
+                Error = p.Error,
+                IsFiltered = p.IsFiltered,
+                IsMatched = p.IsMatched,
+                MatchReason = p.MatchReason,
+                RelevanceScore = p.RelevanceScore
             }).ToList()
         };
     }

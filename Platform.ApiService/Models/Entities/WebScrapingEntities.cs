@@ -30,9 +30,13 @@ public class WebScrapingTask : MultiTenantEntity
     public string? LastError { get; set; }
     public int TotalPagesCrawled { get; set; }
     public int ResultCount { get; set; }
+    public int MatchedCount { get; set; }
 
     public string UserId { get; set; } = string.Empty;
     public bool IsPublic { get; set; } = false;
+
+    public string? FilterPrompt { get; set; }
+    public bool EnableFilter { get; set; } = false;
 }
 
 public class WebScrapingLog : MultiTenantEntity
@@ -46,6 +50,7 @@ public class WebScrapingLog : MultiTenantEntity
     public int PagesCrawled { get; set; }
     public int SuccessCount { get; set; }
     public int FailedCount { get; set; }
+    public int MatchedCount { get; set; }
     public string? ErrorMessage { get; set; }
     public string? ExtractedData { get; set; }
 }
@@ -72,6 +77,8 @@ public class CrawlResult
     public int TotalPages { get; set; }
     public int SuccessCount { get; set; }
     public int FailedCount { get; set; }
+    public int MatchedCount { get; set; }
+    public int FilteredCount { get; set; }
     public List<PageResult> Pages { get; set; } = new();
     public TimeSpan TotalDuration { get; set; }
 }
@@ -86,6 +93,10 @@ public class PageResult
     public List<string> Links { get; set; } = new();
     public bool Success { get; set; }
     public string? Error { get; set; }
+    public bool IsFiltered { get; set; }
+    public bool IsMatched { get; set; }
+    public string? MatchReason { get; set; }
+    public double? RelevanceScore { get; set; }
 }
 
 public class WebScrapingResult : MultiTenantEntity
@@ -104,4 +115,9 @@ public class WebScrapingResult : MultiTenantEntity
     public int ContentLength { get; set; }
     public int ImageCount { get; set; }
     public int LinkCount { get; set; }
+
+    public bool IsFiltered { get; set; }
+    public bool IsMatched { get; set; }
+    public string? MatchReason { get; set; }
+    public double? RelevanceScore { get; set; }
 }

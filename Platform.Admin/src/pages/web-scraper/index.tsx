@@ -22,11 +22,14 @@ interface WebScrapingTask {
   lastError?: string;
   totalPagesCrawled: number;
   resultCount: number;
+  matchedCount?: number;
   isEnabled: boolean;
   scheduleCron?: string;
   followExternalLinks?: boolean;
   deduplicate?: boolean;
   mode?: 'SinglePage' | 'DepthFirst' | 'BreadthFirst';
+  filterPrompt?: string;
+  enableFilter?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -195,6 +198,19 @@ const WebScraper: React.FC = () => {
       key: 'totalPagesCrawled',
       sorter: true,
       render: (dom) => `${dom} 页`,
+    },
+    {
+      title: '匹配',
+      dataIndex: 'matchedCount',
+      key: 'matchedCount',
+      sorter: true,
+      render: (dom, record) => {
+        if (record.enableFilter && (dom as number) > 0) {
+          return <Tag color="green">{dom} 页</Tag>;
+        }
+        return '-';
+      },
+      hideInSearch: true,
     },
     {
       title: '抓取深度',

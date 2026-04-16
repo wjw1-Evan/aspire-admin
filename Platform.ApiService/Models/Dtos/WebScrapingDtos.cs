@@ -19,6 +19,8 @@ public class CreateWebScrapingTaskRequest
     public string? ScheduleCron { get; set; }
     public bool IsEnabled { get; set; } = true;
     public bool IsPublic { get; set; } = false;
+    public string? FilterPrompt { get; set; }
+    public bool EnableFilter { get; set; } = false;
 }
 
 public class UpdateWebScrapingTaskRequest
@@ -38,6 +40,8 @@ public class UpdateWebScrapingTaskRequest
     public string? ScheduleCron { get; set; }
     public bool? IsEnabled { get; set; }
     public bool? IsPublic { get; set; }
+    public string? FilterPrompt { get; set; }
+    public bool? EnableFilter { get; set; }
 }
 
 public class WebScrapingTaskDto
@@ -64,6 +68,9 @@ public class WebScrapingTaskDto
     public string? LastError { get; set; }
     public int TotalPagesCrawled { get; set; }
     public int ResultCount { get; set; }
+    public int MatchedCount { get; set; }
+    public string? FilterPrompt { get; set; }
+    public bool EnableFilter { get; set; }
     public DateTime? CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 }
@@ -80,6 +87,7 @@ public class WebScrapingLogDto
     public int PagesCrawled { get; set; }
     public int SuccessCount { get; set; }
     public int FailedCount { get; set; }
+    public int MatchedCount { get; set; }
     public string? ErrorMessage { get; set; }
     public string? ExtractedData { get; set; }
 }
@@ -118,6 +126,8 @@ public class CrawlResultDto
     public int TotalPages { get; set; }
     public int SuccessCount { get; set; }
     public int FailedCount { get; set; }
+    public int MatchedCount { get; set; }
+    public int FilteredCount { get; set; }
     public List<PageResultDto> Pages { get; set; } = new();
     public string TotalDuration { get; set; } = string.Empty;
 }
@@ -132,4 +142,8 @@ public class PageResultDto
     public List<string> Links { get; set; } = new();
     public bool Success { get; set; }
     public string? Error { get; set; }
+    public bool IsFiltered { get; set; }
+    public bool IsMatched { get; set; }
+    public string? MatchReason { get; set; }
+    public double? RelevanceScore { get; set; }
 }

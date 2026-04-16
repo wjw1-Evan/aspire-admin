@@ -14,12 +14,18 @@ interface PageResult {
   links: string[];
   success: boolean;
   error?: string;
+  isFiltered?: boolean;
+  isMatched?: boolean;
+  matchReason?: string;
+  relevanceScore?: number;
 }
 
 interface CrawlResult {
   totalPages: number;
   successCount: number;
   failedCount: number;
+  matchedCount?: number;
+  filteredCount?: number;
   pages: PageResult[];
   totalDuration?: string;
 }
@@ -37,7 +43,7 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
   if (!data) return null;
 
   const pageColumns = [
-    { title: '层级', dataIndex: 'level', key: 'level', width: 80 },
+    { title: '层级', dataIndex: 'level', key: 'level', width: 60 },
     {
       title: 'URL',
       dataIndex: 'url',
@@ -60,15 +66,27 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
       title: '状态',
       dataIndex: 'success',
       key: 'success',
-      width: 100,
+      width: 80,
       render: (success: boolean) => (
         <Tag color={success ? 'success' : 'error'}>{success ? '成功' : '失败'}</Tag>
       ),
     },
     {
+      title: '匹配',
+      key: 'matched',
+      width: 80,
+      render: (_: any, record: PageResult) => (
+        record.isFiltered ? (
+          <Tag color={record.isMatched ? 'green' : 'default'}>
+            {record.isMatched ? `匹配 ${record.relevanceScore || 0}%` : '未匹配'}
+          </Tag>
+        ) : '-'
+      ),
+    },
+    {
       title: '操作',
       key: 'action',
-      width: 80,
+      width: 60,
       render: (_: any, record: PageResult) => (
         <Button type="link" size="small" onClick={() => setSelectedPage(record)}>
           详情
@@ -108,6 +126,18 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
             <Descriptions.Item label="成功">{data.successCount}</Descriptions.Item>
             <Descriptions.Item label="失败">{data.failedCount}</Descriptions.Item>
             <Descriptions.Item label="总耗时">{data.totalDuration || '-'}</Descriptions.Item>
+            {(data.filteredCount !== undefined || data.matchedCount !== undefined) && (
+              <>
+                <Descriptions.Item label="已筛选">{data.filteredCount ?? 0}</Descriptions.Item>
+                <Descriptions.Item label="匹配">
+                  <Text type="success" strong>{data.matchedCount ?? 0}</Text>
+                </Descriptions.Item>
+                <Descriptions.Item label="未匹配">{data.filteredCount! - data.matchedCount!}</Descriptions.Item>
+                <Descriptions.Item label="匹配率">
+                  {data.filteredCount! > 0 ? Math.round((data.matchedCount! / data.filteredCount!) * 100) : 0}%
+                </Descriptions.Item>
+              </>
+            )}
           </Descriptions>
         </TabPane>
 
@@ -140,6 +170,55 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
             size="small"
           />
         </TabPane>
+
+        {(data.matchedCount ?? 0) > 0 && (
+          <TabPane tab={`匹配结果 (${data.matchedCount})`} key="matched">
+            <Table
+              dataSource={(data.pages || []).filter((p) => p.isFiltered && p.isMatched)}
+              columns={[
+                { title: '层级', dataIndex: 'level', key: 'level', width: 60 },
+                {
+                  title: 'URL',
+                  dataIndex: 'url',
+                  key: 'url',
+                  ellipsis: true,
+                  render: (url: string) => (
+                    <a href={url} target="_blank" rel="noopener noreferrer">
+                      {url}
+                    </a>
+                  ),
+                },
+                {
+                  title: '标题',
+                  dataIndex: 'title',
+                  key: 'title',
+                  ellipsis: true,
+                  render: (title: string) => title || '-',
+                },
+                {
+                  title: '相关度',
+                  dataIndex: 'relevanceScore',
+                  key: 'relevanceScore',
+                  width: 80,
+                  render: (score?: number) => `${score ?? 0}%`,
+                },
+                {
+                  title: '操作',
+                  key: 'action',
+                  width: 60,
+                  render: (_: any, record: PageResult) => (
+                    <Button type="link" size="small" onClick={() => setSelectedPage(record)}>
+                      详情
+                    </Button>
+                  ),
+                },
+              ]}
+              rowKey={(r, i) => `${r.url}-${i}`}
+              pagination={{ pageSize: 10 }}
+              size="small"
+            />
+          </TabPane>
+        )}
       </Tabs>
 
       <Modal
@@ -173,6 +252,22 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
             {selectedPage.title && (
               <Card title="标题" size="small">
                 <Text strong>{selectedPage.title}</Text>
+              </Card>
+            )}
+
+            {selectedPage.isFiltered && (
+              <Card title="AI筛选结果" size="small">
+                <Space direction="vertical" style={{ width: '100%' }}>
+                  <Space>
+                    <Tag color={selectedPage.isMatched ? 'green' : 'default'}>
+                      {selectedPage.isMatched ? '匹配' : '未匹配'}
+                    </Tag>
+                    <Text>相关度：{selectedPage.relevanceScore ?? 0}%</Text>
+                  </Space>
+                  {selectedPage.matchReason && (
+                    <Text type="secondary">{selectedPage.matchReason}</Text>
+                  )}
+                </Space>
               </Card>
             )}
 

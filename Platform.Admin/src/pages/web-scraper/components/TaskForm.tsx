@@ -19,6 +19,8 @@ interface TaskFormValues {
   mode?: 'SinglePage' | 'DepthFirst' | 'BreadthFirst';
   scheduleCron?: string;
   isEnabled?: boolean;
+  filterPrompt?: string;
+  enableFilter?: boolean;
 }
 
 interface TaskFormProps {
@@ -188,6 +190,22 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onCancel, onSuccess 
             </ul>
           </div>
         }
+      />
+
+      <Form.Item label="启用AI筛选" name="enableFilter" valuePropName="checked" initialValue={false}>
+        <Switch />
+      </Form.Item>
+
+      <ProFormTextArea
+        name="filterPrompt"
+        label="筛选提示词"
+        placeholder="请输入筛选条件，如：筛选包含&quot;价格&quot;或&quot;报价&quot;的页面，提取相关的价格信息"
+        tooltip="AI将根据此提示词分析抓取的页面内容，筛选出符合条件的结果"
+        fieldProps={{
+          rows: 3,
+          showCount: true,
+          maxLength: 500,
+        }}
       />
 
       <Form.Item label="启用任务" name="isEnabled" valuePropName="checked" initialValue={true}>

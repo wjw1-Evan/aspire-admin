@@ -15,7 +15,6 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<WebScraperScheduledTaskHostedService> _logger;
     private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(1);
-    private readonly SemaphoreSlim _runLock = new(1, 1);
 
     public WebScraperScheduledTaskHostedService(
         IServiceProvider serviceProvider,
@@ -27,7 +26,6 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-
         while (!stoppingToken.IsCancellationRequested)
         {
             try
@@ -45,146 +43,67 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
 
     private async Task CheckAndExecuteScheduledTasksAsync(CancellationToken stoppingToken)
     {
-        if (!await _runLock.WaitAsync(0, stoppingToken).ConfigureAwait(false))
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<PlatformDbContext>();
+
+        var now = DateTime.UtcNow;
+        var allEnabledTasks = await context.Set<WebScrapingTask>()
+            .IgnoreQueryFilters()
+            .Where(t => t.IsEnabled && !string.IsNullOrEmpty(t.ScheduleCron))
+            .ToListAsync(stoppingToken);
+
+        foreach (var t in allEnabledTasks.Where(t => t.NextRunAt == null))
         {
-            _logger.LogWarning("上一个定时抓取任务正在执行中，跳过本次检查");
-            return;
+            t.NextRunAt = WebScraperCron.ParseNext(t.ScheduleCron!, now);
         }
 
-        try
+        if (allEnabledTasks.Any(t => t.NextRunAt != null))
         {
-            using var scope = _serviceProvider.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<PlatformDbContext>();
+            await context.SaveChangesAsync(stoppingToken);
+        }
 
-            var now = DateTime.UtcNow;
-            _logger.LogDebug("[定时任务] 开始检查到期任务，当前时间: {Now}", now);
+        var dueTasks = allEnabledTasks
+            .Where(t => t.NextRunAt != null && t.NextRunAt <= now && t.LastStatus != ScrapingStatus.Running)
+            .ToList();
 
-            var allEnabledTasks = await context.Set<WebScrapingTask>()
-                .IgnoreQueryFilters()
-                .Where(t => t.IsEnabled && !string.IsNullOrEmpty(t.ScheduleCron))
-                .ToListAsync(stoppingToken);
+        foreach (var task in dueTasks)
+        {
+            if (stoppingToken.IsCancellationRequested) break;
 
-            _logger.LogDebug("[定时任务] 查询到 {Count} 个启用了定时表达式的任务", allEnabledTasks.Count);
-
-            if (allEnabledTasks.Count == 0)
+            var locked = await TryLockTaskAsync(task, context, stoppingToken);
+            if (!locked)
             {
-                _logger.LogWarning("[定时任务] 未查询到任何启用了定时表达式的任务，请检查数据");
-                var totalTaskCount = await context.Set<WebScrapingTask>().IgnoreQueryFilters().CountAsync(stoppingToken);
-                _logger.LogWarning("[定时任务] 数据库中WebScrapingTask总数: {Count}", totalTaskCount);
+                _logger.LogDebug("[定时任务] 任务 {TaskName} 已在执行中，跳过", task.Name);
+                continue;
             }
 
-            // 自动修复 NextRunAt 为 null 的任务
-            foreach (var t in allEnabledTasks.Where(t => t.NextRunAt == null && !string.IsNullOrEmpty(t.ScheduleCron)))
+            try
             {
-                var nextRun = WebScraperCron.ParseNext(t.ScheduleCron!, now);
-                _logger.LogWarning("[定时任务] 修复任务 {TaskName} 的NextRunAt: null -> {NextRun}", t.Name, nextRun);
-                t.NextRunAt = nextRun;
+                using var taskScope = _serviceProvider.CreateScope();
+                var tenantSetter = taskScope.ServiceProvider.GetRequiredService<ITenantContextSetter>();
+                tenantSetter.SetContext(task.CompanyId, task.CreatedBy);
+
+                var webScraperService = taskScope.ServiceProvider.GetRequiredService<IWebScraperService>();
+                await webScraperService.ExecuteTaskAsync(task.Id, task.CreatedBy ?? task.UserId);
             }
-            if (allEnabledTasks.Any(t => t.NextRunAt != null))
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "执行定时抓取任务失败: {TaskName}", task.Name);
+                task.LastStatus = ScrapingStatus.Failed;
+                task.LastError = ex.Message;
+                task.NextRunAt = WebScraperCron.ParseNext(task.ScheduleCron!, DateTime.UtcNow);
                 await context.SaveChangesAsync(stoppingToken);
             }
-
-            foreach (var t in allEnabledTasks.Where(t => t.NextRunAt != null))
-            {
-                _logger.LogDebug("[定时任务] 任务 {TaskName}, NextRunAt={NextRunAt}, IsEnabled={IsEnabled}, ScheduleCron={Cron}",
-                    t.Name, t.NextRunAt, t.IsEnabled, t.ScheduleCron);
-            }
-
-            var dueTasks = allEnabledTasks
-                .Where(t => t.NextRunAt != null && t.NextRunAt <= now && t.LastStatus != ScrapingStatus.Running)
-                .ToList();
-
-            var lockedTasks = new List<WebScrapingTask>();
-            foreach (var task in dueTasks)
-            {
-                if (stoppingToken.IsCancellationRequested) break;
-
-                try
-                {
-                    var locked = await TryLockTaskAsync(task, context, stoppingToken);
-                    if (!locked)
-                    {
-                        _logger.LogWarning("[定时任务] 任务 {TaskName} 无法锁定，可能正在执行中，跳过", task.Name);
-                        continue;
-                    }
-                    lockedTasks.Add(task);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "锁定任务失败: {TaskName}", task.Name);
-                }
-            }
-
-            foreach (var task in lockedTasks)
-            {
-                if (stoppingToken.IsCancellationRequested) break;
-
-                try
-                {
-                    await ExecuteTaskInTenantScopeAsync(task, stoppingToken);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "执行定时抓取任务失败: {TaskName}", task.Name);
-
-                    try
-                    {
-                        using var errorScope = _serviceProvider.CreateScope();
-                        var errorTenantSetter = errorScope.ServiceProvider.GetRequiredService<ITenantContextSetter>();
-                        errorTenantSetter.SetContext(task.CompanyId, task.CreatedBy);
-                        var errorContext = errorScope.ServiceProvider.GetRequiredService<PlatformDbContext>();
-
-                        var errorTask = await errorContext.Set<WebScrapingTask>()
-                            .IgnoreQueryFilters()
-                            .FirstOrDefaultAsync(t => t.Id == task.Id, stoppingToken);
-                        if (errorTask != null)
-                        {
-                            errorTask.LastStatus = ScrapingStatus.Failed;
-                            errorTask.LastError = ex.Message;
-                            errorTask.NextRunAt = WebScraperCron.ParseNext(task.ScheduleCron!, DateTime.UtcNow);
-                            await errorContext.SaveChangesAsync(stoppingToken);
-                        }
-                    }
-                    catch (Exception updateEx)
-                    {
-                        _logger.LogError(updateEx, "更新任务失败状态时出错: {TaskName}", task.Name);
-                    }
-                }
-            }
         }
-        finally
-        {
-            _runLock.Release();
-        }
-    }
-
-    private async Task ExecuteTaskInTenantScopeAsync(WebScrapingTask task, CancellationToken stoppingToken)
-    {
-
-        using var taskScope = _serviceProvider.CreateScope();
-        var tenantSetter = taskScope.ServiceProvider.GetRequiredService<ITenantContextSetter>();
-        tenantSetter.SetContext(task.CompanyId, task.CreatedBy);
-        _logger.LogDebug("[定时任务] 租户上下文已设置: CompanyId={CompanyId}", task.CompanyId);
-
-        var webScraperService = taskScope.ServiceProvider.GetRequiredService<IWebScraperService>();
-        var result = await webScraperService.ExecuteTaskAsync(task.Id, task.CreatedBy ?? task.UserId);
-
     }
 
     private async Task<bool> TryLockTaskAsync(WebScrapingTask task, PlatformDbContext context, CancellationToken stoppingToken)
     {
-        var currentTask = await context.Set<WebScrapingTask>()
+        var rowsAffected = await context.Set<WebScrapingTask>()
             .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(t => t.Id == task.Id, stoppingToken);
+            .Where(t => t.Id == task.Id && t.LastStatus != ScrapingStatus.Running)
+            .ExecuteUpdateAsync(s => s.SetProperty(t => t.LastStatus, ScrapingStatus.Running), stoppingToken);
 
-        if (currentTask == null || currentTask.LastStatus == ScrapingStatus.Running)
-        {
-            return false;
-        }
-
-        currentTask.LastStatus = ScrapingStatus.Running;
-        await context.SaveChangesAsync(stoppingToken);
-        return true;
+        return rowsAffected > 0;
     }
 }

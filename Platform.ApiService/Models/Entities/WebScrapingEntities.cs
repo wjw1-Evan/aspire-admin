@@ -50,7 +50,7 @@ public class WebScrapingLog : MultiTenantEntity
     public int PagesCrawled { get; set; }
     public int SuccessCount { get; set; }
     public int FailedCount { get; set; }
-    public int MatchedCount { get; set; }
+    public int? MatchedCount { get; set; }
     public string? ErrorMessage { get; set; }
     public string? ExtractedData { get; set; }
 }

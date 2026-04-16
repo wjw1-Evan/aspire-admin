@@ -105,9 +105,9 @@ public class WebScraperController : BaseApiController
     {
         var result = await _webScraperService.StopTaskAsync(id, RequiredUserId);
         if (!result)
-            return NotFound(new { message = "任务未在运行或不存在" });
+            return Success(new { success = false, message = "任务未在运行或不存在" });
 
-        return Success(new { message = "任务已停止" });
+        return Success(new { success = true, message = "任务已停止" });
     }
 
     [HttpPost("execute-quick")]

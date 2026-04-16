@@ -95,8 +95,28 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
                 .Where(t => t.NextRunAt != null && t.NextRunAt <= now && t.LastStatus != ScrapingStatus.Running)
                 .ToList();
 
-
+            var lockedTasks = new List<WebScrapingTask>();
             foreach (var task in dueTasks)
+            {
+                if (stoppingToken.IsCancellationRequested) break;
+
+                try
+                {
+                    var locked = await TryLockTaskAsync(task, context, stoppingToken);
+                    if (!locked)
+                    {
+                        _logger.LogWarning("[定时任务] 任务 {TaskName} 无法锁定，可能正在执行中，跳过", task.Name);
+                        continue;
+                    }
+                    lockedTasks.Add(task);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "锁定任务失败: {TaskName}", task.Name);
+                }
+            }
+
+            foreach (var task in lockedTasks)
             {
                 if (stoppingToken.IsCancellationRequested) break;
 
@@ -150,5 +170,21 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
         var webScraperService = taskScope.ServiceProvider.GetRequiredService<IWebScraperService>();
         var result = await webScraperService.ExecuteTaskAsync(task.Id, task.CreatedBy ?? task.UserId);
 
+    }
+
+    private async Task<bool> TryLockTaskAsync(WebScrapingTask task, PlatformDbContext context, CancellationToken stoppingToken)
+    {
+        var currentTask = await context.Set<WebScrapingTask>()
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(t => t.Id == task.Id, stoppingToken);
+
+        if (currentTask == null || currentTask.LastStatus == ScrapingStatus.Running)
+        {
+            return false;
+        }
+
+        currentTask.LastStatus = ScrapingStatus.Running;
+        await context.SaveChangesAsync(stoppingToken);
+        return true;
     }
 }

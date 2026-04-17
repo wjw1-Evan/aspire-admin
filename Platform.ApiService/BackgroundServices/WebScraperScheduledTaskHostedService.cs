@@ -80,6 +80,10 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
 
             task.LastStatus = ScrapingStatus.Running;
             await context.SaveChangesAsync(CancellationToken.None);
+
+            task.NextRunAt = CronExpressionParser.ParseNext(task.ScheduleCron!, DateTime.UtcNow);
+            await context.SaveChangesAsync(CancellationToken.None);
+
             _taskLauncher.LaunchAsync(task.Id, task.CreatedBy ?? task.UserId);
         }
     }

@@ -64,26 +64,34 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
             await context.SaveChangesAsync(stoppingToken);
         }
 
-        var dueTasks = allEnabledTasks
-            .Where(t => t.NextRunAt != null && t.NextRunAt <= now && t.LastStatus != ScrapingStatus.Running)
-            .GroupBy(t => t.Id)
-            .Select(g => g.First())
-            .ToList();
-
-        _logger.LogInformation("[定时任务] 检查到 {Count} 个到期任务", dueTasks.Count);
-
-        foreach (var task in dueTasks)
+        foreach (var task in allEnabledTasks)
         {
-            if (stoppingToken.IsCancellationRequested) break;
+            var isDue = task.NextRunAt != null && task.NextRunAt <= now;
+            var isRunning = task.LastStatus == ScrapingStatus.Running;
 
-            _logger.LogInformation("[定时任务] 准备执行任务 {TaskName}, NextRunAt={NextRunAt}", task.Name, task.NextRunAt);
+            if (isDue && isRunning)
+            {
+                _logger.LogWarning("[定时任务] 任务 {TaskName} 已到期但正在执行，跳过", task.Name);
+                continue;
+            }
 
-            task.LastStatus = ScrapingStatus.Running;
-            task.NextRunAt = CronExpressionParser.ParseNext(task.ScheduleCron!, DateTime.UtcNow);
-            await context.SaveChangesAsync(CancellationToken.None);
-
-            _logger.LogInformation("[定时任务] 已启动任务 {TaskName}", task.Name);
-            _taskLauncher.LaunchAsync(task.Id, task.CreatedBy ?? task.UserId);
+            if (isDue)
+            {
+                task.LastStatus = ScrapingStatus.Running;
+                task.NextRunAt = CronExpressionParser.ParseNext(task.ScheduleCron!, DateTime.UtcNow);
+                await context.SaveChangesAsync(CancellationToken.None);
+                _taskLauncher.LaunchAsync(task.Id, task.CreatedBy ?? task.UserId);
+            }
+            else if (task.NextRunAt != null && task.LastStatus == ScrapingStatus.Running)
+            {
+                var elapsed = now - (task.LastRunAt ?? now.AddMinutes(-5));
+                if (elapsed.TotalMinutes > 10)
+                {
+                    _logger.LogWarning("[定时任务] 任务 {TaskName} 状态异常，已重置", task.Name);
+                    task.LastStatus = ScrapingStatus.Idle;
+                    await context.SaveChangesAsync(CancellationToken.None);
+                }
+            }
         }
     }
 }

@@ -32,7 +32,7 @@ public class ParkTenantService : IParkTenantService
     /// <summary>
     /// 获取租户列表
     /// </summary>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<ParkTenantDto>> GetTenantsAsync(Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<ParkTenantDto>> GetTenantsAsync(Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         var pagedResult = _context.Set<ParkTenant>().ToPagedList(request);
         var items = await pagedResult.Queryable.ToListAsync();
@@ -155,7 +155,7 @@ public class ParkTenantService : IParkTenantService
     /// <summary>
     /// 获取合同列表
     /// </summary>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<LeaseContractDto>> GetContractsAsync(Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<LeaseContractDto>> GetContractsAsync(Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         var pagedResult = _context.Set<LeaseContract>().ToPagedList(request);
         var items = await pagedResult.Queryable.ToListAsync();

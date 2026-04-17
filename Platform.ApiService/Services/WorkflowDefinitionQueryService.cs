@@ -21,7 +21,7 @@ public class WorkflowDefinitionQueryService : IWorkflowDefinitionQueryService
         _context = context;
     }
 
-    public async Task<System.Linq.Dynamic.Core.PagedResult<WorkflowDefinition>> GetWorkflowsAsync(PageParams request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<WorkflowDefinition>> GetWorkflowsAsync(ProTableRequest request)
     {
         return _context.Set<WorkflowDefinition>().ToPagedList(request);
     }

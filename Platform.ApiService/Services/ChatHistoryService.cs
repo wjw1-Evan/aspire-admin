@@ -17,7 +17,7 @@ public class ChatHistoryService : IChatHistoryService
         _chatService = chatService;
     }
 
-    public async Task<System.Linq.Dynamic.Core.PagedResult<ChatHistoryListItemDto>> GetChatHistoryAsync(Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<ChatHistoryListItemDto>> GetChatHistoryAsync(Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         var pagedResult = _context.Set<ChatSession>().ToPagedList(request);
         var sessions = await pagedResult.Queryable.ToListAsync();

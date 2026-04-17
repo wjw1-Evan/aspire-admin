@@ -13,22 +13,22 @@ public interface IUnifiedNotificationService
     /// <summary>
     /// 获取统一的通知/待办/任务中心数据
     /// </summary>
-    Task<PagedResult<NoticeIconItem>> GetUnifiedNotificationsAsync(PageParams request, string filterType = "all");
+    Task<PagedResult<NoticeIconItem>> GetUnifiedNotificationsAsync(ProTableRequest request, string filterType = "all");
 
     /// <summary>
     /// 获取待办项列表
     /// </summary>
-    Task<PagedResult<NoticeIconItem>> GetTodosAsync(PageParams request, string sortBy = "dueDate");
+    Task<PagedResult<NoticeIconItem>> GetTodosAsync(ProTableRequest request, string sortBy = "dueDate");
 
     /// <summary>
     /// 获取系统消息列表
     /// </summary>
-    Task<PagedResult<NoticeIconItem>> GetSystemMessagesAsync(PageParams request);
+    Task<PagedResult<NoticeIconItem>> GetSystemMessagesAsync(ProTableRequest request);
 
     /// <summary>
     /// 获取任务相关通知列表
     /// </summary>
-    Task<PagedResult<NoticeIconItem>> GetTaskNotificationsAsync(PageParams request);
+    Task<PagedResult<NoticeIconItem>> GetTaskNotificationsAsync(ProTableRequest request);
 
     /// <summary>
     /// 创建待办项

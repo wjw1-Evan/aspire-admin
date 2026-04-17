@@ -15,7 +15,7 @@ public class FormDefinitionService : IFormDefinitionService
         _context = context;
     }
 
-    public async Task<System.Linq.Dynamic.Core.PagedResult<FormDefinition>> GetFormsAsync(Platform.ServiceDefaults.Models.PageParams request, bool? isActive)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<FormDefinition>> GetFormsAsync(Platform.ServiceDefaults.Models.ProTableRequest request, bool? isActive)
     {
         var query = _context.Set<FormDefinition>().AsQueryable();
 

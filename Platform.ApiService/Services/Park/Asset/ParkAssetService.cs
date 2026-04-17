@@ -25,7 +25,7 @@ public class ParkAssetService : IParkAssetService
 
     #region 楼宇管理
 
-    public async Task<System.Linq.Dynamic.Core.PagedResult<BuildingDto>> GetBuildingsAsync(Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<BuildingDto>> GetBuildingsAsync(Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         var pagedResult = _context.Set<Building>().ToPagedList(request);
         var items = await pagedResult.Queryable.ToListAsync();
@@ -103,7 +103,7 @@ public class ParkAssetService : IParkAssetService
 
     #region 房源管理
 
-    public async Task<System.Linq.Dynamic.Core.PagedResult<PropertyUnitDto>> GetPropertyUnitsAsync(Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<PropertyUnitDto>> GetPropertyUnitsAsync(Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         var pagedResult = _context.Set<PropertyUnit>().ToPagedList(request);
         var items = await pagedResult.Queryable.ToListAsync();

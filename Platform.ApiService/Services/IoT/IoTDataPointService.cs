@@ -42,7 +42,7 @@ public class IoTDataPointService
         return dataPoint;
     }
 
-    public async Task<System.Linq.Dynamic.Core.PagedResult<IoTDataPoint>> GetDataPointsAsync(Platform.ServiceDefaults.Models.PageParams request, string? deviceId = null)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<IoTDataPoint>> GetDataPointsAsync(Platform.ServiceDefaults.Models.ProTableRequest request, string? deviceId = null)
     {
         var query = _context.Set<IoTDataPoint>().AsQueryable();
 
@@ -179,7 +179,7 @@ public class IoTDataPointService
         return records;
     }
 
-    public Task<System.Linq.Dynamic.Core.PagedResult<IoTDataRecord>> QueryDataRecordsAsync(Platform.ServiceDefaults.Models.PageParams request, string? deviceId = null, string? dataPointId = null, DateTime? startTime = null, DateTime? endTime = null)
+    public Task<System.Linq.Dynamic.Core.PagedResult<IoTDataRecord>> QueryDataRecordsAsync(Platform.ServiceDefaults.Models.ProTableRequest request, string? deviceId = null, string? dataPointId = null, DateTime? startTime = null, DateTime? endTime = null)
     {
         var query = _context.Set<IoTDataRecord>().AsQueryable();
 

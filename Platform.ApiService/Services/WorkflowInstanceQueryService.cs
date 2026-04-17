@@ -16,7 +16,7 @@ public class WorkflowInstanceQueryService : IWorkflowInstanceQueryService
         _context = context;
     }
 
-    public async Task<System.Linq.Dynamic.Core.PagedResult<WorkflowInstance>> GetInstancesAsync(Platform.ServiceDefaults.Models.PageParams request, string? workflowDefinitionId, WorkflowStatus? status)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<WorkflowInstance>> GetInstancesAsync(Platform.ServiceDefaults.Models.ProTableRequest request, string? workflowDefinitionId, WorkflowStatus? status)
     {
         var queryable = _context.Set<WorkflowInstance>().AsQueryable();
 

@@ -47,7 +47,7 @@ public class UserActivityLogService : IUserActivityLogService
     /// <summary>
     /// 获取用户活动日志（分页）
     /// </summary>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<UserActivityLog>> GetActivityLogsAsync(PageParams request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<UserActivityLog>> GetActivityLogsAsync(ProTableRequest request)
     {
         return _context.Set<UserActivityLog>().ToPagedList(request);
     }
@@ -62,7 +62,7 @@ public class UserActivityLogService : IUserActivityLogService
 
     /// <inheritdoc/>
     public async Task<System.Linq.Dynamic.Core.PagedResult<ActivityLogListItemResponse>> GetCurrentUserActivityLogsAsync(
-        PageParams request,
+        ProTableRequest request,
         string? action = null,
         string? httpMethod = null,
         int? statusCode = null,
@@ -125,13 +125,13 @@ public class UserActivityLogService : IUserActivityLogService
     }
 
     /// <inheritdoc/>
-    public Task<System.Linq.Dynamic.Core.PagedResult<UserActivityLog>> GetAllActivityLogsAsync(PageParams request)
+    public Task<System.Linq.Dynamic.Core.PagedResult<UserActivityLog>> GetAllActivityLogsAsync(ProTableRequest request)
     {
         return Task.FromResult(_context.Set<UserActivityLog>().ToPagedList(request));
     }
 
     /// <inheritdoc/>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<ActivityLogListItemResponse>> GetAllActivityLogsWithUsersAsync(PageParams request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<ActivityLogListItemResponse>> GetAllActivityLogsWithUsersAsync(ProTableRequest request)
     {
         var pagedResult = _context.Set<UserActivityLog>().ToPagedList(request);
         var logs = pagedResult.Queryable.ToList();

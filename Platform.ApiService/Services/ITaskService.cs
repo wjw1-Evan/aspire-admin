@@ -30,7 +30,7 @@ public interface ITaskService
     /// </summary>
     /// <param name="request">查询请求</param>
     /// <returns>任务列表</returns>
-    Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> QueryTasksAsync(Platform.ServiceDefaults.Models.PageParams request);
+    Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> QueryTasksAsync(Platform.ServiceDefaults.Models.ProTableRequest request);
 
     /// <summary>
     /// 更新任务
@@ -90,7 +90,7 @@ public interface ITaskService
     /// <param name="taskId">任务ID</param>
     /// <returns>执行日志列表</returns>
     /// <param name="request">分页请求参数</param>
-    Task<System.Linq.Dynamic.Core.PagedResult<TaskExecutionLogDto>> GetTaskExecutionLogsAsync(string taskId, Platform.ServiceDefaults.Models.PageParams request);
+    Task<System.Linq.Dynamic.Core.PagedResult<TaskExecutionLogDto>> GetTaskExecutionLogsAsync(string taskId, Platform.ServiceDefaults.Models.ProTableRequest request);
 
     /// <summary>
     /// 记录任务执行日志
@@ -119,7 +119,7 @@ public interface ITaskService
     /// <param name="userId">用户ID</param>
     /// <returns>创建的任务列表</returns>
     /// <param name="request">分页请求参数</param>
-    Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> GetUserCreatedTasksAsync(string userId, Platform.ServiceDefaults.Models.PageParams request);
+    Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> GetUserCreatedTasksAsync(string userId, Platform.ServiceDefaults.Models.ProTableRequest request);
 
     /// <summary>
     /// 批量更新任务状态

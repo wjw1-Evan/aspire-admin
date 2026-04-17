@@ -134,7 +134,7 @@ public class ParkEnterpriseServiceController : BaseApiController
     /// 获取服务申请列表
     /// </summary>
     [HttpGet("requests/list")]
-    public async Task<IActionResult> GetRequests([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<IActionResult> GetRequests([FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         try
         {

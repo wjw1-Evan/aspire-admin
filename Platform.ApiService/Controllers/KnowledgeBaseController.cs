@@ -33,7 +33,7 @@ public class KnowledgeBaseController : BaseApiController
     /// </summary>
     [HttpGet]
     [RequireMenu("workflow-list")]
-    public async Task<IActionResult> GetKnowledgeBases([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<IActionResult> GetKnowledgeBases([FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         try
         {

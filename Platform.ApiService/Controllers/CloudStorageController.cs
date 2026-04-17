@@ -116,7 +116,7 @@ public class CloudStorageController : BaseApiController
     [HttpGet("list")]
     [HttpGet("files")] // 兼容客户端使用 /files 路径
     [RequireMenu("cloud-storage-files")]
-    public async Task<IActionResult> GetFileItems([FromQuery] string? parentId, [FromQuery] Platform.ServiceDefaults.Models.PageParams query)
+    public async Task<IActionResult> GetFileItems([FromQuery] string? parentId, [FromQuery] Platform.ServiceDefaults.Models.ProTableRequest query)
     {
         var result = await _cloudStorageService.GetFileItemsAsync(parentId ?? string.Empty, query);
         return Success(result);
@@ -270,7 +270,7 @@ public class CloudStorageController : BaseApiController
     /// <returns>搜索结果</returns>
     [HttpGet("search")]
     [RequireMenu("cloud-storage-files")]
-    public async Task<IActionResult> SearchFiles([FromQuery] Platform.ServiceDefaults.Models.PageParams query)
+    public async Task<IActionResult> SearchFiles([FromQuery] Platform.ServiceDefaults.Models.ProTableRequest query)
     {
         try
         {
@@ -341,7 +341,7 @@ public class CloudStorageController : BaseApiController
     [HttpGet("recycle")]
     [RequireMenu("cloud-storage-recycle")]
     public async Task<IActionResult> GetRecycleItems(
-        [FromQuery] PageParams request,
+        [FromQuery] ProTableRequest request,
         [FromQuery] FileItemType? type = null)
     {
         var result = await _cloudStorageService.GetRecycleBinItemsAsync(request, type);
@@ -355,7 +355,7 @@ public class CloudStorageController : BaseApiController
     /// <returns>分页回收站项目列表</returns>
     [HttpGet("recycle-bin")]
     [RequireMenu("cloud-storage-recycle")]
-    public async Task<IActionResult> GetRecycleBinItems([FromQuery] Platform.ServiceDefaults.Models.PageParams query)
+    public async Task<IActionResult> GetRecycleBinItems([FromQuery] Platform.ServiceDefaults.Models.ProTableRequest query)
     {
         var result = await _cloudStorageService.GetRecycleBinItemsAsync(query);
         return Success(result);

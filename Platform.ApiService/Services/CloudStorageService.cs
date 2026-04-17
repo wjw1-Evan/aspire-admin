@@ -401,7 +401,7 @@ public class CloudStorageService : ICloudStorageService
     }
 
     /// <inheritdoc/>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<FileItem>> GetFileItemsAsync(string parentId, Platform.ServiceDefaults.Models.PageParams query)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<FileItem>> GetFileItemsAsync(string parentId, Platform.ServiceDefaults.Models.ProTableRequest query)
     {
         var normalizedParentId = string.IsNullOrWhiteSpace(parentId) ? string.Empty : parentId;
         var q = _context.Set<FileItem>().Where(x => x.Status == FileStatus.Active && x.ParentId == normalizedParentId);
@@ -582,7 +582,7 @@ public class CloudStorageService : ICloudStorageService
     }
 
     /// <inheritdoc/>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<FileItem>> SearchFilesAsync(Platform.ServiceDefaults.Models.PageParams query)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<FileItem>> SearchFilesAsync(Platform.ServiceDefaults.Models.ProTableRequest query)
     {
         var q = _context.Set<FileItem>().Where(x => x.Status == FileStatus.Active);
 
@@ -631,7 +631,7 @@ public class CloudStorageService : ICloudStorageService
     }
 
     /// <inheritdoc/>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<FileItem>> GetRecycleBinItemsAsync(Platform.ServiceDefaults.Models.PageParams query, FileItemType? type = null)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<FileItem>> GetRecycleBinItemsAsync(Platform.ServiceDefaults.Models.ProTableRequest query, FileItemType? type = null)
     {
         var queryable = _context.Set<FileItem>().Where(x => x.Status == FileStatus.InRecycleBin);
 

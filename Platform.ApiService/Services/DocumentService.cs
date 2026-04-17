@@ -12,7 +12,7 @@ public interface IDocumentService
     Task<Document?> UpdateDocumentAsync(string id, UpdateDocumentRequest request);
     Task UpdateDocumentAsync(Document document);
     Task<Document?> GetDocumentAsync(string id);
-    Task<PagedResult<Document>> GetDocumentsAsync(PageParams pageParams, DocumentStatus? status = null, string? documentType = null, string? category = null, string? createdBy = null, string? filterType = null);
+    Task<PagedResult<Document>> GetDocumentsAsync(ProTableRequest request, DocumentStatus? status = null, string? documentType = null, string? category = null, string? createdBy = null, string? filterType = null);
     Task<bool> DeleteDocumentAsync(string id);
     Task<WorkflowInstance> SubmitDocumentAsync(string documentId, string workflowDefinitionId, Dictionary<string, object>? variables = null);
     Task<DocumentAttachmentUploadResult> UploadAttachmentAsync(IFormFile file);
@@ -57,13 +57,13 @@ public class DocumentService : IDocumentService
         => await _crudService.GetDocumentAsync(id);
 
     public async Task<PagedResult<Document>> GetDocumentsAsync(
-        PageParams pageParams,
+        ProTableRequest request,
         DocumentStatus? status = null,
         string? documentType = null,
         string? category = null,
         string? createdBy = null,
         string? filterType = null)
-        => await _crudService.GetDocumentsAsync(pageParams, status, documentType, category, createdBy, filterType);
+        => await _crudService.GetDocumentsAsync(request, status, documentType, category, createdBy, filterType);
 
     public async Task<bool> DeleteDocumentAsync(string id)
         => await _crudService.DeleteDocumentAsync(id);

@@ -106,7 +106,7 @@ public class ProjectService : IProjectService
     }
 
     /// <inheritdoc/>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<ProjectDto>> GetProjectsListAsync(Platform.ServiceDefaults.Models.PageParams request, string currentUserId)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<ProjectDto>> GetProjectsListAsync(Platform.ServiceDefaults.Models.ProTableRequest request, string currentUserId)
     {
         var q = _context.Set<Project>().AsQueryable();
         q = q.Where(p => p.CreatedBy == currentUserId || (p.MemberIds != null && p.MemberIds.Contains(currentUserId)));

@@ -81,14 +81,14 @@ public interface IUserService
     /// </summary>
     /// <param name="request">用户列表请求</param>
     /// <returns>用户列表响应</returns>
-    Task<System.Linq.Dynamic.Core.PagedResult<AppUser>> GetUsersWithPaginationAsync(Platform.ServiceDefaults.Models.PageParams request);
+    Task<System.Linq.Dynamic.Core.PagedResult<AppUser>> GetUsersWithPaginationAsync(Platform.ServiceDefaults.Models.ProTableRequest request);
 
     /// <summary>
     /// 分页获取用户列表（包含角色信息）
     /// </summary>
     /// <param name="request">用户列表请求</param>
     /// <returns>带角色信息的用户列表响应</returns>
-    Task<System.Linq.Dynamic.Core.PagedResult<UserWithRolesResponse>> GetUsersWithRolesAsync(Platform.ServiceDefaults.Models.PageParams request);
+    Task<System.Linq.Dynamic.Core.PagedResult<UserWithRolesResponse>> GetUsersWithRolesAsync(Platform.ServiceDefaults.Models.ProTableRequest request);
 
     /// <summary>
     /// 确保当前用户有权访问目标用户的数据
@@ -152,7 +152,7 @@ public interface IUserService
     /// <param name="startDate">开始日期（可选）</param>
     /// <param name="endDate">结束日期（可选）</param>
     /// <returns>带统计的分页活动日志响应</returns>
-    Task<System.Linq.Dynamic.Core.PagedResult<ActivityLogListItemResponse>> GetCurrentUserActivityLogsAsync(Platform.ServiceDefaults.Models.PageParams request, string? action = null, string? httpMethod = null, int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null);
+    Task<System.Linq.Dynamic.Core.PagedResult<ActivityLogListItemResponse>> GetCurrentUserActivityLogsAsync(Platform.ServiceDefaults.Models.ProTableRequest request, string? action = null, string? httpMethod = null, int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null);
 
     /// <summary>
     /// 获取当前用户的活动日志详情（根据日志ID）

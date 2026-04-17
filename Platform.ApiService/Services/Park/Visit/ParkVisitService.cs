@@ -40,7 +40,7 @@ public class ParkVisitService : IParkVisitService
     /// <summary>
     /// 获取走访任务列表
     /// </summary>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<VisitTaskDto>> GetVisitTasksAsync(Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<VisitTaskDto>> GetVisitTasksAsync(Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         var pagedResult = _context.Set<VisitTask>().ToPagedList(request);
         var items = await pagedResult.Queryable.ToListAsync();
@@ -206,7 +206,7 @@ public class ParkVisitService : IParkVisitService
     /// <summary>
     /// 获取走访考核列表
     /// </summary>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<VisitAssessmentDto>> GetVisitAssessmentsAsync(Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<VisitAssessmentDto>> GetVisitAssessmentsAsync(Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         var pagedResult = _context.Set<VisitAssessment>().ToPagedList(request);
         var items = await pagedResult.Queryable.ToListAsync();
@@ -274,7 +274,7 @@ public class ParkVisitService : IParkVisitService
     /// <summary>
     /// 获取知识库问题列表
     /// </summary>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<VisitQuestionDto>> GetVisitQuestionsAsync(Platform.ServiceDefaults.Models.PageParams request, string? category = null)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<VisitQuestionDto>> GetVisitQuestionsAsync(Platform.ServiceDefaults.Models.ProTableRequest request, string? category = null)
     {
         var search = request.Search?.ToLower();
 

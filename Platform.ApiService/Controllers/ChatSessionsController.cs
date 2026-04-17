@@ -35,7 +35,7 @@ public class ChatSessionsController : BaseApiController
     /// <returns>会话列表</returns>
     [HttpGet]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetSessions([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<IActionResult> GetSessions([FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         var result = await _chatService.GetSessionsAsync(request);
         return Success(result);

@@ -67,7 +67,7 @@ public class WebScraperService : IWebScraperService
     }
 
     public async Task<PagedResult<WebScrapingTask>> GetTasksAsync(
-        PageParams pageParams, string userId, string? keyword = null, ScrapingStatus? status = null)
+        ProTableRequest request, string userId, string? keyword = null, ScrapingStatus? status = null)
     {
         var query = _context.Set<WebScrapingTask>().AsQueryable();
 
@@ -76,7 +76,7 @@ public class WebScraperService : IWebScraperService
             query = query.Where(t => t.LastStatus == status.Value);
         }
 
-        return  query.ToPagedList(pageParams);
+        return  query.ToPagedList(request);
         
     }
 
@@ -385,7 +385,7 @@ public class WebScraperService : IWebScraperService
     }
 
     public async Task<PagedResult<WebScrapingLog>> GetLogsAsync(
-        PageParams pageParams, string userId, string? taskId = null)
+        ProTableRequest request, string userId, string? taskId = null)
     {
         var taskIds = await _context.Set<WebScrapingTask>()
             .Where(t => t.UserId == userId)
@@ -400,7 +400,7 @@ public class WebScraperService : IWebScraperService
             query = query.Where(l => l.TaskId == taskId);
         }
 
-        return query.ToPagedList(pageParams);
+        return query.ToPagedList(request);
     }
 
     public async Task<WebScrapingLog?> GetLogByIdAsync(string id, string userId)
@@ -415,7 +415,7 @@ public class WebScraperService : IWebScraperService
     }
 
     public async Task<PagedResult<WebScrapingResult>> GetResultsAsync(
-        PageParams pageParams, string userId, string? taskId = null, string? logId = null)
+        ProTableRequest request, string userId, string? taskId = null, string? logId = null)
     {
         var taskIds = await _context.Set<WebScrapingTask>()
             .Where(t => t.UserId == userId || t.IsPublic)
@@ -435,7 +435,7 @@ public class WebScraperService : IWebScraperService
             query = query.Where(r => r.LogId == logId);
         }
 
-        return query.ToPagedList(pageParams);
+        return query.ToPagedList(request);
     }
 
     public async Task<WebScrapingResult?> GetResultByIdAsync(string id, string userId)

@@ -14,7 +14,7 @@ public interface IXiaokeConfigService
     /// <param name="queryParams">查询参数</param>
     /// <param name="isEnabled">是否启用（筛选）</param>
     /// <returns>配置列表响应</returns>
-    Task<System.Linq.Dynamic.Core.PagedResult<XiaokeConfigDto>> GetConfigsAsync(Platform.ServiceDefaults.Models.PageParams queryParams, bool? isEnabled = null);
+    Task<System.Linq.Dynamic.Core.PagedResult<XiaokeConfigDto>> GetConfigsAsync(Platform.ServiceDefaults.Models.ProTableRequest queryParams, bool? isEnabled = null);
 
     /// <summary>
     /// 根据ID获取配置详情

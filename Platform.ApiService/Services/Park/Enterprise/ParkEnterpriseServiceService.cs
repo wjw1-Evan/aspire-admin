@@ -136,7 +136,7 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
     /// <summary>
     /// 获取服务申请列表
     /// </summary>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<ServiceRequestDto>> GetRequestsAsync(Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<ServiceRequestDto>> GetRequestsAsync(Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         var pagedResult = _context.Set<ServiceRequest>().ToPagedList(request);
         var items = await pagedResult.Queryable.ToListAsync();

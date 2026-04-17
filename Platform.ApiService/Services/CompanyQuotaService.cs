@@ -108,7 +108,7 @@ public class CompanyQuotaService : ICompanyQuotaService
     }
 
     public async Task<System.Linq.Dynamic.Core.PagedResult<StorageQuotaListItem>> GetStorageQuotaListAsync(
-        PageParams pageParams, string? companyId = null, bool? isEnabled = null)
+        ProTableRequest request, string? companyId = null, bool? isEnabled = null)
     {
         var targetCompanyId = companyId ?? await _tenantContext.GetCurrentCompanyIdAsync();
         var allQuotas = await _context.Set<StorageQuota>().ToListAsync();
@@ -137,7 +137,7 @@ public class CompanyQuotaService : ICompanyQuotaService
             Status = q.IsEnabled ? "Active" : "Disabled"
         }).ToList();
 
-        return items.OrderByDescending(item => item.UsedSpace).ToList().AsQueryable().ToPagedList(pageParams);
+        return items.OrderByDescending(item => item.UsedSpace).ToList().AsQueryable().ToPagedList(request);
     }
 
     private static string GetFileTypeCategory(string? mimeType)

@@ -150,7 +150,7 @@ public class FileShareService : IFileShareService
     /// 获取我创建的分享列表
     /// </summary>
     public async Task<System.Linq.Dynamic.Core.PagedResult<Models.FileShare>> GetMySharesAsync(
-        Platform.ServiceDefaults.Models.PageParams pageParams,
+        Platform.ServiceDefaults.Models.ProTableRequest request,
         ShareType? type = null,
         SharePermission? permission = null,
         bool? isActive = null,
@@ -196,14 +196,14 @@ public class FileShareService : IFileShareService
             queryable = queryable.Where(s => s.ExpiresAt <= expiresBefore.Value);
         }
 
-        return queryable.ToPagedList(pageParams);
+        return queryable.ToPagedList(request);
     }
 
     /// <summary>
     /// 获取分享给我的文件列表
     /// </summary>
     public async Task<System.Linq.Dynamic.Core.PagedResult<Models.FileShare>> GetSharedWithMeAsync(
-        Platform.ServiceDefaults.Models.PageParams pageParams,
+        Platform.ServiceDefaults.Models.ProTableRequest request,
         SharePermission? permission = null,
         DateTime? createdAfter = null,
         DateTime? createdBefore = null,
@@ -238,7 +238,7 @@ public class FileShareService : IFileShareService
             queryable = queryable.Where(s => s.ExpiresAt <= expiresBefore.Value);
         }
 
-        return queryable.ToPagedList(pageParams);
+        return queryable.ToPagedList(request);
     }
 
     /// <summary>

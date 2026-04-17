@@ -33,7 +33,7 @@ public class UnifiedNotificationController : BaseApiController
     /// <param name="request">分页请求参数</param>
     [HttpGet("center")]
     public async Task<IActionResult> GetUnifiedNotifications(
-        [FromQuery] Platform.ServiceDefaults.Models.PageParams request,
+        [FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request,
         [FromQuery] string filterType = "all")
     {
         var result = await _unifiedNotificationService.GetUnifiedNotificationsAsync(request, filterType);
@@ -46,7 +46,7 @@ public class UnifiedNotificationController : BaseApiController
     /// <returns>待办项列表</returns>
     [HttpGet("todos")]
     public async Task<IActionResult> GetTodos(
-        [FromQuery] Platform.ServiceDefaults.Models.PageParams request,
+        [FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request,
         [FromQuery] string sortBy = "dueDate")
     {
         var result = await _unifiedNotificationService.GetTodosAsync(request, sortBy);
@@ -59,7 +59,7 @@ public class UnifiedNotificationController : BaseApiController
     /// <returns>系统消息列表</returns>
     [HttpGet("system-messages")]
     public async Task<IActionResult> GetSystemMessages(
-        [FromQuery] Platform.ServiceDefaults.Models.PageParams request)
+        [FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         var result = await _unifiedNotificationService.GetSystemMessagesAsync(request);
         return Success(result);
@@ -71,7 +71,7 @@ public class UnifiedNotificationController : BaseApiController
     /// <returns>任务相关通知列表</returns>
     [HttpGet("task-notifications")]
     public async Task<IActionResult> GetTaskNotifications(
-        [FromQuery] Platform.ServiceDefaults.Models.PageParams request)
+        [FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         var result = await _unifiedNotificationService.GetTaskNotificationsAsync(request);
         return Success(result);

@@ -18,12 +18,12 @@ public interface ICompanyQuotaService
     Task<CompanyStorageStatistics> GetCompanyStorageStatisticsAsync();
     Task<StorageUsageStats> GetStorageUsageStatsAsync(string? userId = null);
     Task<List<UserStorageRanking>> GetStorageUsageRankingAsync(int topCount = 10);
-    Task<System.Linq.Dynamic.Core.PagedResult<StorageQuotaListItem>> GetStorageQuotaListAsync(PageParams pageParams, string? companyId = null, bool? isEnabled = null);
+    Task<System.Linq.Dynamic.Core.PagedResult<StorageQuotaListItem>> GetStorageQuotaListAsync(ProTableRequest request, string? companyId = null, bool? isEnabled = null);
 }
 
 public interface IQuotaWarningService
 {
     Task<List<StorageQuotaWarning>> GetQuotaWarningsAsync(double warningThreshold = 0.8);
-    Task<System.Linq.Dynamic.Core.PagedResult<StorageQuotaWarning>> GetQuotaWarningsPaginatedAsync(PageParams pageParams, double warningThreshold = 0.8);
+    Task<System.Linq.Dynamic.Core.PagedResult<StorageQuotaWarning>> GetQuotaWarningsPaginatedAsync(ProTableRequest request, double warningThreshold = 0.8);
     Task<BatchOperationResult> CleanupUnusedQuotasAsync();
 }

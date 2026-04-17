@@ -52,7 +52,7 @@ public class KnowledgeService : IKnowledgeService
     }
 
     /// <inheritdoc/>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<KnowledgeBase>> GetKnowledgeBasesAsync(Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<KnowledgeBase>> GetKnowledgeBasesAsync(Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         var q = _context.Set<KnowledgeBase>().AsQueryable();
         return q.OrderByDescending(kb => kb.CreatedAt).ToPagedList(request);

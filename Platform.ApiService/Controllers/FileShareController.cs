@@ -174,7 +174,7 @@ public class FileShareController : BaseApiController
     [HttpGet("my-shares")]
     [RequireMenu("cloud-storage-shared")]
     public async Task<IActionResult> GetMyShares(
-        [FromQuery] Platform.ServiceDefaults.Models.PageParams pageParams,
+        [FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request,
         [FromQuery] ShareType? type = null,
         [FromQuery] SharePermission? permission = null,
         [FromQuery] bool? isActive = null,
@@ -185,9 +185,8 @@ public class FileShareController : BaseApiController
     {
         try
         {
-            pageParams.SortBy = string.IsNullOrEmpty(pageParams.SortBy) ? "createdAt" : pageParams.SortBy;
             var result = await _fileShareService.GetMySharesAsync(
-                pageParams, type, permission, isActive,
+                request, type, permission, isActive,
                 createdAfter, createdBefore, expiresAfter, expiresBefore);
             return Success(result);
         }
@@ -211,7 +210,7 @@ public class FileShareController : BaseApiController
     [HttpGet("shared-with-me")]
     [RequireMenu("cloud-storage-shared")]
     public async Task<IActionResult> GetSharedWithMe(
-        [FromQuery] Platform.ServiceDefaults.Models.PageParams pageParams,
+        [FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request,
         [FromQuery] SharePermission? permission = null,
         [FromQuery] DateTime? createdAfter = null,
         [FromQuery] DateTime? createdBefore = null,
@@ -220,9 +219,8 @@ public class FileShareController : BaseApiController
     {
         try
         {
-            pageParams.SortBy = string.IsNullOrEmpty(pageParams.SortBy) ? "createdAt" : pageParams.SortBy;
             var result = await _fileShareService.GetSharedWithMeAsync(
-                pageParams, permission, createdAfter, createdBefore, expiresAfter, expiresBefore);
+                request, permission, createdAfter, createdBefore, expiresAfter, expiresBefore);
             return Success(result);
         }
         catch (Exception ex)

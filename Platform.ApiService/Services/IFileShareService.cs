@@ -50,7 +50,7 @@ public interface IFileShareService
     /// 获取我创建的分享列表
     /// </summary>
     Task<PagedResult<Models.FileShare>> GetMySharesAsync(
-        PageParams pageParams,
+        ProTableRequest request,
         ShareType? type = null,
         SharePermission? permission = null,
         bool? isActive = null,
@@ -63,7 +63,7 @@ public interface IFileShareService
     /// 获取分享给我的文件列表
     /// </summary>
     Task<PagedResult<Models.FileShare>> GetSharedWithMeAsync(
-        PageParams pageParams,
+        ProTableRequest request,
         SharePermission? permission = null,
         DateTime? createdAfter = null,
         DateTime? createdBefore = null,

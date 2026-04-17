@@ -46,7 +46,7 @@ public class IoTService : IIoTService
     public Task<IoTGateway> CreateGatewayAsync(CreateIoTGatewayRequest request)
         => _gatewayService.CreateGatewayAsync(request);
 
-    public Task<System.Linq.Dynamic.Core.PagedResult<IoTGateway>> GetGatewaysAsync(Platform.ServiceDefaults.Models.PageParams request, IoTDeviceStatus? status = null)
+    public Task<System.Linq.Dynamic.Core.PagedResult<IoTGateway>> GetGatewaysAsync(Platform.ServiceDefaults.Models.ProTableRequest request, IoTDeviceStatus? status = null)
         => _gatewayService.GetGatewaysAsync(request, status);
 
     public Task<IoTGateway?> GetGatewayByIdAsync(string id)
@@ -74,7 +74,7 @@ public class IoTService : IIoTService
     public async Task<IoTDevice> CreateDeviceAsync(CreateIoTDeviceRequest request)
         => await _deviceService.CreateDeviceAsync(request, _gatewayService.GetGatewayByGatewayIdAsync);
 
-    public Task<System.Linq.Dynamic.Core.PagedResult<IoTDevice>> GetDevicesAsync(Platform.ServiceDefaults.Models.PageParams request, string? gatewayId = null)
+    public Task<System.Linq.Dynamic.Core.PagedResult<IoTDevice>> GetDevicesAsync(Platform.ServiceDefaults.Models.ProTableRequest request, string? gatewayId = null)
         => _deviceService.GetDevicesAsync(request, gatewayId);
 
     public Task<IoTDevice?> GetDeviceByIdAsync(string id)
@@ -111,7 +111,7 @@ public class IoTService : IIoTService
     public Task<IoTDataPoint> CreateDataPointAsync(CreateIoTDataPointRequest request)
         => _dataPointService.CreateDataPointAsync(request);
 
-    public Task<System.Linq.Dynamic.Core.PagedResult<IoTDataPoint>> GetDataPointsAsync(Platform.ServiceDefaults.Models.PageParams request, string? deviceId = null)
+    public Task<System.Linq.Dynamic.Core.PagedResult<IoTDataPoint>> GetDataPointsAsync(Platform.ServiceDefaults.Models.ProTableRequest request, string? deviceId = null)
         => _dataPointService.GetDataPointsAsync(request, deviceId);
 
     public Task<IoTDataPoint?> GetDataPointByIdAsync(string id)
@@ -136,7 +136,7 @@ public class IoTService : IIoTService
     public async Task<List<IoTDataRecord>> BatchReportDataAsync(BatchReportIoTDataRequest request)
         => await _dataPointService.BatchReportDataAsync(request, _dataPointService.GetDataPointByDataPointIdAsync, _deviceService.GetDeviceByDeviceIdAsync);
 
-    public Task<System.Linq.Dynamic.Core.PagedResult<IoTDataRecord>> QueryDataRecordsAsync(Platform.ServiceDefaults.Models.PageParams request, string? deviceId = null, string? dataPointId = null, DateTime? startTime = null, DateTime? endTime = null)
+    public Task<System.Linq.Dynamic.Core.PagedResult<IoTDataRecord>> QueryDataRecordsAsync(Platform.ServiceDefaults.Models.ProTableRequest request, string? deviceId = null, string? dataPointId = null, DateTime? startTime = null, DateTime? endTime = null)
         => _dataPointService.QueryDataRecordsAsync(request, deviceId, dataPointId, startTime, endTime);
 
     public Task<IoTDataRecord?> GetLatestDataAsync(string dataPointId)
@@ -152,7 +152,7 @@ public class IoTService : IIoTService
     public Task<IoTDeviceEvent> CreateEventAsync(string deviceId, string eventType, string level, string? description = null, Dictionary<string, object>? eventData = null)
         => _eventService.CreateEventAsync(deviceId, eventType, level, description, eventData);
 
-    public Task<System.Linq.Dynamic.Core.PagedResult<IoTDeviceEvent>> QueryEventsAsync(Platform.ServiceDefaults.Models.PageParams request, string? deviceId = null, string? eventType = null, string? level = null, bool? isHandled = null, DateTime? startTime = null, DateTime? endTime = null)
+    public Task<System.Linq.Dynamic.Core.PagedResult<IoTDeviceEvent>> QueryEventsAsync(Platform.ServiceDefaults.Models.ProTableRequest request, string? deviceId = null, string? eventType = null, string? level = null, bool? isHandled = null, DateTime? startTime = null, DateTime? endTime = null)
         => _eventService.QueryEventsAsync(request, deviceId, eventType, level, isHandled, startTime, endTime);
 
     public Task<bool> HandleEventAsync(string eventId, string remarks)

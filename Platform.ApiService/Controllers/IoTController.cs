@@ -37,7 +37,7 @@ public class IoTController : BaseApiController
     /// 获取网关列表
     /// </summary>
     [HttpGet("gateways")]
-    public async Task<IActionResult> GetGateways([FromQuery] PageParams request, [FromQuery] IoTDeviceStatus? status = null)
+    public async Task<IActionResult> GetGateways([FromQuery] ProTableRequest request, [FromQuery] IoTDeviceStatus? status = null)
         => Success(await _iotService.GetGatewaysAsync(request, status));
 
     /// <summary>
@@ -87,7 +87,7 @@ public class IoTController : BaseApiController
     /// 获取设备列表
     /// </summary>
     [HttpGet("devices")]
-    public async Task<IActionResult> GetDevices([FromQuery] PageParams request, [FromQuery] string? gatewayId = null)
+    public async Task<IActionResult> GetDevices([FromQuery] ProTableRequest request, [FromQuery] string? gatewayId = null)
         => Success(await _iotService.GetDevicesAsync(request, gatewayId));
 
     /// <summary>
@@ -173,7 +173,7 @@ public class IoTController : BaseApiController
     /// 获取数据点列表
     /// </summary>
     [HttpGet("datapoints")]
-    public async Task<IActionResult> GetDataPoints([FromQuery] PageParams request, [FromQuery] string? deviceId = null)
+    public async Task<IActionResult> GetDataPoints([FromQuery] ProTableRequest request, [FromQuery] string? deviceId = null)
         => Success(await _iotService.GetDataPointsAsync(request, deviceId));
 
     /// <summary>
@@ -226,7 +226,7 @@ public class IoTController : BaseApiController
     /// </summary>
     [HttpGet("data/query")]
     public async Task<IActionResult> QueryDataRecords(
-        [FromQuery] PageParams request,
+        [FromQuery] ProTableRequest request,
         [FromQuery] string? deviceId = null,
         [FromQuery] string? dataPointId = null,
         [FromQuery] DateTime? startTime = null,
@@ -254,7 +254,7 @@ public class IoTController : BaseApiController
     /// </summary>
     [HttpGet("events/query")]
     public async Task<IActionResult> QueryEvents(
-        [FromQuery] PageParams request,
+        [FromQuery] ProTableRequest request,
         [FromQuery] string? deviceId = null,
         [FromQuery] string? eventType = null,
         [FromQuery] string? level = null,

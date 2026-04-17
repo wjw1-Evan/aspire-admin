@@ -96,7 +96,7 @@ public class WorkflowController : BaseApiController
     /// </summary>
     [HttpGet]
     [RequireMenu("workflow-list", "workflow-monitor")]
-    public async Task<IActionResult> GetWorkflows([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<IActionResult> GetWorkflows([FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request)
         => Success(await _workflowQueryService.GetWorkflowsAsync(request));
 
     /// <summary>
@@ -230,7 +230,7 @@ public class WorkflowController : BaseApiController
     [HttpGet("instances")]
     [RequireMenu("workflow-monitor")]
     public async Task<IActionResult> GetInstances(
-        [FromQuery] Platform.ServiceDefaults.Models.PageParams request,
+        [FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request,
         [FromQuery] string? workflowDefinitionId = null,
         [FromQuery] WorkflowStatus? status = null)
         => Success(await _workflowInstanceQueryService.GetInstancesAsync(request, workflowDefinitionId, status));
@@ -332,7 +332,7 @@ public class WorkflowController : BaseApiController
     /// </summary>
     [HttpGet("instances/todo")]
     [RequireMenu("document-approval")]
-    public async Task<IActionResult> GetTodoInstances([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<IActionResult> GetTodoInstances([FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request)
         => Success(await _workflowTodoService.GetTodoInstancesAsync(RequiredUserId, request));
 
     /// <summary>

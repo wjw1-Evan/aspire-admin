@@ -7,6 +7,6 @@ namespace Platform.ApiService.Services;
 
 public interface IWorkflowInstanceQueryService
 {
-    Task<System.Linq.Dynamic.Core.PagedResult<WorkflowInstance>> GetInstancesAsync(Platform.ServiceDefaults.Models.PageParams request, string? workflowDefinitionId, WorkflowStatus? status);
+    Task<System.Linq.Dynamic.Core.PagedResult<WorkflowInstance>> GetInstancesAsync(Platform.ServiceDefaults.Models.ProTableRequest request, string? workflowDefinitionId, WorkflowStatus? status);
     Task<WorkflowInstance?> GetInstanceByIdAsync(string id);
 }

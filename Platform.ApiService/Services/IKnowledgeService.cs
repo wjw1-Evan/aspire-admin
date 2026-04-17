@@ -19,7 +19,7 @@ public interface IKnowledgeService
     /// <summary>
     /// 分页获取知识库列表
     /// </summary>
-    Task<PagedResult<KnowledgeBase>> GetKnowledgeBasesAsync(Platform.ServiceDefaults.Models.PageParams request);
+    Task<PagedResult<KnowledgeBase>> GetKnowledgeBasesAsync(Platform.ServiceDefaults.Models.ProTableRequest request);
 
     /// <summary>
     /// 获取知识库详情

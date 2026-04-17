@@ -25,7 +25,7 @@ public class FormController : BaseApiController
     /// </summary>
     [HttpGet]
     [RequireMenu("workflow-list")]
-    public async Task<IActionResult> GetForms([FromQuery] Platform.ServiceDefaults.Models.PageParams request, [FromQuery] bool? isActive = null)
+    public async Task<IActionResult> GetForms([FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request, [FromQuery] bool? isActive = null)
     {
         try
         {

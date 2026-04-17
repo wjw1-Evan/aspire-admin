@@ -35,7 +35,7 @@ public class ChatService : IChatService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public Task<System.Linq.Dynamic.Core.PagedResult<ChatSession>> GetSessionsAsync(Platform.ServiceDefaults.Models.PageParams request)
+    public Task<System.Linq.Dynamic.Core.PagedResult<ChatSession>> GetSessionsAsync(Platform.ServiceDefaults.Models.ProTableRequest request)
         => _sessionService.GetSessionsAsync(request);
 
     public Task<(List<ChatMessage> messages, bool hasMore, string? nextCursor)> GetMessagesAsync(string sessionId, ChatMessageListRequest request)

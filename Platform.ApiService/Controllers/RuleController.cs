@@ -33,7 +33,7 @@ public class RuleController : BaseApiController
     /// <param name="request">分页参数</param>
     /// <returns>规则列表</returns>
     [HttpGet]
-    public async Task<IActionResult> GetRules([FromQuery] PageParams request)
+    public async Task<IActionResult> GetRules([FromQuery] ProTableRequest request)
     {
         var result = await _ruleService.GetRulesAsync(request);
         return Success(result);

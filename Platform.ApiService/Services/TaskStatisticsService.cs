@@ -56,7 +56,7 @@ public class TaskStatisticsService : ITaskStatisticsService
         return stats;
     }
 
-    public async Task<System.Linq.Dynamic.Core.PagedResult<TaskExecutionLogDto>> GetTaskExecutionLogsAsync(string taskId, PageParams request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<TaskExecutionLogDto>> GetTaskExecutionLogsAsync(string taskId, ProTableRequest request)
     {
         var logs = await _context.Set<TaskExecutionLog>()
             .Where(log => log.TaskId == taskId)

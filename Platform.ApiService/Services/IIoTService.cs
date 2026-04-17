@@ -12,7 +12,7 @@ public interface IIoTService
     #region Gateway Operations
 
     Task<IoTGateway> CreateGatewayAsync(CreateIoTGatewayRequest request);
-    Task<PagedResult<IoTGateway>> GetGatewaysAsync(PageParams request, IoTDeviceStatus? status = null);
+    Task<PagedResult<IoTGateway>> GetGatewaysAsync(ProTableRequest request, IoTDeviceStatus? status = null);
     Task<IoTGateway?> GetGatewayByIdAsync(string id);
     Task<IoTGateway?> GetGatewayByGatewayIdAsync(string gatewayId);
     Task<IoTGateway?> UpdateGatewayAsync(string id, UpdateIoTGatewayRequest request);
@@ -25,7 +25,7 @@ public interface IIoTService
     #region Device Operations
 
     Task<IoTDevice> CreateDeviceAsync(CreateIoTDeviceRequest request);
-    Task<PagedResult<IoTDevice>> GetDevicesAsync(PageParams request, string? gatewayId = null);
+    Task<PagedResult<IoTDevice>> GetDevicesAsync(ProTableRequest request, string? gatewayId = null);
     Task<IoTDevice?> GetDeviceByIdAsync(string id);
     Task<IoTDevice?> GetDeviceByDeviceIdAsync(string deviceId);
     Task<IoTDevice?> UpdateDeviceAsync(string id, UpdateIoTDeviceRequest request);
@@ -41,7 +41,7 @@ public interface IIoTService
     #region DataPoint Operations
 
     Task<IoTDataPoint> CreateDataPointAsync(CreateIoTDataPointRequest request);
-    Task<PagedResult<IoTDataPoint>> GetDataPointsAsync(PageParams request, string? deviceId = null);
+    Task<PagedResult<IoTDataPoint>> GetDataPointsAsync(ProTableRequest request, string? deviceId = null);
     Task<IoTDataPoint?> GetDataPointByIdAsync(string id);
     Task<IoTDataPoint?> GetDataPointByDataPointIdAsync(string dataPointId);
     Task<IoTDataPoint?> UpdateDataPointAsync(string id, UpdateIoTDataPointRequest request);
@@ -53,7 +53,7 @@ public interface IIoTService
 
     Task<IoTDataRecord> ReportDataAsync(ReportIoTDataRequest request);
     Task<List<IoTDataRecord>> BatchReportDataAsync(BatchReportIoTDataRequest request);
-    Task<PagedResult<IoTDataRecord>> QueryDataRecordsAsync(PageParams request, string? deviceId = null, string? dataPointId = null, DateTime? startTime = null, DateTime? endTime = null);
+    Task<PagedResult<IoTDataRecord>> QueryDataRecordsAsync(ProTableRequest request, string? deviceId = null, string? dataPointId = null, DateTime? startTime = null, DateTime? endTime = null);
     Task<IoTDataRecord?> GetLatestDataAsync(string dataPointId);
     Task<DataStatistics?> GetDataStatisticsAsync(string dataPointId, DateTime startTime, DateTime endTime);
 
@@ -62,7 +62,7 @@ public interface IIoTService
     #region Event Operations
 
     Task<IoTDeviceEvent> CreateEventAsync(string deviceId, string eventType, string level, string? description = null, Dictionary<string, object>? eventData = null);
-    Task<PagedResult<IoTDeviceEvent>> QueryEventsAsync(PageParams request, string? deviceId = null, string? eventType = null, string? level = null, bool? isHandled = null, DateTime? startTime = null, DateTime? endTime = null);
+    Task<PagedResult<IoTDeviceEvent>> QueryEventsAsync(ProTableRequest request, string? deviceId = null, string? eventType = null, string? level = null, bool? isHandled = null, DateTime? startTime = null, DateTime? endTime = null);
     Task<bool> HandleEventAsync(string eventId, string remarks);
     Task<long> GetUnhandledEventCountAsync(string? deviceId = null);
 

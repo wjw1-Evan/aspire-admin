@@ -28,7 +28,7 @@ public class WorkflowTodoService : IWorkflowTodoService
         _formDefinitionService = formDefinitionService;
     }
 
-    public async Task<System.Linq.Dynamic.Core.PagedResult<object>> GetTodoInstancesAsync(string userId, Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<object>> GetTodoInstancesAsync(string userId, Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         var queryable = _context.Set<WorkflowInstance>()
             .Where(i => i.Status == WorkflowStatus.Running && i.CurrentApproverIds.Contains(userId));

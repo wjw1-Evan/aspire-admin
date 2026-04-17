@@ -31,7 +31,7 @@ public class ParkVisitController : BaseApiController
     /// </summary>
     [HttpGet("tasks")]
     [RequireMenu("park-management-visit-task")]
-    public async Task<IActionResult> GetTasks([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<IActionResult> GetTasks([FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         var result = await _visitService.GetVisitTasksAsync(request);
         return Success(result);
@@ -92,7 +92,7 @@ public class ParkVisitController : BaseApiController
     /// </summary>
     [HttpGet("assessments")]
     [RequireMenu("park-management-visit-assessment")]
-    public async Task<IActionResult> GetAssessments([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<IActionResult> GetAssessments([FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         var result = await _visitService.GetVisitAssessmentsAsync(request);
         return Success(result);
@@ -119,7 +119,7 @@ public class ParkVisitController : BaseApiController
     [HttpGet("questions")]
     [RequireMenu("park-management-visit-knowledge-base")]
     public async Task<IActionResult> GetQuestions(
-        [FromQuery] Platform.ServiceDefaults.Models.PageParams request,
+        [FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request,
         [FromQuery] string? category = null)
     {
         var result = await _visitService.GetVisitQuestionsAsync(request, category);

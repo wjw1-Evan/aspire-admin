@@ -39,7 +39,7 @@ public class IoTEventService
         return @event;
     }
 
-    public Task<System.Linq.Dynamic.Core.PagedResult<IoTDeviceEvent>> QueryEventsAsync(Platform.ServiceDefaults.Models.PageParams request, string? deviceId = null, string? eventType = null, string? level = null, bool? isHandled = null, DateTime? startTime = null, DateTime? endTime = null)
+    public Task<System.Linq.Dynamic.Core.PagedResult<IoTDeviceEvent>> QueryEventsAsync(Platform.ServiceDefaults.Models.ProTableRequest request, string? deviceId = null, string? eventType = null, string? level = null, bool? isHandled = null, DateTime? startTime = null, DateTime? endTime = null)
     {
         var query = _context.Set<IoTDeviceEvent>().AsQueryable();
 

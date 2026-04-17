@@ -43,7 +43,7 @@ public class WebScraperController : BaseApiController
     [HttpGet("tasks")]
     [RequireMenu("web-scraper")]
     public async Task<IActionResult> GetTasks(
-        [FromQuery] Platform.ServiceDefaults.Models.PageParams request,
+        [FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request,
         [FromQuery] string? keyword = null,
         [FromQuery] ScrapingStatus? status = null)
     {
@@ -146,7 +146,7 @@ public class WebScraperController : BaseApiController
     [HttpGet("logs")]
     [RequireMenu("web-scraper")]
     public async Task<IActionResult> GetLogs(
-        [FromQuery] Platform.ServiceDefaults.Models.PageParams request,
+        [FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request,
         [FromQuery] string? taskId = null)
     {
         var result = await _webScraperService.GetLogsAsync(request, RequiredUserId, taskId);
@@ -166,7 +166,7 @@ public class WebScraperController : BaseApiController
     [HttpGet("results")]
     [RequireMenu("web-scraper")]
     public async Task<IActionResult> GetResults(
-        [FromQuery] Platform.ServiceDefaults.Models.PageParams request,
+        [FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request,
         [FromQuery] string? taskId = null,
         [FromQuery] string? logId = null)
     {

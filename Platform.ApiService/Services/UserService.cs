@@ -309,14 +309,14 @@ public class UserService : IUserService
     }
 
     /// <inheritdoc/>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<User>> GetUsersWithPaginationAsync(Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<User>> GetUsersWithPaginationAsync(Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         var query = _context.Set<User>().Where(u => u.IsActive);
 
         return query.ToPagedList(request);
     }
 
-    public async Task<System.Linq.Dynamic.Core.PagedResult<UserWithRolesResponse>> GetUsersWithRolesAsync(Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<UserWithRolesResponse>> GetUsersWithRolesAsync(Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         var pagedResult = await GetUsersWithPaginationAsync(request);
         var users = await pagedResult.Queryable.ToListAsync();
@@ -499,7 +499,7 @@ public class UserService : IUserService
 
     /// <inheritdoc/>
     public async Task<System.Linq.Dynamic.Core.PagedResult<ActivityLogListItemResponse>> GetCurrentUserActivityLogsAsync(
-        Platform.ServiceDefaults.Models.PageParams request, string? action = null, string? httpMethod = null, int? statusCode = null,
+        Platform.ServiceDefaults.Models.ProTableRequest request, string? action = null, string? httpMethod = null, int? statusCode = null,
         string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null)
     {
         return await _userActivityLogService.GetCurrentUserActivityLogsAsync(request, action, httpMethod, statusCode, ipAddress, startDate, endDate);
@@ -522,7 +522,7 @@ public class UserService : IUserService
         int page = 1, int pageSize = 20, string? createdBy = null, string? action = null, string? httpMethod = null,
         int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null)
     {
-        return await _userActivityLogService.GetAllActivityLogsAsync(new PageParams { Page = page, PageSize = pageSize, Search = action });
+        return await _userActivityLogService.GetAllActivityLogsAsync(new ProTableRequest { Page = page, PageSize = pageSize, Search = action });
     }
 
     /// <inheritdoc/>
@@ -530,7 +530,7 @@ public class UserService : IUserService
         int page = 1, int pageSize = 20, string? createdBy = null, string? action = null, string? httpMethod = null,
         int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null)
     {
-        return await _userActivityLogService.GetAllActivityLogsWithUsersAsync(new PageParams { Page = page, PageSize = pageSize, Search = action });
+        return await _userActivityLogService.GetAllActivityLogsWithUsersAsync(new ProTableRequest { Page = page, PageSize = pageSize, Search = action });
     }
 
     /// <inheritdoc/>

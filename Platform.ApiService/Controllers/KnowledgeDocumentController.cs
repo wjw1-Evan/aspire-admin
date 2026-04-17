@@ -37,7 +37,7 @@ public class KnowledgeDocumentController : BaseApiController
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> GetDocuments(
         string knowledgeBaseId,
-        [FromQuery] Platform.ServiceDefaults.Models.PageParams request)
+        [FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         try
         {

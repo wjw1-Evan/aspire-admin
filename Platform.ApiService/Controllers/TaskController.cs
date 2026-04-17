@@ -84,7 +84,7 @@ public class TaskController : BaseApiController
     [HttpGet("list")]
     [HttpGet("query")]
     [RequireMenu("project-management-task")]
-    public async Task<IActionResult> QueryTasks([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<IActionResult> QueryTasks([FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         try
         {
@@ -224,7 +224,7 @@ public class TaskController : BaseApiController
     /// <response code="401">未授权，需要登录</response>
     [HttpPost("{taskId}/logs")]
     [RequireMenu("project-management-task")]
-    public async Task<IActionResult> GetExecutionLogs(string taskId, [FromBody] Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<IActionResult> GetExecutionLogs(string taskId, [FromBody] Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         var result = await _taskService.GetTaskExecutionLogsAsync(taskId, request);
         return Success(result);
@@ -251,7 +251,7 @@ public class TaskController : BaseApiController
     /// </summary>
     [HttpPost("created")]
     [RequireMenu("project-management-task")]
-    public async Task<IActionResult> GetUserCreatedTasks([FromBody] Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<IActionResult> GetUserCreatedTasks([FromBody] Platform.ServiceDefaults.Models.ProTableRequest request)
         => Success(await _taskService.GetUserCreatedTasksAsync(RequiredUserId, request));
 
     /// <summary>
@@ -259,7 +259,7 @@ public class TaskController : BaseApiController
     /// </summary>
     [HttpPost("my/created")]
     [RequireMenu("project-management-task")]
-    public async Task<IActionResult> GetMyCreatedTasks([FromBody] Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<IActionResult> GetMyCreatedTasks([FromBody] Platform.ServiceDefaults.Models.ProTableRequest request)
         => Success(await _taskService.GetUserCreatedTasksAsync(RequiredUserId, request));
 
     /// <summary>

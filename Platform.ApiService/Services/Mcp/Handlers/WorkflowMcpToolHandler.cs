@@ -39,7 +39,7 @@ public class WorkflowMcpToolHandler : McpToolHandlerBase
             {
                 var (page, pageSize) = ParsePaginationArgs(args);
                 var keyword = args.GetValueOrDefault("keyword")?.ToString();
-                var result = await _definitionQueryService.GetWorkflowsAsync(new Platform.ServiceDefaults.Models.PageParams { Page = page, PageSize = pageSize, Search = keyword });
+                var result = await _definitionQueryService.GetWorkflowsAsync(new Platform.ServiceDefaults.Models.ProTableRequest { Page = page, PageSize = pageSize, Search = keyword });
                 var items = await result.Queryable.ToListAsync();
                 return new { items, rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount };
             });
@@ -69,7 +69,7 @@ public class WorkflowMcpToolHandler : McpToolHandlerBase
                 var statusStr = args.GetValueOrDefault("status")?.ToString();
                 WorkflowStatus? status = null;
                 if (!string.IsNullOrEmpty(statusStr) && Enum.TryParse<WorkflowStatus>(statusStr, out var s)) status = s;
-                var result = await _instanceQueryService.GetInstancesAsync(new Platform.ServiceDefaults.Models.PageParams { Page = page, PageSize = pageSize }, defId, status);
+                var result = await _instanceQueryService.GetInstancesAsync(new Platform.ServiceDefaults.Models.ProTableRequest { Page = page, PageSize = pageSize }, defId, status);
                 var items = await result.Queryable.ToListAsync();
                 return new { items, rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount };
             });
@@ -88,7 +88,7 @@ public class WorkflowMcpToolHandler : McpToolHandlerBase
             async (args, uid) =>
             {
                 var (page, pageSize) = ParsePaginationArgs(args);
-                var result = await _todoService.GetTodoInstancesAsync(uid, new Platform.ServiceDefaults.Models.PageParams { Page = page, PageSize = pageSize });
+                var result = await _todoService.GetTodoInstancesAsync(uid, new Platform.ServiceDefaults.Models.ProTableRequest { Page = page, PageSize = pageSize });
                 var items = await result.Queryable.ToListAsync();
                 return new { items, rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount };
             });

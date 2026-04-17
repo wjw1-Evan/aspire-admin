@@ -35,10 +35,10 @@ public class ChatSessionService : IChatSessionService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<System.Linq.Dynamic.Core.PagedResult<ChatSession>> GetSessionsAsync(Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<ChatSession>> GetSessionsAsync(Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         await _aiAssistantCoordinator.EnsureAssistantSessionForCurrentUserAsync();
-        request ??= new Platform.ServiceDefaults.Models.PageParams { PageSize = 20 };
+        request ??= new Platform.ServiceDefaults.Models.ProTableRequest { PageSize = 20 };
         var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
         var query = _context.Set<ChatSession>().Where(session => session.Participants.Contains(currentUserId));

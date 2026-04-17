@@ -85,7 +85,7 @@ public class DocumentCrudService : IDocumentCrudService
     }
 
     public async Task<PagedResult<Document>> GetDocumentsAsync(
-        PageParams pageParams,
+        ProTableRequest request,
         DocumentStatus? status = null,
         string? documentType = null,
         string? category = null,
@@ -94,9 +94,9 @@ public class DocumentCrudService : IDocumentCrudService
     {
         Expression<Func<Document, bool>> filter = d => true;
 
-        if (!string.IsNullOrEmpty(pageParams.Search))
+        if (!string.IsNullOrEmpty(request.Search))
         {
-            string keyword = pageParams.Search.ToLower();
+            string keyword = request.Search.ToLower();
             filter = filter.And(d => (d.Title ?? "").ToLower().Contains(keyword) || (d.Content != null && d.Content.ToLower().Contains(keyword)))!;
         }
 
@@ -140,7 +140,7 @@ public class DocumentCrudService : IDocumentCrudService
                         if (instanceIds.Any())
                             filter = filter.And(d => d.WorkflowInstanceId != null && instanceIds.Contains(d.WorkflowInstanceId))!;
                         else
-                            return _context.Set<Document>().Where(d => false).ToPagedList(pageParams);
+                            return _context.Set<Document>().Where(d => false).ToPagedList(request);
                     }
                     break;
                 case "approved":
@@ -152,7 +152,7 @@ public class DocumentCrudService : IDocumentCrudService
             }
         }
 
-        return _context.Set<Document>().Where(filter).ToPagedList(pageParams);
+        return _context.Set<Document>().Where(filter).ToPagedList(request);
     }
 
     public async Task<bool> DeleteDocumentAsync(string id)

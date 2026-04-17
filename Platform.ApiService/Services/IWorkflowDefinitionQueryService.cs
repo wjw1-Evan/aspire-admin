@@ -7,6 +7,6 @@ namespace Platform.ApiService.Services;
 
 public interface IWorkflowDefinitionQueryService
 {
-    Task<System.Linq.Dynamic.Core.PagedResult<WorkflowDefinition>> GetWorkflowsAsync(Platform.ServiceDefaults.Models.PageParams request);
+    Task<System.Linq.Dynamic.Core.PagedResult<WorkflowDefinition>> GetWorkflowsAsync(Platform.ServiceDefaults.Models.ProTableRequest request);
     Task<WorkflowDefinition?> GetWorkflowByIdAsync(string id);
 }

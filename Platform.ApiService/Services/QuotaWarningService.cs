@@ -47,10 +47,10 @@ public class QuotaWarningService : IQuotaWarningService
     }
 
     public async Task<System.Linq.Dynamic.Core.PagedResult<StorageQuotaWarning>> GetQuotaWarningsPaginatedAsync(
-        PageParams pageParams, double warningThreshold = 0.8)
+        ProTableRequest request, double warningThreshold = 0.8)
     {
         var warnings = await GetQuotaWarningsAsync(warningThreshold);
-        return warnings.ToList().AsQueryable().ToPagedList(pageParams);
+        return warnings.ToList().AsQueryable().ToPagedList(request);
     }
 
     public async Task<BatchOperationResult> CleanupUnusedQuotasAsync()

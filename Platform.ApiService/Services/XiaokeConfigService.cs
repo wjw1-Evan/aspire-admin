@@ -58,7 +58,7 @@ public class XiaokeConfigService : IXiaokeConfigService
     }
 
     /// <inheritdoc/>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<XiaokeConfigDto>> GetConfigsAsync(Platform.ServiceDefaults.Models.PageParams queryParams, bool? isEnabled = null)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<XiaokeConfigDto>> GetConfigsAsync(Platform.ServiceDefaults.Models.ProTableRequest queryParams, bool? isEnabled = null)
     {
         var query = _context.Set<XiaokeConfig>().AsQueryable();
 

@@ -51,7 +51,7 @@ public class DocumentController : BaseApiController
     [HttpGet]
     [RequireMenu("document-list")]
     public async Task<IActionResult> GetDocuments(
-        [FromQuery] Platform.ServiceDefaults.Models.PageParams pageParams,
+        [FromQuery] Platform.ServiceDefaults.Models.ProTableRequest pageParams,
         [FromQuery] DocumentStatus? status = null,
         [FromQuery] string? documentType = null,
         [FromQuery] string? category = null,
@@ -555,7 +555,7 @@ public class DocumentController : BaseApiController
     [HttpGet("pending")]
     [RequireMenu("document-approval")]
     public async Task<IActionResult> GetPendingDocuments(
-        [FromQuery] Platform.ServiceDefaults.Models.PageParams pageParams,
+        [FromQuery] Platform.ServiceDefaults.Models.ProTableRequest pageParams,
         [FromQuery] DocumentStatus? status = null,
         [FromQuery] string? documentType = null,
         [FromQuery] string? category = null,

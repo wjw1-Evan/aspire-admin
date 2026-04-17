@@ -35,7 +35,7 @@ public class XiaokeConfigController : BaseApiController
     [HttpGet]
     [RequireMenu("xiaoke-management-config")]
     public async Task<IActionResult> GetConfigs(
-        [FromQuery] PageParams request,
+        [FromQuery] ProTableRequest request,
         [FromQuery] bool? isEnabled = null)
     {
         var result = await _xiaokeConfigService.GetConfigsAsync(request, isEnabled);

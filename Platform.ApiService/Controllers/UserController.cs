@@ -77,7 +77,7 @@ public class UserController : BaseApiController
     /// 获取用户列表
     /// </summary>
     [HttpGet("list")]
-    public async Task<IActionResult> GetUsersList([FromQuery] PageParams request)
+    public async Task<IActionResult> GetUsersList([FromQuery] ProTableRequest request)
         => Success(await _userService.GetUsersWithRolesAsync(request));
 
     /// <summary>
@@ -166,7 +166,7 @@ public class UserController : BaseApiController
     /// </summary>
     [HttpGet("activity-logs")]
     [RequireMenu("user-log")]
-    public async Task<IActionResult> GetAllActivityLogs([FromQuery] PageParams query)
+    public async Task<IActionResult> GetAllActivityLogs([FromQuery] ProTableRequest query)
         => Success(await _activityLogService.GetAllActivityLogsWithUsersAsync(query));
 
     /// <summary>
@@ -239,7 +239,7 @@ public class UserController : BaseApiController
     /// </summary>
     [HttpGet("me/activity-logs-paged")]
     public async Task<IActionResult> GetCurrentUserActivityLogsPaged(
-        [FromQuery] PageParams request,
+        [FromQuery] ProTableRequest request,
         [FromQuery] string? action = null,
         [FromQuery] string? httpMethod = null,
         [FromQuery] int? statusCode = null,

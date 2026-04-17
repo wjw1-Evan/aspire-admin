@@ -259,7 +259,7 @@ public class StorageQuotaController : BaseApiController
     [HttpGet("list")]
     [RequireMenu("cloud-storage-quota")]
     public async Task<IActionResult> GetStorageQuotaList(
-        [FromQuery] Platform.ServiceDefaults.Models.PageParams pageParams,
+        [FromQuery] Platform.ServiceDefaults.Models.ProTableRequest pageParams,
         [FromQuery] string? companyId = null,
         [FromQuery] bool? isEnabled = null)
     {
@@ -332,7 +332,7 @@ public class StorageQuotaController : BaseApiController
     [HttpGet("warnings")]
     [RequireMenu("cloud-storage-quota")]
     public async Task<IActionResult> GetQuotaWarnings(
-        [FromQuery] Platform.ServiceDefaults.Models.PageParams pageParams,
+        [FromQuery] Platform.ServiceDefaults.Models.ProTableRequest pageParams,
         [FromQuery] double warningThreshold = 0.8)
     {
         if (warningThreshold < 0.1 || warningThreshold > 1.0)

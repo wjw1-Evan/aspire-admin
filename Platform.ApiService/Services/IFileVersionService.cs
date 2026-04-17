@@ -22,7 +22,7 @@ public interface IFileVersionService
     /// <summary>
     /// 获取文件版本历史（分页）
     /// </summary>
-    Task<PagedResult<FileVersion>> GetVersionHistoryPaginatedAsync(string fileItemId, PageParams request);
+    Task<PagedResult<FileVersion>> GetVersionHistoryPaginatedAsync(string fileItemId, ProTableRequest request);
 
     /// <summary>
     /// 获取版本详情

@@ -33,7 +33,7 @@ public class ParkTenantController : BaseApiController
     /// 获取租户列表
     /// </summary>
     [HttpGet("tenants/list")]
-    public async Task<IActionResult> GetTenants([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<IActionResult> GetTenants([FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         try
         {
@@ -133,7 +133,7 @@ public class ParkTenantController : BaseApiController
     /// 获取合同列表
     /// </summary>
     [HttpGet("contracts/list")]
-    public async Task<IActionResult> GetContracts([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<IActionResult> GetContracts([FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         try
         {

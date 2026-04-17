@@ -23,7 +23,7 @@ public class KnowledgeDocumentService : IKnowledgeDocumentService
 
     }
 
-    public async Task<System.Linq.Dynamic.Core.PagedResult<KnowledgeDocument>> GetDocumentsAsync(string knowledgeBaseId, Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<KnowledgeDocument>> GetDocumentsAsync(string knowledgeBaseId, Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         var query = _context.Set<KnowledgeDocument>().Where(d => d.KnowledgeBaseId == knowledgeBaseId);
 

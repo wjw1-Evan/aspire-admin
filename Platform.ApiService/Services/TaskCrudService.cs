@@ -74,7 +74,7 @@ public class TaskCrudService : ITaskCrudService
         return task == null ? null : await ConvertToTaskDtoAsync(task);
     }
 
-    public async Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> QueryTasksAsync(PageParams request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> QueryTasksAsync(ProTableRequest request)
     {
         var q = _context.Set<WorkTask>().AsQueryable();
         var pagedResult = q.ToPagedList(request);
@@ -212,7 +212,7 @@ public class TaskCrudService : ITaskCrudService
         return await ConvertToTaskDtosAsync(tasks);
     }
 
-    public async Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> GetUserCreatedTasksAsync(string userId, PageParams request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> GetUserCreatedTasksAsync(string userId, ProTableRequest request)
     {
         var q = _context.Set<WorkTask>().Where(t => t.CreatedBy == userId);
         var pagedResult = q.ToPagedList(request);

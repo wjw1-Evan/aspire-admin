@@ -30,7 +30,7 @@ public class ChatHistoryController : BaseApiController
     /// <returns>聊天历史列表</returns>
     [HttpGet("list")]
     [RequireMenu("xiaoke-management-chat-history")]
-    public async Task<IActionResult> GetChatHistory([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<IActionResult> GetChatHistory([FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         try
         {

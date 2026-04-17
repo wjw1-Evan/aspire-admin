@@ -39,7 +39,7 @@ public class IoTGatewayService
         return gateway;
     }
 
-    public async Task<System.Linq.Dynamic.Core.PagedResult<IoTGateway>> GetGatewaysAsync(Platform.ServiceDefaults.Models.PageParams request, IoTDeviceStatus? status = null)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<IoTGateway>> GetGatewaysAsync(Platform.ServiceDefaults.Models.ProTableRequest request, IoTDeviceStatus? status = null)
     {
         var query = _context.Set<IoTGateway>().AsQueryable();
 

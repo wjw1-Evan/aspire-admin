@@ -33,7 +33,7 @@ public class ParkInvestmentController : BaseApiController
     /// 获取线索列表
     /// </summary>
     [HttpGet("leads/list")]
-    public async Task<IActionResult> GetLeads([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<IActionResult> GetLeads([FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         try
         {
@@ -153,7 +153,7 @@ public class ParkInvestmentController : BaseApiController
     /// 获取项目列表
     /// </summary>
     [HttpGet("projects/list")]
-    public async Task<IActionResult> GetProjects([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<IActionResult> GetProjects([FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         try
         {

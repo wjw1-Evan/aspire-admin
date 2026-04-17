@@ -137,7 +137,7 @@ public class ProjectController : BaseApiController
     /// </summary>
     [HttpGet("list")]
     [RequireMenu("project-management-project")]
-    public async Task<IActionResult> GetProjectsList([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<IActionResult> GetProjectsList([FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         try
         {

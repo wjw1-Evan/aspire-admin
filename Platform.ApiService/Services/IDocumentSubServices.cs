@@ -13,7 +13,7 @@ public interface IDocumentCrudService
     Task UpdateDocumentAsync(Document document);
     Task<Document?> GetDocumentAsync(string id);
     Task<PagedResult<Document>> GetDocumentsAsync(
-        PageParams pageParams,
+        ProTableRequest request,
         DocumentStatus? status = null,
         string? documentType = null,
         string? category = null,

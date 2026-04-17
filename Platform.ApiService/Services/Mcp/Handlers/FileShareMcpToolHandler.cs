@@ -54,7 +54,7 @@ public class FileShareMcpToolHandler : McpToolHandlerBase
             async (args, uid) =>
             {
                 var (page, pageSize) = ParsePaginationArgs(args);
-                var pageParams = new Platform.ServiceDefaults.Models.PageParams { Page = page, PageSize = pageSize };
+                var pageParams = new Platform.ServiceDefaults.Models.ProTableRequest { Page = page, PageSize = pageSize };
                 return await _shareService.GetMySharesAsync(pageParams);
             });
 
@@ -63,7 +63,7 @@ public class FileShareMcpToolHandler : McpToolHandlerBase
             async (args, uid) =>
             {
                 var (page, pageSize) = ParsePaginationArgs(args);
-                var pageParams = new Platform.ServiceDefaults.Models.PageParams { Page = page, PageSize = pageSize };
+                var pageParams = new Platform.ServiceDefaults.Models.ProTableRequest { Page = page, PageSize = pageSize };
                 return await _shareService.GetSharedWithMeAsync(pageParams);
             });
     }

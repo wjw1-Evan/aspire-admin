@@ -29,7 +29,7 @@ public class RuleService : IRuleService
     /// <summary>
     /// 获取规则列表
     /// </summary>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<RuleListItem>> GetRulesAsync(Platform.ServiceDefaults.Models.PageParams queryParams)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<RuleListItem>> GetRulesAsync(Platform.ServiceDefaults.Models.ProTableRequest queryParams)
     {
         var pagedResult = _context.Set<RuleListItem>().ToPagedList(queryParams);
         var rules = await pagedResult.Queryable.ToListAsync();

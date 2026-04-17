@@ -25,12 +25,12 @@ public class TaskService : ITaskService
 
     public Task<TaskDto> CreateTaskAsync(CreateTaskRequest request) => _crudService.CreateTaskAsync(request);
     public Task<TaskDto?> GetTaskByIdAsync(string taskId) => _crudService.GetTaskByIdAsync(taskId);
-    public Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> QueryTasksAsync(ServiceDefaults.Models.PageParams request) => _crudService.QueryTasksAsync(request);
+    public Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> QueryTasksAsync(ServiceDefaults.Models.ProTableRequest request) => _crudService.QueryTasksAsync(request);
     public Task<TaskDto> UpdateTaskAsync(UpdateTaskRequest request, string userId) => _crudService.UpdateTaskAsync(request, userId);
     public Task<bool> DeleteTaskAsync(string taskId, string userId) => _crudService.DeleteTaskAsync(taskId, userId);
     public Task<int> BatchUpdateTaskStatusAsync(List<string> taskIds, Models.TaskStatus status) => _crudService.BatchUpdateTaskStatusAsync(taskIds, status);
     public Task<List<TaskDto>> GetUserTodoTasksAsync(string userId) => _crudService.GetUserTodoTasksAsync(userId);
-    public Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> GetUserCreatedTasksAsync(string userId, ServiceDefaults.Models.PageParams request) => _crudService.GetUserCreatedTasksAsync(userId, request);
+    public Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> GetUserCreatedTasksAsync(string userId, ServiceDefaults.Models.ProTableRequest request) => _crudService.GetUserCreatedTasksAsync(userId, request);
 
     public Task<TaskDto> AssignTaskAsync(AssignTaskRequest request) => _executionService.AssignTaskAsync(request);
     public Task<TaskDto> ExecuteTaskAsync(ExecuteTaskRequest request) => _executionService.ExecuteTaskAsync(request);
@@ -45,21 +45,21 @@ public class TaskService : ITaskService
     public Task<List<string>> CalculateCriticalPathAsync(string projectId) => _relationService.CalculateCriticalPathAsync(projectId);
 
     public Task<TaskStatistics> GetTaskStatisticsAsync(string? userId = null) => _statisticsService.GetTaskStatisticsAsync(userId);
-    public Task<System.Linq.Dynamic.Core.PagedResult<TaskExecutionLogDto>> GetTaskExecutionLogsAsync(string taskId, ServiceDefaults.Models.PageParams request) =>
+    public Task<System.Linq.Dynamic.Core.PagedResult<TaskExecutionLogDto>> GetTaskExecutionLogsAsync(string taskId, ServiceDefaults.Models.ProTableRequest request) =>
         _statisticsService.GetTaskExecutionLogsAsync(taskId, request);
     public Task<TaskExecutionLogDto> LogTaskExecutionAsync(string taskId, TaskExecutionResult status, string? message = null, int progressPercentage = 0) =>
         _statisticsService.LogTaskExecutionAsync(taskId, status, message, progressPercentage);
 
     public async Task<List<TaskDto>> GetTasksByProjectIdAsync(string projectId)
     {
-        var all = await _crudService.QueryTasksAsync(new ServiceDefaults.Models.PageParams { Page = 1, PageSize = int.MaxValue });
+        var all = await _crudService.QueryTasksAsync(new ServiceDefaults.Models.ProTableRequest { Page = 1, PageSize = int.MaxValue });
         var projectTasks = all.Queryable.Where(t => t.ProjectId == projectId).ToList();
         return BuildTaskTree(projectTasks);
     }
 
     public async Task<List<TaskDto>> GetTaskTreeAsync(string? projectId = null)
     {
-        var all = await _crudService.QueryTasksAsync(new ServiceDefaults.Models.PageParams { Page = 1, PageSize = int.MaxValue });
+        var all = await _crudService.QueryTasksAsync(new ServiceDefaults.Models.ProTableRequest { Page = 1, PageSize = int.MaxValue });
         var tasks = string.IsNullOrEmpty(projectId)
             ? all.Queryable.ToList()
             : all.Queryable.Where(t => t.ProjectId == projectId).ToList();

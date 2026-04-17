@@ -58,7 +58,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
                 var (page, pageSize) = ParsePaginationArgs(args, defaultPageSize: 10, maxPageSize: 100);
                 var filterType = args.ContainsKey("filterType") ? (args["filterType"]?.ToString() ?? "all") : "all";
                 var sortBy = args.ContainsKey("sortBy") ? (args["sortBy"]?.ToString() ?? "datetime") : "datetime";
-                var pageParams = new Platform.ServiceDefaults.Models.PageParams { Page = page, PageSize = pageSize, SortBy = sortBy };
+                var pageParams = new Platform.ServiceDefaults.Models.ProTableRequest { Page = page, PageSize = pageSize };
                 var result = await _unifiedNotificationService.GetUnifiedNotificationsAsync(pageParams, filterType);
                 return new { items = result.Queryable, rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount };
             });
@@ -84,7 +84,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
             async (args, uid) =>
             {
                 var (page, pageSize) = ParsePaginationArgs(args, defaultPageSize: 10, maxPageSize: 100);
-                var pageParams = new Platform.ServiceDefaults.Models.PageParams { Page = page, PageSize = pageSize };
+                var pageParams = new Platform.ServiceDefaults.Models.ProTableRequest { Page = page, PageSize = pageSize };
                 var result = await _unifiedNotificationService.GetTaskNotificationsAsync(pageParams);
                 return new { items = result.Queryable, rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount };
             });
@@ -98,7 +98,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
             {
                 var (page, pageSize) = ParsePaginationArgs(args, defaultPageSize: 10, maxPageSize: 100);
                 var sortBy = args.ContainsKey("sortBy") ? (args["sortBy"]?.ToString() ?? "dueDate") : "dueDate";
-                var pageParams = new Platform.ServiceDefaults.Models.PageParams { Page = page, PageSize = pageSize, SortBy = sortBy };
+                var pageParams = new Platform.ServiceDefaults.Models.ProTableRequest { Page = page, PageSize = pageSize };
                 var result = await _unifiedNotificationService.GetTodosAsync(pageParams, sortBy);
                 return new { items = result.Queryable, rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount };
             });
@@ -164,7 +164,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
             async (args, uid) =>
             {
                 var (page, pageSize) = ParsePaginationArgs(args, defaultPageSize: 10, maxPageSize: 100);
-                var pageParams = new Platform.ServiceDefaults.Models.PageParams { Page = page, PageSize = pageSize };
+                var pageParams = new Platform.ServiceDefaults.Models.ProTableRequest { Page = page, PageSize = pageSize };
                 var result = await _unifiedNotificationService.GetSystemMessagesAsync(pageParams);
                 return new { items = result.Queryable, rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount };
             });
@@ -211,7 +211,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
                 var keyword = args.ContainsKey("keyword") ? args["keyword"]?.ToString() : null;
                 var (page, pageSize) = ParsePaginationArgs(args);
                 var query = _context.Set<WorkflowDefinition>().Where(d => string.IsNullOrEmpty(keyword) || (d.Name != null && d.Name.Contains(keyword)));
-                var pagedResult = query.OrderByDescending(d => d.UpdatedAt).AsQueryable().ToPagedList(new Platform.ServiceDefaults.Models.PageParams { Page = page, PageSize = pageSize });
+                var pagedResult = query.OrderByDescending(d => d.UpdatedAt).AsQueryable().ToPagedList(new Platform.ServiceDefaults.Models.ProTableRequest { Page = page, PageSize = pageSize });
                 var items = await pagedResult.Queryable.ToListAsync();
                 return new { items, rowCount = pagedResult.RowCount, currentPage = page, pageSize, pageCount = (int)Math.Ceiling((double)pagedResult.RowCount / pageSize) };
             });
@@ -226,7 +226,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
                 var (page, pageSize) = ParsePaginationArgs(args);
                 var status = args.ContainsKey("status") && int.TryParse(args["status"]?.ToString(), out var s) ? (WorkflowStatus)s : (WorkflowStatus?)null;
                 var query = _context.Set<WorkflowInstance>().Where(i => status == null || i.Status == status);
-                var pagedResult = query.OrderByDescending(i => i.UpdatedAt).AsQueryable().ToPagedList(new Platform.ServiceDefaults.Models.PageParams { Page = page, PageSize = pageSize });
+                var pagedResult = query.OrderByDescending(i => i.UpdatedAt).AsQueryable().ToPagedList(new Platform.ServiceDefaults.Models.ProTableRequest { Page = page, PageSize = pageSize });
                 var items = await pagedResult.Queryable.ToListAsync();
                 return new { items, rowCount = pagedResult.RowCount, currentPage = page, pageSize, pageCount = (int)Math.Ceiling((double)pagedResult.RowCount / pageSize) };
             });
@@ -281,7 +281,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
         if (_xiaokeConfigService == null) return new { error = "小科配置服务未启用" };
         var name = arguments.ContainsKey("name") ? arguments["name"]?.ToString() : null;
         var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 10, maxPageSize: 100);
-        var queryParams = new Platform.ServiceDefaults.Models.PageParams { Page = page, PageSize = pageSize, Search = name };
+        var queryParams = new Platform.ServiceDefaults.Models.ProTableRequest { Page = page, PageSize = pageSize, Search = name };
         var response = await _xiaokeConfigService.GetConfigsAsync(queryParams);
         var items = response.Queryable?.ToList() ?? new List<XiaokeConfigDto>();
         var configs = items.Select(c => new { c.Id, c.Name, c.Model, c.SystemPrompt, c.Temperature, c.MaxTokens, c.TopP, c.FrequencyPenalty, c.PresencePenalty, c.IsEnabled, c.IsDefault }).Cast<object>().ToList();

@@ -33,7 +33,7 @@ public class KnowledgeMcpToolHandler : McpToolHandlerBase
             {
                 var (page, pageSize) = ParsePaginationArgs(args);
                 var keyword = args.GetValueOrDefault("keyword")?.ToString();
-                var result = await _knowledgeService.GetKnowledgeBasesAsync(new Platform.ServiceDefaults.Models.PageParams { Page = page, PageSize = pageSize, Search = keyword });
+                var result = await _knowledgeService.GetKnowledgeBasesAsync(new Platform.ServiceDefaults.Models.ProTableRequest { Page = page, PageSize = pageSize, Search = keyword });
                 var items = await result.Queryable.ToListAsync();
                 return new { items, rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount };
             });
@@ -107,7 +107,7 @@ public class KnowledgeMcpToolHandler : McpToolHandlerBase
                 var kbId = args.GetValueOrDefault("knowledgeBaseId")?.ToString();
                 var keyword = args.GetValueOrDefault("keyword")?.ToString();
                 if (string.IsNullOrEmpty(kbId)) return new { error = "knowledgeBaseId 必填" };
-                var result = await _documentService.GetDocumentsAsync(kbId, new Platform.ServiceDefaults.Models.PageParams { Page = page, PageSize = pageSize, Search = keyword });
+                var result = await _documentService.GetDocumentsAsync(kbId, new Platform.ServiceDefaults.Models.ProTableRequest { Page = page, PageSize = pageSize, Search = keyword });
                 var items = await result.Queryable.ToListAsync();
                 return new { items, rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount };
             });

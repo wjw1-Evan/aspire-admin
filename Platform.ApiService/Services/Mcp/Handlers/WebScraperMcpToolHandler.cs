@@ -57,7 +57,7 @@ public class WebScraperMcpToolHandler : McpToolHandlerBase
                 var (page, pageSize) = ParsePaginationArgs(args);
                 var keyword = args.GetValueOrDefault("keyword")?.ToString();
 
-                var pageParams = new Platform.ServiceDefaults.Models.PageParams
+                var pageParams = new Platform.ServiceDefaults.Models.ProTableRequest
                 {
                     Page = page,
                     PageSize = pageSize
@@ -124,7 +124,7 @@ public class WebScraperMcpToolHandler : McpToolHandlerBase
                 var (page, pageSize) = ParsePaginationArgs(args);
                 var taskId = args.GetValueOrDefault("task_id")?.ToString();
 
-                var pageParams = new Platform.ServiceDefaults.Models.PageParams
+                var pageParams = new Platform.ServiceDefaults.Models.ProTableRequest
                 {
                     Page = page,
                     PageSize = pageSize

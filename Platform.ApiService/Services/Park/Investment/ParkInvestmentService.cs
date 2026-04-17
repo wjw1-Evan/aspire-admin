@@ -31,7 +31,7 @@ public class ParkInvestmentService : IParkInvestmentService
     /// <summary>
     /// 获取线索列表
     /// </summary>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<InvestmentLeadDto>> GetLeadsAsync(Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<InvestmentLeadDto>> GetLeadsAsync(Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         var pagedResult = _context.Set<InvestmentLead>().ToPagedList(request);
         var items = await pagedResult.Queryable.ToListAsync();
@@ -175,7 +175,7 @@ public class ParkInvestmentService : IParkInvestmentService
     /// <summary>
     /// 获取项目列表
     /// </summary>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<InvestmentProjectDto>> GetProjectsAsync(Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<InvestmentProjectDto>> GetProjectsAsync(Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         var pagedResult = _context.Set<InvestmentProject>().ToPagedList(request);
         var items = await pagedResult.Queryable.ToListAsync();

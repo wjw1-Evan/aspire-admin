@@ -13,7 +13,7 @@ public interface IParkVisitService
     /// <summary>
     /// 获取走访任务列表
     /// </summary>
-    Task<System.Linq.Dynamic.Core.PagedResult<VisitTaskDto>> GetVisitTasksAsync(Platform.ServiceDefaults.Models.PageParams request);
+    Task<System.Linq.Dynamic.Core.PagedResult<VisitTaskDto>> GetVisitTasksAsync(Platform.ServiceDefaults.Models.ProTableRequest request);
 
     /// <summary>
     /// 根据ID获取走访任务详情
@@ -44,7 +44,7 @@ public interface IParkVisitService
     /// <summary>
     /// 获取走访考核列表
     /// </summary>
-    Task<System.Linq.Dynamic.Core.PagedResult<VisitAssessmentDto>> GetVisitAssessmentsAsync(Platform.ServiceDefaults.Models.PageParams request);
+    Task<System.Linq.Dynamic.Core.PagedResult<VisitAssessmentDto>> GetVisitAssessmentsAsync(Platform.ServiceDefaults.Models.ProTableRequest request);
 
     /// <summary>
     /// 创建走访考核
@@ -58,7 +58,7 @@ public interface IParkVisitService
     /// <summary>
     /// 获取走访知识库问题列表
     /// </summary>
-    Task<System.Linq.Dynamic.Core.PagedResult<VisitQuestionDto>> GetVisitQuestionsAsync(Platform.ServiceDefaults.Models.PageParams request, string? category = null);
+    Task<System.Linq.Dynamic.Core.PagedResult<VisitQuestionDto>> GetVisitQuestionsAsync(Platform.ServiceDefaults.Models.ProTableRequest request, string? category = null);
 
     /// <summary>
     /// 根据分类获取走访问题

@@ -79,7 +79,7 @@ public class FileVersionService : IFileVersionService
 
     public async Task<List<FileVersion>> GetVersionHistoryAsync(string fileItemId) => await _context.Set<FileVersion>().Where(v => v.FileItemId == fileItemId).OrderByDescending(v => v.VersionNumber).ToListAsync();
 
-    public async Task<System.Linq.Dynamic.Core.PagedResult<FileVersion>> GetVersionHistoryPaginatedAsync(string fileItemId, Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<FileVersion>> GetVersionHistoryPaginatedAsync(string fileItemId, Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         var query = _context.Set<FileVersion>().Where(v => v.FileItemId == fileItemId).OrderByDescending(v => v.VersionNumber);
         return await Task.FromResult(query.ToPagedList(request));

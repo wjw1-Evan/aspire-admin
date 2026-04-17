@@ -41,7 +41,7 @@ public class FileVersionController : BaseApiController
     /// <returns>版本列表</returns>
     /// <param name="request">分页请求参数</param>
     [HttpGet("list")]
-    public async Task<IActionResult> GetVersionList([FromQuery] string fileId, [FromQuery] Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<IActionResult> GetVersionList([FromQuery] string fileId, [FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         if (string.IsNullOrWhiteSpace(fileId))
             throw new ArgumentException("文件ID不能为空");

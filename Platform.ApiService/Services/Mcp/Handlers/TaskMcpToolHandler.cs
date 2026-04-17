@@ -175,7 +175,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
     {
         var currentUser = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == currentUserId);
         var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
-        var request = new Platform.ServiceDefaults.Models.PageParams
+        var request = new Platform.ServiceDefaults.Models.ProTableRequest
         {
             Page = page,
             PageSize = pageSize,
@@ -215,7 +215,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
         {
             if (string.IsNullOrEmpty(taskName)) return new { error = "参数错误: taskId 或 taskName 必填" };
 
-            var searchResult = await _taskService.QueryTasksAsync(new Platform.ServiceDefaults.Models.PageParams { Search = taskName, Page = 1, PageSize = 1 });
+            var searchResult = await _taskService.QueryTasksAsync(new Platform.ServiceDefaults.Models.ProTableRequest { Search = taskName, Page = 1, PageSize = 1 });
             var searchTasks = await searchResult.Queryable.ToListAsync();
             if (searchTasks.Any()) taskId = searchTasks.First().Id;
             else return new { error = "未找到该任务" };
@@ -394,7 +394,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             return new { error = "无法确定当前企业" };
 
         var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
-        var request = new Platform.ServiceDefaults.Models.PageParams
+        var request = new Platform.ServiceDefaults.Models.ProTableRequest
         {
             Page = page,
             PageSize = pageSize,
@@ -432,7 +432,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             return new { error = "无法确定当前企业" };
 
         var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
-        var request = new Platform.ServiceDefaults.Models.PageParams
+        var request = new Platform.ServiceDefaults.Models.ProTableRequest
         {
             Page = page,
             PageSize = pageSize,
@@ -460,7 +460,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
         {
             if (string.IsNullOrEmpty(name)) return new { error = "未提供项目ID或名称" };
 
-            var searchResult = await _projectService.GetProjectsListAsync(new Platform.ServiceDefaults.Models.PageParams { Search = name, Page = 1, PageSize = 1 }, currentUserId);
+            var searchResult = await _projectService.GetProjectsListAsync(new Platform.ServiceDefaults.Models.ProTableRequest { Search = name, Page = 1, PageSize = 1 }, currentUserId);
             var searchItems = await searchResult.Queryable.ToListAsync();
             if (searchItems.Any()) projectId = searchItems.First().Id;
             else return new { error = "未找到该项目" };

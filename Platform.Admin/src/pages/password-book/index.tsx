@@ -141,9 +141,11 @@ const PasswordBook: React.FC = () => {
           </Space>
         }
 
-        request={async (params: any, sort?: any, filter?: any) => {
+        request={async (params: any, sort?: Record<string, any>, filter?: Record<string, any>) => {
           const { current, pageSize } = params;
-          const sortParams = sort?.field ? { sortBy: sort.field, sortOrder: sort.order === 'ascend' ? 'asc' : 'desc' } : undefined;
+          const sortKeys = sort ? Object.keys(sort) : [];
+          const sortField = sortKeys[0];
+          const sortParams = sortField ? { sortBy: sortField, sortOrder: sort && sort[sortField] === 'ascend' ? 'asc' : 'desc' } : undefined;
           const res = await api.list({ page: current, pageSize, search: state.search, ...sortParams });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
         }}

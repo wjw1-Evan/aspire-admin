@@ -29,7 +29,7 @@ interface Stats {
 }
 
 const api = {
-  list: (params: PageParams) => request<ApiResponse<PagedResult<Entry>>>('/apiservice/api/password-book/list', { params }),
+  list: (params: any) => request<ApiResponse<PagedResult<Entry>>>('/apiservice/api/password-book/list', { params }),
   get: (id: string) => request<ApiResponse<Entry>>(`/apiservice/api/password-book/${id}`),
   delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/password-book/${id}`, { method: 'DELETE' }),
   create: (data: Partial<Entry>) => request<ApiResponse<Entry>>('/apiservice/api/password-book', { method: 'POST', data }),
@@ -140,18 +140,11 @@ const PasswordBook: React.FC = () => {
           </Space>
         }
 
-        request={async (params: any, sort) => {
-          const sortField = Object.keys(sort)[0];
-          const sortOrder = sortField ? (sort[sortField] === 'ascend' ? 'asc' : 'desc') : undefined;
-          const res = await api.list({
-            page: params.current,
-            pageSize: params.pageSize,
-            sortBy: sortField,
-            sortOrder,
-            search: state.search
-          });
+        request={async (params, sort, filter) => {
+          const res = await api.list({ ...params, sort, filter });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
         }}
+
         columns={columns}
         rowKey="id"
         search={false}

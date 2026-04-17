@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { Button, Space, Tag, Popconfirm } from 'antd';
+import { Button, Space, Tag, Popconfirm, Input } from 'antd';
 import { PageContainer, ModalForm, ProTable, ProColumns, ActionType, ProFormText, ProFormDigit, ProFormSwitch } from '@ant-design/pro-components';
-import { PlusOutlined, EditOutlined, DeleteOutlined, PartitionOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, PartitionOutlined, SearchOutlined } from '@ant-design/icons';
 import { request } from '@umijs/max';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 
@@ -23,6 +23,7 @@ const FormDefinitionManagement: React.FC = () => {
         editingForm: null as FormDefinition | null,
         formVisible: false,
         sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
+        search: '' as string,
     });
     const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
@@ -57,7 +58,7 @@ const FormDefinitionManagement: React.FC = () => {
                     </Space>
                 }
                 rowKey="id"
-                search={{ labelWidth: 'auto' }}
+                search={false}
                 scroll={{ x: 'max-content' }}
                 request={async (params) => {
                     const { current, pageSize } = params;
@@ -72,6 +73,15 @@ const FormDefinitionManagement: React.FC = () => {
                     set({ sorter: sorter?.order ? { sortBy: sorter.field as string, sortOrder: sorter.order === 'ascend' ? 'asc' : 'desc' } : undefined });
                 }}
                 toolBarRender={() => [
+                    <Input.Search
+                        key="search"
+                        placeholder="搜索..."
+                        allowClear
+                        value={state.search}
+                        onChange={(e) => set({ search: e.target.value })}
+                        onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+                        style={{ width: 260, marginRight: 8 }}
+                    />,
                     <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingForm: null, formVisible: true })}>新建表单</Button>,
                 ]}
             />

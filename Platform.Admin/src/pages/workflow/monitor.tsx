@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { Tag, Space, Button, Modal } from 'antd';
+import { Tag, Space, Button, Modal, Input } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
-import { EyeOutlined, MonitorOutlined, HistoryOutlined, FormOutlined } from '@ant-design/icons';
+import { EyeOutlined, MonitorOutlined, HistoryOutlined, FormOutlined, SearchOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns } from '@ant-design/pro-table';
 import {
   getWorkflowInstances, getWorkflowInstance, getApprovalHistory, getWorkflowDetail,
@@ -27,6 +27,7 @@ const WorkflowMonitor: React.FC = () => {
   const [nodeFormInitial, setNodeFormInitial] = useState<Record<string, any> | null>(null);
   const [nodeFormLoading, setNodeFormLoading] = useState(false);
   const [currentFormInstanceId, setCurrentFormInstanceId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
 
   const getFlowStatus = (status?: WorkflowStatus | null) => getStatusMeta(intl, status, workflowStatusMap);
 
@@ -146,10 +147,10 @@ const WorkflowMonitor: React.FC = () => {
         }
         actionRef={undefined}
         rowKey="id"
-        search={{ labelWidth: 'auto' }}
+        search={false}
         request={async (params: any) => {
           const { current, pageSize, ...rest } = params;
-          const response = await getWorkflowInstances({ page: current, pageSize, ...rest } as PageParams);
+          const response = await getWorkflowInstances({ page: current, pageSize, ...rest, search } as PageParams);
           if (response.success && response.data) {
             return { data: response.data.queryable || [], total: response.data.rowCount || 0, success: true };
           }
@@ -157,6 +158,17 @@ const WorkflowMonitor: React.FC = () => {
         }}
         columns={columns}
         scroll={{ x: 'max-content' }}
+        toolBarRender={() => [
+          <Input.Search
+            key="search"
+            placeholder="搜索..."
+            allowClear
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onSearch={(value) => setSearch(value)}
+            style={{ width: 260 }}
+          />,
+        ]}
       />
       <Modal title={intl.formatMessage({ id: 'pages.workflow.monitor.modal.progressTitle' })} open={previewVisible} onCancel={() => { setPreviewVisible(false); setPreviewInstance(null); }} footer={null} width="90%" style={{ top: 20 }} styles={{ body: { height: 'calc(100vh - 120px)' } }}>
         {previewInstance && (

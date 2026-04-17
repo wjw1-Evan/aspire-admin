@@ -486,9 +486,10 @@ export interface PagedResult<T> {
         </Space>
       </Space>
     }
-    request={async (params: PageParams & { current?: number }) => {
-      const { current, pageSize, sortBy, sortOrder, search } = params;
-      const res = await api.list({ page: current, pageSize, sortBy, sortOrder, search: search || state.search });
+    request={async (params: any) => {
+      const { current, pageSize } = params;
+      const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
+      const res = await api.list({ page: current, pageSize, sortBy: sortParams?.sortBy, sortOrder: sortParams?.sortOrder, search: state.search });
       return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
     }}
     columns={columns}
@@ -575,7 +576,7 @@ export interface PageParams {
 | `api.list({ page: current })` | `api.list({ page: current, pageSize })` |
 | 解构后忘记传递 pageSize | 必须传递 `pageSize` |
 
-> **检查工具**：使用 `grep "request={async (params: PageParams" src/pages/**/*.tsx` 确保所有 ProTable 都正确使用 PageParams。
+> **检查工具**：使用 `grep "{ current, pageSize" src/pages/**/*.tsx` 确保所有 ProTable 都正确传递。
 
 ### 7.7 前端开发标准（密码本模块）
 

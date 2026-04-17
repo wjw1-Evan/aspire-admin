@@ -50,7 +50,6 @@ const PasswordBook: React.FC = () => {
     viewingId: '',
     detailLoading: false,
     search: '' as string,
-    sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
   });
   const [formState, setFormState] = useState({ tags: [] as string[] });
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
@@ -142,14 +141,12 @@ const PasswordBook: React.FC = () => {
           </Space>
         }
 
-        request={async (params: any) => {
+        request={async (params: any, sort?: any, filter?: any) => {
           const { current, pageSize } = params;
-          const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
+          const sortParams = sort?.field ? { sortBy: sort.field, sortOrder: sort.order === 'ascend' ? 'asc' : 'desc' } : undefined;
           const res = await api.list({ page: current, pageSize, search: state.search, ...sortParams });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
         }}
-
-        onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
 
         columns={columns}
         rowKey="id"

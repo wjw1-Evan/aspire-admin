@@ -497,17 +497,17 @@ export interface PagedResult<T> {
 | 参数 | 后端默认值 | 前端行为 |
 |------|-----------|----------|
 | `page` | `1` | **必须显式传值** |
-| `pageSize` | `10` | **禁止前端传值**，使用后端默认值 |
+| `pageSize` | `10` | **允许前端传值**，ProTable 支持自定义每页数量 |
 
 ```typescript
-// ✅ 正确：使用空对象
+// ✅ 正确：使用空对象（使用后端默认值）
 await getUserList({})
 
 // ✅ 正确：只需指定 page
 await getUserList({ page: 2 })
 
-// ❌ 禁止：显式传 pageSize
-await getUserList({ page: 1, pageSize: 10 })
+// ✅ 正确：ProTable 分页可自定义 pageSize
+await getUserList({ page: 1, pageSize: params.pageSize })
 ```
 
 ### 7.7 前端开发标准（密码本模块）

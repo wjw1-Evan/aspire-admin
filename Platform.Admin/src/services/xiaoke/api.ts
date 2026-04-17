@@ -5,22 +5,6 @@ import type { PageParams } from '@/types';
 /**
  * 小科配置相关类型
  */
-export interface XiaokeConfig {
-  id: string;
-  name: string;
-  model: string;
-  systemPrompt: string;
-  temperature: number;
-  maxTokens: number;
-  topP: number;
-  frequencyPenalty: number;
-  presencePenalty: number;
-  isEnabled: boolean;
-  isDefault: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface CreateXiaokeConfigRequest {
   name: string;
   model: string;
@@ -32,6 +16,12 @@ export interface CreateXiaokeConfigRequest {
   presencePenalty?: number;
   isEnabled?: boolean;
   isDefault?: boolean;
+}
+
+export interface XiaokeConfig extends CreateXiaokeConfigRequest {
+  id: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface UpdateXiaokeConfigRequest {

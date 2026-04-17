@@ -1556,6 +1556,7 @@ export default {
   'pages.cloud-storage.quota.field.user': 'User',
   'pages.cloud-storage.quota.field.totalQuota': 'Total Quota',
   'pages.cloud-storage.quota.field.usedQuota': 'Used Quota',
+  'pages.cloud-storage.quota.field.usedSpace': 'Used Space',
   'pages.cloud-storage.quota.field.usagePercentage': 'Usage %',
   'pages.cloud-storage.quota.field.fileCount': 'File Count',
   'pages.cloud-storage.quota.field.isEnabled': 'Status',

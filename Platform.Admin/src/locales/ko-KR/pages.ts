@@ -1493,6 +1493,7 @@ export default {
   'pages.cloud-storage.quota.field.user': '사용자',
   'pages.cloud-storage.quota.field.totalQuota': '총 할당량',
   'pages.cloud-storage.quota.field.usedQuota': '사용된 할당량',
+  'pages.cloud-storage.quota.field.usedSpace': '사용된 공간',
   'pages.cloud-storage.quota.field.usagePercentage': '사용률 %',
   'pages.cloud-storage.quota.field.fileCount': '파일 수',
   'pages.cloud-storage.quota.field.isEnabled': '상태',

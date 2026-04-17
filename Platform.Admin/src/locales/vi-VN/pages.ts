@@ -1505,6 +1505,7 @@ export default {
   'pages.cloud-storage.quota.field.user': 'Người dùng',
   'pages.cloud-storage.quota.field.totalQuota': 'Tổng hạn mức',
   'pages.cloud-storage.quota.field.usedQuota': 'Hạn mức đã dùng',
+  'pages.cloud-storage.quota.field.usedSpace': 'Dung lượng đã dùng',
   'pages.cloud-storage.quota.field.usagePercentage': '% Sử dụng',
   'pages.cloud-storage.quota.field.fileCount': 'Số lượng tệp',
   'pages.cloud-storage.quota.field.isEnabled': 'Trạng thái',

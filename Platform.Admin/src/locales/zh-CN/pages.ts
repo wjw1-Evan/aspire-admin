@@ -1678,6 +1678,7 @@ export default {
   'pages.cloud-storage.quota.field.updatedBy': '更新人',
   'pages.cloud-storage.quota.field.usagePercentage': '使用率',
   'pages.cloud-storage.quota.field.usedQuota': '已用配额',
+  'pages.cloud-storage.quota.field.usedSpace': '已用空间',
   'pages.cloud-storage.quota.field.user': '用户',
   'pages.cloud-storage.quota.field.warningThreshold': '警告阈值',
   'pages.cloud-storage.quota.field.warningThresholdPercent': '警告阈值 (%)',

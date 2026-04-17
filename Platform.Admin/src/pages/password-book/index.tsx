@@ -29,8 +29,7 @@ interface Stats {
 }
 
 const api = {
-  list: (params: any) =>
-    request<ApiResponse<PagedResult<Entry>>>('/apiservice/api/password-book/list', { params }),
+  list: (params: any) => request<ApiResponse<PagedResult<Entry>>>('/apiservice/api/password-book/list', { params }),
   get: (id: string) => request<ApiResponse<Entry>>(`/apiservice/api/password-book/${id}`),
   delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/password-book/${id}`, { method: 'DELETE' }),
   create: (data: Partial<Entry>) => request<ApiResponse<Entry>>('/apiservice/api/password-book', { method: 'POST', data }),
@@ -141,13 +140,8 @@ const PasswordBook: React.FC = () => {
           </Space>
         }
 
-        request={async (params: any, sort?: Record<string, any>, filter?: Record<string, any>) => {
-          console.log('sort:', JSON.stringify(sort));
-          const { current, pageSize } = params;
-          const sortKeys = sort ? Object.keys(sort) : [];
-          const sortField = sortKeys[0];
-          const sortParams = sortField ? { sortBy: sortField, sortOrder: sort && sort[sortField] === 'ascend' ? 'asc' : 'desc' } : undefined;
-          const res = await api.list({ page: current, pageSize, search: state.search, ...sortParams });
+        request={async (params: any, sort: any, filter: any) => {
+          const res = await api.list({ ...params, search: state.search, sort, filter });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
         }}
 

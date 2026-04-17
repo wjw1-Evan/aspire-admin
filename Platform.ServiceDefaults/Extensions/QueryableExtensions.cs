@@ -1,5 +1,6 @@
 using System.Linq.Dynamic.Core;
 using System.Reflection;
+using System.Text.Json;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -40,6 +41,40 @@ public static class QueryableExtensions
         query = query.OrderBy(isDesc ? $"{field} descending" : field);
 
         return query.PageResult(p.Page, p.PageSize);
+    }
+
+    /// <summary>
+    /// 支持 ProTable 请求参数的分页查询
+    /// </summary>
+    public static PagedResult<T> ToPagedList<T>(
+        this IQueryable<T> query,
+        Models.ProTableRequest? request)
+    {
+        var p = new Models.PageParams
+        {
+            Page = request?.Page ?? 1,
+            PageSize = request?.PageSize ?? 20,
+            Search = request?.Search
+        };
+
+        if (!string.IsNullOrWhiteSpace(request?.Sort))
+        {
+            try
+            {
+                var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(request.Sort);
+                if (dict?.Count > 0)
+                {
+                    var first = dict.First();
+                    p.SortBy = first.Key;
+                    p.SortOrder = first.Value == "ascend" ? "asc" : "desc";
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        return query.ToPagedList(p);
     }
 
     /// <summary>

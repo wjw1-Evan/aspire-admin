@@ -7,6 +7,7 @@ using Platform.ApiService.Services.WebScraper;
 using System.Linq.Dynamic.Core;
 using System.Text.Json;
 using System.Reflection;
+using System.Collections.Concurrent;
 
 namespace Platform.ApiService.Services;
 
@@ -16,7 +17,7 @@ public class WebScraperService : IWebScraperService
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IContentFilterService _contentFilterService;
     private readonly ILogger<WebScraperService> _logger;
-    private static readonly Dictionary<string, CancellationTokenSource> _runningTasks = new();
+    private static readonly ConcurrentDictionary<string, CancellationTokenSource> _runningTasks = new();
 
     public WebScraperService(
         DbContext context,
@@ -155,7 +156,7 @@ public class WebScraperService : IWebScraperService
         if (_runningTasks.TryGetValue(id, out var cts))
         {
             cts.Cancel();
-            _runningTasks.Remove(id);
+            _runningTasks.TryRemove(id, out _);
             return true;
         }
 
@@ -325,7 +326,7 @@ public class WebScraperService : IWebScraperService
         }
         finally
         {
-            _runningTasks.Remove(id);
+            _runningTasks.TryRemove(id, out _);
         }
     }
 

@@ -66,10 +66,10 @@ const PasswordBook: React.FC = () => {
   };
 
   const columns: ProColumns<Entry>[] = [
-    { title: '平台', dataIndex: 'platform', key: 'platform', sorter: true, filters: true },
-    { title: '账号', dataIndex: 'account', key: 'account', sorter: true, filters: true },
-    { title: '网址', dataIndex: 'url', key: 'url', sorter: true, filters: true, render: (dom) => dom ? <a href={dom as string} target="_blank">{dom}</a> : '-' },
-    { title: '分类', dataIndex: 'category', key: 'category', sorter: true, filters: true, render: (dom) => dom ? <Tag color="blue">{dom as string}</Tag> : '-' },
+    { title: '平台', dataIndex: 'platform', key: 'platform', sorter: true, filters: true, filterSearch: true },
+    { title: '账号', dataIndex: 'account', key: 'account', sorter: true, filters: true, filterSearch: true },
+    { title: '网址', dataIndex: 'url', key: 'url', sorter: true, filters: true, filterSearch: true, render: (dom) => dom ? <a href={dom as string} target="_blank">{dom}</a> : '-' },
+    { title: '分类', dataIndex: 'category', key: 'category', sorter: true, filters: true, filterSearch: true, render: (dom) => dom ? <Tag color="blue">{dom as string}</Tag> : '-' },
     { title: '标签', dataIndex: 'tags', render: (dom) => dom && typeof dom === 'object' && 'length' in dom ? <Space size={[0, 4]} wrap>{(dom as string[]).map((t) => <Tag key={t}>{t}</Tag>)}</Space> : '-' },
     { title: '最后使用', dataIndex: 'lastUsedAt', key: 'lastUsedAt', sorter: true, valueType: 'dateTime' },
     {

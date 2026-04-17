@@ -305,13 +305,19 @@ const CloudStorageFilesPage: React.FC = () => {
                     onChange={(info) => {
                         set({ uploadFileList: info.fileList });
                         if (info.file.status === 'done') {
-                            message.success(`${info.file.name} 上传成功`);
-                            if (info.fileList.every(f => f.status !== 'uploading')) {
-                                set({ uploadVisible: false, uploadFileList: [] });
-                                actionRef.current?.reload();
+                            const response = info.file.response as any;
+                            if (response?.success === false) {
+                                message.error(response.message || `${info.file.name} 上传失败`);
+                            } else {
+                                message.success(`${info.file.name} 上传成功`);
+                                if (info.fileList.every(f => f.status !== 'uploading')) {
+                                    set({ uploadVisible: false, uploadFileList: [] });
+                                    actionRef.current?.reload();
+                                }
                             }
                         } else if (info.file.status === 'error') {
-                            message.error(`${info.file.name} 上传失败`);
+                            const response = info.file.response as any;
+                            message.error(response?.message || `${info.file.name} 上传失败`);
                         }
                     }}
                 >

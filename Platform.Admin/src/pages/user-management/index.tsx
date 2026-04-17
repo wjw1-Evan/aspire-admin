@@ -6,7 +6,7 @@ import { Drawer } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormSwitch, ProFormDatePicker, ProFormDateRangePicker } from '@ant-design/pro-form';
 import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, CrownOutlined, SearchOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
-import { ApiResponse, PagedResult, PageParams } from '@/types';
+import { ApiResponse, PagedResult, ProTableRequest } from '@/types';
 import dayjs from 'dayjs';
 import type { Role } from '@/services/role/api';
 import { getCurrentCompany } from '@/services/company';
@@ -24,7 +24,7 @@ interface JoinReq { id: string; username: string; userEmail?: string; reason?: s
 
 // ==================== API ====================
 const api = {
-  list: (p: PageParams) => request<ApiResponse<PagedResult<AppUser>>>('/apiservice/api/users/list', { params: p }),
+  list: (p: ProTableRequest) => request<ApiResponse<PagedResult<AppUser>>>('/apiservice/api/users/list', { params: p }),
   stats: () => request<ApiResponse<UserStats>>('/apiservice/api/users/statistics', { method: 'GET' }),
   del: (id: string, reason?: string) => request<ApiResponse<unknown>>(`/apiservice/api/users/${id}`, { method: 'DELETE', params: reason ? { reason } : undefined }),
   activate: (id: string) => request<ApiResponse<unknown>>(`/apiservice/api/users/${id}/activate`, { method: 'PUT' }),

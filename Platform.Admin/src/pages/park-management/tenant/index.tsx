@@ -8,7 +8,7 @@ import { ProDescriptions } from '@ant-design/pro-components';
 import { ModalForm, ProFormText, ProFormDatePicker } from '@ant-design/pro-form';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, UserOutlined, WarningOutlined, ReloadOutlined, CalendarOutlined, CustomerServiceOutlined, FileTextOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { ApiResponse, PagedResult, PageParams } from '@/types';
+import { ApiResponse, PagedResult, ProTableRequest } from '@/types';
 
 interface ParkTenant { id: string; tenantName: string; contactPerson?: string; phone?: string; email?: string; industry?: string; businessLicense?: string; address?: string; notes?: string; entryDate?: string; status: string; unitCount: number; activeContracts: number; createdAt?: string; updatedAt?: string; }
 interface LeaseContract { id: string; contractNumber: string; tenantId: string; tenantName?: string; unitIds: string[]; startDate: string; endDate: string; monthlyRent: number; totalAmount?: number; status: string; createdAt?: string; }
@@ -18,7 +18,7 @@ interface LeasePaymentRecord { id: string; contractId: string; paymentType: stri
 interface TenantFormData { tenantName: string; contactPerson?: string; phone?: string; email?: string; industry?: string; businessLicense?: string; address?: string; notes?: string; entryDate?: string; }
 
 const api = {
-    list: (params: PageParams & { tenantId?: string }) => request<ApiResponse<PagedResult<ParkTenant>>>('/apiservice/api/park/tenants/list', { params }),
+    list: (params: ProTableRequest & { tenantId?: string }) => request<ApiResponse<PagedResult<ParkTenant>>>('/apiservice/api/park/tenants/list', { params }),
     get: (id: string) => request<ApiResponse<ParkTenant>>(`/apiservice/api/park/tenants/${id}`),
     create: (data: TenantFormData) => request<ApiResponse<ParkTenant>>('/apiservice/api/park/tenants', { method: 'POST', data }),
     update: (id: string, data: TenantFormData) => request<ApiResponse<ParkTenant>>(`/apiservice/api/park/tenants/${id}`, { method: 'PUT', data }),

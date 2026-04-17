@@ -7,7 +7,7 @@ import { Drawer } from 'antd';
 import { ProDescriptions } from '@ant-design/pro-components';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { HistoryOutlined, CheckCircleOutlined, CloseCircleOutlined, ThunderboltOutlined, SearchOutlined } from '@ant-design/icons';
-import { ApiResponse, PagedResult, PageParams } from '@/types';
+import { ApiResponse, PagedResult, ProTableRequest } from '@/types';
 import dayjs from 'dayjs';
 import { getActionTagColor, getActionText, getMethodColor, getStatusBadge } from '@/utils/activityLog';
 

@@ -57,7 +57,7 @@ public interface IStorageQuotaService
     /// <summary>
     /// 获取存储配额警告列表（分页）
     /// </summary>
-    Task<PagedResult<StorageQuotaWarning>> GetQuotaWarningsPaginatedAsync(PageParams pageParams, double warningThreshold = 0.8);
+    Task<PagedResult<StorageQuotaWarning>> GetQuotaWarningsPaginatedAsync(ProTableRequest request, double warningThreshold = 0.8);
 
     /// <summary>
     /// 清理未使用的存储配额记录
@@ -67,7 +67,7 @@ public interface IStorageQuotaService
     /// <summary>
     /// 获取存储配额列表（分页）
     /// </summary>
-    Task<PagedResult<StorageQuotaListItem>> GetStorageQuotaListAsync(PageParams pageParams, string? companyId = null, bool? isEnabled = null);
+    Task<PagedResult<StorageQuotaListItem>> GetStorageQuotaListAsync(ProTableRequest request, string? companyId = null, bool? isEnabled = null);
 
     /// <summary>
     /// 获取存储使用统计信息

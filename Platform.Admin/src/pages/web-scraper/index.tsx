@@ -5,7 +5,7 @@ import { PageContainer, ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { PlusOutlined, PlayCircleOutlined, DeleteOutlined, EyeOutlined, PauseCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { ApiResponse, PagedResult, PageParams } from '@/types';
+import { ApiResponse, PagedResult, ProTableRequest } from '@/types';
 import TaskForm from './components/TaskForm';
 import ResultPreview from './components/ResultPreview';
 
@@ -61,7 +61,7 @@ interface ScrapeResult {
 }
 
 const api = {
-  list: (params: PageParams & { keyword?: string; status?: string }) =>
+  list: (params: ProTableRequest & { keyword?: string; status?: string }) =>
     request<ApiResponse<PagedResult<WebScrapingTask>>>('/apiservice/api/web-scraper/tasks', { params }),
   get: (id: string) =>
     request<ApiResponse<WebScrapingTask>>(`/apiservice/api/web-scraper/tasks/${id}`),

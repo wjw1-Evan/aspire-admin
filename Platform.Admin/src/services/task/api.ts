@@ -1,6 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse, PagedResult } from '@/types';
-import type { PageParams } from '@/types';
+import type { ApiResponse, PagedResult, ProTableRequest } from '@/types';
 
 /**
  * 任务状态枚举
@@ -232,7 +231,7 @@ export async function getTaskById(taskId: string) {
 /**
  * 查询任务列表
  */
-export async function queryTasks(params: PageParams) {
+export async function queryTasks(params: ProTableRequest) {
   return request<ApiResponse<TaskListResponse>>('/apiservice/api/task/query', {
     params,
   });

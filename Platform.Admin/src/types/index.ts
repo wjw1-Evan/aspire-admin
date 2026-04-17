@@ -1,4 +1,4 @@
-export type { ApiResponse, PagedResult, PageParams } from './api-response';
+export type { ApiResponse, PagedResult, ProTableRequest } from './api-response';
 
 export interface MenuTreeNode {
   id?: string;

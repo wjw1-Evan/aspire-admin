@@ -67,18 +67,20 @@ export interface PagedResult<T> {
 }
 
 /**
- * 分页查询参数
+ * ProTable 分页查询参数
  *
- * 用于列表请求的分页和排序参数
+ * 用于列表请求的分页和排序参数，与后端 ProTableRequest 完全一致
  *
  * @example
  * // 查询第 2 页，每页 10 条，按创建时间降序
- * { page: 2, pageSize: 10, sortBy: 'createdAt', sortOrder: 'desc' ，search: 'keyword'}
+ * { page: 2, pageSize: 10, sortBy: 'createdAt', sortOrder: 'desc', search: 'keyword'}
  */
-export interface PageParams {
+export interface ProTableRequest {
   page?: number;
   pageSize?: number;
+  search?: string;
   sortBy?: string;
   sortOrder?: string;
-  search?: string;
+  sort?: any;
+  filter?: any;
 }

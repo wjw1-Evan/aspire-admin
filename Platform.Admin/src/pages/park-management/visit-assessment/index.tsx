@@ -7,7 +7,7 @@ import { ProDescriptions } from '@ant-design/pro-components';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { StarFilled, FileSearchOutlined, StarOutlined, SearchOutlined, ReloadOutlined, TeamOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { ApiResponse, PagedResult, PageParams } from '@/types';
+import { ApiResponse, PagedResult, ProTableRequest } from '@/types';
 
 const { Text } = Typography;
 
@@ -16,7 +16,7 @@ interface VisitAssessment { id: string; taskId: string; visitorName: string; pho
 interface AssessmentFormData { taskId: string; visitorName: string; phone?: string; location?: string; taskDescription: string; score: number; comments?: string; }
 
 const api = {
-    list: (params: PageParams & { status?: string }) => request<ApiResponse<PagedResult<VisitTask>>>('/apiservice/api/park-management/visit/tasks', { params }),
+    list: (params: ProTableRequest & { status?: string }) => request<ApiResponse<PagedResult<VisitTask>>>('/apiservice/api/park-management/visit/tasks', { params }),
     createAssessment: (data: AssessmentFormData) => request<ApiResponse<VisitAssessment>>('/apiservice/api/park-management/visit/assessment', { method: 'POST', data }),
 };
 

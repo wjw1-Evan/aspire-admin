@@ -8,7 +8,7 @@ import { ModalForm, ProFormText, ProFormSelect, ProFormDatePicker, ProFormDigit,
 import { PlusOutlined, EditOutlined, DeleteOutlined, SwapOutlined, TeamOutlined, ProjectOutlined, PhoneOutlined, SearchOutlined } from '@ant-design/icons';
 import { ProDescriptions } from '@ant-design/pro-components';
 import dayjs from 'dayjs';
-import { ApiResponse, PagedResult, PageParams } from '@/types';
+import { ApiResponse, PagedResult, ProTableRequest } from '@/types';
 
 const { Text } = Typography;
 
@@ -18,12 +18,12 @@ interface InvestmentStatistics { totalLeads: number; newLeadsThisMonth: number; 
 
 const api = {
     getStatistics: () => request<ApiResponse<InvestmentStatistics>>('/apiservice/api/park/investment/statistics'),
-    getLeads: (params: PageParams) => request<ApiResponse<PagedResult<InvestmentLead>>>('/apiservice/api/park/investment/leads/list', { params }),
+    getLeads: (params: ProTableRequest) => request<ApiResponse<PagedResult<InvestmentLead>>>('/apiservice/api/park/investment/leads/list', { params }),
     createLead: (data: Partial<InvestmentLead>) => request<ApiResponse<InvestmentLead>>('/apiservice/api/park/investment/leads', { method: 'POST', data }),
     updateLead: (id: string, data: Partial<InvestmentLead>) => request<ApiResponse<InvestmentLead>>(`/apiservice/api/park/investment/leads/${id}`, { method: 'PUT', data }),
     deleteLead: (id: string) => request<ApiResponse<boolean>>(`/apiservice/api/park/investment/leads/${id}`, { method: 'DELETE' }),
     convertLeadToProject: (id: string) => request<ApiResponse<InvestmentProject>>(`/apiservice/api/park/investment/leads/${id}/convert`, { method: 'POST' }),
-    getProjects: (params: PageParams) => request<ApiResponse<PagedResult<InvestmentProject>>>('/apiservice/api/park/investment/projects/list', { params }),
+    getProjects: (params: ProTableRequest) => request<ApiResponse<PagedResult<InvestmentProject>>>('/apiservice/api/park/investment/projects/list', { params }),
     createProject: (data: Partial<InvestmentProject>) => request<ApiResponse<InvestmentProject>>('/apiservice/api/park/investment/projects', { method: 'POST', data }),
     updateProject: (id: string, data: Partial<InvestmentProject>) => request<ApiResponse<InvestmentProject>>(`/apiservice/api/park/investment/projects/${id}`, { method: 'PUT', data }),
     deleteProject: (id: string) => request<ApiResponse<boolean>>(`/apiservice/api/park/investment/projects/${id}`, { method: 'DELETE' }),

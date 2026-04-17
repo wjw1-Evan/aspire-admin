@@ -1,6 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse, PagedResult } from '@/types';
-import type { PageParams } from '@/types';
+import type { ApiResponse, PagedResult, ProTableRequest } from '@/types';
 
 /**
  * 批量操作类型
@@ -479,7 +478,7 @@ export interface StartWorkflowRequest {
 /**
  * 获取流程定义列表
  */
-export async function getWorkflowList(params: PageParams & {
+export async function getWorkflowList(params: ProTableRequest & {
   category?: string;
   isActive?: boolean;
 }): Promise<ApiResponse<PagedResult<WorkflowDefinition>>> {

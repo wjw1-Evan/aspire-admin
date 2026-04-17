@@ -8,7 +8,7 @@ import { ProTable, ProColumns } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormTextArea, ProFormDigit } from '@ant-design/pro-components';
 import * as kbService from '@/services/workflow/knowledge-base';
 import type { KnowledgeDocument } from '@/services/workflow/knowledge-base';
-import type { PageParams } from '@/types';
+import type { ProTableRequest } from '@/types';
 import dayjs from 'dayjs';
 
 const KnowledgeBaseDocuments: React.FC = () => {

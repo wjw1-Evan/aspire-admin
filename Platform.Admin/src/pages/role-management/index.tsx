@@ -8,7 +8,7 @@ import { ProDescriptions } from '@ant-design/pro-components';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormTextArea, ProFormSwitch, ProForm } from '@ant-design/pro-form';
 import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined, SafetyOutlined } from '@ant-design/icons';
-import { ApiResponse, PagedResult, PageParams } from '@/types';
+import { ApiResponse, PagedResult, ProTableRequest } from '@/types';
 import dayjs from 'dayjs';
 
 // ==================== Types ====================

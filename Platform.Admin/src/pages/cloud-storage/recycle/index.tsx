@@ -7,7 +7,7 @@ import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { request } from '@umijs/max';
-import { ApiResponse, PagedResult, PageParams } from '@/types';
+import { ApiResponse, PagedResult, ProTableRequest } from '@/types';
 
 dayjs.extend(relativeTime);
 

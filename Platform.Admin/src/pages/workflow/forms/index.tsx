@@ -3,7 +3,7 @@ import { Button, Space, Tag, Popconfirm, Input } from 'antd';
 import { PageContainer, ModalForm, ProTable, ProColumns, ActionType, ProFormText, ProFormDigit, ProFormSwitch } from '@ant-design/pro-components';
 import { PlusOutlined, EditOutlined, DeleteOutlined, PartitionOutlined, SearchOutlined } from '@ant-design/icons';
 import { request } from '@umijs/max';
-import { ApiResponse, PagedResult, PageParams } from '@/types';
+import { ApiResponse, PagedResult, ProTableRequest } from '@/types';
 
 interface FormDefinition { id?: string; name: string; key: string; version?: number; isActive?: boolean; createdAt?: string; updatedAt?: string; }
 interface FormStatistics { totalForms: number; activeForms: number; }

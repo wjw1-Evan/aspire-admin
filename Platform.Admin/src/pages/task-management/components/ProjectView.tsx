@@ -19,7 +19,7 @@ import {
   ProjectStatus,
   ProjectPriority,
 } from '@/services/task/project';
-import type { ApiResponse, PageParams } from '@/types';
+import type { ApiResponse, ProTableRequest } from '@/types';
 import ProjectForm from './ProjectForm';
 import ProjectDetail from './ProjectDetail';
 import { useModal } from '@/hooks/useModal';
@@ -283,7 +283,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
             search: searchText,
             sortBy,
             sortOrder,
-          } as PageParams);
+          } as ProTableRequest);
           if (response.success && response.data) {
             return { data: response.data.queryable || [], total: response.data.rowCount || 0, success: true };
           }

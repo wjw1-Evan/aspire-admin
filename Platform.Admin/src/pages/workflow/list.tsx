@@ -8,7 +8,7 @@ import WorkflowCreateForm from './components/WorkflowCreateForm';
 import WorkflowEditForm from './components/WorkflowEditForm';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
-import type { PageParams } from '@/types';
+import type { ProTableRequest } from '@/types';
 
 const WorkflowManagement: React.FC = () => {
   const intl = useIntl();

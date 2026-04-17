@@ -1,6 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse, PagedResult } from '@/types';
-import type { PageParams } from '@/types';
+import type { ApiResponse, PagedResult, ProTableRequest } from '@/types';
 
 /**
  * 小科配置相关类型
@@ -87,7 +86,7 @@ export interface ChatHistoryDetailResponse {
 /**
  * 获取配置列表
  */
-export async function getXiaokeConfigs(params?: PageParams) {
+export async function getXiaokeConfigs(params?: ProTableRequest) {
   return request<ApiResponse<PagedResult<XiaokeConfig>>>('/apiservice/api/xiaoke/config', {
     method: 'GET',
     params,
@@ -153,7 +152,7 @@ export async function setDefaultXiaokeConfig(id: string) {
 /**
  * 获取聊天记录列表
  */
-export async function getChatHistory(params: PageParams) {
+export async function getChatHistory(params: ProTableRequest) {
   return request<ApiResponse<PagedResult<ChatHistoryListItem>>>('/apiservice/api/xiaoke/chat-history/list', {
     params,
   });

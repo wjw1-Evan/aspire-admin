@@ -13,7 +13,7 @@ import WorkflowDesigner from './components/WorkflowDesigner';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import { getStatusMeta, workflowStatusMap, approvalActionMap } from '@/utils/statusMaps';
-import type { PageParams } from '@/types';
+import type { ProTableRequest } from '@/types';
 
 const WorkflowMonitor: React.FC = () => {
   const intl = useIntl();

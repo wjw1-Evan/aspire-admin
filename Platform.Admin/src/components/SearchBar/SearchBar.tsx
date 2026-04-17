@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { Form, Input, Button, Space, Card } from 'antd';
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import { createStyles } from 'antd-style';
-import type { PageParams } from '@/types';
+import type { ProTableRequest } from '@/types';
 
 const useStyles = createStyles(({ token, css }) => ({
   searchCard: {
@@ -21,9 +21,9 @@ const useStyles = createStyles(({ token, css }) => ({
 
 export interface SearchBarProps {
   /** 初始搜索参数 */
-  initialParams?: Partial<PageParams>;
+  initialParams?: Partial<ProTableRequest>;
   /** 搜索参数变化回调 */
-  onSearch?: (params: PageParams) => void;
+  onSearch?: (params: ProTableRequest) => void;
   /** 搜索按钮文本 */
   searchText?: string;
   /** 重置按钮文本 */

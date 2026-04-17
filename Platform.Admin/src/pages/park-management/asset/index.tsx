@@ -8,7 +8,7 @@ import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormDatePicker } from '@ant-design/pro-form';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, HomeOutlined, BankOutlined, AreaChartOutlined, SyncOutlined, ReloadOutlined, UploadOutlined, ArrowUpOutlined, ArrowDownOutlined, SearchOutlined } from '@ant-design/icons';
 import { ProDescriptions } from '@ant-design/pro-components';
-import { ApiResponse, PagedResult, PageParams } from '@/types';
+import { ApiResponse, PagedResult, ProTableRequest } from '@/types';
 import dayjs from 'dayjs';
 
 const { Text, Title } = Typography;
@@ -41,7 +41,7 @@ interface AssetStatistics {
 const api = {
     statistics: (startDate?: string, endDate?: string) =>
         request<ApiResponse<AssetStatistics>>('/apiservice/api/park/asset/statistics', { method: 'GET', params: { startDate, endDate } }),
-    buildings: (params: PageParams) =>
+    buildings: (params: ProTableRequest) =>
         request<ApiResponse<PagedResult<Building>>>('/apiservice/api/park/buildings/list', { params }),
     getBuilding: (id: string) =>
         request<ApiResponse<Building>>(`/apiservice/api/park/buildings/${id}`),
@@ -53,7 +53,7 @@ const api = {
         request<ApiResponse<boolean>>(`/apiservice/api/park/buildings/${id}`, { method: 'DELETE' }),
     allBuildings: () =>
         request<ApiResponse<PagedResult<Building>>>('/apiservice/api/park/buildings/list', { params: { page: 1, pageSize: 1000 } }),
-    units: (params: PageParams & { buildingId?: string }) =>
+    units: (params: ProTableRequest & { buildingId?: string }) =>
         request<ApiResponse<PagedResult<PropertyUnit>>>('/apiservice/api/park/properties/list', { params }),
     unit: (id: string) =>
         request<ApiResponse<PropertyUnit>>(`/apiservice/api/park/properties/${id}`, { method: 'GET' }),

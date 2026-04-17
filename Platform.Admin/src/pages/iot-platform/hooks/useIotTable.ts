@@ -1,11 +1,11 @@
 import { useState, useRef, useCallback } from 'react';
-import type { PageParams } from '@/types';
+import type { ProTableRequest } from '@/types';
 
-export function useIotTable<T>(fetchFn: (params: PageParams) => Promise<{ success: boolean; data?: { queryable?: T[]; rowCount?: number } }>) {
+export function useIotTable<T>(fetchFn: (params: ProTableRequest) => Promise<{ success: boolean; data?: { queryable?: T[]; rowCount?: number } }>) {
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
-  const searchParamsRef = useRef<PageParams>({ page: 1, pageSize: 20 });
+  const searchParamsRef = useRef<ProTableRequest>({ page: 1, pageSize: 20 });
 
   const fetchData = useCallback(async () => {
     const params = searchParamsRef.current;
@@ -27,7 +27,7 @@ export function useIotTable<T>(fetchFn: (params: PageParams) => Promise<{ succes
     }
   }, [fetchFn]);
 
-  const handleSearch = useCallback((params: PageParams) => {
+  const handleSearch = useCallback((params: ProTableRequest) => {
     searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
     fetchData();
   }, [fetchData]);

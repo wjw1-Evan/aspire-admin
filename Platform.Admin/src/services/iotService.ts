@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse, PagedResult, PageParams } from '@/types';
+import type { ApiResponse, PagedResult, ProTableRequest } from '@/types';
 
 const API_PREFIX = '/apiservice/api/iot';
 
@@ -297,7 +297,7 @@ export const iotService = {
       data,
     }),
 
-  getGateways: (params?: PageParams & { status?: string }) => {
+  getGateways: (params?: ProTableRequest & { status?: string }) => {
     const page = params?.page || 1;
     const pageSize = params?.pageSize || 20;
     let url = `${API_PREFIX}/gateways?page=${page}&pageSize=${pageSize}`;
@@ -324,7 +324,7 @@ export const iotService = {
   createDevice: (data: CreateDeviceRequest) =>
     request<ApiResponse<IoTDevice>>(`${API_PREFIX}/devices`, { method: 'POST', data }),
 
-  getDevices: (params?: PageParams & { gatewayId?: string }) => {
+  getDevices: (params?: ProTableRequest & { gatewayId?: string }) => {
     const page = params?.page || 1;
     const pageSize = params?.pageSize || 20;
     let url = `${API_PREFIX}/devices?page=${page}&pageSize=${pageSize}`;
@@ -375,7 +375,7 @@ export const iotService = {
     }),
 
   /** 查询设备命令历史（通过事件列表模拟） */
-  getCommandHistory: (params?: PageParams & { deviceId?: string }) => {
+  getCommandHistory: (params?: ProTableRequest & { deviceId?: string }) => {
     const page = params?.page || 1;
     const pageSize = params?.pageSize || 20;
     let url = `${API_PREFIX}/events/query?page=${page}&pageSize=${pageSize}&eventType=Command`;
@@ -394,7 +394,7 @@ export const iotService = {
   createDataPoint: (data: CreateDataPointRequest) =>
     request<ApiResponse<IoTDataPoint>>(`${API_PREFIX}/datapoints`, { method: 'POST', data }),
 
-  getDataPoints: (params?: PageParams & { deviceId?: string }) => {
+  getDataPoints: (params?: ProTableRequest & { deviceId?: string }) => {
     const page = params?.page || 1;
     const pageSize = params?.pageSize || 20;
     let url = `${API_PREFIX}/datapoints?page=${page}&pageSize=${pageSize}`;
@@ -421,7 +421,7 @@ export const iotService = {
   batchReportData: (data: BatchReportDataRequest) =>
     request<ApiResponse<IoTDataRecord[]>>(`${API_PREFIX}/data/batch-report`, { method: 'POST', data }),
 
-  queryDataRecords: (params?: PageParams & { deviceId?: string; dataPointId?: string; startTime?: string; endTime?: string }) => {
+  queryDataRecords: (params?: ProTableRequest & { deviceId?: string; dataPointId?: string; startTime?: string; endTime?: string }) => {
     const page = params?.page || 1;
     const pageSize = params?.pageSize || 20;
     let url = `${API_PREFIX}/data/query?page=${page}&pageSize=${pageSize}`;
@@ -442,7 +442,7 @@ export const iotService = {
     ),
 
   // ── Events ────────────────────────────────────────────────────
-  queryEvents: (params?: PageParams & { deviceId?: string; eventType?: string; level?: string; isHandled?: boolean; startTime?: string; endTime?: string }) => {
+  queryEvents: (params?: ProTableRequest & { deviceId?: string; eventType?: string; level?: string; isHandled?: boolean; startTime?: string; endTime?: string }) => {
     const page = params?.page || 1;
     const pageSize = params?.pageSize || 20;
     let url = `${API_PREFIX}/events/query?page=${page}&pageSize=${pageSize}`;

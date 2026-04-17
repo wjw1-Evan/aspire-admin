@@ -6,7 +6,7 @@ import { FileTextOutlined, PlusOutlined, EyeOutlined, EditOutlined, SendOutlined
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import dayjs from 'dayjs';
 import { request } from '@umijs/max';
-import { ApiResponse, PagedResult, PageParams } from '@/types';
+import { ApiResponse, PagedResult, ProTableRequest } from '@/types';
 import {
   type Document,
   type DocumentStatistics,

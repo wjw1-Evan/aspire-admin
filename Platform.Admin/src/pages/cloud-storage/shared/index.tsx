@@ -7,13 +7,13 @@ import { ModalForm, ProFormText, ProFormSelect, ProFormDatePicker, ProFormDigit,
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import { request } from '@umijs/max';
-import { ApiResponse, PagedResult, PageParams } from '@/types';
+import { ApiResponse, PagedResult, ProTableRequest } from '@/types';
 
 interface FileShare { id: string; fileId: string; fileName: string; shareToken: string; shareType: 'internal' | 'external'; accessType: 'view' | 'download' | 'edit'; password: string; expiresAt?: string; maxDownloads?: number; isEnabled: boolean; createdAt: string; createdBy?: string; createdByName?: string; }
 
 const api = {
-    getMyShares: (params: PageParams) => request<ApiResponse<PagedResult<any>>>('/apiservice/api/file-share/my-shares', { params }),
-    getSharedWithMe: (params: PageParams) => request<ApiResponse<PagedResult<any>>>('/apiservice/api/file-share/shared-with-me', { params }),
+    getMyShares: (params: ProTableRequest) => request<ApiResponse<PagedResult<any>>>('/apiservice/api/file-share/my-shares', { params }),
+    getSharedWithMe: (params: ProTableRequest) => request<ApiResponse<PagedResult<any>>>('/apiservice/api/file-share/shared-with-me', { params }),
     update: (id: string, data: any) => request<ApiResponse<void>>(`/apiservice/api/file-share/${id}`, { method: 'PUT', data }),
     delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/file-share/${id}`, { method: 'DELETE' }),
 };

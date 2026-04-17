@@ -515,19 +515,28 @@ await getUserList({ page: 1, pageSize: params.pageSize })
 **[强制]** 所有使用 ProTable 的列表页面，必须正确提取并传递 `pageSize` 参数：
 
 ```typescript
-// ✅ 正确：从 params 解构并传递给 API
+// PageParams 类型定义
+export interface PageParams {
+  page?: number;
+  pageSize?: number;
+  sortBy?: string;
+  sortOrder?: string;
+  search?: string;
+}
+
+// ✅ 正确：从 params 解构并传递给 PageParams
 request={async (params: any) => {
   const { current, pageSize } = params;  // 必须解构
-  const res = await api.list({ page: current, pageSize });  // 必须传递
+  const res = await api.list({ page: current, pageSize } as PageParams);
   return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
 }}
 
 // ❌ 错误：解构了 pageSize 但未传递
 const { current, pageSize } = params;
-const res = await api.list({ page: current });  // pageSize 丢失
+const res = await api.list({ page: current } as PageParams);  // pageSize 丢失
 
 // ❌ 错误：直接使用 params 跳过 pageSize
-const res = await api.list({ page: params.current });  // pageSize 可能丢失
+const res = await api.list({ page: params.current } as PageParams);  // pageSize 可能丢失
 ```
 
 **常见错误模式**：

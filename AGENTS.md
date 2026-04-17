@@ -520,6 +520,45 @@ export interface PageParams {
 }
 ```
 
+#### 页面结构
+参考密码本模块 `src/pages/password-book/index.tsx`：
+
+```tsx
+<PageContainer>
+  <ProTable
+    actionRef={actionRef}
+    headerTitle={
+      <Space size={24}>
+        <Space><Icon />模块名称</Space>
+        <Space size={12}>
+          <Tag color="blue">统计1 {count1 || 0}</Tag>
+          <Tag color="green">统计2 {count2 || 0}</Tag>
+        </Space>
+      </Space>
+    }
+    request={async (params: PageParams) => {
+      const { page, pageSize, sortBy, sortOrder, search } = params;
+      const res = await api.list({ page, pageSize, sortBy, sortOrder, search: search || state.search });
+      return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+    }}
+    columns={columns}
+    rowKey="id"
+    search={false}
+    scroll={{ x: 'max-content' }}
+    toolBarRender={() => [
+      <Input.Search key="search" placeholder="搜索..." allowClear value={state.search}
+        onChange={(e) => set({ search: e.target.value })}
+        onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+        style={{ width: 260, marginRight: 8 }}
+      />,
+      <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ formVisible: true })}>新建</Button>,
+    ]}
+  />
+  {/* 表单弹窗 */}
+  <ModalForm ... />
+</PageContainer>
+```
+
 #### 分页参数说明
 
 | 参数 | 后端默认值 | 前端行为 |
@@ -531,11 +570,11 @@ export interface PageParams {
 
 | 错误写法 | 正确写法 |
 |---------|---------|
-| `api.list({ page: current })` | `api.list({ page: current, pageSize })` |
-| `api.list({ page: current, search })` | `api.list({ page: current, pageSize, search })` |
+| `api.list({ page, pageSize })` | `api.list({ page, pageSize, search })` |
+| `api.list({ page })` | `api.list({ page, pageSize })` |
 | 解构后忘记传递 | 解构后必须传递 |
 
-> **检查工具**：使用 `grep "{ current, pageSize" src/pages/**/*.tsx` 确保所有 ProTable 都正确传递。
+> **检查工具**：使用 `grep "request={async (params: PageParams)" src/pages/**/*.tsx` 确保所有 ProTable 都正确使用 PageParams。
 
 ### 7.7 前端开发标准（密码本模块）
 

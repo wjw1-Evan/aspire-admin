@@ -524,10 +524,17 @@ export interface PageParams {
   search?: string;
 }
 
-// ✅ 正确：从 params 解构并传递给 PageParams
+// ✅ 正确：从 params 解构并传递给 PageParams（包含完整参数）
 request={async (params: any) => {
-  const { current, pageSize } = params;  // 必须解构
-  const res = await api.list({ page: current, pageSize } as PageParams);
+  const { current, pageSize } = params;
+  const res = await api.list({ page: current, pageSize, search: state.search } as PageParams);
+  return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+}}
+
+// ✅ 正确：带排序参数
+request={async (params: any) => {
+  const { current, pageSize, sortBy, sortOrder } = params;
+  const res = await api.list({ page: current, pageSize, sortBy, sortOrder, search: state.search } as PageParams);
   return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
 }}
 

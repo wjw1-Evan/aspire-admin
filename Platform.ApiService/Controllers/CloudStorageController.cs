@@ -68,7 +68,7 @@ public class CloudStorageController : BaseApiController
     [HttpPost("upload")]
     public async Task<IActionResult> UploadFile([FromForm] UploadFileRequest request)
     {
-        var fileItem = await _cloudStorageService.UploadFileAsync(request.File, request.ParentId, request.Overwrite);
+        var fileItem = await _cloudStorageService.UploadFileAsync(request.File, request.ParentId ?? string.Empty, request.Overwrite);
         return Success(fileItem, "文件上传成功");
     }
 

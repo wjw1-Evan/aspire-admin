@@ -181,7 +181,7 @@ public class UploadFileRequest
 {
     public IFormFile File { get; set; } = null!;
 
-    public string ParentId { get; set; } = string.Empty;
+    public string? ParentId { get; set; }
 
     public bool Overwrite { get; set; } = false;
 }

@@ -16,6 +16,7 @@ interface ImageCaptchaProps {
 
 export interface ImageCaptchaRef {
   refresh: () => Promise<void>;
+  getCaptchaId: () => string;
 }
 
 const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
@@ -74,6 +75,7 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
   // 暴露刷新方法给父组件（自动刷新，不显示成功消息）
   useImperativeHandle(ref, () => ({
     refresh: () => fetchCaptcha(false),
+    getCaptchaId: () => captchaId,
   }));
 
   // 验证图形验证码

@@ -211,12 +211,15 @@ const Login: React.FC = () => {
         ? await PasswordEncryption.encrypt(values.password)
         : undefined;
 
+      // 获取当前验证码ID（确保使用最新的）
+      const currentCaptchaId = captchaRef.current?.getCaptchaId() || captchaId;
+
       // 登录
       const loginData = {
         ...values,
         password: encryptedPassword,
         type,
-        captchaId: captchaId || undefined,
+        captchaId: currentCaptchaId || undefined,
         captchaAnswer: (captchaAnswer || '').trim() || undefined,
       };
       const response = await login(loginData);

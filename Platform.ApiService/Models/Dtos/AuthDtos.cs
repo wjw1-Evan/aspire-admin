@@ -88,6 +88,8 @@ public class LoginResult
 
 public class LoginData
 {
+    public string? Status { get; set; }
+
     public string? Type { get; set; }
 
     public string? CurrentAuthority { get; set; }

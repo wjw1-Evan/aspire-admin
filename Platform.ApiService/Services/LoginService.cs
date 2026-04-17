@@ -129,6 +129,7 @@ public class LoginService : ILoginService
 
         var loginData = new LoginData
         {
+            Status = "ok",
             Type = request.Type,
             CurrentAuthority = "user",
             Token = token,

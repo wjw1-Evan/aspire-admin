@@ -5,7 +5,7 @@
 
 import { useModel } from '@umijs/max';
 import { useCallback, useMemo } from 'react';
-import type { CurrentUser } from '@/services/auth/types';
+import type { CurrentUser } from '@/types';
 
 export function useAuthState() {
   const { initialState, setInitialState } = useModel('@@initialState');

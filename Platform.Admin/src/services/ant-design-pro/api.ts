@@ -1,25 +1,7 @@
 import { request } from '@umijs/max';
-import type { ApiResponse } from '@/types';
+import type { ApiResponse, CurrentUser, LoginResult, CaptchaResult } from '@/types';
 
-export interface CurrentUser {
-  id: string;
-  username: string;
-  name?: string;
-  email?: string;
-  phoneNumber?: string;
-  avatar?: string;
-  createdAt?: string;
-}
-
-export interface LoginResult {
-  status?: string;
-  type?: string;
-  currentAuthority?: string;
-  token?: string;
-  refreshToken?: string;
-  expiresAt?: string;
-  code?: string;
-}
+export type { CurrentUser, LoginResult, CaptchaResult };
 
 export interface UserStatistics {
   totalUsers: number;
@@ -77,12 +59,6 @@ export async function updateUserProfile(data: Partial<CurrentUser>): Promise<Api
 
 export async function getUserStatistics(): Promise<ApiResponse<UserStatistics>> {
   return request('/apiservice/api/users/statistics', { method: 'GET' });
-}
-
-export interface CaptchaResult {
-  captchaId: string;
-  captchaImage: string;
-  imageData?: string;
 }
 
 export async function getImageCaptcha(type?: 'login' | 'register'): Promise<ApiResponse<CaptchaResult>> {

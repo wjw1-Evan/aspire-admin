@@ -25,8 +25,6 @@ import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './request-error-config';
 import { getIconFromMap } from '@/utils/iconMap';
 
-const TOKEN_CHECK_INTERVAL = 60 * 1000;
-
 // 🚀 核心优化：全量 Layout 系统中剥离大型组件（AiAssistant 是真正的 React 组件，可以使用 lazy）
 const AiAssistant = React.lazy(() => import('@/components/AiAssistant'));
 // LocationService 是服务类而非组件，不需要用 React.lazy，我们在组件内部动态 import 它即可
@@ -250,56 +248,9 @@ const LocationReporter = ({ currentUser, location }: { currentUser: any, locatio
 
 const AppWrapper = ({ children, currentUser }: { children: React.ReactNode, currentUser: any }) => {
   const app = App.useApp();
-  const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
-
   useEffect(() => {
     setAppInstance(app);
   }, [app]);
-
-  useEffect(() => {
-    if (!currentUser) {
-      if (refreshTimerRef.current) {
-        clearInterval(refreshTimerRef.current);
-        refreshTimerRef.current = null;
-      }
-      return;
-    }
-
-    const checkAndRefreshToken = async () => {
-      if (!tokenUtils.hasToken() || !tokenUtils.isTokenExpiringSoon()) {
-        return;
-      }
-
-      const refreshToken = tokenUtils.getRefreshToken();
-      if (!refreshToken) {
-        return;
-      }
-
-      if (TokenRefreshManager.isRefreshing()) {
-        return;
-      }
-
-      try {
-        const result = await TokenRefreshManager.refresh(refreshToken);
-        if (result?.success) {
-          console.log('[TokenRefresh] Token refreshed proactively');
-        }
-      } catch (error) {
-        console.warn('[TokenRefresh] Proactive refresh failed:', error);
-      }
-    };
-
-    checkAndRefreshToken();
-
-    refreshTimerRef.current = setInterval(checkAndRefreshToken, TOKEN_CHECK_INTERVAL);
-
-    return () => {
-      if (refreshTimerRef.current) {
-        clearInterval(refreshTimerRef.current);
-        refreshTimerRef.current = null;
-      }
-    };
-  }, [currentUser]);
 
   return (
     <>

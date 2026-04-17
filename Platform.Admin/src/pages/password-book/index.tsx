@@ -142,6 +142,7 @@ const PasswordBook: React.FC = () => {
         }
 
         request={async (params: any, sort?: Record<string, any>, filter?: Record<string, any>) => {
+          console.log('sort:', JSON.stringify(sort));
           const { current, pageSize } = params;
           const sortKeys = sort ? Object.keys(sort) : [];
           const sortField = sortKeys[0];

@@ -19,7 +19,7 @@ import {
 import ConfigForm from './ConfigForm';
 import dayjs from 'dayjs';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import type { ProTableRequest } from '@/types';
+
 
 const ConfigManagement: React.FC = () => {
   const intl = useIntl();
@@ -213,7 +213,7 @@ const ConfigManagement: React.FC = () => {
             search: searchText,
             sortBy,
             sortOrder,
-          } as ProTableRequest);
+          });
           if (response.success && response.data) {
             return { data: response.data.queryable || [], total: response.data.rowCount || 0, success: true };
           }

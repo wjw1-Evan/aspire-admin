@@ -6,7 +6,7 @@ import { Button, Space, App, Modal, Input } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { ApiResponse, ProTableRequest } from '@/types';
+import { ApiResponse } from '@/types';
 
 const { TextArea } = Input;
 
@@ -17,7 +17,7 @@ interface JoinRequestDetail {
 
 // ==================== API ====================
 const api = {
-  list: (companyId: string, params: ProTableRequest) =>
+  list: (companyId: string, params: any) =>
     request<ApiResponse<JoinRequestDetail[]>>(`/apiservice/api/company/${companyId}/join-requests`, { params: { status: 'pending', ...params } }),
   approve: (id: string) =>
     request<ApiResponse<string>>(`/apiservice/api/company/join-requests/${id}/approve`, { method: 'POST', data: {} }),

@@ -4,7 +4,7 @@ import { Tag, Space, Button, Input, Timeline, Card, Row, Col, Descriptions, Moda
 import { PageContainer, ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { PlayCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, WarningOutlined, HistoryOutlined, FileTextOutlined } from '@ant-design/icons';
-import { ApiResponse, PagedResult, ProTableRequest } from '@/types';
+import { ApiResponse, PagedResult } from '@/types';
 
 interface WebScrapingLog {
   id: string;
@@ -52,7 +52,7 @@ const WebScraperLogs: React.FC = () => {
   const [currentLog, setCurrentLog] = useState<WebScrapingLog | null>(null);
 
   const api = {
-    list: (params: ProTableRequest & { taskId?: string }) =>
+    list: (params: any) =>
       request<ApiResponse<PagedResult<WebScrapingLog>>>('/apiservice/api/web-scraper/logs', { params }),
     get: (id: string) =>
       request<ApiResponse<WebScrapingLog>>(`/apiservice/api/web-scraper/logs/${id}`),

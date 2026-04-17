@@ -19,7 +19,7 @@ import {
 import ChatHistoryDetail from './ChatHistoryDetail';
 import dayjs from 'dayjs';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import type { ProTableRequest } from '@/types';
+
 
 const ChatHistoryManagement: React.FC = () => {
   const intl = useIntl();
@@ -177,7 +177,7 @@ const ChatHistoryManagement: React.FC = () => {
             search: searchText,
             sortBy,
             sortOrder,
-          } as ProTableRequest);
+          });
           if (resp.success && resp.data) {
             return { data: resp.data.queryable || [], total: resp.data.rowCount || 0, success: true };
           }

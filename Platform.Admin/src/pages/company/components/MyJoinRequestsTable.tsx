@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import { cancelJoinRequest } from '@/services/company';
 import { UndoOutlined, TeamOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns } from '@ant-design/pro-table';
-import type { ProTableRequest } from '@/types';
+
 
 interface JoinRequestDetail {
     id: string;
@@ -124,7 +124,7 @@ const MyJoinRequestsTable: React.FC = () => {
             request={async (params: any) => {
                 const { current, pageSize, ...rest } = params;
                 const result = await request('/apiservice/api/company/my-join-requests', {
-                    params: { page: current, pageSize, ...rest } as ProTableRequest,
+                    params: { page: current, pageSize, ...rest },
                 });
                 if (result.data) {
                     const data = result.data || [];

@@ -9,7 +9,7 @@ import { ModalForm, ProFormText, ProFormSelect, ProFormDateRangePicker, ProFormD
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, FileTextOutlined, WarningOutlined, ReloadOutlined, CalendarOutlined, SyncOutlined, UploadOutlined, DownloadOutlined, PaperClipOutlined, CheckCircleOutlined, SearchOutlined } from '@ant-design/icons';
 import type { UploadFile, UploadProps } from 'antd';
 import dayjs from 'dayjs';
-import { ApiResponse, PagedResult, ProTableRequest } from '@/types';
+import { ApiResponse, PagedResult } from '@/types';
 
 const { Text } = Typography;
 
@@ -43,8 +43,8 @@ const api = {
     delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/park/contracts/${id}`, { method: 'DELETE' }),
     getDetail: (id: string) => request<ApiResponse<LeaseContract>>(`/apiservice/api/park/contracts/${id}`),
     statistics: () => request<ApiResponse<TenantStatistics>>('/apiservice/api/park/tenant/statistics'),
-    tenants: (params: ProTableRequest) => request<ApiResponse<PagedResult<ParkTenant>>>('/apiservice/api/park/tenants/list', { params }),
-    units: (params: ProTableRequest) => request<ApiResponse<PagedResult<PropertyUnit>>>('/apiservice/api/park/properties/list', { params }),
+    tenants: (params: any) => request<ApiResponse<PagedResult<ParkTenant>>>('/apiservice/api/park/tenants/list', { params }),
+    units: (params: any) => request<ApiResponse<PagedResult<PropertyUnit>>>('/apiservice/api/park/properties/list', { params }),
     createPayment: (data: Partial<LeasePaymentRecord>) => request<ApiResponse<LeasePaymentRecord>>('/apiservice/api/park/contracts/payments', { method: 'POST', data }),
     deletePayment: (id: string) => request<ApiResponse<void>>(`/apiservice/api/park/contracts/payments/${id}`, { method: 'DELETE' }),
     uploadFile: (data: FormData) => request<ApiResponse<{ id: string; name: string }>>('/storage/api/files/upload', { method: 'POST', data }),

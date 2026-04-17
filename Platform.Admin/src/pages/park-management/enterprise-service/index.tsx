@@ -8,7 +8,7 @@ import { ModalForm, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-des
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, AppstoreOutlined, FormOutlined, CheckCircleOutlined, ClockCircleOutlined, StarOutlined, ReloadOutlined, SettingOutlined, SearchOutlined } from '@ant-design/icons';
 import { ProDescriptions } from '@ant-design/pro-components';
 import dayjs from 'dayjs';
-import { ApiResponse, PagedResult, ProTableRequest } from '@/types';
+import { ApiResponse, PagedResult } from '@/types';
 
 const { Text } = Typography;
 
@@ -24,12 +24,12 @@ const api = {
     updateCategory: (id: string, data: Partial<ServiceCategory>) => request<ApiResponse<ServiceCategory>>(`/apiservice/api/park/services/categories/${id}`, { method: 'PUT', data }),
     deleteCategory: (id: string) => request<ApiResponse<boolean>>(`/apiservice/api/park/services/categories/${id}`, { method: 'DELETE' }),
     toggleCategory: (id: string) => request<ApiResponse<boolean>>(`/apiservice/api/park/services/categories/${id}/toggle`, { method: 'PUT' }),
-    requests: (params: ProTableRequest) => request<ApiResponse<PagedResult<ServiceRequest>>>('/apiservice/api/park/services/requests/list', { params }),
+    requests: (params: any) => request<ApiResponse<PagedResult<ServiceRequest>>>('/apiservice/api/park/services/requests/list', { params }),
     createRequest: (data: Partial<ServiceRequest>) => request<ApiResponse<ServiceRequest>>('/apiservice/api/park/services/requests', { method: 'POST', data }),
     updateStatus: (id: string, data: { status: string; assignedTo?: string; resolution?: string }) => request<ApiResponse<ServiceRequest>>(`/apiservice/api/park/services/requests/${id}/status`, { method: 'PUT', data }),
     deleteRequest: (id: string) => request<ApiResponse<boolean>>(`/apiservice/api/park/services/requests/${id}`, { method: 'DELETE' }),
     rateRequest: (id: string, data: { rating: number; feedback?: string }) => request<ApiResponse<boolean>>(`/apiservice/api/park/services/requests/${id}/rate`, { method: 'POST', data }),
-    tenants: (params: ProTableRequest) => request<ApiResponse<PagedResult<ParkTenant>>>('/apiservice/api/park/tenants/list', { params }),
+    tenants: (params: any) => request<ApiResponse<PagedResult<ParkTenant>>>('/apiservice/api/park/tenants/list', { params }),
 };
 
 const priorityOptions = [

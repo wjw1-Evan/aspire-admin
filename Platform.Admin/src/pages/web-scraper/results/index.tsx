@@ -4,7 +4,7 @@ import { Tag, Space, Button, Modal, message, Input, Descriptions, Card, Row, Col
 import { PageContainer, ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { EyeOutlined, FileTextOutlined, PictureOutlined, LinkOutlined } from '@ant-design/icons';
-import { ApiResponse, PagedResult, ProTableRequest } from '@/types';
+import { ApiResponse, PagedResult } from '@/types';
 
 interface WebScrapingResult {
   id: string;
@@ -44,7 +44,7 @@ const WebScraperResults: React.FC = () => {
   const [activeTab, setActiveTab] = useState('content');
 
   const api = {
-    list: (params: ProTableRequest & { taskId?: string }) =>
+    list: (params: any) =>
       request<ApiResponse<PagedResult<WebScrapingResult>>>('/apiservice/api/web-scraper/results', { params }),
     get: (id: string) =>
       request<ApiResponse<WebScrapingResult>>(`/apiservice/api/web-scraper/results/${id}`),

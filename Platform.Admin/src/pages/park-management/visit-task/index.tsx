@@ -8,7 +8,7 @@ import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormDateTimePicker } from '@ant-design/pro-form';
 import { PlusOutlined, UserOutlined, CheckCircleOutlined, SyncOutlined, CloseCircleOutlined, EditOutlined, DeleteOutlined, EyeOutlined, SearchOutlined, TeamOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { ApiResponse, PagedResult, ProTableRequest } from '@/types';
+import { ApiResponse, PagedResult } from '@/types';
 
 interface VisitTask { id: string; title: string; visitType: string; visitMethod?: string; tenantId?: string; tenantName?: string; managerName?: string; phone?: string; visitDate?: string; visitLocation?: string; intervieweeName?: string; intervieweePosition?: string; intervieweePhone?: string; visitor?: string; details?: string; status: string; content?: string; feedback?: string; createdAt: string; updatedAt?: string; }
 interface VisitStatistics { pendingTasks: number; completedTasksThisMonth: number; activeManagers: number; completionRate: number; }
@@ -22,7 +22,7 @@ const api = {
     create: (data: VisitTaskFormData) => request<ApiResponse<VisitTask>>('/apiservice/api/park-management/visit/task', { method: 'POST', data }),
     update: (id: string, data: VisitTaskFormData) => request<ApiResponse<VisitTask>>(`/apiservice/api/park-management/visit/task/${id}`, { method: 'PUT', data }),
     statistics: () => request<ApiResponse<VisitStatistics>>('/apiservice/api/park-management/visit/statistics'),
-    tenants: (params: ProTableRequest) => request<ApiResponse<PagedResult<ParkTenant>>>('/apiservice/api/park/tenants/list', { params }),
+    tenants: (params: any) => request<ApiResponse<PagedResult<ParkTenant>>>('/apiservice/api/park/tenants/list', { params }),
 };
 
 const statusMap: Record<string, { text: string; color: string; icon: React.ReactNode }> = {

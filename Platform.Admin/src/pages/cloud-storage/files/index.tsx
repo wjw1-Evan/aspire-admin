@@ -14,7 +14,7 @@ import { ModalForm, ProFormText, ProFormDatePicker, ProFormSelect, ProFormDigit 
 import { tokenUtils } from '@/utils/token';
 import { EditOutlined, DeleteOutlined, CloudOutlined, FolderOutlined, FileOutlined, DownloadOutlined, ShareAltOutlined, UploadOutlined, FolderAddOutlined, MoreOutlined, EyeOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { ApiResponse, PagedResult, ProTableRequest } from '@/types';
+import { ApiResponse, PagedResult } from '@/types';
 
 // ==================== Types ====================
 interface FileItem { id: string; name: string; parentId?: string; isFolder: boolean; size?: number; mimeType?: string; createdByName?: string; createdAt: string; updatedAt: string; }
@@ -27,8 +27,8 @@ interface ShareResponse { shareLink?: string; expiresAt?: string; }
 interface ShareFormValues { shareType: string; expiresAt?: string; maxDownloads?: number; allowedUserIds?: string[]; }
 
 const api = {
-    list: (params: ProTableRequest & { parentId?: string }) => request<ApiResponse<PagedResult<FileItem>>>('/apiservice/api/cloud-storage/list', { params }),
-    search: (params: ProTableRequest & { keyword: string }) => request<ApiResponse<PagedResult<FileItem>>>('/apiservice/api/cloud-storage/search', { params }),
+    list: (params: any) => request<ApiResponse<PagedResult<FileItem>>>('/apiservice/api/cloud-storage/list', { params }),
+    search: (params: any) => request<ApiResponse<PagedResult<FileItem>>>('/apiservice/api/cloud-storage/search', { params }),
     get: (id: string) => request<ApiResponse<FileItem>>(`/apiservice/api/cloud-storage/files/${id}`),
     delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/cloud-storage/items/${id}`, { method: 'DELETE' }),
     batchDelete: (ids: string[]) => request<ApiResponse<void>>('/apiservice/api/cloud-storage/items/batch-delete', { method: 'POST', data: { ids } }),

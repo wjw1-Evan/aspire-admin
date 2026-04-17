@@ -14,7 +14,7 @@ import { getCurrentCompany } from '@/services/company';
 import { request } from '@umijs/max';
 import { ApiResponse, PagedResult } from '@/types';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import type { ProTableRequest } from '@/types';
+
 
 interface StorageQuota { userId: string; totalQuota: number; usedQuota: number; fileCount: number; warningThreshold?: number; isEnabled: boolean; userDisplayName?: string; username?: string; createdAt: string; updatedAt: string; }
 interface QuotaUsageStats { totalUsers: number; totalQuota: number; totalUsed: number; averageUsage: number; usageDistribution: { range: string; count: number; percentage: number }[]; topUsers: { userId: string; userDisplayName?: string; username?: string; usedQuota: number; usagePercentage: number }[]; }
@@ -175,7 +175,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                                 const { current, pageSize, sortBy, sortOrder } = params;
                                 const res = await request<ApiResponse<PagedResult<StorageQuota>>>('/apiservice/api/storage-quota/list', {
                                     method: 'GET',
-                                    params: { page: current, pageSize, sortBy, sortOrder, companyId: state.currentCompanyId, search: searchText } as ProTableRequest,
+                                    params: { page: current, pageSize, sortBy, sortOrder, companyId: state.currentCompanyId, search: searchText },
                                 });
                                 if (res.success && res.data) {
                                     return { data: res.data.queryable || [], total: res.data.rowCount || 0, success: true };

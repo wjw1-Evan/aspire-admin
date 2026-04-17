@@ -6,7 +6,7 @@ import { FileTextOutlined, EyeOutlined, CheckOutlined, CloseOutlined } from '@an
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import dayjs from 'dayjs';
 import { request } from '@umijs/max';
-import { ApiResponse, PagedResult, ProTableRequest } from '@/types';
+import { ApiResponse, PagedResult } from '@/types';
 import {
   type Document,
   type DocumentStatistics,
@@ -21,8 +21,8 @@ const documentStatusMap = {
 };
 
 const api = {
-  pending: (params: ProTableRequest) => request<ApiResponse<PagedResult<Document>>>('/apiservice/api/documents/pending', { params }),
-  list: (params: ProTableRequest & { filterType?: string }) => request<ApiResponse<PagedResult<Document>>>('/apiservice/api/documents', { params }),
+  pending: (params: any) => request<ApiResponse<PagedResult<Document>>>('/apiservice/api/documents/pending', { params }),
+  list: (params: any) => request<ApiResponse<PagedResult<Document>>>('/apiservice/api/documents', { params }),
   get: (id: string) => request<ApiResponse<Document>>(`/apiservice/api/documents/${id}`),
   approve: (id: string) => request<ApiResponse<boolean>>(`/apiservice/api/documents/${id}/approve`, { method: 'POST' }),
   reject: (id: string, comment: string) => request<ApiResponse<boolean>>(`/apiservice/api/documents/${id}/reject`, { method: 'POST', data: { comment } }),

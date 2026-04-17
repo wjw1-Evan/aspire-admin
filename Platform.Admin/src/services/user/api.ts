@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse, PagedResult, ProTableRequest } from '@/types';
+import type { ApiResponse, PagedResult } from '@/types';
 
 export interface AppUser {
   id: string;
@@ -63,7 +63,7 @@ export async function getUserById(id: string) {
   });
 }
 
-export async function getUserList(params: ProTableRequest) {
+export async function getUserList(params: any) {
   return request<ApiResponse<PagedResult<AppUser>>>('/apiservice/api/users/list', {
     params,
   });

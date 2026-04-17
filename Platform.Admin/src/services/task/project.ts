@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse, PagedResult, ProTableRequest } from '@/types';
+import type { ApiResponse, PagedResult } from '@/types';
 
 /**
  * 项目状态枚举
@@ -126,7 +126,7 @@ export interface AddProjectMemberRequest {
 /**
  * 获取项目列表
  */
-export async function getProjectList(params: ProTableRequest) {
+export async function getProjectList(params: any) {
   return request<ApiResponse<PagedResult<ProjectDto>>>('/apiservice/api/project/list', {
     params,
   });

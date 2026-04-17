@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse, PagedResult, ProTableRequest } from '@/types';
+import type { ApiResponse, PagedResult } from '@/types';
 
 const API_PREFIX = '/apiservice/api/iot';
 
@@ -21,7 +21,7 @@ export interface IoTDeviceEvent {
 
 export type IoTEventQueryResponse = PagedResult<IoTDeviceEvent>;
 
-export const queryIoTEvents = (params: ProTableRequest) =>
+export const queryIoTEvents = (params: any) =>
     request<ApiResponse<IoTEventQueryResponse>>(`${API_PREFIX}/events/query`, {
         method: 'GET',
         params: params,

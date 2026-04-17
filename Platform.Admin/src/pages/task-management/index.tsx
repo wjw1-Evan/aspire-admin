@@ -8,7 +8,7 @@ import { Drawer } from 'antd';
 import { ProTable, ActionType } from '@ant-design/pro-table';
 import { PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined, ReloadOutlined, PlayCircleOutlined, StopOutlined, SearchOutlined, ProjectOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { ApiResponse, PagedResult, ProTableRequest } from '@/types';
+import { ApiResponse, PagedResult } from '@/types';
 import { getTaskStatusColor, getTaskPriorityColor } from '@/utils/task';
 import { getTaskById, getTaskExecutionLogs, TaskStatus as TaskStatusEnum, type TaskDto, type TaskExecutionLogDto } from '@/services/task/api';
 import { getProjectList } from '@/services/task/project';
@@ -26,7 +26,7 @@ interface TaskStatistics {
 
 // ==================== API ====================
 const api = {
-  list: (params: ProTableRequest & { status?: number; priority?: number; assignedTo?: string; taskType?: string; projectId?: string }) =>
+  list: (params: any) =>
     request<ApiResponse<PagedResult<TaskDto>>>('/apiservice/api/task/query', { params }),
   delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/task/${id}`, { method: 'DELETE' }),
   cancel: (id: string) => request<ApiResponse<void>>(`/apiservice/api/task/${id}/cancel`, { method: 'POST' }),

@@ -5,7 +5,7 @@ import { request } from '@umijs/max';
 import { Tag, Space, Input } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { FileTextOutlined, SearchOutlined } from '@ant-design/icons';
-import { ApiResponse, PagedResult, ProTableRequest } from '@/types';
+import { ApiResponse, PagedResult } from '@/types';
 import dayjs from 'dayjs';
 import { getActionTagColor, getActionText, getMethodColor, getStatusBadge } from '@/utils/activityLog';
 import LogDetailDrawer from './components/LogDetailDrawer';

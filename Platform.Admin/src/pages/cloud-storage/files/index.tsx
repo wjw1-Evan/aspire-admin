@@ -6,13 +6,14 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
-import { App, Button, Tag, Space, Breadcrumb, Dropdown, Image, Input, Modal, Popconfirm, Card } from 'antd';
+import { App, Button, Tag, Space, Breadcrumb, Dropdown, Image, Input, Modal, Popconfirm, Card, Upload, Progress } from 'antd';
 import { Drawer } from 'antd';
+import type { UploadFile, UploadProps } from 'antd';
 import { ProDescriptions, ProCard } from '@ant-design/pro-components';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormDatePicker, ProFormSelect, ProFormDigit } from '@ant-design/pro-form';
 import { tokenUtils } from '@/utils/token';
-import { EditOutlined, DeleteOutlined, CloudOutlined, FolderOutlined, FileOutlined, DownloadOutlined, ShareAltOutlined, UploadOutlined, FolderAddOutlined, MoreOutlined, EyeOutlined, SearchOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, CloudOutlined, FolderOutlined, FileOutlined, DownloadOutlined, ShareAltOutlined, UploadOutlined, FolderAddOutlined, MoreOutlined, EyeOutlined, SearchOutlined, InboxOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult } from '@/types';
 
@@ -39,6 +40,7 @@ const api = {
     restoreVersion: (fileId: string, versionNumber: number) => request<ApiResponse<void>>(`/apiservice/api/file-version/${fileId}/versions/${versionNumber}/restore`, { method: 'POST' }),
     share: (data: ShareRequest) => request<ApiResponse<ShareResponse>>(`/apiservice/api/file-share/${data.fileId}`, { method: 'POST', data }),
     users: () => request<ApiResponse<AppUser[]>>('/apiservice/api/users/all'),
+    upload: (data: FormData) => request<ApiResponse<FileItem>>('/apiservice/api/cloud-storage/upload', { method: 'POST', data, headers: { 'Content-Type': 'multipart/form-data' } }),
 };
 
 // ==================== Utils ====================
@@ -86,7 +88,7 @@ const CloudStorageFilesPage: React.FC = () => {
         versionList: [] as FileVersion[], versionLoading: false,
         createFolderVisible: false, renameVisible: false, renamingFile: null as FileItem | null,
         shareVisible: false, sharingFile: null as FileItem | null,
-        uploadVisible: false, uploadType: 'file' as 'file' | 'folder',
+        uploadVisible: false, uploadType: 'file' as 'file' | 'folder', uploadFileList: [] as UploadFile[],
         uploadProgress: {} as Record<string, { percent: number; label: string }>,
         userOptions: [] as AppUser[], userLoading: false,
     });
@@ -279,6 +281,46 @@ const CloudStorageFilesPage: React.FC = () => {
                 <ProFormDigit name="maxDownloads" label="下载次数限制" min={1} />
                 {state.userOptions.length > 0 && <ProFormSelect name="allowedUserIds" label="选择用户" mode="multiple" options={state.userOptions.map(u => ({ label: u.name, value: u.id }))} />}
             </ModalForm>
+
+            {/* 上传文件 */}
+            <Modal
+                title={state.uploadType === 'folder' ? '上传文件夹' : '上传文件'}
+                open={state.uploadVisible}
+                onCancel={() => set({ uploadVisible: false, uploadFileList: [] })}
+                footer={null}
+                width={600}
+            >
+                <Upload.Dragger
+                    multiple={true}
+                    directory={state.uploadType === 'folder'}
+                    fileList={state.uploadFileList}
+                    beforeUpload={(file) => {
+                        set({ uploadFileList: [...state.uploadFileList, { uid: file.uid, name: file.name, status: 'uploading' }] });
+                        return false;
+                    }}
+                    onChange={async (info) => {
+                        set({ uploadFileList: info.fileList });
+                        if (info.file.status === 'done') {
+                            try {
+                                const formData = new FormData();
+                                formData.append('File', info.file.originFileObj as any);
+                                if (currentParentIdRef.current) formData.append('ParentId', currentParentIdRef.current);
+                                await api.upload(formData);
+                                message.success(`${info.file.name} 上传成功`);
+                            } catch { message.error(`${info.file.name} 上传失败`); }
+                        } else if (info.file.status === 'error') {
+                            message.error(`${info.file.name} 上传失败`);
+                        }
+                    }}
+                    customRequest={({ file, onSuccess }) => {
+                        setTimeout(() => { onSuccess?.('ok'); }, 0);
+                    }}
+                >
+                    <p className="ant-upload-drag-icon"><InboxOutlined /></p>
+                    <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
+                    <p className="ant-upload-hint">支持单个或多个文件上传</p>
+                </Upload.Dragger>
+            </Modal>
 
             {/* 文件详情 */}
             {state.detailVisible && state.viewingFile && (

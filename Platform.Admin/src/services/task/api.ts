@@ -114,6 +114,10 @@ export interface CreateTaskRequest {
   participantIds?: string[];
   tags?: string[];
   remarks?: string;
+  projectId?: string;
+  parentTaskId?: string;
+  sortOrder?: number;
+  duration?: number;
 }
 
 /**
@@ -133,6 +137,10 @@ export interface UpdateTaskRequest {
   participantIds?: string[];
   tags?: string[];
   remarks?: string;
+  projectId?: string;
+  parentTaskId?: string;
+  sortOrder?: number;
+  duration?: number;
 }
 
 /**

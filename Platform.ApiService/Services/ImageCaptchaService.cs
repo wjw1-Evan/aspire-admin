@@ -23,7 +23,6 @@ public class ImageCaptchaService : IImageCaptchaService
     private const int NOISE_LINES = 5;
     private const int NOISE_DOTS = 50;
 
-    private static string? _encryptionKey;
     private static string[] CHARACTERS = null!;
 
     private readonly string _encryptionKeyInstance;
@@ -37,15 +36,16 @@ public class ImageCaptchaService : IImageCaptchaService
     {
         _context = context;
         _encryptionKeyInstance = configuration["Captcha:EncryptionKey"] ?? throw new InvalidOperationException("Captcha:EncryptionKey must be configured in appsettings.json");
-        _encryptionKey = _encryptionKeyInstance;
     }
+
+    private string GetEncryptionKey() => _encryptionKeyInstance;
 
     public async Task<CaptchaImageResult> GenerateCaptchaAsync(string type = "login", string? clientIp = null)
     {
         var answer = GenerateRandomAnswer();
         var captchaId = Guid.NewGuid().ToString("N")[..16];
         var imageData = GenerateCaptchaImage(answer);
-        var encryptedAnswer = EncryptAnswer(answer, _encryptionKey);
+        var encryptedAnswer = EncryptAnswer(answer, GetEncryptionKey());
         var expiresAt = DateTime.UtcNow.AddMinutes(EXPIRATION_MINUTES);
 
         var existingCaptchas = await _context.Set<CaptchaImage>().IgnoreQueryFilters().Where(x => x.IsDeleted != true).Where(
@@ -108,7 +108,7 @@ public class ImageCaptchaService : IImageCaptchaService
             return false;
         }
 
-        var decryptedAnswer = DecryptAnswer(result.Answer, _encryptionKey);
+        var decryptedAnswer = DecryptAnswer(result.Answer, GetEncryptionKey());
         if (!string.Equals(decryptedAnswer, answer, StringComparison.OrdinalIgnoreCase))
         {
             return false;

@@ -212,10 +212,11 @@ const CloudStorageFilesPage: React.FC = () => {
 
     const columns: ProColumns<FileItem>[] = [
         { title: intl.formatMessage({ id: 'pages.cloud-storage.files.field.name' }), dataIndex: 'name', key: 'name', sorter: true, render: (dom, record) => (<Space>{getFileIcon(record)}<a onClick={() => record.isFolder ? handleFolderClick(record) : handleView(record)} style={{ cursor: 'pointer' }}>{dom}</a></Space>) },
+        { title: '类型', dataIndex: 'isFolder', key: 'isFolder', width: 80, render: (dom, record) => record.isFolder ? <Tag color="orange">文件夹</Tag> : <Tag color="blue">文件</Tag> },
         { title: intl.formatMessage({ id: 'pages.cloud-storage.files.field.size' }), dataIndex: 'size', key: 'size', sorter: true, render: (_, r) => r.isFolder ? '-' : formatFileSize(r.size || 0) },
         { title: intl.formatMessage({ id: 'pages.cloud-storage.files.field.updatedAt' }), dataIndex: 'updatedAt', key: 'updatedAt', sorter: true, render: (dom) => dom && typeof dom === 'string' ? dayjs(dom).format('YYYY-MM-DD HH:mm:ss') : '-' },
         { title: intl.formatMessage({ id: 'pages.cloud-storage.files.field.creator' }), dataIndex: 'createdByName', key: 'createdByName' },
-        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.field.action' }), key: 'action', fixed: 'right', render: (_, record) => (<Space>
+        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.field.action' }), key: 'action', fixed: 'right', width: 220, render: (_, record) => (<Space size={4}>
             <Button type="link" size="small" icon={<ShareAltOutlined />} onClick={() => set({ sharingFile: record, shareVisible: true })}>{intl.formatMessage({ id: 'pages.cloud-storage.files.action.share' })}</Button>
             <Button type="link" size="small" icon={<DownloadOutlined />} onClick={() => handleDownload(record)}>{intl.formatMessage({ id: 'pages.cloud-storage.files.action.download' })}</Button>
             <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ renamingFile: record, renameVisible: true })}>{intl.formatMessage({ id: 'pages.cloud-storage.files.action.rename' })}</Button>

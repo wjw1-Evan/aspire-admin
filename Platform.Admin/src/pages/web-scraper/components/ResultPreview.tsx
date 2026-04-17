@@ -73,7 +73,6 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
     },
     {
       title: '匹配',
-      key: 'matched',
       width: 80,
       render: (_: any, record: PageResult) => (
         record.isFiltered ? (

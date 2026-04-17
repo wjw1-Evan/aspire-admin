@@ -510,6 +510,35 @@ await getUserList({ page: 2 })
 await getUserList({ page: 1, pageSize: params.pageSize })
 ```
 
+### 7.6.1 ProTable pageSize 传递规范
+
+**[强制]** 所有使用 ProTable 的列表页面，必须正确提取并传递 `pageSize` 参数：
+
+```typescript
+// ✅ 正确：从 params 解构并传递给 API
+request={async (params: any) => {
+  const { current, pageSize } = params;  // 必须解构
+  const res = await api.list({ page: current, pageSize });  // 必须传递
+  return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+}}
+
+// ❌ 错误：解构了 pageSize 但未传递
+const { current, pageSize } = params;
+const res = await api.list({ page: current });  // pageSize 丢失
+
+// ❌ 错误：直接使用 params 跳过 pageSize
+const res = await api.list({ page: params.current });  // pageSize 可能丢失
+```
+
+**常见错误模式**：
+| 错误写法 | 正确写法 |
+|---------|---------|
+| `{ page: current }` | `{ page: current, pageSize }` |
+| `api.list({ page: current, search })` | `api.list({ page: current, pageSize, search })` |
+| 解构后忘记传递 | 解构后必须传递 |
+
+> **检查工具**：使用 grep 搜索 `{ current, pageSize }` 确保所有 ProTable 都正确传递。
+
 ### 7.7 前端开发标准（密码本模块）
 
 `src/pages/password-book` 是所有列表页面的**开发标准参考**：

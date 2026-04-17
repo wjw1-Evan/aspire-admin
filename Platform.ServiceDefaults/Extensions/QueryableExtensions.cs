@@ -74,6 +74,39 @@ public static class QueryableExtensions
             }
         }
 
+        if (!string.IsNullOrWhiteSpace(request?.Filter))
+        {
+            try
+            {
+                var filterDict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(request.Filter);
+                if (filterDict != null && filterDict.Count > 0)
+                {
+                    foreach (var kvp in filterDict)
+                    {
+                        var field = kvp.Key;
+                        var value = kvp.Value;
+
+                        if (value.ValueKind == JsonValueKind.Array && value.GetArrayLength() > 0)
+                        {
+                            var values = value.EnumerateArray().Select(v => v.ToString().Trim('"')).ToList();
+                            query = query.Where($"{field}.Contains(@0)", values);
+                        }
+                        else if (value.ValueKind == JsonValueKind.String)
+                        {
+                            var strValue = value.GetString();
+                            if (!string.IsNullOrEmpty(strValue))
+                            {
+                                query = query.Where($"{field} == @0", strValue);
+                            }
+                        }
+                    }
+                }
+            }
+            catch
+            {
+            }
+        }
+
         return query.ToPagedList(p);
     }
 

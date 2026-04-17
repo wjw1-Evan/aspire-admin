@@ -78,7 +78,6 @@ const CloudStorageFilesPage: React.FC = () => {
         pathHistory: [{ name: '我的文件', path: '' }] as PathHistoryItem[],
         selectedRowKeys: [] as string[], selectedRows: [] as FileItem[],
         isSearchMode: false, search: '',
-        sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
         detailVisible: false, viewingFile: null as FileItem | null,
         previewVisible: false, imagePreviewVisible: false,
         previewUrl: '', previewLoading: false,
@@ -96,19 +95,17 @@ const CloudStorageFilesPage: React.FC = () => {
 
     useEffect(() => { api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }, []);
 
-    const fetchData = useCallback(async (params: Record<string, any>) => {
-        const { current, pageSize } = params;
-        const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
+    const fetchData = useCallback(async (params: any, sort: any, filter: any) => {
         const res = state.isSearchMode && state.search
-            ? await api.search({ page: current, pageSize, keyword: state.search, ...sortParams })
-            : await api.list({ page: current, pageSize, parentId: currentParentIdRef.current, ...sortParams });
+            ? await api.search({ ...params, keyword: state.search, sort, filter })
+            : await api.list({ ...params, parentId: currentParentIdRef.current, sort, filter });
         if (res.success && res.data) {
             set({ data: res.data.queryable || [] });
             api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
             return { data: res.data.queryable || [], total: res.data.rowCount || 0, success: res.success };
         }
         return { data: [], total: 0, success: false };
-    }, [state.isSearchMode, state.search, state.sorter]);
+    }, [state.isSearchMode, state.search]);
 
     const handleFolderClick = useCallback((folder: FileItem) => {
         const newPath = state.currentPath ? `${state.currentPath}/${folder.name}` : folder.name;
@@ -239,7 +236,6 @@ const CloudStorageFilesPage: React.FC = () => {
                 </Space>
               </Space>
             } request={fetchData} columns={columns} rowKey="id" search={false}
-                onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
                 scroll={{ x: 'max-content' }}
                 toolBarRender={() => [
                   <Input.Search

@@ -108,9 +108,8 @@ const CloudStorageSharedPage: React.FC = () => {
                 actionRef={actionRef}
                 rowKey="id"
                 search={false}
-                request={async (params: any) => {
-                    const { current, pageSize, sortBy, sortOrder } = params;
-                    const res = activeTab === 'my-shares' ? await api.getMyShares({ page: current, pageSize, search: searchText, sortBy, sortOrder } as PageParams) : await api.getSharedWithMe({ page: current, pageSize, search: searchText, sortBy, sortOrder } as PageParams);
+                request={async (params: any, sort: any, filter: any) => {
+                    const res = activeTab === 'my-shares' ? await api.getMyShares({ ...params, search: searchText, sort, filter }) : await api.getSharedWithMe({ ...params, search: searchText, sort, filter });
                     if (res.success && res.data) {
                         const transformed = (res.data.queryable || []).map(transformShare);
                         return { data: transformed, total: res.data.rowCount || 0, success: true };

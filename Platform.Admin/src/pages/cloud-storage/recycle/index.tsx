@@ -15,7 +15,7 @@ interface RecycleItem { id: string; name: string; originalPath?: string; size: n
 interface RecycleStatistics { totalItems: number; totalSize: number; oldestItem?: string; newestItem?: string; }
 
 const api = {
-    list: (params: PageParams) => request<ApiResponse<PagedResult<RecycleItem>>>('/apiservice/api/cloud-storage/recycle', { params }),
+    list: (params: any) => request<ApiResponse<PagedResult<RecycleItem>>>('/apiservice/api/cloud-storage/recycle', { params }),
     restore: (id: string, data: { itemId: string; newParentId?: string }) => request<ApiResponse<void>>(`/apiservice/api/cloud-storage/recycle-bin/${id}/restore`, { method: 'POST', data }),
     permanentDelete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/cloud-storage/recycle-bin/${id}`, { method: 'DELETE' }),
     empty: () => request<ApiResponse<{ deletedCount: number; freedSpace: number }>>('/apiservice/api/cloud-storage/recycle-bin/empty', { method: 'DELETE' }),
@@ -69,9 +69,11 @@ const CloudStorageRecyclePage: React.FC = () => {
                         });
                     }}>恢复</Button>
                     <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => {
-                        Modal.confirm({ title: '确认永久删除', content: `确定要永久删除文件 "..." 吗？此操作不可恢复。`, okText: '删除', okType: 'danger', onOk: async () => {
-                            try { await api.permanentDelete(r.id); message.success('删除成功'); actionRef.current?.reload(); } catch { message.error('删除失败'); }
-                        }});
+                        Modal.confirm({
+                            title: '确认永久删除', content: `确定要永久删除文件 "..." 吗？此操作不可恢复。`, okText: '删除', okType: 'danger', onOk: async () => {
+                                try { await api.permanentDelete(r.id); message.success('删除成功'); actionRef.current?.reload(); } catch { message.error('删除失败'); }
+                            }
+                        });
                     }}>删除</Button>
                 </Space>
             )
@@ -82,21 +84,20 @@ const CloudStorageRecyclePage: React.FC = () => {
         <PageContainer>
             <ProTable
                 headerTitle={
-            <Space size={24}>
-              <Space><DeleteOutlined />回收站</Space>
-              <Space size={12}>
-                <Tag color="blue">总数 0</Tag>
-                <Tag color="orange">即将过期 0</Tag>
-                <Tag color="green">可恢复 0</Tag>
-              </Space>
-            </Space>
-          }
+                    <Space size={24}>
+                        <Space><DeleteOutlined />回收站</Space>
+                        <Space size={12}>
+                            <Tag color="blue">总数 0</Tag>
+                            <Tag color="orange">即将过期 0</Tag>
+                            <Tag color="green">可恢复 0</Tag>
+                        </Space>
+                    </Space>
+                }
                 actionRef={actionRef}
                 rowKey="id"
                 search={false}
-                request={async (params: any) => {
-                    const { current, pageSize, sortBy, sortOrder } = params;
-                    const res = await api.list({ page: current, pageSize, search: searchText, sortBy, sortOrder } as PageParams);
+                request={async (params: any, sort: any, filter: any) => {
+                    const res = await api.list({ ...params, search: searchText, sort, filter });
                     if (res.success && res.data) {
                         const list = (res.data.queryable || []).map((item: RecycleItem) => ({ ...item, isFolder: item.isFolder ?? (item.type === 'folder' || item.type === 'Folder' || item.type === 1) }));
                         return { data: list, total: res.data.rowCount || 0, success: true };
@@ -106,31 +107,31 @@ const CloudStorageRecyclePage: React.FC = () => {
                 columns={columns}
                 scroll={{ x: 'max-content' }}
                 toolBarRender={() => [
-                  <Input.Search
-                    key="search"
-                    placeholder="搜索..."
-                    allowClear
-                    value={searchText}
-                    onChange={(e) => setSearchText(e.target.value)}
-                    onSearch={(value) => { setSearchText(value); actionRef.current?.reload(); }}
-                    style={{ width: 260, marginRight: 8 }}
-                    prefix={<SearchOutlined />}
-                  />,
-                  <Button key="empty" danger type="primary" icon={<ClearOutlined />} onClick={() => {
-                    Modal.confirm({
-                        title: '确认清空回收站',
-                        content: '确定要清空整个回收站吗？此操作将永久删除所有文件，无法恢复！',
-                        okText: '清空',
-                        okType: 'danger',
-                        onOk: async () => {
-                            try {
-                                const res = await api.empty();
-                                if (res.success && res.data) message.success(`清空成功，删除了 ${res.data.deletedCount} 个文件`);
-                                actionRef.current?.reload();
-                            } catch { message.error('清空失败'); }
-                        }
-                    });
-                  }}>清空回收站</Button>,
+                    <Input.Search
+                        key="search"
+                        placeholder="搜索..."
+                        allowClear
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        onSearch={(value) => { setSearchText(value); actionRef.current?.reload(); }}
+                        style={{ width: 260, marginRight: 8 }}
+                        prefix={<SearchOutlined />}
+                    />,
+                    <Button key="empty" danger type="primary" icon={<ClearOutlined />} onClick={() => {
+                        Modal.confirm({
+                            title: '确认清空回收站',
+                            content: '确定要清空整个回收站吗？此操作将永久删除所有文件，无法恢复！',
+                            okText: '清空',
+                            okType: 'danger',
+                            onOk: async () => {
+                                try {
+                                    const res = await api.empty();
+                                    if (res.success && res.data) message.success(`清空成功，删除了 ${res.data.deletedCount} 个文件`);
+                                    actionRef.current?.reload();
+                                } catch { message.error('清空失败'); }
+                            }
+                        });
+                    }}>清空回收站</Button>,
                 ]}
             />
         </PageContainer>

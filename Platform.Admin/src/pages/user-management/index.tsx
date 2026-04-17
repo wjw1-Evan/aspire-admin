@@ -47,8 +47,6 @@ const UserManagement: React.FC = () => {
     editingUser: null as AppUser | null, formVisible: false,
     detailVisible: false, viewingUser: null as AppUser | null, statistics: null as UserStats | null,
     roleMap: {} as Record<string, string>, currentCompany: null as { id?: string; createdBy?: string } | null,
-    sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
-    searchParams: { sortBy: 'createdAt', sortOrder: 'desc' } as PageParams,
     search: '',
   });
   const [form, setForm] = useState({ roles: [] as Role[], searchingUsers: false, userOptions: [] as AppUser[], selectedUser: null as AppUser | null });
@@ -72,11 +70,6 @@ const UserManagement: React.FC = () => {
       }
     });
   }, []);
-
-  const handleSearch = useCallback((params: PageParams) => {
-    set({ searchParams: { ...state.searchParams, ...params, page: 1 } });
-    actionRef.current?.reload();
-  }, [state.searchParams]);
 
   const handleToggle = useCallback(async (user: AppUser) => {
     const res = user.isActive ? await api.deactivate(user.id) : await api.activate(user.id);
@@ -145,15 +138,11 @@ const UserManagement: React.FC = () => {
             <Tag color="purple">本月新增 {state.statistics?.newUsersThisMonth || 0}</Tag>
           </Space>
         </Space>
-      } request={async (params) => {
-        const { current, pageSize, search, createdAtRange } = params;
-        const sp = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-        const rangeParams = createdAtRange ? { startDate: createdAtRange[0], endDate: createdAtRange[1] } : {};
-        const res = await api.list({ page: current, pageSize, ...state.searchParams, ...sp, ...rangeParams, search: state.search });
+      } request={async (params: any, sort: any, filter: any) => {
+        const res = await api.list({ ...params, search: state.search, sort, filter });
         api.stats().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
         return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
       }} columns={columns} rowKey="id"
-        onChange={(_p, _f, s) => set({ sorter: (s as Record<string, unknown>)?.order ? { sortBy: (s as Record<string, string>).field, sortOrder: (s as Record<string, string>).order === 'ascend' ? 'asc' : 'desc' } : undefined })}
         search={false}
         scroll={{ x: 'max-content' }}
         toolBarRender={() => [

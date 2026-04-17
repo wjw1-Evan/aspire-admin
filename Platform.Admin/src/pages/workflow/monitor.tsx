@@ -148,9 +148,8 @@ const WorkflowMonitor: React.FC = () => {
         actionRef={undefined}
         rowKey="id"
         search={false}
-        request={async (params: any) => {
-          const { current, pageSize, ...rest } = params;
-          const response = await getWorkflowInstances({ page: current, pageSize, ...rest, search } as PageParams);
+        request={async (params: any, sort: any, filter: any) => {
+          const response = await getWorkflowInstances({ ...params, search, sort, filter });
           if (response.success && response.data) {
             return { data: response.data.queryable || [], total: response.data.rowCount || 0, success: true };
           }

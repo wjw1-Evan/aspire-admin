@@ -35,7 +35,7 @@ const contractStatusOptions = [{ label: '有效', value: 'Active', color: 'green
 const TenantManagement: React.FC = () => {
     const { message } = App.useApp();
     const actionRef = useRef<any>(null);
-    const [state, setState] = useState({ statistics: null as TenantStatistics | null, formVisible: false, editingTenant: null as ParkTenant | null, detailVisible: false, viewingTenant: null as ParkTenant | null, detailLoading: false, sorter: undefined as { sortBy: string; sortOrder: string } | undefined, search: '' });
+    const [state, setState] = useState({ statistics: null as TenantStatistics | null, formVisible: false, editingTenant: null as ParkTenant | null, detailVisible: false, viewingTenant: null as ParkTenant | null, detailLoading: false, search: '' });
     const [detailData, setDetailData] = useState({ contracts: [] as LeaseContract[], serviceRequests: [] as ServiceRequest[], payments: [] as (LeasePaymentRecord & { contractNumber?: string })[], loading: false });
     const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
     const setDetail = (partial: Partial<typeof detailData>) => setDetailData(prev => ({ ...prev, ...partial }));
@@ -96,12 +96,10 @@ const TenantManagement: React.FC = () => {
                   <Tag color="purple">月租金 ¥{state.statistics?.totalMonthlyRent?.toLocaleString() || 0}</Tag>
                 </Space>
               </Space>
-            } request={async (params: any) => {
-                const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-                const res = await api.list({ page: current, pageSize, search: state.search, ...sortParams });
+            } request={async (params: any, sort: any, filter: any) => {
+                const res = await api.list({ ...params, search: state.search, sort, filter });
                 return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
             }} columns={columns} rowKey="id" search={false}
-                onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
                 scroll={{ x: 'max-content' }}
                 toolBarRender={() => [
                     <Input.Search

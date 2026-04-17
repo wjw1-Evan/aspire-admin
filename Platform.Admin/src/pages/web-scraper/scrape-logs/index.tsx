@@ -46,7 +46,6 @@ const statusText = {
 const WebScraperLogs: React.FC = () => {
   const actionRef = useRef<ActionType | undefined>(undefined);
   const [search, setSearch] = useState('');
-  const [sorter, setSorter] = useState<{ sortBy: string; sortOrder: string } | undefined>(undefined);
   const [taskId, setTaskId] = useState<string | undefined>();
   const [tasks, setTasks] = useState<TaskOption[]>([]);
   const [detailVisible, setDetailVisible] = useState(false);
@@ -170,24 +169,13 @@ const WebScraperLogs: React.FC = () => {
         actionRef={actionRef}
         rowKey="id"
         search={false}
-        request={async (params: any) => {
-          const sortParams = sorter?.sortBy && sorter?.sortOrder ? sorter : undefined;
-          const res = await api.list({
-            page: params.current,
-            taskId: taskId,
-            search: search,
-            sortBy: sortParams?.sortBy,
-            sortOrder: sortParams?.sortOrder,
-          });
+        request={async (params: any, sort: any, filter: any) => {
+          const res = await api.list({ ...params, taskId, search, sort, filter });
           return {
             data: res.data?.queryable || [],
             success: res.success,
             total: res.data?.rowCount || 0,
           };
-        }}
-        onChange={(_, __, s) => {
-          const sorterData = Array.isArray(s) ? s[0] : s;
-          setSorter(sorterData?.order ? { sortBy: sorterData.field as string, sortOrder: sorterData.order === 'ascend' ? 'asc' : 'desc' } : undefined);
         }}
         toolBarRender={() => [
           <Input.Search

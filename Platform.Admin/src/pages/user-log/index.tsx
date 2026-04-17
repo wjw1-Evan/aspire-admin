@@ -49,7 +49,7 @@ interface LogStats {
 
 // ==================== API ====================
 const api = {
-  list: (params: PageParams) =>
+  list: (params: any) =>
     request<ApiResponse<PagedResult<UserActivityLog>>>('/apiservice/api/users/activity-logs', { params }),
   statistics: () =>
     request<ApiResponse<ActivityLogStatistics>>('/apiservice/api/users/activity-logs/statistics'),
@@ -66,7 +66,6 @@ const UserLog: React.FC = () => {
     statistics: null as LogStats | null,
     detailDrawerOpen: false,
     selectedLog: null as UserActivityLog | null,
-    sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
     search: '',
   });
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
@@ -93,13 +92,15 @@ const UserLog: React.FC = () => {
     { title: intl.formatMessage({ id: 'pages.table.httpMethod' }), dataIndex: 'httpMethod', key: 'httpMethod', sorter: true, render: (_: any, r: UserActivityLog) => r.httpMethod ? <Tag color={getMethodColor(r.httpMethod)}>{r.httpMethod}</Tag> : '-' },
     { title: intl.formatMessage({ id: 'pages.table.statusCode' }), dataIndex: 'statusCode', key: 'statusCode', sorter: true, render: (_: any, r: UserActivityLog) => getStatusBadge(r.statusCode) },
     { title: intl.formatMessage({ id: 'pages.table.fullUrl' }), dataIndex: 'fullUrl', key: 'fullUrl', ellipsis: true, sorter: true, render: (_: any, r: UserActivityLog) => r.fullUrl ? <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{r.fullUrl}</span> : '-' },
-    { title: intl.formatMessage({ id: 'pages.table.duration' }), dataIndex: 'duration', key: 'duration', sorter: true, render: (_: any, r: UserActivityLog) => {
-      if (r.duration === undefined || r.duration === null) return '-';
-      let color = 'green';
-      if (r.duration > 1000) color = 'orange';
-      if (r.duration > 3000) color = 'red';
-      return <span style={{ color }}>{r.duration}ms</span>;
-    }},
+    {
+      title: intl.formatMessage({ id: 'pages.table.duration' }), dataIndex: 'duration', key: 'duration', sorter: true, render: (_: any, r: UserActivityLog) => {
+        if (r.duration === undefined || r.duration === null) return '-';
+        let color = 'green';
+        if (r.duration > 1000) color = 'orange';
+        if (r.duration > 3000) color = 'red';
+        return <span style={{ color }}>{r.duration}ms</span>;
+      }
+    },
     { title: intl.formatMessage({ id: 'pages.table.ipAddress' }), dataIndex: 'ipAddress', key: 'ipAddress', ellipsis: true, sorter: true },
     { title: intl.formatMessage({ id: 'pages.table.actionTime' }), dataIndex: 'createdAt', key: 'createdAt', sorter: true, defaultSortOrder: 'descend', render: (_: any, r: UserActivityLog) => r.createdAt ? dayjs(r.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-' },
   ];
@@ -120,10 +121,8 @@ const UserLog: React.FC = () => {
             </Space>
           </Space>
         }
-        request={async (params: any) => {
-          const { current, pageSize } = params;
-          const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-          const res = await api.list({ page: current, pageSize, search: state.search, ...sortParams });
+        request={async (params: any, sort: any, filter: any) => {
+          const res = await api.list({ ...params, search: state.search, sort, filter });
           api.statistics().then(r => {
             if (r.success && r.data) {
               set({
@@ -139,7 +138,6 @@ const UserLog: React.FC = () => {
           });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
         }} columns={columns} rowKey="id" search={false} scroll={{ x: 'max-content' }}
-        onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
         toolBarRender={() => [
           <Input.Search
             key="search"

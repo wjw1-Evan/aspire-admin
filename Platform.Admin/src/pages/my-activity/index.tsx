@@ -37,7 +37,7 @@ interface ActivityStats {
 
 // ==================== API ====================
 const api = {
-  list: (params: PageParams) =>
+  list: (params: any) =>
     request<ApiResponse<PagedResult<UserActivityLog>>>('/apiservice/api/users/me/activity-logs-paged', { params }),
   statistics: (search?: string) =>
     request<ApiResponse<ActivityStats>>('/apiservice/api/users/me/activity-logs/statistics', { params: { search } }),
@@ -52,7 +52,6 @@ const MyActivity: React.FC = () => {
     statistics: null as ActivityStats | null,
     detailDrawerOpen: false,
     selectedLogId: null as string | null,
-    sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
     search: '',
   });
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
@@ -91,14 +90,11 @@ const MyActivity: React.FC = () => {
             </Space>
           </Space>
         }
-        request={async (params: any) => {
-          const { current, pageSize } = params;
-          const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-          const res = await api.list({ page: current, pageSize, search: state.search, ...sortParams });
+        request={async (params: any, sort: any, filter: any) => {
+          const res = await api.list({ ...params, search: state.search, sort, filter });
           api.statistics(state.search).then(r => { if (r.success && r.data) set({ statistics: r.data }); });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
         }} columns={columns} rowKey="id" search={false}
-        onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
         scroll={{ x: 'max-content' }}
         toolBarRender={() => [
           <Input.Search

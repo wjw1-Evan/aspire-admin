@@ -16,7 +16,6 @@ const KnowledgeBaseManagement: React.FC = () => {
   const actionRef = useRef<ActionType | undefined>(undefined);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingKb, setEditingKb] = useState<KnowledgeBase | null>(null);
-  const [sorter, setSorter] = useState<{ sortBy: string; sortOrder: string } | undefined>(undefined);
   const [search, setSearch] = useState('');
 
   const handleOpenModal = (kb: KnowledgeBase | null) => {
@@ -124,16 +123,14 @@ const KnowledgeBaseManagement: React.FC = () => {
         actionRef={actionRef}
         rowKey="id"
         search={false}
-        request={async (params: any) => {
-          const { current, pageSize } = params;
-          const res = await kbService.getKnowledgeBases({ page: current, pageSize, search, ...sorter } as PageParams);
+        request={async (params: any, sort: any, filter: any) => {
+          const res = await kbService.getKnowledgeBases({ ...params, search, sort, filter });
           if (res.success && res.data) {
             return { data: res.data.queryable || [], total: res.data.rowCount || 0, success: true };
           }
           return { data: [], total: 0, success: false };
         }}
         columns={columns}
-        onChange={(_, __, s: any) => setSorter(s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined)}
         scroll={{ x: 'max-content' }}
         toolBarRender={() => [
           <Input.Search

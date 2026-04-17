@@ -125,7 +125,6 @@ const WebScraper: React.FC = () => {
   const [previewData, setPreviewData] = useState<CrawlResult | null | undefined>(null);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
-  const [sorter, setSorter] = useState<{ sortBy: string; sortOrder: string } | undefined>(undefined);
 
   const handleEdit = useCallback((record: WebScrapingTask) => {
     setEditingTask(record);
@@ -352,24 +351,13 @@ const WebScraper: React.FC = () => {
         actionRef={actionRef}
         rowKey="id"
         search={false}
-        request={async (params: any) => {
-          const sortParams = sorter?.sortBy && sorter?.sortOrder ? sorter : undefined;
-          const res = await api.list({
-            page: params.current,
-            keyword: search,
-            search: search,
-            sortBy: sortParams?.sortBy,
-            sortOrder: sortParams?.sortOrder,
-          });
+        request={async (params: any, sort: any, filter: any) => {
+          const res = await api.list({ ...params, keyword: search, search, sort, filter });
           return {
             data: res.data?.queryable || [],
             success: res.success,
             total: res.data?.rowCount || 0,
           };
-        }}
-        onChange={(_, __, s) => {
-          const sorterData = Array.isArray(s) ? s[0] : s;
-          setSorter(sorterData?.order ? { sortBy: sorterData.field as string, sortOrder: sorterData.order === 'ascend' ? 'asc' : 'desc' } : undefined);
         }}
         toolBarRender={() => [
           <Input.Search

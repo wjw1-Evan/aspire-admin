@@ -16,7 +16,7 @@ interface ParkTenant { id: string; tenantName: string; }
 interface VisitTaskFormData { title: string; managerName: string; phone?: string; visitType: string; visitMethod: string; details?: string; tenantName: string; visitLocation?: string; intervieweeName?: string; intervieweePosition?: string; intervieweePhone?: string; visitDate: string; visitor?: string; status?: string; content?: string; feedback?: string; }
 
 const api = {
-    list: (params: PageParams) => request<ApiResponse<PagedResult<VisitTask>>>('/apiservice/api/park-management/visit/tasks', { params }),
+    list: (params: any) => request<ApiResponse<PagedResult<VisitTask>>>('/apiservice/api/park-management/visit/tasks', { params }),
     get: (id: string) => request<ApiResponse<VisitTask>>(`/apiservice/api/park-management/visit/task/${id}`),
     delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/park-management/visit/task/${id}`, { method: 'DELETE' }),
     create: (data: VisitTaskFormData) => request<ApiResponse<VisitTask>>('/apiservice/api/park-management/visit/task', { method: 'POST', data }),
@@ -39,7 +39,7 @@ const VisitTaskPage: React.FC = () => {
     const [state, setState] = useState({
         statistics: null as VisitStatistics | null, formVisible: false, editingTask: null as VisitTask | null,
         detailVisible: false, selectedTask: null as VisitTask | null, detailLoading: false, tenants: [] as ParkTenant[],
-        sorter: undefined as { sortBy: string; sortOrder: string } | undefined, search: '',
+        search: '',
     });
     const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
@@ -66,22 +66,23 @@ const VisitTaskPage: React.FC = () => {
         { title: '企管员', dataIndex: 'managerName', key: 'managerName', sorter: true, width: 120 },
         { title: '走访日期', dataIndex: 'visitDate', key: 'visitDate', sorter: true, width: 120, render: (dom: any) => dom ? dayjs(dom).format('YYYY-MM-DD') : '-' },
         { title: '状态', dataIndex: 'status', key: 'status', sorter: true, width: 100, render: (_: any, r: VisitTask) => { const config = statusMap[r.status] || { text: r.status, color: 'default', icon: null }; return <Tag color={config.color} icon={config.icon}>{config.text}</Tag>; } },
-        { title: '操作', valueType: 'option', fixed: 'right', width: 180, render: (_: any, r: VisitTask) => (
-            <Space size={4}>
-                <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => handleViewTask(r.id)}>查看</Button>
-                {r.status !== 'Completed' && <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingTask: r, formVisible: true })}>编辑</Button>}
-                {r.status !== 'Completed' && <Popconfirm title={`确定删除「${r.title}」？`} onConfirm={() => handleDelete(r.id)} okText="确定" cancelText="取消"><Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button></Popconfirm>}
-            </Space>
-        )},
+        {
+            title: '操作', valueType: 'option', fixed: 'right', width: 180, render: (_: any, r: VisitTask) => (
+                <Space size={4}>
+                    <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => handleViewTask(r.id)}>查看</Button>
+                    {r.status !== 'Completed' && <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingTask: r, formVisible: true })}>编辑</Button>}
+                    {r.status !== 'Completed' && <Popconfirm title={`确定删除「${r.title}」？`} onConfirm={() => handleDelete(r.id)} okText="确定" cancelText="取消"><Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button></Popconfirm>}
+                </Space>
+            )
+        },
     ];
 
     const handleDelete = async (id: string) => { const res = await api.delete(id); if (res.success) { message.success('删除成功'); actionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); } };
 
     return (
         <PageContainer>
-            <ProTable actionRef={actionRef} request={async (params: any) => {
-                const { current, pageSize, sortBy, sortOrder } = params;
-                const res = await api.list({ page: current, pageSize, search: state.search, sortBy, sortOrder });
+            <ProTable actionRef={actionRef} request={async (params: any, sort: any, filter: any) => {
+                const res = await api.list({ ...params, search: state.search, sort, filter });
                 api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
                 return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
             }} columns={columns} rowKey="id" search={false}
@@ -96,20 +97,19 @@ const VisitTaskPage: React.FC = () => {
                         </Space>
                     </Space>
                 }
-                onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
                 scroll={{ x: 'max-content' }}
                 toolBarRender={() => [
-                  <Input.Search
-                    key="search"
-                    placeholder="搜索..."
-                    allowClear
-                    value={state.search}
-                    onChange={(e) => set({ search: e.target.value })}
-                    onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
-                    style={{ width: 260, marginRight: 8 }}
-                    prefix={<SearchOutlined />}
-                  />,
-                  <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingTask: null, formVisible: true })}>新增任务</Button>,
+                    <Input.Search
+                        key="search"
+                        placeholder="搜索..."
+                        allowClear
+                        value={state.search}
+                        onChange={(e) => set({ search: e.target.value })}
+                        onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+                        style={{ width: 260, marginRight: 8 }}
+                        prefix={<SearchOutlined />}
+                    />,
+                    <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingTask: null, formVisible: true })}>新增任务</Button>,
                 ]}
             />
 

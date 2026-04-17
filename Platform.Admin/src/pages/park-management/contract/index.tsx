@@ -37,7 +37,7 @@ interface ContractFormData {
 }
 
 const api = {
-    list: (params: PageParams) => request<ApiResponse<PagedResult<LeaseContract>>>('/apiservice/api/park/contracts/list', { params }),
+    list: (params: any) => request<ApiResponse<PagedResult<LeaseContract>>>('/apiservice/api/park/contracts/list', { params }),
     create: (data: ContractFormData) => request<ApiResponse<LeaseContract>>('/apiservice/api/park/contracts', { method: 'POST', data }),
     update: (id: string, data: ContractFormData) => request<ApiResponse<LeaseContract>>(`/apiservice/api/park/contracts/${id}`, { method: 'PUT', data }),
     delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/park/contracts/${id}`, { method: 'DELETE' }),

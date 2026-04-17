@@ -9,7 +9,7 @@ interface FormDefinition { id?: string; name: string; key: string; version?: num
 interface FormStatistics { totalForms: number; activeForms: number; }
 
 const api = {
-    list: (params: PageParams) => request<ApiResponse<PagedResult<FormDefinition>>>('/apiservice/api/forms', { params }),
+    list: (params: any) => request<ApiResponse<PagedResult<FormDefinition>>>('/apiservice/api/forms', { params }),
     create: (data: Partial<FormDefinition>) => request<ApiResponse<FormDefinition>>('/apiservice/api/forms', { method: 'POST', data }),
     update: (id: string, data: Partial<FormDefinition>) => request<ApiResponse<boolean>>(`/apiservice/api/forms/${id}`, { method: 'PUT', data }),
     delete: (id: string) => request<ApiResponse<boolean>>(`/apiservice/api/forms/${id}`, { method: 'DELETE' }),
@@ -22,7 +22,6 @@ const FormDefinitionManagement: React.FC = () => {
         statistics: null as FormStatistics | null,
         editingForm: null as FormDefinition | null,
         formVisible: false,
-        sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
         search: '' as string,
     });
     const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
@@ -34,14 +33,16 @@ const FormDefinitionManagement: React.FC = () => {
         { title: '键', dataIndex: 'key', key: 'key', ellipsis: true, sorter: true },
         { title: '版本', dataIndex: 'version', key: 'version', valueType: 'digit', width: 80, sorter: true },
         { title: '启用', dataIndex: 'isActive', key: 'isActive', valueType: 'select', fieldProps: { options: [{ label: '是', value: 'true' }, { label: '否', value: 'false' }] }, render: (_, r) => <Tag color={r.isActive ? 'success' : 'default'}>{r.isActive ? '是' : '否'}</Tag> },
-        { title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 180, render: (_, r) => (
-            <Space size={4}>
-                <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingForm: r, formVisible: true })}>编辑</Button>
-                <Popconfirm title={`确定删除「${r.name}」？`} onConfirm={async () => { await api.delete(r.id!); actionRef.current?.reload(); api.statistics().then(res => { if (res.success && res.data) set({ statistics: res.data }); }); }}>
-                    <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
-                </Popconfirm>
-            </Space>
-        ) },
+        {
+            title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 180, render: (_, r) => (
+                <Space size={4}>
+                    <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingForm: r, formVisible: true })}>编辑</Button>
+                    <Popconfirm title={`确定删除「${r.name}」？`} onConfirm={async () => { await api.delete(r.id!); actionRef.current?.reload(); api.statistics().then(res => { if (res.success && res.data) set({ statistics: res.data }); }); }}>
+                        <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
+                    </Popconfirm>
+                </Space>
+            )
+        },
     ];
 
     return (
@@ -60,18 +61,12 @@ const FormDefinitionManagement: React.FC = () => {
                 rowKey="id"
                 search={false}
                 scroll={{ x: 'max-content' }}
-                request={async (params) => {
-                    const { current, pageSize } = params;
-                    const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-                    const res = await api.list({ page: current, pageSize, ...sortParams, search: state.search });
+                request={async (params: any, sort: any, filter: any) => {
+                    const res = await api.list({ ...params, search: state.search, sort, filter });
                     api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
                     return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
                 }}
                 columns={columns}
-                onChange={(_, __, s) => {
-                    const sorter = Array.isArray(s) ? s[0] : s;
-                    set({ sorter: sorter?.order ? { sortBy: sorter.field as string, sortOrder: sorter.order === 'ascend' ? 'asc' : 'desc' } : undefined });
-                }}
                 toolBarRender={() => [
                     <Input.Search
                         key="search"

@@ -136,9 +136,8 @@ const KnowledgeBaseDocuments: React.FC = () => {
         headerTitle="文档列表"
         rowKey="id"
         search={{ labelWidth: 'auto' }}
-        request={async (params: any) => {
-          const { current, pageSize, ...rest } = params;
-          const res = await kbService.getKnowledgeDocuments(knowledgeBaseId!, { page: current, pageSize, ...rest } as PageParams);
+        request={async (params: any, sort: any, filter: any) => {
+          const res = await kbService.getKnowledgeDocuments(knowledgeBaseId!, { ...params, sort, filter });
           if (res.success && res.data) {
             return { data: res.data.queryable || [], total: res.data.rowCount || 0, success: true };
           }

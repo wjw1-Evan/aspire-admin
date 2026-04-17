@@ -22,7 +22,7 @@ interface TreeNode { key: string; title: string; children?: TreeNode[]; }
 
 // ==================== API ====================
 const api = {
-  list: (params: PageParams) => request<ApiResponse<PagedResult<RoleWithStats>>>('/apiservice/api/role/with-stats', { params }),
+  list: (params: any) => request<ApiResponse<PagedResult<RoleWithStats>>>('/apiservice/api/role/with-stats', { params }),
   statistics: () => request<ApiResponse<RoleStatistics>>('/apiservice/api/role/statistics'),
   get: (id: string) => request<ApiResponse<Role>>(`/apiservice/api/role/${id}`),
   create: (data: CreateRoleRequest) => request<ApiResponse<Role>>('/apiservice/api/role', { method: 'POST', data }),
@@ -42,7 +42,6 @@ const RoleManagement: React.FC = () => {
     formVisible: false,
     detailVisible: false,
     viewingRole: null as RoleWithStats | null,
-    sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
     search: '',
   });
   const [formState, setFormState] = useState({
@@ -66,14 +65,16 @@ const RoleManagement: React.FC = () => {
     { title: intl.formatMessage({ id: 'pages.table.status' }), dataIndex: 'isActive', key: 'isActive', sorter: true, valueType: 'select', fieldProps: { options: [{ label: intl.formatMessage({ id: 'pages.table.activated' }), value: 'true' }, { label: intl.formatMessage({ id: 'pages.table.deactivated' }), value: 'false' }] }, render: (_, r) => <Tag color={r.isActive ? 'success' : 'default'}>{r.isActive ? intl.formatMessage({ id: 'pages.table.activated' }) : intl.formatMessage({ id: 'pages.table.deactivated' })}</Tag> },
     { title: intl.formatMessage({ id: 'pages.table.stats' }), valueType: 'option', render: (_, r) => <Space separator="|"><span>{intl.formatMessage({ id: 'pages.table.user' })}: {r.userCount || 0}</span><span>{intl.formatMessage({ id: 'pages.table.menu' })}: {r.menuCount || 0}</span></Space> },
     { title: intl.formatMessage({ id: 'pages.table.createdAt' }), dataIndex: 'createdAt', key: 'createdAt', sorter: true, valueType: 'dateTime' },
-    { title: intl.formatMessage({ id: 'pages.table.actions' }), key: 'action', valueType: 'option', fixed: 'right', width: 180, render: (_, r) => (
-      <Space size={4}>
-        <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { set({ editingRole: r, formVisible: true }); setFormState(p => ({ ...p, checkedKeys: r.menuIds || [] })); }}>{intl.formatMessage({ id: 'pages.table.edit' })}</Button>
-        <Popconfirm title={intl.formatMessage({ id: 'pages.modal.confirmDeleteRole' }, { roleName: r.name })} onConfirm={async () => { await api.delete(r.id!); actionRef.current?.reload(); loadStatistics(); }}>
-          <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.table.delete' })}</Button>
-        </Popconfirm>
-      </Space>
-    ) },
+    {
+      title: intl.formatMessage({ id: 'pages.table.actions' }), key: 'action', valueType: 'option', fixed: 'right', width: 180, render: (_, r) => (
+        <Space size={4}>
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { set({ editingRole: r, formVisible: true }); setFormState(p => ({ ...p, checkedKeys: r.menuIds || [] })); }}>{intl.formatMessage({ id: 'pages.table.edit' })}</Button>
+          <Popconfirm title={intl.formatMessage({ id: 'pages.modal.confirmDeleteRole' }, { roleName: r.name })} onConfirm={async () => { await api.delete(r.id!); actionRef.current?.reload(); loadStatistics(); }}>
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.table.delete' })}</Button>
+          </Popconfirm>
+        </Space>
+      )
+    },
   ];
 
   const convertToTreeData = (menus: MenuTreeNode[]): TreeNode[] => menus.filter((m): m is MenuTreeNode & { id: string } => Boolean(m.id)).map(m => ({ key: m.id, title: m.title || m.name || '', children: m.children ? convertToTreeData(m.children) : [] }));
@@ -81,11 +82,8 @@ const RoleManagement: React.FC = () => {
 
   return (
     <PageContainer>
-      <ProTable actionRef={actionRef} request={async (params) => {
-        const { current, pageSize, name, description, isActive } = params;
-        const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-        const filterParams = { name: name || undefined, description: description || undefined, isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined };
-        const res = await api.list({ page: current, pageSize, ...filterParams, ...sortParams });
+      <ProTable actionRef={actionRef} request={async (params: any, sort: any, filter: any) => {
+        const res = await api.list({ ...params, search: state.search, sort, filter });
         return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
       }} columns={columns} rowKey="id" search={false}
         headerTitle={
@@ -99,7 +97,6 @@ const RoleManagement: React.FC = () => {
             </Space>
           </Space>
         }
-        onChange={(_p, _f, s) => set({ sorter: Array.isArray(s) ? undefined : s?.order ? { sortBy: (s as { field?: string }).field || '', sortOrder: (s as { order?: 'ascend' | 'descend' }).order === 'ascend' ? 'asc' : 'desc' } : undefined })}
         scroll={{ x: 'max-content' }}
         toolBarRender={() => [
           <Input.Search
@@ -118,7 +115,7 @@ const RoleManagement: React.FC = () => {
       <ModalForm key={state.editingRole?.id || 'create'}
         title={state.editingRole ? intl.formatMessage({ id: 'pages.roleForm.editTitle' }) : intl.formatMessage({ id: 'pages.roleForm.createTitle' })}
         open={state.formVisible}
-        onOpenChange={(open) => { 
+        onOpenChange={(open) => {
           if (open) {
             setFormState(p => ({ ...p, menuLoading: true }));
             Promise.all([

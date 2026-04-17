@@ -153,7 +153,6 @@ const TaskManagement: React.FC = () => {
     statistics: null as TaskStatistics | null,
     formVisible: false, detailVisible: false, executionVisible: false,
     editingTask: null as TaskDto | null, viewingTask: null as TaskDto | null,
-    sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
     search: '',
   });
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
@@ -197,14 +196,11 @@ const TaskManagement: React.FC = () => {
 
   return (
     <PageContainer>
-      <ProTable actionRef={actionRef} request={async (params: { current?: number; pageSize?: number; [key: string]: unknown }) => {
-        const { current, pageSize } = params;
-        const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-        const res = await api.list({ page: current, pageSize, search: state.search, ...sortParams });
+      <ProTable actionRef={actionRef} request={async (params: any, sort: any, filter: any) => {
+        const res = await api.list({ ...params, search: state.search, sort, filter });
         loadStatistics();
         return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
       }} columns={columns} rowKey="id" search={false}
-        onChange={(_p, _f, s) => set({ sorter: Array.isArray(s) ? (s[0] as { field?: string; order?: 'ascend' | 'descend' })?.order ? { sortBy: (s[0] as { field?: string }).field || '', sortOrder: (s[0] as { order?: 'ascend' | 'descend' }).order === 'ascend' ? 'asc' : 'desc' } : undefined : s?.order ? { sortBy: (s as { field?: string }).field || '', sortOrder: (s as { order?: 'ascend' | 'descend' }).order === 'ascend' ? 'asc' : 'desc' } : undefined })}
         headerTitle={
           <Space size={24}>
             <Space><ProjectOutlined />任务管理</Space>

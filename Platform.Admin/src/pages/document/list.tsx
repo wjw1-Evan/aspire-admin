@@ -22,7 +22,7 @@ const documentStatusMap = {
 };
 
 const api = {
-  list: (params: PageParams) => request<ApiResponse<PagedResult<Document>>>('/apiservice/api/documents', { params }),
+  list: (params: any) => request<ApiResponse<PagedResult<Document>>>('/apiservice/api/documents', { params }),
   get: (id: string) => request<ApiResponse<Document>>(`/apiservice/api/documents/${id}`),
   delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/documents/${id}`, { method: 'DELETE' }),
   create: (data: Partial<Document>) => request<ApiResponse<Document>>('/apiservice/api/documents', { method: 'POST', data }),
@@ -90,9 +90,8 @@ const DocumentManagement: React.FC = () => {
             </Space>
           </Space>
         }
-        request={async (params: any) => {
-          const { current, pageSize } = params;
-          const res = await api.list({ page: current, pageSize, search: state.search });
+        request={async (params: any, sort: any, filter: any) => {
+          const res = await api.list({ ...params, search: state.search, sort, filter });
           api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
         }}

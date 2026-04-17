@@ -73,9 +73,8 @@ const ApprovalPage: React.FC = () => {
     },
   ];
 
-  const fetchData = async (params: any) => {
-    const { current, pageSize } = params;
-    const res = await api.pending({ page: current, pageSize, search: state.search });
+  const fetchData = async (params: any, sort: any, filter: any) => {
+    const res = await api.pending({ ...params, search: state.search, sort, filter });
     api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
     return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
   };

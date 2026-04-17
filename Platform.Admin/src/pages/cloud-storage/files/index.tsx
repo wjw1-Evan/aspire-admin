@@ -296,6 +296,7 @@ const CloudStorageFilesPage: React.FC = () => {
                     action="/apiservice/api/cloud-storage/upload"
                     data={{ parentId: currentParentIdRef.current || '' }}
                     accept="*/*"
+                    headers={{ Authorization: `Bearer ${tokenUtils.getToken()}` }}
                     beforeUpload={(file) => {
                         set({ uploadFileList: [...state.uploadFileList, { uid: file.uid, name: file.name, status: 'uploading' }] });
                         return true;

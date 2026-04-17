@@ -199,131 +199,227 @@ git push origin main
 
 ## 6. 后端开发规范
 
-### 6.1 控制器与权限
+> **开发标准参考**：`PasswordBookController.cs` + `PasswordBookService.cs` 是所有后端模块的开发标准代码。
+
+### 6.1 控制器规范
 
 #### 控制器分层与继承
-- **[强制]** 所有业务控制器必须继承 `BaseApiController`，禁止直接继承 `ControllerBase` 或返回裸 JSON。
+- **[强制]** 所有业务控制器必须继承 `BaseApiController`，禁止直接继承 `ControllerBase`。
 - 控制器层**只负责**路由、参数校验、权限注解 `[RequireMenu]`、调用服务层、返回统一响应。
-- **禁止**在控制器注入/操作 `DbContext`、`IMongoCollection`、`IMongoDatabase`，所有数据访问必须下沉到服务层。
+- **禁止**在控制器注入/操作 `DbContext`，所有数据访问必须下沉到服务层。
 
-#### 权限注解标准
-- **[强制]** 所有敏感操作必须添加 `[RequireMenu("menu-action")]` 注解。
-- 菜单名称统一用连字符 `-` 分隔，格式为 `模块-资源`。
-
+#### 标准控制器模板
 ```csharp
-// ✅ 正确：使用 RequireMenu
-[HttpPost("create")]
-[RequireMenu("task-management")]
-public async Task<IActionResult> CreateTask([FromBody] CreateTaskRequest request) { }
+[ApiController]
+[Route("api/xxx")]
+public class XxxController : BaseApiController
+{
+    private readonly IXxxService _xxxService;
+    private readonly ILogger<XxxController> _logger;
 
-// ✅ 正确：多个菜单，满足其一即可
-[HttpPost("list")]
-[RequireMenu("workflow-list", "workflow-monitor")]
-public async Task<IActionResult> GetWorkflows() { }
+    public XxxController(IXxxService xxxService, ILogger<XxxController> logger)
+    {
+        _xxxService = xxxService ?? throw new ArgumentNullException(nameof(xxxService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    [HttpPost]
+    [RequireMenu("xxx")]
+    public async Task<IActionResult> Create([FromBody] CreateXxxRequest request)
+    {
+        var userId = RequiredUserId;
+        var result = await _xxxService.CreateAsync(request, userId);
+        return Success(result);
+    }
+
+    [HttpGet("{id}")]
+    [RequireMenu("xxx")]
+    public async Task<IActionResult> GetById(string id)
+    {
+        var userId = RequiredUserId;
+        var result = await _xxxService.GetByIdAsync(id, userId);
+        if (result == null)
+            throw new KeyNotFoundException("资源不存在");
+        return Success(result);
+    }
+
+    [HttpGet("list")]
+    [RequireMenu("xxx")]
+    public async Task<IActionResult> GetList([FromQuery] ProTableRequest request)
+    {
+        var userId = RequiredUserId;
+        var result = await _xxxService.GetListAsync(request, userId);
+        return Success(result);
+    }
+
+    [HttpDelete("{id}")]
+    [RequireMenu("xxx")]
+    public async Task<IActionResult> Delete(string id)
+    {
+        var userId = RequiredUserId;
+        var success = await _xxxService.DeleteAsync(id, userId);
+        if (!success)
+            throw new KeyNotFoundException("资源不存在或无权删除");
+        return Success(true);
+    }
+}
 ```
 
 #### 用户上下文获取
 ```csharp
 // ✅ 正确：使用基类提供的方法
 protected string? CurrentUserId => GetCurrentUserId();
-protected string GetRequiredUserId();
-protected Task<string?> GetCurrentCompanyIdAsync();
+protected string RequiredUserId { get; }
 
 // ✅ 正确：通过 ITenantContext 获取
-var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
+var companyId = await GetCompanyIdAsync();
 var isAdmin = await _tenantContext.IsAdminAsync();
 
 // ❌ 禁止：直读 JWT Claims
 var companyId = User.FindFirst("companyId")?.Value;
 ```
 
-### 6.2 数据访问与审计
+### 6.2 服务层规范
 
-#### 注入与使用方式
-通过 `ServiceExtensions.cs` 的 `builder.AddMongoDbContext<PlatformDbContext>(connectionName)` 注册底层 DbContext，业务层直接注入 `DbContext` 基类即可。
-
+#### 标准服务模板
 ```csharp
-// ✅ 正确：服务层注入 DbContext 并使用 Set<T>()
-public class UserService
+public class XxxService : IXxxService
 {
     private readonly DbContext _context;
-    public UserService(DbContext context) => _context = context;
+    private readonly ILogger<XxxService> _logger;
 
-    public async Task<List<User>> GetUsersAsync()
-        => await _context.Set<User>().ToListAsync();
+    public XxxService(DbContext context, ILogger<XxxService> logger)
+    {
+        _context = context;
+        _logger = logger;
+    }
+
+    public async Task<XxxEntity> CreateAsync(CreateXxxRequest request, string userId)
+    {
+        if (string.IsNullOrEmpty(userId))
+            throw new ArgumentException("用户ID不能为空", nameof(userId));
+
+        var entity = new XxxEntity
+        {
+            Name = request.Name,
+            UserId = userId
+        };
+
+        await _context.Set<XxxEntity>().AddAsync(entity);
+        await _context.SaveChangesAsync();
+        return entity;
+    }
+
+    public async Task<XxxEntity?> GetByIdAsync(string id, string userId)
+    {
+        return await _context.Set<XxxEntity>().FirstOrDefaultAsync(x => x.Id == id);
+    }
+
+    public async Task<PagedResult<XxxEntity>> GetListAsync(ProTableRequest request, string userId)
+    {
+        var query = _context.Set<XxxEntity>().Where(x => x.UserId == userId);
+        return query.ToPagedList(request);
+    }
+
+    public async Task<bool> DeleteAsync(string id, string userId)
+    {
+        var entity = await _context.Set<XxxEntity>().FirstOrDefaultAsync(x => x.Id == id);
+        if (entity == null)
+            return false;
+        if (entity.UserId != userId)
+            throw new UnauthorizedAccessException("无权删除此资源");
+
+        _context.Set<XxxEntity>().Remove(entity);
+        await _context.SaveChangesAsync();
+        return true;
+    }
 }
 ```
 
-#### 禁止手动赋值
-**禁止**在控制器或服务中手动设置审计字段：
+#### 数据访问规范
+- 服务层注入 `DbContext` 并使用 `_context.Set<T>()` 进行数据操作
+- 禁止在控制器层操作数据库
+- 审计字段（CreatedAt/UpdatedAt/CreatedBy/UpdatedBy）由 `PlatformDbContext` 自动维护
+
 ```csharp
-// ❌ 禁止：手动设置
-entity.CreatedBy = _tenantContext.GetCurrentUserId();
-entity.CreatedAt = DateTime.UtcNow;
-
-// ✅ 正确：PlatformDbContext 自动维护
-await _context.Set<Entity>().AddAsync(entity);
+// ✅ 正确
+await _context.Set<User>().AddAsync(user);
 await _context.SaveChangesAsync();
+
+// ❌ 禁止：手动设置审计字段
+user.CreatedBy = userId;
+user.CreatedAt = DateTime.UtcNow;
 ```
 
-### 6.3 中间件与响应
+### 6.3 权限注解标准
 
-#### 中间件顺序（固定）
-```
-UseExceptionHandler → UseCors → UseAuthentication → UseAuthorization → UseMiddleware<ActivityLogMiddleware> → UseMiddleware<ResponseFormattingMiddleware> → MapControllers
-```
+- **[强制]** 所有敏感操作必须添加 `[RequireMenu("menu-name")]` 注解
+- 菜单名称统一用连字符 `-` 分隔
+- 支持多个菜单名称，满足其一即可访问
 
-#### 统一响应格式
-```json
-{
-  "success": true,
-  "data": { ... },
-  "timestamp": 1680000000
-}
+```csharp
+// ✅ 单个菜单
+[HttpPost]
+[RequireMenu("task-management")]
+
+// ✅ 多个菜单（满足其一即可）
+[HttpGet("list")]
+[RequireMenu("workflow-list", "workflow-monitor")]
 ```
 
 ### 6.4 分页规范
 
-#### 统一参数命名
+#### 请求参数类型
+使用 `ProTableRequest` 接收前端分页请求：
 
-| 参数 | 说明 | 禁止使用 |
-|------|------|----------|
-| `page` | 当前页码（从 1 开始） | `current`、`pageIndex` |
-| `pageSize` | 每页数量 | `limit`、`size` |
-
-#### 后端实现
 ```csharp
-var pagedResult = _context.Set<User>()
-    .Where(u => u.IsActive)
-    .ToPagedList(request);  // 自动搜索 + 排序 + 分页
-```
-
-> **[强制]** 分页必须使用 `ToPagedList()`，禁止手动 `.PageResult()` 或手动 `Skip/Take`。
-
-### 6.5 实时通信 SSE
-
-#### SSE 连接建立
-```csharp
-[HttpGet("sse")]
-public async Task SseConnect()
+public sealed class ProTableRequest
 {
-    var userId = await _tenantContext.GetCurrentUserIdAsync();
-    var connectionId = Guid.NewGuid().ToString();
-    await _connectionManager.AddConnectionAsync(userId, connectionId);
-    Response.ContentType = "text/event-stream";
-    return new EmptyResult();
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 20;
+    public string? Search { get; set; }
+    public string? Sort { get; set; }      // JSON: {"fieldName":"ascend"}
+    public string? Filter { get; set; }     // JSON 对象筛选
 }
 ```
 
-#### 事件格式
+#### 后端实现
+```csharp
+// ✅ 正确：使用 ToPagedList
+var result = _context.Set<User>()
+    .Where(u => u.IsActive)
+    .ToPagedList(request);
+
+// ❌ 禁止：手动分页
+var paged = query.Skip((page - 1) * pageSize).Take(pageSize);
 ```
-event: Connected\ndata: {"connectionId":"xxx"}\n\n
-event: Message\ndata: {"content":"hello"}\n\n
+
+> **[强制]** 必须使用 `ToPagedList()` 扩展方法，禁止手动 `Skip/Take`。
+
+### 6.5 异常处理规范
+
+**[强制]** 控制器和服务层出现错误时，**直接抛出异常**：
+
+```csharp
+// ✅ 正确：直接抛出异常
+if (entity == null)
+    throw new KeyNotFoundException("资源不存在");
+
+if (!hasPermission)
+    throw new UnauthorizedAccessException("无权访问此资源");
+
+if (string.IsNullOrEmpty(name))
+    throw new ArgumentException("名称不能为空", nameof(name));
 ```
+
+**原因**：
+- 全局异常处理中间件统一捕获并格式化异常
+- 避免大量重复的 try-catch 代码
+- 保持控制器层职责单一
 
 ### 6.6 批量查询规范（N+1 防护）
 
-**[强制]** 严禁在循环内调用单条查询，必须使用批量查询方法：
+**[强制]** 严禁在循环内调用单条查询：
 
 ```csharp
 // ✅ 正确：批量查询
@@ -331,7 +427,7 @@ var allUserIds = tasks.SelectMany(t => new[] { t.CreatedBy, t.AssignedTo }).Dist
 var userMap = await _userService.GetUsersByIdsAsync(allUserIds);
 return tasks.Select(t => ConvertWithCache(t, userMap)).ToList();
 
-// ❌ 错误：N+1 查询
+// ❌ 禁止：N+1 查询
 foreach (var task in tasks)
 {
     var user = await _userService.GetUserByIdAsync(task.CreatedBy);  // N 次查询
@@ -340,57 +436,31 @@ foreach (var task in tasks)
 
 ### 6.7 类型命名规范
 
-#### 禁止使用 "Dependency" 单词
-```csharp
-// ❌ 错误：名称包含 Dependency
-public interface ITaskDependencyService { }
+| 规范 | 示例 |
+|------|------|
+| 禁止使用 "Dependency" | ✅ `IRelationService` ❌ `IDependencyService` |
+| 禁止 using 别名 | ✅ `Set<WorkTask>()` ❌ `using X = WorkTask;` |
+| 请求/响应类后缀 | `CreateXxxRequest`、`XxxResponse`、`XxxDto` |
+| 实体类后缀 | `XxxEntity`、`PasswordBookEntry` |
 
-// ✅ 正确：使用其他同义词
-public interface ITaskRelationService { }
-```
+### 6.8 统一响应格式
 
-#### 禁止 using 别名
-```csharp
-// ❌ 错误：类型别名
-using TaskModel = Platform.ApiService.Models.WorkTask;
-
-// ✅ 正确：直接使用完整类型名
-var tasks = await _context.Set<WorkTask>().ToListAsync();
-```
-
-### 6.8 异常处理规范
-
-**[强制]** 控制器和服务层出现错误时，**直接抛出异常**，禁止吞掉异常或手动返回错误响应：
-
-```csharp
-// ✅ 正确：直接抛出异常
-public async Task<User?> GetUserByIdAsync(string id)
+```json
 {
-    var user = await _context.Set<User>().FindAsync(id);
-    if (user == null)
-        throw new KeyNotFoundException($"用户 {id} 不存在");
-    return user;
-}
-
-// ❌ 禁止：手动返回错误响应或吞掉异常
-public async Task<IActionResult> GetUserById(string id)
-{
-    try
-    {
-        var user = await _userService.GetUserByIdAsync(id);
-        return Ok(user);
-    }
-    catch (Exception ex)
-    {
-        return BadRequest(new { message = ex.Message });  // ❌ 禁止
-    }
+  "success": true,
+  "data": { ... },
+  "message": null,
+  "timestamp": "2024-01-01T00:00:00.000Z",
+  "traceId": "xxx"
 }
 ```
 
-**原因**：
-- 全局异常处理中间件 `UseExceptionHandler` 会统一捕获并格式化异常
-- 避免大量重复的 try-catch 代码
-- 保持控制器层职责单一
+控制器返回：
+```csharp
+return Success(entity);           // 返回数据
+return Success(true);             // 返回成功
+return Success(result, "操作成功"); // 返回数据 + 消息
+```
 
 ## 7. 前端开发规范（Admin）
 

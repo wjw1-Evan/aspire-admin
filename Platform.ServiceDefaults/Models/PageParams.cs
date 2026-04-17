@@ -29,4 +29,14 @@ public sealed class PageParams
     /// 搜索关键词（全文搜索）
     /// </summary>
     public string? Search { get; set; }
+
+    /// <summary>
+    /// 排序配置（JSON序列化）
+    /// </summary>
+    public string? Sort { get; set; }
+
+    /// <summary>
+    /// 过滤条件（JSON序列化）
+    /// </summary>
+    public string? Filter { get; set; }
 }

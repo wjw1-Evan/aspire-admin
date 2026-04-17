@@ -29,8 +29,8 @@ interface Stats {
 }
 
 const api = {
-  list: (params: any, sort?: Record<string, any>, filter?: Record<string, any>) =>
-    request<ApiResponse<PagedResult<Entry>>>('/apiservice/api/password-book/list', { params: { ...params, sort, filter } }),
+  list: (params: any, sort?: any, filter?: any) =>
+    request<ApiResponse<PagedResult<Entry>>>('/apiservice/api/password-book/list', { params: { ...params, sort: sort ? JSON.stringify(sort) : undefined, filter: filter ? JSON.stringify(filter) : undefined } }),
   get: (id: string) => request<ApiResponse<Entry>>(`/apiservice/api/password-book/${id}`),
   delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/password-book/${id}`, { method: 'DELETE' }),
   create: (data: Partial<Entry>) => request<ApiResponse<Entry>>('/apiservice/api/password-book', { method: 'POST', data }),

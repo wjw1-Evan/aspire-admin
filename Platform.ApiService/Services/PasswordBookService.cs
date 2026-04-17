@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Extensions;
 using System.Linq.Dynamic.Core;
@@ -153,7 +154,7 @@ public class PasswordBookService : IPasswordBookService
     /// 可见范围：自己的私有条目 + 企业内所有公有条目
     /// </summary>
     public async Task<System.Linq.Dynamic.Core.PagedResult<PasswordBookEntry>> GetEntriesAsync(
-        Platform.ServiceDefaults.Models.PageParams pageParams,
+        ProTableRequest request,
         string userId)
     {
         if (string.IsNullOrEmpty(userId))
@@ -163,7 +164,7 @@ public class PasswordBookService : IPasswordBookService
             .Where(e => e.UserId == userId || e.IsPublic)
           ;
 
-        return query.ToPagedList(pageParams);
+        return query.ToPagedList(request);
 
     }
 

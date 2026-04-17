@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using Microsoft.Extensions.Logging;
 
@@ -32,7 +33,7 @@ public class PasswordBookMcpToolHandler : McpToolHandlerBase
             {
                 var (page, pageSize) = ParsePaginationArgs(args);
                 var keyword = args.GetValueOrDefault("keyword")?.ToString();
-                var result = await _passwordBookService.GetEntriesAsync(new Platform.ServiceDefaults.Models.PageParams { Page = page, PageSize = pageSize, Search = keyword }, uid);
+                var result = await _passwordBookService.GetEntriesAsync(new ProTableRequest { Page = page, PageSize = pageSize, Search = keyword }, uid);
                 var items = await result.Queryable.ToListAsync();
                 return new { items, rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount };
             });

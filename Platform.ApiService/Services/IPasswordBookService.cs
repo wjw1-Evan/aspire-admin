@@ -1,4 +1,5 @@
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
 using System.Linq.Dynamic.Core;
 
 namespace Platform.ApiService.Services;
@@ -33,10 +34,10 @@ public interface IPasswordBookService
     /// <summary>
     /// 分页查询条目列表（不返回密码）
     /// </summary>
-    /// <param name="pageParams">分页参数（包含搜索关键词）</param>
+    /// <param name="request">ProTable 请求参数</param>
     /// <param name="userId">当前用户ID</param>
     Task<System.Linq.Dynamic.Core.PagedResult<PasswordBookEntry>> GetEntriesAsync(
-        Platform.ServiceDefaults.Models.PageParams pageParams,
+        ProTableRequest request,
         string userId);
 
     /// <summary>

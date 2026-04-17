@@ -135,7 +135,7 @@ const DocumentManagement: React.FC = () => {
             try {
               const resp = await getWorkflowList({ page: 1 });
               if (resp.success && resp.data) {
-                return (resp.data.queryable || []).map((wf) => ({ label: wf.name, value: wf.id! }));
+                return (resp.data.queryable || []).map((wf: any) => ({ label: wf.name, value: wf.id! }));
               }
             } catch (e) {
               console.error('加载流程列表失败:', e);

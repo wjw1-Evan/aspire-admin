@@ -44,7 +44,7 @@ const CreateAndStartByWorkflow: React.FC = () => {
             try {
                 const resp = await getWorkflowList({ page: 1 });
                 if (resp.success && resp.data) {
-                    const options = (resp.data.queryable || []).map((wf) => ({ label: wf.name, value: wf.id! }));
+                    const options = (resp.data.queryable || []).map((wf: any) => ({ label: wf.name, value: wf.id! }));
                     setWorkflows(options);
                     const params = new URLSearchParams(location.search || '');
                     const preDefId = params.get('definitionId') || undefined;

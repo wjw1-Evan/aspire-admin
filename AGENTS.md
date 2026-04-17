@@ -468,9 +468,9 @@ export interface PagedResult<T> {
 }
 ```
 
-### 7.5 页面风格
+### 7.5 列表页面与 ProTable 规范
 
-#### 列表页面结构
+#### 页面结构
 ```tsx
 <PageContainer>
   {/* 统计卡片 */}
@@ -480,42 +480,8 @@ export interface PagedResult<T> {
 </PageContainer>
 ```
 
-#### ProTable 配置
-```tsx
-<ProTable
-  request={async (params) => {
-    const res = await api.list({ page: params.current, pageSize: params.pageSize });
-    return { data: res.data?.queryable || [], total: res.data?.rowCount || 0 };
-  }}
-  columns={columns}
-  scroll={{ x: 'max-content' }}
-/>
-```
-
-### 7.6 分页与前端行为
-
-| 参数 | 后端默认值 | 前端行为 |
-|------|-----------|----------|
-| `page` | `1` | **必须显式传值** |
-| `pageSize` | `10` | **允许前端传值**，ProTable 支持自定义每页数量 |
-
+#### PageParams 类型定义
 ```typescript
-// ✅ 正确：使用空对象（使用后端默认值）
-await getUserList({})
-
-// ✅ 正确：只需指定 page
-await getUserList({ page: 2 })
-
-// ✅ 正确：ProTable 分页可自定义 pageSize
-await getUserList({ page: 1, pageSize: params.pageSize })
-```
-
-### 7.6.1 ProTable pageSize 传递规范
-
-**[强制]** 所有使用 ProTable 的列表页面，必须正确提取并传递 `pageSize` 参数：
-
-```typescript
-// PageParams 类型定义
 export interface PageParams {
   page?: number;
   pageSize?: number;
@@ -523,37 +489,41 @@ export interface PageParams {
   sortOrder?: string;
   search?: string;
 }
-
-// ✅ 正确：从 params 解构并传递给 PageParams（包含完整参数）
-request={async (params: any) => {
-  const { current, pageSize } = params;
-  const res = await api.list({ page: current, pageSize, search: state.search } as PageParams);
-  return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
-}}
-
-// ✅ 正确：带排序参数
-request={async (params: any) => {
-  const { current, pageSize, sortBy, sortOrder } = params;
-  const res = await api.list({ page: current, pageSize, sortBy, sortOrder, search: state.search } as PageParams);
-  return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
-}}
-
-// ❌ 错误：解构了 pageSize 但未传递
-const { current, pageSize } = params;
-const res = await api.list({ page: current } as PageParams);  // pageSize 丢失
-
-// ❌ 错误：直接使用 params 跳过 pageSize
-const res = await api.list({ page: params.current } as PageParams);  // pageSize 可能丢失
 ```
 
-**常见错误模式**：
+#### ProTable 配置规范
+
+**[强制]** 所有使用 ProTable 的列表页面必须遵循以下规范：
+
+```tsx
+// ✅ 正确：完整参数传递（包含排序）
+<ProTable
+  request={async (params: any) => {
+    const { current, pageSize, sortBy, sortOrder } = params;
+    const res = await api.list({ page: current, pageSize, sortBy, sortOrder, search: state.search } as PageParams);
+    return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+  }}
+  columns={columns}
+  scroll={{ x: 'max-content' }}
+/>
+```
+
+#### 分页参数说明
+
+| 参数 | 后端默认值 | 前端行为 |
+|------|-----------|----------|
+| `page` | `1` | **必须显式传值** |
+| `pageSize` | `10` | **允许前端传值**，ProTable 支持自定义每页数量 |
+
+#### 常见错误模式
+
 | 错误写法 | 正确写法 |
 |---------|---------|
-| `{ page: current }` | `{ page: current, pageSize }` |
+| `api.list({ page: current })` | `api.list({ page: current, pageSize })` |
 | `api.list({ page: current, search })` | `api.list({ page: current, pageSize, search })` |
 | 解构后忘记传递 | 解构后必须传递 |
 
-> **检查工具**：使用 grep 搜索 `{ current, pageSize }` 确保所有 ProTable 都正确传递。
+> **检查工具**：使用 `grep "{ current, pageSize" src/pages/**/*.tsx` 确保所有 ProTable 都正确传递。
 
 ### 7.7 前端开发标准（密码本模块）
 

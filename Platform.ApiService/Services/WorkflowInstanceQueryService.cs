@@ -30,6 +30,12 @@ public class WorkflowInstanceQueryService : IWorkflowInstanceQueryService
             queryable = queryable.Where(i => i.Status == status.Value);
         }
 
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            var search = request.Search.ToLower();
+            queryable = queryable.Where(i => i.Id.ToLower().Contains(search) || i.StartedBy.ToLower().Contains(search));
+        }
+
         return queryable.OrderByDescending(i => i.StartedAt).ToPagedList(request);
     }
 

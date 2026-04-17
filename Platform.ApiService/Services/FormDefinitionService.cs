@@ -24,6 +24,12 @@ public class FormDefinitionService : IFormDefinitionService
             query = query.Where(f => f.IsActive == isActive.Value);
         }
 
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            var search = request.Search.ToLower();
+            query = query.Where(f => f.Name.ToLower().Contains(search) || (f.Description != null && f.Description.ToLower().Contains(search)));
+        }
+
         return query.ToPagedList(request);
     }
 

@@ -63,7 +63,7 @@ const FormDefinitionManagement: React.FC = () => {
                 request={async (params) => {
                     const { current, pageSize } = params;
                     const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-                    const res = await api.list({ page: current, pageSize, ...sortParams });
+                    const res = await api.list({ page: current, pageSize, ...sortParams, search: state.search });
                     api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
                     return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
                 }}

@@ -14,7 +14,6 @@ namespace Platform.ApiService.Services;
 public class ImageCaptchaService : IImageCaptchaService
 {
     private readonly DbContext _context;
-    private readonly IConfiguration _configuration;
 
     private const int EXPIRATION_MINUTES = 5;
     private const int IMAGE_WIDTH = 130;
@@ -24,20 +23,21 @@ public class ImageCaptchaService : IImageCaptchaService
     private const int NOISE_LINES = 5;
     private const int NOISE_DOTS = 50;
 
-    private static readonly string EncryptionKey;
+    private static string? _encryptionKey;
+    private static string[] CHARACTERS = null!;
 
-    private static readonly string[] CHARACTERS = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+    private readonly string _encryptionKeyInstance;
 
     static ImageCaptchaService()
     {
-        var config = new ConfigurationBuilder().AddJsonFile("appsettings.json", optional: true).Build();
-        EncryptionKey = config["Captcha:EncryptionKey"] ?? throw new InvalidOperationException("Captcha:EncryptionKey must be configured in appsettings.json");
+        CHARACTERS = new[] { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
     }
 
     public ImageCaptchaService(DbContext context, IConfiguration configuration)
     {
         _context = context;
-        _configuration = configuration;
+        _encryptionKeyInstance = configuration["Captcha:EncryptionKey"] ?? throw new InvalidOperationException("Captcha:EncryptionKey must be configured in appsettings.json");
+        _encryptionKey = _encryptionKeyInstance;
     }
 
     public async Task<CaptchaImageResult> GenerateCaptchaAsync(string type = "login", string? clientIp = null)
@@ -45,7 +45,7 @@ public class ImageCaptchaService : IImageCaptchaService
         var answer = GenerateRandomAnswer();
         var captchaId = Guid.NewGuid().ToString("N")[..16];
         var imageData = GenerateCaptchaImage(answer);
-        var encryptedAnswer = EncryptAnswer(answer, EncryptionKey);
+        var encryptedAnswer = EncryptAnswer(answer, _encryptionKey);
         var expiresAt = DateTime.UtcNow.AddMinutes(EXPIRATION_MINUTES);
 
         var existingCaptchas = await _context.Set<CaptchaImage>().IgnoreQueryFilters().Where(x => x.IsDeleted != true).Where(
@@ -108,7 +108,7 @@ public class ImageCaptchaService : IImageCaptchaService
             return false;
         }
 
-        var decryptedAnswer = DecryptAnswer(result.Answer, EncryptionKey);
+        var decryptedAnswer = DecryptAnswer(result.Answer, _encryptionKey);
         if (!string.Equals(decryptedAnswer, answer, StringComparison.OrdinalIgnoreCase))
         {
             return false;

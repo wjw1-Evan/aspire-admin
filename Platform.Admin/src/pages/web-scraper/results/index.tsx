@@ -117,7 +117,6 @@ const WebScraperResults: React.FC = () => {
     {
       title: '匹配',
       dataIndex: 'isMatched',
-      key: 'matched',
       sorter: true,
       render: (_: any, record: WebScrapingResult) => (
         record.isFiltered ? (

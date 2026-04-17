@@ -48,7 +48,6 @@ const PasswordBook: React.FC = () => {
     detailVisible: false,
     viewingId: '',
     detailLoading: false,
-    sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
     search: '' as string,
   });
   const [formState, setFormState] = useState({ tags: [] as string[] });
@@ -140,18 +139,21 @@ const PasswordBook: React.FC = () => {
             </Space>
           </Space>
         }
-        request={async (params: any) => {
-          const { current, pageSize } = params;
-          const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-          const res = await api.list({ page: current, pageSize, sortBy: sortParams?.sortBy, sortOrder: sortParams?.sortOrder, search: state.search });
+
+        request={async (params: any, sort) => {
+          const sortField = Object.keys(sort)[0];
+          const sortOrder = sortField ? (sort[sortField] === 'ascend' ? 'asc' : 'desc') : undefined;
+          const res = await api.list({
+            page: params.current,
+            pageSize: params.pageSize,
+            sortBy: sortField,
+            sortOrder,
+            search: state.search
+          });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
         }}
         columns={columns}
         rowKey="id"
-        onChange={(_, __, s) => {
-          const sorter = Array.isArray(s) ? s[0] : s;
-          set({ sorter: sorter?.order ? { sortBy: sorter.field as string, sortOrder: sorter.order === 'ascend' ? 'asc' : 'desc' } : undefined });
-        }}
         search={false}
         scroll={{ x: 'max-content' }}
         toolBarRender={() => [

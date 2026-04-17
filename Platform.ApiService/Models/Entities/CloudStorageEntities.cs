@@ -30,6 +30,11 @@ public class FileItem : MultiTenantEntity
     [BsonRepresentation(BsonType.Int32)]
     public FileItemType Type { get; set; } = FileItemType.File;
 
+    /// <summary>是否为文件夹（用于前端兼容）</summary>
+    [NotMapped]
+    [BsonIgnore]
+    public bool IsFolder => Type == FileItemType.Folder;
+
     /// <summary>文件大小（字节）</summary>
     public long Size { get; set; } = 0;
 

@@ -544,15 +544,9 @@ export interface PagedResult<T> {
   rowCount: number;
   pageCount: number;
 }
-
-export interface PageParams {
-  page?: number;
-  pageSize?: number;
-  sortBy?: string;
-  sortOrder?: string;
-  search?: string;
-}
 ```
+
+> **注意**：分页参数直接使用 `any` 类型，ProTable 会自动传递 `params`、`sort`、`filter` 参数。
 
 ### 7.5 列表页面标准结构
 
@@ -797,7 +791,7 @@ useEffect(() => {
 
 | 模块 | 位置 |
 |------|------|
-| 后端分页类型 | `Platform.ServiceDefaults/Models/PagedResult.cs` |
+| 后端分页类型 | `Platform.ServiceDefaults/Models/ProTableRequest.cs` |
 | 后端分页扩展 | `Platform.ServiceDefaults/Extensions/QueryableExtensions.cs` |
 | DbContext | `Platform.ServiceDefaults/Services/PlatformDbContext.cs` |
 | 前端统一类型 | `Platform.Admin/src/types/api-response.ts` |

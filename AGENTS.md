@@ -551,8 +551,8 @@ const PasswordBook: React.FC = () => {
             </Space>
           </Space>
         }
-        request={async (params: any) => {
-          const res = await api.list({ ...params, search: state.search });
+        request={async (params: any, sort: any, filter: any) => {
+          const res = await api.list({ ...params, search: state.search, sort, filter });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
         }}
         columns={columns}

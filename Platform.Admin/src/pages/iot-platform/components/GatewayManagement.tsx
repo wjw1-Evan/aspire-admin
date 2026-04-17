@@ -34,7 +34,6 @@ const GatewayManagement = React.forwardRef<GatewayManagementRef, any>((props, re
     detailVisible: false,
     viewingGateway: null as IoTGateway | null,
     gatewayStats: null as GatewayStatistics | null,
-    sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
     search: '',
   });
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
@@ -101,13 +100,10 @@ const GatewayManagement = React.forwardRef<GatewayManagementRef, any>((props, re
             <Tag color="default">离线 {state.statistics?.offline || 0}</Tag>
           </Space>
         </Space>
-      } request={async (params: any) => {
-        const { current, pageSize } = params;
-        const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-        const res = await iotService.getGateways({ page: current, pageSize, search: state.search, ...sortParams });
+      } request={async (params: any, sort: any, filter: any) => {
+        const res = await iotService.getGateways({ ...params, search: state.search, sort, filter });
         return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
       }} columns={columns} rowKey="id" search={false}
-        onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
         scroll={{ x: 'max-content' }}
         toolBarRender={() => [
           <Input.Search

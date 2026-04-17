@@ -40,7 +40,6 @@ const DataPointManagement = React.forwardRef<DataPointManagementRef, any>((props
     formVisible: false,
     detailVisible: false,
     viewingDataPoint: null as IoTDataPoint | null,
-    sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
     search: '',
   });
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
@@ -120,13 +119,10 @@ const DataPointManagement = React.forwardRef<DataPointManagementRef, any>((props
             <Tag color="orange">已配置告警 {state.statistics?.withAlarm || 0}</Tag>
           </Space>
         </Space>
-      } request={async (params: any) => {
-        const { current, pageSize } = params;
-        const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-        const res = await iotService.getDataPoints({ page: current, pageSize, search: state.search, ...sortParams });
+      } request={async (params: any, sort: any, filter: any) => {
+        const res = await iotService.getDataPoints({ ...params, search: state.search, sort, filter });
         return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
       }} columns={columns} rowKey="id" search={false}
-        onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
         scroll={{ x: 'max-content' }}
         toolBarRender={() => [
           <Input.Search

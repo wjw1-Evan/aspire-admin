@@ -471,12 +471,41 @@ export interface PagedResult<T> {
 ### 7.5 列表页面与 ProTable 规范
 
 #### 页面结构
+参考密码本模块 `src/pages/password-book/index.tsx`：
+
 ```tsx
 <PageContainer>
-  {/* 统计卡片 */}
-  <Card>...</Card>
-  {/* 数据表格 */}
-  <ProTable />
+  <ProTable
+    actionRef={actionRef}
+    headerTitle={
+      <Space size={24}>
+        <Space><Icon />模块名称</Space>
+        <Space size={12}>
+          <Tag color="blue">统计1 {count1 || 0}</Tag>
+          <Tag color="green">统计2 {count2 || 0}</Tag>
+        </Space>
+      </Space>
+    }
+    request={async (params) => {
+      const { current, pageSize, sortBy, sortOrder } = params;
+      const res = await api.list({ page: current, pageSize, sortBy, sortOrder, search: state.search } as PageParams);
+      return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+    }}
+    columns={columns}
+    rowKey="id"
+    search={false}
+    scroll={{ x: 'max-content' }}
+    toolBarRender={() => [
+      <Input.Search key="search" placeholder="搜索..." allowClear value={state.search}
+        onChange={(e) => set({ search: e.target.value })}
+        onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+        style={{ width: 260, marginRight: 8 }}
+      />,
+      <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ formVisible: true })}>新建</Button>,
+    ]}
+  />
+  {/* 表单弹窗 */}
+  <ModalForm ... />
 </PageContainer>
 ```
 
@@ -489,23 +518,6 @@ export interface PageParams {
   sortOrder?: string;
   search?: string;
 }
-```
-
-#### ProTable 配置规范
-
-**[强制]** 所有使用 ProTable 的列表页面必须遵循以下规范：
-
-```tsx
-// ✅ 正确：完整参数传递（包含排序）
-<ProTable
-  request={async (params: any) => {
-    const { current, pageSize, sortBy, sortOrder } = params;
-    const res = await api.list({ page: current, pageSize, sortBy, sortOrder, search: state.search } as PageParams);
-    return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
-  }}
-  columns={columns}
-  scroll={{ x: 'max-content' }}
-/>
 ```
 
 #### 分页参数说明

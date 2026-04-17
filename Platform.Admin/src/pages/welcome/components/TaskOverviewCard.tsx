@@ -141,7 +141,7 @@ const TaskOverviewCard: React.FC<TaskOverviewCardProps> = ({ taskStatistics, tod
                                         )}
                                     </Space>
                                     <Text type="secondary" style={{ fontSize: 12 }}>
-                                        {task.statusName} · {task.assignedToName || currentUser?.name || currentUser?.userId}
+                                        {task.statusName} · {task.assignedToName || currentUser?.displayName || currentUser?.username}
                                     </Text>
                                 </Space>
                             </li>

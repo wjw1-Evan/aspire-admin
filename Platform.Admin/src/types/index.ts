@@ -20,26 +20,22 @@ export interface MenuTreeNode {
 
 export interface CurrentUser {
   id?: string;
-  userId?: string;
   username?: string;
-  name?: string;
   displayName?: string;
-  email?: string;
-  phone?: string;
-  phoneNumber?: string;
   avatar?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  email?: string;
+  tags?: Array<{ key?: string; label?: string }>;
   roles?: string[];
   permissions?: string[];
   menus?: MenuTreeNode[];
+  phone?: string;
   isLogin?: boolean;
   currentCompanyId?: string;
-  currentCompanyName?: string;
+  createdAt?: string;
+  updatedAt?: string;
   currentCompanyDisplayName?: string;
+  currentCompanyName?: string;
   currentCompanyLogo?: string;
-  access?: string;
-  tags?: Array<{ key?: string; label?: string }>;
 }
 
 export interface LoginResult {
@@ -49,7 +45,6 @@ export interface LoginResult {
   token?: string;
   refreshToken?: string;
   expiresAt?: string;
-  code?: string;
   message?: string;
 }
 
@@ -65,14 +60,13 @@ export interface Company {
   code: string;
   description?: string;
   logo?: string;
-  status?: string;
   isActive?: boolean;
-  isExpired?: boolean;
   displayName?: string;
   industry?: string;
   contactName?: string;
   contactEmail?: string;
   contactPhone?: string;
+  maxUsers?: number;
   expiresAt?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -106,12 +100,11 @@ export interface UpdateCompanyRequest {
 export interface CompanyStatistics {
   totalUsers: number;
   activeUsers: number;
-  newUsersThisMonth: number;
-  totalProjects: number;
-  maxUsers?: number;
-  totalRoles?: number;
-  totalMenus?: number;
-  isExpired?: boolean;
+  totalRoles: number;
+  totalMenus: number;
+  maxUsers: number;
+  remainingUsers: number;
+  isExpired: boolean;
   expiresAt?: string;
 }
 
@@ -151,11 +144,7 @@ export interface SwitchCompanyResult {
 }
 
 export interface CompanyMemberItem {
-  userId: string;
-  username: string;
-  name?: string;
-  email?: string;
-  avatar?: string;
+  userId?: string;
   role: string;
   isAdmin: boolean;
   joinedAt: string;
@@ -172,18 +161,18 @@ export interface ReviewJoinRequestRequest {
 }
 
 export interface JoinRequestDetail {
-  id: string;
-  userId: string;
-  username: string;
-  name?: string;
-  email?: string;
-  avatar?: string;
-  companyId: string;
-  companyName: string;
+  id?: string;
+  userId?: string;
+  username?: string;
+  userEmail?: string;
+  companyId?: string;
+  companyName?: string;
   status: string;
-  message?: string;
+  reason?: string;
   reviewedBy?: string;
+  reviewedByName?: string;
   reviewedAt?: string;
+  rejectReason?: string;
   createdAt: string;
 }
 

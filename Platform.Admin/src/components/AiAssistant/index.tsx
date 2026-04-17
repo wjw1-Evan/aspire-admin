@@ -247,7 +247,7 @@ const AiAssistant: React.FC = () => {
     // 先添加用户消息到界面（乐观更新）
     // 注意：senderId 用于前端显示，实际发送时后端会从token中获取用户ID
     // 这里使用临时ID，等后端返回真实消息后再替换
-    const tempUserId = currentUser.userId || (currentUser as any)?.id || 'temp-user';
+    const tempUserId = currentUser?.id || 'temp-user';
     const optimisticMessage: ChatMessage = {
       id: `temp-${Date.now()}`,
       sessionId: currentSession.id,
@@ -348,7 +348,7 @@ const AiAssistant: React.FC = () => {
                   id: messageId,
                   sessionId: sessionId,
                   senderId: AI_ASSISTANT_ID,
-                  recipientId: (currentUser?.userId || (currentUser as any)?.id) || '',
+                  recipientId: currentUser?.id || '',
                   type: 'Text',
                   content: '', // 初始为空，useMemo 会从 streamingMessages 读取最新值
                   createdAt: new Date().toISOString(),
@@ -769,7 +769,7 @@ const AiAssistant: React.FC = () => {
                   const isAssistant = msg.senderId === AI_ASSISTANT_ID;
                   // 判断是否为当前用户的消息（用于前端显示）
                   // 注意：实际用户ID由后端从token中获取，这里只是用于前端显示判断
-                  const currentUserId = currentUser?.userId || (currentUser as any)?.id;
+                  const currentUserId = currentUser?.id;
                   const isUser = currentUserId && msg.senderId === currentUserId;
 
                   return (

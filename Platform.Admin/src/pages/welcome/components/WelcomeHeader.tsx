@@ -88,7 +88,7 @@ const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({ currentUser, companyInfo 
         <Col xs={24} sm={24} md={13} lg={14} xl={14} xxl={15}>
           <div className="welcome-header-text">
             <Title level={1} style={{ color: 'white', margin: 0, fontSize: '24px', fontWeight: 700, letterSpacing: '-0.5px' }}>
-              {getGreeting()}，{currentUser?.name || currentUser?.userId || intl.formatMessage({ id: 'pages.welcome.user' })}！
+              {getGreeting()}，{currentUser?.displayName || currentUser?.username || intl.formatMessage({ id: 'pages.welcome.user' })}！
             </Title>
             <Paragraph style={{ color: 'rgba(255,255,255,0.85)', margin: '12px 0 20px 0', fontSize: '16px' }}>
               {intl.formatMessage({ id: 'pages.welcome.welcomeText' }, { title: Settings.title })}

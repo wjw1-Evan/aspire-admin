@@ -24,9 +24,13 @@ public class CurrentUser
 
     public List<string> Roles { get; set; } = new();
 
+    public List<string> Permissions { get; set; } = new();
+
+    public List<MenuTreeNode>? Menus { get; set; }
+
     public string? Phone { get; set; }
 
-    public int? Age { get; set; }
+    public string? City { get; set; }
 
     public bool IsLogin { get; set; } = true;
 
@@ -35,8 +39,6 @@ public class CurrentUser
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
-    public string? City { get; set; }
 
     public string? CurrentCompanyDisplayName { get; set; }
 
@@ -72,21 +74,6 @@ public class LoginRequest
 }
 
 public class LoginResult
-{
-    public string? Status { get; set; }
-
-    public string? Type { get; set; }
-
-    public string? CurrentAuthority { get; set; }
-
-    public string? Token { get; set; }
-
-    public string? RefreshToken { get; set; }
-
-    public DateTime? ExpiresAt { get; set; }
-}
-
-public class LoginData
 {
     public string? Status { get; set; }
 

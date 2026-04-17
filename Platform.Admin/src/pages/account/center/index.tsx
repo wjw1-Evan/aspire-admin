@@ -94,7 +94,7 @@ const UserCenter: React.FC = () => {
       fetchUserProfile();
       setInitialState((s) => {
         if (!s || !s.currentUser) return s;
-        return { ...s, currentUser: { ...s.currentUser, ...updateData, name: updateData.name || s.currentUser.name, avatar: updateData.avatar || s.currentUser.avatar } };
+        return { ...s, currentUser: { ...s.currentUser, ...updateData, displayName: updateData.displayName || s.currentUser.displayName, avatar: updateData.avatar || s.currentUser.avatar } };
       });
     } else {
       throw new Error(response.message || intl.formatMessage({ id: 'pages.account.center.updateFailed', defaultMessage: '更新失败' }));

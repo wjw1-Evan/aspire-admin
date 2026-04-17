@@ -39,6 +39,24 @@ public class FormController : BaseApiController
     }
 
     /// <summary>
+    /// 获取表单统计信息
+    /// </summary>
+    [HttpGet("statistics")]
+    [RequireMenu("workflow-list")]
+    public async Task<IActionResult> GetStatistics()
+    {
+        try
+        {
+            var result = await _formService.GetStatisticsAsync();
+            return Success(result);
+        }
+        catch (Exception ex)
+        {
+            throw new ArgumentException(ex.Message);
+        }
+    }
+
+    /// <summary>
     /// 获取表单定义详情
     /// </summary>
     [HttpGet("{id}")]

@@ -84,4 +84,17 @@ public class FormDefinitionService : IFormDefinitionService
         await _context.SaveChangesAsync();
         return true;
     }
+
+    public async Task<object> GetStatisticsAsync()
+    {
+        var totalForms = await _context.Set<FormDefinition>().CountAsync();
+        var activeForms = await _context.Set<FormDefinition>().CountAsync(f => f.IsActive);
+
+        return new
+        {
+            totalForms,
+            activeForms,
+            inactiveForms = totalForms - activeForms
+        };
+    }
 }

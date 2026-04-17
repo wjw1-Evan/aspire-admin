@@ -11,4 +11,5 @@ public interface IFormDefinitionService
     Task<FormDefinition> CreateFormAsync(FormDefinition form);
     Task<FormDefinition?> UpdateFormAsync(string id, FormDefinition form);
     Task<bool> DeleteFormAsync(string id);
+    Task<object> GetStatisticsAsync();
 }

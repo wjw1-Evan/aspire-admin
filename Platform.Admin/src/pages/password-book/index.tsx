@@ -66,10 +66,10 @@ const PasswordBook: React.FC = () => {
   };
 
   const columns: ProColumns<Entry>[] = [
-    { title: '平台', dataIndex: 'platform', key: 'platform', sorter: true },
-    { title: '账号', dataIndex: 'account', key: 'account', sorter: true },
-    { title: '网址', dataIndex: 'url', key: 'url', sorter: true, render: (dom) => dom ? <a href={dom as string} target="_blank">{dom}</a> : '-' },
-    { title: '分类', dataIndex: 'category', key: 'category', sorter: true, render: (dom) => dom ? <Tag color="blue">{dom as string}</Tag> : '-' },
+    { title: '平台', dataIndex: 'platform', key: 'platform', sorter: true, filters: true },
+    { title: '账号', dataIndex: 'account', key: 'account', sorter: true, filters: true },
+    { title: '网址', dataIndex: 'url', key: 'url', sorter: true, filters: true, render: (dom) => dom ? <a href={dom as string} target="_blank">{dom}</a> : '-' },
+    { title: '分类', dataIndex: 'category', key: 'category', sorter: true, filters: true, render: (dom) => dom ? <Tag color="blue">{dom as string}</Tag> : '-' },
     { title: '标签', dataIndex: 'tags', render: (dom) => dom && typeof dom === 'object' && 'length' in dom ? <Space size={[0, 4]} wrap>{(dom as string[]).map((t) => <Tag key={t}>{t}</Tag>)}</Space> : '-' },
     { title: '最后使用', dataIndex: 'lastUsedAt', key: 'lastUsedAt', sorter: true, valueType: 'dateTime' },
     {
@@ -141,7 +141,13 @@ const PasswordBook: React.FC = () => {
         }
 
         request={async (params: any, sort: any, filter: any) => {
-          const res = await api.list({ ...params, search: state.search, sort, filter });
+          const res = await api.list({ 
+            page: params.current, 
+            pageSize: params.pageSize, 
+            search: state.search, 
+            sort: sort ? JSON.stringify(sort) : undefined,
+            filter: filter ? JSON.stringify(filter) : undefined 
+          });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
         }}
 

@@ -513,8 +513,22 @@ export default {
 };
 ```
 
-### 7.2 API 内联封装
+### 7.2 API 端点规范
 
+#### 后端路由约定
+```
+api/xxx              - CRUD 主资源
+api/xxx/list         - 分页列表
+api/xxx/{id}         - 单个资源
+api/xxx/categories   - 获取分类列表
+api/xxx/tags         - 获取标签列表
+api/xxx/statistics   - 获取统计信息
+api/xxx/export       - 导出数据
+api/xxx/generate     - 生成/计算操作
+api/xxx/check-xxx    - 检查/验证操作
+```
+
+#### 前端 API 封装
 **[强制]** API 直接内联在页面组件中，不单独创建服务文件：
 
 ```typescript
@@ -525,7 +539,6 @@ interface Entry {
   id: string;
   platform: string;
   account: string;
-  // ...其他字段
 }
 
 const api = {
@@ -534,6 +547,9 @@ const api = {
   delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/password-book/${id}`, { method: 'DELETE' }),
   create: (data: Partial<Entry>) => request<ApiResponse<Entry>>('/apiservice/api/password-book', { method: 'POST', data }),
   update: (id: string, data: Partial<Entry>) => request<ApiResponse<Entry>>(`/apiservice/api/password-book/${id}`, { method: 'PUT', data }),
+  statistics: () => request<ApiResponse<Stats>>('/apiservice/api/password-book/statistics'),
+  categories: () => request<ApiResponse<string[]>>('/apiservice/api/password-book/categories'),
+  tags: () => request<ApiResponse<string[]>>('/apiservice/api/password-book/tags'),
 };
 ```
 

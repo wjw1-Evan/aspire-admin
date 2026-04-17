@@ -37,6 +37,7 @@ public class WebScrapingTask : MultiTenantEntity
 
     public string? FilterPrompt { get; set; }
     public bool? EnableFilter { get; set; }
+    public bool? NotifyOnMatch { get; set; } = true;
 }
 
 public class WebScrapingLog : MultiTenantEntity

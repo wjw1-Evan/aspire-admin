@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -33,16 +34,63 @@ public class TaskLauncher(
                     .IgnoreQueryFilters()
                     .FirstOrDefaultAsync(t => t.Id == taskId);
 
-                tenantSetter.SetContext(task!.CompanyId, task.UserId);
+                if (task == null)
+                {
+                    Logger.LogWarning("任务未找到: {TaskId}", taskId);
+                    return;
+                }
+
+                tenantSetter.SetContext(task.CompanyId, task.UserId);
                 var result = await ws.ExecuteTaskAsync(taskId, userId);
 
                 if (!result.Success)
+                {
                     Logger.LogWarning("抓取任务执行失败: {TaskId}, {Message}", taskId, result.Message);
+                    return;
+                }
+
+                if (task.EnableFilter == true && task.NotifyOnMatch != false)
+                {
+                    await SendMatchNotificationsAsync(context, task, userId);
+                }
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "抓取任务执行异常: {TaskId}", taskId);
             }
         });
+    }
+
+    private async Task SendMatchNotificationsAsync(DbContext context, WebScrapingTask task, string userId)
+    {
+        var matchedResults = await context.Set<WebScrapingResult>()
+            .Where(r => r.TaskId == task.Id && r.IsMatched == true)
+            .OrderByDescending(r => r.RelevanceScore)
+            .ToListAsync();
+
+        foreach (var page in matchedResults)
+        {
+            var title = string.IsNullOrWhiteSpace(page.Title) ? page.Url : page.Title;
+            var score = page.RelevanceScore.HasValue ? $"{(int)page.RelevanceScore.Value}%" : "";
+            var description = $"[{task.Name}] {score} 匹配相关".Trim();
+
+            await context.Set<NoticeIconItem>().AddAsync(new NoticeIconItem
+            {
+                Title = title.Length > 50 ? title[..50] + "..." : title,
+                Description = description,
+                Type = NoticeIconItemType.Notification,
+                Extra = page.Id,
+                ActionType = "web-scraper-match",
+                Datetime = DateTime.UtcNow,
+                Read = false,
+                ClickClose = true
+            });
+        }
+
+        if (matchedResults.Any())
+        {
+            await context.SaveChangesAsync();
+            Logger.LogInformation("任务 {TaskId} 发现 {Count} 条匹配记录，已发送通知", task.Id, matchedResults.Count);
+        }
     }
 }

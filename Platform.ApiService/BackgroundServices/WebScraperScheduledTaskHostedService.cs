@@ -66,24 +66,23 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
 
         var dueTasks = allEnabledTasks
             .Where(t => t.NextRunAt != null && t.NextRunAt <= now && t.LastStatus != ScrapingStatus.Running)
+            .GroupBy(t => t.Id)
+            .Select(g => g.First())
             .ToList();
+
+        _logger.LogInformation("[定时任务] 检查到 {Count} 个到期任务", dueTasks.Count);
 
         foreach (var task in dueTasks)
         {
             if (stoppingToken.IsCancellationRequested) break;
 
-            if (task.LastStatus == ScrapingStatus.Running)
-            {
-                _logger.LogDebug("[定时任务] 任务 {TaskName} 正在执行中，跳过", task.Name);
-                continue;
-            }
+            _logger.LogInformation("[定时任务] 准备执行任务 {TaskName}, NextRunAt={NextRunAt}", task.Name, task.NextRunAt);
 
             task.LastStatus = ScrapingStatus.Running;
-            await context.SaveChangesAsync(CancellationToken.None);
-
             task.NextRunAt = CronExpressionParser.ParseNext(task.ScheduleCron!, DateTime.UtcNow);
             await context.SaveChangesAsync(CancellationToken.None);
 
+            _logger.LogInformation("[定时任务] 已启动任务 {TaskName}", task.Name);
             _taskLauncher.LaunchAsync(task.Id, task.CreatedBy ?? task.UserId);
         }
     }

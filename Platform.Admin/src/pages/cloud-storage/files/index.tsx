@@ -19,7 +19,7 @@ import { ApiResponse, PagedResult } from '@/types';
 
 // ==================== Types ====================
 interface FileItem { id: string; name: string; parentId?: string; isFolder: boolean; size?: number; mimeType?: string; createdByName?: string; createdAt: string; updatedAt: string; }
-interface StorageStatistics { totalFiles: number; totalFolders: number; totalSize: number; usedQuota: number; totalQuota: number; fileTypeStats: { type: string; count: number; size: number }[]; }
+interface StorageStatistics { fileCount: number; folderCount: number; usedSpace: number; totalQuota: number; typeUsage?: Record<string, number>; lastUpdatedAt?: string; }
 interface FileVersion { id: string; fileId: string; version: number; versionNumber?: number; size: number; createdByName: string; createdAt: string; comment?: string; }
 interface AppUser { id: string; name: string; username: string; email?: string; }
 interface PathHistoryItem { id?: string; name: string; path: string; }
@@ -232,10 +232,10 @@ const CloudStorageFilesPage: React.FC = () => {
               <Space size={24}>
                 <Space><CloudOutlined />网盘管理</Space>
                 <Space size={12}>
-                  <Tag color="blue">文件 {state.statistics?.totalFiles || 0}</Tag>
-                  <Tag color="green">文件夹 {state.statistics?.totalFolders || 0}</Tag>
+                  <Tag color="blue">文件 {state.statistics?.fileCount || 0}</Tag>
+                  <Tag color="green">文件夹 {state.statistics?.folderCount || 0}</Tag>
                   <Tag color="purple">容量 {formatFileSize(state.statistics?.totalQuota || 0)}</Tag>
-                  <Tag color="orange">已用 {formatFileSize(state.statistics?.usedQuota || 0)}</Tag>
+                  <Tag color="orange">已用 {formatFileSize(state.statistics?.usedSpace || 0)}</Tag>
                 </Space>
               </Space>
             } request={fetchData} columns={columns} rowKey="id" search={false}

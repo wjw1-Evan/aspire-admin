@@ -293,27 +293,24 @@ const CloudStorageFilesPage: React.FC = () => {
                 <Upload.Dragger
                     multiple={true}
                     directory={state.uploadType === 'folder'}
-                    fileList={state.uploadFileList}
+                    action="/apiservice/api/cloud-storage/upload"
+                    data={{ parentId: currentParentIdRef.current || '' }}
+                    accept="*/*"
                     beforeUpload={(file) => {
                         set({ uploadFileList: [...state.uploadFileList, { uid: file.uid, name: file.name, status: 'uploading' }] });
-                        return false;
+                        return true;
                     }}
-                    onChange={async (info) => {
+                    onChange={(info) => {
                         set({ uploadFileList: info.fileList });
                         if (info.file.status === 'done') {
-                            try {
-                                const formData = new FormData();
-                                formData.append('File', info.file.originFileObj as any);
-                                if (currentParentIdRef.current) formData.append('ParentId', currentParentIdRef.current);
-                                await api.upload(formData);
-                                message.success(`${info.file.name} 上传成功`);
-                            } catch { message.error(`${info.file.name} 上传失败`); }
+                            message.success(`${info.file.name} 上传成功`);
+                            if (info.fileList.every(f => f.status !== 'uploading')) {
+                                set({ uploadVisible: false, uploadFileList: [] });
+                                actionRef.current?.reload();
+                            }
                         } else if (info.file.status === 'error') {
                             message.error(`${info.file.name} 上传失败`);
                         }
-                    }}
-                    customRequest={({ file, onSuccess }) => {
-                        setTimeout(() => { onSuccess?.('ok'); }, 0);
                     }}
                 >
                     <p className="ant-upload-drag-icon"><InboxOutlined /></p>

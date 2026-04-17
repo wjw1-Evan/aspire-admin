@@ -394,6 +394,8 @@ public async Task<IActionResult> GetUserById(string id)
 
 ## 7. 前端开发规范（Admin）
 
+> **开发标准参考**：`src/pages/password-book/index.tsx` 是所有列表页面的开发标准代码。
+
 ### 7.1 路由与菜单
 
 #### 路由配置
@@ -402,7 +404,7 @@ public async Task<IActionResult> GetUserById(string id)
 export default [
   {
     path: '/task-management',
-    name: 'task-management', // 必须与后端 RequireMenu 对应
+    name: 'task-management',
     component: './task-management',
   },
 ];
@@ -416,27 +418,35 @@ export default {
 };
 ```
 
-### 7.2 服务层封装
+### 7.2 API 内联封装
 
-**[强制]** 所有 HTTP 请求必须通过 `@umijs/max` 的 `request` 封装：
+**[强制]** API 直接内联在页面组件中，不单独创建服务文件：
 
 ```typescript
 import { request } from '@umijs/max';
-import type { ApiResponse, PagedResult, PageParams } from '@/types';
+import type { ApiResponse, PagedResult } from '@/types';
 
-export async function getUsers(params: PageParams) {
-  return request<ApiResponse<PagedResult<User>>>('/api/users', { params });
+interface Entry {
+  id: string;
+  platform: string;
+  account: string;
+  // ...其他字段
 }
+
+const api = {
+  list: (params: any) => request<ApiResponse<PagedResult<Entry>>>('/apiservice/api/password-book/list', { params }),
+  get: (id: string) => request<ApiResponse<Entry>>(`/apiservice/api/password-book/${id}`),
+  delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/password-book/${id}`, { method: 'DELETE' }),
+  create: (data: Partial<Entry>) => request<ApiResponse<Entry>>('/apiservice/api/password-book', { method: 'POST', data }),
+  update: (id: string, data: Partial<Entry>) => request<ApiResponse<Entry>>(`/apiservice/api/password-book/${id}`, { method: 'PUT', data }),
+};
 ```
 
 ### 7.3 类型安全
 
-**[强制]** 禁止使用 `any` 类型：
+**[强制]** 禁止使用 `any` 类型，定义具体接口：
 
 ```typescript
-// ❌ 禁止
-const handleSubmit = (values: any) => {};
-
 // ✅ 正确
 interface TaskFormValues {
   taskName: string;
@@ -444,8 +454,6 @@ interface TaskFormValues {
 }
 const handleSubmit = (values: TaskFormValues) => {};
 ```
-
-> **历史遗留**：现有代码中的 `any` 类型按需逐步替换，新开发代码必须定义具体类型。
 
 ### 7.4 统一 API 响应类型
 
@@ -466,54 +474,7 @@ export interface PagedResult<T> {
   rowCount: number;
   pageCount: number;
 }
-```
 
-### 7.5 列表页面与 ProTable 规范
-
-#### 页面结构
-参考密码本模块 `src/pages/password-book/index.tsx`：
-
-```tsx
-<PageContainer>
-  <ProTable
-    actionRef={actionRef}
-    headerTitle={
-      <Space size={24}>
-        <Space><Icon />模块名称</Space>
-        <Space size={12}>
-          <Tag color="blue">统计1 {count1 || 0}</Tag>
-          <Tag color="green">统计2 {count2 || 0}</Tag>
-        </Space>
-      </Space>
-    }
-    request={async (params: any) => {
-      const { current, pageSize } = params;
-      const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-      const res = await api.list({ page: current, pageSize, sortBy: sortParams?.sortBy, sortOrder: sortParams?.sortOrder, search: state.search });
-      return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
-    }}
-    columns={columns}
-    rowKey="id"
-    search={false}
-    scroll={{ x: 'max-content' }}
-    toolBarRender={() => [
-      <Input.Search key="search" placeholder="搜索..." allowClear value={state.search}
-        onChange={(e) => set({ search: e.target.value })}
-        onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
-        style={{ width: 260, marginRight: 8 }}
-      />,
-      <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ formVisible: true })}>新建</Button>,
-    ]}
-  />
-  {/* 表单弹窗 */}
-  <ModalForm ... />
-</PageContainer>
-```
-
-> **注意**：ProTable 传递的参数使用 `current` 表示当前页码，需映射为 API 的 `page` 参数。
-
-#### PageParams 类型定义
-```typescript
 export interface PageParams {
   page?: number;
   pageSize?: number;
@@ -523,69 +484,225 @@ export interface PageParams {
 }
 ```
 
-#### 页面结构
-参考密码本模块 `src/pages/password-book/index.tsx`：
+### 7.5 列表页面标准结构
 
-```tsx
-<PageContainer>
-  <ProTable
-    actionRef={actionRef}
-    headerTitle={
-      <Space size={24}>
-        <Space><Icon />模块名称</Space>
-        <Space size={12}>
-          <Tag color="blue">统计1 {count1 || 0}</Tag>
-          <Tag color="green">统计2 {count2 || 0}</Tag>
+参考 `src/pages/password-book/index.tsx`：
+
+```typescript
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { request } from '@umijs/max';
+import { Tag, Space, Button, Popconfirm } from 'antd';
+import { PageContainer, ModalForm, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
+import { PlusOutlined } from '@ant-design/icons';
+
+interface Entry {
+  id: string;
+  platform: string;
+  account: string;
+  // ...
+}
+
+const PasswordBook: React.FC = () => {
+  const actionRef = useRef<ActionType | undefined>(undefined);
+  const [state, setState] = useState({
+    formVisible: false,
+    editingEntry: null as Entry | null,
+    search: '' as string,
+  });
+  const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
+
+  // 列定义
+  const columns: ProColumns<Entry>[] = [
+    { title: '平台', dataIndex: 'platform', key: 'platform', sorter: true },
+    {
+      title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 180,
+      render: (_, record) => (
+        <Space size={4}>
+          <Button type="link" size="small" onClick={() => set({ editingEntry: record, formVisible: true })}>编辑</Button>
+          <Popconfirm title="确定删除？" onConfirm={async () => { await api.delete(record.id); actionRef.current?.reload(); }}>
+            <Button type="link" size="small" danger>删除</Button>
+          </Popconfirm>
         </Space>
-      </Space>
+      ),
+    },
+  ];
+
+  // 表单提交
+  const handleFinish = async (values: Record<string, any>) => {
+    const res = state.editingEntry
+      ? await api.update(state.editingEntry.id, values)
+      : await api.create(values);
+    if (res.success) {
+      set({ formVisible: false, editingEntry: null });
+      actionRef.current?.reload();
     }
-    request={async (params: PageParams) => {
-      const { page, pageSize, sortBy, sortOrder, search } = params;
-      const res = await api.list({ page, pageSize, sortBy, sortOrder, search: search || state.search });
-      return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
-    }}
-    columns={columns}
-    rowKey="id"
-    search={false}
-    scroll={{ x: 'max-content' }}
-    toolBarRender={() => [
-      <Input.Search key="search" placeholder="搜索..." allowClear value={state.search}
-        onChange={(e) => set({ search: e.target.value })}
-        onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
-        style={{ width: 260, marginRight: 8 }}
-      />,
-      <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ formVisible: true })}>新建</Button>,
-    ]}
-  />
-  {/* 表单弹窗 */}
-  <ModalForm ... />
-</PageContainer>
+    return res.success;
+  };
+
+  return (
+    <PageContainer>
+      <ProTable
+        actionRef={actionRef}
+        headerTitle={
+          <Space size={24}>
+            <Space>模块名称</Space>
+            <Space size={12}>
+              <Tag color="blue">统计 {count || 0}</Tag>
+            </Space>
+          </Space>
+        }
+        request={async (params: any) => {
+          const res = await api.list({ ...params, search: state.search });
+          return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+        }}
+        columns={columns}
+        rowKey="id"
+        search={false}
+        scroll={{ x: 'max-content' }}
+        toolBarRender={() => [
+          <Input.Search key="search" placeholder="搜索..." allowClear value={state.search}
+            onChange={(e) => set({ search: e.target.value })}
+            onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+            style={{ width: 260, marginRight: 8 }}
+          />,
+          <Button key="create" type="primary" icon={<PlusOutlined />}
+            onClick={() => set({ editingEntry: null, formVisible: true })}>新建</Button>,
+        ]}
+      />
+      <ModalForm
+        key={state.editingEntry?.id || 'create'}
+        title={state.editingEntry ? '编辑' : '新建'}
+        open={state.formVisible}
+        onOpenChange={(open) => { if (!open) set({ formVisible: false, editingEntry: null }); }}
+        onFinish={handleFinish}
+        autoFocusFirstInput
+        width={600}
+      >
+        {/* 表单项 */}
+      </ModalForm>
+    </PageContainer>
+  );
+};
 ```
 
-#### 分页参数说明
+### 7.6 状态管理模式
 
-| 参数 | 后端默认值 | 前端行为 |
-|------|-----------|----------|
-| `page` | `1` | **必须显式传值** |
-| `pageSize` | `10` | **允许前端传值**，ProTable 支持自定义每页数量 |
+#### 状态集中管理
+```typescript
+const [state, setState] = useState({
+  formVisible: false,
+  editingEntry: null as Entry | null,
+  search: '' as string,
+});
+const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
+```
 
-#### 常见错误模式
+#### 状态更新模式
+```typescript
+// 设置单个状态
+set({ formVisible: true });
 
-| 错误写法 | 正确写法 |
-|---------|---------|
-| `api.list({ page: current })` | `api.list({ page: current, pageSize })` |
-| 解构后忘记传递 pageSize | 必须传递 `pageSize` |
+// 依赖前一状态
+set(prev => ({ ...prev, editingEntry: newValue }));
+```
 
-> **检查工具**：使用 `grep "{ current, pageSize" src/pages/**/*.tsx` 确保所有 ProTable 都正确传递。
+### 7.7 表单处理规范
 
-### 7.7 前端开发标准（密码本模块）
+#### ModalForm 配置
+- 使用 `key={editingEntry?.id || 'create'}` 强制重新挂载，区分新建和编辑
+- `onOpenChange` 中重置编辑状态
+- 编辑时设置 `initialValues`
 
-`src/pages/password-book` 是所有列表页面的**开发标准参考**：
+```typescript
+<ModalForm
+  key={state.editingEntry?.id || 'create'}
+  title={state.editingEntry ? '编辑' : '新建'}
+  open={state.formVisible}
+  onOpenChange={(open) => { if (!open) set({ formVisible: false, editingEntry: null }); }}
+  initialValues={state.editingEntry || undefined}
+  onFinish={handleFinish}
+>
+```
 
-- 使用 `ProTable` + `ModalForm` 组件
-- API 直接内联在页面中，不单独创建服务文件
-- 状态管理使用 `set()` 辅助函数
-- 编辑表单使用 `key` 强制重新挂载
+#### 表单提交
+```typescript
+const handleFinish = async (values: Record<string, any>) => {
+  const res = state.editingEntry
+    ? await api.update(state.editingEntry.id, values)
+    : await api.create(values);
+  if (res.success) {
+    set({ formVisible: false, editingEntry: null });
+    actionRef.current?.reload();
+  }
+  return res.success;
+};
+```
+
+### 7.8 分页与搜索规范
+
+| 参数 | 说明 | 备注 |
+|------|------|------|
+| `page` | 当前页码 | 必须显式传递 |
+| `pageSize` | 每页数量 | ProTable 自动传递 |
+| `search` | 搜索关键词 | 存储在 state 中 |
+
+```typescript
+const { current, pageSize, ...filters } = params;
+const res = await api.list({ page: current, pageSize, search: state.search });
+return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+```
+
+### 7.9 列渲染规范
+
+```typescript
+const columns: ProColumns<Entry>[] = [
+  { title: '名称', dataIndex: 'name', sorter: true },
+  {
+    title: '状态',
+    dataIndex: 'status',
+    render: (dom) => dom ? <Tag color="blue">{dom as string}</Tag> : '-',
+  },
+  {
+    title: '标签',
+    dataIndex: 'tags',
+    render: (dom) => dom && typeof dom === 'object' && 'length' in dom
+      ? <Space wrap>{(dom as string[]).map(t => <Tag key={t}>{t}</Tag>)}</Space>
+      : '-',
+  },
+];
+```
+
+### 7.10 详情抽屉规范
+
+```typescript
+const DetailContent: React.FC<{ id: string }> = ({ id }) => {
+  const [data, setData] = useState<Data | null>(null);
+  useEffect(() => {
+    if (id) api.get(id).then(r => { if (r.success && r.data) setData(r.data); });
+  }, [id]);
+  if (!data) return null;
+  return <ProDescriptions column={1} bordered size="small">{/* ... */}</ProDescriptions>;
+};
+
+// 使用 Drawer 包裹
+<Drawer title="详情" placement="right" open={state.detailVisible}
+  onClose={() => set({ detailVisible: false })} size="large">
+  <DetailContent id={state.viewingId} />
+</Drawer>
+```
+
+### 7.11 初始化数据加载
+
+```typescript
+useEffect(() => {
+  loadStatistics();
+}, [loadStatistics]); // 依赖项数组包含回调函数
+
+// 或直接执行
+useEffect(() => {
+  api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
+}, []);
+```
 
 ## 8. 移动端开发规范（Expo）
 

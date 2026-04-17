@@ -95,7 +95,6 @@ public class SessionService : ISessionService
             Tags = user.Tags ?? new List<UserTag>(),
             Roles = roleNames,
             Phone = user.PhoneNumber,
-            Age = user.Age,
             IsLogin = true,
             CurrentCompanyId = user.CurrentCompanyId,
             City = city,

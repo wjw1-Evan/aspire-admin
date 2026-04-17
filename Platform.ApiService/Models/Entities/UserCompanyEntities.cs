@@ -178,9 +178,9 @@ public class SwitchCompanyResult
     public string CompanyName { get; set; } = string.Empty;
 
     /// <summary>
-    /// 权限列表
+    /// 该企业的菜单列表
     /// </summary>
-    public List<string> Permissions { get; set; } = new();
+    public List<MenuTreeNode> Menus { get; set; } = new();
 
     /// <summary>
     /// 可选的新 JWT Token（如果需要刷新）

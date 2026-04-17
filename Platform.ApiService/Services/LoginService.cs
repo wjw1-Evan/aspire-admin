@@ -47,7 +47,7 @@ public class LoginService : ILoginService
         _validationService = validationService;
     }
 
-    public async Task<LoginData> LoginAsync(LoginRequest request)
+    public async Task<LoginResult> LoginAsync(LoginRequest request)
     {
         if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
         {
@@ -127,7 +127,7 @@ public class LoginService : ILoginService
         await _context.Set<RefreshToken>().AddAsync(refreshTokenEntity);
         await _context.SaveChangesAsync();
 
-        var loginData = new LoginData
+        var loginResult = new LoginResult
         {
             Status = "ok",
             Type = request.Type,
@@ -137,7 +137,7 @@ public class LoginService : ILoginService
             ExpiresAt = DateTime.UtcNow.AddMinutes(expirationMinutes)
         };
 
-        return loginData;
+        return loginResult;
     }
 
     public async Task<bool> LogoutAsync()

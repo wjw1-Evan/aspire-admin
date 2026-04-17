@@ -30,7 +30,7 @@ public class AuthService : IAuthService
         return await _sessionService.GetCurrentUserAsync();
     }
 
-    public async Task<LoginData> LoginAsync(LoginRequest request)
+    public async Task<LoginResult> LoginAsync(LoginRequest request)
     {
         return await _loginService.LoginAsync(request);
     }

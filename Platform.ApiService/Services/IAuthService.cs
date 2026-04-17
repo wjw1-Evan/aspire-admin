@@ -19,7 +19,7 @@ public interface IAuthService
     /// </summary>
     /// <param name="request">登录请求</param>
     /// <returns>登录结果，包含 Token 和用户信息</returns>
-    Task<LoginData> LoginAsync(LoginRequest request);
+    Task<LoginResult> LoginAsync(LoginRequest request);
 
     /// <summary>
     /// 用户登出

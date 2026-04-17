@@ -139,7 +139,7 @@ export interface UserCompanyItem {
 export interface SwitchCompanyResult {
   companyId: string;
   companyName: string;
-  permissions: string[];
+  menus?: MenuTreeNode[];
   token?: string;
 }
 

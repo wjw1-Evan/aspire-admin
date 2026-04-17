@@ -1,5 +1,6 @@
 using Platform.ApiService.Constants;
 using Platform.ApiService.Models;
+using System.Text.Json;
 
 namespace Platform.ApiService.Validators;
 
@@ -101,7 +102,7 @@ public static class UserRequestValidator
     /// <summary>
     /// 验证用户列表请求
     /// </summary>
-    public static List<string> ValidateUserListRequest(Platform.ServiceDefaults.Models.PageParams request)
+    public static List<string> ValidateUserListRequest(Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         var errors = new List<string>();
 
@@ -112,18 +113,32 @@ public static class UserRequestValidator
             errors.Add(paginationError!);
         }
 
-        // 验证排序字段
-        var validSortFields = new[] { "Username", "CreatedAt", "Email", "IsActive" };
-        if (!string.IsNullOrEmpty(request.SortBy) && !validSortFields.Contains(request.SortBy, StringComparer.OrdinalIgnoreCase))
+        // 验证排序参数（JSON 格式如 {"fieldName":"ascend"}）
+        if (!string.IsNullOrEmpty(request.Sort))
         {
-            errors.Add($"排序字段必须是以下之一: {string.Join(", ", validSortFields)}");
-        }
-
-        // 验证排序顺序
-        var validSortOrders = new[] { "asc", "desc", "ascending", "descending" };
-        if (!string.IsNullOrEmpty(request.SortOrder) && !validSortOrders.Contains(request.SortOrder, StringComparer.OrdinalIgnoreCase))
-        {
-            errors.Add("排序顺序必须是 asc 或 desc");
+            try
+            {
+                var sortDict = JsonSerializer.Deserialize<Dictionary<string, string>>(request.Sort);
+                if (sortDict != null && sortDict.Count > 0)
+                {
+                    var validSortFields = new[] { "Username", "CreatedAt", "Email", "IsActive" };
+                    var field = sortDict.Keys.First();
+                    if (!validSortFields.Contains(field, StringComparer.OrdinalIgnoreCase))
+                    {
+                        errors.Add($"排序字段必须是以下之一: {string.Join(", ", validSortFields)}");
+                    }
+                    var order = sortDict.Values.First();
+                    var validSortOrders = new[] { "ascend", "descend" };
+                    if (!validSortOrders.Contains(order, StringComparer.OrdinalIgnoreCase))
+                    {
+                        errors.Add("排序顺序必须是 ascend 或 descend");
+                    }
+                }
+            }
+            catch
+            {
+                errors.Add("排序参数格式错误，应为 JSON 格式如 {\"字段名\":\"ascend\"}");
+            }
         }
 
         return errors;

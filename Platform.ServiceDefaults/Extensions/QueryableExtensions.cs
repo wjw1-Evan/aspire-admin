@@ -8,54 +8,33 @@ namespace Platform.ServiceDefaults.Extensions;
 
 public static class QueryableExtensions
 {
-
-
     public static PagedResult<T> ToPagedList<T>(
         this IQueryable<T> query,
-        Models.PageParams? pageParams)
+        Models.ProTableRequest? request)
     {
-        var p = pageParams ?? new Models.PageParams();
+        var page = request?.Page ?? 1;
+        var pageSize = request?.PageSize ?? 20;
+        var search = request?.Search;
 
-        if (!string.IsNullOrWhiteSpace(p.Search))
+        if (!string.IsNullOrWhiteSpace(search))
         {
             var props = typeof(T).GetProperties()
                 .Where(x => x.CanRead
                     && x.GetIndexParameters().Length == 0
                     && x.PropertyType == typeof(string)
-                    // && !x.IsDefined(typeof(BsonIdAttribute), true)
                     && !IsObjectIdRepresentation(x))
                 .Select(x => x.Name)
                 .ToList();
 
-
-
             if (props.Count > 0)
             {
                 var expr = string.Join(" || ", props.Select(x => $"({x} != null && {x}.Contains(@0))"));
-                query = query.Where(expr, p.Search);
+                query = query.Where(expr, search);
             }
         }
 
-        var field = string.IsNullOrWhiteSpace(p.SortBy) ? "createdAt" : p.SortBy.Trim();
-        var isDesc = string.IsNullOrWhiteSpace(p.SortOrder) || p.SortOrder.Equals("desc", StringComparison.OrdinalIgnoreCase);
-        query = query.OrderBy(isDesc ? $"{field} descending" : field);
-
-        return query.PageResult(p.Page, p.PageSize);
-    }
-
-    /// <summary>
-    /// 支持 ProTable 请求参数的分页查询
-    /// </summary>
-    public static PagedResult<T> ToPagedList<T>(
-        this IQueryable<T> query,
-        Models.ProTableRequest? request)
-    {
-        var p = new Models.PageParams
-        {
-            Page = request?.Page ?? 1,
-            PageSize = request?.PageSize ?? 20,
-            Search = request?.Search
-        };
+        var sortBy = "createdAt";
+        var sortOrder = "desc";
 
         if (!string.IsNullOrWhiteSpace(request?.Sort))
         {
@@ -65,14 +44,16 @@ public static class QueryableExtensions
                 if (dict?.Count > 0)
                 {
                     var first = dict.First();
-                    p.SortBy = first.Key;
-                    p.SortOrder = first.Value == "ascend" ? "asc" : "desc";
+                    sortBy = first.Key;
+                    sortOrder = first.Value == "ascend" ? "asc" : "desc";
                 }
             }
             catch
             {
             }
         }
+
+        query = query.OrderBy(sortOrder == "desc" ? $"{sortBy} descending" : sortBy);
 
         if (!string.IsNullOrWhiteSpace(request?.Filter))
         {
@@ -107,12 +88,9 @@ public static class QueryableExtensions
             }
         }
 
-        return query.ToPagedList(p);
+        return query.PageResult(page, pageSize);
     }
 
-    /// <summary>
-    /// 判断属性是否标注了 BsonRepresentation(ObjectId)
-    /// </summary>
     private static bool IsObjectIdRepresentation(PropertyInfo prop)
     {
         var attr = prop.GetCustomAttribute<BsonRepresentationAttribute>();

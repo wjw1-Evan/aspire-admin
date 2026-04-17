@@ -162,7 +162,7 @@ public class FileShareController : BaseApiController
     /// <summary>
     /// 获取我创建的分享列表
     /// </summary>
-    /// <param name="pageParams">分页参数</param>
+    /// <param name="request">分页参数</param>
     /// <param name="type">分享类型筛选</param>
     /// <param name="permission">分享权限筛选</param>
     /// <param name="isActive">是否激活筛选</param>
@@ -200,7 +200,7 @@ public class FileShareController : BaseApiController
     /// <summary>
     /// 获取分享给我的文件列表
     /// </summary>
-    /// <param name="pageParams">分页参数</param>
+    /// <param name="request">分页参数</param>
     /// <param name="permission">分享权限筛选</param>
     /// <param name="createdAfter">创建时间范围（开始）</param>
     /// <param name="createdBefore">创建时间范围（结束）</param>

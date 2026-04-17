@@ -81,4 +81,18 @@ export const tokenUtils = {
     // 使用统一的缓冲时间
     return Date.now() >= expiresAt - TOKEN_EXPIRY_BUFFER;
   },
+
+  // 获取 token 剩余有效时间（毫秒）
+  getTokenRemainingTime: (): number => {
+    const expiresAt = tokenUtils.getTokenExpiresAt();
+    if (!expiresAt) {
+      return Infinity;
+    }
+    return Math.max(0, expiresAt - Date.now());
+  },
+
+  // 检查 token 是否快过期（剩余时间少于缓冲时间）
+  isTokenExpiringSoon: (): boolean => {
+    return tokenUtils.getTokenRemainingTime() < TOKEN_EXPIRY_BUFFER;
+  },
 };

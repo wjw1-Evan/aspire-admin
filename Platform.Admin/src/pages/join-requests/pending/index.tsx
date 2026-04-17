@@ -160,7 +160,7 @@ const PendingJoinRequests: React.FC = () => {
           const { current, pageSize, search } = params;
           const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
           let keyword = state.search || search;
-          const res = await api.list(companyId, { page: current, search: keyword, ...sortParams });
+          const res = await api.list(companyId, { page: current, pageSize, search: keyword, ...sortParams });
           if (res.success && res.data) {
             let filteredData = res.data;
             if (keyword) {

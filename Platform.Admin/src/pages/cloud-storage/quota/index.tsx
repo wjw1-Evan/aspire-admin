@@ -16,7 +16,7 @@ import { ApiResponse, PagedResult } from '@/types';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 
 
-interface StorageQuota { userId: string; totalQuota: number; usedSpace: number; fileCount: number; warningThreshold?: number; isEnabled: boolean; displayName?: string; username?: string; createdAt?: string; updatedAt?: string; }
+interface StorageQuota { userId: string; totalQuota: number; usedSpace: number; fileCount: number; warningThreshold?: number; isEnabled: boolean; displayName?: string; username?: string; createdAt?: string; updatedAt?: string; lastCalculatedAt?: string; }
 interface QuotaUsageStats { totalUsers: number; totalQuota: number; totalUsed: number; averageUsage: number; usageDistribution: { range: string; count: number; percentage: number }[]; topUsers: { userId: string; displayName?: string; username?: string; usedSpace: number; usagePercentage: number }[]; }
 interface QuotaWarning { userId: string; displayName?: string; username?: string; warningType: string; usedSpace: number; totalQuota: number; usagePercentage: number; createdAt: string; }
 
@@ -150,7 +150,7 @@ const CloudStorageQuotaPage: React.FC = () => {
         { title: intl.formatMessage({ id: 'pages.cloud-storage.quota.field.usagePercentage' }), key: 'usagePercentage', render: (_: any, r: StorageQuota) => { const pct = r.totalQuota > 0 ? parseFloat(((r.usedSpace / r.totalQuota) * 100).toFixed(2)) : 0; return <Progress percent={pct} size="small" strokeColor={getUsageColor(pct)} format={(p) => `${p}%`} />; } },
         { title: intl.formatMessage({ id: 'pages.cloud-storage.quota.field.fileCount' }), dataIndex: 'fileCount', key: 'fileCount', sorter: true },
         { title: intl.formatMessage({ id: 'pages.table.status' }), key: 'status', render: (_: any, r: StorageQuota) => getStatusTag(r) },
-        { title: intl.formatMessage({ id: 'pages.table.updatedAt', defaultMessage: '更新时间' }), dataIndex: 'updatedAt', key: 'updatedAt', sorter: true, render: (dom: any) => dom ? dayjs(dom).format('YYYY-MM-DD HH:mm:ss') : '-' },
+        { title: intl.formatMessage({ id: 'pages.table.updatedAt', defaultMessage: '更新时间' }), dataIndex: 'createdAt', key: 'createdAt', sorter: true, render: (dom: any) => dom ? dayjs(dom).format('YYYY-MM-DD HH:mm:ss') : '-' },
         { title: intl.formatMessage({ id: 'pages.table.actions' }), key: 'action', fixed: 'right' as const, render: (_: any, r: StorageQuota) => (<Space>
             <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(r)}>{intl.formatMessage({ id: 'pages.table.edit' })}</Button>
             <Button type="link" size="small" danger icon={<DeleteOutlined />} loading={state.deletingId === r.userId} onClick={() => modal.confirm({ title: intl.formatMessage({ id: 'pages.cloud-storage.quota.confirmDelete.title' }), content: intl.formatMessage({ id: 'pages.cloud-storage.quota.confirmDelete.desc' }), onOk: () => handleDelete(r), okButtonProps: { danger: true } })}>{intl.formatMessage({ id: 'pages.table.delete' })}</Button>

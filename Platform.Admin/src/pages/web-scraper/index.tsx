@@ -30,6 +30,7 @@ interface WebScrapingTask {
   mode?: 'SinglePage' | 'DepthFirst' | 'BreadthFirst';
   filterPrompt?: string;
   enableFilter?: boolean;
+  notifyOnMatch?: boolean;
   createdAt: string;
   updatedAt: string;
 }

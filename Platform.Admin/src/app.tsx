@@ -573,6 +573,12 @@ async function handle401Error(error: any): Promise<any> {
 
   const refreshResult = await TokenRefreshManager.refresh(refreshToken);
   if (refreshResult?.success && refreshResult.token) {
+    // 显式保存新的 tokens（TokenRefreshManager.doRefresh 内部也会调用，这里确保一致性）
+    tokenUtils.setTokens(
+      refreshResult.token,
+      refreshResult.refreshToken || tokenUtils.getRefreshToken()!,
+      refreshResult.expiresAt
+    );
     return TokenRefreshManager.retryRequest(error.config, refreshResult.token);
   }
   return null;

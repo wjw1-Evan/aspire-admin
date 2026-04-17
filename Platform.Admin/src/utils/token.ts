@@ -75,10 +75,30 @@ export const tokenUtils = {
   isTokenExpired: (): boolean => {
     const expiresAt = tokenUtils.getTokenExpiresAt();
     if (!expiresAt) {
-      return false; // 如果没有过期时间，假设不过期
+      // 如果没有保存过期时间，从 token payload 解析
+      const token = tokenUtils.getToken();
+      if (token) {
+        const tokenExpiry = tokenUtils.getTokenExpiryFromJwt(token);
+        if (tokenExpiry) {
+          return Date.now() >= tokenExpiry - TOKEN_EXPIRY_BUFFER;
+        }
+      }
+      return false; // 无法确定，假设不过期
     }
-
-    // 使用统一的缓冲时间
     return Date.now() >= expiresAt - TOKEN_EXPIRY_BUFFER;
+  },
+
+  // 从 JWT token payload 解析过期时间
+  getTokenExpiryFromJwt: (token: string): number | null => {
+    try {
+      const payload = token.split('.')[1];
+      const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+      if (decoded.exp) {
+        return decoded.exp * 1000; // 转换为毫秒
+      }
+      return null;
+    } catch {
+      return null;
+    }
   },
 };

@@ -227,6 +227,9 @@ public class XxxController : BaseApiController
     [RequireMenu("xxx")]
     public async Task<IActionResult> Create([FromBody] CreateXxxRequest request)
     {
+        if (string.IsNullOrEmpty(request.Name))
+            throw new ArgumentException("名称不能为空");
+
         var userId = RequiredUserId;
         var result = await _xxxService.CreateAsync(request, userId);
         return Success(result);
@@ -239,7 +242,7 @@ public class XxxController : BaseApiController
         var userId = RequiredUserId;
         var result = await _xxxService.GetByIdAsync(id, userId);
         if (result == null)
-            throw new KeyNotFoundException("资源不存在");
+            throw new ArgumentException("资源不存在");
         return Success(result);
     }
 
@@ -252,6 +255,17 @@ public class XxxController : BaseApiController
         return Success(result);
     }
 
+    [HttpPut("{id}")]
+    [RequireMenu("xxx")]
+    public async Task<IActionResult> Update(string id, [FromBody] UpdateXxxRequest request)
+    {
+        var userId = RequiredUserId;
+        var result = await _xxxService.UpdateAsync(id, request, userId);
+        if (result == null)
+            throw new ArgumentException("资源不存在");
+        return Success(result);
+    }
+
     [HttpDelete("{id}")]
     [RequireMenu("xxx")]
     public async Task<IActionResult> Delete(string id)
@@ -259,7 +273,7 @@ public class XxxController : BaseApiController
         var userId = RequiredUserId;
         var success = await _xxxService.DeleteAsync(id, userId);
         if (!success)
-            throw new KeyNotFoundException("资源不存在或无权删除");
+            throw new ArgumentException("资源不存在或无权删除");
         return Success(true);
     }
 }
@@ -321,11 +335,22 @@ public class XxxService : IXxxService
         return query.ToPagedList(request);
     }
 
+    public async Task<XxxEntity?> UpdateAsync(string id, UpdateXxxRequest request, string userId)
+    {
+        var entity = await _context.Set<XxxEntity>().FirstOrDefaultAsync(x => x.Id == id);
+        if (entity == null) return null;
+        if (entity.UserId != userId)
+            throw new UnauthorizedAccessException("无权更新此资源");
+
+        entity.Name = request.Name;
+        await _context.SaveChangesAsync();
+        return entity;
+    }
+
     public async Task<bool> DeleteAsync(string id, string userId)
     {
         var entity = await _context.Set<XxxEntity>().FirstOrDefaultAsync(x => x.Id == id);
-        if (entity == null)
-            return false;
+        if (entity == null) return false;
         if (entity.UserId != userId)
             throw new UnauthorizedAccessException("无权删除此资源");
 
@@ -556,50 +581,79 @@ export interface PagedResult<T> {
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { request } from '@umijs/max';
 import { Tag, Space, Button, Popconfirm } from 'antd';
-import { PageContainer, ModalForm, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
-import { PlusOutlined } from '@ant-design/icons';
+import { Drawer, Form, Input } from 'antd';
+import { PageContainer, ModalForm, ProDescriptions, ProTable, ProColumns, ActionType, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-components';
+import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 
 interface Entry {
   id: string;
   platform: string;
   account: string;
-  // ...
+  url?: string;
+  category?: string;
+  tags: string[];
+  notes?: string;
+  createdAt: string;
 }
+
+interface Stats {
+  totalEntries: number;
+  categoryCount: number;
+  tagCount: number;
+  recentUsedCount: number;
+}
+
+const api = {
+  list: (params: any) => request<ApiResponse<PagedResult<Entry>>>('/apiservice/api/password-book/list', { params }),
+  get: (id: string) => request<ApiResponse<Entry>>(`/apiservice/api/password-book/${id}`),
+  delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/password-book/${id}`, { method: 'DELETE' }),
+  create: (data: Partial<Entry>) => request<ApiResponse<Entry>>('/apiservice/api/password-book', { method: 'POST', data }),
+  update: (id: string, data: Partial<Entry>) => request<ApiResponse<Entry>>(`/apiservice/api/password-book/${id}`, { method: 'PUT', data }),
+  statistics: () => request<ApiResponse<Stats>>('/apiservice/api/password-book/statistics'),
+};
 
 const PasswordBook: React.FC = () => {
   const actionRef = useRef<ActionType | undefined>(undefined);
   const [state, setState] = useState({
-    formVisible: false,
+    statistics: null as Stats | null,
     editingEntry: null as Entry | null,
+    formVisible: false,
+    detailVisible: false,
+    viewingId: '',
     search: '' as string,
   });
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
-  // 列定义
+  const loadStatistics = useCallback(() => {
+    api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
+  }, [set]);
+
+  useEffect(() => { loadStatistics(); }, [loadStatistics]);
+
   const columns: ProColumns<Entry>[] = [
     { title: '平台', dataIndex: 'platform', key: 'platform', sorter: true },
+    { title: '账号', dataIndex: 'account', key: 'account', sorter: true },
+    { title: '分类', dataIndex: 'category', key: 'category', sorter: true, render: (dom) => dom ? <Tag color="blue">{dom as string}</Tag> : '-' },
+    { title: '标签', dataIndex: 'tags', render: (dom) => dom && typeof dom === 'object' && 'length' in dom
+      ? <Space size={[0, 4]} wrap>{(dom as string[]).map((t) => <Tag key={t}>{t}</Tag>)}</Space> : '-' },
+    { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', sorter: true, valueType: 'dateTime' },
     {
       title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 180,
-      render: (_, record) => (
+      render: (_, r) => (
         <Space size={4}>
-          <Button type="link" size="small" onClick={() => set({ editingEntry: record, formVisible: true })}>编辑</Button>
-          <Popconfirm title="确定删除？" onConfirm={async () => { await api.delete(record.id); actionRef.current?.reload(); }}>
-            <Button type="link" size="small" danger>删除</Button>
+          <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => set({ viewingId: r.id, detailVisible: true })}>查看</Button>
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingEntry: r, formVisible: true })}>编辑</Button>
+          <Popconfirm title={`确定删除「${r.platform}」？`} onConfirm={async () => { await api.delete(r.id); actionRef.current?.reload(); loadStatistics(); }}>
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
           </Popconfirm>
         </Space>
       ),
     },
   ];
 
-  // 表单提交
   const handleFinish = async (values: Record<string, any>) => {
-    const res = state.editingEntry
-      ? await api.update(state.editingEntry.id, values)
-      : await api.create(values);
-    if (res.success) {
-      set({ formVisible: false, editingEntry: null });
-      actionRef.current?.reload();
-    }
+    const res = state.editingEntry ? await api.update(state.editingEntry.id, values) : await api.create(values);
+    if (res.success) { set({ formVisible: false, editingEntry: null }); actionRef.current?.reload(); loadStatistics(); }
     return res.success;
   };
 
@@ -609,9 +663,11 @@ const PasswordBook: React.FC = () => {
         actionRef={actionRef}
         headerTitle={
           <Space size={24}>
-            <Space>模块名称</Space>
+            <Space>密码本</Space>
             <Space size={12}>
-              <Tag color="blue">统计 {count || 0}</Tag>
+              <Tag color="blue">总数 {state.statistics?.totalEntries || 0}</Tag>
+              <Tag color="green">分类 {state.statistics?.categoryCount || 0}</Tag>
+              <Tag color="orange">标签 {state.statistics?.tagCount || 0}</Tag>
             </Space>
           </Space>
         }
@@ -629,22 +685,54 @@ const PasswordBook: React.FC = () => {
             onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
             style={{ width: 260, marginRight: 8 }}
           />,
-          <Button key="create" type="primary" icon={<PlusOutlined />}
-            onClick={() => set({ editingEntry: null, formVisible: true })}>新建</Button>,
+          <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingEntry: null, formVisible: true })}>新建</Button>,
         ]}
       />
+
       <ModalForm
         key={state.editingEntry?.id || 'create'}
-        title={state.editingEntry ? '编辑' : '新建'}
+        title={state.editingEntry ? '编辑密码本' : '新建密码本'}
         open={state.formVisible}
         onOpenChange={(open) => { if (!open) set({ formVisible: false, editingEntry: null }); }}
+        initialValues={state.editingEntry || undefined}
         onFinish={handleFinish}
         autoFocusFirstInput
         width={600}
       >
-        {/* 表单项 */}
+        <ProFormText name="platform" label="平台名称" placeholder="请输入平台名称" rules={[{ required: true, message: '请输入平台名称' }]} />
+        <ProFormText name="account" label="账号" placeholder="请输入账号" rules={[{ required: true, message: '请输入账号' }]} />
+        <Form.Item name="password" label="密码" rules={[{ required: true, message: '请输入密码' }]}>
+          <Input.Password placeholder="请输入密码" />
+        </Form.Item>
+        <ProFormText name="url" label="网址" placeholder="请输入网址" />
+        <ProFormSelect name="category" label="分类" placeholder="选择或输入分类" showSearch allowClear mode="tags" />
+        <ProFormSelect name="tags" label="标签" placeholder="输入标签后按回车" mode="tags" />
+        <ProFormTextArea name="notes" label="备注" placeholder="请输入备注" />
       </ModalForm>
+
+      <Drawer title="密码本详情" placement="right" open={state.detailVisible}
+        onClose={() => set({ detailVisible: false, viewingId: '' })} size="large">
+        <DetailContent id={state.viewingId} />
+      </Drawer>
     </PageContainer>
+  );
+};
+
+const DetailContent: React.FC<{ id: string }> = ({ id }) => {
+  const [entry, setEntry] = useState<Entry | null>(null);
+  useEffect(() => { if (id) api.get(id).then(r => { if (r.success && r.data) setEntry(r.data); }); }, [id]);
+  if (!entry) return null;
+  return (
+    <ProDescriptions column={1} bordered size="small">
+      <ProDescriptions.Item label="平台"><strong>{entry.platform}</strong></ProDescriptions.Item>
+      <ProDescriptions.Item label="账号">{entry.account}</ProDescriptions.Item>
+      <ProDescriptions.Item label="分类">{entry.category ? <Tag color="blue">{entry.category}</Tag> : '-'}</ProDescriptions.Item>
+      <ProDescriptions.Item label="标签">
+        {entry.tags?.length ? <Space wrap>{entry.tags.map(t => <Tag key={t}>{t}</Tag>)}</Space> : '-'}
+      </ProDescriptions.Item>
+      <ProDescriptions.Item label="创建时间">{entry.createdAt}</ProDescriptions.Item>
+      {entry.notes && <ProDescriptions.Item label="备注" span={1}>{entry.notes}</ProDescriptions.Item>}
+    </ProDescriptions>
   );
 };
 ```

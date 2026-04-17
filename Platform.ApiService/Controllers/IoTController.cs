@@ -224,7 +224,7 @@ public class IoTController : BaseApiController
     /// <summary>
     /// 查询数据记录
     /// </summary>
-    [HttpGet]
+    [HttpGet("data/query")]
     public async Task<IActionResult> QueryDataRecords(
         [FromQuery] PageParams request,
         [FromQuery] string? deviceId = null,

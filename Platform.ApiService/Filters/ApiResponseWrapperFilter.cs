@@ -23,7 +23,8 @@ public class ApiResponseWrapperFilter : IAsyncResultFilter
         "/_framework/",
         "/favicon.ico",
         "/chat/sse",
-        "/api/chat/sse"
+        "/api/chat/sse",
+        "/api/notifications/stream"
     };
 
     // 缓存类型的反射结果：Key 是对象的 Type，Value 是该类型是否包含了 success/data/code 字段
@@ -46,8 +47,10 @@ public class ApiResponseWrapperFilter : IAsyncResultFilter
         }
 
         // 检查是否是流式请求（SSE 等）
-        if (context.HttpContext.Request.Query.ContainsKey("stream") &&
-            context.HttpContext.Request.Query["stream"].ToString().Equals("true", StringComparison.OrdinalIgnoreCase))
+        var accept = context.HttpContext.Request.Headers.Accept.ToString();
+        if (accept.Contains("text/event-stream", StringComparison.OrdinalIgnoreCase) ||
+            (context.HttpContext.Request.Query.ContainsKey("stream") &&
+             context.HttpContext.Request.Query["stream"].ToString().Equals("true", StringComparison.OrdinalIgnoreCase)))
         {
             await next();
             return;

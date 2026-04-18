@@ -32,15 +32,10 @@ public class NotificationController : BaseApiController
         return Success(result);
     }
 
-    /// <summary>
-    /// 获取未读统计
-    /// </summary>
-    [HttpGet("statistics")]
-    public async Task<IActionResult> GetStatistics()
-    {
-        var stats = await _notificationService.GetStatisticsAsync(RequiredUserId);
-        return Success(stats);
-    }
+    // --- 以下接口已废弃，改由 SSE 推送更新 ---
+    // [HttpGet("statistics")]
+    // public async Task<IActionResult> GetStatistics() { ... }
+
 
     /// <summary>
     /// 标记单条已读
@@ -49,6 +44,16 @@ public class NotificationController : BaseApiController
     public async Task<IActionResult> MarkAsRead(string id)
     {
         var success = await _notificationService.MarkAsReadAsync(RequiredUserId, id);
+        return success ? Success(null, "标记成功") : BadRequest("通知不存在或无权操作");
+    }
+
+    /// <summary>
+    /// 标记单条未读
+    /// </summary>
+    [HttpPut("{id}/unread")]
+    public async Task<IActionResult> MarkAsUnread(string id)
+    {
+        var success = await _notificationService.MarkAsUnreadAsync(RequiredUserId, id);
         return success ? Success(null, "标记成功") : BadRequest("通知不存在或无权操作");
     }
 

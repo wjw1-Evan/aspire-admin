@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { tokenUtils } from '@/utils/token';
 import { getApiBaseUrl } from '@/utils/request';
-import { NotificationCategory, NotificationStatistics, AppNotification, getNotificationStatistics } from '@/services/notification/api';
+import { NotificationCategory, NotificationStatistics, AppNotification } from '@/services/notification/api';
 import { notification } from 'antd';
 
 export interface NotificationState {
@@ -19,21 +19,6 @@ export function useNotificationStream() {
     latestNotifications: [],
   });
 
-  const fetchStats = useCallback(async () => {
-    try {
-      const res = await getNotificationStatistics();
-      if (res.success && res.data) {
-        setState(s => ({ 
-          ...s, 
-          statistics: res.data!, 
-          unreadCount: res.data!.Total 
-        }));
-      }
-    } catch (e) {
-      console.error('Failed to fetch notification stats', e);
-    }
-  }, []);
-
   const connect = useCallback(() => {
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
@@ -49,11 +34,12 @@ export function useNotificationStream() {
     eventSourceRef.current = es;
 
     es.onopen = () => {
+      console.info('[SSE] 通知流已连接');
       setIsConnected(true);
-      fetchStats();
     };
 
-    es.onerror = () => {
+    es.onerror = (err) => {
+      console.error('[SSE] 通知流连接发生异常, 5秒后尝试重连:', err);
       setIsConnected(false);
       es.close();
       // 指数退避重连逻辑
@@ -62,13 +48,22 @@ export function useNotificationStream() {
 
     es.onmessage = (event) => {
       try {
+        if (event.data === ': ping') {
+           // 心跳包，静默处理
+           return;
+        }
+        console.debug('[SSE] 收到原始数据包:', event.data);
         const data = JSON.parse(event.data);
         if (data.type === 'Connected') {
-          console.log('Notification SSE Connected, connectionId:', data.connectionId);
-          if (data.statistics) {
-             setState(s => ({ ...s, statistics: data.statistics, unreadCount: data.statistics.Total }));
-          }
+          console.info('[SSE] 会话已就绪, 连接ID:', data.connectionId);
+          setState(s => ({ 
+             ...s, 
+             statistics: data.statistics || s.statistics, 
+             unreadCount: data.statistics?.Total ?? s.unreadCount,
+             latestNotifications: data.latestNotifications || s.latestNotifications
+          }));
         } else if (data.type === 'NewNotification') {
+          console.info('[SSE] 收到新通知推送:', data.notification);
           const newNotif = data.notification as AppNotification;
           setState(s => ({
             ...s,
@@ -91,14 +86,15 @@ export function useNotificationStream() {
           setState(s => ({
             ...s,
             statistics: data.statistics,
-            unreadCount: data.statistics.Total
+            unreadCount: data.statistics.Total ?? s.unreadCount,
+            latestNotifications: data.latestNotifications || s.latestNotifications
           }));
         }
       } catch (e) {
         console.error('Parse SSE message failed', e);
       }
     };
-  }, [fetchStats]);
+  }, []);
 
   useEffect(() => {
     connect();
@@ -112,6 +108,6 @@ export function useNotificationStream() {
   return {
     ...state,
     isConnected,
-    refreshStats: fetchStats
   };
 }
+

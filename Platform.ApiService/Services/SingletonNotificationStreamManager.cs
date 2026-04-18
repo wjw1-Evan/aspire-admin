@@ -38,10 +38,35 @@ public class SingletonNotificationStreamManager : INotificationStreamManager
     private readonly ConcurrentDictionary<string, HashSet<string>> _userConnections = new();
     private readonly ConcurrentDictionary<string, string> _connectionToUserMap = new();
     private readonly ILogger<SingletonNotificationStreamManager> _logger;
+    private readonly CancellationTokenSource _cts = new();
 
     public SingletonNotificationStreamManager(ILogger<SingletonNotificationStreamManager> logger)
     {
         _logger = logger;
+        // 启动后台心跳任务，每 15 秒发送一次 ping
+        _ = StartHeartbeatAsync(_cts.Token);
+    }
+
+    private async Task StartHeartbeatAsync(CancellationToken token)
+    {
+        _logger.LogInformation("已启动通知 SSE 心跳后台任务 (15s 间隔)");
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(15));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(token))
+            {
+                if (_connections.IsEmpty) continue;
+
+                var pingData = ": ping\n\n";
+                var tasks = _connections.Keys.Select(id => SendRawAsync(id, pingData));
+                await Task.WhenAll(tasks);
+            }
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "通知 SSE 心跳后台任务发生异常");
+        }
     }
 
     public Task RegisterUserConnectionAsync(string userId, string connectionId, HttpResponse response, CancellationToken cancellationToken)
@@ -68,11 +93,22 @@ public class SingletonNotificationStreamManager : INotificationStreamManager
 
         cancellationToken.Register(() =>
         {
+            _logger.LogDebug("连接 {ConnectionId} 的 RequestAborted 已触发", connectionId);
             _ = UnregisterConnectionAsync(connectionId);
         });
 
-        _logger.LogInformation("用户 {UserId} 已建立通知 SSE 连接 {ConnectionId}", userId, connectionId);
+        _logger.LogInformation("用户 {UserId} 已成功建立通知 SSE 连接 {ConnectionId} (当前活跃连接总数: {TotalCount})", 
+            userId, connectionId, _connections.Count);
         return Task.CompletedTask;
+    }
+
+    private static readonly JsonSerializerOptions _jsonOptions = CreateJsonOptions();
+
+    private static JsonSerializerOptions CreateJsonOptions()
+    {
+        var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        options.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+        return options;
     }
 
     public async Task SendToUserAsync(string userId, object message)
@@ -85,20 +121,28 @@ public class SingletonNotificationStreamManager : INotificationStreamManager
                 ids = connections.ToList();
             }
 
-            var json = JsonSerializer.Serialize(message, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+            var json = JsonSerializer.Serialize(message, _jsonOptions);
             var sseData = $"data: {json}\n\n";
+
+            _logger.LogDebug("准备向用户 {UserId} 的 {Count} 个连接推送消息", userId, ids.Count);
 
             foreach (var id in ids)
             {
                 await SendRawAsync(id, sseData);
             }
         }
+        else
+        {
+            _logger.LogWarning("尝试向用户 {UserId} 推送消息，但未找到活跃连接", userId);
+        }
     }
 
     public async Task BroadcastAsync(object message)
     {
-        var json = JsonSerializer.Serialize(message, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        var json = JsonSerializer.Serialize(message, _jsonOptions);
         var sseData = $"data: {json}\n\n";
+
+        _logger.LogDebug("准备向所有用户广播消息");
 
         foreach (var connectionId in _connections.Keys)
         {
@@ -140,6 +184,11 @@ public class SingletonNotificationStreamManager : INotificationStreamManager
                     var bytes = Encoding.UTF8.GetBytes(rawData);
                     await connection.Response.Body.WriteAsync(bytes, connection.CancellationToken);
                     await connection.Response.Body.FlushAsync(connection.CancellationToken);
+                    _logger.LogDebug("成功向连接 {ConnectionId} 写入并刷新 SSE 消息", connectionId);
+                }
+                else
+                {
+                    _logger.LogWarning("连接 {ConnectionId} 已取消，跳过消息写入", connectionId);
                 }
             }
             catch (Exception ex)
@@ -147,6 +196,10 @@ public class SingletonNotificationStreamManager : INotificationStreamManager
                 _logger.LogWarning("向连接 {ConnectionId} 发送通知失败: {Message}", connectionId, ex.Message);
                 await UnregisterConnectionAsync(connectionId);
             }
+        }
+        else
+        {
+            _logger.LogWarning("尝试向连接 {ConnectionId} 发送原始消息，但连接已失效", connectionId);
         }
     }
 

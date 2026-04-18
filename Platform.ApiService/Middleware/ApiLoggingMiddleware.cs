@@ -22,7 +22,8 @@ public class ApiLoggingMiddleware
         "/_framework/",
         "/favicon.ico",
         "/api/chat/sse",
-        "/chat/sse"
+        "/chat/sse",
+        "/api/notifications/stream"
     };
 
     public ApiLoggingMiddleware(RequestDelegate next, ILogger<ApiLoggingMiddleware> logger)

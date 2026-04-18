@@ -15,19 +15,19 @@ export enum NotificationCategory {
  * 通知级别
  */
 export enum NotificationLevel {
-  Info = 'Info',
-  Success = 'Success',
-  Warning = 'Warning',
-  Error = 'Error',
+  Info = 'info',
+  Success = 'success',
+  Warning = 'warning',
+  Error = 'error',
 }
 
 /**
  * 通知状态
  */
 export enum NotificationStatus {
-  Unread = 0,
-  Read = 1,
-  Archived = 2,
+  Unread = 'unread',
+  Read = 'read',
+  Archived = 'archived',
 }
 
 /**
@@ -44,7 +44,7 @@ export interface AppNotification {
   actionUrl?: string;
   status: NotificationStatus;
   metadata: Record<string, string>;
-  datetime: string;
+  createdAt?: string;
   readAt?: string;
 }
 
@@ -70,19 +70,19 @@ export async function getNotifications(params: any): Promise<ApiResponse<PagedRe
 }
 
 /**
- * 获取未读统计
- */
-export async function getNotificationStatistics(): Promise<ApiResponse<NotificationStatistics>> {
-  return request('/apiservice/api/notifications/statistics', {
-    method: 'GET',
-  });
-}
-
-/**
  * 标记为已读
  */
 export async function markAsRead(id: string): Promise<ApiResponse<void>> {
   return request(`/apiservice/api/notifications/${id}/read`, {
+    method: 'PUT',
+  });
+}
+
+/**
+ * 标记为未读
+ */
+export async function markAsUnread(id: string): Promise<ApiResponse<void>> {
+  return request(`/apiservice/api/notifications/${id}/unread`, {
     method: 'PUT',
   });
 }

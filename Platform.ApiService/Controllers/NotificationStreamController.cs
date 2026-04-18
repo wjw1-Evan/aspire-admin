@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
@@ -37,18 +38,26 @@ public class NotificationStreamController : BaseApiController
         var connectionId = Guid.NewGuid().ToString("N");
 
         Response.Headers.Append("Content-Type", "text/event-stream");
-        Response.Headers.Append("Cache-Control", "no-cache");
+        Response.Headers.Append("Cache-Control", "no-cache, no-transform");
         Response.Headers.Append("Connection", "keep-alive");
+        Response.Headers.Append("X-Accel-Buffering", "no"); // 关键：禁用 Nginx/代理缓冲
+
+        // 显式禁用响应缓冲，确保 SSE 消息能实时推送到客户端
+        var bufferingFeature = HttpContext.Features.Get<IHttpResponseBodyFeature>();
+        bufferingFeature?.DisableBuffering();
 
         // 注册连接到管理器
         await _streamManager.RegisterUserConnectionAsync(userId, connectionId, Response, HttpContext.RequestAborted);
 
-        // 推送初始统计信息
+        // 推送初始统计信息和最近列表
         var stats = await _notificationService.GetStatisticsAsync(userId);
+        var latestNotifications = await _notificationService.GetLatestAsync(userId);
+        
         await _streamManager.SendToUserAsync(userId, new {
             Type = "Connected",
             ConnectionId = connectionId,
-            Statistics = stats
+            Statistics = stats,
+            LatestNotifications = latestNotifications.Take(10).ToList()
         });
 
         _logger.LogInformation("用户 {UserId} 通知流已启动", userId);

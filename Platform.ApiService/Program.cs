@@ -170,6 +170,11 @@ builder.Services.AddOpenApi(options =>
 // 7. 认证 & 授权
 // ──────────────────────────────────────────────
 
+var jwtSecretKey = builder.Configuration["Jwt:SecretKey"];
+if (string.IsNullOrWhiteSpace(jwtSecretKey))
+{
+    if (builder.Environment.IsDevelopment())
+    {
         jwtSecretKey = "dev-secret-key-for-aspire-admin-platform-32-chars-long!!"; // 使用固定位数的开发密钥
         Console.WriteLine("[DEV] Jwt:SecretKey 未配置，已使用开发环境固定密钥。");
     }

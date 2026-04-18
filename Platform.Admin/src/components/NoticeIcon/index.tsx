@@ -3,7 +3,7 @@ import { Badge, Tabs, Button, List, Space, Empty, Spin, Tag, Typography } from '
 import { BellOutlined, CheckCircleOutlined, InfoCircleOutlined, WarningOutlined, CloseCircleOutlined, DeleteOutlined } from '@ant-design/icons';
 import HeaderDropdown from '@/components/HeaderDropdown';
 import { useNotificationStream } from '@/hooks/useNotificationStream';
-import { NotificationCategory, NotificationLevel, markAsRead, markAllAsRead, AppNotification } from '@/services/notification/api';
+import { NotificationCategory, NotificationLevel, NotificationStatus, markAsRead, markAsUnread, markAllAsRead, AppNotification } from '@/services/notification/api';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import styles from './index.less';
@@ -24,14 +24,23 @@ const LevelIcon: React.FC<{ level: NotificationLevel }> = ({ level }) => {
 
 const NoticeIcon: React.FC = () => {
   const [popoverOpen, setPopoverOpen] = useState(false);
-  const { statistics, unreadCount, latestNotifications, refreshStats } = useNotificationStream();
+  const { statistics, unreadCount, latestNotifications } = useNotificationStream();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('all');
 
-  const handleMarkAsRead = async (id: string) => {
+  const handleMarkAsRead = async (e: React.MouseEvent, id: string) => {
+    if (e) e.stopPropagation();
     try {
       await markAsRead(id);
-      refreshStats();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleMarkAsUnread = async (e: React.MouseEvent, id: string) => {
+    if (e) e.stopPropagation();
+    try {
+      await markAsUnread(id);
     } catch (e) {
       console.error(e);
     }
@@ -41,7 +50,6 @@ const NoticeIcon: React.FC = () => {
     setLoading(true);
     try {
       await markAllAsRead(category);
-      refreshStats();
     } finally {
       setLoading(false);
     }
@@ -70,7 +78,12 @@ const NoticeIcon: React.FC = () => {
             renderItem={(item) => (
               <div 
                 className={styles.notificationItem}
-                onClick={() => handleMarkAsRead(item.id)}
+                style={{ opacity: item.status === NotificationStatus.Read ? 0.6 : 1 }}
+                onClick={(e) => {
+                  if (item.status === NotificationStatus.Unread) {
+                    handleMarkAsRead(e, item.id);
+                  }
+                }}
               >
                 <div className={`${styles.levelIndicator} ${styles[item.level.toLowerCase()]}`} />
                 <div style={{ marginTop: 4 }}>
@@ -80,12 +93,17 @@ const NoticeIcon: React.FC = () => {
                   <div className={styles.notificationTitle}>
                     {item.title}
                     <span style={{ float: 'right', fontWeight: 'normal', fontSize: 10, color: '#999' }}>
-                      {dayjs(item.datetime).fromNow()}
+                      {dayjs(item.createdAt).fromNow()}
                     </span>
                   </div>
                   <div className={styles.notificationDesc}>{item.content}</div>
-                  <div style={{ marginTop: 4 }}>
-                    <Tag size="small" color="blue">{item.category}</Tag>
+                  <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Tag size="small" color={item.status === NotificationStatus.Unread ? 'blue' : 'default'}>{item.category}</Tag>
+                    {item.status === NotificationStatus.Read ? (
+                      <Button size="small" type="link" style={{ padding: 0, fontSize: 12 }} onClick={(e) => handleMarkAsUnread(e, item.id)}>标记为未读</Button>
+                    ) : (
+                      <Button size="small" type="link" style={{ padding: 0, fontSize: 12 }} onClick={(e) => handleMarkAsRead(e, item.id)}>标为已读</Button>
+                    )}
                   </div>
                 </div>
               </div>

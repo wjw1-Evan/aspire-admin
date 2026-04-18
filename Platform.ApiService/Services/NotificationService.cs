@@ -19,6 +19,11 @@ public interface INotificationService
         Dictionary<string, string>? metadata = null);
 
     /// <summary>
+    /// 获取用户的最新通知（包含已读和未读）
+    /// </summary>
+    Task<List<AppNotification>> GetLatestAsync(string userId, int count = 20);
+
+    /// <summary>
     /// 获取用户的未读通知
     /// </summary>
     Task<List<AppNotification>> GetUnreadAsync(string userId);
@@ -37,6 +42,11 @@ public interface INotificationService
     /// 标记为已读
     /// </summary>
     Task<bool> MarkAsReadAsync(string userId, string notificationId);
+
+    /// <summary>
+    /// 标记为未读
+    /// </summary>
+    Task<bool> MarkAsUnreadAsync(string userId, string notificationId);
 
     /// <summary>
     /// 全部标记为已读
@@ -81,7 +91,7 @@ public class NotificationService : INotificationService
         await _context.Set<AppNotification>().AddAsync(notification);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("正在推送通知到用户 {UserId}: {Title}", recipientId, title);
+        _logger.LogInformation("正在准备向用户推送实时通知. [RecipientId: {UserId}, Title: {Title}]", recipientId, title);
 
         // SSE 实时推送一个 "NewNotification" 事件给前端
         await _streamManager.SendToUserAsync(recipientId, new {
@@ -90,11 +100,20 @@ public class NotificationService : INotificationService
         });
     }
 
+    public async Task<List<AppNotification>> GetLatestAsync(string userId, int count = 20)
+    {
+        return await _context.Set<AppNotification>()
+            .Where(n => n.RecipientId == userId)
+            .OrderByDescending(n => n.CreatedAt)
+            .Take(count)
+            .ToListAsync();
+    }
+
     public async Task<List<AppNotification>> GetUnreadAsync(string userId)
     {
         return await _context.Set<AppNotification>()
             .Where(n => n.RecipientId == userId && n.Status == NotificationStatus.Unread)
-
+            .OrderByDescending(n => n.CreatedAt)
             .ToListAsync();
     }
 
@@ -144,6 +163,24 @@ public class NotificationService : INotificationService
         return true;
     }
 
+    public async Task<bool> MarkAsUnreadAsync(string userId, string notificationId)
+    {
+        var notification = await _context.Set<AppNotification>()
+            .FirstOrDefaultAsync(n => n.Id == notificationId && n.RecipientId == userId);
+
+        if (notification == null) return false;
+
+        notification.Status = NotificationStatus.Unread;
+        notification.ReadAt = null;
+
+        await _context.SaveChangesAsync();
+
+        // 推送统计数据更新
+        await PushStatsUpdateAsync(userId);
+
+        return true;
+    }
+
     public async Task<int> MarkAllAsReadAsync(string userId, NotificationCategory? category = null)
     {
         var query = _context.Set<AppNotification>()
@@ -172,9 +209,11 @@ public class NotificationService : INotificationService
     private async Task PushStatsUpdateAsync(string userId)
     {
         var stats = await GetStatisticsAsync(userId);
+        var latestNotifications = await GetLatestAsync(userId);
         await _streamManager.SendToUserAsync(userId, new {
             Type = "StatsUpdate",
-            Statistics = stats
+            Statistics = stats,
+            LatestNotifications = latestNotifications.Take(10).ToList()
         });
     }
 }

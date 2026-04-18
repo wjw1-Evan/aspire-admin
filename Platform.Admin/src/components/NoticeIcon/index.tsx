@@ -157,7 +157,7 @@ export default function NoticeIcon() {
         placement="bottomRight"
       >
         <span className={headerStyles.headerActionButton} onClick={() => setVisible(true)}>
-          <Badge count={unreadCount} overflowCount={99} offset={[7, -7]}>
+          <Badge count={unreadCount} overflowCount={99} offset={[7, -7]} showZero={true}>
             <BellOutlined />
           </Badge>
         </span>

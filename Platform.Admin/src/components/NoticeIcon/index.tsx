@@ -77,6 +77,10 @@ export default function NoticeIcon() {
       }
     };
 
+    eventSource.onmessage = (event: MessageEvent) => {
+      console.log('[NoticeIcon] 收到 message 事件:', event.data);
+    };
+
     eventSource.addEventListener('NotificationUpdated', (event: MessageEvent) => {
       console.log('[NoticeIcon] 收到 NotificationUpdated 事件:', event.data);
       if (!isMountedRef.current) return;

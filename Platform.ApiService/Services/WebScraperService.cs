@@ -55,6 +55,7 @@ public class WebScraperService : IWebScraperService
             IsPublic = request.IsPublic,
             FilterPrompt = request.FilterPrompt,
             EnableFilter = request.EnableFilter,
+            NotifyOnMatch = true,
             UserId = userId,
             LastStatus = ScrapingStatus.Idle
         };
@@ -126,6 +127,7 @@ public class WebScraperService : IWebScraperService
         if (request.IsPublic.HasValue) task.IsPublic = request.IsPublic.Value;
         if (request.FilterPrompt != null) task.FilterPrompt = request.FilterPrompt;
         if (request.EnableFilter.HasValue) task.EnableFilter = request.EnableFilter.Value;
+        if (request.NotifyOnMatch.HasValue) task.NotifyOnMatch = request.NotifyOnMatch.Value;
 
         await _context.SaveChangesAsync();
         return task;

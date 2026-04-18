@@ -42,6 +42,7 @@ public class UpdateWebScrapingTaskRequest
     public bool? IsPublic { get; set; }
     public string? FilterPrompt { get; set; }
     public bool? EnableFilter { get; set; }
+    public bool? NotifyOnMatch { get; set; }
 }
 
 public class WebScrapingTaskDto

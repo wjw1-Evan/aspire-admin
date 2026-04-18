@@ -61,7 +61,7 @@ export interface SystemResources {
     objectCount?: number;
     status: string;
   };
-  timestamp: string;
+timestamp: string;
 }
 
 /**
@@ -73,11 +73,3 @@ export async function getSystemStatus(): Promise<ApiResponse<SystemStatus>> {
   });
 }
 
-/**
- * 获取系统资源使用情况
- */
-export async function getSystemResources(): Promise<ApiResponse<SystemResources>> {
-  return request<ApiResponse<SystemResources>>('/apiservice/api/system-monitor/resources', {
-    method: 'GET',
-  });
-}

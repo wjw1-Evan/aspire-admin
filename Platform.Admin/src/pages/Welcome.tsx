@@ -5,8 +5,6 @@ import { theme, Row, Col, message as antMessage } from 'antd';
 import { getUserStatistics } from '@/services/ant-design-pro/api';
 import { getTaskStatistics, getMyTodoTasks } from '@/services/task/api';
 import { getCurrentCompany } from '@/services/company';
-import { getSystemResources } from '@/services/system/api';
-import type { SystemResources } from '@/services/system/api';
 import { getDocumentStatistics, getPendingDocuments } from '@/services/document/api';
 import { saveWelcomeLayout, getWelcomeLayout } from '@/services/welcome/layout';
 import type { CardLayoutConfig } from '@/services/welcome/layout';
@@ -134,7 +132,6 @@ const Welcome: React.FC = () => {
   const [taskStatistics, setTaskStatistics] = useState<import('@/services/task/api').TaskStatistics | null>(null);
   const [todoTasks, setTodoTasks] = useState<import('@/services/task/api').TaskDto[]>([]);
   const [companyInfo, setCompanyInfo] = useState<any>(null);
-  const [systemResources, setSystemResources] = useState<SystemResources | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [docStatistics, setDocStatistics] = useState<import('@/services/document/api').DocumentStatistics | null>(null);
@@ -142,10 +139,6 @@ const Welcome: React.FC = () => {
 
   const access = useAccess();
   const canAccessApproval = access.canAccessPath('/document/approval');
-
-  const [cpuHistory, setCpuHistory] = useState<{ value: number; time: string }[]>([]);
-  const [memoryHistory, setMemoryHistory] = useState<{ value: number; time: string }[]>([]);
-  const [diskHistory, setDiskHistory] = useState<{ value: number; time: string }[]>([]);
 
   const [leftCards, setLeftCards] = useState<string[]>(['task-overview', 'project-list', 'statistics-overview']);
   const [rightCards, setRightCards] = useState<string[]>(['approval-overview', 'iot-events']);
@@ -196,29 +189,6 @@ const Welcome: React.FC = () => {
     }
   }, []);
 
-  const fetchSystemResources = useCallback(async () => {
-    try {
-      const res = await getSystemResources();
-      if (res?.data) {
-        const data = res.data;
-        setSystemResources(data);
-        const time = new Date().toLocaleTimeString();
-
-        if (data.cpu) {
-          setCpuHistory(prev => [...prev, { value: data.cpu?.usagePercent || 0, time }].slice(-20));
-        }
-        if (data.memory) {
-          setMemoryHistory(prev => [...prev, { value: data.memory?.usagePercent || 0, time }].slice(-20));
-        }
-        if (data.disk) {
-          setDiskHistory(prev => [...prev, { value: data.disk?.usagePercent || 0, time }].slice(-20));
-        }
-      }
-    } catch (error) {
-      console.error('获取系统资源失败:', error);
-    }
-  }, []);
-
   useEffect(() => {
     fetchStatistics();
   }, [fetchStatistics]);
@@ -260,31 +230,6 @@ const Welcome: React.FC = () => {
 
     loadWelcomeLayout();
   }, []);
-
-  useEffect(() => {
-    if (!currentUser) return;
-
-    const performFetch = () => {
-      if (document.visibilityState === 'visible') {
-        fetchSystemResources();
-      }
-    };
-
-    performFetch();
-    const intervalId = setInterval(performFetch, 5000);
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        fetchSystemResources();
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      clearInterval(intervalId);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [currentUser, fetchSystemResources]);
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
@@ -378,10 +323,6 @@ const Welcome: React.FC = () => {
       taskStatistics,
       todoTasks,
       statistics,
-      systemResources,
-      memoryHistory,
-      cpuHistory,
-      diskHistory,
       docStatistics,
       pendingDocs,
     };

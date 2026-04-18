@@ -58,12 +58,7 @@ export default [
     hideInMenu: true,
   },
 
-  // 业务页面路由（从数据库菜单生成，这里只定义路由映射）
-  {
-    path: '/welcome',
-    component: './Welcome',
-    hideInMenu: true, // 隐藏静态路由，使用数据库菜单
-  },
+  
   {
     path: '/system/user-management',
     component: './user-management',

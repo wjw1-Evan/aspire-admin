@@ -78,7 +78,6 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
             if (isDue)
             {
                 task.LastStatus = ScrapingStatus.Running;
-                task.NextRunAt = CronExpressionParser.ParseNext(task.ScheduleCron!, DateTime.UtcNow);
                 await context.SaveChangesAsync(CancellationToken.None);
                 _taskLauncher.LaunchAsync(task.Id, task.CreatedBy ?? task.UserId);
             }

@@ -66,6 +66,8 @@ public class TaskLauncher(
 
     private async Task SendMatchNotificationsAsync(DbContext context, WebScrapingTask task, string userId)
     {
+        Logger.LogInformation("SendMatchNotificationsAsync 开始查询匹配结果, TaskId={TaskId}", task.Id);
+        
         var matchedResults = await context.Set<WebScrapingResult>()
             .Where(r => r.TaskId == task.Id && r.IsMatched == true)
             .OrderByDescending(r => r.RelevanceScore)
@@ -75,6 +77,9 @@ public class TaskLauncher(
 
         foreach (var page in matchedResults)
         {
+            Logger.LogInformation("匹配记录: TaskId={TaskId}, PageId={PageId}, Title={Title}, Url={Url}, IsMatched={IsMatched}", 
+                task.Id, page.Id, page.Title, page.Url, page.IsMatched);
+            
             var title = string.IsNullOrWhiteSpace(page.Title) ? page.Url : page.Title;
             var score = page.RelevanceScore.HasValue ? $"{(int)page.RelevanceScore.Value}%" : "";
             var description = $"[{task.Name}] {score} 匹配相关".Trim();

@@ -15,12 +15,12 @@ public class TaskCrudService : ITaskCrudService
 {
     private readonly DbContext _context;
     private readonly IUserService _userService;
-    private readonly IUnifiedNotificationService _notificationService;
+    private readonly INotificationService _notificationService;
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<TaskCrudService> _logger;
 
     public TaskCrudService(DbContext context, IUserService userService,
-        IUnifiedNotificationService notificationService, IServiceProvider serviceProvider,
+        INotificationService notificationService, IServiceProvider serviceProvider,
         ILogger<TaskCrudService> logger)
     {
         _context = context;
@@ -59,10 +59,15 @@ public class TaskCrudService : ITaskCrudService
 
         if (!string.IsNullOrEmpty(task.AssignedTo))
         {
-            await _notificationService.CreateTaskNotificationAsync(
-                task.Id!, task.TaskName, "task_assigned",
-                (int)task.Priority, (int)task.Status, task.AssignedTo, null,
-                string.IsNullOrWhiteSpace(request.Remarks) ? "任务已分配给您" : request.Remarks);
+            await _notificationService.PublishAsync(
+                task.AssignedTo,
+                "任务已分配",
+                $"任务 \"{task.TaskName}\" 已分配给您。备注：{request.Remarks ?? "无"}",
+                NotificationCategory.Work,
+                NotificationLevel.Info,
+                actionUrl: $"/task-management/detail?id={task.Id}",
+                metadata: new Dictionary<string, string> { { "TaskId", task.Id ?? "" }, { "Action", "task_assigned" } }
+            );
         }
 
         return await ConvertToTaskDtoAsync(task);
@@ -157,10 +162,15 @@ public class TaskCrudService : ITaskCrudService
 
         if (!string.IsNullOrEmpty(task.AssignedTo))
         {
-            await _notificationService.CreateTaskNotificationAsync(
-                task.Id!, task.TaskName, "task_assigned",
-                (int)task.Priority, (int)task.Status, task.AssignedTo, null,
-                string.IsNullOrWhiteSpace(request.Remarks) ? "任务已分配给您" : request.Remarks);
+            await _notificationService.PublishAsync(
+                task.AssignedTo,
+                "任务有更新",
+                $"任务 \"{task.TaskName}\" 有新的动态。备注：{request.Remarks ?? "无"}",
+                NotificationCategory.Work,
+                NotificationLevel.Info,
+                actionUrl: $"/task-management/detail?id={task.Id}",
+                metadata: new Dictionary<string, string> { { "TaskId", task.Id ?? "" }, { "Action", "task_updated" } }
+            );
         }
 
         return await ConvertToTaskDtoAsync(task);

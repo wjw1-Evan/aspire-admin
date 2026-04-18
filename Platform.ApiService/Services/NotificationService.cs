@@ -1,5 +1,7 @@
+using System.Linq.Dynamic.Core;
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models.Entities;
+using Platform.ServiceDefaults.Extensions;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 
@@ -10,9 +12,9 @@ public interface INotificationService
     /// <summary>
     /// 发布通知并推送到前端
     /// </summary>
-    Task PublishAsync(string recipientId, string title, string? content = null, 
-        NotificationCategory category = NotificationCategory.System, 
-        NotificationLevel level = NotificationLevel.Info, 
+    Task PublishAsync(string recipientId, string title, string? content = null,
+        NotificationCategory category = NotificationCategory.System,
+        NotificationLevel level = NotificationLevel.Info,
         string? actionUrl = null,
         Dictionary<string, string>? metadata = null);
 
@@ -49,8 +51,8 @@ public class NotificationService : INotificationService
     private readonly ILogger<NotificationService> _logger;
 
     public NotificationService(
-        DbContext context, 
-        INotificationStreamManager streamManager, 
+        DbContext context,
+        INotificationStreamManager streamManager,
         ILogger<NotificationService> logger)
     {
         _context = context;
@@ -58,9 +60,9 @@ public class NotificationService : INotificationService
         _logger = logger;
     }
 
-    public async Task PublishAsync(string recipientId, string title, string? content = null, 
-        NotificationCategory category = NotificationCategory.System, 
-        NotificationLevel level = NotificationLevel.Info, 
+    public async Task PublishAsync(string recipientId, string title, string? content = null,
+        NotificationCategory category = NotificationCategory.System,
+        NotificationLevel level = NotificationLevel.Info,
         string? actionUrl = null,
         Dictionary<string, string>? metadata = null)
     {
@@ -74,14 +76,13 @@ public class NotificationService : INotificationService
             ActionUrl = actionUrl,
             Metadata = metadata ?? new(),
             Status = NotificationStatus.Unread,
-            Datetime = DateTime.UtcNow
         };
 
         await _context.Set<AppNotification>().AddAsync(notification);
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("正在推送通知到用户 {UserId}: {Title}", recipientId, title);
-        
+
         // SSE 实时推送一个 "NewNotification" 事件给前端
         await _streamManager.SendToUserAsync(recipientId, new {
             Type = "NewNotification",
@@ -93,15 +94,14 @@ public class NotificationService : INotificationService
     {
         return await _context.Set<AppNotification>()
             .Where(n => n.RecipientId == userId && n.Status == NotificationStatus.Unread)
-            .OrderByDescending(n => n.Datetime)
+
             .ToListAsync();
     }
 
     public async Task<PagedResult<AppNotification>> GetPagedListAsync(string userId, ProTableRequest request)
     {
         var query = _context.Set<AppNotification>()
-            .Where(n => n.RecipientId == userId)
-            .OrderByDescending(n => n.Datetime);
+            .Where(n => n.RecipientId == userId);
 
         return await Task.FromResult(query.ToPagedList(request));
     }
@@ -128,17 +128,17 @@ public class NotificationService : INotificationService
     {
         var notification = await _context.Set<AppNotification>()
             .FirstOrDefaultAsync(n => n.Id == notificationId && n.RecipientId == userId);
-        
+
         if (notification == null) return false;
 
         notification.Status = NotificationStatus.Read;
         notification.ReadAt = DateTime.UtcNow;
-        
+
         await _context.SaveChangesAsync();
-        
+
         // 推送统计数据更新
         await PushStatsUpdateAsync(userId);
-        
+
         return true;
     }
 
@@ -160,10 +160,10 @@ public class NotificationService : INotificationService
         }
 
         var count = await _context.SaveChangesAsync();
-        
+
         // 推送统计数据更新
         await PushStatsUpdateAsync(userId);
-        
+
         return count;
     }
 

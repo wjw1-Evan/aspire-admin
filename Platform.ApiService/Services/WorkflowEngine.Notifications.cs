@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
+using Platform.ApiService.Models.Entities;
 using Platform.ApiService.Models.Workflow;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,13 +47,18 @@ public partial class WorkflowEngine
         if (approvers.Any())
         {
             var message = $"您有一个待处理的审批节点：{node.Data.Label ?? node.Id}";
-            await _notificationService.CreateWorkflowNotificationAsync(
-                instanceId,
-                document.Title,
-                "workflow_pending_approval",
-                approvers,
-                message
-            );
+            foreach (var userId in approvers)
+            {
+                await _notificationService.PublishAsync(
+                    userId,
+                    document.Title,
+                    message,
+                    NotificationCategory.Work,
+                    NotificationLevel.Warning,
+                    actionUrl: $"/workflow/instance-detail?id={instanceId}",
+                    metadata: new Dictionary<string, string> { { "InstanceId", instanceId }, { "Type", "ApprovalRequired" } }
+                );
+            }
         }
     }
 
@@ -67,12 +73,14 @@ public partial class WorkflowEngine
         var document = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == instance.DocumentId);
         if (document == null) return;
 
-        await _notificationService.CreateWorkflowNotificationAsync(
-            instanceId,
+        await _notificationService.PublishAsync(
+            startedBy,
             document.Title,
-            "workflow_returned_to_start",
-            new List<string> { startedBy },
-            $"您的流程已被退回至起始节点，请重新填写并提交：{startNode.Data.Label ?? startNode.Id}"
+            $"您的流程已被退回至起始节点，请重新填写并提交：{startNode.Data.Label ?? startNode.Id}",
+            NotificationCategory.Work,
+            NotificationLevel.Error,
+            actionUrl: $"/workflow/instance-detail?id={instanceId}",
+            metadata: new Dictionary<string, string> { { "InstanceId", instanceId }, { "Type", "ReturnedToStart" } }
         );
     }
 
@@ -117,13 +125,18 @@ public partial class WorkflowEngine
 
         if (ccUserIds.Any())
         {
-            await _notificationService.CreateWorkflowNotificationAsync(
-                instanceId,
-                document.Title,
-                "workflow_cc",
-                ccUserIds,
-                ccMessage
-            );
+            foreach (var userId in ccUserIds)
+            {
+                await _notificationService.PublishAsync(
+                    userId,
+                    document.Title,
+                    ccMessage,
+                    NotificationCategory.Work,
+                    NotificationLevel.Info,
+                    actionUrl: $"/workflow/instance-detail?id={instanceId}",
+                    metadata: new Dictionary<string, string> { { "InstanceId", instanceId }, { "Type", "Cc" } }
+                );
+            }
         }
     }
 }

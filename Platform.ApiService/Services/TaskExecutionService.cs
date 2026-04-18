@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Platform.ApiService.Models;
+using Platform.ApiService.Models.Entities;
 using Platform.ServiceDefaults.Models;
 using System;
 using System.Collections.Generic;
@@ -15,12 +16,12 @@ public class TaskExecutionService : ITaskExecutionService
 {
     private readonly DbContext _context;
     private readonly IUserService _userService;
-    private readonly IUnifiedNotificationService _notificationService;
+    private readonly INotificationService _notificationService;
     private readonly IServiceProvider _serviceProvider;
     private readonly ITaskStatisticsService _statisticsService;
 
     public TaskExecutionService(DbContext context, IUserService userService,
-        IUnifiedNotificationService notificationService, IServiceProvider serviceProvider,
+        INotificationService notificationService, IServiceProvider serviceProvider,
         ITaskStatisticsService statisticsService)
     {
         _context = context;
@@ -42,12 +43,20 @@ public class TaskExecutionService : ITaskExecutionService
 
         await _context.SaveChangesAsync();
 
-        var related = GetRelatedUsers(task);
+        var related = GetRelatedUsers(task).Distinct().ToList();
 
-        await _notificationService.CreateTaskNotificationAsync(
-            task.Id!, task.TaskName, "task_assigned",
-            (int)task.Priority, (int)task.Status, task.AssignedTo,
-            related.Distinct(), request.Remarks);
+        foreach (var userId in related)
+        {
+            await _notificationService.PublishAsync(
+                userId,
+                "任务已分配",
+                $"任务 \"{task.TaskName}\" 已分配给您。备注：{request.Remarks ?? "无"}",
+                NotificationCategory.Work,
+                NotificationLevel.Info,
+                actionUrl: $"/task-management/detail?id={task.Id}",
+                metadata: new Dictionary<string, string> { { "TaskId", task.Id ?? "" }, { "Action", "task_assigned" } }
+            );
+        }
 
         return await GetTaskDtoAsync(task);
     }
@@ -84,11 +93,26 @@ public class TaskExecutionService : ITaskExecutionService
             _ => "task_updated"
         };
 
-        var related = GetRelatedUsers(task);
-        await _notificationService.CreateTaskNotificationAsync(
-            task.Id!, task.TaskName, action,
-            (int)task.Priority, (int)task.Status, task.AssignedTo,
-            related.Distinct(), request.Message);
+        var title = (Models.TaskStatus)task.Status switch
+        {
+            Models.TaskStatus.Completed => "任务已完成",
+            Models.TaskStatus.Failed => "任务失败",
+            _ => "任务状态变更"
+        };
+
+        var related = GetRelatedUsers(task).Distinct().ToList();
+        foreach (var userId in related)
+        {
+            await _notificationService.PublishAsync(
+                userId,
+                title,
+                $"任务 \"{task.TaskName}\" 状态变更为：{GetStatusName(task.Status)}。消息：{request.Message ?? "无"}",
+                NotificationCategory.Work,
+                task.Status == Models.TaskStatus.Failed ? NotificationLevel.Error : NotificationLevel.Info,
+                actionUrl: $"/task-management/detail?id={task.Id}",
+                metadata: new Dictionary<string, string> { { "TaskId", task.Id ?? "" }, { "Action", action } }
+            );
+        }
 
         return await GetTaskDtoAsync(task);
     }
@@ -118,11 +142,19 @@ public class TaskExecutionService : ITaskExecutionService
             await projectService.CalculateProjectProgressAsync(task.ProjectId);
         }
 
-        var related = GetRelatedUsers(task);
-        await _notificationService.CreateTaskNotificationAsync(
-            task.Id!, task.TaskName, "task_completed",
-            (int)task.Priority, (int)task.Status, task.AssignedTo,
-            related.Distinct(), request.Remarks);
+        var related = GetRelatedUsers(task).Distinct().ToList();
+        foreach (var userId in related)
+        {
+            await _notificationService.PublishAsync(
+                userId,
+                "任务已完成",
+                $"任务 \"{task.TaskName}\" 已完成。备注：{request.Remarks ?? "无"}",
+                NotificationCategory.Work,
+                NotificationLevel.Success,
+                actionUrl: $"/task-management/detail?id={task.Id}",
+                metadata: new Dictionary<string, string> { { "TaskId", task.Id ?? "" }, { "Action", "task_completed" } }
+            );
+        }
 
         return await GetTaskDtoAsync(task);
     }
@@ -136,11 +168,19 @@ public class TaskExecutionService : ITaskExecutionService
         if (!string.IsNullOrEmpty(remarks)) task.Remarks = remarks;
         await _context.SaveChangesAsync();
 
-        var related = GetRelatedUsers(task);
-        await _notificationService.CreateTaskNotificationAsync(
-            task.Id!, task.TaskName, "task_cancelled",
-            (int)task.Priority, (int)task.Status, task.AssignedTo,
-            related.Distinct(), remarks);
+        var related = GetRelatedUsers(task).Distinct().ToList();
+        foreach (var userId in related)
+        {
+            await _notificationService.PublishAsync(
+                userId,
+                "任务已取消",
+                $"任务 \"{task.TaskName}\" 已取消。备注：{remarks ?? "无"}",
+                NotificationCategory.Work,
+                NotificationLevel.Warning,
+                actionUrl: $"/task-management/detail?id={task.Id}",
+                metadata: new Dictionary<string, string> { { "TaskId", task.Id ?? "" }, { "Action", "task_cancelled" } }
+            );
+        }
 
         return await GetTaskDtoAsync(task);
     }

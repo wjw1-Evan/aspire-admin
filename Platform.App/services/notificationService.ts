@@ -1,8 +1,9 @@
 import { apiClient } from './api';
 import { ApiResponse } from '../types/api';
 import {
-    UnifiedNotificationListResponse,
-    UnreadCountStatistics,
+    PagedResult,
+    AppNotification,
+    NotificationStatistics,
 } from '../types/notification';
 
 export const notificationService = {
@@ -10,21 +11,26 @@ export const notificationService = {
     async getNotifications(
         page: number = 1,
         pageSize: number = 10,
-        filterType: string = 'all',
-        sortBy: string = 'datetime'
-    ): Promise<ApiResponse<UnifiedNotificationListResponse>> {
-        return await apiClient.get<any, ApiResponse<UnifiedNotificationListResponse>>(
-            '/api/unified-notification/center',
-            { params: { page, pageSize, filterType, sortBy } }
+        filterType: string = 'all'
+    ): Promise<ApiResponse<PagedResult<AppNotification>>> {
+        return await apiClient.get<any, ApiResponse<PagedResult<AppNotification>>>(
+            '/apiservice/api/notifications',
+            { params: { page, pageSize, filterType } }
+        );
+    },
+
+    /** 获取统计信息 */
+    async getStatistics(): Promise<ApiResponse<NotificationStatistics>> {
+        return await apiClient.get<any, ApiResponse<NotificationStatistics>>(
+            '/apiservice/api/notifications/statistics'
         );
     },
 
     /** 标记为已读 */
-    async markAsRead(id: string): Promise<ApiResponse<string>> {
-        return await apiClient.post<any, ApiResponse<string>>(
-            `/api/unified-notification/${id}/mark-as-read`,
+    async markAsRead(id: string): Promise<ApiResponse<void>> {
+        return await apiClient.put<any, ApiResponse<void>>(
+            `/apiservice/api/notifications/${id}/read`,
             {}
         );
     },
- 
 };

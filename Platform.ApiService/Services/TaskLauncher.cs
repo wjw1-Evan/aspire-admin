@@ -75,6 +75,11 @@ public class TaskLauncher(
 
         Logger.LogInformation("任务 {TaskId} 匹配结果数量: {Count}", task.Id, matchedResults.Count);
 
+        if (!matchedResults.Any()) return;
+
+        using var scope = ServiceProvider.CreateScope();
+        var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+
         foreach (var page in matchedResults)
         {
             Logger.LogInformation("匹配记录: TaskId={TaskId}, PageId={PageId}, Title={Title}, Url={Url}, IsMatched={IsMatched}", 
@@ -84,23 +89,17 @@ public class TaskLauncher(
             var score = page.RelevanceScore.HasValue ? $"{(int)page.RelevanceScore.Value}%" : "";
             var description = $"[{task.Name}] {score} 匹配相关".Trim();
 
-            await context.Set<NoticeIconItem>().AddAsync(new NoticeIconItem
-            {
-                Title = title.Length > 50 ? title[..50] + "..." : title,
-                Description = description,
-                Type = NoticeIconItemType.Notification,
-                Extra = page.Id,
-                ActionType = "web-scraper-match",
-                Datetime = DateTime.UtcNow,
-                Read = false,
-                ClickClose = true
-            });
+            await notificationService.PublishAsync(
+                task.UserId,
+                title.Length > 50 ? title[..50] + "..." : title,
+                description,
+                NotificationCategory.System,
+                NotificationLevel.Info,
+                actionUrl: page.Url,
+                metadata: new Dictionary<string, string> { { "TaskId", task.Id ?? "" }, { "ResultId", page.Id ?? "" } }
+            );
         }
 
-        if (matchedResults.Any())
-        {
-            await context.SaveChangesAsync();
-            Logger.LogInformation("任务 {TaskId} 发现 {Count} 条匹配记录，已发送通知", task.Id, matchedResults.Count);
-        }
+        Logger.LogInformation("任务 {TaskId} 发现 {Count} 条匹配记录，已通过新版通知系统发送", task.Id, matchedResults.Count);
     }
 }

@@ -1,38 +1,49 @@
 import { ApiResponse } from './api';
 
-export interface UnifiedNotificationItem {
-    id: string;
-    title: string;
-    description?: string;
-    avatar?: string;
-    extra?: string;
-    status?: string;
-    datetime: string;
-    type: string; // Notification | Message | Event | Task | System
-    read: boolean;
-    clickClose: boolean;
-    taskId?: string;
-    taskPriority?: number;
-    taskStatus?: number;
-    isSystemMessage?: boolean;
-    messagePriority?: number;
-    actionType?: string;
-    relatedUserIds?: string[];
+export enum NotificationCategory {
+  System = 'System',
+  Work = 'Work',
+  Social = 'Social',
+  Security = 'Security',
 }
 
-export interface UnifiedNotificationListResponse {
-    items: UnifiedNotificationItem[];
-    total: number;
-    page: number;
-    pageSize: number;
-    unreadCount: number;
-    success: boolean;
+export enum NotificationLevel {
+  Info = 'Info',
+  Success = 'Success',
+  Warning = 'Warning',
+  Error = 'Error',
 }
 
-export interface UnreadCountStatistics {
-    total: number;
+export interface AppNotification {
+  id: string;
+  senderId: string;
+  recipientId: string;
+  category: NotificationCategory;
+  level: NotificationLevel;
+  title: string;
+  content?: string;
+  actionUrl?: string;
+  status: number; // 0=Unread, 1=Read
+  metadata: Record<string, string>;
+  datetime: string;
+  readAt?: string;
 }
 
-export type UnifiedNotificationListResult = ApiResponse<UnifiedNotificationListResponse>;
-export type MarkAsReadResult = ApiResponse<string>;
-export type UnreadStatisticsResult = ApiResponse<UnreadCountStatistics>;
+export interface NotificationStatistics {
+  System: number;
+  Work: number;
+  Social: number;
+  Security: number;
+  Total: number;
+}
+
+export interface PagedResult<T> {
+  queryable: T[];
+  rowCount: number;
+  currentPage: number;
+  pageSize: number;
+  pageCount: number;
+}
+
+export type NotificationListResult = ApiResponse<PagedResult<AppNotification>>;
+export type NotificationStatisticsResult = ApiResponse<NotificationStatistics>;

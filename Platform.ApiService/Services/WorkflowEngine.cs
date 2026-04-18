@@ -28,7 +28,7 @@ public partial class WorkflowEngine : IWorkflowEngine
     private readonly DbContext _context;
 
     private readonly IUserService _userService;
-    private readonly IUnifiedNotificationService _notificationService;
+    private readonly INotificationService _notificationService;
     private readonly IApproverResolverFactory _approverResolverFactory = null!;
     private readonly IWorkflowExpressionEvaluator _expressionEvaluator;
     private readonly IWorkflowExpressionValidator _expressionValidator;
@@ -41,7 +41,7 @@ public partial class WorkflowEngine : IWorkflowEngine
     /// </summary>
     public WorkflowEngine(DbContext context,
         IUserService userService,
-        IUnifiedNotificationService notificationService,
+        INotificationService notificationService,
         IApproverResolverFactory approverResolverFactory,
         IWorkflowExpressionEvaluator expressionEvaluator,
         IWorkflowExpressionValidator expressionValidator,

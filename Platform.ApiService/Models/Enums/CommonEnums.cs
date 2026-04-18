@@ -8,14 +8,6 @@ public enum ChatMessageType
     System
 }
 
-public enum NoticeIconItemType
-{
-    Notification,
-    Message,
-    Event,
-    Task,
-    Todo
-}
 
 public enum PasswordStrengthLevel
 {

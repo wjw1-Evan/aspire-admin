@@ -19,20 +19,20 @@ public class JoinRequestService : IJoinRequestService
 {
     private readonly DbContext _context;
     private readonly IUserCompanyService _userCompanyService;
-    private readonly INoticeService _noticeService;
+    private readonly INotificationService _notificationService;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<JoinRequestService> _logger;
 
     public JoinRequestService(
         DbContext context,
         IUserCompanyService userCompanyService,
-        INoticeService noticeService,
+        INotificationService notificationService,
         ITenantContext tenantContext,
         ILogger<JoinRequestService> logger)
     {
         _context = context;
         _userCompanyService = userCompanyService;
-        _noticeService = noticeService;
+        _notificationService = notificationService;
         _tenantContext = tenantContext;
         _logger = logger;
     }
@@ -262,18 +262,18 @@ public class JoinRequestService : IJoinRequestService
 
             if (!adminUserIds.Any()) return;
 
-            var noticeRequest = new CreateNoticeRequest
+            foreach (var adminId in adminUserIds)
             {
-                Title = "新的加入企业申请",
-                Description = $"{applicantName} 申请加入企业 {companyName}" + (string.IsNullOrEmpty(applicant?.Email) ? "" : $" ({applicant.Email})"),
-                Type = NoticeIconItemType.Event,
-                Status = "processing",
-                Extra = requestId,
-                ClickClose = false,
-                Datetime = DateTime.UtcNow
-            };
-
-            await _noticeService.CreateNoticeForCompanyAsync(noticeRequest);
+                await _notificationService.PublishAsync(
+                    adminId,
+                    "新的加入企业申请",
+                    $"{applicantName} 申请加入企业 {companyName}" + (string.IsNullOrEmpty(applicant?.Email) ? "" : $" ({applicant.Email})"),
+                    NotificationCategory.System,
+                    NotificationLevel.Info,
+                    actionUrl: $"/organization/join-requests?companyId={companyId}",
+                    metadata: new Dictionary<string, string> { { "RequestId", requestId } }
+                );
+            }
         }
         catch (Exception ex)
         {

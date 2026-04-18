@@ -58,7 +58,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
                 if (args.TryGetValue("level", out var lev) && lev?.ToString() != "all" && Enum.TryParse<NotificationLevel>(lev.ToString(), out var level))
                     query = query.Where(n => n.Level == level);
 
-                var result = query.OrderByDescending(n => n.Datetime).ToPagedList(pageParams);
+                var result = query.OrderByDescending(n => n.CreatedAt).ToPagedList(pageParams);
                 return new { items = result.Queryable, rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount };
             });
 

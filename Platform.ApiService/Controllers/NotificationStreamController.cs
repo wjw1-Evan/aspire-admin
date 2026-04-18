@@ -31,7 +31,7 @@ public class NotificationStreamController : BaseApiController
     /// 建立 SSE 连接
     /// </summary>
     [HttpGet]
-    public async Task Subscribe()
+    public async Task<IActionResult> Subscribe()
     {
         var userId = RequiredUserId;
         var connectionId = Guid.NewGuid().ToString("N");
@@ -66,5 +66,7 @@ public class NotificationStreamController : BaseApiController
         {
             await _streamManager.UnregisterConnectionAsync(connectionId);
         }
+
+        return new EmptyResult();
     }
 }

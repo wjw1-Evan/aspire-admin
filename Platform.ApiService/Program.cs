@@ -170,20 +170,20 @@ builder.Services.AddOpenApi(options =>
 // 7. 认证 & 授权
 // ──────────────────────────────────────────────
 
-var jwtSecretKey = builder.Configuration["Jwt:SecretKey"];
-if (string.IsNullOrWhiteSpace(jwtSecretKey))
-{
-    if (builder.Environment.IsDevelopment())
-    {
-        jwtSecretKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
-
-        Console.WriteLine("[DEV] Jwt:SecretKey 未配置，已生成一次性密钥用于开发/测试环境。切勿在生产环境使用。");
+        jwtSecretKey = "dev-secret-key-for-aspire-admin-platform-32-chars-long!!"; // 使用固定位数的开发密钥
+        Console.WriteLine("[DEV] Jwt:SecretKey 未配置，已使用开发环境固定密钥。");
     }
     else
     {
         throw new InvalidOperationException(
             "JWT SecretKey must be configured. Set via User Secrets, Environment Variables (Jwt__SecretKey), or Azure Key Vault.");
     }
+}
+
+// 确保密钥长度足够 (HMAC-SHA256 需要至少 32 字节)
+if (jwtSecretKey.Length < 32)
+{
+    jwtSecretKey = jwtSecretKey.PadRight(32, '0');
 }
 
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "Platform.ApiService";
@@ -208,6 +208,28 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
         options.Events = new JwtBearerEvents
         {
+            OnMessageReceived = context =>
+            {
+                // 首先尝试从 Header 中获取 (标准方式)
+                var authHeader = context.Request.Headers.Authorization.FirstOrDefault();
+                if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                {
+                    return Task.CompletedTask;
+                }
+
+                // 如果 Header 中没有，尝试从查询参数 "token" 中获取 (SSE/SignalR 常用方式)
+                var accessToken = context.Request.Query["token"];
+                var path = context.Request.Path;
+                
+                // 只要路径包含通知流或者文件下载等可能需要 URL Token 的地方
+                if (!string.IsNullOrEmpty(accessToken) && 
+                    (path.Value?.Contains("/api/notifications/stream", StringComparison.OrdinalIgnoreCase) == true ||
+                     path.Value?.Contains("/api/files/download", StringComparison.OrdinalIgnoreCase) == true))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            },
             OnAuthenticationFailed = _ => Task.CompletedTask,
             OnChallenge = context =>
             {
@@ -265,7 +287,7 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseUserContext();
-app.UseGlobalAuthentication();
+// app.UseGlobalAuthentication(); // 移除此冗余中间件，它无法正确处理 SSE Token 并导致 401
 app.UseApiLogging();
 
 // 端点映射

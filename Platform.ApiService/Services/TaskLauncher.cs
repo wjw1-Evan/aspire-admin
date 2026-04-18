@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Models;
+using Platform.ApiService.Models.Entities;
 
 namespace Platform.ApiService.Services;
 

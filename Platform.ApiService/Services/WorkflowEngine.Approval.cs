@@ -1,4 +1,5 @@
 using Platform.ApiService.Models;
+using Platform.ApiService.Models.Entities;
 using Platform.ApiService.Models.Workflow;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
@@ -201,12 +202,14 @@ public partial class WorkflowEngine
                 var document = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == instance.DocumentId);
                 if (document != null)
                 {
-                    await _notificationService.CreateWorkflowNotificationAsync(
-                        instanceId,
-                        document.Title,
-                        "workflow_delegated",
-                        new List<string> { delegateToUserId },
-                        $"您收到一个转办的审批任务"
+                    await _notificationService.PublishAsync(
+                        delegateToUserId,
+                        $"[转办] {document.Title}",
+                        $"您收到一个转办的审批任务，节点: {nodeId}",
+                        NotificationCategory.Work,
+                        NotificationLevel.Info,
+                        actionUrl: $"/workflow/instance/{instanceId}",
+                        metadata: new Dictionary<string, string> { { "InstanceId", instanceId }, { "Action", "workflow_delegated" } }
                     );
                 }
             }
@@ -334,12 +337,14 @@ public partial class WorkflowEngine
                     if (document != null)
                     {
                         var approverNames = string.Join(", ", completedApprovals);
-                        await _notificationService.CreateWorkflowNotificationAsync(
-                            instanceId,
-                            document.Title,
-                            "workflow_approval_completed",
-                            new List<string> { instanceForNotify.StartedBy },
-                            $"审批节点 [{node.Data.Label ?? node.Id}] 已完成，审批人: {approverNames}"
+                        await _notificationService.PublishAsync(
+                            instanceForNotify.StartedBy,
+                            $"[通过] {document.Title}",
+                            $"审批节点 [{node.Data.Label ?? node.Id}] 已完成，审批人: {approverNames}",
+                            NotificationCategory.Work,
+                            NotificationLevel.Success,
+                            actionUrl: $"/workflow/instance/{instanceId}",
+                            metadata: new Dictionary<string, string> { { "InstanceId", instanceId }, { "Action", "workflow_approval_completed" } }
                         );
 
                         await SendCcNotificationsAsync(instanceId, node, "workflow_approval_completed",
@@ -438,14 +443,19 @@ public partial class WorkflowEngine
                 var document = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == instance.DocumentId);
                 if (document != null)
                 {
-                    var relatedUsers = new List<string> { instance.StartedBy, currentUserId };
-                    await _notificationService.CreateWorkflowNotificationAsync(
-                        instanceId,
-                        document.Title,
-                        "workflow_returned",
-                        relatedUsers,
-                        comment
-                    );
+                    var relatedUsers = new List<string> { instance.StartedBy, currentUserId }.Distinct();
+                    foreach (var uid in relatedUsers)
+                    {
+                        await _notificationService.PublishAsync(
+                            uid,
+                            $"[退回] {document.Title}",
+                            $"流程已被退回。审批意见: {comment ?? "无"}",
+                            NotificationCategory.Work,
+                            NotificationLevel.Warning,
+                            actionUrl: $"/workflow/instance/{instanceId}",
+                            metadata: new Dictionary<string, string> { { "InstanceId", instanceId }, { "Action", "workflow_returned" } }
+                        );
+                    }
                 }
             }
         }

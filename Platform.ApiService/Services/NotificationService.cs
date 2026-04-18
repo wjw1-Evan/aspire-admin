@@ -108,11 +108,13 @@ public class NotificationService : INotificationService
 
     public async Task<Dictionary<string, int>> GetStatisticsAsync(string userId)
     {
-        var stats = await _context.Set<AppNotification>()
+        var unreadItems = await _context.Set<AppNotification>()
             .Where(n => n.RecipientId == userId && n.Status == NotificationStatus.Unread)
+            .ToListAsync();
+
+        var stats = unreadItems
             .GroupBy(n => n.Category)
-            .Select(g => new { Category = g.Key.ToString(), Count = g.Count() })
-            .ToDictionaryAsync(x => x.Category, x => x.Count);
+            .ToDictionary(g => g.Key.ToString(), g => g.Count());
 
         // 补全缺失的分类到 0
         foreach (var category in Enum.GetNames<NotificationCategory>())

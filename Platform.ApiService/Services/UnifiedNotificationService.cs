@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
@@ -21,12 +22,18 @@ public class UnifiedNotificationService : IUnifiedNotificationService
     private readonly DbContext _context;
     private readonly ITenantContext _tenantContext;
     private readonly IChatSseConnectionManager _sseConnectionManager;
+    private readonly ILogger<UnifiedNotificationService> _logger;
 
-    public UnifiedNotificationService(DbContext context, ITenantContext tenantContext, IChatSseConnectionManager sseConnectionManager)
+    public UnifiedNotificationService(
+        DbContext context, 
+        ITenantContext tenantContext, 
+        IChatSseConnectionManager sseConnectionManager,
+        ILogger<UnifiedNotificationService> logger)
     {
         _context = context;
         _tenantContext = tenantContext;
         _sseConnectionManager = sseConnectionManager;
+        _logger = logger;
     }
 
     /// <inheritdoc/>
@@ -236,22 +243,50 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         return await GetUnreadCountStatisticsInternalAsync(null);
     }
 
+    /// <inheritdoc/>
+    public async Task<UnreadCountStatistics> GetUnreadCountStatisticsByUserIdAsync(string userId)
+    {
+        _logger.LogInformation("GetUnreadCountStatisticsByUserIdAsync: userId={UserId}", userId);
+        var result = await GetUnreadCountStatisticsInternalAsync(userId);
+        _logger.LogInformation("GetUnreadCountStatisticsByUserIdAsync 结果: Total={Total}, System={System}, Notification={Notification}, Message={Message}, Task={Task}, Todo={Todo}",
+            result.Total, result.SystemMessages, result.Notifications, result.Messages, result.TaskNotifications, result.Todos);
+        return result;
+    }
+
     private async Task<UnreadCountStatistics> GetUnreadCountStatisticsInternalAsync(string? specificUserId)
     {
-        var uid = specificUserId ?? _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var uid = specificUserId ?? _tenantContext.GetCurrentUserId();
+        if (string.IsNullOrEmpty(uid))
+        {
+            return new UnreadCountStatistics
+            {
+                Total = 0,
+                SystemMessages = 0,
+                Notifications = 0,
+                Messages = 0,
+                Todos = 0,
+                TaskNotifications = 0
+            };
+        }
+
+        _logger.LogInformation("GetUnreadCountStatisticsInternalAsync: uid={Uid}", uid);
 
         var systemMessagesCount = (int)await _context.Set<NoticeIconItem>().LongCountAsync(n => !n.Read && n.IsSystemMessage);
         var notificationsCount = (int)await _context.Set<NoticeIconItem>().LongCountAsync(n => !n.Read && n.Type == NoticeIconItemType.Notification);
         var messagesCount = (int)await _context.Set<NoticeIconItem>().LongCountAsync(n => !n.Read && n.Type == NoticeIconItemType.Message);
-        var taskNotificationsCount = (int)await _context.Set<NoticeIconItem>().LongCountAsync(n => !n.Read && n.Type == NoticeIconItemType.Task && n.RelatedUserIds.Contains(uid));
+        var taskNotificationsCount = (int)await _context.Set<NoticeIconItem>().LongCountAsync(n => !n.Read && n.Type == NoticeIconItemType.Task && n.RelatedUserIds != null && n.RelatedUserIds.Contains(uid));
+        var todosCount = (int)await _context.Set<NoticeIconItem>().LongCountAsync(n => !n.Read && n.IsTodo);
+
+        _logger.LogInformation("统计结果: system={System}, notification={Notification}, message={Message}, task={Task}, todo={Todo}",
+            systemMessagesCount, notificationsCount, messagesCount, taskNotificationsCount, todosCount);
 
         return new UnreadCountStatistics
         {
-            Total = systemMessagesCount + notificationsCount + messagesCount + taskNotificationsCount,
+            Total = systemMessagesCount + notificationsCount + messagesCount + taskNotificationsCount + todosCount,
             SystemMessages = systemMessagesCount,
             Notifications = notificationsCount,
             Messages = messagesCount,
-            Todos = 0,
+            Todos = todosCount,
             TaskNotifications = taskNotificationsCount
         };
     }

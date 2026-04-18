@@ -26,11 +26,5 @@ export const notificationService = {
             {}
         );
     },
-
-    /** 获取未读统计 */
-    async getUnreadStatistics(): Promise<ApiResponse<UnreadCountStatistics>> {
-        return await apiClient.get<any, ApiResponse<UnreadCountStatistics>>(
-            '/api/unified-notification/unread-statistics'
-        );
-    },
+ 
 };

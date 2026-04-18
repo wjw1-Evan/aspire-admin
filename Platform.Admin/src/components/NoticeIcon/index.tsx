@@ -4,7 +4,7 @@ import HeaderDropdown from '@/components/HeaderDropdown';
 import { BellOutlined } from '@ant-design/icons';
 import UnifiedNotificationCenter from '@/components/UnifiedNotificationCenter';
 import UnifiedNotificationList from '@/components/UnifiedNotificationCenter/UnifiedNotificationList';
-import { getUnreadStatistics, UnreadCountStatistics } from '@/services/unified-notification/api';
+import { UnreadCountStatistics } from '@/services/unified-notification/api';
 import headerStyles from '@/components/RightContent/index.less';
 import { tokenUtils } from '@/utils/token';
 import { getApiBaseUrl } from '@/utils/request';
@@ -22,25 +22,11 @@ export default function NoticeIcon() {
   const [visible, setVisible] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [popoverOpen, setPopoverOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const isMountedRef = useRef(true);
-
-  const fetchUnreadCount = useCallback(async () => {
-    try {
-      const res = await getUnreadStatistics();
-      if (res?.success && res.data) {
-        setUnreadCount(res.data.total || 0);
-      }
-    } catch {
-      // 静默失败
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   const connectSse = useCallback(() => {
     if (eventSourceRef.current?.readyState === EventSource.OPEN ||
@@ -57,12 +43,17 @@ export default function NoticeIcon() {
     if (!token) return;
 
     const baseUrl = getApiBaseUrl();
-    const url = `${baseUrl}/apiservice/api/notification/sse?token=${encodeURIComponent(token)}`;
+    const url = process.env.NODE_ENV === 'development'
+      ? `/apiservice/api/notification/sse?token=${encodeURIComponent(token)}`
+      : `${baseUrl}/api/notification/sse?token=${encodeURIComponent(token)}`;
+
+    console.log('[NoticeIcon] 尝试连接 SSE:', url);
 
     const eventSource = new EventSource(url);
     eventSourceRef.current = eventSource;
 
     eventSource.onopen = () => {
+      console.log('[NoticeIcon] SSE 连接已打开');
       if (!isMountedRef.current) {
         eventSource.close();
         return;
@@ -71,6 +62,7 @@ export default function NoticeIcon() {
     };
 
     eventSource.onerror = () => {
+      console.error('[NoticeIcon] SSE 连接错误');
       if (!isMountedRef.current) return;
 
       if (eventSource.readyState === EventSource.CLOSED) {
@@ -86,22 +78,28 @@ export default function NoticeIcon() {
     };
 
     eventSource.addEventListener('NotificationUpdated', (event: MessageEvent) => {
+      console.log('[NoticeIcon] 收到 NotificationUpdated 事件:', event.data);
       if (!isMountedRef.current) return;
       try {
         const data: UnreadCountStatistics = event.data ? JSON.parse(event.data) : null;
         if (data) {
+          console.log('[NoticeIcon] 更新未读数:', data.total);
           setUnreadCount(data.total || 0);
+          window.dispatchEvent(new CustomEvent('notification-updated', { detail: data }));
         }
-      } catch {
-        // 忽略解析错误
+      } catch (e) {
+        console.error('[NoticeIcon] 解析事件数据失败:', e);
       }
+    });
+
+    eventSource.addEventListener('message', (event: MessageEvent) => {
+      // 忽略默认消息事件
     });
   }, []);
 
   useEffect(() => {
     isMountedRef.current = true;
 
-    fetchUnreadCount();
     connectSse();
 
     return () => {
@@ -114,7 +112,7 @@ export default function NoticeIcon() {
         eventSourceRef.current = null;
       }
     };
-  }, [fetchUnreadCount, connectSse]);
+  }, [connectSse]);
 
   const popoverContent = (
     <div style={{ width: 420 }}>
@@ -158,7 +156,7 @@ export default function NoticeIcon() {
         placement="bottomRight"
       >
         <span className={headerStyles.headerActionButton} onClick={() => setVisible(true)}>
-          <Badge dot={loading} count={loading ? 0 : unreadCount} overflowCount={99} offset={[7, -7]}>
+          <Badge count={unreadCount} overflowCount={99} offset={[7, -7]}>
             <BellOutlined />
           </Badge>
         </span>

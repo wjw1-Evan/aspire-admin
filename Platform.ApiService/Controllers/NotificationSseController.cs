@@ -5,6 +5,7 @@ using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
 using Platform.ServiceDefaults.Services;
 using System.Text;
+using System.Text.Json;
 
 namespace Platform.ApiService.Controllers;
 
@@ -19,15 +20,18 @@ public class NotificationSseController : BaseApiController
 {
     private readonly IChatSseConnectionManager _connectionManager;
     private readonly IJwtService _jwtService;
+    private readonly IUnifiedNotificationService _unifiedNotificationService;
     private readonly ILogger<NotificationSseController> _logger;
 
     public NotificationSseController(
         IChatSseConnectionManager connectionManager,
         IJwtService jwtService,
+        IUnifiedNotificationService unifiedNotificationService,
         ILogger<NotificationSseController> logger)
     {
         _connectionManager = connectionManager ?? throw new ArgumentNullException(nameof(connectionManager));
         _jwtService = jwtService ?? throw new ArgumentNullException(nameof(jwtService));
+        _unifiedNotificationService = unifiedNotificationService ?? throw new ArgumentNullException(nameof(unifiedNotificationService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -74,6 +78,19 @@ public class NotificationSseController : BaseApiController
         
         await _connectionManager.RegisterUserConnectionAsync(userId, connectionId, Response, cancellationToken);
 
+        // 连接建立后立即发送初始未读统计
+        _logger.LogInformation("通知 SSE 连接建立，用户: {UserId}, 连接: {ConnectionId}", userId, connectionId);
+        try
+        {
+            var initialStatistics = await _unifiedNotificationService.GetUnreadCountStatisticsByUserIdAsync(userId);
+            _logger.LogInformation("获取初始未读统计成功: Total={Total}", initialStatistics.Total);
+            await WriteSseEventAsync("NotificationUpdated", initialStatistics, cancellationToken);
+            _logger.LogInformation("已发送初始未读统计: {Total}", initialStatistics.Total);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "通知 SSE 初始统计发送失败: 连接 {ConnectionId}", connectionId);
+        }
 
         try
         {
@@ -86,8 +103,7 @@ public class NotificationSseController : BaseApiController
                 {
                     try
                     {
-                        var heartbeatMessage = "event: keepalive\ndata: \n\n";
-                        await _connectionManager.SendToUserAsync(userId, heartbeatMessage);
+                        await WriteSseEventAsync("keepalive", null, cancellationToken);
                         lastHeartbeat = DateTime.UtcNow;
                     }
                     catch (Exception ex)
@@ -112,5 +128,25 @@ public class NotificationSseController : BaseApiController
         }
 
         return new EmptyResult();
+    }
+
+    private async Task WriteSseEventAsync(string eventType, object? data, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var json = data != null ? JsonSerializer.Serialize(data) : "null";
+            var message = $"event: {eventType}\ndata: {json}\n\n";
+            var bytes = Encoding.UTF8.GetBytes(message);
+
+            await Response.Body.WriteAsync(bytes, cancellationToken);
+            await Response.Body.FlushAsync(cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "SSE 写入事件失败: 事件 {EventType}", eventType);
+        }
     }
 }

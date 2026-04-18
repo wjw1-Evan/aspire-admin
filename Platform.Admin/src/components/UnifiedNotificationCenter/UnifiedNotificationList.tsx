@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Tag, Space, Empty, Spin, Badge, Avatar, Tooltip, Flex, Pagination, theme } from 'antd';
 import { BellOutlined, FileTextOutlined, AlertOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -8,8 +8,8 @@ import { useIntl, history } from '@umijs/max';
 import {
   getUnifiedNotifications,
   markAsRead,
-  getUnreadStatistics,
   type UnifiedNotificationItem,
+  type UnreadCountStatistics,
 } from '@/services/unified-notification/api';
 import styles from './index.less';
 
@@ -42,43 +42,29 @@ const UnifiedNotificationList: React.FC<UnifiedNotificationListProps> = ({
 
   const t = (id: string, def: string) => intl.formatMessage({ id, defaultMessage: def });
 
-  const fetchUnreadStats = async () => {
-    try {
-      const response = await getUnreadStatistics();
-      if (response.success && response.data) {
-        setUnreadTotal(response.data.total ?? 0);
-      }
-    } catch {
-      // 静默失败
+  // 通过 SSE 事件更新未读数（不再轮询）
+  const handleNotificationUpdate = useCallback((event: Event) => {
+    const customEvent = event as CustomEvent<UnreadCountStatistics>;
+    if (customEvent.detail) {
+      setUnreadTotal(customEvent.detail.total ?? 0);
     }
-  };
+  }, []);
 
-  const fetchUnifiedNotifications = async () => {
-    setLoading(true);
-    try {
-      const response = await getUnifiedNotifications(page, pageSize, filterType, sortBy);
+  useEffect(() => {
+    // 监听 SSE 推送的未读数更新事件
+    window.addEventListener('notification-updated', handleNotificationUpdate);
+    // 初始加载一次
+    getUnifiedNotifications(1, pageSize, filterType, sortBy).then((response) => {
       if (response.success && response.data) {
         setNotifications(response.data.queryable);
         setTotal(response.data.rowCount);
       }
-    } catch {
-      setNotifications([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    });
 
-  useEffect(() => {
-    fetchUnreadStats();
-    fetchUnifiedNotifications();
-
-    const intervalId = setInterval(() => {
-      fetchUnreadStats();
-      fetchUnifiedNotifications();
-    }, 5000);
-
-    return () => clearInterval(intervalId);
-  }, [page, pageSize]);
+    return () => {
+      window.removeEventListener('notification-updated', handleNotificationUpdate);
+    };
+  }, [pageSize, handleNotificationUpdate]);
 
   const { token } = theme.useToken();
 

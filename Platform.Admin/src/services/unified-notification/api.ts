@@ -62,23 +62,4 @@ export async function markAsRead(id: string) {
     data: {},
   });
 }
-
-/** 获取未读通知数量 */
-export async function getUnreadCount() {
-  return request<ApiResponse<{ unreadCount: number }>>(
-    '/apiservice/api/unified-notification/unread-count',
-    {
-      method: 'GET',
-    },
-  );
-}
-
-/** 获取未读通知数量统计 */
-export async function getUnreadStatistics() {
-  return request<ApiResponse<UnreadCountStatistics>>(
-    '/apiservice/api/unified-notification/unread-statistics',
-    {
-      method: 'GET',
-    },
-  );
-}
+ 

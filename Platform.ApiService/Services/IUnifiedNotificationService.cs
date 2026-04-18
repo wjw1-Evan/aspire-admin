@@ -92,6 +92,11 @@ public interface IUnifiedNotificationService
     /// 获取未读通知数量统计（按类型）
     /// </summary>
     Task<UnreadCountStatistics> GetUnreadCountStatisticsAsync();
+
+    /// <summary>
+    /// 根据指定用户ID获取未读通知数量统计（用于 SSE 推送，不依赖 TenantContext）
+    /// </summary>
+    Task<UnreadCountStatistics> GetUnreadCountStatisticsByUserIdAsync(string userId);
 }
 
 /// <summary>

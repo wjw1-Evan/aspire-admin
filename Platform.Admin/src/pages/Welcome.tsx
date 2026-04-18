@@ -36,7 +36,6 @@ import {
   QuickActionsPanel,
   TaskOverviewCard,
   StatisticsOverview,
-  SystemResourcesCard,
   ApprovalOverviewCard,
   IoTEventAlertsCard,
   ProjectListCard
@@ -149,7 +148,7 @@ const Welcome: React.FC = () => {
   const [diskHistory, setDiskHistory] = useState<{ value: number; time: string }[]>([]);
 
   const [leftCards, setLeftCards] = useState<string[]>(['task-overview', 'project-list', 'statistics-overview']);
-  const [rightCards, setRightCards] = useState<string[]>(['approval-overview', 'iot-events', 'system-resources']);
+  const [rightCards, setRightCards] = useState<string[]>(['approval-overview', 'iot-events']);
   const [isSavingLayout, setIsSavingLayout] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -405,8 +404,6 @@ const Welcome: React.FC = () => {
           ) : null;
         case 'iot-events':
           return <IoTEventAlertsCard loading={loading} />;
-        case 'system-resources':
-          return <SystemResourcesCard {...cardProps} />;
         default:
           return null;
       }

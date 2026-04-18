@@ -3,7 +3,6 @@ export { default as QuickActionsPanel } from './QuickActionsPanel';
 export { default as TaskOverviewCard } from './TaskOverviewCard';
 export { default as RecentActivitiesCard } from './RecentActivitiesCard';
 export { default as StatisticsOverview } from './StatisticsOverview';
-export { default as SystemResourcesCard } from './SystemResourcesCard';
 export { default as TinyAreaChart } from './TinyAreaChart';
 export { default as ResourceCard } from './ResourceCard';
 export { default as StatCard } from './StatCard';

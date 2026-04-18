@@ -1,3 +1,5 @@
+curl -sSL <https://aspire.dev/install.sh> | bash
+
 aspire update
 
 dotnet dev-certs https --trust

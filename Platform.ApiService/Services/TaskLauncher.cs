@@ -49,6 +49,9 @@ public class TaskLauncher(
                     return;
                 }
 
+                Logger.LogInformation("任务 {TaskId} 执行完成, EnableFilter={EnableFilter}, NotifyOnMatch={NotifyOnMatch}", 
+                    taskId, task.EnableFilter, task.NotifyOnMatch);
+
                 if (task.EnableFilter == true && task.NotifyOnMatch != false)
                 {
                     await SendMatchNotificationsAsync(context, task, userId);
@@ -67,6 +70,8 @@ public class TaskLauncher(
             .Where(r => r.TaskId == task.Id && r.IsMatched == true)
             .OrderByDescending(r => r.RelevanceScore)
             .ToListAsync();
+
+        Logger.LogInformation("任务 {TaskId} 匹配结果数量: {Count}", task.Id, matchedResults.Count);
 
         foreach (var page in matchedResults)
         {

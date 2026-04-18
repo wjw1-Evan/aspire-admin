@@ -74,9 +74,13 @@ public class NotificationSseController : BaseApiController
         Response.Headers["Connection"] = "keep-alive";
         Response.Headers["X-Accel-Buffering"] = "no";
 
+        _logger.LogInformation("SSE Response 头已设置: ContentType={ContentType}", Response.ContentType);
+
         var connectionId = Guid.NewGuid().ToString();
         
+        _logger.LogInformation("RegisterUserConnectionAsync 之前: userId={UserId}, connectionId={ConnectionId}", userId, connectionId);
         await _connectionManager.RegisterUserConnectionAsync(userId, connectionId, Response, cancellationToken);
+        _logger.LogInformation("RegisterUserConnectionAsync 完成");
 
         // 连接建立后立即发送初始未读统计
         _logger.LogInformation("通知 SSE 连接建立，用户: {UserId}, 连接: {ConnectionId}", userId, connectionId);

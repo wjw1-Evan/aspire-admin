@@ -52,20 +52,32 @@ class TokenRefreshManager {
    * 执行实际的 token 刷新逻辑
    */
   private static async doRefresh(refreshToken: string): Promise<TokenRefreshResult | null> {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[TokenRefresh] Starting refresh with token:', refreshToken?.substring(0, 20) + '...');
+    }
     try {
       const { refreshToken: refreshTokenAPI } = await import(
         '@/services/ant-design-pro/api'
       );
 
       const refreshResponse = await refreshTokenAPI({ refreshToken });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[TokenRefresh] API response:', JSON.stringify(refreshResponse));
+      }
 
       if (!refreshResponse.success || !refreshResponse.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[TokenRefresh] Failed - no success or no data');
+        }
         return {
           success: false,
         };
       }
 
       const refreshResult = refreshResponse.data;
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[TokenRefresh] refreshResult:', JSON.stringify(refreshResult));
+      }
       const hasValidTokens =
         refreshResult.status === 'ok' &&
         refreshResult.token &&

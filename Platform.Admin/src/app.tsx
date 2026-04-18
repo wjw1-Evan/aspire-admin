@@ -555,6 +555,9 @@ function handleCurrentUserResponse(response: any): any {
 
 async function handle401Error(error: any): Promise<any> {
   const is401Error = error.response?.status === 401;
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[Auth] 401 error detected, URL:', error.config?.url);
+  }
   if (!is401Error) {
     return null;
   }
@@ -563,16 +566,31 @@ async function handle401Error(error: any): Promise<any> {
   const isRetryRequest = error.config?._retry;
 
   if (isRefreshTokenRequest || isRetryRequest) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Auth] Skipping refresh - already a refresh/retry request');
+    }
     return null;
   }
 
   const refreshToken = tokenUtils.getRefreshToken();
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[Auth] Refresh token available:', !!refreshToken);
+  }
   if (!refreshToken) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Auth] No refresh token, will redirect to login');
+    }
     return null;
   }
 
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[Auth] Attempting to refresh token...');
+  }
   const refreshResult = await TokenRefreshManager.refresh(refreshToken);
   if (refreshResult?.success && refreshResult.token) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Auth] Token refreshed successfully');
+    }
     // 显式保存新的 tokens（TokenRefreshManager.doRefresh 内部也会调用，这里确保一致性）
     tokenUtils.setTokens(
       refreshResult.token,
@@ -580,6 +598,9 @@ async function handle401Error(error: any): Promise<any> {
       refreshResult.expiresAt
     );
     return TokenRefreshManager.retryRequest(error.config, refreshResult.token);
+  }
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[Auth] Token refresh failed or returned null');
   }
   return null;
 }

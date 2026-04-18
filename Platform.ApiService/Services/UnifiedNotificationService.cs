@@ -256,8 +256,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
     private async Task<UnreadCountStatistics> GetUnreadCountStatisticsInternalAsync(string? specificUserId)
     {
         var uid = specificUserId ?? _tenantContext.GetCurrentUserId();
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
-        if (string.IsNullOrEmpty(uid) || string.IsNullOrEmpty(companyId))
+        if (string.IsNullOrEmpty(uid))
         {
             return new UnreadCountStatistics
             {
@@ -270,9 +269,9 @@ public class UnifiedNotificationService : IUnifiedNotificationService
             };
         }
 
-        _logger.LogInformation("GetUnreadCountStatisticsInternalAsync: uid={Uid}, companyId={CompanyId}", uid, companyId);
+        _logger.LogInformation("GetUnreadCountStatisticsInternalAsync: uid={Uid}", uid);
 
-        var baseQuery = _context.Set<NoticeIconItem>().Where(n => n.CompanyId == companyId && !n.Read);
+        var baseQuery = _context.Set<NoticeIconItem>().Where(n => !n.Read);
 
         var allRelatedQuery = baseQuery.Where(n => n.RelatedUserIds != null && n.RelatedUserIds.Contains(uid));
         var systemMessagesCount = await baseQuery.CountAsync(n => n.IsSystemMessage);

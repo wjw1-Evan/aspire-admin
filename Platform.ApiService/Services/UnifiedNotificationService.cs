@@ -44,6 +44,8 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         var applyTaskVisibility = filterTypeLower is "all" or "unread";
         var onlyMyTasks = filterTypeLower == "task";
 
+        var currentCompanyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? "";
+
         Expression<Func<NoticeIconItem, bool>> BuildFilter(bool unreadOnly)
         {
             return n =>
@@ -54,40 +56,49 @@ public class UnifiedNotificationService : IUnifiedNotificationService
                  filterTypeLower == "system" ? n.IsSystemMessage :
                  filterTypeLower == "unread" ? !n.Read :
                  true) &&
-                (!applyTaskVisibility || n.Type != NoticeIconItemType.Task || n.RelatedUserIds.Contains(currentUserId)) &&
-                (!onlyMyTasks || (n.Type == NoticeIconItemType.Task && n.RelatedUserIds.Contains(currentUserId))) &&
+                // 用户相关：或者是系统消息（全局或当前租户），或者是关联用户列表中包含当前用户
+                ((n.IsSystemMessage && (string.IsNullOrEmpty(n.CompanyId) || n.CompanyId == currentCompanyId)) || 
+                 (n.RelatedUserIds != null && n.RelatedUserIds.Contains(currentUserId))) &&
                 (!unreadOnly || !n.Read);
         }
 
-        var query = _context.Set<NoticeIconItem>().Where(BuildFilter(false));
+        var query = _context.Set<NoticeIconItem>().IgnoreQueryFilters().Where(BuildFilter(false));
 
         return query.ToPagedList(request);
     }
 
     /// <inheritdoc/>
-    public Task<System.Linq.Dynamic.Core.PagedResult<NoticeIconItem>> GetTodosAsync(Platform.ServiceDefaults.Models.ProTableRequest request, string sortBy = "dueDate")
-    {
-        var query = _context.Set<NoticeIconItem>().Where(n => n.IsTodo);
-
-        return Task.FromResult(query.ToPagedList(request));
-    }
-
-    /// <inheritdoc/>
-    public Task<System.Linq.Dynamic.Core.PagedResult<NoticeIconItem>> GetSystemMessagesAsync(Platform.ServiceDefaults.Models.ProTableRequest request)
-    {
-        var query = _context.Set<NoticeIconItem>().Where(n => n.IsSystemMessage).OrderByDescending(n => n.Datetime);
-        return Task.FromResult(query.ToPagedList(request));
-    }
-
-    /// <inheritdoc/>
-    public Task<System.Linq.Dynamic.Core.PagedResult<NoticeIconItem>> GetTaskNotificationsAsync(Platform.ServiceDefaults.Models.ProTableRequest request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<NoticeIconItem>> GetTodosAsync(Platform.ServiceDefaults.Models.ProTableRequest request, string sortBy = "dueDate")
     {
         var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var query = _context.Set<NoticeIconItem>()
+            .IgnoreQueryFilters()
+            .Where(n => n.IsTodo && n.RelatedUserIds.Contains(currentUserId));
+
+        return query.ToPagedList(request);
+    }
+
+    /// <inheritdoc/>
+    public async Task<System.Linq.Dynamic.Core.PagedResult<NoticeIconItem>> GetSystemMessagesAsync(Platform.ServiceDefaults.Models.ProTableRequest request)
+    {
+        var currentCompanyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? "";
+        var query = _context.Set<NoticeIconItem>()
+            .IgnoreQueryFilters()
+            .Where(n => n.IsSystemMessage && (string.IsNullOrEmpty(n.CompanyId) || n.CompanyId == currentCompanyId))
+            .OrderByDescending(n => n.Datetime);
+        return query.ToPagedList(request);
+    }
+
+    /// <inheritdoc/>
+    public async Task<System.Linq.Dynamic.Core.PagedResult<NoticeIconItem>> GetTaskNotificationsAsync(Platform.ServiceDefaults.Models.ProTableRequest request)
+    {
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var query = _context.Set<NoticeIconItem>()
+            .IgnoreQueryFilters()
             .Where(n => n.Type == NoticeIconItemType.Task && n.RelatedUserIds.Contains(currentUserId))
             .OrderByDescending(n => n.Datetime);
 
-        return Task.FromResult(query.ToPagedList(request));
+        return query.ToPagedList(request);
     }
 
     /// <inheritdoc/>
@@ -106,6 +117,12 @@ public class UnifiedNotificationService : IUnifiedNotificationService
             ClickClose = false
         };
 
+        var currentUserId = _tenantContext.GetCurrentUserId();
+        if (!string.IsNullOrEmpty(currentUserId))
+        {
+            todo.RelatedUserIds.Add(currentUserId);
+        }
+
         await _context.Set<NoticeIconItem>().AddAsync(todo);
         await _context.SaveChangesAsync();
         await BroadcastUnreadStatisticsAsync();
@@ -115,8 +132,16 @@ public class UnifiedNotificationService : IUnifiedNotificationService
     /// <inheritdoc/>
     public async Task<NoticeIconItem?> UpdateTodoAsync(string id, UpdateTodoRequest request)
     {
-        var todo = await _context.Set<NoticeIconItem>().FirstOrDefaultAsync(x => x.Id == id);
+        var currentUserId = _tenantContext.GetCurrentUserId();
+        var todo = await _context.Set<NoticeIconItem>()
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.Id == id);
+            
         if (todo == null) return null;
+        
+        // 权限检查
+        if (!todo.IsTodo || (todo.RelatedUserIds != null && !todo.RelatedUserIds.Contains(currentUserId)))
+            throw new UnauthorizedAccessException("无权更新此待办项");
 
         if (!string.IsNullOrEmpty(request.Title)) todo.Title = request.Title;
         if (!string.IsNullOrEmpty(request.Description)) todo.Description = request.Description;
@@ -132,8 +157,16 @@ public class UnifiedNotificationService : IUnifiedNotificationService
     /// <inheritdoc/>
     public async Task<bool> CompleteTodoAsync(string id)
     {
-        var todo = await _context.Set<NoticeIconItem>().FirstOrDefaultAsync(x => x.Id == id);
+        var currentUserId = _tenantContext.GetCurrentUserId();
+        var todo = await _context.Set<NoticeIconItem>()
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.Id == id);
+            
         if (todo == null) return false;
+        
+        // 权限检查
+        if (!todo.IsTodo || (todo.RelatedUserIds != null && !todo.RelatedUserIds.Contains(currentUserId)))
+            throw new UnauthorizedAccessException("无权完成此待办项");
 
         todo.Read = true;
         await _context.SaveChangesAsync();
@@ -144,8 +177,16 @@ public class UnifiedNotificationService : IUnifiedNotificationService
     /// <inheritdoc/>
     public async Task<bool> DeleteTodoAsync(string id)
     {
-        var todo = await _context.Set<NoticeIconItem>().FirstOrDefaultAsync(x => x.Id == id);
+        var currentUserId = _tenantContext.GetCurrentUserId();
+        var todo = await _context.Set<NoticeIconItem>()
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.Id == id);
+            
         if (todo == null) return false;
+        
+        // 权限检查
+        if (!todo.IsTodo || (todo.RelatedUserIds != null && !todo.RelatedUserIds.Contains(currentUserId)))
+            throw new UnauthorizedAccessException("无权删除此待办项");
 
         _context.Set<NoticeIconItem>().Remove(todo);
         await _context.SaveChangesAsync();
@@ -212,8 +253,16 @@ public class UnifiedNotificationService : IUnifiedNotificationService
     /// <inheritdoc/>
     public async Task<bool> MarkAsReadAsync(string id)
     {
-        var item = await _context.Set<NoticeIconItem>().FirstOrDefaultAsync(x => x.Id == id);
+        var currentUserId = _tenantContext.GetCurrentUserId();
+        var item = await _context.Set<NoticeIconItem>()
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.Id == id);
+            
         if (item == null) return false;
+        
+        // 权限检查
+        if (item.RelatedUserIds != null && !item.RelatedUserIds.Contains(currentUserId))
+             return false;
 
         item.Read = true;
         await _context.SaveChangesAsync();
@@ -224,7 +273,12 @@ public class UnifiedNotificationService : IUnifiedNotificationService
     /// <inheritdoc/>
     public async Task<bool> MarkMultipleAsReadAsync(List<string> ids)
     {
-        var items = await _context.Set<NoticeIconItem>().Where(x => ids.Contains(x.Id!)).ToListAsync();
+        var currentUserId = _tenantContext.GetCurrentUserId();
+        var items = await _context.Set<NoticeIconItem>()
+            .IgnoreQueryFilters()
+            .Where(x => ids.Contains(x.Id!) && x.RelatedUserIds.Contains(currentUserId))
+            .ToListAsync();
+            
         foreach (var item in items) item.Read = true;
         await _context.SaveChangesAsync();
         await BroadcastUnreadStatisticsAsync();
@@ -271,10 +325,17 @@ public class UnifiedNotificationService : IUnifiedNotificationService
 
         _logger.LogInformation("GetUnreadCountStatisticsInternalAsync: uid={Uid}", uid);
 
-        var baseQuery = _context.Set<NoticeIconItem>().Where(n => !n.Read);
+        // 统计未读数量时忽略租户过滤器，因为通知中心通常显示全局未读数
+        var baseQuery = _context.Set<NoticeIconItem>().IgnoreQueryFilters().Where(n => !n.Read);
 
+        var currentCompanyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? "";
+
+        // 相关通知：包含用户ID在 RelatedUserIds 中的条目
         var allRelatedQuery = baseQuery.Where(n => n.RelatedUserIds != null && n.RelatedUserIds.Contains(uid));
-        var systemMessagesCount = await baseQuery.CountAsync(n => n.IsSystemMessage);
+        
+        // 系统消息：全局系统消息 (CompanyId 为空) 或 当前租户的系统消息
+        var systemMessagesCount = await baseQuery.CountAsync(n => n.IsSystemMessage && (string.IsNullOrEmpty(n.CompanyId) || n.CompanyId == currentCompanyId));
+        
         var notificationsCount = await allRelatedQuery.CountAsync(n => n.Type == NoticeIconItemType.Notification);
         var messagesCount = await allRelatedQuery.CountAsync(n => n.Type == NoticeIconItemType.Message);
         var taskNotificationsCount = await allRelatedQuery.CountAsync(n => n.Type == NoticeIconItemType.Task);

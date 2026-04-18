@@ -101,6 +101,26 @@ export default function NoticeIcon() {
   useEffect(() => {
     isMountedRef.current = true;
 
+    // 初始获取未读数作为兜底
+    const fetchInitialUnreadCount = async () => {
+      try {
+        const res = await fetch('/apiservice/api/unified-notification/unread-count', {
+          headers: {
+            'Authorization': `Bearer ${tokenUtils.getToken()}`
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.data) {
+            setUnreadCount(data.data.unreadCount || 0);
+          }
+        }
+      } catch (error) {
+        console.warn('[NoticeIcon] 初始获取未读数失败:', error);
+      }
+    };
+
+    fetchInitialUnreadCount();
     connectSse();
 
     return () => {

@@ -1,3 +1,4 @@
+using System.Threading;
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
@@ -15,6 +16,7 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
     private readonly ILogger<WebScraperScheduledTaskHostedService> _logger;
     private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(1);
     private readonly Platform.ApiService.Services.ITaskLauncher _taskLauncher;
+    private readonly SemaphoreSlim _runLock = new(1, 1);
 
     public WebScraperScheduledTaskHostedService(
         IServiceProvider serviceProvider,
@@ -32,7 +34,20 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
         {
             try
             {
-                await CheckAndExecuteScheduledTasksAsync(stoppingToken);
+                if (!await _runLock.WaitAsync(0, stoppingToken).ConfigureAwait(false))
+                {
+                    await Task.Delay(_checkInterval, stoppingToken);
+                    continue;
+                }
+
+                try
+                {
+                    await CheckAndExecuteScheduledTasksAsync(stoppingToken);
+                }
+                finally
+                {
+                    _runLock.Release();
+                }
             }
             catch (Exception ex)
             {
@@ -68,10 +83,10 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
         {
             var isDue = task.NextRunAt != null && task.NextRunAt <= now;
             var isRunning = task.LastStatus == ScrapingStatus.Running;
+            var hasRunVeryRecently = task.LastRunAt.HasValue && (now - task.LastRunAt.Value).TotalSeconds < 30;
 
-            if (isDue && isRunning)
+            if (isDue && (isRunning || hasRunVeryRecently))
             {
-                _logger.LogWarning("[定时任务] 任务 {TaskName} 已到期但正在执行，跳过", task.Name);
                 continue;
             }
 
@@ -86,7 +101,6 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
                 var elapsed = now - (task.LastRunAt ?? now.AddMinutes(-5));
                 if (elapsed.TotalMinutes > 10)
                 {
-                    _logger.LogWarning("[定时任务] 任务 {TaskName} 状态异常，已重置", task.Name);
                     task.LastStatus = ScrapingStatus.Idle;
                     await context.SaveChangesAsync(CancellationToken.None);
                 }

@@ -159,12 +159,10 @@ builder.Services.AddOpenApi(options =>
 });
 
 // ──────────────────────────────────────────────
-// 6. 业务服务注册 (全自动扫描)
-// ──────────────────────────────────────────────
+ // 6. 业务服务注册 (全自动扫描)
+ // ──────────────────────────────────────────────
 
-builder.Services.AddHostedService<WebScraperScheduledTaskHostedService>();
-
-builder.Services.AddServiceDiscovery(builder.Configuration);
+ builder.Services.AddServiceDiscovery(builder.Configuration);
 
 // ──────────────────────────────────────────────
 

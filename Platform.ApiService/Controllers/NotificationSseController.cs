@@ -38,12 +38,9 @@ public class NotificationSseController : BaseApiController
     /// <summary>
     /// SSE 事件流端点
     /// </summary>
-    /// <param name="token">JWT token（通过查询参数传递，因为 EventSource 不支持自定义请求头）</param>
-    /// <param name="cancellationToken">取消令牌</param>
-    /// <returns>SSE 事件流</returns>
     [HttpGet("sse")]
     [Produces("text/event-stream")]
-    public async Task<IActionResult> StreamEvents(
+    public async Task StreamEvents(
         [FromQuery] string? token,
         CancellationToken cancellationToken)
     {
@@ -74,27 +71,22 @@ public class NotificationSseController : BaseApiController
         Response.Headers["Connection"] = "keep-alive";
         Response.Headers["X-Accel-Buffering"] = "no";
 
-        _logger.LogInformation("SSE Response 头已设置: ContentType={ContentType}", Response.ContentType);
-
         var connectionId = Guid.NewGuid().ToString();
         
-        _logger.LogInformation("RegisterUserConnectionAsync 之前: userId={UserId}, connectionId={ConnectionId}", userId, connectionId);
         await _connectionManager.RegisterUserConnectionAsync(userId, connectionId, Response, cancellationToken);
-        _logger.LogInformation("RegisterUserConnectionAsync 完成");
 
-        // 连接建立后立即发送初始未读统计
         _logger.LogInformation("通知 SSE 连接建立，用户: {UserId}, 连接: {ConnectionId}", userId, connectionId);
-        _logger.LogInformation("准备获取未读统计...");
+
+        // 发送初始未读统计
         try
         {
             var initialStatistics = await _unifiedNotificationService.GetUnreadCountStatisticsByUserIdAsync(userId);
-            _logger.LogInformation("获取初始未读统计成功: Total={Total}", initialStatistics.Total);
             await WriteSseEventAsync("NotificationUpdated", initialStatistics, cancellationToken);
-            _logger.LogInformation("已发送初始未读统计: {Total}", initialStatistics.Total);
+            _logger.LogInformation("已发送初始未读统计: Total={Total}", initialStatistics.Total);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "通知 SSE 初始统计发送失败: 连接 {ConnectionId}", connectionId);
+            _logger.LogError(ex, "通知 SSE 初始统计发送失败");
         }
 
         try
@@ -113,7 +105,7 @@ public class NotificationSseController : BaseApiController
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "通知 SSE 心跳发送失败: 连接 {ConnectionId}", connectionId);
+                        _logger.LogWarning(ex, "通知 SSE 心跳发送失败");
                     }
                 }
 
@@ -125,36 +117,25 @@ public class NotificationSseController : BaseApiController
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "通知 SSE 连接异常: 连接 {ConnectionId} 用户 {UserId}", connectionId, userId);
+            _logger.LogError(ex, "通知 SSE 连接异常: 连接 {ConnectionId}", connectionId);
         }
         finally
         {
             await _connectionManager.UnregisterConnectionAsync(connectionId);
         }
-
-        return new EmptyResult();
     }
 
     private async Task WriteSseEventAsync(string eventType, object? data, CancellationToken cancellationToken)
     {
-        try
+        var json = data != null ? JsonSerializer.Serialize(data, new JsonSerializerOptions
         {
-            var json = data != null ? JsonSerializer.Serialize(data) : "null";
-            var message = $"event: {eventType}\ndata: {json}\n\n";
-            _logger.LogInformation("WriteSseEventAsync: {Message}", message);
-            var bytes = Encoding.UTF8.GetBytes(message);
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        }) : "null";
 
-            await Response.Body.WriteAsync(bytes, 0, bytes.Length, cancellationToken);
-            await Response.Body.FlushAsync(cancellationToken);
-            _logger.LogInformation("WriteSseEventAsync 完成");
-        }
-        catch (OperationCanceledException)
-        {
-            _logger.LogWarning("WriteSseEventAsync 取消: {EventType}", eventType);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "SSE 写入事件失败: 事件 {EventType}", eventType);
-        }
+        var message = $"event: {eventType}\ndata: {json}\n\n";
+        var bytes = Encoding.UTF8.GetBytes(message);
+
+        await Response.Body.WriteAsync(bytes, 0, bytes.Length, cancellationToken);
+        await Response.Body.FlushAsync(cancellationToken);
     }
 }

@@ -44,24 +44,6 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
     useEffect(() => {
         if (!canAccessProject) return;
         fetchProjects();
-
-        const intervalId = setInterval(() => {
-            if (document.visibilityState === 'visible') {
-                fetchProjects();
-            }
-        }, 60000);
-
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible') {
-                fetchProjects();
-            }
-        };
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-
-        return () => {
-            clearInterval(intervalId);
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-        };
     }, [canAccessProject]);
 
     const getStatusColor = (status: number) => {

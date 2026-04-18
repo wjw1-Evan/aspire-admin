@@ -57,26 +57,6 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
         if (!canAccessIoT) return;
         fetchUnhandledCount();
         fetchEvents();
-
-        const intervalId = setInterval(() => {
-            if (document.visibilityState === 'visible') {
-                fetchUnhandledCount();
-                fetchEvents();
-            }
-        }, 30000);
-
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible') {
-                fetchUnhandledCount();
-                fetchEvents();
-            }
-        };
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-
-        return () => {
-            clearInterval(intervalId);
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-        };
     }, [canAccessIoT]);
 
     const getLevelColor = (level: string) => {

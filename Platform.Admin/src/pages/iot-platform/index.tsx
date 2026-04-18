@@ -31,8 +31,6 @@ const IoTPlatform: React.FC = () => {
 
   useEffect(() => {
     loadStatistics();
-    const interval = setInterval(loadStatistics, 30000);
-    return () => clearInterval(interval);
   }, []);
 
   const loadStatistics = async () => {

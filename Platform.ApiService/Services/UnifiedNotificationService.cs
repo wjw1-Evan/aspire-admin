@@ -256,7 +256,8 @@ public class UnifiedNotificationService : IUnifiedNotificationService
     private async Task<UnreadCountStatistics> GetUnreadCountStatisticsInternalAsync(string? specificUserId)
     {
         var uid = specificUserId ?? _tenantContext.GetCurrentUserId();
-        if (string.IsNullOrEmpty(uid))
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
+        if (string.IsNullOrEmpty(uid) || string.IsNullOrEmpty(companyId))
         {
             return new UnreadCountStatistics
             {
@@ -269,13 +270,15 @@ public class UnifiedNotificationService : IUnifiedNotificationService
             };
         }
 
-        _logger.LogInformation("GetUnreadCountStatisticsInternalAsync: uid={Uid}", uid);
+        _logger.LogInformation("GetUnreadCountStatisticsInternalAsync: uid={Uid}, companyId={CompanyId}", uid, companyId);
 
-        var systemMessagesCount = (int)await _context.Set<NoticeIconItem>().LongCountAsync(n => !n.Read && n.IsSystemMessage);
-        var notificationsCount = (int)await _context.Set<NoticeIconItem>().LongCountAsync(n => !n.Read && n.Type == NoticeIconItemType.Notification);
-        var messagesCount = (int)await _context.Set<NoticeIconItem>().LongCountAsync(n => !n.Read && n.Type == NoticeIconItemType.Message);
-        var taskNotificationsCount = (int)await _context.Set<NoticeIconItem>().LongCountAsync(n => !n.Read && n.Type == NoticeIconItemType.Task && n.RelatedUserIds != null && n.RelatedUserIds.Contains(uid));
-        var todosCount = (int)await _context.Set<NoticeIconItem>().LongCountAsync(n => !n.Read && n.IsTodo);
+        var baseQuery = _context.Set<NoticeIconItem>().Where(n => n.CompanyId == companyId && !n.Read);
+
+        var systemMessagesCount = await baseQuery.CountAsync(n => n.IsSystemMessage);
+        var notificationsCount = await baseQuery.CountAsync(n => n.Type == NoticeIconItemType.Notification);
+        var messagesCount = await baseQuery.CountAsync(n => n.Type == NoticeIconItemType.Message);
+        var taskNotificationsCount = await baseQuery.CountAsync(n => n.Type == NoticeIconItemType.Task && n.RelatedUserIds != null && n.RelatedUserIds.Contains(uid));
+        var todosCount = await baseQuery.CountAsync(n => n.IsTodo);
 
         _logger.LogInformation("统计结果: system={System}, notification={Notification}, message={Message}, task={Task}, todo={Todo}",
             systemMessagesCount, notificationsCount, messagesCount, taskNotificationsCount, todosCount);

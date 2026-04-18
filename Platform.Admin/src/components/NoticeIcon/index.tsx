@@ -1,189 +1,131 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
-import { Badge } from 'antd';
+import React, { useState, useCallback, useMemo } from 'react';
+import { Badge, Tabs, Button, List, Space, Empty, Spin, Tag, Typography } from 'antd';
+import { BellOutlined, CheckCircleOutlined, InfoCircleOutlined, WarningOutlined, CloseCircleOutlined, DeleteOutlined } from '@ant-design/icons';
 import HeaderDropdown from '@/components/HeaderDropdown';
-import { BellOutlined } from '@ant-design/icons';
-import UnifiedNotificationCenter from '@/components/UnifiedNotificationCenter';
-import UnifiedNotificationList from '@/components/UnifiedNotificationCenter/UnifiedNotificationList';
-import { UnreadCountStatistics } from '@/services/unified-notification/api';
+import { useNotificationStream } from '@/hooks/useNotificationStream';
+import { NotificationCategory, NotificationLevel, markAsRead, markAllAsRead, AppNotification } from '@/services/notification/api';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import styles from './index.less';
 import headerStyles from '@/components/RightContent/index.less';
-import { tokenUtils } from '@/utils/token';
-import { getApiBaseUrl } from '@/utils/request';
 
-function getReconnectDelay(attempts: number): number {
-  if (attempts === 0) return 1000;
-  if (attempts === 1) return 2000;
-  if (attempts === 2) return 4000;
-  if (attempts === 3) return 8000;
-  if (attempts === 4) return 16000;
-  return 30000;
-}
+dayjs.extend(relativeTime);
 
-export default function NoticeIcon() {
-  const [visible, setVisible] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+const { Text } = Typography;
+
+const LevelIcon: React.FC<{ level: NotificationLevel }> = ({ level }) => {
+  switch (level) {
+    case NotificationLevel.Success: return <CheckCircleOutlined style={{ color: '#52c41a' }} />;
+    case NotificationLevel.Warning: return <WarningOutlined style={{ color: '#faad14' }} />;
+    case NotificationLevel.Error: return <CloseCircleOutlined style={{ color: '#ff4d4f' }} />;
+    default: return <InfoCircleOutlined style={{ color: '#1677ff' }} />;
+  }
+};
+
+const NoticeIcon: React.FC = () => {
   const [popoverOpen, setPopoverOpen] = useState(false);
+  const { statistics, unreadCount, latestNotifications, refreshStats } = useNotificationStream();
+  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>('all');
 
-  const eventSourceRef = useRef<EventSource | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const reconnectAttemptsRef = useRef(0);
-  const isMountedRef = useRef(true);
-
-  const connectSse = useCallback(() => {
-    if (eventSourceRef.current?.readyState === EventSource.OPEN ||
-        eventSourceRef.current?.readyState === EventSource.CONNECTING) {
-      return;
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      await markAsRead(id);
+      refreshStats();
+    } catch (e) {
+      console.error(e);
     }
+  };
 
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
+  const handleMarkAllAsRead = async (category?: NotificationCategory) => {
+    setLoading(true);
+    try {
+      await markAllAsRead(category);
+      refreshStats();
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const token = tokenUtils.getToken();
-    if (!token) return;
+  const notificationList = (
+    <div className={styles.notificationPanel}>
+      <div className={styles.notificationHeader}>
+        <Text strong>通知中心</Text>
+        <Space>
+          <Button 
+            type="link" 
+            size="small" 
+            onClick={() => handleMarkAllAsRead()}
+            icon={<CheckCircleOutlined />}
+          >
+            全部已读
+          </Button>
+        </Space>
+      </div>
+      
+      <div className={styles.notificationList}>
+        {latestNotifications.length > 0 ? (
+          <List
+            dataSource={latestNotifications}
+            renderItem={(item) => (
+              <div 
+                className={styles.notificationItem}
+                onClick={() => handleMarkAsRead(item.id)}
+              >
+                <div className={`${styles.levelIndicator} ${styles[item.level.toLowerCase()]}`} />
+                <div style={{ marginTop: 4 }}>
+                  <LevelIcon level={item.level} />
+                </div>
+                <div className={styles.notificationContent}>
+                  <div className={styles.notificationTitle}>
+                    {item.title}
+                    <span style={{ float: 'right', fontWeight: 'normal', fontSize: 10, color: '#999' }}>
+                      {dayjs(item.datetime).fromNow()}
+                    </span>
+                  </div>
+                  <div className={styles.notificationDesc}>{item.content}</div>
+                  <div style={{ marginTop: 4 }}>
+                    <Tag size="small" color="blue">{item.category}</Tag>
+                  </div>
+                </div>
+              </div>
+            )}
+          />
+        ) : (
+          <div className={styles.emptyState}>
+            <Empty description="暂无新通知" />
+          </div>
+        )}
+      </div>
 
-    const baseUrl = getApiBaseUrl();
-    const url = process.env.NODE_ENV === 'development'
-      ? `/apiservice/api/notification/sse?token=${encodeURIComponent(token)}`
-      : `${baseUrl}/api/notification/sse?token=${encodeURIComponent(token)}`;
-
-    console.log('[NoticeIcon] 尝试连接 SSE:', url);
-
-    const eventSource = new EventSource(url);
-    eventSourceRef.current = eventSource;
-
-    eventSource.onopen = () => {
-      console.log('[NoticeIcon] SSE 连接已打开');
-      if (!isMountedRef.current) {
-        eventSource.close();
-        return;
-      }
-      reconnectAttemptsRef.current = 0;
-    };
-
-    eventSource.onerror = (error) => {
-      console.error('[NoticeIcon] SSE 连接错误:', error);
-      console.log('[NoticeIcon] EventSource readyState:', eventSource.readyState);
-      if (!isMountedRef.current) return;
-
-      if (eventSource.readyState === EventSource.CLOSED) {
-        const delay = getReconnectDelay(reconnectAttemptsRef.current);
-        reconnectAttemptsRef.current++;
-
-        reconnectTimeoutRef.current = setTimeout(() => {
-          if (isMountedRef.current) {
-            connectSse();
-          }
-        }, delay);
-      }
-    };
-
-    eventSource.addEventListener('NotificationUpdated', (event: MessageEvent) => {
-      console.log('[NoticeIcon] 收到 NotificationUpdated 事件:', event.data);
-      if (!isMountedRef.current) return;
-      try {
-        const data: UnreadCountStatistics = event.data ? JSON.parse(event.data) : null;
-        if (data !== null && data !== undefined) {
-          console.log('[NoticeIcon] 更新未读数:', data.total);
-          setUnreadCount(data.total || 0);
-          window.dispatchEvent(new CustomEvent('notification-updated', { detail: data }));
-        }
-      } catch (e) {
-        console.error('[NoticeIcon] 解析事件数据失败:', e);
-      }
-    });
-
-    eventSource.addEventListener('message', (event: MessageEvent) => {
-      console.log('[NoticeIcon] 收到 message 事件:', event.data);
-    });
-  }, []);
-
-  useEffect(() => {
-    isMountedRef.current = true;
-
-    // 初始获取未读数作为兜底
-    const fetchInitialUnreadCount = async () => {
-      try {
-        const res = await fetch('/apiservice/api/unified-notification/unread-count', {
-          headers: {
-            'Authorization': `Bearer ${tokenUtils.getToken()}`
-          }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && data.data) {
-            setUnreadCount(data.data.unreadCount || 0);
-          }
-        }
-      } catch (error) {
-        console.warn('[NoticeIcon] 初始获取未读数失败:', error);
-      }
-    };
-
-    fetchInitialUnreadCount();
-    connectSse();
-
-    return () => {
-      isMountedRef.current = false;
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-        eventSourceRef.current = null;
-      }
-    };
-  }, [connectSse]);
-
-  const popoverContent = (
-    <div style={{ width: 420 }}>
-      <UnifiedNotificationList
-        pageSize={5}
-        showPagination={false}
-        maxHeight={400}
-        onItemClick={() => setPopoverOpen(false)}
-      />
-      <div
-        style={{
-          textAlign: 'center',
-          padding: '12px 0 4px',
-          borderTop: '1px solid #f0f0f0',
-          marginTop: 8,
-        }}
-      >
-        <a
-          onClick={() => {
-            setPopoverOpen(false);
-            setVisible(true);
-          }}
-        >
-          查看全部通知
-        </a>
+      <div className={styles.notificationFooter}>
+        <Button type="link" block onClick={() => { /* Navigate to full page */ }}>
+          查看所有
+        </Button>
       </div>
     </div>
   );
 
   return (
-    <>
-      <HeaderDropdown
-        dropdownRender={() => (
-          <div>
-            {popoverContent}
-          </div>
-        )}
-        trigger={['hover']}
-        open={popoverOpen}
-        onOpenChange={setPopoverOpen}
-        placement="bottomRight"
-      >
-        <span className={headerStyles.headerActionButton} onClick={() => setVisible(true)}>
-          <Badge count={unreadCount} overflowCount={99} offset={[7, -7]} showZero={true}>
-            <BellOutlined />
-          </Badge>
-        </span>
-      </HeaderDropdown>
-
-      <UnifiedNotificationCenter open={visible} onClose={() => setVisible(false)} />
-    </>
+    <HeaderDropdown
+      dropdownRender={() => notificationList}
+      trigger={['click']}
+      open={popoverOpen}
+      onOpenChange={setPopoverOpen}
+      placement="bottomRight"
+    >
+      <span className={headerStyles.headerActionButton}>
+        <Badge 
+          count={unreadCount} 
+          overflowCount={99} 
+          size="small"
+          style={{ boxShadow: '0 0 0 1px #fff' }}
+        >
+          <BellOutlined style={{ fontSize: 18 }} />
+        </Badge>
+      </span>
+    </HeaderDropdown>
   );
-}
+};
+
+export default NoticeIcon;

@@ -84,6 +84,7 @@ public class NotificationSseController : BaseApiController
 
         // 连接建立后立即发送初始未读统计
         _logger.LogInformation("通知 SSE 连接建立，用户: {UserId}, 连接: {ConnectionId}", userId, connectionId);
+        _logger.LogInformation("准备获取未读统计...");
         try
         {
             var initialStatistics = await _unifiedNotificationService.GetUnreadCountStatisticsByUserIdAsync(userId);

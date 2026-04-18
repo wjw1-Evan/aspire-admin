@@ -22,11 +22,6 @@ public class UserContextMiddleware
         {
             context.Items["UserId"] = userId;
         }
-        else
-        {
-            _logger.LogWarning("【UserContext】未能从 Token 提取 UserId，Claims: {Claims}", 
-                string.Join(", ", context.User?.Claims.Select(c => $"{c.Type}={c.Value}") ?? []));
-        }
 
         await _next(context);
     }
@@ -34,11 +29,11 @@ public class UserContextMiddleware
     private static string? GetUserIdFromToken(ClaimsPrincipal? user)
     {
         if (user == null) return null;
-        
+
         var userId = user.FindFirst("userId")?.Value
                ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value
                ?? user.FindFirst("sub")?.Value;
-        
+
         return userId;
     }
 }

@@ -61,8 +61,9 @@ export default function NoticeIcon() {
       reconnectAttemptsRef.current = 0;
     };
 
-    eventSource.onerror = () => {
-      console.error('[NoticeIcon] SSE 连接错误');
+    eventSource.onerror = (error) => {
+      console.error('[NoticeIcon] SSE 连接错误:', error);
+      console.log('[NoticeIcon] EventSource readyState:', eventSource.readyState);
       if (!isMountedRef.current) return;
 
       if (eventSource.readyState === EventSource.CLOSED) {
@@ -75,10 +76,6 @@ export default function NoticeIcon() {
           }
         }, delay);
       }
-    };
-
-    eventSource.onmessage = (event: MessageEvent) => {
-      console.log('[NoticeIcon] 收到 message 事件:', event.data);
     };
 
     eventSource.addEventListener('NotificationUpdated', (event: MessageEvent) => {
@@ -97,7 +94,7 @@ export default function NoticeIcon() {
     });
 
     eventSource.addEventListener('message', (event: MessageEvent) => {
-      // 忽略默认消息事件
+      console.log('[NoticeIcon] 收到 message 事件:', event.data);
     });
   }, []);
 

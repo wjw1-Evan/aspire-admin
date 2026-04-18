@@ -82,7 +82,7 @@ export default function NoticeIcon() {
       if (!isMountedRef.current) return;
       try {
         const data: UnreadCountStatistics = event.data ? JSON.parse(event.data) : null;
-        if (data) {
+        if (data !== null && data !== undefined) {
           console.log('[NoticeIcon] 更新未读数:', data.total);
           setUnreadCount(data.total || 0);
           window.dispatchEvent(new CustomEvent('notification-updated', { detail: data }));

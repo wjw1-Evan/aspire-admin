@@ -228,6 +228,8 @@ public class WebScraperService : IWebScraperService
                 var matchedCount = 0;
                 if (task.EnableFilter == true && !string.IsNullOrWhiteSpace(task.FilterPrompt))
                 {
+                    _logger.LogInformation("[ExecuteTaskAsync] 开始AI筛选, TaskId={TaskId}, FilterPrompt={Prompt}", task.Id, task.FilterPrompt);
+                    
                     var filterResults = await _contentFilterService.FilterPagesAsync(task.FilterPrompt!, result.Pages);
                     for (int i = 0; i < result.Pages.Count; i++)
                     {
@@ -237,6 +239,8 @@ public class WebScraperService : IWebScraperService
                             result.Pages[i].IsMatched = filterResults[i].IsMatched;
                             result.Pages[i].MatchReason = filterResults[i].Reason;
                             result.Pages[i].RelevanceScore = filterResults[i].Score;
+                            _logger.LogDebug("[ExecuteTaskAsync] 页面筛选结果: Url={Url}, IsMatched={IsMatched}, Score={Score}, Reason={Reason}", 
+                                result.Pages[i].Url, filterResults[i].IsMatched, filterResults[i].Score, filterResults[i].Reason);
                             if (filterResults[i].IsMatched) matchedCount++;
                         }
                         else
@@ -244,6 +248,7 @@ public class WebScraperService : IWebScraperService
                             result.Pages[i].IsFiltered = false;
                         }
                     }
+                    _logger.LogInformation("[ExecuteTaskAsync] AI筛选完成, TaskId={TaskId}, TotalPages={Total}, MatchedCount={Matched}", task.Id, result.Pages.Count, matchedCount);
                 }
 
                 var endTime = DateTime.UtcNow;

@@ -487,6 +487,27 @@ return Success(true);             // 返回成功
 return Success(result, "操作成功"); // 返回数据 + 消息
 ```
 
+### 6.9 SSE (Server-Sent Events) 开发规范
+
+**[强制]** 本项目严禁使用框架自带的实时推送中间件（如 SignalR），必须使用轻量级的 SSE 实现。
+
+#### 后端实现准则
+1. **禁用缓冲**：必须调用 `IHttpResponseBodyFeature.DisableBuffering()` 确保消息即时下发。
+2. **报头控制**：
+   - `Content-Type`: `text/event-stream`
+   - `Cache-Control`: `no-cache, no-transform`
+   - **[关键]** `X-Accel-Buffering`: `no` (确保能穿透 Nginx/YARP 等反向代理)。
+3. **心跳机制**：必须实现服务端心跳（建议每 15 秒发送一次 `: ping` 注释），防止代理层因长连接空闲而将其断开。
+4. **响应压缩避让**：在流式连接中必须显式跳过响应压缩中间件（或确保 `text/event-stream` 不在压缩列表中）。
+
+#### 过滤器与中间件避让
+1. **全局过滤器**：在 `ApiResponseWrapperFilter` 等全局过滤器中，必须通过路径排除或检查 `Accept: text/event-stream` 报头来避让，严禁包裹 SSE 响应源。
+2. **请求日志**：在 `ApiLoggingMiddleware` 中应排除 SSE 路径，避免记录海量的长连接日志，同时防止日志逻辑干扰流的生命周期。
+
+#### 前端连接准则
+1. **认证支持**：SSE 原生不支持 Header 认证。必须在 `JwtBearerEvents.OnMessageReceived` 中支持从查询参数 `token` 中提取令牌。
+2. **重连逻辑**：前端钩子必须实现指数退避重连机制，并在连接成功后通过首个消息（如 `Connected` 类型）初始化状态，实现“推送即初始化”。
+
 ## 7. 前端开发规范（Admin）
 
 > **开发标准参考**：`src/pages/password-book/index.tsx` 是所有列表页面的开发标准代码。

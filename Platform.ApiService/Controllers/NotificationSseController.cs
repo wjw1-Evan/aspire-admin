@@ -136,17 +136,20 @@ public class NotificationSseController : BaseApiController
         {
             var json = data != null ? JsonSerializer.Serialize(data) : "null";
             var message = $"event: {eventType}\ndata: {json}\n\n";
+            _logger.LogInformation("WriteSseEventAsync: {Message}", message);
             var bytes = Encoding.UTF8.GetBytes(message);
 
-            await Response.Body.WriteAsync(bytes, cancellationToken);
+            await Response.Body.WriteAsync(bytes, 0, bytes.Length, cancellationToken);
             await Response.Body.FlushAsync(cancellationToken);
+            _logger.LogInformation("WriteSseEventAsync 完成");
         }
         catch (OperationCanceledException)
         {
+            _logger.LogWarning("WriteSseEventAsync 取消: {EventType}", eventType);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "SSE 写入事件失败: 事件 {EventType}", eventType);
+            _logger.LogError(ex, "SSE 写入事件失败: 事件 {EventType}", eventType);
         }
     }
 }

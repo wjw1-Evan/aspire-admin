@@ -21,8 +21,8 @@ public class ApiLoggingMiddleware
         "/metrics",
         "/_framework/",
         "/favicon.ico",
-        "/api/chat/sse",
-        "/chat/sse",
+        "/api/stream/sse",
+        "/stream/sse",
         "/api/notifications/stream"
     };
 

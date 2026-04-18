@@ -13,28 +13,28 @@ using System.Text.Json;
 namespace Platform.ApiService.Controllers;
 
 /// <summary>
-/// 聊天 SSE 控制器（简化版）
-/// 提供基础的 Server-Sent Events 实时消息推送
+/// 流式事件控制器
+/// 提供 Server-Sent Events 实时消息推送（通用 SSE 连接）
 /// </summary>
 [ApiController]
-[Route("api/chat")]
+[Route("api/stream")]
 [SkipGlobalAuthentication("SSE端点通过查询参数自主验证Token")]
-public class ChatSseController : BaseApiController
+public class StreamController : BaseApiController
 {
     private readonly IChatSseConnectionManager _connectionManager;
     private readonly IJwtService _jwtService;
-    private readonly ILogger<ChatSseController> _logger;
+    private readonly ILogger<StreamController> _logger;
 
     /// <summary>
-    /// 初始化聊天 SSE 控制器
+    /// 初始化流式事件控制器
     /// </summary>
     /// <param name="connectionManager">连接管理器</param>
     /// <param name="jwtService">JWT 服务</param>
     /// <param name="logger">日志记录器</param>
-    public ChatSseController(
+    public StreamController(
         IChatSseConnectionManager connectionManager,
         IJwtService jwtService,
-        ILogger<ChatSseController> logger)
+        ILogger<StreamController> logger)
     {
         _connectionManager = connectionManager ?? throw new ArgumentNullException(nameof(connectionManager));
         _jwtService = jwtService ?? throw new ArgumentNullException(nameof(jwtService));

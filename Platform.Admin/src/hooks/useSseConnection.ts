@@ -87,7 +87,7 @@ export function useSseConnection(
       }
 
       const baseUrl = getApiBaseUrl();
-      const url = `${baseUrl}/apiservice/api/chat/sse?token=${encodeURIComponent(token)}`;
+      const url = `${baseUrl}/apiservice/api/stream/sse?token=${encodeURIComponent(token)}`;
 
       // 创建 EventSource
       let eventSource: EventSource;

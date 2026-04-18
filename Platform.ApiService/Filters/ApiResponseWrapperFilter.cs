@@ -22,8 +22,8 @@ public class ApiResponseWrapperFilter : IAsyncResultFilter
         "/metrics",
         "/_framework/",
         "/favicon.ico",
-        "/chat/sse",
-        "/api/chat/sse",
+        "/stream/sse",
+        "/api/stream/sse",
         "/api/notifications/stream"
     };
 

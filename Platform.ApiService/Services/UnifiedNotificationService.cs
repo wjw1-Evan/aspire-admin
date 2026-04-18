@@ -274,11 +274,12 @@ public class UnifiedNotificationService : IUnifiedNotificationService
 
         var baseQuery = _context.Set<NoticeIconItem>().Where(n => n.CompanyId == companyId && !n.Read);
 
+        var allRelatedQuery = baseQuery.Where(n => n.RelatedUserIds != null && n.RelatedUserIds.Contains(uid));
         var systemMessagesCount = await baseQuery.CountAsync(n => n.IsSystemMessage);
-        var notificationsCount = await baseQuery.CountAsync(n => n.Type == NoticeIconItemType.Notification);
-        var messagesCount = await baseQuery.CountAsync(n => n.Type == NoticeIconItemType.Message);
-        var taskNotificationsCount = await baseQuery.CountAsync(n => n.Type == NoticeIconItemType.Task && n.RelatedUserIds != null && n.RelatedUserIds.Contains(uid));
-        var todosCount = await baseQuery.CountAsync(n => n.IsTodo);
+        var notificationsCount = await allRelatedQuery.CountAsync(n => n.Type == NoticeIconItemType.Notification);
+        var messagesCount = await allRelatedQuery.CountAsync(n => n.Type == NoticeIconItemType.Message);
+        var taskNotificationsCount = await allRelatedQuery.CountAsync(n => n.Type == NoticeIconItemType.Task);
+        var todosCount = await allRelatedQuery.CountAsync(n => n.IsTodo);
 
         _logger.LogInformation("统计结果: system={System}, notification={Notification}, message={Message}, task={Task}, todo={Todo}",
             systemMessagesCount, notificationsCount, messagesCount, taskNotificationsCount, todosCount);

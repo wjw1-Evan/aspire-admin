@@ -7,16 +7,16 @@
       "description": "自动提交 Git"
     },
     "build-frontend": {
-      "template": "编译前端并修复错误：\n1. 进入 Platform.Admin 目录\n2. 运行 npm run lint（包含 npm run tsc）检查代码\n3. 分析错误输出，定位问题文件\n4. 修复 TypeScript 错误和其他 lint 问题\n5. 重新运行 npm run lint 直到无错误\n\n规则：\n- 使用简体中文\n- 优先修复 TypeScript 错误\n- 如需决策，询问用户",
+      "template": "编译前端并修复错误：\n\n## 阶段 1：运行 lint 检查\n1. 进入 Platform.Admin 目录\n2. 运行 npm run lint（= tsc + biome）检查代码\n3. 捕获所有错误和警告\n\n## 阶段 2：错误分类\n按以下优先级排序处理：\n1. TS2304 - 找不到符号（类型/接口/变量）→ 检查导入\n2. TS2345 - 类型不匹配→ 检查类型定义和推断\n3. TS7000 - 缺少必要属性→ 添加缺失属性\n4. TS7031 - 已声明但未使用→ 删除或导出\n5. TS2753 - 命名空间错误→ 检查 module 配置\n6. biome 错误 - 格式/风格问题→ 使用 biome check --write 自动修复\n\n## 阶段 3：逐个修复\n1. 对每个错误：\n   - 定位错误文件和行号\n   - 分析错误原因\n   - 应用修复：\n     * 导入缺失→ 添加 import\n     * 类型错误→ 使用正确类型\n     * 未使用→ 删除或添加 _ 前缀\n     * 格式问题→ biome check --write\n2. 每修复一个文件→ 重新运行 npm run lint 验证\n3. 循环直到所有错误修复\n\n## 规则\n- 使用简体中文\n- 优先修复 TS 编译器错误（阻塞构建）\n- biome 错误可批量自动修复\n- 如遇到复杂类型问题，使用 as any 临时绕过（后续优化）\n- 无法解决的问题询问用户",
       "description": "编译前端并修复错误"
     },
     "build-fix": {
-      "template": "编译后端并修复错误：\n1. 运行 dotnet build 编译解决方案\n2. 分析编译输出中的错误和警告\n3. 逐个定位并修复错误\n4. 处理警告（必要时）\n5. 重复编译直到无错误无警告\n\n规则：\n- 优先修复错误\n- 合理处理警告\n- 如需决策，询问用户",
+      "template": "编译后端并修复错误：\n\n## 阶段 1：运行 dotnet build\n1. 在解决方案根目录运行 dotnet build\n2. 捕获所有 CS 错误和警告\n\n## 阶段 2：错误分类\n按以下优先级排序处理：\n1. CS0246 - 找不到类型/命名空间→ 检查 using 或 NuGet 包\n2. CS0122 - 成员不可访问→ 检查访问修饰符\n3. CS1061/CS0154 - 缺少成员→ 实现接口或添加属性\n4. CS1503/CS1502 - 参数不匹配→ 检查方法签名\n5. CS1944 - 不能用作 IQueryable→ 使用 .AsQueryable()\n6. CS1974 - 循环引用→ 重构解耦\n7. CS8032/CS8012 - 语法/版本错误→ 检查语法或目标框架\n8. 警告：\n   - CS8602/CS8603 - 可空引用→ 使用 ! 或 ?\n   - CS4014 - 异步未等待→ _ = 或 await\n   - CS1998 - async 无 await→ 移除 async\n\n## 阶段 3：逐个修复\n1. 对每个错误：\n   - 定位错误文件和行号\n   - 分析错误原因\n   - 应用修复：\n     * 缺失 using→ 添加或检查包\n     * 类型问题→ 检查泛型约束\n     * 可空警告→ 使用 Null 条件 operator\n2. 每修复一个项目→ 重新 dotnet build 验证\n3. 循环直到编译通过\n\n## 规则\n- 使用简体中文\n- 优先修复错误，其次处理警告\n- 合理处理警告（不强制全部消除）\n- 无法解决的问题询问用户",
       "description": "编译后端并修复错误"
     },
     "aspire-run": {
-      "template": "运行 dotnet run 并自动修复错误：\n1. 使用后台进程启动 dotnet run\n2. 监控输出中的编译错误和警告\n3. 当出现错误时：\n   - 停止当前进程\n   - 分析错误信息定位问题\n   - 修复错误或警告\n   - 重新运行 dotnet run\n4. 当应用启动成功（无错误）时，停止运行\n\n规则：\n- 优先修复编译错误\n- 应用启动成功后立即停止\n- 使用 Ctrl+C 或适当方式停止",
-      "description": "运行 dotnet run 并自动修复错误"
+      "template": "运行 Aspire 并自动修复错误：\n\n## 阶段 1：启动 Aspire\n1. 启动 dotnet run --project Platform.AppHost\n2. 等待编译完成，观察初始输出\n\n## 阶段 2：监控错误分类\n编译阶段错误：\n1. 分析 dotnet build 输出\n2. 定位哪个项目出错\n3. 修复后重新编译（dotnet build）\n\n运行时错误：\n1. 运行时异常（Startup, Middleware）\n2. 数据库连接失败→ 检查连接字符串\n3. 服务发现失败→ 检查端口和健康检查\n4. 配置错误→ 检查 appsettings.json\n\nAspire 相关错误：\n1. 资源未启动→ 检查资源健康状态\n2. 健康检查失败→ 查看资源日志\n3. 分布式追踪错误→ 分析 trace\n\n## 阶段 3：修复流程\n1. 错误出现时：\n   - 停止当前进程（Ctrl+C）\n   - 分析错误信息：\n     * 编译错误→ 修复代码，重新 dotnet build\n     * 运行错误→ 检查配置或服务状态\n2. 修复后重新 dotnet run\n3. 重复直到应用启动成功\n\n## 阶段 4：验证\n1. 访问 Aspire Dashboard（默认 :17091）\n2. 检查所有资源状态为 Running\n3. 检查 API Gateway 可访问（:15000）\n\n## 规则\n- 使用简体中文\n- 优先修复编译错误\n- 应用启动成功（无错误）后立即停止\n- 使用 Ctrl+C 停止\n- 查看结构化日志：list structured logs",
+      "description": "运行 Aspire 并自动修复错误"
     }
   },
   "mcp": {

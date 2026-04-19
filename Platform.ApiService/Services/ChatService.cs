@@ -63,56 +63,28 @@ public class ChatService : IChatService
         var isTextMsg = userMessage.Type == ChatMessageType.Text;
         var shouldSkip = _aiService.ShouldSkipAutomaticAssistantReply(userMessage);
 
-        _logger.LogInformation("检查 AI 回复触发条件: 会话={SessionId}, 是助手会话={IsAi}, 是文本={IsText}, 是否跳过={ShouldSkip}", 
-            session.Id, isAiParticipant, isTextMsg, shouldSkip);
-
-        if (isAiParticipant && isTextMsg && !shouldSkip)
+// 触发小科异步回复
+        if (session.Participants.Contains(AiAssistantConstants.AssistantUserId) && userMessage.Type == ChatMessageType.Text)
         {
-            var sessionId = session.Id;
-            var messageId = userMessage.Id;
-            var companyId = userMessage.CompanyId;
-            var userId = userMessage.SenderId;
-
-            _logger.LogInformation("准备启动后台 AI 回复任务: 会话={SessionId}, 消息={MessageId}", sessionId, messageId);
-
+            var (sessionId, messageId, companyId, userId) = (session.Id, userMessage.Id, userMessage.CompanyId, userMessage.SenderId);
             _ = Task.Run(async () =>
             {
                 try
                 {
                     await using var scope = _scopeFactory.CreateAsyncScope();
-                    
-                    _logger.LogDebug("后台作用域已创建，正在恢复租户上下文: 企业={CompanyId}, 用户={UserId}", companyId, userId);
-                    
-                    // 设置后台任务的租户上下文
                     var tenantSetter = scope.ServiceProvider.GetRequiredService<ITenantContextSetter>();
                     tenantSetter.SetContext(companyId, userId);
 
-var scopedAiService = scope.ServiceProvider.GetRequiredService<IChatAiService>();
+                    var aiService = scope.ServiceProvider.GetRequiredService<IChatAiService>();
                     var context = scope.ServiceProvider.GetRequiredService<DbContext>();
 
-                    _logger.LogDebug("正在重新加载会话 {SessionId}...", sessionId);
-                    var freshSession = await context.Set<ChatSession>().FirstOrDefaultAsync(x => x.Id == sessionId && x.CompanyId == companyId);
-                    if (freshSession == null)
-                    {
-                        _logger.LogWarning("后台任务无法加载会话 {SessionId}，可能已删除。", sessionId);
-                        return;
-                    }
+                    var freshSession = await context.Set<ChatSession>().FirstOrDefaultAsync(x => x.Id == sessionId);
+                    if (freshSession == null) return;
 
                     var freshMessage = await context.Set<ChatMessage>().FirstOrDefaultAsync(m => m.Id == messageId);
-                    if (freshMessage != null)
-                    {
-                        _logger.LogInformation("正在调用 AI 服务生成回复: 会话={SessionId}", sessionId);
-                        await scopedAiService.RespondAsAssistantAsync(freshSession, freshMessage, CancellationToken.None);
-                    }
-                    else
-                    {
-                        _logger.LogWarning("后台任务无法加载原始消息 {MessageId}", messageId);
-                    }
+                    if (freshMessage != null) await aiService.RespondAsAssistantAsync(freshSession, freshMessage, CancellationToken.None);
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "AI 自动回复过程发生未捕获异常: 会话 {SessionId}", sessionId);
-                }
+                catch (Exception ex) { _logger.LogError(ex, "AI 自动回复异常"); }
             });
         }
 

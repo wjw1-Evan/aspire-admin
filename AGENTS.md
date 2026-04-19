@@ -459,7 +459,51 @@ foreach (var task in tasks)
 }
 ```
 
-### 6.7 类型命名规范
+### 6.7 后台任务与租户上下文
+
+在后台任务（如 `Task.Run`、后台服务、定时任务）中，无法直接使用 HTTP 请求上下文，需要手动设置租户上下文。
+
+#### ITenantContextSetter 使用场景
+
+| 场景 | 使用方法 |
+|------|----------|
+| **后台异步任务** | 使用 `ITenantContextSetter.SetContext(companyId, userId)` 设置上下文 |
+| **定时任务** | 在任务执行体内设置租户上下文 |
+| **消息队列消费者** | 消费消息时设置租户上下文 |
+
+#### 标准用法
+
+```csharp
+// 1. 注入 IServiceScopeFactory
+private readonly IServiceScopeFactory _scopeFactory;
+
+public XxxService(IServiceScopeFactory scopeFactory)
+{
+    _scopeFactory = scopeFactory;
+}
+
+// 2. 在后台任务中创建作用域并设置租户上下文
+_ = Task.Run(async () =>
+{
+    await using var scope = _scopeFactory.CreateAsyncScope();
+    
+    // 设置租户上下文（必须在获取 DbContext 之前）
+    var tenantSetter = scope.ServiceProvider.GetRequiredService<ITenantContextSetter>();
+    tenantSetter.SetContext(companyId, userId);
+    
+    // 现在查询会自动应用 CompanyId 过滤
+    var context = scope.ServiceProvider.GetRequiredService<DbContext>();
+    var entity = await context.Set<MyEntity>().FirstOrDefaultAsync(x => x.Id == id);
+});
+```
+
+#### 关键点
+
+- **必须先设置上下文再查询**：在调用 `DbContext` 查询之前，必须先调用 `SetContext`
+- **作用域隔离**：每个后台任务需要创建独立的 `IServiceScope`
+- **自动过滤**：设置上下文后，所有继承 `MultiTenantEntity` 的实体查询会自动应用 `CompanyId` 过滤
+
+### 6.8 类型命名规范
 
 | 规范 | 示例 |
 |------|------|

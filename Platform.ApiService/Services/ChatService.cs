@@ -78,7 +78,9 @@ public class ChatService : IChatService
                     var freshSession = await context.Set<ChatSession>().FirstOrDefaultAsync(x => x.Id == sessionId);
                     if (freshSession == null)
                     {
-                        _logger.LogWarning("【小科】会话加载失败 | SessionId={SessionId} | CompanyId={CompanyId}", sessionId, companyId);
+                        _logger.LogWarning(
+                            "【小科】会话加载失败 | SessionId={SessionId} | CompanyId={CompanyId} | UserId={UserId} | 可能原因：租户上下文未正确设置或会话不属于当前企业",
+                            sessionId, companyId, userId);
                         return;
                     }
 

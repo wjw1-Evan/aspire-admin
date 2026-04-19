@@ -105,6 +105,9 @@ public class NotificationService : INotificationService
         _logger.LogInformation("准备发送通知 SSE 消息: {RecipientId}, messageLength={Length}", recipientId, sseMessage.Length);
         await _streamManager.SendToUserAsync(recipientId, sseMessage);
         _logger.LogInformation("通知 SSE 消息已发送: {RecipientId}", recipientId);
+
+        // 新通知发布后同步推送统计更新
+        await PushStatsUpdateAsync(recipientId);
     }
 
     public async Task<List<AppNotification>> GetLatestAsync(string userId, int count = 20)

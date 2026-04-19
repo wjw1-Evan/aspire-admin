@@ -217,25 +217,10 @@ export function useSseConnection(
         eventSource.addEventListener('notification', (event: MessageEvent) => {
           try {
             const data = event.data ? JSON.parse(event.data) : null;
-            if (!data) return;
+            if (!data?.notification) return;
             console.info('[SSE] 收到新通知推送:', data.notification);
             const newNotif = data.notification as AppNotification;
-            setNotificationState(s => {
-              const updated = {
-                ...s,
-                unreadCount: s.unreadCount + 1,
-                latestNotifications: [newNotif, ...s.latestNotifications].slice(0, 10),
-                statistics: {
-                  ...s.statistics,
-                  [newNotif.category]: (s.statistics[newNotif.category] || 0) + 1,
-                  Total: s.statistics.Total + 1
-                }
-              };
-              // 同步到全局状态
-              Object.assign(globalNotificationState, updated);
-              return updated;
-            });
-            // 弹出全局 Toast
+            // 弹出全局 Toast（统计更新由 stats 事件统一处理）
             notification[newNotif.level.toLowerCase() as 'info' | 'success' | 'warning' | 'error']({
               message: newNotif.title,
               description: newNotif.content,

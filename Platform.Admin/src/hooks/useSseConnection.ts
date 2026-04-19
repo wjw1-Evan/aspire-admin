@@ -251,16 +251,14 @@ export function useSseConnection(
           try {
             const data = event.data ? JSON.parse(event.data) : null;
             console.log('[SSE] stats 解析后:', data);
-            if (data?.statistics) {
-              console.log('[SSE] 更新 notificationState, statistics:', data.statistics);
-              // 强制创建新对象引用以确保 React 检测到变化
+            if (data?.Statistics) {
+              console.log('[SSE] 更新 notificationState, Statistics:', data.Statistics);
               const newState: NotificationState = {
-                statistics: { ...data.statistics },
-                unreadCount: data.statistics.Total ?? 0,
-                latestNotifications: data.latestNotifications || []
+                statistics: { ...data.Statistics },
+                unreadCount: data.Statistics.Total ?? 0,
+                latestNotifications: data.LatestNotifications || []
               };
               console.log('[SSE] newState:', newState);
-              // 更新全局状态
               Object.assign(globalNotificationState, newState);
               setNotificationState(() => newState);
               console.log('[SSE] setNotificationState 已调用');

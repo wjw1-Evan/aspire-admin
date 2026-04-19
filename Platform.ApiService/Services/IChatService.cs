@@ -78,6 +78,12 @@ public interface IChatService
     Task<ChatSession?> GetSessionByIdAsync(string sessionId);
 
     /// <summary>
+    /// 获取或创建与小科的会话
+    /// </summary>
+    /// <returns>会话实体</returns>
+    Task<ChatSession> GetOrCreateAssistantSessionAsync();
+
+    /// <summary>
     /// 发送消息并流式生成 AI 回复（支持回调）
     /// </summary>
     /// <param name="request">发送请求</param>

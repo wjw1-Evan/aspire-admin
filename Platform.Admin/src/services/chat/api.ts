@@ -126,20 +126,13 @@ export async function getSessions(
 
 /**
  * 获取或创建与小科的会话
- * 如果会话不存在，返回 null，由组件处理首次消息发送
  */
 export async function getOrCreateAssistantSession(): Promise<ChatSession | null> {
   try {
-    // 先尝试查找包含小科的会话
-    const sessionsPaged = await getSessions({});
-    
-    const assistantSession = sessionsPaged.queryable.find(
-      (session: ChatSession) =>
-        session.participants.includes(AI_ASSISTANT_ID) &&
-        session.participants.length === 2
-    );
-
-    return assistantSession || null;
+    const response = await request<ApiResponse<ChatSession>>('/apiservice/api/chat/sessions/assistant', {
+      method: 'GET',
+    });
+    return response.success && response.data ? response.data : null;
   } catch (error) {
     console.error('获取小科会话失败:', error);
     return null;

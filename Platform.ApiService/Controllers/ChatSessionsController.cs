@@ -40,4 +40,16 @@ public class ChatSessionsController : BaseApiController
         var result = await _chatService.GetSessionsAsync(request);
         return Success(result);
     }
+
+    /// <summary>
+    /// 获取或创建与小科的会话
+    /// </summary>
+    /// <returns>会话实体</returns>
+    [HttpGet("assistant")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetOrCreateAssistantSession()
+    {
+        var session = await _chatService.GetOrCreateAssistantSessionAsync();
+        return Success(session);
+    }
 }

@@ -63,16 +63,33 @@ public class ChatService : IChatService
         {
             var (companyId, userId) = (session.CompanyId, userMessage.SenderId);
             _logger.LogInformation("【小科】准备触发异步回复 | 会话={SessionId} | 消息={MessageId}", session.Id, userMessage.Id);
+
+            // 使用链接令牌，确保应用关闭时任务被取消
+            using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+            var linkedToken = cts.Token;
+
             _ = Task.Run(async () =>
             {
-                await using var scope = _scopeFactory.CreateAsyncScope();
-                var tenantSetter = scope.ServiceProvider.GetRequiredService<ITenantContextSetter>();
-                tenantSetter.SetContext(companyId, userId);
+                try
+                {
+                    await using var scope = _scopeFactory.CreateAsyncScope();
+                    var tenantSetter = scope.ServiceProvider.GetRequiredService<ITenantContextSetter>();
+                    tenantSetter.SetContext(companyId, userId);
 
-                var aiService = scope.ServiceProvider.GetRequiredService<IChatAiService>();
-                _logger.LogInformation("【小科】开始生成回复 | 会话={SessionId}", session.Id);
-                await aiService.RespondAsAssistantAsync(session, userMessage, CancellationToken.None);
-            });
+                    var aiService = scope.ServiceProvider.GetRequiredService<IChatAiService>();
+                    _logger.LogInformation("【小科】开始生成回复 | 会话={SessionId}", session.Id);
+                    await aiService.RespondAsAssistantAsync(session, userMessage, linkedToken);
+                    _logger.LogInformation("【小科】异步回复完成 | 会话={SessionId}", session.Id);
+                }
+                catch (OperationCanceledException)
+                {
+                    _logger.LogWarning("【小科】异步回复已取消 | 会话={SessionId}", session.Id);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "【小科】异步回复异常 | 会话={SessionId} | 错误={Error}", session.Id, ex.Message);
+                }
+            }, linkedToken);
         }
 
         return userMessage;
@@ -121,4 +138,7 @@ public class ChatService : IChatService
 
     public Task<ChatSession?> GetSessionByIdAsync(string sessionId)
         => _sessionService.GetSessionByIdAsync(sessionId);
+
+    public Task<ChatSession> GetOrCreateAssistantSessionAsync()
+        => _sessionService.GetOrCreateAssistantSessionAsync();
 }

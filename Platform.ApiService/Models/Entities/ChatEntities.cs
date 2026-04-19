@@ -130,6 +130,12 @@ public class ChatAttachment : MultiTenantEntity
 public class ChatSession : MultiTenantEntity
 {
     /// <summary>
+    /// 会话创建者用户标识
+    /// </summary>
+    [StringLength(100)]
+    public new string? CreatedBy { get; set; }
+
+    /// <summary>
     /// 会话参与用户标识集合
     /// </summary>
     [Required]

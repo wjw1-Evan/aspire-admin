@@ -262,9 +262,9 @@ public class ChatAiService : IChatAiService
             }
             return null;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-           
+            _logger.LogError(ex, "【小科调试】流式生成异常 | 会话={SessionId}", session.Id);
             return null;
         }
     }

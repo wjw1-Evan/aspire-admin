@@ -27,6 +27,11 @@ public interface IChatSessionService
     Task<ChatSession> GetOrCreateDirectSessionAsync(string participantUserId);
 
     /// <summary>
+    /// 获取或创建与小科的会话
+    /// </summary>
+    Task<ChatSession> GetOrCreateAssistantSessionAsync();
+
+    /// <summary>
     /// 根据ID获取会话
     /// </summary>
     Task<ChatSession?> GetSessionByIdAsync(string sessionId);

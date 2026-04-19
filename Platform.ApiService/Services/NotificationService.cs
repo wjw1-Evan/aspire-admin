@@ -224,7 +224,8 @@ public class NotificationService : INotificationService
         
         var stats = await GetStatisticsAsync(userId);
         var latestNotifications = await GetLatestAsync(userId);
-        var json = JsonSerializer.Serialize(new { Type = "stats", Statistics = stats, LatestNotifications = latestNotifications.Take(10).ToList() });
+        var statsData = new { Type = "stats", Statistics = stats, LatestNotifications = latestNotifications.Take(10).ToList() };
+        var json = JsonSerializer.Serialize(statsData, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
         var sseMessage = $"event: stats\ndata: {json}\n\n";
         _logger.LogInformation("PushStatsUpdateAsync: 正在推送统计更新, userId={UserId}, stats={Stats}", userId, stats);
         

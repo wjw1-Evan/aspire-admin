@@ -61,7 +61,7 @@ public class ChatService : IChatService
 // 触发小科异步回复
         if (session.Participants.Contains(AiAssistantConstants.AssistantUserId) && userMessage.Type == ChatMessageType.Text)
         {
-            var (sessionId, messageId, companyId, userId) = (session.Id, userMessage.Id, userMessage.CompanyId, userMessage.SenderId);
+            var (sessionId, messageId, companyId, userId) = (session.Id, userMessage.Id, session.CompanyId, userMessage.SenderId);
             _logger.LogInformation("【小科】准备触发异步回复 | 会话={SessionId} | 消息={MessageId}", sessionId, messageId);
             _ = Task.Run(async () =>
             {

@@ -1,6 +1,6 @@
 /**
  * SSE 连接管理 Hook
- * 提供统一的 SSE 连接生命周期管理
+ * 提供统一的 SSE 连接生命周期管理（单例模式）
  */
 
 import { useEffect, useRef, useCallback, useState } from 'react';
@@ -8,6 +8,25 @@ import { tokenUtils } from '@/utils/token';
 import { getApiBaseUrl } from '@/utils/request';
 import { notification } from 'antd';
 import { NotificationCategory, NotificationStatistics, AppNotification } from '@/services/notification/api';
+
+// 全局单例 EventSource（所有组件共享）
+let globalEventSource: EventSource | null = null;
+let globalConnectionId: string | null = null;
+let globalIsConnected = false;
+const globalEventHandlers = new Map<string, Set<(data: any) => void>>();
+
+// 全局状态（供所有 hook 实例共享）
+const globalNotificationState: NotificationState = {
+  unreadCount: 0,
+  statistics: { System: 0, Work: 0, Social: 0, Security: 0, Total: 0 },
+  latestNotifications: [],
+};
+
+function notifyAllListeners() {
+  globalEventHandlers.forEach((handlers, eventName) => {
+    handlers.forEach((handler) => handler(null));
+  });
+}
 
 interface UseSseConnectionOptions {
   onConnected?: () => void;
@@ -50,20 +69,17 @@ export function useSseConnection(
     enableNotifications = false,
   } = options;
 
-  const eventSourceRef = useRef<EventSource | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
+  const [isConnected, setIsConnected] = useState(globalIsConnected);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [connectionId, setConnectionId] = useState<string | null>(null);
+  const [connectionId, setConnectionId] = useState<string | null>(globalConnectionId);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
-  const eventHandlersRef = useRef<Map<string, Set<(data: any) => void>>>(new Map());
+  const eventHandlersRef = useRef<Map<string, Set<(data: any) => void>>>(globalEventHandlers);
   const isMountedRef = useRef(true);
 
-  const [notificationState, setNotificationState] = useState<NotificationState>({
-    unreadCount: 0,
-    statistics: { System: 0, Work: 0, Social: 0, Security: 0, Total: 0 },
-    latestNotifications: [],
-  });
+  // 检查是否已存在全局连接
+  const eventSourceRef = useRef<EventSource | null>(globalEventSource);
+  const [notificationState, setNotificationState] = useState<NotificationState>(globalNotificationState);
 
   // 计算重连延迟（指数退避）
   const getReconnectDelay = useCallback((attempts: number): number => {
@@ -116,16 +132,17 @@ export function useSseConnection(
       eventSourceRef.current = eventSource;
 
       // 处理 connected 事件，获取 connectionId（必须在 onopen 之前注册）
-      eventSource.addEventListener('connected', (event: MessageEvent) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.connectionId) {
-            setConnectionId(data.connectionId);
+eventSource.addEventListener('connected', (event: MessageEvent) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.connectionId) {
+              setConnectionId(data.connectionId);
+              globalConnectionId = data.connectionId;
+            }
+          } catch (e) {
+            onConnected?.();
           }
-        } catch (e) {
-          // 忽略解析错误
-        }
-      });
+        });
 
       // 添加连接超时检查（5秒）
       statusCheckTimer = setTimeout(() => {
@@ -148,9 +165,12 @@ export function useSseConnection(
         }
 
         setIsConnected(true);
+        globalIsConnected = true;
         setIsConnecting(false);
         reconnectAttemptsRef.current = 0;
-        onConnected?.();
+
+        // 保存全局 EventSource
+        globalEventSource = eventSource;
       };
 
       // 监听通知相关事件（仅当 enableNotifications 为 true 时）
@@ -170,16 +190,21 @@ export function useSseConnection(
             if (!data) return;
             console.info('[SSE] 收到新通知推送:', data.notification);
             const newNotif = data.notification as AppNotification;
-            setNotificationState(s => ({
-              ...s,
-              unreadCount: s.unreadCount + 1,
-              latestNotifications: [newNotif, ...s.latestNotifications].slice(0, 10),
-              statistics: {
-                ...s.statistics,
-                [newNotif.category]: (s.statistics[newNotif.category] || 0) + 1,
-                Total: s.statistics.Total + 1
-              }
-            }));
+            setNotificationState(s => {
+              const updated = {
+                ...s,
+                unreadCount: s.unreadCount + 1,
+                latestNotifications: [newNotif, ...s.latestNotifications].slice(0, 10),
+                statistics: {
+                  ...s.statistics,
+                  [newNotif.category]: (s.statistics[newNotif.category] || 0) + 1,
+                  Total: s.statistics.Total + 1
+                }
+              };
+              // 同步到全局状态
+              Object.assign(globalNotificationState, updated);
+              return updated;
+            });
             // 弹出全局 Toast
             notification[newNotif.level.toLowerCase() as 'info' | 'success' | 'warning' | 'error']({
               message: newNotif.title,

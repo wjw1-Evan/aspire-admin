@@ -15,7 +15,6 @@ import { getProjectList } from '@/services/task/project';
 
 import TaskForm from './components/TaskForm';
 import TaskExecutionPanel from './components/TaskExecutionPanel';
-import UnifiedNotificationCenter from '@/components/UnifiedNotificationCenter';
 
 const { useBreakpoint } = Grid;
 

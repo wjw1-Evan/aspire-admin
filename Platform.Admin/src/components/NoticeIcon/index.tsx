@@ -99,7 +99,7 @@ const NoticeIcon: React.FC = () => {
                   </div>
                   <div className={styles.notificationDesc}>{item.content}</div>
                   <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Tag size="small" color={item.status === NotificationStatus.Unread ? 'blue' : 'default'}>{item.category}</Tag>
+                    <Tag color={item.status === NotificationStatus.Unread ? 'blue' : 'default'}>{item.category}</Tag>
                     {item.status === NotificationStatus.Read ? (
                       <Button size="small" type="link" style={{ padding: 0, fontSize: 12 }} onClick={(e) => handleMarkAsUnread(e, item.id)}>标记为未读</Button>
                     ) : (

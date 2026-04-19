@@ -210,61 +210,6 @@ const AiAssistant: React.FC = () => {
       unsubMessageComplete?.();
     };
   }, [session?.id, open, sse]);
-          setStreamingMessages((prev) => {
-            const currentContent = prev[messageId] || '';
-            return { ...prev, [messageId]: currentContent + delta };
-          });
-          setMessages((prev) => {
-            const messageIndex = prev.findIndex((m) => m.id === messageId);
-            if (messageIndex < 0) {
-              const tempMessage: ChatMessage = {
-                id: messageId,
-                sessionId: session.id,
-                senderId: AI_ASSISTANT_ID,
-               recipientId: currentUser?.id || '',
-                type: 'Text',
-                content: '',
-                createdAt: new Date().toISOString(),
-              };
-              return [...prev, tempMessage].sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
-            }
-            return prev;
-          });
-        }
-
-        // AI 回复完成
-        if (data.type === 'AssistantMessageComplete' && data.message) {
-          const completedMessage = data.message;
-          setStreamingMessages((prev) => {
-            const { [completedMessage.id]: _, ...rest } = prev;
-            return rest;
-          });
-          setMessages((prev) => {
-            const messageIndex = prev.findIndex((m) => m.id === completedMessage.id);
-            let updated: ChatMessage[];
-            if (messageIndex >= 0) {
-              updated = [...prev];
-              updated[messageIndex] = completedMessage;
-            } else {
-              updated = [...prev, completedMessage];
-            }
-            return updated.sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
-          });
-        }
-      }
-
-      if (data.error) {
-        console.error('[AiAssistant] 发送消息失败:', data.error);
-        message.error('发送消息失败: ' + data.error);
-      }
-    });
-
-    return () => {
-      unsubReceiveMessage?.();
-      unsubMessageChunk?.();
-      unsubMessageComplete?.();
-    };
-  }, [session?.id, open, sse]);
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);

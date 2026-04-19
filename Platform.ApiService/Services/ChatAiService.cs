@@ -246,17 +246,34 @@ public class ChatAiService : IChatAiService
 
     private async Task<XiaokeConfigDto?> GetXiaokeConfig()
     {
-        if (_xiaokeConfigService == null) return null;
         try
         {
-            return await _xiaokeConfigService.GetDefaultConfigAsync();
+            if (_xiaokeConfigService != null)
+            {
+                var config = await _xiaokeConfigService.GetDefaultConfigAsync();
+                if (config != null) return config;
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "获取小科配置失败");
-            return null;
+            _logger.LogWarning(ex, "获取小科配置失败，使用内置 fallback");
         }
+
+        return GetBuiltInXiaokeConfig();
     }
+
+    private static XiaokeConfigDto GetBuiltInXiaokeConfig() => new()
+    {
+        Model = "gpt-4o-mini",
+        IsEnabled = true,
+        IsDefault = true,
+        Temperature = 0.7,
+        MaxTokens = 2000,
+        TopP = 1.0,
+        FrequencyPenalty = 0.0,
+        PresencePenalty = 0.0,
+        SystemPrompt = "你是小科，请使用简体中文提供简洁、专业且友好的回复。"
+    };
 
     private async Task<string> GetEffectiveSystemPrompt(string userId, XiaokeConfigDto? xiaokeConfig)
     {

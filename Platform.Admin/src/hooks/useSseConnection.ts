@@ -91,21 +91,28 @@ export function useSseConnection(
     return 30000; // 最大 30 秒
   }, []);
 
-  // 连接
+  // 连接（单例模式）
   const connect = useCallback(async () => {
-    if (eventSourceRef.current?.readyState === EventSource.OPEN) {
-      return; // 已经连接
+    // 检查全局是否已连接
+    if (globalEventSource && globalEventSource.readyState === EventSource.OPEN) {
+      eventSourceRef.current = globalEventSource;
+      return;
     }
 
-    if (eventSourceRef.current?.readyState === EventSource.CONNECTING) {
-      return; // 正在连接
+    if (globalEventSource && globalEventSource.readyState === EventSource.CONNECTING) {
+      eventSourceRef.current = globalEventSource;
+      return;
     }
 
-    // 关闭现有连接
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
+    // 关闭旧连接
+    if (globalEventSource) {
+      globalEventSource.close();
     }
+
+    // 重置全局状态
+    globalEventSource = null;
+    globalConnectionId = null;
+    globalIsConnected = false;
 
     setIsConnecting(true);
     reconnectAttemptsRef.current = 0;
@@ -316,17 +323,21 @@ eventSource.addEventListener('connected', (event: MessageEvent) => {
     }
   }, [onConnected, onError, getReconnectDelay]);
 
-  // 断开连接
+  // 断开连接（全局）
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = null;
     }
 
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
+    // 关闭全局连接
+    if (globalEventSource) {
+      globalEventSource.close();
+      globalEventSource = null;
     }
+
+    globalIsConnected = false;
+    globalConnectionId = null;
 
     setIsConnected(false);
     setIsConnecting(false);

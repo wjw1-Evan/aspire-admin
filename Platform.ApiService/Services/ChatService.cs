@@ -74,15 +74,15 @@ public class ChatService : IChatService
                     var aiService = scope.ServiceProvider.GetRequiredService<IChatAiService>();
                     var context = scope.ServiceProvider.GetRequiredService<DbContext>();
 
-                    // 使用 companyId 过滤确保能加载到会话
+                    // 使用 companyId + userId 过滤确保能加载到会话和消息
                     var freshSession = await context.Set<ChatSession>().FirstOrDefaultAsync(x => x.Id == sessionId && x.CompanyId == companyId);
                     if (freshSession == null)
                     {
-                        _logger.LogWarning("【小科】会话加载失败 | SessionId={SessionId}", sessionId);
+                        _logger.LogWarning("【小科】会话加载失败 | SessionId={SessionId} | CompanyId={CompanyId}", sessionId, companyId);
                         return;
                     }
 
-                    var freshMessage = await context.Set<ChatMessage>().FirstOrDefaultAsync(m => m.Id == messageId);
+                    var freshMessage = await context.Set<ChatMessage>().FirstOrDefaultAsync(m => m.Id == messageId && m.CompanyId == companyId);
                     if (freshMessage == null)
                     {
                         _logger.LogWarning("【小科】消息加载失败 | MessageId={MessageId}", messageId);

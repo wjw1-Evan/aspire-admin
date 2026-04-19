@@ -251,12 +251,14 @@ export function useSseConnection(
           try {
             const data = event.data ? JSON.parse(event.data) : null;
             console.log('[SSE] stats 解析后:', data);
-            if (data?.Statistics) {
-              console.log('[SSE] 更新 notificationState, Statistics:', data.Statistics);
+            const rawStats = data?.statistics ?? data?.Statistics;
+            const rawNotifications = data?.latestNotifications ?? data?.LatestNotifications;
+            if (rawStats) {
+              console.log('[SSE] 更新 notificationState, statistics:', rawStats);
               const newState: NotificationState = {
-                statistics: { ...data.Statistics },
-                unreadCount: data.Statistics.Total ?? 0,
-                latestNotifications: data.LatestNotifications || []
+                statistics: { ...rawStats },
+                unreadCount: rawStats.Total ?? 0,
+                latestNotifications: rawNotifications || []
               };
               console.log('[SSE] newState:', newState);
               Object.assign(globalNotificationState, newState);

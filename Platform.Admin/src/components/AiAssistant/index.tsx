@@ -133,10 +133,10 @@ const AiAssistant: React.FC = () => {
     // 监听 ReceiveMessage（AI 回复）
     const unsubReceiveMessage = sse.on<any>('ReceiveMessage', (data) => {
       if (!data || !data.message) return;
-      console.log('[AiAssistant] 收到 ReceiveMessage:', data);
 
       const msg = data.message;
-      if (msg.sessionId === session.id && msg.senderId === 'ai-assistant') {
+      const isAssistantMessage = msg.senderId === 'ai-assistant' || msg.metadata?.isAssistant === true;
+      if (msg.sessionId === session.id && isAssistantMessage) {
         setMessages((prev) => {
           const existingIndex = prev.findIndex((m) => m.id === msg.id);
           if (existingIndex >= 0) {

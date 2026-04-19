@@ -210,10 +210,32 @@ public class NotificationService : INotificationService
 
     private async Task PushStatsUpdateAsync(string userId)
     {
+        _logger.LogInformation("PushStatsUpdateAsync: 开始, userId={UserId}", userId);
+        
+        // 检查连接是否存在
+        var hasConnection = _streamManager.HasUserConnection(userId);
+        _logger.LogInformation("PushStatsUpdateAsync: userId={UserId} 是否有连接: {HasConnection}", userId, hasConnection);
+        
+        if (!hasConnection)
+        {
+            _logger.LogWarning("PushStatsUpdateAsync: userId={UserId} 没有活跃连接，跳过推送", userId);
+            return;
+        }
+        
         var stats = await GetStatisticsAsync(userId);
         var latestNotifications = await GetLatestAsync(userId);
         var json = JsonSerializer.Serialize(new { Type = "stats", Statistics = stats, LatestNotifications = latestNotifications.Take(10).ToList() });
         var sseMessage = $"event: stats\ndata: {json}\n\n";
-        await _streamManager.SendToUserAsync(userId, sseMessage);
+        _logger.LogInformation("PushStatsUpdateAsync: 正在推送统计更新, userId={UserId}, stats={Stats}", userId, stats);
+        
+        try
+        {
+            await _streamManager.SendToUserAsync(userId, sseMessage);
+            _logger.LogInformation("PushStatsUpdateAsync: 统计更新已发送, userId={UserId}", userId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "PushStatsUpdateAsync: 发送失败, userId={UserId}", userId);
+        }
     }
 }

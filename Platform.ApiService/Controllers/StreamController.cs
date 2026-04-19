@@ -129,31 +129,6 @@ public class StreamController : BaseApiController
                 _logger.LogWarning("NotificationService 未注入，跳过推送初始通知统计");
             }
 
-            // 启动心跳任务
-            var heartbeatTask = Task.Run(async () =>
-            {
-                while (!cancellationToken.IsCancellationRequested)
-                {
-                    try
-                    {
-                        await Task.Delay(30000, cancellationToken); // 30 秒心跳
-                        if (!cancellationToken.IsCancellationRequested)
-                        {
-                            await WriteSseEventAsync("keepalive", null, cancellationToken);
-                        }
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        break;
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(ex, "SSE 心跳发送失败: 连接 {ConnectionId}", connectionId);
-                        break;
-                    }
-                }
-            }, cancellationToken);
-
             // 等待连接关闭
             try
             {
@@ -166,6 +141,7 @@ public class StreamController : BaseApiController
             finally
             {
                 // 清理连接
+                _logger.LogInformation("SSE 连接关闭, connectionId: {ConnectionId}, userId: {UserId}", connectionId, userId);
                 await _connectionManager.UnregisterConnectionAsync(connectionId);
             }
         }

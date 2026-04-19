@@ -49,4 +49,9 @@ public interface IChatSseConnectionManager
     /// <param name="userId">用户ID</param>
     /// <param name="message">消息内容（已格式化的 SSE 消息）</param>
     Task SendToUserAsync(string userId, string message);
+
+    /// <summary>
+    /// 检查用户是否有活跃连接
+    /// </summary>
+    bool HasUserConnection(string userId);
 }

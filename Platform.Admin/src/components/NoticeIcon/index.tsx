@@ -24,8 +24,12 @@ const LevelIcon: React.FC<{ level: NotificationLevel }> = ({ level }) => {
 
 const NoticeIcon: React.FC = () => {
   const [popoverOpen, setPopoverOpen] = useState(false);
-  const { notificationState } = useSseConnection({ enableNotifications: true });
+  const sseResult = useSseConnection({ enableNotifications: true });
+  const notificationState = sseResult.notificationState;
   const { statistics, unreadCount, latestNotifications } = notificationState;
+  
+  console.log('[NoticeIcon] 渲染, unreadCount:', unreadCount, 'statistics:', statistics, 'latestNotifications:', latestNotifications?.length);
+  
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('all');
 
@@ -51,6 +55,8 @@ const NoticeIcon: React.FC = () => {
     setLoading(true);
     try {
       await markAllAsRead(category);
+    } catch (e) {
+      console.error(e);
     } finally {
       setLoading(false);
     }
@@ -127,13 +133,14 @@ const NoticeIcon: React.FC = () => {
 
   return (
     <HeaderDropdown
+      key={unreadCount}
       dropdownRender={() => notificationList}
       trigger={['click']}
       open={popoverOpen}
       onOpenChange={setPopoverOpen}
       placement="bottomRight"
     >
-      <span className={headerStyles.headerActionButton}>
+      <span className={headerStyles.headerActionButton} key={unreadCount}>
         <Badge 
           count={unreadCount} 
           overflowCount={99} 

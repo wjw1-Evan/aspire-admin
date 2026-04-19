@@ -1,6 +1,7 @@
 /**
  * SSE 连接管理 Hook
  * 提供统一的 SSE 连接生命周期管理（单例模式）
+ * 支持 HMR 热更新后自动重连
  */
 
 import { useEffect, useRef, useCallback, useState } from 'react';
@@ -13,8 +14,26 @@ import { NotificationCategory, NotificationStatistics, AppNotification } from '@
 let globalEventSource: EventSource | null = null;
 let globalConnectionId: string | null = null;
 let globalIsConnected = false;
-let globalAutoConnectAttempted = false;
-const globalEventHandlers = new Map<string, Set<(data: any) => void>>();
+// HMR 检测：使用 sessionStorage 标记来跨 HMR 持久化状态
+const HMR_SESSION_KEY = 'sse_hmr_refresh_' + (window.location.pathname || '');
+let lastHmrTime = 0;
+try {
+  lastHmrTime = parseInt(sessionStorage.getItem(HMR_SESSION_KEY) || '0', 10);
+} catch (e) { }
+
+// 检查是否刚发生 HMR（当前时间与 sessionStorage 时间接近）
+const isAfterHmr = Date.now() - lastHmrTime < 2000;
+if (isAfterHmr) {
+  // 刚发生 HMR，需要重连
+  globalAutoConnectAttempted = false;
+  globalIsConnected = false;
+  globalEventSource = null;
+  globalConnectionId = null;
+  // 重置通知状态
+  globalNotificationState.unreadCount = 0;
+  globalNotificationState.statistics = { System: 0, Work: 0, Social: 0, Security: 0, Total: 0 };
+  globalNotificationState.latestNotifications = [];
+}
 
 // 全局状态（供所有 hook 实例共享）
 const globalNotificationState: NotificationState = {
@@ -92,26 +111,21 @@ export function useSseConnection(
     return 30000; // 最大 30 秒
   }, []);
 
-  // 连接（单例模式）
+// 连接（单例模式）
   const connect = useCallback(async () => {
-    console.log('[SSE] connect() 被调用, globalIsConnected:', globalIsConnected, 'globalAutoConnectAttempted:', globalAutoConnectAttempted);
-
     // 检查全局是否已连接
     if (globalEventSource && globalEventSource.readyState === EventSource.OPEN) {
-      console.log('[SSE] 复用已有连接');
       eventSourceRef.current = globalEventSource;
       return;
     }
 
     if (globalEventSource && globalEventSource.readyState === EventSource.CONNECTING) {
-      console.log('[SSE] 连接正在建立中，复用');
       eventSourceRef.current = globalEventSource;
       return;
     }
 
     // 关闭旧连接
     if (globalEventSource) {
-      console.log('[SSE] 关闭旧连接');
       globalEventSource.close();
     }
 
@@ -134,13 +148,11 @@ export function useSseConnection(
 
       const baseUrl = getApiBaseUrl();
       const url = `${baseUrl}/apiservice/api/stream/sse?token=${encodeURIComponent(token)}`;
-      console.log('[SSE] 尝试连接:', url, 'globalAutoConnectAttempted:', globalAutoConnectAttempted);
 
       // 创建 EventSource
       let eventSource: EventSource;
       try {
         eventSource = new EventSource(url);
-        console.log('[SSE] EventSource 已创建, readyState:', eventSource.readyState);
       } catch (createError) {
         console.error('[SSE] EventSource 创建失败:', createError);
         throw new Error(`EventSource 创建失败: ${createError}`);
@@ -148,7 +160,7 @@ export function useSseConnection(
       eventSourceRef.current = eventSource;
 
       // 处理 connected 事件，获取 connectionId（必须在 onopen 之前注册）
-eventSource.addEventListener('connected', (event: MessageEvent) => {
+      eventSource.addEventListener('connected', (event: MessageEvent) => {
           try {
             const data = JSON.parse(event.data);
             if (data.connectionId) {
@@ -174,7 +186,6 @@ eventSource.addEventListener('connected', (event: MessageEvent) => {
 
 // 连接打开
       eventSource.onopen = () => {
-        console.log('[SSE] onopen 触发, readyState:', eventSource.readyState);
         if (statusCheckTimer) clearTimeout(statusCheckTimer);
         if (!isMountedRef.current) {
           eventSource.close();
@@ -187,7 +198,6 @@ eventSource.addEventListener('connected', (event: MessageEvent) => {
 
         // 保存全局 EventSource
         globalEventSource = eventSource;
-        console.log('[SSE] 连接已建立!');
       };
 
       // 监听通知相关事件（仅当 enableNotifications 为 true 时）
@@ -234,27 +244,32 @@ eventSource.addEventListener('connected', (event: MessageEvent) => {
         });
 
         eventSource.addEventListener('stats', (event: MessageEvent) => {
+          console.log('[SSE] 收到 stats 事件, data:', event.data);
           try {
             const data = event.data ? JSON.parse(event.data) : null;
+            console.log('[SSE] stats 解析后:', data);
             if (data?.statistics) {
-              setNotificationState(s => ({
-                ...s,
-                statistics: data.statistics,
-                unreadCount: data.statistics.Total ?? s.unreadCount,
-                latestNotifications: data.latestNotifications || s.latestNotifications
-              }));
+              console.log('[SSE] 更新 notificationState, statistics:', data.statistics);
+              // 强制创建新对象引用以确保 React 检测到变化
+              const newState: NotificationState = {
+                statistics: { ...data.statistics },
+                unreadCount: data.statistics.Total ?? 0,
+                latestNotifications: data.latestNotifications || []
+              };
+              console.log('[SSE] newState:', newState);
+              // 更新全局状态
+              Object.assign(globalNotificationState, newState);
+              setNotificationState(() => newState);
+              console.log('[SSE] setNotificationState 已调用');
             }
-          } catch (e) { }
-        });
-
-        eventSource.addEventListener('keepalive', () => {
-          // 心跳包，静默处理
+          } catch (e) { console.error('[SSE] stats 解析失败:', e); }
         });
       }
 
       // 连接错误
       eventSource.onerror = (error) => {
-        console.error('[SSE] onerror 触发, readyState:', eventSource.readyState, 'error:', error);
+        // 静默处理，仅在需要调试时启用
+        // console.error('[SSE] onerror, readyState:', eventSource.readyState);
         if (statusCheckTimer) clearTimeout(statusCheckTimer);
         if (!isMountedRef.current) {
           return;
@@ -292,8 +307,7 @@ eventSource.addEventListener('connected', (event: MessageEvent) => {
         'agent_update',
         'agent_track',
         'agent_complete',
-        'agent_failed',
-        'keepalive'
+        'agent_failed'
       ];
       eventNames.forEach(eventName => {
         eventSource.addEventListener(eventName, (event: MessageEvent) => {
@@ -317,7 +331,6 @@ eventSource.addEventListener('connected', (event: MessageEvent) => {
 
       // 监听默认的 'message' 事件 (没有任何 event 头的 data)
       eventSource.onmessage = (event: MessageEvent) => {
-        console.log('[SSE] ========== onmessage 原始消息 ==========', event.data);
         try {
           const data = event.data ? JSON.parse(event.data) : null;
           // 如果 data 中有 type，则尝试寻找特定 type 的 handler，否则调用 'message' handler

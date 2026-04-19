@@ -5,10 +5,10 @@ using System.Text.Json;
 namespace Platform.ApiService.Services;
 
 /// <summary>
-/// SSE 连接管理器实现（单机版）
+/// SSE 连接管理器实现（单机版，单例）
 /// 管理所有活跃的 SSE 连接，支持按用户ID发送消息
 /// </summary>
-public class ChatSseConnectionManager : IChatSseConnectionManager, IDisposable
+public class SingletonChatSseConnectionManager : IChatSseConnectionManager, IDisposable
 {
     // 连接ID -> 连接信息
     private readonly ConcurrentDictionary<string, SseConnection> _connections = new();
@@ -17,12 +17,12 @@ public class ChatSseConnectionManager : IChatSseConnectionManager, IDisposable
     // 连接ID -> 用户ID (反向索引，用于 O(1) 注销)
     private readonly ConcurrentDictionary<string, string> _connectionToUserMap = new();
 
-    private readonly ILogger<ChatSseConnectionManager> _logger;
+    private readonly ILogger<SingletonChatSseConnectionManager> _logger;
 
     /// <summary>
     /// 初始化 SSE 连接管理器
     /// </summary>
-    public ChatSseConnectionManager(ILogger<ChatSseConnectionManager> logger)
+    public SingletonChatSseConnectionManager(ILogger<SingletonChatSseConnectionManager> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -120,10 +120,11 @@ public class ChatSseConnectionManager : IChatSseConnectionManager, IDisposable
     {
         if (_connections.TryRemove(connectionId, out var connection))
         {
-            _logger.LogDebug("注销 SSE 连接: {ConnectionId}", connectionId);
+            _logger.LogInformation("注销 SSE 连接: {ConnectionId}", connectionId);
 
             if (_connectionToUserMap.TryRemove(connectionId, out var userId))
             {
+                _logger.LogInformation("从用户映射中移除: connectionId={ConnectionId}, userId={UserId}", connectionId, userId);
                 if (_userConnections.TryGetValue(userId, out var connections))
                 {
                     bool isEmpty = false;
@@ -131,10 +132,12 @@ public class ChatSseConnectionManager : IChatSseConnectionManager, IDisposable
                     {
                         connections.Remove(connectionId);
                         isEmpty = connections.Count == 0;
+                        _logger.LogInformation("用户 {UserId} 剩余连接数: {Count}", userId, connections.Count);
                     }
 
                     if (isEmpty)
                     {
+                        _logger.LogInformation("用户 {UserId} 已无连接，从映射中移除", userId);
                         _userConnections.TryRemove(userId, out _);
                     }
                 }
@@ -198,6 +201,21 @@ public class ChatSseConnectionManager : IChatSseConnectionManager, IDisposable
         }
 
         return !connection.CancellationToken.IsCancellationRequested;
+    }
+
+    /// <summary>
+    /// 检查用户是否有活跃连接
+    /// </summary>
+    public bool HasUserConnection(string userId)
+    {
+        if (_userConnections.TryGetValue(userId, out var connections))
+        {
+            lock (connections)
+            {
+                return connections.Count > 0;
+            }
+        }
+        return false;
     }
 
     /// <summary>

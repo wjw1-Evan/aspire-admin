@@ -61,8 +61,8 @@ public class ChatService : IChatService
 // 触发小科异步回复
         if (session.Participants.Contains(AiAssistantConstants.AssistantUserId) && userMessage.Type == ChatMessageType.Text)
         {
-            var (sessionId, messageId, companyId, userId) = (session.Id, userMessage.Id, session.CompanyId, userMessage.SenderId);
-            _logger.LogInformation("【小科】准备触发异步回复 | 会话={SessionId} | 消息={MessageId}", sessionId, messageId);
+            var (companyId, userId) = (session.CompanyId, userMessage.SenderId);
+            _logger.LogInformation("【小科】准备触发异步回复 | 会话={SessionId} | 消息={MessageId}", session.Id, userMessage.Id);
             _ = Task.Run(async () =>
             {
                 await using var scope = _scopeFactory.CreateAsyncScope();
@@ -70,26 +70,8 @@ public class ChatService : IChatService
                 tenantSetter.SetContext(companyId, userId);
 
                 var aiService = scope.ServiceProvider.GetRequiredService<IChatAiService>();
-                var context = scope.ServiceProvider.GetRequiredService<DbContext>();
-
-                var freshSession = await context.Set<ChatSession>().FirstOrDefaultAsync(x => x.Id == sessionId);
-                if (freshSession == null)
-                {
-                    _logger.LogError(
-                        "【小科】会话加载失败 | SessionId={SessionId} | CompanyId={CompanyId} | UserId={UserId} | 可能原因：租户上下文未正确设置或会话不属于当前企业",
-                        sessionId, companyId, userId);
-                    return;
-                }
-
-                var freshMessage = await context.Set<ChatMessage>().FirstOrDefaultAsync(m => m.Id == messageId);
-                if (freshMessage == null)
-                {
-                    _logger.LogWarning("【小科】消息加载失败 | MessageId={MessageId}", messageId);
-                    return;
-                }
-
-                _logger.LogInformation("【小科】开始生成回复 | 会话={SessionId}", sessionId);
-                await aiService.RespondAsAssistantAsync(freshSession, freshMessage, CancellationToken.None);
+                _logger.LogInformation("【小科】开始生成回复 | 会话={SessionId}", session.Id);
+                await aiService.RespondAsAssistantAsync(session, userMessage, CancellationToken.None);
             });
         }
 

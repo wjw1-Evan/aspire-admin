@@ -74,7 +74,8 @@ public class ChatService : IChatService
                     var aiService = scope.ServiceProvider.GetRequiredService<IChatAiService>();
                     var context = scope.ServiceProvider.GetRequiredService<DbContext>();
 
-                    var freshSession = await context.Set<ChatSession>().FirstOrDefaultAsync(x => x.Id == sessionId);
+                    // 使用 companyId 过滤确保能加载到会话
+                    var freshSession = await context.Set<ChatSession>().FirstOrDefaultAsync(x => x.Id == sessionId && x.CompanyId == companyId);
                     if (freshSession == null)
                     {
                         _logger.LogWarning("【小科】会话加载失败 | SessionId={SessionId}", sessionId);

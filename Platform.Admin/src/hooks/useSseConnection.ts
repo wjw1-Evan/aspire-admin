@@ -13,6 +13,7 @@ import { NotificationCategory, NotificationStatistics, AppNotification } from '@
 let globalEventSource: EventSource | null = null;
 let globalConnectionId: string | null = null;
 let globalIsConnected = false;
+let globalAutoConnectAttempted = false;
 const globalEventHandlers = new Map<string, Set<(data: any) => void>>();
 
 // 全局状态（供所有 hook 实例共享）
@@ -23,7 +24,7 @@ const globalNotificationState: NotificationState = {
 };
 
 function notifyAllListeners() {
-  globalEventHandlers.forEach((handlers, eventName) => {
+  globalEventHandlers.forEach((handlers) => {
     handlers.forEach((handler) => handler(null));
   });
 }
@@ -369,11 +370,13 @@ eventSource.addEventListener('connected', (event: MessageEvent) => {
     eventHandlersRef.current.delete(eventName);
   }, []);
 
-  // 自动连接
+  // 自动连接（仅第一个组件尝试连接）
   useEffect(() => {
     isMountedRef.current = true;
 
-    if (autoConnect) {
+    if (autoConnect && !globalAutoConnectAttempted) {
+      globalAutoConnectAttempted = true;
+
       // 延迟连接，避免阻塞渲染
       const timer = setTimeout(() => {
         if (isMountedRef.current) {

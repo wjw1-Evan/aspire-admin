@@ -68,10 +68,10 @@ public class ChatBroadcaster : IChatBroadcaster
     /// <summary>
     /// 广播流式消息块（增量内容）
     /// </summary>
-    public async Task BroadcastMessageChunkAsync(List<string> participants, string messageId, string delta)
+    public async Task BroadcastMessageChunkAsync(List<string> participants, string sessionId, string messageId, string delta)
     {
         _logger.LogDebug("BroadcastMessageChunkAsync: messageId={MessageId}, participants={Participants}", messageId, string.Join(",", participants));
-        var payload = new { messageId, delta, timestamp = DateTime.UtcNow };
+        var payload = new { sessionId, messageId, delta, timestamp = DateTime.UtcNow };
         await BroadcastToParticipantsAsync(participants, "MessageChunk", payload);
     }
 

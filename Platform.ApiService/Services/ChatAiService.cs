@@ -182,7 +182,7 @@ public class ChatAiService : IChatAiService
                 var tip = $">  **{mcpResult?.ToolSummary}**  \n\n";
                 accumulatedContent.Append(tip);
                 if (onChunk != null) await onChunk(session.Id, assistantMessage.Id, tip);
-                await _broadcaster.BroadcastMessageChunkAsync(session.Participants, assistantMessage.Id, tip);
+                await _broadcaster.BroadcastMessageChunkAsync(session.Participants, session.Id, assistantMessage.Id, tip);
             }
 
             var chatOptions = new ChatOptions
@@ -219,7 +219,7 @@ public class ChatAiService : IChatAiService
                 var delta = update.Text;
                 accumulatedContent.Append(delta);
                 if (onChunk != null) await onChunk(session.Id, assistantMessage.Id, delta);
-                await _broadcaster.BroadcastMessageChunkAsync(session.Participants, assistantMessage.Id, delta);
+                await _broadcaster.BroadcastMessageChunkAsync(session.Participants, session.Id, assistantMessage.Id, delta);
 
                 if (accumulatedContent.Length - lastSavedLength >= 50)
                 {

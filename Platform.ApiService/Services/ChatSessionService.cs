@@ -139,8 +139,12 @@ public class ChatSessionService : IChatSessionService
         return session;
     }
 
-    public async Task<ChatSession?> GetSessionByIdAsync(string sessionId)
+    public async Task<ChatSession?> GetSessionByIdAsync(string sessionId, bool bypassTenantFilter = false)
     {
+        if (bypassTenantFilter)
+        {
+            return await _context.Set<ChatSession>().IgnoreQueryFilters().FirstOrDefaultAsync(x => x.Id == sessionId);
+        }
         return await _context.Set<ChatSession>().FirstOrDefaultAsync(x => x.Id == sessionId);
     }
 

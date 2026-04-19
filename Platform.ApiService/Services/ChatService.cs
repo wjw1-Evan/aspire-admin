@@ -88,16 +88,17 @@ public class ChatService : IChatService
                     tenantSetter.SetContext(companyId, userId);
 
                     var scopedAiService = scope.ServiceProvider.GetRequiredService<IChatAiService>();
+                    var scopedSessionService = scope.ServiceProvider.GetRequiredService<IChatSessionService>();
 
                     _logger.LogDebug("正在重新加载会话 {SessionId}...", sessionId);
-                    var context = scope.ServiceProvider.GetRequiredService<DbContext>();
-                    var freshSession = await context.Set<ChatSession>().FirstOrDefaultAsync(x => x.Id == sessionId);
+var freshSession = await scopedSessionService.GetSessionByIdAsync(sessionId, bypassTenantFilter: true);
                     if (freshSession == null)
                     {
                         _logger.LogWarning("后台任务无法加载会话 {SessionId}，可能已删除。", sessionId);
                         return;
                     }
 
+                    var context = scope.ServiceProvider.GetRequiredService<DbContext>();
                     var freshMessage = await context.Set<ChatMessage>().FirstOrDefaultAsync(m => m.Id == messageId);
                     if (freshMessage != null)
                     {

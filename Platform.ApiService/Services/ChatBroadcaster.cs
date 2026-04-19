@@ -1,4 +1,5 @@
 using Platform.ApiService.Models;
+using Platform.ApiService.Constants;
 using System.Text.Json;
 
 namespace Platform.ApiService.Services;
@@ -103,7 +104,14 @@ public class ChatBroadcaster : IChatBroadcaster
             var json = JsonSerializer.Serialize(payload, _jsonOptions);
             var message = $"event: {eventType}\ndata: {json}\n\n";
 
-            var tasks = participants.Select(async userId =>
+            // 过滤掉 AI 助手，因为它是虚拟机器人，不需要 SSE 连接
+            var activeParticipants = participants
+                .Where(uid => !string.Equals(uid, AiAssistantConstants.AssistantUserId, StringComparison.Ordinal))
+                .ToList();
+
+            if (activeParticipants.Count == 0) return;
+
+            var tasks = activeParticipants.Select(async userId =>
             {
                 try
                 {

@@ -55,9 +55,25 @@ public class ChatAiService : IChatAiService
         if (triggerMessage.SenderId == AiAssistantConstants.AssistantUserId) return;
         if (ShouldSkipAutomaticAssistantReply(triggerMessage)) return;
 
+        // 检查小科配置。如果明确禁用了，则跳过。
+        var xiaokeConfig = await GetXiaokeConfig();
+        if (xiaokeConfig != null && !xiaokeConfig.IsEnabled)
+        {
+            _logger.LogInformation("小科已在配置中明确禁用，跳过回复。会话: {SessionId}", session.Id);
+            return;
+        }
+
+        // 幂等性检查：防止针对同一条消息重复生成回复
+        var existingAssistant = await FindExistingAssistantReply(session.Id, triggerMessage.Id);
+        if (existingAssistant != null)
+        {
+            _logger.LogDebug("消息 {MessageId} 已有助理回复，跳过。会话: {SessionId}", triggerMessage.Id, session.Id);
+            return;
+        }
+
         if (triggerMessage.Type == ChatMessageType.Text)
         {
-            await GenerateAssistantReplyStreamAsync(session, triggerMessage, cancellationToken);
+            await GenerateAssistantReplyStreamAsync(session, triggerMessage, cancellationToken, null, null, xiaokeConfig);
         }
         else
         {
@@ -101,9 +117,11 @@ public class ChatAiService : IChatAiService
         ChatMessage triggerMessage,
         CancellationToken cancellationToken,
         Func<string, string, string, Task>? onChunk = null,
-        Func<ChatMessage, Task>? onComplete = null)
+        Func<ChatMessage, Task>? onComplete = null,
+        XiaokeConfigDto? config = null)
     {
-        var xiaokeConfig = await GetXiaokeConfig();
+        var xiaokeConfig = config ?? await GetXiaokeConfig();
+        if (xiaokeConfig == null) return null; // 如果没有配置且获取不到，则不回复
 
         var systemPrompt = await GetEffectiveSystemPrompt(triggerMessage.SenderId, xiaokeConfig);
         var conversationMessages = await BuildAssistantConversationMessagesAsync(session, triggerMessage, cancellationToken);
@@ -210,10 +228,13 @@ public class ChatAiService : IChatAiService
         if (_xiaokeConfigService == null) return null;
         try
         {
-            var config = await _xiaokeConfigService.GetDefaultConfigAsync();
-            return (config != null && config.IsEnabled) ? config : null;
+            return await _xiaokeConfigService.GetDefaultConfigAsync();
         }
-        catch { return null; }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "获取小科配置失败");
+            return null;
+        }
     }
 
     private async Task<string> GetEffectiveSystemPrompt(string userId, XiaokeConfigDto? xiaokeConfig)
@@ -269,18 +290,20 @@ public class ChatAiService : IChatAiService
         var conversation = new List<Microsoft.Extensions.AI.ChatMessage>();
         try
         {
+            // 仅提取触发消息之前的历史记录，防止读取到并发产生的“未来”消息
             var history = await _context.Set<ChatMessage>()
-                .Where(m => m.SessionId == session.Id)
+                .Where(m => m.SessionId == session.Id && m.CreatedAt <= triggerMessage.CreatedAt && m.Id != triggerMessage.Id)
                 .OrderByDescending(m => m.CreatedAt)
-                .Take(AssistantContextMessageLimit)
+                .Take(AssistantContextMessageLimit - 1)
                 .ToListAsync();
 
-            history.Reverse();
+            history.Add(triggerMessage); // 确保触发消息在最后
+            history = history.OrderBy(m => m.CreatedAt).ToList();
             foreach (var message in history)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (message.IsDeleted == true || message.IsRecalled) continue;
-                var normalized = NormalizeAssistantMessageContent(message);
+                var normalized = NormalizeAssistantMessageContent(message.Content ?? string.Empty);
                 if (string.IsNullOrWhiteSpace(normalized)) continue;
 
                 var role = string.Equals(message.SenderId, AiAssistantConstants.AssistantUserId, StringComparison.Ordinal)
@@ -306,17 +329,19 @@ public class ChatAiService : IChatAiService
         catch (Exception ex) { _logger.LogWarning(ex, "构建上下文失败"); }
         if (conversation.Count == 0)
         {
-            var fallback = NormalizeAssistantMessageContent(triggerMessage);
+            var fallback = NormalizeAssistantMessageContent(triggerMessage.Content ?? string.Empty);
             if (!string.IsNullOrWhiteSpace(fallback)) conversation.Add(new Microsoft.Extensions.AI.ChatMessage(Microsoft.Extensions.AI.ChatRole.User, fallback));
         }
         return conversation;
     }
 
-    private string? NormalizeAssistantMessageContent(ChatMessage message)
+    private static string NormalizeAssistantMessageContent(string content)
     {
-        if (message == null || string.IsNullOrWhiteSpace(message.Content)) return null;
-        var content = Regex.Replace(message.Content, @"<[^>]*>", string.Empty);
-        return content.Trim();
+        if (string.IsNullOrWhiteSpace(content)) return string.Empty;
+        // 仅过滤特定的容器标签，防止误删包含小于号（如 a < b）的内容
+        // 这里主要针对某些 LLM 输出的思考链标签 <thought>...</thought>
+        var result = System.Text.RegularExpressions.Regex.Replace(content, @"<(thought|details|summary)[^>]*>.*?</\1>", string.Empty, System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        return System.Text.RegularExpressions.Regex.Replace(result, @"<[^>]+>", string.Empty).Trim();
     }
 
     private static string GetParticipantDisplayName(ChatSession session, ChatMessage message)

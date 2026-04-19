@@ -130,8 +130,7 @@ public class StreamController : BaseApiController
                     await Task.Delay(15000, cancellationToken);
                     try
                     {
-                        await Response.WriteAsync(": ping\n\n", cancellationToken);
-                        await Response.Body.FlushAsync(cancellationToken);
+                    await WriteSseEventAsync("ping", null, cancellationToken);
                     }
                     catch { break; }
                 }

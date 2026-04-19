@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 
@@ -16,6 +17,8 @@ public class SingletonChatSseConnectionManager : IChatSseConnectionManager, IDis
     private readonly ConcurrentDictionary<string, HashSet<string>> _userConnections = new();
     // 连接ID -> 用户ID (反向索引，用于 O(1) 注销)
     private readonly ConcurrentDictionary<string, string> _connectionToUserMap = new();
+    // 用户级别的写入锁，防止并发写入导致数据交错
+    private readonly ConcurrentDictionary<string, object> _userWriteLocks = new();
 
     private readonly ILogger<SingletonChatSseConnectionManager> _logger;
 
@@ -32,11 +35,7 @@ public class SingletonChatSseConnectionManager : IChatSseConnectionManager, IDis
     /// </summary>
     public Task RegisterConnectionAsync(string connectionId, HttpResponse response, CancellationToken cancellationToken)
     {
-        var connection = new SseConnection
-        {
-            Response = response,
-            CancellationToken = cancellationToken
-        };
+        var connection = new SseConnection(response, cancellationToken);
 
         _connections.TryAdd(connectionId, connection);
 
@@ -78,38 +77,36 @@ public class SingletonChatSseConnectionManager : IChatSseConnectionManager, IDis
     /// </summary>
     public async Task SendToUserAsync(string userId, string message)
     {
-        // 检查本地是否有该用户的连接
-        if (_userConnections.TryGetValue(userId, out var connections))
-        {
-            List<string>? connectionIds;
-            lock (connections)
-            {
-                connectionIds = [.. connections];
-            }
-
-            _logger.LogInformation("SendToUserAsync: userId={UserId}, connectionCount={Count}, message={Message}", 
-                userId, connectionIds.Count, message.Length > 100 ? message.Substring(0, 100) + "..." : message);
-
-            if (connectionIds.Count != 0)
-            {
-                var tasks = connectionIds.Select(async connectionId =>
-                {
-                    try
-                    {
-                        await SendMessageToLocalConnectionAsync(connectionId, message);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(ex, "向用户 {UserId} 的连接 {ConnectionId} 发送消息失败", userId, connectionId);
-                    }
-                });
-
-                await Task.WhenAll(tasks);
-            }
-        }
-        else
+        if (!_userConnections.TryGetValue(userId, out var connections))
         {
             _logger.LogWarning("SendToUserAsync: userId={UserId} 未找到连接", userId);
+            return;
+        }
+
+        List<string>? connectionIds;
+        lock (connections)
+        {
+            connectionIds = [.. connections];
+        }
+
+        if (connectionIds.Count == 0) return;
+
+        // 获取或创建用户级别的写入锁，防止并发写入导致数据交错
+        var writeLock = _userWriteLocks.GetOrAdd(userId, _ => new object());
+
+        lock (writeLock)
+        {
+            foreach (var connectionId in connectionIds)
+            {
+                try
+                {
+                    SendMessageToLocalConnectionAsync(connectionId, message).ConfigureAwait(false).GetAwaiter().GetResult();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "向用户 {UserId} 的连接 {ConnectionId} 发送消息失败", userId, connectionId);
+                }
+            }
         }
     }
 
@@ -223,12 +220,28 @@ public class SingletonChatSseConnectionManager : IChatSseConnectionManager, IDis
     /// </summary>
     public void Dispose()
     {
+        foreach (var connectionId in _connections.Keys.ToList())
+        {
+            _ = UnregisterConnectionAsync(connectionId);
+        }
+
+        _connections.Clear();
+        _userConnections.Clear();
+        _connectionToUserMap.Clear();
+        _userWriteLocks.Clear();
+
         GC.SuppressFinalize(this);
     }
 
-    private class SseConnection
+    private sealed class SseConnection
     {
-        public HttpResponse Response { get; set; } = null!;
-        public CancellationToken CancellationToken { get; set; }
+        public HttpResponse Response { get; }
+        public CancellationToken CancellationToken { get; }
+
+        public SseConnection(HttpResponse response, CancellationToken cancellationToken)
+        {
+            Response = response;
+            CancellationToken = cancellationToken;
+        }
     }
 }

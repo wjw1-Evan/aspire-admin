@@ -137,25 +137,30 @@ public class ChatAiService : IChatAiService
         Func<ChatMessage, Task>? onComplete = null,
         XiaokeConfigDto? config = null)
     {
-        var xiaokeConfig = config ?? await GetXiaokeConfig();
-        if (xiaokeConfig == null) return null; // 如果没有配置且获取不到，则不回复
-
-        var systemPrompt = await GetEffectiveSystemPrompt(triggerMessage.SenderId, xiaokeConfig);
-        var conversationMessages = await BuildAssistantConversationMessagesAsync(session, triggerMessage, cancellationToken);
-        if (conversationMessages.Count == 0) return null;
-        _logger.LogInformation("历史记录构建完成，共 {Count} 条消息。", conversationMessages.Count);
-
-        var mcpResult = await _mcpService.DetectAndCallMcpToolsAsync(session, triggerMessage, triggerMessage.SenderId, cancellationToken);
-        string? toolResultContext = mcpResult?.Context;
-        _logger.LogInformation("MCP 工具检查完成。是否有工具上下文: {HasContext}", !string.IsNullOrEmpty(toolResultContext));
-
-        ChatMessage? assistantMessage = null;
-        var accumulatedContent = new StringBuilder();
-        var lastSavedLength = 0;
-
-        _logger.LogInformation("正在创建初始流式消息实体...");
         try
         {
+            _logger.LogInformation(">>> 进入 GenerateAssistantReplyStreamAsync <<< 会话={SessionId}", session.Id);
+            var xiaokeConfig = config ?? await GetXiaokeConfig();
+            if (xiaokeConfig == null)
+            {
+                _logger.LogWarning("无法获取小科配置，跳过回复。会话: {SessionId}", session.Id);
+                return null;
+            }
+
+            var systemPrompt = await GetEffectiveSystemPrompt(triggerMessage.SenderId, xiaokeConfig);
+            var conversationMessages = await BuildAssistantConversationMessagesAsync(session, triggerMessage, cancellationToken);
+            if (conversationMessages.Count == 0) return null;
+            _logger.LogInformation("历史记录构建完成，共 {Count} 条消息。", conversationMessages.Count);
+
+            var mcpResult = await _mcpService.DetectAndCallMcpToolsAsync(session, triggerMessage, triggerMessage.SenderId, cancellationToken);
+            string? toolResultContext = mcpResult?.Context;
+            _logger.LogInformation("MCP 工具检查完成。是否有工具上下文: {HasContext}", !string.IsNullOrEmpty(toolResultContext));
+
+            ChatMessage? assistantMessage = null;
+            var accumulatedContent = new StringBuilder();
+            var lastSavedLength = 0;
+
+            _logger.LogInformation("正在创建初始流式消息实体...");
             assistantMessage = await CreateAssistantMessageStreamingAsync(session, string.Empty, triggerMessage.SenderId, null, triggerMessage.Id, cancellationToken);
             _logger.LogInformation("消息实体已创建: {MessageId}，准备调用 LLM 接口...", assistantMessage.Id);
 

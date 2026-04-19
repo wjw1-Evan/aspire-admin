@@ -53,6 +53,11 @@ public interface INotificationService
     /// 全部标记为已读
     /// </summary>
     Task<int> MarkAllAsReadAsync(string userId, NotificationCategory? category = null);
+
+    /// <summary>
+    /// 推送统计更新到 SSE 客户端
+    /// </summary>
+    Task PushStatsUpdateAsync(string userId);
 }
 
 public class NotificationService : INotificationService
@@ -208,7 +213,7 @@ public class NotificationService : INotificationService
         return count;
     }
 
-    private async Task PushStatsUpdateAsync(string userId)
+    public async Task PushStatsUpdateAsync(string userId)
     {
         _logger.LogInformation("PushStatsUpdateAsync: 开始, userId={UserId}", userId);
         

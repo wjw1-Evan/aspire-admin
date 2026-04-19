@@ -110,14 +110,7 @@ public class StreamController : BaseApiController
             {
                 try
                 {
-                    _logger.LogInformation("正在推送初始通知统计, userId: {UserId}", userId);
-                    var stats = await _notificationService.GetStatisticsAsync(userId);
-                    var latestNotifications = await _notificationService.GetLatestAsync(userId);
-                    var statsData = new { Type = "stats", Statistics = stats, LatestNotifications = latestNotifications.Take(10).ToList() };
-                    var statsJson = JsonSerializer.Serialize(statsData, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
-                    var statsMessage = $"event: stats\ndata: {statsJson}\n\n";
-                    await _connectionManager.SendToUserAsync(userId, statsMessage);
-                    _logger.LogInformation("初始通知统计已推送, userId: {UserId}, stats: {@Stats}", userId, stats);
+                    await (_notificationService as INotificationService).PushStatsUpdateAsync(userId);
                 }
                 catch (Exception ex)
                 {

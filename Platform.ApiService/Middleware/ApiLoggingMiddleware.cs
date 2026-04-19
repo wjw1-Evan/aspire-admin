@@ -104,7 +104,8 @@ public class ApiLoggingMiddleware
                         }
                     };
 
-                    await logService.LogHttpRequestAsync(log);
+                    // fire-and-forget，避免与请求处理中的 DbContext 冲突
+                    _ = logService.LogHttpRequestAsync(log);
                 }
                 catch (Exception logEx)
                 {

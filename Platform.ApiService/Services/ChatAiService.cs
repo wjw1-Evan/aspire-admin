@@ -143,36 +143,21 @@ public class ChatAiService : IChatAiService
         var systemPrompt = await GetEffectiveSystemPrompt(triggerMessage.SenderId, xiaokeConfig);
         var conversationMessages = await BuildAssistantConversationMessagesAsync(session, triggerMessage, cancellationToken);
         if (conversationMessages.Count == 0) return null;
+        _logger.LogInformation("历史记录构建完成，共 {Count} 条消息。", conversationMessages.Count);
 
         var mcpResult = await _mcpService.DetectAndCallMcpToolsAsync(session, triggerMessage, triggerMessage.SenderId, cancellationToken);
-        var toolResultContext = mcpResult?.Context;
-
-        var instructionBuilder = new StringBuilder();
-        instructionBuilder.AppendLine(systemPrompt.Trim());
-        instructionBuilder.AppendLine("当前用户语言标识：zh-CN");
-        instructionBuilder.Append("请结合完整的历史聊天记录，使用自然、真诚且有温度的语气回复对方。");
-
-        if (!string.IsNullOrWhiteSpace(toolResultContext))
-        {
-            instructionBuilder.AppendLine("\n【已查询的数据】\n" + toolResultContext + "\n请基于以上查询结果，用自然、友好的语言向用户回复。");
-        }
-
-        var messages = new List<Microsoft.Extensions.AI.ChatMessage>
-        {
-            new(ChatRole.System, instructionBuilder.ToString())
-        };
-        messages.AddRange(conversationMessages);
-    
+        string? toolResultContext = mcpResult?.Context;
+        _logger.LogInformation("MCP 工具检查完成。是否有工具上下文: {HasContext}", !string.IsNullOrEmpty(toolResultContext));
 
         ChatMessage? assistantMessage = null;
         var accumulatedContent = new StringBuilder();
         var lastSavedLength = 0;
 
-        _logger.LogInformation("开始为会话 {SessionId} 生成助手机器人回复...", session.Id);
-
+        _logger.LogInformation("正在创建初始流式消息实体...");
         try
         {
             assistantMessage = await CreateAssistantMessageStreamingAsync(session, string.Empty, triggerMessage.SenderId, null, triggerMessage.Id, cancellationToken);
+            _logger.LogInformation("消息实体已创建: {MessageId}，准备调用 LLM 接口...", assistantMessage.Id);
 
             if (!string.IsNullOrEmpty(toolResultContext))
             {
@@ -184,13 +169,29 @@ public class ChatAiService : IChatAiService
 
             var chatOptions = new ChatOptions
             {
-                MaxOutputTokens = xiaokeConfig?.MaxTokens ?? 2048
+                Temperature = (float?)xiaokeConfig.Temperature,
+                MaxOutputTokens = xiaokeConfig.MaxTokens,
+                TopP = (float?)xiaokeConfig.TopP,
+                FrequencyPenalty = (float?)xiaokeConfig.FrequencyPenalty,
+                PresencePenalty = (float?)xiaokeConfig.PresencePenalty,
+                ModelId = xiaokeConfig.Model
             };
 
+            var messages = new List<Microsoft.Extensions.AI.ChatMessage>();
+            messages.Add(new Microsoft.Extensions.AI.ChatMessage(ChatRole.System, systemPrompt));
+            if (!string.IsNullOrEmpty(toolResultContext))
+            {
+                messages.Add(new Microsoft.Extensions.AI.ChatMessage(ChatRole.System, $"[MCP 工具上下文]\n{toolResultContext}"));
+            }
+            messages.AddRange(conversationMessages);
+
+            _logger.LogInformation("正在发起 LLM 流式请求...");
             await foreach (var update in _openAiClient.GetStreamingResponseAsync(messages, chatOptions, cancellationToken))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (update?.Text == null) continue;
+
+                if (accumulatedContent.Length == 0) _logger.LogInformation("收到 LLM 首个响应块。");
 
                 var delta = update.Text;
                 accumulatedContent.Append(delta);
@@ -205,6 +206,8 @@ public class ChatAiService : IChatAiService
                     try { await UpdateStreamingMessageAsync(msgId, content, cancellationToken); } catch { }
                 }
             }
+
+            _logger.LogInformation("LLM 生成完毕。");
 
             _logger.LogInformation("会话 {SessionId} 的助手内容生成完成，长度: {Length}", session.Id, accumulatedContent.Length);
 

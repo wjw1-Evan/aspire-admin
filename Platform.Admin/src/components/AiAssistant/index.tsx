@@ -27,7 +27,6 @@ const TypewriterContent: React.FC<{ content: string; isStreaming: boolean; onUpd
   onUpdate,
 }) => {
   const [displayContent, setDisplayContent] = useState('');
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Markdown 全局样式注入
   useEffect(() => {
@@ -54,26 +53,11 @@ const TypewriterContent: React.FC<{ content: string; isStreaming: boolean; onUpd
       return;
     }
 
-    // 如果流式内容比当前显示的内容多，则逐步更新
-    if (content.length > displayContent.length) {
-      if (timerRef.current) clearInterval(timerRef.current);
-
-      timerRef.current = setInterval(() => {
-        setDisplayContent((prev) => {
-          if (prev.length < content.length) {
-            const next = content.slice(0, prev.length + 1);
-            return next;
-          }
-          if (timerRef.current) clearInterval(timerRef.current);
-          return prev;
-        });
-      }, 20); // 20ms 一个字符，比较平滑
+    // 流式内容直接实时显示（无延迟）
+    if (content !== displayContent) {
+      setDisplayContent(content);
     }
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [content, isStreaming]);
+  }, [content, isStreaming, displayContent]);
 
   // 当内容更新时通知父组件（用于滚动）
   useEffect(() => {

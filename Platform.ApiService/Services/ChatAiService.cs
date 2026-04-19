@@ -226,7 +226,7 @@ public class ChatAiService : IChatAiService
                     var content = accumulatedContent.ToString();
                     var msgId = assistantMessage.Id;
                     lastSavedLength = accumulatedContent.Length;
-                    try { await UpdateStreamingMessageAsync(msgId, content, cancellationToken); } catch { }
+                    _ = UpdateStreamingMessageAsync(msgId, content, cancellationToken);
                 }
             }
 

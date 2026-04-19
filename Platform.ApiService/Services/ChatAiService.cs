@@ -51,49 +51,59 @@ public class ChatAiService : IChatAiService
 
     public async Task RespondAsAssistantAsync(ChatSession session, ChatMessage triggerMessage, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("RespondAsAssistantAsync 被触发: 会话={SessionId}, 触发消息={MessageId}", session.Id, triggerMessage.Id);
+        _logger.LogInformation("【小科调试】RespondAsAssistantAsync 触发 | 会话={SessionId} | 消息={MessageId} | 内容={Content}",
+            session.Id, triggerMessage.Id, triggerMessage.Content?.Substring(0, Math.Min(50, triggerMessage.Content?.Length ?? 0)));
 
         if (!session.Participants.Contains(AiAssistantConstants.AssistantUserId))
         {
-            _logger.LogWarning("会话 {SessionId} 不包含助手参与者，停止回复。", session.Id);
+            _logger.LogWarning("【小科调试】会话不包含助手参与者 | 会话={SessionId} | Participants=[{Participants}]",
+                session.Id, string.Join(",", session.Participants ?? new()));
             return;
         }
 
-        if (triggerMessage.SenderId == AiAssistantConstants.AssistantUserId) return;
+        if (triggerMessage.SenderId == AiAssistantConstants.AssistantUserId)
+        {
+            _logger.LogDebug("【小科调试】消息来自助手本身，跳过");
+            return;
+        }
 
         if (ShouldSkipAutomaticAssistantReply(triggerMessage))
         {
-            _logger.LogInformation("根据元数据标记，跳过自动回复。消息: {MessageId}", triggerMessage.Id);
+            _logger.LogInformation("【小科调试】消息标记为跳���自动回复 | MessageId={MessageId}", triggerMessage.Id);
             return;
         }
 
-        // 检查小科配置。如果明确禁用了，则跳过。
-        _logger.LogDebug("正在读取小科配置...");
+        // 检查小科配置
+        _logger.LogDebug("【小科调试】正在读取小科配置...");
         var xiaokeConfig = await GetXiaokeConfig();
+        _logger.LogInformation("【小科调试】小科配置 | Model={Model} | IsEnabled={IsEnabled} | IsDefault={IsDefault}",
+            xiaokeConfig?.Model, xiaokeConfig?.IsEnabled, xiaokeConfig?.IsDefault);
+
         if (xiaokeConfig != null && !xiaokeConfig.IsEnabled)
         {
-            _logger.LogInformation("小科已在配置中明确禁用，跳过回复。会话: {SessionId}", session.Id);
+            _logger.LogInformation("【小科调试】小科已在配置中明确禁用 | 会话={SessionId}", session.Id);
             return;
         }
 
-        // 幂等性检查：防止针对同一条消息重复生成回复
-        _logger.LogDebug("正在进行幂等性检查...");
+        // 幂等性检查
+        _logger.LogDebug("【小科调试】正在进行幂等性检查...");
         var existingAssistant = await FindExistingAssistantReply(session.Id, triggerMessage.Id);
         if (existingAssistant != null)
         {
-            _logger.LogInformation("检测到幂等性跳过：消息 {MessageId} 已有助理回复 {AiMsgId}，跳过生成。会话: {SessionId}",
-                triggerMessage.Id, existingAssistant.Id, session.Id);
+            _logger.LogInformation("【小科调试】检测到幂等性跳过 | 触发消息={TriggerMsgId} | 已有回复={AssistantMsgId}",
+                triggerMessage.Id, existingAssistant.Id);
             return;
         }
 
         if (triggerMessage.Type == ChatMessageType.Text)
         {
-            _logger.LogInformation("准备进入流式生成流程: 会话={SessionId}", session.Id);
+            _logger.LogInformation("【小科调试】准备进入流式生成流程 | 会话={SessionId} | Model={Model}",
+                session.Id, xiaokeConfig?.Model);
             await GenerateAssistantReplyStreamAsync(session, triggerMessage, cancellationToken, null, null, xiaokeConfig);
         }
         else
         {
-            _logger.LogInformation("非文本消息，发送静默提示。类型={Type}", triggerMessage.Type);
+            _logger.LogInformation("【小科调试】非文本消息，发送静默提示 | 类型={Type}", triggerMessage.Type);
             var replyContent = "我已收到您的附件，目前仅支持文本对话，欢迎告诉我想要讨论的内容。";
             await CreateAssistantMessageAsync(session, replyContent, triggerMessage.SenderId, null, cancellationToken);
         }
@@ -139,13 +149,16 @@ public class ChatAiService : IChatAiService
     {
         try
         {
-            _logger.LogInformation(">>> 进入 GenerateAssistantReplyStreamAsync <<< 会话={SessionId}", session.Id);
+            _logger.LogInformation("【小科调试】进入 GenerateAssistantReplyStreamAsync | 会话={SessionId}", session.Id);
             var xiaokeConfig = config ?? await GetXiaokeConfig();
             if (xiaokeConfig == null)
             {
-                _logger.LogWarning("无法获取小科配置，跳过回复。会话: {SessionId}", session.Id);
+                _logger.LogWarning("【小科调试】无法获取小科配置，跳过回复");
                 return null;
             }
+
+            _logger.LogInformation("【小科调试】使用配置 | Model={Model} | Temp={Temp} | MaxTokens={MaxTokens}",
+                xiaokeConfig.Model, xiaokeConfig.Temperature, xiaokeConfig.MaxTokens);
 
             var systemPrompt = await GetEffectiveSystemPrompt(triggerMessage.SenderId, xiaokeConfig);
             var conversationMessages = await BuildAssistantConversationMessagesAsync(session, triggerMessage, cancellationToken);
@@ -190,13 +203,18 @@ public class ChatAiService : IChatAiService
             }
             messages.AddRange(conversationMessages);
 
-            _logger.LogInformation("正在发起 LLM 流式请求...");
+            _logger.LogInformation("【小科调试】发起 LLM 流式请求 | 消息数={MessageCount} | Model={Model}",
+                messages.Count, xiaokeConfig.Model);
+
             await foreach (var update in _openAiClient.GetStreamingResponseAsync(messages, chatOptions, cancellationToken))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (update?.Text == null) continue;
 
-                if (accumulatedContent.Length == 0) _logger.LogInformation("收到 LLM 首个响应块。");
+                if (accumulatedContent.Length == 0)
+                {
+                    _logger.LogInformation("【小科调试】收到 LLM 首个响应块");
+                }
 
                 var delta = update.Text;
                 accumulatedContent.Append(delta);
@@ -212,7 +230,7 @@ public class ChatAiService : IChatAiService
                 }
             }
 
-            _logger.LogInformation("LLM 生成完毕。");
+            _logger.LogInformation("【小科调试】LLM 生成完毕 | 内容长度={Length}", accumulatedContent.Length);
 
             _logger.LogInformation("会话 {SessionId} 的助手内容生成完成，长度: {Length}", session.Id, accumulatedContent.Length);
 
@@ -225,12 +243,19 @@ public class ChatAiService : IChatAiService
                 var completed = await _context.Set<ChatMessage>().FirstOrDefaultAsync(m => m.Id == assistantMessage.Id);
                 if (completed != null)
                 {
+                    _logger.LogInformation("【小科调试】✅ 回复消息已保存 | MessageId={MessageId} | 内容预览={Preview}",
+                        completed.Id, completed.Content?.Substring(0, Math.Min(100, completed.Content?.Length ?? 0)));
                     if (onComplete != null) await onComplete(completed);
                     await _broadcaster.BroadcastMessageCompleteAsync(session.Participants, completed);
                 }
                 return completed;
             }
-            else if (assistantMessage != null)
+            else
+            {
+                _logger.LogWarning("【小科调试】❌ 回复内容为空，跳过保存");
+            }
+
+            if (assistantMessage != null)
             {
                 _context.Set<ChatMessage>().Remove(assistantMessage);
                 await _context.SaveChangesAsync();

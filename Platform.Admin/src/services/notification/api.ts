@@ -73,7 +73,6 @@ export async function getNotifications(params: any): Promise<ApiResponse<PagedRe
  * 标记为已读
  */
 export async function markAsRead(id: string): Promise<ApiResponse<void>> {
-  console.log('[Notification API] markAsRead called, id:', id);
   return request(`/apiservice/api/notifications/${id}/read`, {
     method: 'PUT',
   });
@@ -83,7 +82,6 @@ export async function markAsRead(id: string): Promise<ApiResponse<void>> {
  * 标记为未读
  */
 export async function markAsUnread(id: string): Promise<ApiResponse<void>> {
-  console.log('[Notification API] markAsUnread called, id:', id);
   return request(`/apiservice/api/notifications/${id}/unread`, {
     method: 'PUT',
   });
@@ -93,7 +91,6 @@ export async function markAsUnread(id: string): Promise<ApiResponse<void>> {
  * 全部标记为已读
  */
 export async function markAllAsRead(category?: NotificationCategory): Promise<ApiResponse<number>> {
-  console.log('[Notification API] markAllAsRead called, category:', category);
   return request('/apiservice/api/notifications/read-all', {
     method: 'PUT',
     params: { category },

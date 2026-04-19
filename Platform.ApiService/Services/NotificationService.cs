@@ -96,7 +96,7 @@ public class NotificationService : INotificationService
 
         // SSE 实时推送一个 "notification" 事件给前端
         var json = JsonSerializer.Serialize(new { Type = "notification", Notification = notification });
-        var sseMessage = $"data: {json}\n\n";
+        var sseMessage = $"event: notification\ndata: {json}\n\n";
         await _streamManager.SendToUserAsync(recipientId, sseMessage);
     }
 
@@ -211,7 +211,7 @@ public class NotificationService : INotificationService
         var stats = await GetStatisticsAsync(userId);
         var latestNotifications = await GetLatestAsync(userId);
         var json = JsonSerializer.Serialize(new { Type = "stats", Statistics = stats, LatestNotifications = latestNotifications.Take(10).ToList() });
-        var sseMessage = $"data: {json}\n\n";
+        var sseMessage = $"event: stats\ndata: {json}\n\n";
         await _streamManager.SendToUserAsync(userId, sseMessage);
     }
 }

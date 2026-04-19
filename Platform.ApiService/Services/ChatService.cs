@@ -1,4 +1,5 @@
 #pragma warning disable CS1591
+using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Platform.ApiService.Constants;
@@ -20,12 +21,14 @@ public class ChatService : IChatService
     private readonly IChatSessionService _sessionService;
     private readonly IChatAiService _aiService;
     private readonly IChatAttachmentService _attachmentService;
+    private readonly IChatSseConnectionManager _sseConnectionManager;
     private readonly ILogger<ChatService> _logger;
 
     public ChatService(
         IChatSessionService sessionService,
         IChatAiService aiService,
         IChatAttachmentService attachmentService,
+        IChatSseConnectionManager sseConnectionManager,
         ILogger<ChatService> logger)
     {
         _sessionService = sessionService ?? throw new ArgumentNullException(nameof(sessionService));
@@ -53,6 +56,13 @@ public class ChatService : IChatService
         var userMessage = await _sessionService.SendMessageAsync(request, attachmentInfo);
 
         var session = await _sessionService.EnsureSessionAccessibleAsync(request.SessionId);
+
+        // 通过 SSE 推送用户消息给前端
+        var userMessageJson = JsonSerializer.Serialize(new { Type = "chat-response", message = userMessage, sessionId = session.Id });
+        var sseMessage = $"event: chat-response\ndata: {userMessageJson}\n\n";
+        await _sseConnectionManager.SendToUserAsync(session.CreatedBy, sseMessage);
+
+        // 如果是给小科的文本消息，触发异步 AI 回复
         if (session.Participants.Contains(AiAssistantConstants.AssistantUserId) &&
             userMessage.Type == ChatMessageType.Text &&
             !_aiService.ShouldSkipAutomaticAssistantReply(userMessage))

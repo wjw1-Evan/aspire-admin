@@ -922,7 +922,65 @@ useEffect(() => {
 | 前端统一类型 | `Platform.Admin/src/types/api-response.ts` |
 | 页面开发标准 | `Platform.Admin/src/pages/password-book/index.tsx` |
 
-## 10. 变更与维护
+## 10. 小科 AI 聊天系统
+
+### 10.1 技术架构
+
+| 组件 | 技术 | 说明 |
+|------|------|------|
+| LLM | OpenAI (gpt-4o-mini) | 大语言模型供应商 |
+| 流式输出 | `IChatClient.GetStreamingResponseAsync` | 流式调用 OpenAI |
+| 实时推送 | SSE (Server-Sent Events) | 通过 ChatBroadcaster 推送 |
+| Fallback | 内置配置 | 数据库无配置时使用内置 gpt-4o-mini |
+
+### 10.2 消息流程
+
+```
+用户发送消息 → ChatService.SendMessageAsync() → 保存消息到数据库
+                    ↓
+            后台 Task.Run() → RespondAsAssistantAsync()
+                    ↓
+            GetXiaokeConfig() → 获取/构建配置 (含 fallback)
+                    ↓
+            GetStreamingResponseAsync() → 流式调用 OpenAI
+                    ↓
+            BroadcastMessageChunkAsync() → SSE 推送 token 到前端
+                    ↓
+            BroadcastMessageCompleteAsync() → 完成广播
+```
+
+### 10.3 关键代码位置
+
+| 文件 | 行号 | 职责 |
+|------|------|------|
+| `ChatService.cs` | 第 69 行 | 触发后台 AI 回复任务 |
+| `ChatAiService.cs` | 第 52 行 | `RespondAsAssistantAsync` 主入口 |
+| `ChatAiService.cs` | 第 195 行 | `GetStreamingResponseAsync` 流式请求 |
+| `ChatBroadcaster.cs` | 第 71 行 | `BroadcastMessageChunkAsync` 推送 |
+| `ChatAiService.cs` | 第 259 行 | `Get XiaokeConfig` fallback |
+
+### 10.4 配置说明
+
+**Fallback 配置**（数据库无配置时使用）：
+```csharp
+Model = "gpt-4o-mini",
+IsEnabled = true,
+Temperature = 0.7,
+MaxTokens = 2000,
+SystemPrompt = "你是小科，请使用简体中文提供简洁、专业且友好的回复。"
+```
+
+### 10.5 调试日志
+
+在 Aspire Dashboard 搜索 `【小科调试]` 可查看完整调试信息：
+- 触发：`RespondAsAssistantAsync 触发`
+- 配置：`小科配置 | Model= | IsEnabled=`
+- 流式：`发起 LLM 流式请求`
+- 完成：`LLM 生成完毕`
+
+---
+
+## 11. 变更与维护
 
 - **通用规则同步**：当项目代码修改时出现新的通用规则，需同步更新到 AGENTS.md。
 - 各子文档如有原则重复，优先合并至本规范。

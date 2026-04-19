@@ -160,8 +160,8 @@ public class ChatSessionService : IChatSessionService
         session.LastReadMessageIds = lastRead;
         await _context.SaveChangesAsync();
 
-        await _broadcaster.BroadcastSessionReadAsync(session.Id, currentUserId, new ChatSessionReadPayload { SessionId = session.Id, UserId = currentUserId, LastMessageId = message.Id, ReadAtUtc = DateTime.UtcNow });
-        await NotifySessionSummaryAsync(session.Id);
+        await _broadcaster.BroadcastSessionReadAsync(session.Participants, currentUserId, new ChatSessionReadPayload { SessionId = session.Id, UserId = currentUserId, LastMessageId = message.Id, ReadAtUtc = DateTime.UtcNow });
+        await NotifySessionSummaryAsync(session.Id, session.Participants);
     }
 
     public async Task<ChatSession> EnsureSessionAccessibleAsync(string sessionId)
@@ -183,7 +183,7 @@ public class ChatSessionService : IChatSessionService
         session.UnreadCounts = unread;
         await _context.SaveChangesAsync();
 
-        await NotifySessionSummaryAsync(session.Id);
+        await NotifySessionSummaryAsync(session.Id, session.Participants);
     }
 
     public async Task UpdateSessionLastMessageOnlyAsync(ChatSession session, ChatMessage message, string userId)
@@ -192,7 +192,7 @@ public class ChatSessionService : IChatSessionService
         session.LastMessageExcerpt = message.Content?.Length > 50 ? message.Content[..50] + "..." : message.Content;
         await _context.SaveChangesAsync();
 
-        await NotifySessionSummaryAsync(session.Id);
+        await NotifySessionSummaryAsync(session.Id, session.Participants);
     }
 
     public async Task EnrichParticipantMetadataAsync(ChatSession session)
@@ -221,12 +221,12 @@ public class ChatSessionService : IChatSessionService
         }
     }
 
-    private async Task NotifySessionSummaryAsync(string sessionId)
+    private async Task NotifySessionSummaryAsync(string sessionId, List<string> participants)
     {
         try
         {
             var session = await _context.Set<ChatSession>().FirstOrDefaultAsync(x => x.Id == sessionId);
-            if (session != null) await _broadcaster.BroadcastSessionUpdatedAsync(sessionId, new ChatSessionRealtimePayload { Session = session, BroadcastAtUtc = DateTime.UtcNow });
+            if (session != null) await _broadcaster.BroadcastSessionUpdatedAsync(participants, new ChatSessionRealtimePayload { Session = session, BroadcastAtUtc = DateTime.UtcNow });
         }
         catch (Exception ex) { _logger.LogError(ex, "通知摘要失败: {SessionId}", sessionId); }
     }
@@ -289,7 +289,7 @@ public class ChatSessionService : IChatSessionService
         await UpdateSessionAfterMessageAsync(session, message, currentUserId);
 
         var payload = new ChatMessageRealtimePayload { SessionId = session.Id, Message = message, BroadcastAtUtc = DateTime.UtcNow };
-        await _broadcaster.BroadcastMessageAsync(session.Id, payload);
+        await _broadcaster.BroadcastMessageAsync(session.Participants, payload);
 
         return message;
     }

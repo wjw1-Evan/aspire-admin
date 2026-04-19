@@ -161,7 +161,7 @@ public class ChatAiService : IChatAiService
                 {
                     var content = accumulatedContent.ToString();
                     var msgId = assistantMessage.Id;
-                    _ = Task.Run(async () => { try { await UpdateStreamingMessageAsync(msgId, content, cancellationToken); } catch { } });
+                    try { await UpdateStreamingMessageAsync(msgId, content, cancellationToken); } catch { }
                 }
             }
 
@@ -175,7 +175,7 @@ public class ChatAiService : IChatAiService
                 if (completed != null)
                 {
                     if (onComplete != null) await onComplete(completed);
-                    await _broadcaster.BroadcastMessageCompleteAsync(session.Id, completed);
+                    await _broadcaster.BroadcastMessageCompleteAsync(session.Participants, completed);
                 }
                 return completed;
             }
@@ -338,7 +338,7 @@ public class ChatAiService : IChatAiService
         await _sessionService.UpdateSessionAfterMessageAsync(session, message, AiAssistantConstants.AssistantUserId);
 
         var payload = new ChatMessageRealtimePayload { SessionId = session.Id, Message = message };
-        await _broadcaster.BroadcastMessageAsync(session.Id, payload);
+        await _broadcaster.BroadcastMessageAsync(session.Participants, payload);
 
         return message;
     }
@@ -365,7 +365,7 @@ public class ChatAiService : IChatAiService
         await _sessionService.UpdateSessionAfterMessageAsync(session, message, AiAssistantConstants.AssistantUserId);
 
         var payload = new ChatMessageRealtimePayload { SessionId = session.Id, Message = message, BroadcastAtUtc = DateTime.UtcNow };
-        await _broadcaster.BroadcastMessageAsync(session.Id, payload);
+        await _broadcaster.BroadcastMessageAsync(session.Participants, payload);
         return message;
     }
 

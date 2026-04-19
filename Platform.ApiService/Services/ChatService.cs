@@ -10,6 +10,8 @@ using System.Collections.Generic;
 using System.Linq.Dynamic.Core;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Platform.ApiService.Services;
 
@@ -21,17 +23,20 @@ public class ChatService : IChatService
     private readonly IChatSessionService _sessionService;
     private readonly IChatAiService _aiService;
     private readonly IChatAttachmentService _attachmentService;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<ChatService> _logger;
 
     public ChatService(
         IChatSessionService sessionService,
         IChatAiService aiService,
         IChatAttachmentService attachmentService,
+        IServiceScopeFactory scopeFactory,
         ILogger<ChatService> logger)
     {
         _sessionService = sessionService ?? throw new ArgumentNullException(nameof(sessionService));
         _aiService = aiService ?? throw new ArgumentNullException(nameof(aiService));
         _attachmentService = attachmentService ?? throw new ArgumentNullException(nameof(attachmentService));
+        _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -59,7 +64,27 @@ public class ChatService : IChatService
             userMessage.Type == ChatMessageType.Text &&
             !_aiService.ShouldSkipAutomaticAssistantReply(userMessage))
         {
-            _ = _aiService.RespondAsAssistantAsync(session, userMessage, CancellationToken.None);
+            var sessionId = session.Id;
+            var messageId = userMessage.Id;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await using var scope = _scopeFactory.CreateAsyncScope();
+                    var scopedAiService = scope.ServiceProvider.GetRequiredService<IChatAiService>();
+                    var scopedSessionService = scope.ServiceProvider.GetRequiredService<IChatSessionService>();
+                    var freshSession = await scopedSessionService.GetSessionByIdAsync(sessionId);
+                    if (freshSession == null) return;
+                    var context = scope.ServiceProvider.GetRequiredService<DbContext>();
+                    var freshMessage = await context.Set<ChatMessage>().FirstOrDefaultAsync(m => m.Id == messageId);
+                    if (freshMessage != null)
+                        await scopedAiService.RespondAsAssistantAsync(freshSession, freshMessage, CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "AI 自动回复失败: 会话 {SessionId}", sessionId);
+                }
+            });
         }
 
         return userMessage;

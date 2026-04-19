@@ -60,7 +60,7 @@ public class ChatAiService : IChatAiService
         }
 
         if (triggerMessage.SenderId == AiAssistantConstants.AssistantUserId) return;
-        
+
         if (ShouldSkipAutomaticAssistantReply(triggerMessage))
         {
             _logger.LogInformation("根据元数据标记，跳过自动回复。消息: {MessageId}", triggerMessage.Id);
@@ -81,7 +81,7 @@ public class ChatAiService : IChatAiService
         var existingAssistant = await FindExistingAssistantReply(session.Id, triggerMessage.Id);
         if (existingAssistant != null)
         {
-            _logger.LogInformation("检测到幂等性跳过：消息 {MessageId} 已有助理回复 {AiMsgId}，跳过生成。会话: {SessionId}", 
+            _logger.LogInformation("检测到幂等性跳过：消息 {MessageId} 已有助理回复 {AiMsgId}，跳过生成。会话: {SessionId}",
                 triggerMessage.Id, existingAssistant.Id, session.Id);
             return;
         }
@@ -239,11 +239,7 @@ public class ChatAiService : IChatAiService
         }
         catch (Exception)
         {
-            if (assistantMessage != null)
-            {
-                _context.Set<ChatMessage>().Remove(assistantMessage);
-                await _context.SaveChangesAsync();
-            }
+           
             return null;
         }
     }

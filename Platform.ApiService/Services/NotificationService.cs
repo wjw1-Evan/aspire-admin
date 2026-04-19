@@ -97,7 +97,9 @@ public class NotificationService : INotificationService
         // SSE 实时推送一个 "notification" 事件给前端
         var json = JsonSerializer.Serialize(new { Type = "notification", Notification = notification });
         var sseMessage = $"event: notification\ndata: {json}\n\n";
+        _logger.LogInformation("准备发送通知 SSE 消息: {RecipientId}, messageLength={Length}", recipientId, sseMessage.Length);
         await _streamManager.SendToUserAsync(recipientId, sseMessage);
+        _logger.LogInformation("通知 SSE 消息已发送: {RecipientId}", recipientId);
     }
 
     public async Task<List<AppNotification>> GetLatestAsync(string userId, int count = 20)

@@ -2,6 +2,7 @@ using Platform.ApiService.Attributes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http.Features;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
@@ -24,6 +25,7 @@ public class StreamController : BaseApiController
     private readonly IChatSseConnectionManager _connectionManager;
     private readonly IJwtService _jwtService;
     private readonly ILogger<StreamController> _logger;
+    private readonly INotificationService _notificationService;
 
     /// <summary>
     /// 初始化流式事件控制器
@@ -31,14 +33,17 @@ public class StreamController : BaseApiController
     /// <param name="connectionManager">连接管理器</param>
     /// <param name="jwtService">JWT 服务</param>
     /// <param name="logger">日志记录器</param>
+    /// <param name="notificationService">通知服务</param>
     public StreamController(
         IChatSseConnectionManager connectionManager,
         IJwtService jwtService,
-        ILogger<StreamController> logger)
+        ILogger<StreamController> logger,
+        INotificationService? notificationService = null)
     {
         _connectionManager = connectionManager ?? throw new ArgumentNullException(nameof(connectionManager));
         _jwtService = jwtService ?? throw new ArgumentNullException(nameof(jwtService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _notificationService = notificationService!;
     }
 
     /// <summary>
@@ -78,9 +83,16 @@ public class StreamController : BaseApiController
 
         // 设置 SSE 响应头
         Response.ContentType = "text/event-stream";
-        Response.Headers["Cache-Control"] = "no-cache";
+        Response.Headers["Cache-Control"] = "no-cache, no-transform";
         Response.Headers["Connection"] = "keep-alive";
         Response.Headers["X-Accel-Buffering"] = "no"; // 禁用 Nginx 缓冲
+
+        // 禁用响应缓冲，确保消息即时下发
+        var originalBodyFeature = HttpContext.Features.Get<IHttpResponseBodyFeature>();
+        if (originalBodyFeature != null)
+        {
+            originalBodyFeature.DisableBuffering();
+        }
 
         var connectionId = Guid.NewGuid().ToString();
 
@@ -92,6 +104,30 @@ public class StreamController : BaseApiController
             // 发送连接确认
             var connectedData = new { connectionId, userId };
             await WriteSseEventAsync("connected", connectedData, cancellationToken);
+
+            // 连接成功后立即推送当前未读通知统计
+            if (_notificationService != null)
+            {
+                try
+                {
+                    _logger.LogInformation("正在推送初始通知统计, userId: {UserId}", userId);
+                    var stats = await _notificationService.GetStatisticsAsync(userId);
+                    var latestNotifications = await _notificationService.GetLatestAsync(userId);
+                    var statsData = new { Type = "stats", Statistics = stats, LatestNotifications = latestNotifications.Take(10).ToList() };
+                    var statsJson = JsonSerializer.Serialize(statsData, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+                    var statsMessage = $"event: stats\ndata: {statsJson}\n\n";
+                    await _connectionManager.SendToUserAsync(userId, statsMessage);
+                    _logger.LogInformation("初始通知统计已推送, userId: {UserId}, stats: {@Stats}", userId, stats);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "推送初始通知统计失败: 用户 {UserId}", userId);
+                }
+            }
+            else
+            {
+                _logger.LogWarning("NotificationService 未注入，跳过推送初始通知统计");
+            }
 
             // 启动心跳任务
             var heartbeatTask = Task.Run(async () =>

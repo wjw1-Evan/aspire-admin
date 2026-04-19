@@ -317,6 +317,7 @@ eventSource.addEventListener('connected', (event: MessageEvent) => {
 
       // 监听默认的 'message' 事件 (没有任何 event 头的 data)
       eventSource.onmessage = (event: MessageEvent) => {
+        console.log('[SSE] ========== onmessage 原始消息 ==========', event.data);
         try {
           const data = event.data ? JSON.parse(event.data) : null;
           // 如果 data 中有 type，则尝试寻找特定 type 的 handler，否则调用 'message' handler

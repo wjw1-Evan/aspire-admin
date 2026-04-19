@@ -87,6 +87,9 @@ public class ChatSseConnectionManager : IChatSseConnectionManager, IDisposable
                 connectionIds = [.. connections];
             }
 
+            _logger.LogInformation("SendToUserAsync: userId={UserId}, connectionCount={Count}, message={Message}", 
+                userId, connectionIds.Count, message.Length > 100 ? message.Substring(0, 100) + "..." : message);
+
             if (connectionIds.Count != 0)
             {
                 var tasks = connectionIds.Select(async connectionId =>
@@ -103,6 +106,10 @@ public class ChatSseConnectionManager : IChatSseConnectionManager, IDisposable
 
                 await Task.WhenAll(tasks);
             }
+        }
+        else
+        {
+            _logger.LogWarning("SendToUserAsync: userId={UserId} 未找到连接", userId);
         }
     }
 
@@ -148,6 +155,7 @@ public class ChatSseConnectionManager : IChatSseConnectionManager, IDisposable
     {
         if (!_connections.TryGetValue(connectionId, out var connection))
         {
+            _logger.LogWarning("SendMessageToLocalConnectionAsync: connectionId={ConnectionId} 未找到连接", connectionId);
             return;
         }
 
@@ -155,16 +163,21 @@ public class ChatSseConnectionManager : IChatSseConnectionManager, IDisposable
         {
             if (connection.CancellationToken.IsCancellationRequested)
             {
+                _logger.LogWarning("SendMessageToLocalConnectionAsync: connectionId={ConnectionId} 已取消", connectionId);
                 _connections.TryRemove(connectionId, out _);
                 return;
             }
 
+            _logger.LogInformation("SendMessageToLocalConnectionAsync: 正在写入消息, connectionId={ConnectionId}, messageLength={Length}", 
+                connectionId, message.Length);
             var bytes = Encoding.UTF8.GetBytes(message);
             await connection.Response.Body.WriteAsync(bytes, connection.CancellationToken);
             await connection.Response.Body.FlushAsync(connection.CancellationToken);
+            _logger.LogInformation("SendMessageToLocalConnectionAsync: 消息已发送, connectionId={ConnectionId}", connectionId);
         }
         catch (OperationCanceledException)
         {
+            _logger.LogWarning("SendMessageToLocalConnectionAsync: 连接 {ConnectionId} 已取消", connectionId);
             _connections.TryRemove(connectionId, out _);
         }
         catch (Exception ex)

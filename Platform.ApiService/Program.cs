@@ -226,9 +226,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 var accessToken = context.Request.Query["token"];
                 var path = context.Request.Path;
                 
-                // 只要路径包含通知流或者文件下载等可能需要 URL Token 的地方
+                // 只要路径包含通知流、SSE流或者文件下载等可能需要 URL Token 的地方
                 if (!string.IsNullOrEmpty(accessToken) && 
                     (path.Value?.Contains("/api/notifications/stream", StringComparison.OrdinalIgnoreCase) == true ||
+                     path.Value?.Contains("/api/stream/sse", StringComparison.OrdinalIgnoreCase) == true ||
                      path.Value?.Contains("/api/files/download", StringComparison.OrdinalIgnoreCase) == true))
                 {
                     context.Token = accessToken;

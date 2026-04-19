@@ -3,7 +3,7 @@
   "lsp": {},
   "command": {
     "commit": {
-      "template": "自动提交 Git：\n0. git pull 拉取最新代码\n1. 运行 git status 查看变更\n2. 运行 git diff 查看具体改动\n3. 将变更添加到暂存区\n4. 生成符合约定式提交规范的 commit message（feat/fix/docs/refactor/style/perf/test/chore）\n5. 执行 git commit\n6. git push 推送到远程\n\n规则：\n- commit message 使用简体中文\n- 简洁明了\n- 无变更则不提交",
+      "template": "自动提交 Git（自动检测并执行）：\n\n## 阶段 0：环境检查\n1. 运行 GIT_MASTER=1 git status 查看变更\n2. 如果没有变更，终止并提示用户\n3. 识别变更的文件，判断属于前端还是后端项目\n\n## 阶段 1：代码检查（必须通过）\n1. 如果有 .ts/.tsx/.js/.jsx 文件变更：\n   - 进入 Platform.Admin 目录\n   - 运行 npm run lint 检查前端代码\n   - 如果有 lint 错误，修复后再继续\n2. 如果有 .cs 文件变更：\n   - 运行 dotnet build 检查后端代码\n   - 如果有编译错误，修复后再继续\n3. 只有检查通过后才能继续提交\n\n## 阶段 2：智能 Commit（使用 git-master skill）\n1. 运行 GIT_MASTER=1 git diff --staged --stat 和 GIT_MASTER=1 git diff --stat 分析变更\n2. 查看最近 30 条 commit 消息检测风格（简体中文 + 约定式提交）\n3. 根据文件数量决定 commit 数量：\n   - 3 个文件 -> 至少 1 个 commit\n   - 5 个文件 -> 至少 2 个 commit\n   - 10+ 个文件 -> 按比例增加 commit\n4. 按目录/模块拆分 commit（不同目录 = 不同 commit）\n5. 生成符合风格的 commit message：\n   - 类型前缀：feat/fix/docs/refactor/style/perf/test/chore\n   - 使用简体中文\n   - 简洁描述变更内容\n6. 执行 git commit\n\n## 阶段 3：推送\n1. 运行 git push 推送到远程\n\n## 规则\n- commit message 使用简体中文\n- 遵循约定式提交格式：type: message\n- 无变更则不提交\n- lint/build 必须通过才能提交\n- 优先拆分多个 commit，保持 atomic",
       "description": "自动提交 Git"
     },
     "build-frontend": {

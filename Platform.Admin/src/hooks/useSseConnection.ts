@@ -14,6 +14,16 @@ import { NotificationCategory, NotificationStatistics, AppNotification } from '@
 let globalEventSource: EventSource | null = null;
 let globalConnectionId: string | null = null;
 let globalIsConnected = false;
+let globalEventHandlers: Map<string, Set<(data: any) => void>> = new Map();
+let globalAutoConnectAttempted = false;
+
+// 全局状态（供所有 hook 实例共享）
+const globalNotificationState: NotificationState = {
+  unreadCount: 0,
+  statistics: { System: 0, Work: 0, Social: 0, Security: 0, Total: 0 },
+  latestNotifications: [],
+};
+
 // HMR 检测：使用 sessionStorage 标记来跨 HMR 持久化状态
 const HMR_SESSION_KEY = 'sse_hmr_refresh_' + (window.location.pathname || '');
 let lastHmrTime = 0;
@@ -34,13 +44,6 @@ if (isAfterHmr) {
   globalNotificationState.statistics = { System: 0, Work: 0, Social: 0, Security: 0, Total: 0 };
   globalNotificationState.latestNotifications = [];
 }
-
-// 全局状态（供所有 hook 实例共享）
-const globalNotificationState: NotificationState = {
-  unreadCount: 0,
-  statistics: { System: 0, Work: 0, Social: 0, Security: 0, Total: 0 },
-  latestNotifications: [],
-};
 
 function notifyAllListeners() {
   globalEventHandlers.forEach((handlers) => {

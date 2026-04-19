@@ -8,7 +8,6 @@ using Platform.ServiceDefaults.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq.Dynamic.Core;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -66,11 +65,19 @@ public class ChatService : IChatService
         {
             var sessionId = session.Id;
             var messageId = userMessage.Id;
+            var companyId = userMessage.CompanyId;
+            var userId = userMessage.SenderId;
+
             _ = Task.Run(async () =>
             {
                 try
                 {
                     await using var scope = _scopeFactory.CreateAsyncScope();
+                    
+                    // 设置后台任务的租户上下文
+                    var tenantSetter = scope.ServiceProvider.GetRequiredService<ITenantContextSetter>();
+                    tenantSetter.SetContext(companyId, userId);
+
                     var scopedAiService = scope.ServiceProvider.GetRequiredService<IChatAiService>();
                     var scopedSessionService = scope.ServiceProvider.GetRequiredService<IChatSessionService>();
                     var freshSession = await scopedSessionService.GetSessionByIdAsync(sessionId);

@@ -131,16 +131,20 @@ public class ChatAiService : IChatAiService
 
         ChatMessage? assistantMessage = null;
         var accumulatedContent = new StringBuilder();
+        var lastSavedLength = 0;
+
+        _logger.LogInformation("开始为会话 {SessionId} 生成助手机器人回复...", session.Id);
 
         try
         {
             assistantMessage = await CreateAssistantMessageStreamingAsync(session, string.Empty, triggerMessage.SenderId, null, triggerMessage.Id, cancellationToken);
 
-            if (!string.IsNullOrEmpty(toolResultContext) && onChunk != null)
+            if (!string.IsNullOrEmpty(toolResultContext))
             {
                 var tip = $">  **{mcpResult?.ToolSummary}**  \n\n";
                 accumulatedContent.Append(tip);
-                await onChunk(session.Id, assistantMessage.Id, tip);
+                if (onChunk != null) await onChunk(session.Id, assistantMessage.Id, tip);
+                await _broadcaster.BroadcastMessageChunkAsync(session.Participants, assistantMessage.Id, tip);
             }
 
             var chatOptions = new ChatOptions
@@ -156,14 +160,18 @@ public class ChatAiService : IChatAiService
                 var delta = update.Text;
                 accumulatedContent.Append(delta);
                 if (onChunk != null) await onChunk(session.Id, assistantMessage.Id, delta);
+                await _broadcaster.BroadcastMessageChunkAsync(session.Participants, assistantMessage.Id, delta);
 
-                if (accumulatedContent.Length % 50 == 0)
+                if (accumulatedContent.Length - lastSavedLength >= 50)
                 {
                     var content = accumulatedContent.ToString();
                     var msgId = assistantMessage.Id;
+                    lastSavedLength = accumulatedContent.Length;
                     try { await UpdateStreamingMessageAsync(msgId, content, cancellationToken); } catch { }
                 }
             }
+
+            _logger.LogInformation("会话 {SessionId} 的助手内容生成完成，长度: {Length}", session.Id, accumulatedContent.Length);
 
             var finalContent = accumulatedContent.ToString().Trim();
             if (assistantMessage != null && !string.IsNullOrEmpty(finalContent))

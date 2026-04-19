@@ -122,14 +122,24 @@ public class StreamController : BaseApiController
                 _logger.LogWarning("NotificationService 未注入，跳过推送初始通知统计");
             }
 
-            // 等待连接关闭
+            // 心跳：每15秒发送ping保持连接活跃
             try
             {
-                await Task.Delay(Timeout.Infinite, cancellationToken);
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    await Task.Delay(15000, cancellationToken);
+                    try
+                    {
+                        await Response.WriteAsync(": ping\n\n", cancellationToken);
+                        await Response.Body.FlushAsync(cancellationToken);
+                    }
+                    catch { break; }
+                }
             }
             catch (OperationCanceledException)
             {
-                // 连接正常关闭
+                // 连接正常关闭（客户端断开或服务器重启）
+                _logger.LogInformation("SSE 连接正常关闭, connectionId: {ConnectionId}", connectionId);
             }
             finally
             {

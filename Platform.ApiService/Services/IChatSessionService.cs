@@ -29,7 +29,7 @@ public interface IChatSessionService
     /// <summary>
     /// 根据ID获取会话
     /// </summary>
-    Task<ChatSession?> GetSessionByIdAsync(string sessionId, bool bypassTenantFilter = false);
+    Task<ChatSession?> GetSessionByIdAsync(string sessionId);
 
     /// <summary>
     /// 将会话标记为已读

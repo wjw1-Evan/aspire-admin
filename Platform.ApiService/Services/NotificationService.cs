@@ -218,18 +218,12 @@ public class NotificationService : INotificationService
 
     public async Task PushStatsUpdateAsync(string userId)
     {
-        _logger.LogInformation("PushStatsUpdateAsync: 开始, userId={UserId}", userId);
-        
-        // 检查连接是否存在
         var hasConnection = _streamManager.HasUserConnection(userId);
-        _logger.LogInformation("PushStatsUpdateAsync: userId={UserId} 是否有连接: {HasConnection}", userId, hasConnection);
-        
         if (!hasConnection)
         {
-            _logger.LogWarning("PushStatsUpdateAsync: userId={UserId} 没有活跃连接，跳过推送", userId);
             return;
         }
-        
+
         var stats = await GetStatisticsAsync(userId);
         var latestNotifications = await GetLatestAsync(userId);
         var statsData = new { Type = "stats", Statistics = stats, LatestNotifications = latestNotifications.Take(10).ToList() };

@@ -130,33 +130,86 @@ const AiAssistant: React.FC = () => {
   useEffect(() => {
     if (!session?.id || !open) return;
 
-    const unsubscribe = sse.on<any>('chat-response', (data) => {
-      if (!data) return;
-      console.log('[AiAssistant] 收到 chat-response:', data);
+    // 监听 ReceiveMessage（AI 回复）
+    const unsubReceiveMessage = sse.on<any>('ReceiveMessage', (data) => {
+      if (!data || !data.message) return;
+      console.log('[AiAssistant] 收到 ReceiveMessage:', data);
 
-      if (data.message) {
-        // 用户消息
+      const msg = data.message;
+      if (msg.sessionId === session.id && msg.senderId === 'ai-assistant') {
         setMessages((prev) => {
-          const updated = [...prev, data.message];
-          return updated.sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
+          const existingIndex = prev.findIndex((m) => m.id === msg.id);
+          if (existingIndex >= 0) {
+            // 更新现有消息
+            const updated = [...prev];
+            updated[existingIndex] = msg;
+            return updated;
+          }
+          return [...prev, msg];
         });
       }
+    });
+
+    // 监听 MessageChunk（AI 回复增量）
+    const unsubMessageChunk = sse.on<any>('MessageChunk', (data) => {
+      if (!data || !data.messageId || !data.delta) return;
+      console.log('[AiAssistant] 收到 MessageChunk:', data);
 
       if (data.sessionId === session.id) {
-        // AI 回复开始
-        if (data.type === 'AssistantMessageStart' && data.message) {
-          const assistantMessage = data.message;
-          setStreamingMessages((prev) => ({ ...prev, [assistantMessage.id]: '' }));
-          setMessages((prev) => {
-            const existingIndex = prev.findIndex((m) => m.id === assistantMessage.id);
-            if (existingIndex >= 0) return prev;
-            return [...prev, assistantMessage].sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
-          });
-        }
+        const { messageId, delta } = data;
+        setStreamingMessages((prev) => {
+          const currentContent = prev[messageId] || '';
+          return { ...prev, [messageId]: currentContent + delta };
+        });
+        setMessages((prev) => {
+          const messageIndex = prev.findIndex((m) => m.id === messageId);
+          if (messageIndex < 0) {
+            const tempMessage: ChatMessage = {
+              id: messageId,
+              sessionId: session.id,
+              senderId: 'ai-assistant',
+              type: 'Text',
+              content: '',
+              createdAt: new Date().toISOString(),
+            };
+            return [...prev, tempMessage];
+          }
+          return prev;
+        });
+      }
+    });
 
-        // AI 回复增量
-        if (data.type === 'AssistantMessageChunk' && data.messageId && data.delta) {
-          const { messageId, delta } = data;
+    // 监听 MessageComplete（AI 回复完成）
+    const unsubMessageComplete = sse.on<any>('MessageComplete', (data) => {
+      if (!data || !data.message) return;
+      console.log('[AiAssistant] 收到 MessageComplete:', data);
+
+      const msg = data.message;
+      if (msg.sessionId === session.id) {
+        setStreamingMessages((prev) => {
+          const { [msg.id]: _, ...rest } = prev;
+          return rest;
+        });
+        setMessages((prev) => {
+          const messageIndex = prev.findIndex((m) => m.id === msg.id);
+          let updated: ChatMessage[];
+          if (messageIndex >= 0) {
+            updated = [...prev];
+            updated[messageIndex] = msg;
+          } else {
+            updated = [...prev, msg];
+          }
+          return updated;
+        });
+      }
+    });
+
+    return () => {
+      unsubReceiveMessage?.();
+      unsubMessageChunk?.();
+      unsubMessageComplete?.();
+    };
+  }, [session?.id, open, sse]);
           setStreamingMessages((prev) => {
             const currentContent = prev[messageId] || '';
             return { ...prev, [messageId]: currentContent + delta };
@@ -206,18 +259,15 @@ const AiAssistant: React.FC = () => {
       }
     });
 
-    return unsubscribe;
-  }, [session?.id, open, sse, currentUser, message]);
+    return () => {
+      unsubReceiveMessage?.();
+      unsubMessageChunk?.();
+      unsubMessageComplete?.();
+    };
+  }, [session?.id, open, sse]);
 
-  useEffect(() => {
-    if (!open) return;
-  }, [sse, open, session?.id]);
   const dialogRef = useRef<HTMLDivElement>(null);
-
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  // 存储正在流式传输的消息内容（messageId -> content）
-  // 注意：使用状态而不是 ref，确保更新时触发重新渲染
-  // 使用普通对象而不是 Map，确保 React 能正确检测变化
   const [streamingMessages, setStreamingMessages] = useState<Record<string, string>>({});
 
   const isValidObjectId = useCallback((id?: string) => !!id && /^[a-fA-F0-9]{24}$/.test(id), []);

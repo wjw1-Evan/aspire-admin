@@ -51,11 +51,24 @@ public class ChatAiService : IChatAiService
 
     public async Task RespondAsAssistantAsync(ChatSession session, ChatMessage triggerMessage, CancellationToken cancellationToken)
     {
-        if (!session.Participants.Contains(AiAssistantConstants.AssistantUserId)) return;
+        _logger.LogInformation("RespondAsAssistantAsync 被触发: 会话={SessionId}, 触发消息={MessageId}", session.Id, triggerMessage.Id);
+
+        if (!session.Participants.Contains(AiAssistantConstants.AssistantUserId))
+        {
+            _logger.LogWarning("会话 {SessionId} 不包含助手参与者，停止回复。", session.Id);
+            return;
+        }
+
         if (triggerMessage.SenderId == AiAssistantConstants.AssistantUserId) return;
-        if (ShouldSkipAutomaticAssistantReply(triggerMessage)) return;
+        
+        if (ShouldSkipAutomaticAssistantReply(triggerMessage))
+        {
+            _logger.LogInformation("根据元数据标记，跳过自动回复。消息: {MessageId}", triggerMessage.Id);
+            return;
+        }
 
         // 检查小科配置。如果明确禁用了，则跳过。
+        _logger.LogDebug("正在读取小科配置...");
         var xiaokeConfig = await GetXiaokeConfig();
         if (xiaokeConfig != null && !xiaokeConfig.IsEnabled)
         {
@@ -64,19 +77,23 @@ public class ChatAiService : IChatAiService
         }
 
         // 幂等性检查：防止针对同一条消息重复生成回复
+        _logger.LogDebug("正在进行幂等性检查...");
         var existingAssistant = await FindExistingAssistantReply(session.Id, triggerMessage.Id);
         if (existingAssistant != null)
         {
-            _logger.LogDebug("消息 {MessageId} 已有助理回复，跳过。会话: {SessionId}", triggerMessage.Id, session.Id);
+            _logger.LogInformation("检测到幂等性跳过：消息 {MessageId} 已有助理回复 {AiMsgId}，跳过生成。会话: {SessionId}", 
+                triggerMessage.Id, existingAssistant.Id, session.Id);
             return;
         }
 
         if (triggerMessage.Type == ChatMessageType.Text)
         {
+            _logger.LogInformation("准备进入流式生成流程: 会话={SessionId}", session.Id);
             await GenerateAssistantReplyStreamAsync(session, triggerMessage, cancellationToken, null, null, xiaokeConfig);
         }
         else
         {
+            _logger.LogInformation("非文本消息，发送静默提示。类型={Type}", triggerMessage.Type);
             var replyContent = "我已收到您的附件，目前仅支持文本对话，欢迎告诉我想要讨论的内容。";
             await CreateAssistantMessageAsync(session, replyContent, triggerMessage.SenderId, null, cancellationToken);
         }

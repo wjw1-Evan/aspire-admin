@@ -266,22 +266,20 @@ export function useSseConnection(
         setIsConnected(false);
         setIsConnecting(false);
 
-        // 如果连接已关闭，尝试重连
-        if (eventSource.readyState === EventSource.CLOSED) {
-          const delay = getReconnectDelay(reconnectAttemptsRef.current);
-          reconnectAttemptsRef.current++;
+        // 重置全局状态，触发重连
+        globalEventSource = null;
+        globalIsConnected = false;
 
-          reconnectTimeoutRef.current = setTimeout(() => {
-            if (isMountedRef.current) {
-              connect().catch((err) => {
-                onError?.(err instanceof Error ? err : new Error(String(err)));
-              });
-            }
-          }, delay);
-        } else {
-          const err = new Error('SSE 连接错误');
-          onError?.(err);
-        }
+        const delay = getReconnectDelay(reconnectAttemptsRef.current);
+        reconnectAttemptsRef.current++;
+
+        reconnectTimeoutRef.current = setTimeout(() => {
+          if (isMountedRef.current) {
+            connect().catch((err) => {
+              onError?.(err instanceof Error ? err : new Error(String(err)));
+            });
+          }
+        }, delay);
       };
 
       // 监听自定义事件并分发到注册的处理器

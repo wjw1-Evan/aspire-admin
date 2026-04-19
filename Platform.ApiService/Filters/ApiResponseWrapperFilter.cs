@@ -23,8 +23,7 @@ public class ApiResponseWrapperFilter : IAsyncResultFilter
         "/_framework/",
         "/favicon.ico",
         "/stream/sse",
-        "/api/stream/sse",
-        "/api/notifications/stream"
+        "/api/stream/sse"
     };
 
     // 缓存类型的反射结果：Key 是对象的 Type，Value 是该类型是否包含了 success/data/code 字段

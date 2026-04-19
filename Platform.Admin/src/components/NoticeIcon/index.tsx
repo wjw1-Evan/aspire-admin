@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { Badge, Tabs, Button, List, Space, Empty, Spin, Tag, Typography } from 'antd';
 import { BellOutlined, CheckCircleOutlined, InfoCircleOutlined, WarningOutlined, CloseCircleOutlined, DeleteOutlined } from '@ant-design/icons';
 import HeaderDropdown from '@/components/HeaderDropdown';
-import { useNotificationStream } from '@/hooks/useNotificationStream';
+import { useSseConnection } from '@/hooks/useSseConnection';
 import { NotificationCategory, NotificationLevel, NotificationStatus, markAsRead, markAsUnread, markAllAsRead, AppNotification } from '@/services/notification/api';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -24,7 +24,8 @@ const LevelIcon: React.FC<{ level: NotificationLevel }> = ({ level }) => {
 
 const NoticeIcon: React.FC = () => {
   const [popoverOpen, setPopoverOpen] = useState(false);
-  const { statistics, unreadCount, latestNotifications } = useNotificationStream();
+  const { notificationState } = useSseConnection({ enableNotifications: true });
+  const { statistics, unreadCount, latestNotifications } = notificationState;
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('all');
 

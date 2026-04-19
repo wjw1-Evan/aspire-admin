@@ -1,4 +1,5 @@
 using System.Linq.Dynamic.Core;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models.Entities;
 using Platform.ServiceDefaults.Extensions;
@@ -57,12 +58,12 @@ public interface INotificationService
 public class NotificationService : INotificationService
 {
     private readonly DbContext _context;
-    private readonly INotificationStreamManager _streamManager;
+    private readonly IChatSseConnectionManager _streamManager;
     private readonly ILogger<NotificationService> _logger;
 
     public NotificationService(
         DbContext context,
-        INotificationStreamManager streamManager,
+        IChatSseConnectionManager streamManager,
         ILogger<NotificationService> logger)
     {
         _context = context;
@@ -93,11 +94,10 @@ public class NotificationService : INotificationService
 
         _logger.LogInformation("正在准备向用户推送实时通知. [RecipientId: {UserId}, Title: {Title}]", recipientId, title);
 
-        // SSE 实时推送一个 "NewNotification" 事件给前端
-        await _streamManager.SendToUserAsync(recipientId, new {
-            Type = "NewNotification",
-            Notification = notification
-        });
+        // SSE 实时推送一个 "notification" 事件给前端
+        var json = JsonSerializer.Serialize(new { Type = "notification", Notification = notification });
+        var sseMessage = $"data: {json}\n\n";
+        await _streamManager.SendToUserAsync(recipientId, sseMessage);
     }
 
     public async Task<List<AppNotification>> GetLatestAsync(string userId, int count = 20)
@@ -210,10 +210,8 @@ public class NotificationService : INotificationService
     {
         var stats = await GetStatisticsAsync(userId);
         var latestNotifications = await GetLatestAsync(userId);
-        await _streamManager.SendToUserAsync(userId, new {
-            Type = "StatsUpdate",
-            Statistics = stats,
-            LatestNotifications = latestNotifications.Take(10).ToList()
-        });
+        var json = JsonSerializer.Serialize(new { Type = "stats", Statistics = stats, LatestNotifications = latestNotifications.Take(10).ToList() });
+        var sseMessage = $"data: {json}\n\n";
+        await _streamManager.SendToUserAsync(userId, sseMessage);
     }
 }

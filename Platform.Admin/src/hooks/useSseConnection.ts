@@ -6,12 +6,21 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { tokenUtils } from '@/utils/token';
 import { getApiBaseUrl } from '@/utils/request';
+import { notification } from 'antd';
+import { NotificationCategory, NotificationStatistics, AppNotification } from '@/services/notification/api';
 
 interface UseSseConnectionOptions {
   onConnected?: () => void;
   onDisconnected?: () => void;
   onError?: (error: Error) => void;
   autoConnect?: boolean;
+  enableNotifications?: boolean;
+}
+
+export interface NotificationState {
+  unreadCount: number;
+  statistics: NotificationStatistics;
+  latestNotifications: AppNotification[];
 }
 
 interface UseSseConnectionReturn {
@@ -22,6 +31,7 @@ interface UseSseConnectionReturn {
   disconnect: () => void;
   on: <T = any>(eventName: string, handler: (data: T) => void) => () => void;
   off: (eventName: string) => void;
+  notificationState: NotificationState;
 }
 
 /**
@@ -37,6 +47,7 @@ export function useSseConnection(
     onDisconnected,
     onError,
     autoConnect = true,
+    enableNotifications = false,
   } = options;
 
   const eventSourceRef = useRef<EventSource | null>(null);
@@ -47,6 +58,12 @@ export function useSseConnection(
   const reconnectAttemptsRef = useRef(0);
   const eventHandlersRef = useRef<Map<string, Set<(data: any) => void>>>(new Map());
   const isMountedRef = useRef(true);
+
+  const [notificationState, setNotificationState] = useState<NotificationState>({
+    unreadCount: 0,
+    statistics: { System: 0, Work: 0, Social: 0, Security: 0, Total: 0 },
+    latestNotifications: [],
+  });
 
   // 计算重连延迟（指数退避）
   const getReconnectDelay = useCallback((attempts: number): number => {
@@ -135,6 +152,63 @@ export function useSseConnection(
         reconnectAttemptsRef.current = 0;
         onConnected?.();
       };
+
+      // 监听通知相关事件（仅当 enableNotifications 为 true 时）
+      if (enableNotifications) {
+        eventSource.addEventListener('connected', (event: MessageEvent) => {
+          try {
+            const data = event.data ? JSON.parse(event.data) : null;
+            if (data?.connectionId) {
+              setConnectionId(data.connectionId);
+            }
+          } catch (e) { }
+        });
+
+        eventSource.addEventListener('notification', (event: MessageEvent) => {
+          try {
+            const data = event.data ? JSON.parse(event.data) : null;
+            if (!data) return;
+            console.info('[SSE] 收到新通知推送:', data.notification);
+            const newNotif = data.notification as AppNotification;
+            setNotificationState(s => ({
+              ...s,
+              unreadCount: s.unreadCount + 1,
+              latestNotifications: [newNotif, ...s.latestNotifications].slice(0, 10),
+              statistics: {
+                ...s.statistics,
+                [newNotif.category]: (s.statistics[newNotif.category] || 0) + 1,
+                Total: s.statistics.Total + 1
+              }
+            }));
+            // 弹出全局 Toast
+            notification[newNotif.level.toLowerCase() as 'info' | 'success' | 'warning' | 'error']({
+              message: newNotif.title,
+              description: newNotif.content,
+              placement: 'bottomRight',
+            });
+          } catch (e) {
+            console.error('Parse notification failed', e);
+          }
+        });
+
+        eventSource.addEventListener('stats', (event: MessageEvent) => {
+          try {
+            const data = event.data ? JSON.parse(event.data) : null;
+            if (data?.statistics) {
+              setNotificationState(s => ({
+                ...s,
+                statistics: data.statistics,
+                unreadCount: data.statistics.Total ?? s.unreadCount,
+                latestNotifications: data.latestNotifications || s.latestNotifications
+              }));
+            }
+          } catch (e) { }
+        });
+
+        eventSource.addEventListener('keepalive', () => {
+          // 心跳包，静默处理
+        });
+      }
 
       // 连接错误
       eventSource.onerror = (error) => {
@@ -303,5 +377,6 @@ export function useSseConnection(
     disconnect,
     on,
     off,
+    notificationState,
   };
 }

@@ -5,7 +5,7 @@ import { useModel } from '@umijs/max';
 import { marked } from 'marked';
 import {
   getOrCreateAssistantSession,
-  sendMessageWithStreaming,
+  sendMessage,
   getMessages,
 } from '@/services/chat/api';
 import { useSseConnection } from '@/hooks/useSseConnection';
@@ -125,6 +125,89 @@ const AiAssistant: React.FC = () => {
     autoConnect: true,
     onError: (err) => console.warn('[AiAssistant] 全局 SSE 异常:', err),
   });
+
+  // 监听 chat-response 事件（AI 回复）
+  useEffect(() => {
+    if (!session?.id || !open) return;
+
+    const unsubscribe = sse.on<any>('chat-response', (data) => {
+      if (!data) return;
+      console.log('[AiAssistant] 收到 chat-response:', data);
+
+      if (data.message) {
+        // 用户消息
+        setMessages((prev) => {
+          const updated = [...prev, data.message];
+          return updated.sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
+        });
+      }
+
+      if (data.sessionId === session.id) {
+        // AI 回复开始
+        if (data.type === 'AssistantMessageStart' && data.message) {
+          const assistantMessage = data.message;
+          setStreamingMessages((prev) => ({ ...prev, [assistantMessage.id]: '' }));
+          setMessages((prev) => {
+            const existingIndex = prev.findIndex((m) => m.id === assistantMessage.id);
+            if (existingIndex >= 0) return prev;
+            return [...prev, assistantMessage].sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
+          });
+        }
+
+        // AI 回复增量
+        if (data.type === 'AssistantMessageChunk' && data.messageId && data.delta) {
+          const { messageId, delta } = data;
+          setStreamingMessages((prev) => {
+            const currentContent = prev[messageId] || '';
+            return { ...prev, [messageId]: currentContent + delta };
+          });
+          setMessages((prev) => {
+            const messageIndex = prev.findIndex((m) => m.id === messageId);
+            if (messageIndex < 0) {
+              const tempMessage: ChatMessage = {
+                id: messageId,
+                sessionId: session.id,
+                senderId: AI_ASSISTANT_ID,
+               recipientId: currentUser?.id || '',
+                type: 'Text',
+                content: '',
+                createdAt: new Date().toISOString(),
+              };
+              return [...prev, tempMessage].sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
+            }
+            return prev;
+          });
+        }
+
+        // AI 回复完成
+        if (data.type === 'AssistantMessageComplete' && data.message) {
+          const completedMessage = data.message;
+          setStreamingMessages((prev) => {
+            const { [completedMessage.id]: _, ...rest } = prev;
+            return rest;
+          });
+          setMessages((prev) => {
+            const messageIndex = prev.findIndex((m) => m.id === completedMessage.id);
+            let updated: ChatMessage[];
+            if (messageIndex >= 0) {
+              updated = [...prev];
+              updated[messageIndex] = completedMessage;
+            } else {
+              updated = [...prev, completedMessage];
+            }
+            return updated.sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
+          });
+        }
+      }
+
+      if (data.error) {
+        console.error('[AiAssistant] 发送消息失败:', data.error);
+        message.error('发送消息失败: ' + data.error);
+      }
+    });
+
+    return unsubscribe;
+  }, [session?.id, open, sse, currentUser, message]);
 
   useEffect(() => {
     if (!open) return;
@@ -262,151 +345,39 @@ const AiAssistant: React.FC = () => {
       // 先添加用户消息到界面（乐观更新）
       setMessages((prev) => [...prev, optimisticMessage]);
 
-      // 使用流式接口发送消息并接收 AI 回复
-      console.log('[AiAssistant] 发送消息到后端（流式）:', userMessage);
+// 发送消息（通过 SSE 接收 AI 回复）
+      console.log('[AiAssistant] 发送消息到后端:', userMessage);
 
-      // 保存会话 ID，用于回调中验证
-      const sessionIdForCallbacks = currentSession.id;
-
-      let userMessageId: string | null = null;
-      let assistantMessageId: string | null = null;
-
-      await sendMessageWithStreaming(
-        {
+      try {
+        // 调用 sendMessage 发送用户消息
+        const sentMessage = await sendMessage({
           sessionId: currentSession.id,
           type: 'Text',
           content: userMessage,
           recipientId: AI_ASSISTANT_ID,
-        },
-        {
-          // 用户消息已保存
-          onUserMessage: (sentMessage) => {
-            console.log('[AiAssistant] 用户消息已保存，消息ID:', sentMessage.id);
-            userMessageId = sentMessage.id;
-            // 替换临时消息为真实消息，并保持排序
-            setMessages((prev) => {
-              const filtered = prev.filter((msg) => msg.id !== optimisticMessage.id && msg.id !== sentMessage.id);
-              const updated = [...filtered, sentMessage];
-              // 按创建时间排序
-              return updated.sort((a, b) => {
-                const timeA = new Date(a.createdAt || 0).getTime();
-                const timeB = new Date(b.createdAt || 0).getTime();
-                return timeA - timeB;
-              });
-            });
-          },
-          // AI 回复开始
-          onAssistantStart: (assistantMessage) => {
-            console.log('[AiAssistant] AI 回复开始，消息ID:', assistantMessage.id);
-            assistantMessageId = assistantMessage.id;
-            // 初始化流式内容缓存
-            setStreamingMessages((prev) => ({
-              ...prev,
-              [assistantMessage.id]: assistantMessage.content || '',
-            }));
-            // 添加 AI 消息到界面，并保持排序
-            setMessages((prev) => {
-              const existingIndex = prev.findIndex((m) => m.id === assistantMessage.id);
-              if (existingIndex >= 0) {
-                return prev;
-              }
-              const updated = [...prev, assistantMessage];
-              // 按创建时间排序
-              return updated.sort((a, b) => {
-                const timeA = new Date(a.createdAt || 0).getTime();
-                const timeB = new Date(b.createdAt || 0).getTime();
-                return timeA - timeB;
-              });
-            });
-          },
-          // AI 回复增量内容
-          onAssistantChunk: (sessionId, messageId, delta) => {
-            if (!sessionIdForCallbacks || sessionId !== sessionIdForCallbacks || !messageId) {
-              return;
-            }
-            console.log('[AiAssistant] 收到流式增量内容:', { sessionId, messageId, delta, deltaLength: delta.length });
+        });
 
-            // 累积流式内容（使用状态，确保触发重新渲染）
-            setStreamingMessages((prev) => {
-              const currentContent = prev[messageId] || '';
-              const newContent = currentContent + delta;
-              console.log('[AiAssistant] 收到流式增量，消息ID:', messageId, '增量长度:', delta.length, '累积长度:', newContent.length);
-              return {
-                ...prev,
-                [messageId]: newContent,
-              };
-            });
-
-            // 确保消息在列表中（如果不在，创建临时消息）
-            // 注意：实际内容从 streamingMessages 状态读取，在 useMemo 中合并
-            setMessages((prev) => {
-              const messageIndex = prev.findIndex((m) => m.id === messageId);
-              if (messageIndex < 0) {
-                // 如果消息不在列表中，创建一个临时消息用于显示流式内容
-                // 这可能在 onAssistantStart 之前发生
-                const tempMessage: ChatMessage = {
-                  id: messageId,
-                  sessionId: sessionId,
-                  senderId: AI_ASSISTANT_ID,
-                  recipientId: currentUser?.id || '',
-                  type: 'Text',
-                  content: '', // 初始为空，useMemo 会从 streamingMessages 读取最新值
-                  createdAt: new Date().toISOString(),
-                };
-                const updated = [...prev, tempMessage];
-                // 按创建时间排序
-                return updated.sort((a, b) => {
-                  const timeA = new Date(a.createdAt || 0).getTime();
-                  const timeB = new Date(b.createdAt || 0).getTime();
-                  return timeA - timeB;
-                });
-              }
-              // 如果消息已存在，不需要更新（useMemo 会从 streamingMessages 读取最新值）
-              return prev;
-            });
-          },
-          // AI 回复完成
-          onAssistantComplete: (completedMessage) => {
-            console.log('[AiAssistant] AI 回复完成，消息ID:', completedMessage.id);
-            // 清除流式内容缓存
-            setStreamingMessages((prev) => {
-              const { [completedMessage.id]: _, ...rest } = prev;
-              return rest;
-            });
-            // 更新完整消息，并保持排序
-            setMessages((prev) => {
-              const messageIndex = prev.findIndex((m) => m.id === completedMessage.id);
-              let updated: ChatMessage[];
-              if (messageIndex >= 0) {
-                updated = [...prev];
-                updated[messageIndex] = completedMessage;
-              } else {
-                updated = [...prev, completedMessage];
-              }
-              // 按创建时间排序
-              return updated.sort((a, b) => {
-                const timeA = new Date(a.createdAt || 0).getTime();
-                const timeB = new Date(b.createdAt || 0).getTime();
-                return timeA - timeB;
-              });
-            });
-          },
-          // 错误处理
-          onError: (error) => {
-            console.error('[AiAssistant] 发送消息失败:', error);
-            message.error('发送消息失败: ' + error);
-            setMessages((prev) => prev.filter((msg) => msg.id !== optimisticMessage.id));
-          },
-        }
-      );
+        // 替换临时消息为真实消息
+        setMessages((prev) => {
+          const filtered = prev.filter((msg) => msg.id !== optimisticMessage.id);
+          const updated = [...filtered, sentMessage];
+          return updated.sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
+        });
+      } catch (error) {
+        console.error('[AiAssistant] 发送消息失败:', error);
+        message.error('发送消息失败');
+        setMessages((prev) => prev.filter((msg) => msg.id !== optimisticMessage.id));
+      } finally {
+        setSending(false);
+      }
     } catch (error) {
-      console.error('[AiAssistant] 发送消息异常:', error);
+      console.error('[AiAssistant] 发送��息异常:', error);
       message.error('发送消息失败');
       setMessages((prev) => prev.filter((msg) => msg.id !== optimisticMessage.id));
     } finally {
       setSending(false);
     }
-  }, [inputValue, sending, session, currentUser, message]);
+  }, [inputValue, sending, session, currentUser, message, sse]);
 
   /**
    * 处理录音

@@ -58,15 +58,11 @@ public class ChatService : IChatService
 
         var session = await _sessionService.EnsureSessionAccessibleAsync(request.SessionId);
 
-        // 如果是给小科的文本消息，触发异步 AI 回复
-        var isAiParticipant = session.Participants.Contains(AiAssistantConstants.AssistantUserId);
-        var isTextMsg = userMessage.Type == ChatMessageType.Text;
-        var shouldSkip = _aiService.ShouldSkipAutomaticAssistantReply(userMessage);
-
 // 触发小科异步回复
         if (session.Participants.Contains(AiAssistantConstants.AssistantUserId) && userMessage.Type == ChatMessageType.Text)
         {
             var (sessionId, messageId, companyId, userId) = (session.Id, userMessage.Id, userMessage.CompanyId, userMessage.SenderId);
+            _logger.LogInformation("【小科】准备触发异步回复 | 会话={SessionId} | 消息={MessageId}", sessionId, messageId);
             _ = Task.Run(async () =>
             {
                 try
@@ -79,12 +75,23 @@ public class ChatService : IChatService
                     var context = scope.ServiceProvider.GetRequiredService<DbContext>();
 
                     var freshSession = await context.Set<ChatSession>().FirstOrDefaultAsync(x => x.Id == sessionId);
-                    if (freshSession == null) return;
+                    if (freshSession == null)
+                    {
+                        _logger.LogWarning("【小科】会话加载失败 | SessionId={SessionId}", sessionId);
+                        return;
+                    }
 
                     var freshMessage = await context.Set<ChatMessage>().FirstOrDefaultAsync(m => m.Id == messageId);
-                    if (freshMessage != null) await aiService.RespondAsAssistantAsync(freshSession, freshMessage, CancellationToken.None);
+                    if (freshMessage == null)
+                    {
+                        _logger.LogWarning("【小科】消息加载失败 | MessageId={MessageId}", messageId);
+                        return;
+                    }
+
+                    _logger.LogInformation("【小科】开始生成回复 | 会话={SessionId}", sessionId);
+                    await aiService.RespondAsAssistantAsync(freshSession, freshMessage, CancellationToken.None);
                 }
-                catch (Exception ex) { _logger.LogError(ex, "AI 自动回复异常"); }
+                catch (Exception ex) { _logger.LogError(ex, "【小科】AI 自动回复异常"); }
             });
         }
 

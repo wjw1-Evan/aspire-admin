@@ -65,36 +65,31 @@ public class ChatService : IChatService
             _logger.LogInformation("【小科】准备触发异步回复 | 会话={SessionId} | 消息={MessageId}", sessionId, messageId);
             _ = Task.Run(async () =>
             {
-                try
+                await using var scope = _scopeFactory.CreateAsyncScope();
+                var tenantSetter = scope.ServiceProvider.GetRequiredService<ITenantContextSetter>();
+                tenantSetter.SetContext(companyId, userId);
+
+                var aiService = scope.ServiceProvider.GetRequiredService<IChatAiService>();
+                var context = scope.ServiceProvider.GetRequiredService<DbContext>();
+
+                var freshSession = await context.Set<ChatSession>().FirstOrDefaultAsync(x => x.Id == sessionId);
+                if (freshSession == null)
                 {
-                    await using var scope = _scopeFactory.CreateAsyncScope();
-                    var tenantSetter = scope.ServiceProvider.GetRequiredService<ITenantContextSetter>();
-                    tenantSetter.SetContext(companyId, userId);
-
-                    var aiService = scope.ServiceProvider.GetRequiredService<IChatAiService>();
-                    var context = scope.ServiceProvider.GetRequiredService<DbContext>();
-
-                    // 使用 ITenantContext 自动处理 CompanyId 过滤
-                    var freshSession = await context.Set<ChatSession>().FirstOrDefaultAsync(x => x.Id == sessionId);
-                    if (freshSession == null)
-                    {
-                        _logger.LogError(
-                            "【小科】会话加载失败 | SessionId={SessionId} | CompanyId={CompanyId} | UserId={UserId} | 可能原因：租户上下文未正确设置或会话不属于当前企业",
-                            sessionId, companyId, userId);
-                        return;
-                    }
-
-                    var freshMessage = await context.Set<ChatMessage>().FirstOrDefaultAsync(m => m.Id == messageId);
-                    if (freshMessage == null)
-                    {
-                        _logger.LogWarning("【小科】消息加载失败 | MessageId={MessageId}", messageId);
-                        return;
-                    }
-
-                    _logger.LogInformation("【小科】开始生成回复 | 会话={SessionId}", sessionId);
-                    await aiService.RespondAsAssistantAsync(freshSession, freshMessage, CancellationToken.None);
+                    _logger.LogError(
+                        "【小科】会话加载失败 | SessionId={SessionId} | CompanyId={CompanyId} | UserId={UserId} | 可能原因：租户上下文未正确设置或会话不属于当前企业",
+                        sessionId, companyId, userId);
+                    return;
                 }
-                catch (Exception ex) { _logger.LogError(ex, "【小科】AI 自动回复异常"); }
+
+                var freshMessage = await context.Set<ChatMessage>().FirstOrDefaultAsync(m => m.Id == messageId);
+                if (freshMessage == null)
+                {
+                    _logger.LogWarning("【小科】消息加载失败 | MessageId={MessageId}", messageId);
+                    return;
+                }
+
+                _logger.LogInformation("【小科】开始生成回复 | 会话={SessionId}", sessionId);
+                await aiService.RespondAsAssistantAsync(freshSession, freshMessage, CancellationToken.None);
             });
         }
 

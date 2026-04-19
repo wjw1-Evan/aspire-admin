@@ -59,14 +59,21 @@ public class ChatService : IChatService
         var session = await _sessionService.EnsureSessionAccessibleAsync(request.SessionId);
 
         // 如果是给小科的文本消息，触发异步 AI 回复
-        if (session.Participants.Contains(AiAssistantConstants.AssistantUserId) &&
-            userMessage.Type == ChatMessageType.Text &&
-            !_aiService.ShouldSkipAutomaticAssistantReply(userMessage))
+        var isAiParticipant = session.Participants.Contains(AiAssistantConstants.AssistantUserId);
+        var isTextMsg = userMessage.Type == ChatMessageType.Text;
+        var shouldSkip = _aiService.ShouldSkipAutomaticAssistantReply(userMessage);
+
+        _logger.LogInformation("检查 AI 回复触发条件: 会话={SessionId}, 是助手会话={IsAi}, 是文本={IsText}, 是否跳过={ShouldSkip}", 
+            session.Id, isAiParticipant, isTextMsg, shouldSkip);
+
+        if (isAiParticipant && isTextMsg && !shouldSkip)
         {
             var sessionId = session.Id;
             var messageId = userMessage.Id;
             var companyId = userMessage.CompanyId;
             var userId = userMessage.SenderId;
+
+            _logger.LogInformation("准备启动后台 AI 回复任务: 会话={SessionId}, 消息={MessageId}", sessionId, messageId);
 
             _ = Task.Run(async () =>
             {
@@ -74,22 +81,38 @@ public class ChatService : IChatService
                 {
                     await using var scope = _scopeFactory.CreateAsyncScope();
                     
+                    _logger.LogDebug("后台作用域已创建，正在恢复租户上下文: 企业={CompanyId}, 用户={UserId}", companyId, userId);
+                    
                     // 设置后台任务的租户上下文
                     var tenantSetter = scope.ServiceProvider.GetRequiredService<ITenantContextSetter>();
                     tenantSetter.SetContext(companyId, userId);
 
                     var scopedAiService = scope.ServiceProvider.GetRequiredService<IChatAiService>();
                     var scopedSessionService = scope.ServiceProvider.GetRequiredService<IChatSessionService>();
+                    
+                    _logger.LogDebug("正在重新加载会话 {SessionId}...", sessionId);
                     var freshSession = await scopedSessionService.GetSessionByIdAsync(sessionId);
-                    if (freshSession == null) return;
+                    if (freshSession == null)
+                    {
+                        _logger.LogWarning("后台任务无法加载会话 {SessionId}，可能已删除或租户隔离。", sessionId);
+                        return;
+                    }
+
                     var context = scope.ServiceProvider.GetRequiredService<DbContext>();
                     var freshMessage = await context.Set<ChatMessage>().FirstOrDefaultAsync(m => m.Id == messageId);
                     if (freshMessage != null)
+                    {
+                        _logger.LogInformation("正在调用 AI 服务生成回复: 会话={SessionId}", sessionId);
                         await scopedAiService.RespondAsAssistantAsync(freshSession, freshMessage, CancellationToken.None);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("后台任务无法加载原始消息 {MessageId}", messageId);
+                    }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "AI 自动回复失败: 会话 {SessionId}", sessionId);
+                    _logger.LogError(ex, "AI 自动回复过程发生未捕获异常: 会话 {SessionId}", sessionId);
                 }
             });
         }

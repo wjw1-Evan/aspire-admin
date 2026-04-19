@@ -218,8 +218,10 @@ public class ChatAiService : IChatAiService
 
                 var delta = update.Text;
                 accumulatedContent.Append(delta);
+                _logger.LogDebug("【小科调试】广播 chunk | delta={Delta}", delta);
                 if (onChunk != null) await onChunk(session.Id, assistantMessage.Id, delta);
                 await _broadcaster.BroadcastMessageChunkAsync(session.Participants, assistantMessage.Id, delta);
+                _logger.LogDebug("【小科调试】chunk 广播完成");
 
                 if (accumulatedContent.Length - lastSavedLength >= 50)
                 {

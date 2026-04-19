@@ -28,11 +28,6 @@ public class SystemMonitorController : BaseApiController
     private static double _lastCpuUsagePercent = 0;
     private static readonly object _cpuLock = new object();
 
-    private static object? _cachedResources = null;
-    private static DateTime _lastResourceFetchTime = DateTime.MinValue;
-    private static readonly TimeSpan _resourceCacheDuration = TimeSpan.FromSeconds(2);
-    private static readonly object _resourceLock = new object();
-
     
 
     private object GetMemoryInfo(Process process)

@@ -52,10 +52,10 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
                 // 这里我们直接查库，因为 INotificationService 可能没有全量过滤接口
                 var query = _context.Set<AppNotification>().Where(n => n.RecipientId == uid);
                 
-                if (args.TryGetValue("category", out var cat) && cat?.ToString() != "all" && Enum.TryParse<NotificationCategory>(cat.ToString(), out var category))
+                if (args.TryGetValue("category", out var cat) && cat?.ToString() is string catStr && catStr != "all" && Enum.TryParse<NotificationCategory>(catStr, out var category))
                     query = query.Where(n => n.Category == category);
                 
-                if (args.TryGetValue("level", out var lev) && lev?.ToString() != "all" && Enum.TryParse<NotificationLevel>(lev.ToString(), out var level))
+                if (args.TryGetValue("level", out var lev) && lev?.ToString() is string levStr && levStr != "all" && Enum.TryParse<NotificationLevel>(levStr, out var level))
                     query = query.Where(n => n.Level == level);
 
                 var result = query.OrderByDescending(n => n.CreatedAt).ToPagedList(pageParams);

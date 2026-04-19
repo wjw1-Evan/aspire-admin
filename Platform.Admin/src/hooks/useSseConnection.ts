@@ -94,19 +94,24 @@ export function useSseConnection(
 
   // 连接（单例模式）
   const connect = useCallback(async () => {
+    console.log('[SSE] connect() 被调用, globalIsConnected:', globalIsConnected, 'globalAutoConnectAttempted:', globalAutoConnectAttempted);
+
     // 检查全局是否已连接
     if (globalEventSource && globalEventSource.readyState === EventSource.OPEN) {
+      console.log('[SSE] 复用已有连接');
       eventSourceRef.current = globalEventSource;
       return;
     }
 
     if (globalEventSource && globalEventSource.readyState === EventSource.CONNECTING) {
+      console.log('[SSE] 连接正在建立中，复用');
       eventSourceRef.current = globalEventSource;
       return;
     }
 
     // 关闭旧连接
     if (globalEventSource) {
+      console.log('[SSE] 关闭旧连接');
       globalEventSource.close();
     }
 
@@ -129,12 +134,15 @@ export function useSseConnection(
 
       const baseUrl = getApiBaseUrl();
       const url = `${baseUrl}/apiservice/api/stream/sse?token=${encodeURIComponent(token)}`;
+      console.log('[SSE] 尝试连接:', url, 'globalAutoConnectAttempted:', globalAutoConnectAttempted);
 
       // 创建 EventSource
       let eventSource: EventSource;
       try {
         eventSource = new EventSource(url);
+        console.log('[SSE] EventSource 已创建, readyState:', eventSource.readyState);
       } catch (createError) {
+        console.error('[SSE] EventSource 创建失败:', createError);
         throw new Error(`EventSource 创建失败: ${createError}`);
       }
       eventSourceRef.current = eventSource;
@@ -164,8 +172,9 @@ eventSource.addEventListener('connected', (event: MessageEvent) => {
         }
       }, 5000);
 
-      // 连接打开
+// 连接打开
       eventSource.onopen = () => {
+        console.log('[SSE] onopen 触发, readyState:', eventSource.readyState);
         if (statusCheckTimer) clearTimeout(statusCheckTimer);
         if (!isMountedRef.current) {
           eventSource.close();
@@ -175,10 +184,10 @@ eventSource.addEventListener('connected', (event: MessageEvent) => {
         setIsConnected(true);
         globalIsConnected = true;
         setIsConnecting(false);
-        reconnectAttemptsRef.current = 0;
 
         // 保存全局 EventSource
         globalEventSource = eventSource;
+        console.log('[SSE] 连接已建立!');
       };
 
       // 监听通知相关事件（仅当 enableNotifications 为 true 时）
@@ -245,6 +254,7 @@ eventSource.addEventListener('connected', (event: MessageEvent) => {
 
       // 连接错误
       eventSource.onerror = (error) => {
+        console.error('[SSE] onerror 触发, readyState:', eventSource.readyState, 'error:', error);
         if (statusCheckTimer) clearTimeout(statusCheckTimer);
         if (!isMountedRef.current) {
           return;

@@ -27,9 +27,7 @@ const NoticeIcon: React.FC = () => {
   const sseResult = useSseConnection({ enableNotifications: true });
   const notificationState = sseResult.notificationState;
   const { statistics, unreadCount, latestNotifications } = notificationState;
-  
-  console.log('[NoticeIcon] 渲染, unreadCount:', unreadCount, 'statistics:', statistics, 'latestNotifications:', latestNotifications?.length);
-  
+
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('all');
 

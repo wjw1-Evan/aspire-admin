@@ -232,23 +232,18 @@ export function useSseConnection(
         });
 
         eventSource.addEventListener('stats', (event: MessageEvent) => {
-          console.log('[SSE] 收到 stats 事件, data:', event.data);
           try {
             const data = event.data ? JSON.parse(event.data) : null;
-            console.log('[SSE] stats 解析后:', data);
             const rawStats = data?.statistics ?? data?.Statistics;
             const rawNotifications = data?.latestNotifications ?? data?.LatestNotifications;
             if (rawStats) {
-              console.log('[SSE] 更新 notificationState, statistics:', rawStats);
               const newState: NotificationState = {
                 statistics: { ...rawStats },
                 unreadCount: rawStats.Total ?? 0,
                 latestNotifications: rawNotifications || []
               };
-              console.log('[SSE] newState:', newState);
               Object.assign(globalNotificationState, newState);
               setNotificationState(() => newState);
-              console.log('[SSE] setNotificationState 已调用');
             }
           } catch (e) { console.error('[SSE] stats 解析失败:', e); }
         });

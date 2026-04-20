@@ -16,16 +16,24 @@ public class TenantContextMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         var userId = GetUserIdFromToken(context.User);
+        var companyId = GetCompanyIdFromToken(context.User);
+
         if (!string.IsNullOrEmpty(userId))
         {
             context.Items["UserId"] = userId;
-            PlatformDbContext.SetContext(null, userId);
         }
 
-        var dbContext = context.RequestServices.GetService(typeof(PlatformDbContext)) as PlatformDbContext;
-        if (dbContext != null)
+        if (!string.IsNullOrEmpty(companyId))
         {
-            await dbContext.InitializeAsync();
+            PlatformDbContext.SetContext(companyId, userId);
+        }
+        else
+        {
+            var dbContext = context.RequestServices.GetService(typeof(PlatformDbContext)) as PlatformDbContext;
+            if (dbContext != null)
+            {
+                await dbContext.InitializeAsync();
+            }
         }
 
         await _next(context);
@@ -37,6 +45,12 @@ public class TenantContextMiddleware
         return user.FindFirst("userId")?.Value
             ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value
             ?? user.FindFirst("sub")?.Value;
+    }
+
+    private static string? GetCompanyIdFromToken(ClaimsPrincipal? user)
+    {
+        if (user == null) return null;
+        return user.FindFirst("companyId")?.Value;
     }
 }
 

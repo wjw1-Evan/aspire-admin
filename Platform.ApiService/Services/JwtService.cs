@@ -114,12 +114,9 @@ public class JwtService : IJwtService
             new(ClaimTypes.Name, user.Username),
             new(ClaimTypes.Email, user.Email ?? string.Empty),
             new("userId", user.Id ?? string.Empty),
-            new("username", user.Username)
+            new("username", user.Username),
+            new("companyId", user.CurrentCompanyId ?? string.Empty)
         };
-        
-        // ⚠️ 已移除：不再在 JWT token 中包含 CurrentCompanyId
-        // 所有企业ID相关的逻辑应从数据库的 user.CurrentCompanyId 获取，而非 JWT token
-        // 这样可以避免切换企业后 JWT token 延迟更新的问题
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {

@@ -33,6 +33,7 @@ const NoticeIcon: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('all');
+  const [showUnreadOnly, setShowUnreadOnly] = useState(false);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -46,7 +47,10 @@ const NoticeIcon: React.FC = () => {
       setLoadingMore(true);
     }
     try {
-      const res = await getNotifications({ page, pageSize: PAGE_SIZE, search: activeTab === 'all' ? undefined : activeTab });
+      const params: any = { page, pageSize: PAGE_SIZE };
+      if (activeTab !== 'all') params.search = activeTab;
+      if (showUnreadOnly) params.filter = JSON.stringify({ status: [NotificationStatus.Unread] });
+      const res = await getNotifications(params);
       if (res.success && res.data) {
         const newList = res.data.queryable || [];
         if (reset) {
@@ -64,7 +68,7 @@ const NoticeIcon: React.FC = () => {
       setLoadingMore(false);
       isInitialLoad.current = false;
     }
-  }, [activeTab]);
+  }, [activeTab, showUnreadOnly]);
 
   useEffect(() => {
     if (popoverOpen) {
@@ -116,6 +120,13 @@ const NoticeIcon: React.FC = () => {
       <div className={styles.notificationHeader}>
         <Text strong>通知中心</Text>
         <Space>
+          <Button 
+            type={showUnreadOnly ? 'primary' : 'default'} 
+            size="small" 
+            onClick={() => { setShowUnreadOnly(!showUnreadOnly); isInitialLoad.current = true; }}
+          >
+            未读
+          </Button>
           <Button 
             type="link" 
             size="small" 

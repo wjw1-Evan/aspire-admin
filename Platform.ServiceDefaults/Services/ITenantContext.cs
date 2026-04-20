@@ -12,7 +12,8 @@ public interface ITenantContext
 public interface ITenantContextSetter
 {
     void SetContext(string companyId, string? userId);
-    string? GetCurrentCompanyId();  // 同步方法
+    string? GetCurrentCompanyId();
+    string? GetCurrentUserId();
 }
 
 public class TenantContext : ITenantContext, ITenantContextSetter
@@ -64,7 +65,8 @@ public class TenantContext : ITenantContext, ITenantContextSetter
         _overrideCompanyId = companyId;
         _overrideUserId = userId;
         _isOverridden = true;
-        _cachedCompanyId = null;  // 清除缓存
+        _cachedCompanyId = null;
+        PlatformDbContext.SetContext(companyId, userId);
     }
 
     public string? GetCurrentCompanyId()

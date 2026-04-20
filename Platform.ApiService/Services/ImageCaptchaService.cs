@@ -98,8 +98,9 @@ public class ImageCaptchaService : IImageCaptchaService
             return false;
         }
 
+        // 修复：验证码验证时不检查 IsUsed，允许同一 captchaId 多次验证（用户输错后可重试）
         var captchas = await _context.Set<CaptchaImage>().IgnoreQueryFilters().Where(x => x.IsDeleted != true).Where(
-            c => c.CaptchaId == captchaId && c.Type == type && c.IsUsed == false && c.ExpiresAt > DateTime.UtcNow)
+            c => c.CaptchaId == captchaId && c.Type == type && c.ExpiresAt > DateTime.UtcNow)
             .Take(1).ToListAsync();
 
         var result = captchas.FirstOrDefault();

@@ -1,9 +1,9 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { Badge, Tabs, Button, List, Space, Empty, Spin, Tag, Typography } from 'antd';
-import { BellOutlined, CheckCircleOutlined, InfoCircleOutlined, WarningOutlined, CloseCircleOutlined, DeleteOutlined } from '@ant-design/icons';
+import { BellOutlined, CheckCircleOutlined, InfoCircleOutlined, WarningOutlined, CloseCircleOutlined, DeleteOutlined, LoadingOutlined } from '@ant-design/icons';
 import HeaderDropdown from '@/components/HeaderDropdown';
 import { useSseConnection } from '@/hooks/useSseConnection';
-import { NotificationCategory, NotificationLevel, NotificationStatus, markAsRead, markAsUnread, markAllAsRead, AppNotification } from '@/services/notification/api';
+import { NotificationCategory, NotificationLevel, NotificationStatus, markAsRead, markAsUnread, markAllAsRead, getNotifications, AppNotification } from '@/services/notification/api';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import styles from './index.less';
@@ -22,6 +22,8 @@ const LevelIcon: React.FC<{ level: NotificationLevel }> = ({ level }) => {
   }
 };
 
+const PAGE_SIZE = 20;
+
 const NoticeIcon: React.FC = () => {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const sseResult = useSseConnection({ enableNotifications: true });
@@ -29,7 +31,56 @@ const NoticeIcon: React.FC = () => {
   const { statistics, unreadCount, latestNotifications } = notificationState;
 
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('all');
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const listRef = useRef<HTMLDivElement>(null);
+  const isInitialLoad = useRef(true);
+
+  const loadNotifications = useCallback(async (page: number, reset: boolean = false) => {
+    if (page === 1) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
+    try {
+      const res = await getNotifications({ page, pageSize: PAGE_SIZE, search: activeTab === 'all' ? undefined : activeTab });
+      if (res.success && res.data) {
+        const newList = res.data.queryable || [];
+        if (reset) {
+          setNotifications(newList);
+        } else {
+          setNotifications(prev => [...prev, ...newList]);
+        }
+        setHasMore(newList.length === PAGE_SIZE);
+        setCurrentPage(page);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+      isInitialLoad.current = false;
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (popoverOpen) {
+      if (isInitialLoad.current) {
+        loadNotifications(1, true);
+      }
+    }
+  }, [popoverOpen, loadNotifications]);
+
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    const { scrollTop, scrollHeight, clientHeight } = target;
+    if (scrollHeight - scrollTop - clientHeight < 50 && !loadingMore && hasMore && !loading) {
+      loadNotifications(currentPage + 1);
+    }
+  }, [loadingMore, hasMore, loading, currentPage, loadNotifications]);
 
   const handleMarkAsRead = async (e: React.MouseEvent, id: string) => {
     if (e) e.stopPropagation();
@@ -76,44 +127,54 @@ const NoticeIcon: React.FC = () => {
         </Space>
       </div>
       
-      <div className={styles.notificationList}>
-        {latestNotifications.length > 0 ? (
-          <List
-            dataSource={latestNotifications}
-            renderItem={(item) => (
-              <div 
-                className={styles.notificationItem}
-                style={{ opacity: item.status === NotificationStatus.Read ? 0.6 : 1 }}
-                onClick={(e) => {
-                  if (item.status === NotificationStatus.Unread) {
-                    handleMarkAsRead(e, item.id);
-                  }
-                }}
-              >
-                <div className={`${styles.levelIndicator} ${styles[item.level.toLowerCase()]}`} />
-                <div style={{ marginTop: 4 }}>
-                  <LevelIcon level={item.level} />
-                </div>
-                <div className={styles.notificationContent}>
-                  <div className={styles.notificationTitle}>
-                    {item.title}
-                    <span style={{ float: 'right', fontWeight: 'normal', fontSize: 10, color: '#999' }}>
-                      {dayjs(item.createdAt).fromNow()}
-                    </span>
+      <div className={styles.notificationList} ref={listRef} onScroll={handleScroll}>
+        {loading && notifications.length === 0 ? (
+          <div className={styles.emptyState}>
+            <Spin indicator={<LoadingOutlined spin />} />
+          </div>
+        ) : notifications.length > 0 ? (
+          <>
+            <List
+              dataSource={notifications}
+              renderItem={(item) => (
+                <div 
+                  className={styles.notificationItem}
+                  style={{ opacity: item.status === NotificationStatus.Read ? 0.6 : 1 }}
+                  onClick={(e) => {
+                    if (item.status === NotificationStatus.Unread) {
+                      handleMarkAsRead(e, item.id);
+                    }
+                  }}
+                >
+                  <div className={`${styles.levelIndicator} ${styles[item.level.toLowerCase()]}`} />
+                  <div style={{ marginTop: 4 }}>
+                    <LevelIcon level={item.level} />
                   </div>
-                  <div className={styles.notificationDesc}>{item.content}</div>
-                  <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Tag color={item.status === NotificationStatus.Unread ? 'blue' : 'default'}>{item.category}</Tag>
-                    {item.status === NotificationStatus.Read ? (
-                      <Button size="small" type="link" style={{ padding: 0, fontSize: 12 }} onClick={(e) => handleMarkAsUnread(e, item.id)}>标记为未读</Button>
-                    ) : (
-                      <Button size="small" type="link" style={{ padding: 0, fontSize: 12 }} onClick={(e) => handleMarkAsRead(e, item.id)}>标为已读</Button>
-                    )}
+                  <div className={styles.notificationContent}>
+                    <div className={styles.notificationTitle}>
+                      {item.title}
+                      <span style={{ float: 'right', fontWeight: 'normal', fontSize: 10, color: '#999' }}>
+                        {dayjs(item.createdAt).fromNow()}
+                      </span>
+                    </div>
+                    <div className={styles.notificationDesc}>{item.content}</div>
+                    <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Tag color={item.status === NotificationStatus.Unread ? 'blue' : 'default'}>{item.category}</Tag>
+                      {item.status === NotificationStatus.Read ? (
+                        <Button size="small" type="link" style={{ padding: 0, fontSize: 12 }} onClick={(e) => handleMarkAsUnread(e, item.id)}>标记为未读</Button>
+                      ) : (
+                        <Button size="small" type="link" style={{ padding: 0, fontSize: 12 }} onClick={(e) => handleMarkAsRead(e, item.id)}>标为已读</Button>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          />
+              )}
+            />
+            <div className="notificationLoadMore">
+              {loadingMore && <Spin indicator={<LoadingOutlined spin />} />}
+              {!hasMore && notifications.length > 0 && <div style={{ color: 'rgba(0,0,0,0.25)', fontSize: 12 }}>没有更多了</div>}
+            </div>
+          </>
         ) : (
           <div className={styles.emptyState}>
             <Empty description="暂无新通知" />

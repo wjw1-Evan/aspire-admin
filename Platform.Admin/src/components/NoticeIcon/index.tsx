@@ -29,6 +29,7 @@ const NoticeIcon: React.FC = () => {
   const sseResult = useSseConnection({ enableNotifications: true });
   const notificationState = sseResult.notificationState;
   const { statistics, unreadCount, latestNotifications } = notificationState;
+  const badgeCount = notificationState.unreadCount;
 
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -72,9 +73,7 @@ const NoticeIcon: React.FC = () => {
 
   useEffect(() => {
     if (popoverOpen) {
-      if (isInitialLoad.current) {
-        loadNotifications(1, true);
-      }
+      loadNotifications(1, true);
     }
   }, [popoverOpen, loadNotifications]);
 
@@ -199,16 +198,16 @@ const NoticeIcon: React.FC = () => {
 
   return (
     <HeaderDropdown
-      key={unreadCount}
+      key={badgeCount}
       dropdownRender={() => notificationList}
       trigger={['click']}
       open={popoverOpen}
       onOpenChange={setPopoverOpen}
       placement="bottomRight"
     >
-      <span className={headerStyles.headerActionButton} key={unreadCount}>
+      <span className={headerStyles.headerActionButton} key={badgeCount}>
         <Badge 
-          count={unreadCount} 
+          count={badgeCount} 
           overflowCount={99} 
           size="small"
           style={{ boxShadow: '0 0 0 1px #fff' }}

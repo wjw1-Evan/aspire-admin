@@ -294,7 +294,6 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseTenantContext();
-app.UseUserContext();
 // app.UseGlobalAuthentication(); // 移除此冗余中间件，它无法正确处理 SSE Token 并导致 401
 app.UseApiLogging();
 

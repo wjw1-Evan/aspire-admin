@@ -36,15 +36,7 @@ public class TenantContext : ITenantContext, ITenantContextSetter
     public string? GetCurrentUserId()
     {
         if (_isOverridden) return _overrideUserId;
-
-        try
-        {
-            return _httpContextAccessor.HttpContext?.Items["UserId"] as string;
-        }
-        catch (ObjectDisposedException)
-        {
-            return null;
-        }
+        return PlatformDbContext.CurrentUserIdValue;
     }
 
     public async Task<string?> GetCurrentCompanyIdAsync()

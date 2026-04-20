@@ -29,6 +29,9 @@ public class PlatformDbContext : DbContext
     }
 
     // ✅ 使用 AsyncLocal，支持同步访问
+    public static string? CurrentUserIdValue => _currentUserId.Value;
+    public static string? CurrentCompanyIdValue => _currentCompanyId.Value;
+
     protected string? CurrentUserId => _currentUserId.Value;
     protected string? CurrentCompanyId => _currentCompanyId.Value;
 

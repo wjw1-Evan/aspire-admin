@@ -50,7 +50,7 @@ const NoticeIcon: React.FC = () => {
     try {
       const params: any = { page, pageSize: PAGE_SIZE };
       if (activeTab !== 'all') params.search = activeTab;
-      if (showUnreadOnly) params.filter = JSON.stringify({ status: ['Unread'] });
+      if (showUnreadOnly) params.filter = { status: ['Unread'] };
       const res = await getNotifications(params);
       if (res.success && res.data) {
         const newList = res.data.queryable || [];

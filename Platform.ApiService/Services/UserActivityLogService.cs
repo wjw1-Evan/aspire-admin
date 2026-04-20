@@ -100,6 +100,7 @@ public class UserActivityLogService : IUserActivityLogService
                 FullUrl = log.FullUrl,
                 StatusCode = log.StatusCode,
                 Duration = log.Duration,
+                CreatedAt = log.CreatedAt,
                 Username = userNames.GetValueOrDefault(log.CreatedBy ?? "") ?? "Unknown"
             }).AsQueryable()
         };
@@ -148,6 +149,7 @@ public class UserActivityLogService : IUserActivityLogService
                 FullUrl = log.FullUrl,
                 StatusCode = log.StatusCode,
                 Duration = log.Duration,
+                CreatedAt = log.CreatedAt,
                 Username = userNames.GetValueOrDefault(log.CreatedBy ?? "") ?? "Unknown"
             }).AsQueryable()
         };

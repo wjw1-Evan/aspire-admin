@@ -182,11 +182,7 @@ const NoticeIcon: React.FC = () => {
         )}
       </div>
 
-      <div className={styles.notificationFooter}>
-        <Button type="link" block onClick={() => { /* Navigate to full page */ }}>
-          查看所有
-        </Button>
-      </div>
+
     </div>
   );
 

@@ -21,7 +21,6 @@ let globalAutoConnectAttempted = false;
 const globalNotificationState: NotificationState = {
   unreadCount: 0,
   statistics: { System: 0, Work: 0, Social: 0, Security: 0, Total: 0 },
-  latestNotifications: [],
 };
 
 // HMR 检测：使用 sessionStorage 标记来跨 HMR 持久化状态
@@ -42,7 +41,6 @@ if (isAfterHmr) {
   // 重置通知状态
   globalNotificationState.unreadCount = 0;
   globalNotificationState.statistics = { System: 0, Work: 0, Social: 0, Security: 0, Total: 0 };
-  globalNotificationState.latestNotifications = [];
 }
 
 function notifyAllListeners() {
@@ -62,7 +60,6 @@ interface UseSseConnectionOptions {
 export interface NotificationState {
   unreadCount: number;
   statistics: NotificationStatistics;
-  latestNotifications: AppNotification[];
 }
 
 interface UseSseConnectionReturn {
@@ -235,12 +232,10 @@ export function useSseConnection(
           try {
             const data = event.data ? JSON.parse(event.data) : null;
             const rawStats = data?.statistics ?? data?.Statistics;
-            const rawNotifications = data?.latestNotifications ?? data?.LatestNotifications;
             if (rawStats) {
               const newState: NotificationState = {
                 statistics: { ...rawStats },
                 unreadCount: rawStats.Total ?? 0,
-                latestNotifications: rawNotifications || []
               };
               Object.assign(globalNotificationState, newState);
               setNotificationState(() => newState);

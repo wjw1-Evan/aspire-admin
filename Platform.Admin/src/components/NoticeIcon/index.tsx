@@ -28,8 +28,8 @@ const NoticeIcon: React.FC = () => {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const sseResult = useSseConnection({ enableNotifications: true });
   const notificationState = sseResult.notificationState;
-  const { statistics, unreadCount, latestNotifications } = notificationState;
-  const badgeCount = notificationState.unreadCount;
+  const { statistics, unreadCount } = notificationState;
+  const badgeCount = unreadCount;
 
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);

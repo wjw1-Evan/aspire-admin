@@ -75,22 +75,30 @@ function SortableField({ field, selected, onSelect, onDelete }: {
         opacity: isDragging ? 0.5 : 1,
     };
 
+    const renderFieldPreview = () => {
+        switch (field.type) {
+            case 'Text': return <AntInput placeholder={field.placeholder} disabled />;
+            case 'TextArea': return <TextArea rows={2} placeholder={field.placeholder} disabled />;
+            case 'Number': return <AntInput placeholder={field.placeholder} disabled />;
+            case 'Date': return <AntInput placeholder={field.placeholder} disabled />;
+            case 'DateTime': return <AntInput placeholder={field.placeholder} disabled />;
+            case 'Select': return <Select placeholder={field.placeholder} disabled>{field.options?.map(o => <Select.Option key={o.value} value={o.value}>{o.label}</Select.Option>)}</Select>;
+            case 'Radio': return <RadioGroup disabled>{field.options?.map(o => <Radio key={o.value} value={o.value}>{o.label}</Radio>)}</RadioGroup>;
+            case 'Checkbox': return <Checkbox.Group options={field.options?.map(o => ({ label: o.label, value: o.value }))} disabled />;
+            case 'Switch': return <Switch disabled checkedChildren="是" unCheckedChildren="否" />;
+            case 'Attachment': return <Upload disabled><Button icon={<UploadOutlined />}>上传附件</Button></Upload>;
+            default: return <AntInput placeholder={field.placeholder} disabled />;
+        }
+    };
+
     return (
         <div ref={setNodeRef} style={style} {...attributes} {...listeners}
             className={`canvas-field ${selected ? 'selected' : ''}`}
             onClick={onSelect}>
-            <Form.Item label={field.label} required={field.required}>
-                {field.type === 'Text' && <AntInput placeholder={field.placeholder} disabled />}
-                {field.type === 'TextArea' && <TextArea rows={2} placeholder={field.placeholder} disabled />}
-                {field.type === 'Number' && <AntInput type="number" placeholder={field.placeholder} disabled />}
-                {field.type === 'Date' && <AntInput type="date" placeholder={field.placeholder} disabled />}
-                {field.type === 'DateTime' && <AntInput type="datetime-local" placeholder={field.placeholder} disabled />}
-                {field.type === 'Select' && <Select placeholder={field.placeholder} disabled>{field.options?.map(o => <Select.Option key={o.value} value={o.value}>{o.label}</Select.Option>)}</Select>}
-                {field.type === 'Radio' && <RadioGroup disabled>{field.options?.map(o => <Radio key={o.value} value={o.value}>{o.label}</Radio>)}</RadioGroup>}
-                {field.type === 'Checkbox' && <Checkbox.Group options={field.options?.map(o => ({ label: o.label, value: o.value }))} disabled />}
-                {field.type === 'Switch' && <Switch disabled checkedChildren="是" unCheckedChildren="否" />}
-                {field.type === 'Attachment' && <Upload disabled><Button icon={<UploadOutlined />}>上传附件</Button></Upload>}
-            </Form.Item>
+            <div className="field-preview-wrapper">
+                <div className="field-label-preview">{field.label}{field.required && <span className="required-mark">*</span>}</div>
+                {renderFieldPreview()}
+            </div>
             <Button type="text" size="small" danger icon={<CloseOutlined />} className="field-delete-btn" onClick={(e) => { e.stopPropagation(); onDelete(); }} />
         </div>
     );
@@ -333,11 +341,14 @@ const FormDefinitionManagement: React.FC = () => {
                 .form-canvas { flex: 1; display: flex; flex-direction: column; background: #fafafa; }
                 .canvas-header { padding: 12px 16px; font-weight: 500; border-bottom: 1px solid #f0f0f0; background: #fff; }
                 .canvas-content { flex: 1; padding: 16px; overflow-y: auto; }
-                .canvas-field { position: relative; padding: 8px 12px; margin-bottom: 8px; background: #fff; border: 1px solid #d9d9d9; border-radius: 4px; cursor: move; transition: all 0.2s; }
+                .canvas-field { position: relative; padding: 12px 16px; margin-bottom: 8px; background: #fff; border: 1px solid #d9d9d9; border-radius: 8px; cursor: move; transition: all 0.2s; }
                 .canvas-field:hover { border-color: #1890ff; }
                 .canvas-field.selected { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.2); }
-                .canvas-field .ant-form-item { margin-bottom: 0; }
-                .canvas-field .field-delete-btn { position: absolute; top: 8px; right: 8px; opacity: 0; transition: opacity 0.2s; }
+                .field-preview-wrapper { display: flex; flex-direction: column; gap: 6px; }
+                .field-label-preview { font-size: 14px; color: rgba(0,0,0,0.88); font-weight: 400; }
+                .required-mark { color: #ff4d4f; margin-left: 4px; }
+                .field-preview-wrapper .ant-input, .field-preview-wrapper .ant-select { width: 100%; }
+                .field-delete-btn { position: absolute; top: 8px; right: 8px; opacity: 0; transition: opacity 0.2s; }
                 .canvas-field:hover .field-delete-btn { opacity: 1; }
                 .field-property-panel { height: 100%; }
                 .panel-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #d9d9d9; margin-bottom: 12px; font-weight: 500; }

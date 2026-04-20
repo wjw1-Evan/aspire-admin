@@ -201,6 +201,10 @@ public class LoginService : ILoginService
         if (user == null)
             throw new ArgumentException("用户不存在或已被禁用");
 
+        if (!string.IsNullOrEmpty(request.CompanyId))
+        {
+            user.CurrentCompanyId = request.CompanyId;
+        }
         var newToken = _jwtService.GenerateToken(user);
         var newRefreshToken = _jwtService.GenerateRefreshToken(user);
 

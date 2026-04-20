@@ -128,6 +128,11 @@ public class RefreshTokenRequest
 {
     [Required(ErrorMessage = "刷新token不能为空")]
     public string RefreshToken { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 切换企业时使用，传入新的企业ID
+    /// </summary>
+    public string? CompanyId { get; set; }
 }
 
 public class RefreshTokenResult

@@ -249,21 +249,15 @@ public class UserController : BaseApiController
     {
         if (startDate.HasValue && endDate.HasValue && startDate.Value > endDate.Value)
             throw new ArgumentException("开始日期不能晚于结束日期");
-        return Success(await _activityLogService.GetCurrentUserActivityLogsAsync(request, action, httpMethod, statusCode, ipAddress, startDate, endDate));
+        return Success(await _activityLogService.GetCurrentUserActivityLogsAsync(RequiredUserId, request, action, httpMethod, statusCode, ipAddress, startDate, endDate));
     }
 
     /// <summary>
     /// 获取当前用户活动日志统计
     /// </summary>
     [HttpGet("me/activity-logs/statistics")]
-    public async Task<IActionResult> GetCurrentUserActivityLogStatistics(
-        [FromQuery] string? action = null,
-        [FromQuery] string? httpMethod = null,
-        [FromQuery] int? statusCode = null,
-        [FromQuery] string? ipAddress = null,
-        [FromQuery] DateTime? startDate = null,
-        [FromQuery] DateTime? endDate = null)
-        => Success(await _activityLogService.GetCurrentUserActivityLogStatisticsAsync(action, httpMethod, statusCode, ipAddress, startDate, endDate));
+    public async Task<IActionResult> GetCurrentUserActivityLogStatistics()
+        => Success(await _activityLogService.GetCurrentUserActivityLogStatisticsAsync(RequiredUserId));
 
     /// <summary>
     /// 获取当前用户活动日志详情
@@ -273,7 +267,7 @@ public class UserController : BaseApiController
     {
         if (!MongoDB.Bson.ObjectId.TryParse(logId, out _))
             throw new ArgumentException("日志ID格式不正确");
-        var log = await _activityLogService.GetCurrentUserActivityLogByIdAsync(logId);
+        var log = await _activityLogService.GetCurrentUserActivityLogByIdAsync(RequiredUserId, logId);
         if (log == null) throw new KeyNotFoundException("日志不存在");
         return Success(log);
     }

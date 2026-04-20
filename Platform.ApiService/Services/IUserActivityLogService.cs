@@ -45,6 +45,7 @@ public interface IUserActivityLogService
     /// 获取当前用户的活动日志（分页，带统计信息）
     /// </summary>
     Task<System.Linq.Dynamic.Core.PagedResult<ActivityLogListItemResponse>> GetCurrentUserActivityLogsAsync(
+        string userId,
         Platform.ServiceDefaults.Models.ProTableRequest request,
         string? action = null,
         string? httpMethod = null,
@@ -56,7 +57,7 @@ public interface IUserActivityLogService
     /// <summary>
     /// 获取当前用户的活动日志详情（根据日志ID）
     /// </summary>
-    Task<UserActivityLog?> GetCurrentUserActivityLogByIdAsync(string logId);
+    Task<UserActivityLog?> GetCurrentUserActivityLogByIdAsync(string userId, string logId);
 
     /// <summary>
     /// 获取指定活动日志详情（管理员查看）
@@ -88,11 +89,5 @@ public interface IUserActivityLogService
     /// <summary>
     /// 获取当前用户的活动日志统计信息
     /// </summary>
-    Task<ActivityLogStatisticsResponse> GetCurrentUserActivityLogStatisticsAsync(
-        string? action = null,
-        string? httpMethod = null,
-        int? statusCode = null,
-        string? ipAddress = null,
-        DateTime? startDate = null,
-        DateTime? endDate = null);
+    Task<ActivityLogStatisticsResponse> GetCurrentUserActivityLogStatisticsAsync(string userId);
 }

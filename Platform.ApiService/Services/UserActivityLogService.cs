@@ -4,7 +4,6 @@ using Platform.ServiceDefaults.Services;
 using Platform.ApiService.Models;
 using System.Linq.Expressions;
 using System.Linq.Dynamic.Core;
-using Microsoft.AspNetCore.Http;
 using Platform.ServiceDefaults.Extensions;
 using Platform.ApiService.Models.Response;
 
@@ -16,15 +15,13 @@ namespace Platform.ApiService.Services;
 public class UserActivityLogService : IUserActivityLogService
 {
     private readonly DbContext _context;
-    private readonly IHttpContextAccessor _httpContextAccessor;
 
     /// <summary>
     /// 初始化用户活动日志服务
     /// </summary>
-    public UserActivityLogService(DbContext context, IHttpContextAccessor httpContextAccessor)
+    public UserActivityLogService(DbContext context)
     {
         _context = context;
-        _httpContextAccessor = httpContextAccessor;
     }
 
     /// <summary>
@@ -62,6 +59,7 @@ public class UserActivityLogService : IUserActivityLogService
 
     /// <inheritdoc/>
     public async Task<System.Linq.Dynamic.Core.PagedResult<ActivityLogListItemResponse>> GetCurrentUserActivityLogsAsync(
+        string userId,
         ProTableRequest request,
         string? action = null,
         string? httpMethod = null,
@@ -70,11 +68,8 @@ public class UserActivityLogService : IUserActivityLogService
         DateTime? startDate = null,
         DateTime? endDate = null)
     {
-        var userId = _httpContextAccessor.HttpContext?.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
-                     ?? _httpContextAccessor.HttpContext?.Items["UserId"] as string;
-        
         if (string.IsNullOrEmpty(userId)) throw new UnauthorizedAccessException();
-        
+
         var query = _context.Set<UserActivityLog>().Where(l => l.CreatedBy == userId);
 
         if (!string.IsNullOrEmpty(action)) query = query.Where(l => l.Action != null && l.Action.Contains(action));
@@ -86,7 +81,7 @@ public class UserActivityLogService : IUserActivityLogService
 
         var pagedResult = query.ToPagedList(request);
         var logs = pagedResult.Queryable.ToList();
-        
+
         var userNames = await _context.Set<AppUser>().ToDictionaryAsync(u => u.Id!, u => u.Username);
 
         return new System.Linq.Dynamic.Core.PagedResult<ActivityLogListItemResponse>
@@ -111,9 +106,9 @@ public class UserActivityLogService : IUserActivityLogService
     }
 
     /// <inheritdoc/>
-    public async Task<UserActivityLog?> GetCurrentUserActivityLogByIdAsync(string logId)
+    public async Task<UserActivityLog?> GetCurrentUserActivityLogByIdAsync(string userId, string logId)
     {
-        var log = await _context.Set<UserActivityLog>().FirstOrDefaultAsync(x => x.Id == logId);
+        var log = await _context.Set<UserActivityLog>().FirstOrDefaultAsync(x => x.Id == logId && x.CreatedBy == userId);
 
         return log;
     }
@@ -275,26 +270,11 @@ public class UserActivityLogService : IUserActivityLogService
     }
 
     /// <inheritdoc/>
-    public async Task<ActivityLogStatisticsResponse> GetCurrentUserActivityLogStatisticsAsync(
-        string? action = null,
-        string? httpMethod = null,
-        int? statusCode = null,
-        string? ipAddress = null,
-        DateTime? startDate = null,
-        DateTime? endDate = null)
+    public async Task<ActivityLogStatisticsResponse> GetCurrentUserActivityLogStatisticsAsync(string userId)
     {
-        var userId = _httpContextAccessor.HttpContext?.Items["UserId"] as string;
-        if (string.IsNullOrEmpty(userId))
-            throw new UnauthorizedAccessException("无法获取当前用户ID");
 
-        return await GetActivityLogStatisticsAsync(
-            userId,
-            action,
-            httpMethod,
-            statusCode,
-            ipAddress,
-            startDate,
-            endDate);
+
+        return await GetActivityLogStatisticsAsync(userId);
     }
 
     private static bool IsValidObjectId(string? value)

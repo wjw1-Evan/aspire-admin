@@ -144,6 +144,7 @@ public interface IUserService
     /// <summary>
     /// 获取当前用户的活动日志（分页，带统计信息）
     /// </summary>
+    /// <param name="userId">用户ID</param>
     /// <param name="request">分页查询参数</param>
     /// <param name="action">操作类型（可选，支持模糊搜索）</param>
     /// <param name="httpMethod">HTTP 请求方法（可选）</param>
@@ -152,15 +153,16 @@ public interface IUserService
     /// <param name="startDate">开始日期（可选）</param>
     /// <param name="endDate">结束日期（可选）</param>
     /// <returns>带统计的分页活动日志响应</returns>
-    Task<System.Linq.Dynamic.Core.PagedResult<ActivityLogListItemResponse>> GetCurrentUserActivityLogsAsync(Platform.ServiceDefaults.Models.ProTableRequest request, string? action = null, string? httpMethod = null, int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null);
+    Task<System.Linq.Dynamic.Core.PagedResult<ActivityLogListItemResponse>> GetCurrentUserActivityLogsAsync(string userId, Platform.ServiceDefaults.Models.ProTableRequest request, string? action = null, string? httpMethod = null, int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null);
 
     /// <summary>
     /// 获取当前用户的活动日志详情（根据日志ID）
     /// ✅ 返回完整的日志数据，包括 ResponseBody 等所有字段
     /// </summary>
+    /// <param name="userId">用户ID</param>
     /// <param name="logId">日志ID</param>
     /// <returns>活动日志详情，如果不存在或不属于当前用户则返回 null</returns>
-    Task<UserActivityLog?> GetCurrentUserActivityLogByIdAsync(string logId);
+    Task<UserActivityLog?> GetCurrentUserActivityLogByIdAsync(string userId, string logId);
 
     /// <summary>
     /// 获取指定活动日志详情（管理员查看）

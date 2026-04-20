@@ -499,16 +499,17 @@ public class UserService : IUserService
 
     /// <inheritdoc/>
     public async Task<System.Linq.Dynamic.Core.PagedResult<ActivityLogListItemResponse>> GetCurrentUserActivityLogsAsync(
+        string userId,
         Platform.ServiceDefaults.Models.ProTableRequest request, string? action = null, string? httpMethod = null, int? statusCode = null,
         string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null)
     {
-        return await _userActivityLogService.GetCurrentUserActivityLogsAsync(request, action, httpMethod, statusCode, ipAddress, startDate, endDate);
+        return await _userActivityLogService.GetCurrentUserActivityLogsAsync(userId, request, action, httpMethod, statusCode, ipAddress, startDate, endDate);
     }
 
     /// <inheritdoc/>
-    public async Task<UserActivityLog?> GetCurrentUserActivityLogByIdAsync(string logId)
+    public async Task<UserActivityLog?> GetCurrentUserActivityLogByIdAsync(string userId, string logId)
     {
-        return await _userActivityLogService.GetCurrentUserActivityLogByIdAsync(logId);
+        return await _userActivityLogService.GetCurrentUserActivityLogByIdAsync(userId, logId);
     }
 
     /// <inheritdoc/>

@@ -299,7 +299,6 @@ const FormDefinitionManagement: React.FC = () => {
 
     const columns: ProColumns<FormDefinition>[] = [
         { title: '名称', dataIndex: 'name', key: 'name', ellipsis: true, sorter: true },
-        { title: '键', dataIndex: 'key', key: 'key', ellipsis: true, sorter: true },
         { title: '版本', dataIndex: 'version', key: 'version', valueType: 'digit', width: 80, sorter: true },
         { title: '字段数', dataIndex: 'fields', key: 'fields', valueType: 'digit', width: 80, render: (_, r) => r.fields?.length || 0 },
         { title: '启用', dataIndex: 'isActive', key: 'isActive', render: (_, r) => <Tag color={r.isActive ? 'success' : 'default'}>{r.isActive ? '是' : '否'}</Tag> },
@@ -393,9 +392,9 @@ const FormDefinitionManagement: React.FC = () => {
                 open={state.formVisible}
                 title={state.editingForm ? '编辑表单' : '新建表单'}
                 onOpenChange={(open) => { if (!open) set({ formVisible: false, editingForm: null }); }}
-                initialValues={state.editingForm ? { name: state.editingForm.name, key: state.editingForm.key, version: state.editingForm.version, isActive: state.editingForm.isActive, description: state.editingForm.description } : { version: 1, isActive: true }}
+                initialValues={state.editingForm ? { name: state.editingForm.name, version: state.editingForm.version, isActive: state.editingForm.isActive, description: state.editingForm.description } : { version: 1, isActive: true }}
                 onFinish={async (values) => {
-                    const data = { name: values.name, key: values.key, version: values.version, isActive: values.isActive, description: values.description };
+                    const data = { name: values.name, version: values.version, isActive: values.isActive, description: values.description };
                     let res;
                     if (state.editingForm?.id) {
                         res = await api.update(state.editingForm.id, data);
@@ -407,7 +406,6 @@ const FormDefinitionManagement: React.FC = () => {
                 }}
             >
                 <ProFormText name="name" label="名称" rules={[{ required: true, message: '请输入名称' }]} placeholder="请输入表单名称" />
-                <ProFormText name="key" label="键" rules={[{ required: true, message: '请输入键' }]} placeholder="请输入表单键" />
                 <ProFormDigit name="version" label="版本" rules={[{ required: true, message: '请输入版本' }]} min={1} placeholder="请输入版本号" />
                 <ProFormText name="description" label="描述" placeholder="请输入描述" />
                 <ProFormSwitch name="isActive" label="启用" />

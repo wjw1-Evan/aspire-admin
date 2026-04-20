@@ -11,7 +11,7 @@
 - **移动端应用**：`Expo 54.0.31` + `React Native 0.83.1` 跨端 App，内置原生通知
 - **微信小程序**：`Platform.MiniApp` 微信原生开发，轻量级多端扩展
 - **基础设施**：`OpenAI/MCP` 服务、`JWT/国密算法` 加解密认证；**Redis** 可按需在 AppHost 中接入（当前默认编排未启用）
-- **数据库驱动**：MongoDB.Driver + MongoDB.Entities
+- **数据库驱动**：MongoDB.EntityFrameworkCore（EF Core MongoDB Provider）+ MongoDB.Driver
 
 **核心项目结构**：
 - `Platform.AppHost/AppHost.cs`：微服务、MongoDB、YARP 网关及 OpenAI 等资源的统筹编排入口（按需扩展 Redis 等）
@@ -108,23 +108,27 @@ git push origin main
 - 严禁直接注入或操作 `IMongoCollection<T>` 或 `IMongoDatabase`
 - 严禁绕过 `DbContext` 直接操作 MongoDB 集合
 - 业务层必须通过注入 `DbContext` 并使用 `_context.Set<T>()` 进行数据操作
+- `PlatformDbContext` 自动发现所有 `IEntity` 实现，无需手动注册 `DbSet<T>`
 
 ### 📊 审计与软删除
-- 严禁手动设置 `CreatedAt/UpdatedAt/CreatedBy/UpdatedBy` 审计字段
-- 严禁手动设置 `IsDeleted` 实现软删除
-- 调用 `DbContext.Remove()` 时，`PlatformDbContext` 自动处理软删除
+- 严禁手动设置 `CreatedAt/UpdatedAt/UpdatedBy` 审计字段，由 `PlatformDbContext.ApplyAuditInfoCore()` 自动维护
+- `CreatedBy` 使用 `??=` 赋值（仅在为 null 时自动填充），允许在保存前手动指定（如系统级创建）
+- 严禁手动设置 `IsDeleted` 实现软删除，调用 `DbContext.Remove()` 时自动处理
+- 所有继承 `BaseEntity` 的实体自动具备 `IIntegrityTrackable`，`PlatformDbContext` 在每次保存时自动计算 SM3-HMAC 完整性校验
 
 ### 🏢 多租户与上下文安全
-- 严禁直接从 JWT claim 中读取解包 `companyId`、`roles` 等字段
-- 企业上下文必须通过 `ITenantContext` 读取
+- 控制器和服务层严禁直接从 JWT claim 中读取 `companyId`、`userId` 等字段
+- 企业上下文必须通过 `ITenantContext` 或 `BaseApiController` 提供的属性读取（底层由 `TenantContextMiddleware` 从 JWT 解析后写入 `AsyncLocal`）
+- 后台任务中必须使用 `ITenantContextSetter.SetContext(companyId, userId)` 手动设置租户上下文
 
 ### 🔐 权限控制
 - 严禁使用过时的 `HasPermission()` 方法
-- 所有敏感操作必须添加 `[RequireMenu("menu-action")]` 注解
+- 所有敏感操作必须添加 `[RequireMenu("menu-action")]` 注解（支持类级别和方法级别）
 
 ### 📡 接口响应
-- 严禁返回裸 JSON，必须包装为 `ApiResponse<T>`
+- 严禁返回裸 JSON 或使用 `NotFound()`/`BadRequest()` 等原生响应，必须通过 `Success()` 包装为 `ApiResponse`
 - 严禁使用 SignalR 推送实时数据，必须使用 SSE
+- 严禁使用 try-catch 包裹异常后重新抛出（丢失堆栈跟踪），直接抛出原始异常即可
 
 ### 🚫 N+1 查询
 - 严禁在循环内调用单条查询方法
@@ -281,15 +285,16 @@ public class XxxController : BaseApiController
 
 #### 用户上下文获取
 ```csharp
-// ✅ 正确：使用基类提供的方法
-protected string? CurrentUserId => GetCurrentUserId();
-protected string RequiredUserId { get; }
+// ✅ 正确：使用 BaseApiController 提供的属性
+protected string? CurrentUserId => TenantContext.GetCurrentUserId();
+protected string RequiredUserId { get; }  // null 时抛出 UnauthorizedAccessException
+protected string? CurrentCompanyId => TenantContext.GetCurrentCompanyId();
+protected string RequiredCompanyId { get; }  // null 时抛出 KeyNotFoundException
 
 // ✅ 正确：通过 ITenantContext 获取
-var companyId = await GetCompanyIdAsync();
-var isAdmin = await _tenantContext.IsAdminAsync();
+var companyId = TenantContext.GetCurrentCompanyId();
 
-// ❌ 禁止：直读 JWT Claims
+// ❌ 禁止：控制器/服务层直读 JWT Claims
 var companyId = User.FindFirst("companyId")?.Value;
 ```
 
@@ -304,40 +309,40 @@ public class XxxService : IXxxService
 
     public XxxService(DbContext context, ILogger<XxxService> logger)
     {
-        _context = context;
-        _logger = logger;
+        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<XxxEntity> CreateAsync(CreateXxxRequest request, string userId)
+    public async Task<XxxEntry> CreateAsync(CreateXxxRequest request, string userId)
     {
         if (string.IsNullOrEmpty(userId))
             throw new ArgumentException("用户ID不能为空", nameof(userId));
 
-        var entity = new XxxEntity
+        var entity = new XxxEntry
         {
             Name = request.Name,
             UserId = userId
         };
 
-        await _context.Set<XxxEntity>().AddAsync(entity);
+        await _context.Set<XxxEntry>().AddAsync(entity);
         await _context.SaveChangesAsync();
         return entity;
     }
 
-    public async Task<XxxEntity?> GetByIdAsync(string id, string userId)
+    public async Task<XxxEntry?> GetByIdAsync(string id, string userId)
     {
-        return await _context.Set<XxxEntity>().FirstOrDefaultAsync(x => x.Id == id);
+        return await _context.Set<XxxEntry>().FirstOrDefaultAsync(x => x.Id == id);
     }
 
-    public async Task<PagedResult<XxxEntity>> GetListAsync(ProTableRequest request, string userId)
+    public async Task<PagedResult<XxxEntry>> GetListAsync(ProTableRequest request, string userId)
     {
-        var query = _context.Set<XxxEntity>().Where(x => x.UserId == userId);
+        var query = _context.Set<XxxEntry>().Where(x => x.UserId == userId);
         return query.ToPagedList(request);
     }
 
-    public async Task<XxxEntity?> UpdateAsync(string id, UpdateXxxRequest request, string userId)
+    public async Task<XxxEntry?> UpdateAsync(string id, UpdateXxxRequest request, string userId)
     {
-        var entity = await _context.Set<XxxEntity>().FirstOrDefaultAsync(x => x.Id == id);
+        var entity = await _context.Set<XxxEntry>().FirstOrDefaultAsync(x => x.Id == id);
         if (entity == null) return null;
         if (entity.UserId != userId)
             throw new UnauthorizedAccessException("无权更新此资源");
@@ -349,12 +354,12 @@ public class XxxService : IXxxService
 
     public async Task<bool> DeleteAsync(string id, string userId)
     {
-        var entity = await _context.Set<XxxEntity>().FirstOrDefaultAsync(x => x.Id == id);
+        var entity = await _context.Set<XxxEntry>().FirstOrDefaultAsync(x => x.Id == id);
         if (entity == null) return false;
         if (entity.UserId != userId)
             throw new UnauthorizedAccessException("无权删除此资源");
 
-        _context.Set<XxxEntity>().Remove(entity);
+        _context.Set<XxxEntry>().Remove(entity);
         await _context.SaveChangesAsync();
         return true;
     }
@@ -364,7 +369,10 @@ public class XxxService : IXxxService
 #### 数据访问规范
 - 服务层注入 `DbContext` 并使用 `_context.Set<T>()` 进行数据操作
 - 禁止在控制器层操作数据库
-- 审计字段（CreatedAt/UpdatedAt/CreatedBy/UpdatedBy）由 `PlatformDbContext` 自动维护
+- 审计字段（CreatedAt/UpdatedAt/CreatedBy/UpdatedBy/LastOperationAt）由 `PlatformDbContext.ApplyAuditInfoCore()` 自动维护
+- `CreatedBy` 使用 `??=` 赋值，仅当为 null 时自动填充，允许在保存前手动指定（如系统级创建）
+- `IIntegrityTrackable` 在每次保存时自动计算 SM3-HMAC 完整性校验（所有 `BaseEntity` 子类均具备）
+- MongoDB 集合名称使用实体类名（`modelBuilder.Entity(type).ToCollection(type.Name)`）
 
 ```csharp
 // ✅ 正确
@@ -381,18 +389,57 @@ user.CreatedAt = DateTime.UtcNow;
 - **[强制]** 所有敏感操作必须添加 `[RequireMenu("menu-name")]` 注解
 - 菜单名称统一用连字符 `-` 分隔
 - 支持多个菜单名称，满足其一即可访问
+- 支持类级别注解（整个控制器统一权限）和方法级别注解
 
 ```csharp
-// ✅ 单个菜单
+// ✅ 类级别注解（整个控制器统一权限）
+[ApiController]
+[Route("api/iot")]
+[RequireMenu("iot-platform")]
+public class IoTController : BaseApiController { ... }
+
+// ✅ 方法级别 - 单个菜单
 [HttpPost]
 [RequireMenu("task-management")]
 
-// ✅ 多个菜单（满足其一即可）
+// ✅ 方法级别 - 多个菜单（满足其一即可）
 [HttpGet("list")]
 [RequireMenu("workflow-list", "workflow-monitor")]
 ```
 
-### 6.4 分页规范
+### 6.4 自动依赖注入与命名约定
+
+项目使用 `ServiceDiscoveryExtensions` 自动扫描注册，**无需手动注册服务**。
+
+#### 命名约定控制生命周期
+
+| 命名前缀 | 生命周期 | 示例 |
+|----------|---------|------|
+| `Singleton*` | Singleton | `SingletonCacheService` |
+| `Transient*` | Transient | `TransientEmailSender` |
+| (默认) `*Service` | Scoped | `PasswordBookService` |
+
+#### 自动 Options 绑定
+
+类名以 `Options` 结尾 + 含静态字段 `SectionName` → 自动注册 `IOptions<T>`：
+```csharp
+public class JwtOptions
+{
+    public static readonly string SectionName = "Jwt";
+    public string SecretKey { get; set; } = string.Empty;
+    // ...
+}
+```
+
+#### 接口自动发现
+
+类型实现的 `Platform.*` 命名空间接口自动注册为服务接口。无接口的类注册为自身。
+
+#### IHostedService 自动注册
+
+实现 `IHostedService`（类名不含 "Base"）自动注册为 Singleton 托管服务。
+
+### 6.5 分页规范
 
 #### 请求参数类型
 使用 `ProTableRequest` 接收前端分页请求：
@@ -421,7 +468,7 @@ var paged = query.Skip((page - 1) * pageSize).Take(pageSize);
 
 > **[强制]** 必须使用 `ToPagedList()` 扩展方法，禁止手动 `Skip/Take`。
 
-### 6.5 异常处理规范
+### 6.6 异常处理规范
 
 **[强制]** 控制器和服务层出现错误时，**直接抛出异常**：
 
@@ -436,6 +483,31 @@ if (!hasPermission)
 if (string.IsNullOrEmpty(name))
     throw new ArgumentException("名称不能为空", nameof(name));
 ```
+
+**[强制]** 严禁 try-catch 包裹后重新抛出异常（丢失堆栈跟踪）：
+```csharp
+// ❌ 禁止：包裹异常后重新抛出
+catch (Exception ex)
+{
+    throw new ArgumentException(ex.Message);  // 丢失原始堆栈跟踪
+}
+
+// ❌ 禁止：记录日志后替换异常类型
+catch (Exception ex)
+{
+    _logger.LogError(ex, "操作失败");
+    throw new ArgumentException("操作失败");  // 丢失异常类型和堆栈
+}
+```
+
+**全局异常映射**（`BusinessExceptionFilter` 自动处理）：
+
+| 异常类型 | HTTP 状态码 | 说明 |
+|---------|-----------|------|
+| `ArgumentException` | 400 | 参数校验失败 |
+| `KeyNotFoundException` | 404 | 资源不存在 |
+| `UnauthorizedAccessException` | 401 | 未授权 |
+| `InvalidOperationException` | 400 | 业务规则冲突 |
 
 **原因**：
 - 全局异常处理中间件统一捕获并格式化异常
@@ -503,22 +575,25 @@ _ = Task.Run(async () =>
 - **作用域隔离**：每个后台任务需要创建独立的 `IServiceScope`
 - **自动过滤**：设置上下文后，所有继承 `MultiTenantEntity` 的实体查询会自动应用 `CompanyId` 过滤
 
-### 6.8 类型命名规范
+### 6.9 类型命名规范
 
 | 规范 | 示例 |
 |------|------|
 | 禁止使用 "Dependency" | ✅ `IRelationService` ❌ `IDependencyService` |
 | 禁止 using 别名 | ✅ `Set<WorkTask>()` ❌ `using X = WorkTask;` |
 | 请求/响应类后缀 | `CreateXxxRequest`、`XxxResponse`、`XxxDto` |
-| 实体类后缀 | `XxxEntity`、`PasswordBookEntry` |
+| 实体类命名 | 使用领域名称：`PasswordBookEntry`、`WorkTask`、`IoTGateway` |
+| 实体+请求共位 | 同模块实体与 Request/DTO 放在同一文件（参考 `PasswordBookEntities.cs`） |
 
-### 6.8 统一响应格式
+### 6.10 统一响应格式
 
 ```json
 {
   "success": true,
   "data": { ... },
   "message": null,
+  "errors": null,
+  "details": null,
   "timestamp": "2024-01-01T00:00:00.000Z",
   "traceId": "xxx"
 }
@@ -531,7 +606,7 @@ return Success(true);             // 返回成功
 return Success(result, "操作成功"); // 返回数据 + 消息
 ```
 
-### 6.9 SSE (Server-Sent Events) 开发规范
+### 6.11 SSE (Server-Sent Events) 开发规范
 
 **[强制]** 本项目严禁使用框架自带的实时推送中间件（如 SignalR），必须使用轻量级的 SSE 实现。
 
@@ -541,8 +616,9 @@ return Success(result, "操作成功"); // 返回数据 + 消息
    - `Content-Type`: `text/event-stream`
    - `Cache-Control`: `no-cache, no-transform`
    - **[关键]** `X-Accel-Buffering`: `no` (确保能穿透 Nginx/YARP 等反向代理)。
-3. **心跳机制**：必须实现服务端心跳（建议每 15 秒发送一次 `: ping` 注释），防止代理层因长连接空闲而将其断开。
+3. **心跳机制**：必须实现服务端心跳（建议每 15 秒发送一次 `event: ping`），防止代理层因长连接空闲而将其断开。
 4. **响应压缩避让**：在流式连接中必须显式跳过响应压缩中间件（或确保 `text/event-stream` 不在压缩列表中）。
+5. **SSE 端点标记**：使用 `[SkipGlobalAuthentication]` 属性跳过全局认证，改由端点自行验证查询参数 `token`。
 
 #### 过滤器与中间件避让
 1. **全局过滤器**：在 `ApiResponseWrapperFilter` 等全局过滤器中，必须通过路径排除或检查 `Accept: text/event-stream` 报头来避让，严禁包裹 SSE 响应源。
@@ -594,18 +670,13 @@ api/xxx/check-xxx    - 检查/验证操作
 ```
 
 #### 前端 API 封装
-**[强制]** API 直接内联在页面组件中，不单独创建服务文件：
+**[推荐]** 简单模块 API 直接内联在页面组件中；**复杂/复用模块**可提取至 `@/services/` 目录：
 
 ```typescript
 import { request } from '@umijs/max';
 import type { ApiResponse, PagedResult } from '@/types';
 
-interface Entry {
-  id: string;
-  platform: string;
-  account: string;
-}
-
+// ✅ 简单模块：内联 api 对象（参考 password-book）
 const api = {
   list: (params: any) => request<ApiResponse<PagedResult<Entry>>>('/apiservice/api/password-book/list', { params }),
   get: (id: string) => request<ApiResponse<Entry>>(`/apiservice/api/password-book/${id}`),
@@ -616,6 +687,9 @@ const api = {
   categories: () => request<ApiResponse<string[]>>('/apiservice/api/password-book/categories'),
   tags: () => request<ApiResponse<string[]>>('/apiservice/api/password-book/tags'),
 };
+
+// ✅ 复杂模块：提取至 @/services/xxx/api.ts（参考 task、workflow、document、iot）
+// 页面中通过 import { type TaskDto, TaskStatus } from '@/services/task/api' 引用类型和函数
 ```
 
 ### 7.3 类型安全
@@ -640,7 +714,11 @@ export interface ApiResponse<T = any> {
   success: boolean;
   message?: string;
   data?: T;
+  errors?: any;
+  details?: any;
   timestamp?: string;
+  traceId?: string;
+  code?: string;
 }
 
 export interface PagedResult<T> {
@@ -663,7 +741,8 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { request } from '@umijs/max';
 import { Tag, Space, Button, Popconfirm } from 'antd';
 import { Drawer, Form, Input } from 'antd';
-import { PageContainer, ModalForm, ProDescriptions, ProTable, ProColumns, ActionType, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-components';
+import { PageContainer, ModalForm, ProDescriptions, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-components';
+import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 
 interface Entry {
@@ -937,6 +1016,67 @@ useEffect(() => {
 }, []);
 ```
 
+### 7.12 代理配置
+
+开发环境代理配置（`config/proxy.ts`）包含三个目标：
+
+| 前缀 | 目标 | 用途 |
+|------|------|------|
+| `/apiservice/` | `http://localhost:15000` | 主要 API 后端 |
+| `/systemmonitor/` | `http://localhost:15000` | 系统监控端点 |
+| `/storage/` | `http://localhost:15000` | 文件存储端点 |
+
+所有业务 API 请求统一使用 `/apiservice/` 前缀。
+
+### 7.13 认证与 Token 管理
+
+- **Token 存储**：`localStorage`，键名 `auth_token`、`refresh_token`、`token_expires_at`
+- **Token 工具**：`src/utils/token.ts`（`tokenUtils`），提供 `setTokens()`、`getToken()`、`clearAllTokens()`、`isTokenExpired()`
+- **自动刷新**：`src/utils/tokenRefreshManager.ts`（`TokenRefreshManager` 单例），401 时自动调用 `/apiservice/api/auth/refresh-token` 刷新并重试
+- **密码加密**：登录密码使用 `src/utils/encryption.ts`（RSA/JSEncrypt）+ `sm-crypto`（国密算法）加密传输
+
+### 7.14 SSE 连接管理
+
+- **核心 Hook**：`src/hooks/useSseConnection.ts`（426 行），全局单例 EventSource，支持指数退避重连、HMR 热更新、通知状态管理
+- **Context Provider**：`src/hooks/useGlobalSse.tsx`（`GlobalSseProvider`），任何组件可通过 `useGlobalSse()` 订阅 SSE 事件
+- **认证方式**：SSE 不支持 Header，通过查询参数 `?token=` 传递 JWT
+- **连接端点**：`/apiservice/api/stream/sse?token=<jwt>`
+
+### 7.15 文件上传与下载
+
+- **上传**：使用 Ant Design `Upload` 组件，`action` 指向 `/apiservice/api/cloud-storage/upload`，手动设置 `Authorization` Header
+- **下载**：使用原生 `fetch()` + 手动 `Authorization` Header，绕过 UmiJS `request()` 以处理 Blob 响应
+
+```typescript
+// 下载文件示例
+const token = tokenUtils.getToken();
+const response = await fetch(`/apiservice/api/cloud-storage/items/${fileId}/download`, {
+  headers: { 'Authorization': `Bearer ${token}` },
+});
+const blob = await response.blob();
+```
+
+### 7.16 路由与菜单系统
+
+- 所有业务路由配置 `hideInMenu: true`，菜单完全由数据库动态驱动
+- 静态路由文件（`config/routes.ts`）仅用于组件映射，不控制菜单显示
+- 菜单翻译键生成逻辑在 `app.tsx` 中，支持多种命名风格（连字符、冒号分隔、路径分隔）
+
+### 7.17 国际化 (i18n)
+
+- **配置**：默认 `zh-CN`，支持 18 种语言
+- **翻译文件**：`src/locales/zh-CN/` 目录（menu.ts、pages.ts、component.ts 等）
+- **使用方式**：通过 `useIntl().formatMessage({ id: 'key' })` 获取翻译文本
+- **[注意]** 当前代码中 i18n 使用不一致：部分页面（task-management、iot-platform、workflow）全面使用 `intl.formatMessage`，部分页面（password-book、document/list、cloud-storage）使用硬编码中文字符串。新代码应优先使用 `intl.formatMessage`
+
+### 7.18 Lint 检查
+
+前端 `lint` 脚本实际运行 TypeScript 类型检查：
+
+```bash
+cd Platform.Admin && npm run lint  # 实际执行 tsc --noEmit
+```
+
 ## 8. 移动端开发规范（Expo）
 
 ### 8.1 路由与导航
@@ -962,9 +1102,23 @@ useEffect(() => {
 |------|------|
 | 后端分页类型 | `Platform.ServiceDefaults/Models/ProTableRequest.cs` |
 | 后端分页扩展 | `Platform.ServiceDefaults/Extensions/QueryableExtensions.cs` |
+| 自动 DI 扫描 | `Platform.ServiceDefaults/Extensions/ServiceDiscoveryExtensions.cs` |
 | DbContext | `Platform.ServiceDefaults/Services/PlatformDbContext.cs` |
+| 实体基类 | `Platform.ServiceDefaults/Models/BaseEntity.cs` |
+| 审计接口 | `Platform.ServiceDefaults/Models/OperationTracking.cs` |
+| 权限注解 | `Platform.ApiService/Attributes/RequireMenuAttribute.cs` |
+| 响应包装 | `Platform.ApiService/Filters/ApiResponseWrapperFilter.cs` |
+| 异常过滤 | `Platform.ApiService/Filters/BusinessExceptionFilter.cs` |
+| SSE 控制器 | `Platform.ApiService/Controllers/StreamController.cs` |
+| 租户中间件 | `Platform.ServiceDefaults/Services/TenantContextMiddleware.cs` |
 | 前端统一类型 | `Platform.Admin/src/types/api-response.ts` |
 | 页面开发标准 | `Platform.Admin/src/pages/password-book/index.tsx` |
+| SSE Hook | `Platform.Admin/src/hooks/useSseConnection.ts` |
+| Token 工具 | `Platform.Admin/src/utils/token.ts` |
+| Token 刷新 | `Platform.Admin/src/utils/tokenRefreshManager.ts` |
+| 加密工具 | `Platform.Admin/src/utils/encryption.ts` |
+| 代理配置 | `Platform.Admin/config/proxy.ts` |
+| 路由配置 | `Platform.Admin/config/routes.ts` |
 
 ## 10. 小科 AI 聊天系统
 

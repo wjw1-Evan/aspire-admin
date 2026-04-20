@@ -101,8 +101,8 @@ const WorkflowManagement: React.FC = () => {
         open={designerVisible}
         onOpenChange={(open) => { if (!open) { setDesignerVisible(false); setEditingWorkflow(null); setPreviewMode(false); } }}
         width="95%"
-        style={{ top: 20 }}
-        modalProps={{ bodyStyle: { height: 'calc(100vh - 100px)', padding: '12px 24px' }, destroyOnClose: true }}
+        style={{ top: 20, height: '90vh' }}
+        modalProps={{ bodyStyle: { height: 'calc(100vh - 150px)', padding: '12px 24px' }, destroyOnClose: true }}
         submitter={false}
       >
         <WorkflowDesignerModal workflow={editingWorkflow} readOnly={previewMode} onSuccess={() => { setDesignerVisible(false); setEditingWorkflow(null); actionRef.current?.reload(); }} onCancel={() => { setDesignerVisible(false); setEditingWorkflow(null); }} />

@@ -162,6 +162,7 @@ function FieldPropertyPanel({ field, onChange, onClose }: {
 
 const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefinition) => void }> = ({ form, onSave }) => {
     const [fields, setFields] = useState<FormField[]>(form.fields || []);
+    const [formData, setFormData] = useState({ name: form.name, version: form.version || 1, isActive: form.isActive ?? true });
     const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
     const [previewMode, setPreviewMode] = useState(false);
 
@@ -204,7 +205,7 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
     };
 
     const handleSave = () => {
-        onSave({ ...form, fields });
+        onSave({ ...form, ...formData, fields });
         message.success('保存成功');
     };
 
@@ -212,7 +213,7 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
         return (
             <div className="form-preview">
                 <div className="preview-header">
-                    <span>预览: {form.name}</span>
+                    <span>预览: {formData.name}</span>
                     <Button icon={<EditOutlined />} onClick={() => setPreviewMode(false)}>编辑</Button>
                 </div>
                 <Form layout="vertical" style={{ maxWidth: 600, margin: '0 auto' }}>
@@ -237,10 +238,15 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
 
     return (
         <div className="form-designer">
-            <div className="designer-toolbar">
+            <div className="designer-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <Input.Group compact>
+                    <Input placeholder="表单名称" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} style={{ width: 160 }} />
+                    <Input placeholder="版本" type="number" value={formData.version} onChange={e => setFormData({ ...formData, version: parseInt(e.target.value) || 1 })} style={{ width: 80 }} />
+                    <Switch checkedChildren="启用" unCheckedChildren="禁用" checked={formData.isActive} onChange={v => setFormData({ ...formData, isActive: v })} />
+                </Input.Group>
                 <Space>
                     <Button type="primary" icon={<SaveOutlined />} onClick={handleSave}>保存</Button>
-                    <Button icon={<EyeOutlined />} onClick={() => setPreviewMode(true)}>预��</Button>
+                    <Button icon={<EyeOutlined />} onClick={() => setPreviewMode(true)}>预览</Button>
                 </Space>
             </div>
             <div className="designer-body">
@@ -305,7 +311,7 @@ const FormDefinitionManagement: React.FC = () => {
         {
             title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 200, render: (_, r) => (
                 <Space size={4}>
-                    <Button type="link" size="small" icon={<PartitionOutlined />} onClick={() => set({ editingForm: r, designerVisible: true })}>设计</Button>
+                    <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingForm: r, designerVisible: true })}>编辑</Button>
                     <Popconfirm title={`确定删除「${r.name}」？`} onConfirm={async () => { await api.delete(r.id!); actionRef.current?.reload(); api.statistics().then(res => { if (res.success && res.data) set({ statistics: res.data }); }); }}>
                         <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
                     </Popconfirm>

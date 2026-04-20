@@ -239,9 +239,18 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
     return (
         <div className="form-designer">
             <div className="designer-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <Input placeholder="表单名称" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} style={{ width: 200 }} />
-                <Input placeholder="版本" type="number" value={formData.version} onChange={e => setFormData({ ...formData, version: parseInt(e.target.value) || 1 })} style={{ width: 80 }} />
-                <Switch checkedChildren="启用" unCheckedChildren="禁用" checked={formData.isActive} onChange={v => setFormData({ ...formData, isActive: v })} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ width: 60 }}>表单名称</span>
+                    <Input placeholder="请输入表单名称" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} style={{ width: 200 }} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ width: 40 }}>版本</span>
+                    <Input placeholder="版本" type="number" value={formData.version} onChange={e => setFormData({ ...formData, version: parseInt(e.target.value) || 1 })} style={{ width: 80 }} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ width: 40 }}>启用</span>
+                    <Switch checkedChildren="启用" unCheckedChildren="禁用" checked={formData.isActive} onChange={v => setFormData({ ...formData, isActive: v })} />
+                </div>
                 <Space>
                     <Button type="primary" icon={<SaveOutlined />} onClick={handleSave}>保存</Button>
                     <Button icon={<EyeOutlined />} onClick={() => setPreviewMode(true)}>预览</Button>

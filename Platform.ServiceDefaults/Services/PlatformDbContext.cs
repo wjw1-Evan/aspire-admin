@@ -44,7 +44,7 @@ public class PlatformDbContext : DbContext
         if (_tenantContext != null)
         {
             _currentUserId.Value = _tenantContext.GetCurrentUserId();
-            _currentCompanyId.Value = await _tenantContext.GetCurrentCompanyIdAsync();
+            _currentCompanyId.Value = _tenantContext.GetCurrentCompanyId();
         }
     }
 

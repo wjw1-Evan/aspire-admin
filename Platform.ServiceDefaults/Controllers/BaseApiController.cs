@@ -16,7 +16,7 @@ public abstract class BaseApiController : ControllerBase
     protected async Task<string?> GetCompanyId(bool required = false)
     {
         var companyId = HttpContext.RequestServices.GetService(typeof(ITenantContext)) is ITenantContext tenantContext
-            ? await tenantContext.GetCurrentCompanyIdAsync()
+            ?  tenantContext.GetCurrentCompanyId()
             : null;
 
         if (required && string.IsNullOrEmpty(companyId))

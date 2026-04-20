@@ -6,7 +6,7 @@ namespace Platform.ServiceDefaults.Services;
 public interface ITenantContext
 {
     string? GetCurrentUserId();
-    Task<string?> GetCurrentCompanyIdAsync();
+    string? GetCurrentCompanyId();
 }
 
 public interface ITenantContextSetter
@@ -37,19 +37,26 @@ public class TenantContext : ITenantContext, ITenantContextSetter
     public string? GetCurrentUserId()
     {
         if (_isOverridden) return _overrideUserId;
+
+        // 首先尝试从 HttpContext.Items 读取（由 TenantContextMiddleware 设置）
+        if (_httpContextAccessor.HttpContext?.Items.TryGetValue("UserId", out var contextUserId) == true)
+        {
+            return contextUserId?.ToString();
+        }
+
         return _currentUserId;
     }
 
-    public async Task<string?> GetCurrentCompanyIdAsync()
+    public string? GetCurrentCompanyId()
     {
         if (_isOverridden) return _overrideCompanyId;
 
-        if (_cachedCompanyId != null) return _cachedCompanyId;
+        // 首先尝试从 HttpContext.Items 读取（由 TenantContextMiddleware 设置）
+        if (_httpContextAccessor.HttpContext?.Items.TryGetValue("companyId", out var contextCompanyId) == true)
+        {
+            return contextCompanyId?.ToString();
+        }
 
-        var userId = GetCurrentUserId();
-        if (string.IsNullOrEmpty(userId)) return null;
-
-        _cachedCompanyId = await LoadCompanyIdAsync(userId);
         return _cachedCompanyId;
     }
 
@@ -59,36 +66,9 @@ public class TenantContext : ITenantContext, ITenantContextSetter
         _overrideUserId = userId;
         _currentUserId = userId;
         _isOverridden = true;
-        _cachedCompanyId = null;
+        _cachedCompanyId = companyId;
         PlatformDbContext.SetContext(companyId, userId);
     }
 
-    public string? GetCurrentCompanyId()
-    {
-        if (_isOverridden) return _overrideCompanyId;
-        return _cachedCompanyId;
-    }
 
-    private async Task<string?> LoadCompanyIdAsync(string userId)
-    {
-        var collection = _database.GetCollection<MongoDB.Bson.BsonDocument>("AppUser");
-
-        var filter = Builders<MongoDB.Bson.BsonDocument>.Filter.And(
-            Builders<MongoDB.Bson.BsonDocument>.Filter.Eq("_id", MongoDB.Bson.ObjectId.TryParse(userId, out var oid) ? (object)oid : userId),
-            Builders<MongoDB.Bson.BsonDocument>.Filter.Ne("IsDeleted", true)
-        );
-
-        var projection = Builders<MongoDB.Bson.BsonDocument>.Projection
-            .Include("IsActive").Include("CurrentCompanyId").Include("PersonalCompanyId");
-
-        var userDoc = await collection.Find(filter).Project(projection).FirstOrDefaultAsync();
-        if (userDoc == null) return null;
-
-        if (!userDoc.GetValue("IsActive", false).AsBoolean) return null;
-
-        var currentCompanyId = userDoc.GetValue("CurrentCompanyId", MongoDB.Bson.BsonNull.Value);
-        var personalCompanyId = userDoc.GetValue("PersonalCompanyId", MongoDB.Bson.BsonNull.Value);
-
-        return currentCompanyId.AsString ?? (personalCompanyId.IsObjectId ? personalCompanyId.AsObjectId.ToString() : null);
-    }
 }

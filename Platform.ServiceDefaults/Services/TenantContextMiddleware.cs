@@ -25,6 +25,7 @@ public class TenantContextMiddleware
 
         if (!string.IsNullOrEmpty(companyId))
         {
+            context.Items["companyId"] = companyId;
             PlatformDbContext.SetContext(companyId, userId);
         }
         else
@@ -42,9 +43,7 @@ public class TenantContextMiddleware
     private static string? GetUserIdFromToken(ClaimsPrincipal? user)
     {
         if (user == null) return null;
-        return user.FindFirst("userId")?.Value
-            ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value
-            ?? user.FindFirst("sub")?.Value;
+        return user.FindFirst("userId")?.Value;
     }
 
     private static string? GetCompanyIdFromToken(ClaimsPrincipal? user)

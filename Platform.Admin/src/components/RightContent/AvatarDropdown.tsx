@@ -98,6 +98,9 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
       });
 
       if (response.success) {
+        if (response.data?.token) {
+          tokenUtils.setToken(response.data.token);
+        }
         message.success(intl.formatMessage({ id: 'pages.company.switchSuccess' }));
         if (initialState?.fetchUserInfo) {
           const userInfo = await initialState.fetchUserInfo();

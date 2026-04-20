@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
-import { Space } from 'antd';
-import { ProCard, ProFormText, ProFormTextArea, ProFormSwitch, ProForm } from '@ant-design/pro-components';
-import type { ProFormInstance } from '@ant-design/pro-components';
-import { InfoCircleOutlined } from '@ant-design/icons';
+import { Button, Input, Switch } from 'antd';
+import { InfoCircleOutlined, SaveOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import { useMessage } from '@/hooks/useMessage';
 import { createWorkflow, type WorkflowGraph } from '@/services/workflow/api';
@@ -17,29 +15,27 @@ const WorkflowCreateForm: React.FC<WorkflowCreateFormProps> = ({ onSuccess, onCa
   const intl = useIntl();
   const message = useMessage();
   const [loading, setLoading] = useState(false);
-  const formRef = React.useRef<ProFormInstance>(null);
+  const [formData, setFormData] = useState({ name: '', category: '', description: '', isActive: true });
 
   const handleSave = async (workflowGraph: WorkflowGraph) => {
     try {
-      if (!workflowGraph || !workflowGraph.nodes || workflowGraph.nodes.length === 0) {
-        message.error(intl.formatMessage({ id: 'pages.workflow.create.message.designFirst' }));
+      if (!formData.name) {
+        message.error(intl.formatMessage({ id: 'pages.workflow.create.form.nameRequired' }));
         return;
       }
-
-      const formValues = formRef.current?.getFieldsValue();
-      if (!formValues?.name) {
-        message.error(intl.formatMessage({ id: 'pages.workflow.create.form.nameRequired' }));
+      if (!workflowGraph || !workflowGraph.nodes || workflowGraph.nodes.length === 0) {
+        message.error(intl.formatMessage({ id: 'pages.workflow.create.message.designFirst' }));
         return;
       }
 
       setLoading(true);
 
       const response = await createWorkflow({
-        name: formValues.name,
-        description: formValues.description || '',
-        category: formValues.category || 'default',
+        name: formData.name,
+        description: formData.description,
+        category: formData.category || 'default',
         graph: workflowGraph,
-        isActive: formValues.isActive ?? true,
+        isActive: formData.isActive,
       });
 
       if (response.success) {
@@ -54,50 +50,27 @@ const WorkflowCreateForm: React.FC<WorkflowCreateFormProps> = ({ onSuccess, onCa
     }
   };
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '16px' }}>
-      <ProCard
-        size="small"
-        title={
-          <Space>
-            <InfoCircleOutlined style={{ color: '#1890ff' }} />
-            <span>{intl.formatMessage({ id: 'pages.workflow.create.title' })}</span>
-          </Space>
-        }
-        style={{ padding: '16px 24px 0 24px' }}
-      >
-        <ProForm formRef={formRef}>
-          <ProFormText
-          name="name"
-          label={intl.formatMessage({ id: 'pages.workflow.create.form.name' })}
-          rules={[
-            {
-              required: true,
-              message: intl.formatMessage({ id: 'pages.workflow.create.form.nameRequired' }),
-            },
-          ]}
+return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', background: '#fafafa', display: 'flex', alignItems: 'center', gap: 16 }}>
+        <InfoCircleOutlined style={{ color: '#1890ff', fontSize: 18 }} />
+        <Input
           placeholder={intl.formatMessage({ id: 'pages.workflow.create.form.namePlaceholder' })}
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          style={{ width: 200 }}
         />
-        <ProFormText
-          name="category"
-          label={intl.formatMessage({ id: 'pages.workflow.create.form.category' })}
-          placeholder={intl.formatMessage({ id: 'pages.workflow.create.form.categoryPlaceholder' })}
+        <Switch
+          checkedChildren="启用"
+          unCheckedChildren="禁用"
+          checked={formData.isActive}
+          onChange={(v) => setFormData({ ...formData, isActive: v })}
         />
-        <ProFormSwitch
-          name="isActive"
-          label={intl.formatMessage({ id: 'pages.workflow.create.form.status' })}
-          checkedChildren={intl.formatMessage({ id: 'pages.workflow.create.form.statusEnabled' })}
-          unCheckedChildren={intl.formatMessage({ id: 'pages.workflow.create.form.statusDisabled' })}
-          initialValue={true}
-        />
-        <ProFormTextArea
-          name="description"
-          label={intl.formatMessage({ id: 'pages.workflow.create.form.description' })}
-          placeholder={intl.formatMessage({ id: 'pages.workflow.create.form.descriptionPlaceholder' })}
-        />
-        </ProForm>
-      </ProCard>
-
+        <span style={{ color: '#8c8c8c', fontSize: 13, marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Button type="primary" size="small" disabled={!formData.name || !formData.name}>保存</Button>
+          <Button size="small" onClick={onCancel}>退出</Button>
+        </span>
+      </div>
       <div style={{ flex: 1, minHeight: 0 }}>
         <WorkflowDesigner
           open={true}
@@ -135,16 +108,8 @@ const WorkflowCreateForm: React.FC<WorkflowCreateFormProps> = ({ onSuccess, onCa
               },
             ],
             edges: [
-              {
-                id: 'edge-1',
-                source: 'start-1',
-                target: 'approval-1',
-              },
-              {
-                id: 'edge-2',
-                source: 'approval-1',
-                target: 'end-1',
-              },
+              { id: 'edge-1', source: 'start-1', target: 'approval-1' },
+              { id: 'edge-2', source: 'approval-1', target: 'end-1' },
             ],
           }}
           onSave={handleSave}

@@ -1,11 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { PageContainer, ModalForm, ProFormText, ProFormSelect, ProFormSwitch } from '@ant-design/pro-components';
-import { Button, Space, Tag, App, Modal, Input } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, PartitionOutlined, SearchOutlined, ApiOutlined } from '@ant-design/icons';
+import { PageContainer } from '@ant-design/pro-components';
+import { Button, Space, Tag, App, Input, Modal } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, ApiOutlined, SearchOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { getWorkflowList, deleteWorkflow, type WorkflowDefinition } from '@/services/workflow/api';
-import WorkflowCreateForm from './components/WorkflowCreateForm';
-import WorkflowEditForm from './components/WorkflowEditForm';
+import WorkflowDesignerModal from './components/WorkflowDesignerModal';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 
@@ -15,15 +14,14 @@ const WorkflowManagement: React.FC = () => {
   const actionRef = useRef<ActionType | undefined>(undefined);
   const [designerVisible, setDesignerVisible] = useState(false);
   const [editingWorkflow, setEditingWorkflow] = useState<WorkflowDefinition | null>(null);
-  const [previewVisible, setPreviewVisible] = useState(false);
-  const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [previewMode, setPreviewMode] = useState(false);
   const [searchText, setSearchText] = useState('');
 
   const columns: ProColumns<WorkflowDefinition>[] = [
     {
       title: intl.formatMessage({ id: 'pages.workflow.table.name' }), dataIndex: 'name', ellipsis: true, sorter: true,
       render: (dom, record) => (
-        <Button type="link" style={{ padding: 0 }} onClick={() => { setEditingWorkflow(record); setPreviewVisible(true); }}>{dom}</Button>
+        <Button type="link" style={{ padding: 0 }} onClick={() => { setEditingWorkflow(record); setPreviewMode(true); setDesignerVisible(true); }}>{dom}</Button>
       ),
     },
     { title: intl.formatMessage({ id: 'pages.workflow.table.category' }), dataIndex: 'category', ellipsis: true, sorter: true },
@@ -95,16 +93,11 @@ const WorkflowManagement: React.FC = () => {
             style={{ width: 260, marginRight: 8 }}
             prefix={<SearchOutlined />}
           />,
-          <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => setCreateModalVisible(true)}>{intl.formatMessage({ id: 'pages.workflow.create' })}</Button>,
+          <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { setEditingWorkflow(null); setPreviewMode(false); setDesignerVisible(true); }}>{intl.formatMessage({ id: 'pages.workflow.create' })}</Button>,
         ]}
       />
-      <Modal title={intl.formatMessage({ id: 'pages.workflow.create.title' })} open={createModalVisible} onCancel={() => setCreateModalVisible(false)} footer={null} width="95%" style={{ top: 20 }} styles={{ body: { height: 'calc(100vh - 100px)', padding: '12px 24px' } }} destroyOnHidden>
-        <WorkflowCreateForm onSuccess={() => { setCreateModalVisible(false); actionRef.current?.reload(); }} onCancel={() => setCreateModalVisible(false)} />
-      </Modal>
-      <Modal title={editingWorkflow && designerVisible ? intl.formatMessage({ id: 'pages.workflow.action.edit' }) : intl.formatMessage({ id: 'pages.workflow.action.preview' })} open={designerVisible || previewVisible} onCancel={() => { setDesignerVisible(false); setPreviewVisible(false); setEditingWorkflow(null); }} footer={null} width="95%" style={{ top: 20 }} styles={{ body: { height: 'calc(100vh - 100px)', padding: '12px 24px' } }} destroyOnHidden>
-        {editingWorkflow && (
-          <WorkflowEditForm workflow={editingWorkflow} readOnly={previewVisible} onSuccess={() => { setDesignerVisible(false); setEditingWorkflow(null); actionRef.current?.reload(); }} onCancel={() => { setDesignerVisible(false); setPreviewVisible(false); setEditingWorkflow(null); }} />
-        )}
+      <Modal title={editingWorkflow ? intl.formatMessage({ id: 'pages.workflow.action.edit' }) : intl.formatMessage({ id: 'pages.workflow.create.title' })} open={designerVisible} onCancel={() => { setDesignerVisible(false); setEditingWorkflow(null); }} footer={null} width="95%" style={{ top: 20 }} styles={{ body: { height: 'calc(100vh - 100px)', padding: '12px 24px' } }} destroyOnHidden>
+        <WorkflowDesignerModal workflow={editingWorkflow} readOnly={previewMode} onSuccess={() => { setDesignerVisible(false); setEditingWorkflow(null); actionRef.current?.reload(); }} onCancel={() => { setDesignerVisible(false); setEditingWorkflow(null); }} />
       </Modal>
     </PageContainer>
   );

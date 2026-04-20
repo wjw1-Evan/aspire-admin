@@ -23,6 +23,7 @@ public class TenantContext : ITenantContext, ITenantContextSetter
     private string? _cachedCompanyId;
     private string? _overrideCompanyId;
     private string? _overrideUserId;
+    private string? _currentUserId;
     private bool _isOverridden;
 
     public TenantContext(
@@ -36,7 +37,7 @@ public class TenantContext : ITenantContext, ITenantContextSetter
     public string? GetCurrentUserId()
     {
         if (_isOverridden) return _overrideUserId;
-        return PlatformDbContext.CurrentUserIdValue;
+        return _currentUserId;
     }
 
     public async Task<string?> GetCurrentCompanyIdAsync()
@@ -56,6 +57,7 @@ public class TenantContext : ITenantContext, ITenantContextSetter
     {
         _overrideCompanyId = companyId;
         _overrideUserId = userId;
+        _currentUserId = userId;
         _isOverridden = true;
         _cachedCompanyId = null;
         PlatformDbContext.SetContext(companyId, userId);

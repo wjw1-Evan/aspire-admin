@@ -202,14 +202,13 @@ const NoticeIcon: React.FC = () => {
 
   return (
     <HeaderDropdown
-      key={badgeCount}
       dropdownRender={() => notificationList}
       trigger={['click']}
       open={popoverOpen}
       onOpenChange={setPopoverOpen}
       placement="bottomRight"
     >
-      <span className={headerStyles.headerActionButton} key={badgeCount}>
+      <span className={headerStyles.headerActionButton}>
         <Badge 
           count={badgeCount} 
           overflowCount={99} 

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 
@@ -7,23 +8,20 @@ namespace Platform.ServiceDefaults.Controllers;
 [ApiController]
 public abstract class BaseApiController : ControllerBase
 {
-    protected string? CurrentUserId
-        => HttpContext.Items["UserId"] as string;
+    private ITenantContext? _tenantContext;
+
+    protected ITenantContext TenantContext
+        => _tenantContext ??= HttpContext.RequestServices.GetRequiredService<ITenantContext>();
+
+    protected string? CurrentUserId => TenantContext.GetCurrentUserId();
 
     protected string RequiredUserId
         => CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
 
-    protected async Task<string?> GetCompanyId(bool required = false)
-    {
-        var companyId = HttpContext.RequestServices.GetService(typeof(ITenantContext)) is ITenantContext tenantContext
-            ?  tenantContext.GetCurrentCompanyId()
-            : null;
+    protected string? CurrentCompanyId => TenantContext.GetCurrentCompanyId();
 
-        if (required && string.IsNullOrEmpty(companyId))
-            throw new KeyNotFoundException("未找到当前用户的企业信息");
-
-        return companyId;
-    }
+    protected string RequiredCompanyId
+        => CurrentCompanyId ?? throw new KeyNotFoundException("未找到当前用户的企业信息");
 
     protected IActionResult Success(object? data, string? message = null)
         => Ok(CreateResponse(true, message, data));

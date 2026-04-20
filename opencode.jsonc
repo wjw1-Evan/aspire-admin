@@ -49,7 +49,6 @@
     }
   },
   "plugin": [
-    "oh-my-opencode",
     "opencode-supermemory",
     "opencode-dynamic-context-pruning",
     "superpowers",

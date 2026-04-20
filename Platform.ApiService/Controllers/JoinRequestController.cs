@@ -71,7 +71,7 @@ public class JoinRequestController : BaseApiController
         // 如果没有指定企业ID，使用当前企业
         if (string.IsNullOrEmpty(companyId))
         {
-            companyId = await GetCompanyId(true);
+            companyId = RequiredCompanyId;
         }
 
         var requests = await _joinRequestService.GetPendingRequestsAsync(companyId!, keyword);

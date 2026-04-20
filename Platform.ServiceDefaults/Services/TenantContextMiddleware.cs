@@ -18,23 +18,9 @@ public class TenantContextMiddleware
         var userId = GetUserIdFromToken(context.User);
         var companyId = GetCompanyIdFromToken(context.User);
 
-        if (!string.IsNullOrEmpty(userId))
-        {
-            context.Items["UserId"] = userId;
-        }
-
         if (!string.IsNullOrEmpty(companyId))
         {
-            context.Items["companyId"] = companyId;
             PlatformDbContext.SetContext(companyId, userId);
-        }
-        else
-        {
-            var dbContext = context.RequestServices.GetService(typeof(PlatformDbContext)) as PlatformDbContext;
-            if (dbContext != null)
-            {
-                await dbContext.InitializeAsync();
-            }
         }
 
         await _next(context);

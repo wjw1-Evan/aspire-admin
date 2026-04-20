@@ -77,7 +77,7 @@ public class MenuController : BaseApiController
         var userId = RequiredUserId;
 
         // 获取当前用户的企业ID
-        var currentCompanyId = await GetCompanyId();
+        var currentCompanyId = CurrentCompanyId;
         if (string.IsNullOrEmpty(currentCompanyId))
         {
             _logger.LogWarning("用户 {UserId} 没有关联的企业ID", userId);

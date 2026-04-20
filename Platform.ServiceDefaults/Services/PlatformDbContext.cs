@@ -9,49 +9,26 @@ namespace Platform.ServiceDefaults.Services;
 
 public class PlatformDbContext : DbContext
 {
-    private readonly ITenantContext? _tenantContext;
     private readonly ISM3HmacProvider? _hmacProvider;
 
-    // AsyncLocal - 整个请求生命周期内同步/异步都能访问
-    // HTTP 请求由中间件初始化，后台任务由 ITenantContextSetter 初始化
     private static readonly AsyncLocal<string?> _currentUserId = new();
     private static readonly AsyncLocal<string?> _currentCompanyId = new();
 
     public PlatformDbContext(
         DbContextOptions<PlatformDbContext> options,
-        ITenantContext? tenantContext = null,
         ISM3HmacProvider? hmacProvider = null)
         : base(options)
     {
-        _tenantContext = tenantContext;
         _hmacProvider = hmacProvider;
         Database.AutoTransactionBehavior = AutoTransactionBehavior.Never;
     }
 
-    // ✅ 使用 AsyncLocal，支持同步访问
     public static string? CurrentUserIdValue => _currentUserId.Value;
     public static string? CurrentCompanyIdValue => _currentCompanyId.Value;
 
     protected string? CurrentUserId => _currentUserId.Value;
     protected string? CurrentCompanyId => _currentCompanyId.Value;
 
-    /// <summary>
-    /// HTTP 请求初始化：从 ITenantContext 异步加载并缓存到 AsyncLocal
-    /// 由中间件在请求开始时调用
-    /// </summary>
-    public async Task InitializeAsync()
-    {
-        if (_tenantContext != null)
-        {
-            _currentUserId.Value = _tenantContext.GetCurrentUserId();
-            _currentCompanyId.Value = _tenantContext.GetCurrentCompanyId();
-        }
-    }
-
-    /// <summary>
-    /// 后台任务初始化：手动设置上下文到 AsyncLocal
-    /// 使用 ITenantContextSetter.SetContext() 后自动同步到此
-    /// </summary>
     public static void SetContext(string companyId, string? userId)
     {
         _currentCompanyId.Value = companyId;

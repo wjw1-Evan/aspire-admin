@@ -19,7 +19,7 @@ public static class ServiceExtensions
     /// <list type="bullet">
     ///   <item>IMongoClient + IMongoDatabase（Aspire 自动注册）</item>
     ///   <item>PlatformDbContext（EF Core + MongoDB Provider）- 服务层直接使用</item>
-    ///   <item>ITenantContext（多租户上下文 - Singleton，从 HttpContext.Items 读取 userId）</item>
+/// <item>ITenantContext（多租户上下文 - 薄封装，委托给 PlatformDbContext.AsyncLocal）</item>
     ///   <item>IFileStorageFactory（文件存储 / GridFS）</item>
     ///   <item>MongoDB 全局约定（IgnoreExtraElements + CamelCase）</item>
     /// </list>

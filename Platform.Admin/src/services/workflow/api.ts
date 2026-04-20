@@ -886,7 +886,7 @@ export interface OrganizationTreeNode {
  * 获取组织架构树
  */
 export async function getOrganizationTree(): Promise<ApiResponse<OrganizationTreeNode[]>> {
-  return request('/apiservice/api/organizations/tree', {
+  return request('/apiservice/api/organization/tree', {
     method: 'GET',
   });
 }
@@ -898,7 +898,7 @@ export async function getOrganizationMembers(orgId: string, params?: {
   page?: number;
   pageSize?: number;
 }): Promise<ApiResponse<PagedResult<{ userId: string; username: string; email?: string }>>> {
-  return request(`/apiservice/api/organizations/${orgId}/members`, {
+  return request(`/apiservice/api/organization/${orgId}/members`, {
     method: 'GET',
     params,
   });

@@ -279,7 +279,7 @@ public class WorkflowExportImportService : IWorkflowExportImportService
             }
 
             var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-            var companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? throw new InvalidOperationException("COMPANY_NOT_FOUND");
+            var companyId =  _tenantContext.GetCurrentCompanyId() ?? throw new InvalidOperationException("COMPANY_NOT_FOUND");
 
             // 根据解决方案处理每个工作流
             foreach (var workflowItem in importData.Workflows)

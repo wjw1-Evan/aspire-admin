@@ -146,7 +146,7 @@ public class UserService : IUserService
         _validationService.ValidateUsername(request.Username);
 
         var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
+        var companyId = _tenantContext.GetCurrentCompanyId();
 
         if (string.IsNullOrEmpty(companyId))
         {
@@ -237,7 +237,7 @@ public class UserService : IUserService
         if (request.RoleIds != null)
         {
             var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-            var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
+            var companyId = _tenantContext.GetCurrentCompanyId();
             if (string.IsNullOrEmpty(companyId))
             {
                 throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
@@ -276,7 +276,7 @@ public class UserService : IUserService
     /// <inheritdoc/>
     public async Task<bool> DeleteUserAsync(string id, string? reason = null)
     {
-        var currentCompanyId = await _tenantContext.GetCurrentCompanyIdAsync();
+        var currentCompanyId = _tenantContext.GetCurrentCompanyId();
         if (string.IsNullOrEmpty(currentCompanyId))
         {
             throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
@@ -385,7 +385,7 @@ public class UserService : IUserService
     /// <inheritdoc/>
     public async Task<UserStatisticsResponse> GetUserStatisticsAsync()
     {
-        var currentCompanyId = await _tenantContext.GetCurrentCompanyIdAsync();
+        var currentCompanyId = _tenantContext.GetCurrentCompanyId();
         if (string.IsNullOrEmpty(currentCompanyId)) throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
 
         var memberships = await _context.Set<UserCompany>().Where(uc => uc.CompanyId == currentCompanyId && uc.Status == SystemConstants.UserStatus.Active).ToListAsync();
@@ -430,7 +430,7 @@ public class UserService : IUserService
     public async Task<bool> BulkUpdateUsersAsync(BulkUserActionRequest request, string? reason = null)
     {
         var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        var currentCompanyId = await _tenantContext.GetCurrentCompanyIdAsync();
+        var currentCompanyId = _tenantContext.GetCurrentCompanyId();
         if (string.IsNullOrEmpty(currentCompanyId)) throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
 
         var memberships = await _context.Set<UserCompany>().Where(uc => uc.CompanyId == currentCompanyId && request.UserIds.Contains(uc.UserId)).ToListAsync();

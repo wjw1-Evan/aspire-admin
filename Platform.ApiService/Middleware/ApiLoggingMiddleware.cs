@@ -78,7 +78,7 @@ public class ApiLoggingMiddleware
                     var log = new LogHttpRequestRequest
                     {
                         CreatedBy = userId == "Anonymous" ? null : userId,
-                        CompanyId = await tenantContext.GetCurrentCompanyIdAsync(),
+                        CompanyId =  tenantContext.GetCurrentCompanyId(),
                         HttpMethod = context.Request.Method,
                         Path = context.Request.Path.Value ?? string.Empty,
                         QueryString = context.Request.QueryString.Value,

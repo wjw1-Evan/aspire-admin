@@ -31,7 +31,7 @@ public class XiaokeConfigService : IXiaokeConfigService
 
     private async Task<string> GetCurrentCompanyIdAsync()
     {
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
+        var companyId =  _tenantContext.GetCurrentCompanyId();
         if (string.IsNullOrEmpty(companyId))
         {
             throw new UnauthorizedAccessException("未找到当前企业信息");

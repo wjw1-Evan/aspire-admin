@@ -21,7 +21,7 @@ public class CompanyQuotaService : ICompanyQuotaService
 
     public async Task<CompanyStorageStatistics> GetCompanyStorageStatisticsAsync()
     {
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? throw new InvalidOperationException("企业ID不能为空");
+        var companyId = _tenantContext.GetCurrentCompanyId() ?? throw new InvalidOperationException("企业ID不能为空");
 
         var company = await _context.Set<Company>().FirstOrDefaultAsync(c => c.Id == companyId)
             ?? throw new KeyNotFoundException("企业不存在");
@@ -82,7 +82,7 @@ public class CompanyQuotaService : ICompanyQuotaService
 
     public async Task<List<UserStorageRanking>> GetStorageUsageRankingAsync(int topCount = 10)
     {
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? throw new InvalidOperationException("企业ID不能为空");
+        var companyId = _tenantContext.GetCurrentCompanyId() ?? throw new InvalidOperationException("企业ID不能为空");
         var companyUserIds = await _context.Set<UserCompany>().Where(uc => uc.CompanyId == companyId && uc.Status == "active")
             .Select(uc => uc.UserId).ToListAsync();
 
@@ -110,7 +110,7 @@ public class CompanyQuotaService : ICompanyQuotaService
     public async Task<System.Linq.Dynamic.Core.PagedResult<StorageQuotaListItem>> GetStorageQuotaListAsync(
         ProTableRequest request, string? companyId = null, bool? isEnabled = null)
     {
-        var targetCompanyId = companyId ?? await _tenantContext.GetCurrentCompanyIdAsync();
+        var targetCompanyId = companyId ?? _tenantContext.GetCurrentCompanyId();
         var allQuotas = await _context.Set<StorageQuota>().ToListAsync();
 
         if (!string.IsNullOrEmpty(targetCompanyId))

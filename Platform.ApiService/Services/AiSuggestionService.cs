@@ -75,7 +75,7 @@ public class AiSuggestionService : IAiSuggestionService
         if (string.IsNullOrWhiteSpace(request.UserId)) request.UserId = currentUserId;
         if (!string.Equals(request.UserId, currentUserId, StringComparison.Ordinal)) throw new UnauthorizedAccessException("禁止为其他用户请求匹配推荐");
 
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? string.Empty;
+        var companyId =  _tenantContext.GetCurrentCompanyId() ?? string.Empty;
         var interests = (request.Interests ?? new List<string>()).Where(t => !string.IsNullOrWhiteSpace(t)).Select(t => t.Trim().ToLowerInvariant()).ToHashSet();
         var limit = Math.Clamp(request.Limit ?? 10, 1, 50);
 

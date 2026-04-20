@@ -21,7 +21,7 @@ public class QuotaWarningService : IQuotaWarningService
 
     public async Task<List<StorageQuotaWarning>> GetQuotaWarningsAsync(double warningThreshold = 0.8)
     {
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
+        var companyId =  _tenantContext.GetCurrentCompanyId();
         if (string.IsNullOrEmpty(companyId))
             return new List<StorageQuotaWarning>();
 

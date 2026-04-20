@@ -71,7 +71,7 @@ public class SocialService : ISocialService
                 var user = await _context.Set<AppUser>().IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Id == currentUserId);
                 companyId = user?.CurrentCompanyId;
             }
-            else companyId = await _tenantContext.GetCurrentCompanyIdAsync();
+            else companyId =  _tenantContext.GetCurrentCompanyId();
         }
 
         var beacon = new UserLocationBeacon
@@ -144,7 +144,7 @@ public class SocialService : ISocialService
 
         var userIds = beaconDistances.Select(x => x.Beacon.UserId).ToList();
         var userMap = (await _context.Set<AppUser>().Where(u => userIds.Contains(u.Id)).ToListAsync()).ToDictionary(u => u.Id, u => u);
-        
+
         var interestFilters = request.Interests?.Where(t => !string.IsNullOrWhiteSpace(t)).Select(t => t.Trim().ToLowerInvariant()).Distinct().ToList();
         var sessionCache = new Dictionary<string, string?>();
         var items = new List<NearbyUserDto>();
@@ -179,7 +179,7 @@ public class SocialService : ISocialService
     public async Task<UserLocationBeacon?> GetCurrentUserLocationAsync()
     {
         var uid = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        var cid = await _tenantContext.GetCurrentCompanyIdAsync() ?? throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
+        var cid =  _tenantContext.GetCurrentCompanyId() ?? throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
         return await _context.Set<UserLocationBeacon>().Where(b => b.UserId == uid && b.CompanyId == cid).OrderByDescending(b => b.LastSeenAt).FirstOrDefaultAsync();
     }
 

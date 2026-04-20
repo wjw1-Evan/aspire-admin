@@ -365,7 +365,7 @@ public class StorageQuotaController : BaseApiController
         try
         {
             var result = await _storageQuotaService.CleanupUnusedQuotasAsync();
-            var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
+            var companyId =  _tenantContext.GetCurrentCompanyId();
             return Success(result, $"清理完成，删除了 {result.SuccessCount} 个未使用的配额记录");
         }
         catch (Exception ex)

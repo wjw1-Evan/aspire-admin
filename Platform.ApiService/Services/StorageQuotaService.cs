@@ -187,7 +187,7 @@ public class StorageQuotaService : IStorageQuotaService
     /// </summary>
     public async Task<CompanyStorageStatistics> GetCompanyStorageStatisticsAsync()
     {
-        var targetCompanyId = await _tenantContext.GetCurrentCompanyIdAsync();
+        var targetCompanyId =  _tenantContext.GetCurrentCompanyId();
         if (string.IsNullOrEmpty(targetCompanyId))
             throw new InvalidOperationException("企业ID不能为空");
 
@@ -502,7 +502,7 @@ public class StorageQuotaService : IStorageQuotaService
     public async Task<System.Linq.Dynamic.Core.PagedResult<StorageQuotaListItem>> GetStorageQuotaListAsync(Platform.ServiceDefaults.Models.ProTableRequest request, string? companyId = null, bool? isEnabled = null)
     {
         // 获取当前企业ID
-        var currentCompanyId = await _tenantContext.GetCurrentCompanyIdAsync();
+        var currentCompanyId =  _tenantContext.GetCurrentCompanyId();
         if (string.IsNullOrEmpty(currentCompanyId))
             throw new InvalidOperationException("未找到当前企业信息");
 
@@ -742,7 +742,7 @@ public class StorageQuotaService : IStorageQuotaService
     public async Task<StorageUsageStats> GetStorageUsageStatsAsync(string? userId = null)
     {
         // 企业维度统计应与列表一致：基于企业全部用户 + 实时文件统计
-        var currentCompanyId = await _tenantContext.GetCurrentCompanyIdAsync();
+        var currentCompanyId =  _tenantContext.GetCurrentCompanyId();
         if (string.IsNullOrEmpty(currentCompanyId))
             throw new InvalidOperationException("未找到当前企业信息");
 

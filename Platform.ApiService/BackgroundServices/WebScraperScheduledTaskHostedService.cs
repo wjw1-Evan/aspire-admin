@@ -51,16 +51,26 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
         var now = DateTime.UtcNow;
         var allEnabledTasks = await context.Set<WebScrapingTask>()
             .IgnoreQueryFilters()
-            .Where(t => t.IsEnabled && !string.IsNullOrEmpty(t.ScheduleCron))
+            .Where(t => t.IsEnabled && !string.IsNullOrEmpty(t.ScheduleCron) && t.IsDeleted != true)
             .ToListAsync(stoppingToken);
 
+        if (allEnabledTasks.Count == 0) return;
+
+        _logger.LogInformation("[定时调度] 发现 {Count} 个启用的定时任务", allEnabledTasks.Count);
+
+        var initialized = 0;
         foreach (var t in allEnabledTasks.Where(t => t.NextRunAt == null))
         {
             t.NextRunAt = WebScraperCron.ParseNext(t.ScheduleCron!, now);
+            if (t.NextRunAt == null)
+                _logger.LogWarning("[定时调度] 任务 {TaskId}({TaskName}) Cron 表达式解析失败: {Cron}", t.Id, t.Name, t.ScheduleCron);
+            else
+                initialized++;
         }
 
-        if (allEnabledTasks.Any(t => t.NextRunAt != null))
+        if (initialized > 0)
         {
+            _logger.LogInformation("[定时调度] 初始化 {Count} 个任务的 NextRunAt", initialized);
             await context.SaveChangesAsync(stoppingToken);
         }
 
@@ -71,11 +81,13 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
 
             if (isDue && isRunning)
             {
+                _logger.LogInformation("[定时调度] 任务 {TaskId}({TaskName}) 已在运行中，跳过", task.Id, task.Name);
                 continue;
             }
 
             if (isDue)
             {
+                _logger.LogInformation("[定时调度] 触发任务 {TaskId}({TaskName}), NextRunAt={NextRunAt}", task.Id, task.Name, task.NextRunAt);
                 task.LastStatus = ScrapingStatus.Running;
                 await context.SaveChangesAsync(CancellationToken.None);
                 _taskLauncher.LaunchAsync(task.Id, task.CreatedBy ?? task.UserId);
@@ -85,6 +97,7 @@ public class WebScraperScheduledTaskHostedService : BackgroundService
                 var elapsed = now - (task.LastRunAt ?? now.AddMinutes(-5));
                 if (elapsed.TotalMinutes > 10)
                 {
+                    _logger.LogWarning("[定时调度] 任务 {TaskId}({TaskName}) 运行超过10分钟，重置为空闲", task.Id, task.Name);
                     task.LastStatus = ScrapingStatus.Idle;
                     await context.SaveChangesAsync(CancellationToken.None);
                 }

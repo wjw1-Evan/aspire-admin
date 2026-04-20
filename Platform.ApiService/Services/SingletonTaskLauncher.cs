@@ -16,9 +16,9 @@ public interface ITaskLauncher
     void LaunchAsync(string taskId, string userId);
 }
 
-public class TaskLauncher(
+public class SingletonTaskLauncher(
     IServiceProvider ServiceProvider,
-    ILogger<TaskLauncher> Logger) : ITaskLauncher
+    ILogger<SingletonTaskLauncher> Logger) : ITaskLauncher
 {
     public void LaunchAsync(string taskId, string userId)
     {

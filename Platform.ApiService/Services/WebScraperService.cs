@@ -325,6 +325,12 @@ public class WebScraperService : IWebScraperService
                 task.LastDuration = log.Duration;
                 task.LastError = ex.Message;
 
+                // 失败后必须重新计算下次运行时间，否则 NextRunAt 停留在过去导致每分钟无限重试
+                if (!string.IsNullOrEmpty(task.ScheduleCron))
+                {
+                    task.NextRunAt = CronExpressionParser.ParseNext(task.ScheduleCron, DateTime.UtcNow);
+                }
+
                 await _context.Set<WebScrapingLog>().AddAsync(log);
                 await _context.SaveChangesAsync();
 
@@ -508,11 +514,13 @@ public static class CronExpressionParser
 {
     public static DateTime? ParseNext(string cron, DateTime from)
     {
+        if (string.IsNullOrWhiteSpace(cron)) return null;
+
+        var parts = cron.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 5) return null;
+
         try
         {
-            var parts = cron.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length < 5) return null;
-
             var minute = ParseCronPart(parts[0], 0, 59);
             var hour = ParseCronPart(parts[1], 0, 23);
             var dayOfMonth = ParseCronPart(parts[2], 1, 31);
@@ -534,8 +542,9 @@ public static class CronExpressionParser
                 current = current.AddMinutes(1);
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Console.Error.WriteLine($"[CronExpressionParser] 解析失败: cron={cron}, error={ex.Message}");
         }
 
         return null;

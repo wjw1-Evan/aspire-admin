@@ -103,6 +103,7 @@ const WorkflowManagement: React.FC = () => {
         width="95%"
         style={{ top: 20 }}
         modalProps={{ bodyStyle: { height: 'calc(100vh - 100px)', padding: '12px 24px' }, destroyOnClose: true }}
+        submitter={false}
       >
         <WorkflowDesignerModal workflow={editingWorkflow} readOnly={previewMode} onSuccess={() => { setDesignerVisible(false); setEditingWorkflow(null); actionRef.current?.reload(); }} onCancel={() => { setDesignerVisible(false); setEditingWorkflow(null); }} />
       </ModalForm>

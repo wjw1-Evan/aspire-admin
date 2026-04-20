@@ -837,8 +837,8 @@ const PasswordBook: React.FC = () => {
             page: current,
             pageSize,
             search: state.search,
-            sort: sort ,
-            filter: filter ,
+            sort,
+            filter,
           });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
         }}
@@ -964,12 +964,11 @@ const handleFinish = async (values: Record<string, any>) => {
 | `page` | 当前页码 | 必须显式传递（ProTable 传入 `current`，需映射为 `page`） |
 | `pageSize` | 每页数量 | ProTable 自动传递 |
 | `search` | 搜索关键词 | 存储在 state 中 |
-| `sort` | 排序规则 | 如 `{"platform":"ascend"}` |
-| `filter` | 筛选规则 | 如 `{"category":["work"]}` |
-
+| `sort` | 排序规则 | 如 `{"fieldName":"ascend"}`，UmiJS 自动序列化 |
+| `filter` | 筛选规则 | 如 `{"category":["work"]}`，UmiJS 自动序列化 |
 
 ```typescript
-// ✅ 正确：映射 current→page +  sort/filter
+// ✅ 正确：映射 current→page + sort/filter
 const { current, pageSize } = params;
 const res = await api.list({
   page: current,
@@ -982,8 +981,6 @@ return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, succes
 
 // ❌ 禁止：直接展开 params（current 不映射为 page，分页永远在第1页）
 const res = await api.list({ ...params, sort, filter });
-
-
 ```
 
 ### 7.9 列渲染规范

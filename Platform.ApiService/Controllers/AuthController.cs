@@ -116,8 +116,7 @@ public class AuthController : BaseApiController
 
     public async Task<IActionResult> GetCurrentUser()
     {
-
-        var user = await _authService.GetCurrentUserAsync();
+        var user = await _authService.GetCurrentUserAsync(RequiredUserId);
         return Success(user);
     }
 
@@ -160,7 +159,9 @@ public class AuthController : BaseApiController
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        var result = await _authService.LoginAsync(request);
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var userAgent = Request.Headers["User-Agent"].ToString();
+        var result = await _authService.LoginAsync(request, ipAddress, userAgent);
         return Success(result);
     }
 
@@ -191,7 +192,9 @@ public class AuthController : BaseApiController
 
     public async Task<IActionResult> Logout()
     {
-        await _authService.LogoutAsync();
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var userAgent = Request.Headers["User-Agent"].ToString();
+        await _authService.LogoutAsync(RequiredUserId, ipAddress, userAgent);
         return Success(null, "登出成功");
     }
 
@@ -363,7 +366,9 @@ public class AuthController : BaseApiController
 
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {
-        await _authService.ChangePasswordAsync(request);
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var userAgent = Request.Headers["User-Agent"].ToString();
+        await _authService.ChangePasswordAsync(RequiredUserId, request, ipAddress, userAgent);
         return Success(true, "密码修改成功");
     }
 

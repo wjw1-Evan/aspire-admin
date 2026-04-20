@@ -198,7 +198,7 @@ public class UserController : BaseApiController
     /// </summary>
     [HttpGet("me")]
     public async Task<IActionResult> GetCurrentUserProfile()
-        => Success(await _authService.GetCurrentUserAsync());
+        => Success(await _authService.GetCurrentUserAsync(RequiredUserId));
 
     /// <summary>
     /// 更新当前用户资料
@@ -213,7 +213,7 @@ public class UserController : BaseApiController
                 throw new ArgumentException("手机号格式不正确");
         }
         await _userService.UpdateUserProfileAsync(RequiredUserId, request);
-        return Success(await _authService.GetCurrentUserAsync());
+        return Success(await _authService.GetCurrentUserAsync(RequiredUserId));
     }
 
     /// <summary>

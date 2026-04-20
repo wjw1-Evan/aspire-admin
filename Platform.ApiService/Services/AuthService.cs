@@ -25,19 +25,19 @@ public class AuthService : IAuthService
         _sessionService = sessionService;
     }
 
-    public async Task<CurrentUser?> GetCurrentUserAsync()
+    public async Task<CurrentUser?> GetCurrentUserAsync(string? userId = null)
     {
-        return await _sessionService.GetCurrentUserAsync();
+        return await _sessionService.GetCurrentUserAsync(userId);
     }
 
-    public async Task<LoginResult> LoginAsync(LoginRequest request)
+    public async Task<LoginResult> LoginAsync(LoginRequest request, string? ipAddress = null, string? userAgent = null)
     {
-        return await _loginService.LoginAsync(request);
+        return await _loginService.LoginAsync(request, ipAddress, userAgent);
     }
 
-    public async Task<bool> LogoutAsync()
+    public async Task<bool> LogoutAsync(string userId, string? ipAddress = null, string? userAgent = null)
     {
-        return await _loginService.LogoutAsync();
+        return await _loginService.LogoutAsync(userId, ipAddress, userAgent);
     }
 
     public async Task<AppUser> RegisterAsync(RegisterRequest request)
@@ -45,14 +45,14 @@ public class AuthService : IAuthService
         return await _registrationService.RegisterAsync(request);
     }
 
-    public async Task<bool> ChangePasswordAsync(ChangePasswordRequest request)
+    public async Task<bool> ChangePasswordAsync(string userId, ChangePasswordRequest request, string? ipAddress = null, string? userAgent = null)
     {
-        return await _passwordService.ChangePasswordAsync(request);
+        return await _passwordService.ChangePasswordAsync(userId, request, ipAddress, userAgent);
     }
 
-    public async Task<RefreshTokenResult> RefreshTokenAsync(RefreshTokenRequest request)
+    public async Task<RefreshTokenResult> RefreshTokenAsync(RefreshTokenRequest request, string? ipAddress = null, string? userAgent = null)
     {
-        return await _loginService.RefreshTokenAsync(request);
+        return await _loginService.RefreshTokenAsync(request, ipAddress, userAgent);
     }
 
     public async Task<bool> SendPasswordResetCodeAsync(SendResetCodeRequest request)

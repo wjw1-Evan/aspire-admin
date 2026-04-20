@@ -7,31 +7,21 @@ namespace Platform.ApiService.Services;
 public class SessionService : ISessionService
 {
     private readonly DbContext _context;
-    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ISocialService _socialService;
     private readonly ILogger<SessionService> _logger;
 
     public SessionService(
         DbContext context,
-        IHttpContextAccessor httpContextAccessor,
         ISocialService socialService,
         ILogger<SessionService> logger)
     {
         _context = context;
-        _httpContextAccessor = httpContextAccessor;
         _socialService = socialService;
         _logger = logger;
     }
 
-    public async Task<CurrentUser?> GetCurrentUserAsync()
+    public async Task<CurrentUser?> GetCurrentUserAsync(string? userId = null)
     {
-        var httpContext = _httpContextAccessor.HttpContext;
-        if (httpContext?.User?.Identity?.IsAuthenticated != true)
-        {
-            return new CurrentUser { IsLogin = false };
-        }
-
-        var userId = httpContext.User.FindFirst("userId")?.Value;
         if (string.IsNullOrEmpty(userId))
         {
             return new CurrentUser { IsLogin = false };

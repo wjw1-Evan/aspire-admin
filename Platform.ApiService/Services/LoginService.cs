@@ -11,7 +11,6 @@ public class LoginService : ILoginService
 {
     private readonly DbContext _context;
     private readonly IJwtService _jwtService;
-    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IUserService _userService;
     private readonly ILogger<LoginService> _logger;
     private readonly IConfiguration _configuration;
@@ -23,7 +22,6 @@ public class LoginService : ILoginService
     public LoginService(
         DbContext context,
         IJwtService jwtService,
-        IHttpContextAccessor httpContextAccessor,
         IUserService userService,
         ILogger<LoginService> logger,
         IConfiguration configuration,
@@ -34,7 +32,6 @@ public class LoginService : ILoginService
     {
         _context = context;
         _jwtService = jwtService;
-        _httpContextAccessor = httpContextAccessor;
         _userService = userService;
         _logger = logger;
         _configuration = configuration;
@@ -44,7 +41,7 @@ public class LoginService : ILoginService
         _validationService = validationService;
     }
 
-    public async Task<LoginResult> LoginAsync(LoginRequest request)
+    public async Task<LoginResult> LoginAsync(LoginRequest request, string? ipAddress = null, string? userAgent = null)
     {
         var user = await _context.Set<AppUser>().FirstOrDefaultAsync(u => u.Username == request.Username && u.IsActive == true);
 
@@ -91,9 +88,6 @@ public class LoginService : ILoginService
         }
         await _context.SaveChangesAsync();
 
-        var httpContext = _httpContextAccessor.HttpContext;
-        var ipAddress = httpContext?.Connection?.RemoteIpAddress?.ToString();
-        var userAgent = httpContext?.Request?.Headers["User-Agent"].ToString();
         await _userService.LogUserActivityAsync(user.Id!, "login", "用户登录", ipAddress, userAgent);
 
         var token = _jwtService.GenerateToken(user);
@@ -126,23 +120,16 @@ public class LoginService : ILoginService
         return loginResult;
     }
 
-    public async Task<bool> LogoutAsync()
+    public async Task<bool> LogoutAsync(string userId, string? ipAddress = null, string? userAgent = null)
     {
-        var httpContext = _httpContextAccessor.HttpContext;
-        if (httpContext?.User?.Identity?.IsAuthenticated == true)
+        if (!string.IsNullOrEmpty(userId))
         {
-            var userId = httpContext.User.FindFirst("userId")?.Value;
-            if (!string.IsNullOrEmpty(userId))
-            {
-                var ipAddress = httpContext?.Connection?.RemoteIpAddress?.ToString();
-                var userAgent = httpContext?.Request?.Headers["User-Agent"].ToString();
-                await _userService.LogUserActivityAsync(userId, "logout", "用户登出", ipAddress, userAgent);
-            }
+            await _userService.LogUserActivityAsync(userId, "logout", "用户登出", ipAddress, userAgent);
         }
         return true;
     }
 
-    public async Task<RefreshTokenResult> RefreshTokenAsync(RefreshTokenRequest request)
+    public async Task<RefreshTokenResult> RefreshTokenAsync(RefreshTokenRequest request, string? ipAddress = null, string? userAgent = null)
     {
         if (string.IsNullOrWhiteSpace(request.RefreshToken))
             throw new ArgumentException("刷新token不能为空");
@@ -193,10 +180,6 @@ public class LoginService : ILoginService
         }
         var newToken = _jwtService.GenerateToken(user);
         var newRefreshToken = _jwtService.GenerateRefreshToken(user);
-
-        var httpContext = _httpContextAccessor.HttpContext;
-        var ipAddress = httpContext?.Connection?.RemoteIpAddress?.ToString();
-        var userAgent = httpContext?.Request?.Headers["User-Agent"].ToString();
 
         existingToken.IsRevoked = true;
         existingToken.RevokedAt = DateTime.UtcNow;

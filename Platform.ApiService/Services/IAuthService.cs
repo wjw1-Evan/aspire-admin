@@ -11,21 +11,27 @@ public interface IAuthService
     /// <summary>
     /// 获取当前登录用户信息
     /// </summary>
+    /// <param name="userId">用户ID</param>
     /// <returns>当前用户信息，如果未登录则返回 null</returns>
-    Task<CurrentUser?> GetCurrentUserAsync();
+    Task<CurrentUser?> GetCurrentUserAsync(string? userId = null);
 
     /// <summary>
     /// 用户登录
     /// </summary>
     /// <param name="request">登录请求</param>
+    /// <param name="ipAddress">IP地址（可选）</param>
+    /// <param name="userAgent">用户代理（可选）</param>
     /// <returns>登录结果，包含 Token 和用户信息</returns>
-    Task<LoginResult> LoginAsync(LoginRequest request);
+    Task<LoginResult> LoginAsync(LoginRequest request, string? ipAddress = null, string? userAgent = null);
 
     /// <summary>
     /// 用户登出
     /// </summary>
+    /// <param name="userId">用户ID</param>
+    /// <param name="ipAddress">IP地址（可选）</param>
+    /// <param name="userAgent">用户代理（可选）</param>
     /// <returns>是否成功登出</returns>
-    Task<bool> LogoutAsync();
+    Task<bool> LogoutAsync(string userId, string? ipAddress = null, string? userAgent = null);
 
     /// <summary>
     /// 用户注册
@@ -37,16 +43,21 @@ public interface IAuthService
     /// <summary>
     /// 修改密码
     /// </summary>
+    /// <param name="userId">用户ID</param>
     /// <param name="request">修改密码请求</param>
+    /// <param name="ipAddress">IP地址（可选）</param>
+    /// <param name="userAgent">用户代理（可选）</param>
     /// <returns>是否成功修改</returns>
-    Task<bool> ChangePasswordAsync(ChangePasswordRequest request);
+    Task<bool> ChangePasswordAsync(string userId, ChangePasswordRequest request, string? ipAddress = null, string? userAgent = null);
 
     /// <summary>
     /// 刷新 Token
     /// </summary>
     /// <param name="request">刷新 Token 请求</param>
+    /// <param name="ipAddress">IP地址（可选）</param>
+    /// <param name="userAgent">用户代理（可选）</param>
     /// <returns>新的 Token 信息</returns>
-    Task<RefreshTokenResult> RefreshTokenAsync(RefreshTokenRequest request);
+    Task<RefreshTokenResult> RefreshTokenAsync(RefreshTokenRequest request, string? ipAddress = null, string? userAgent = null);
 
     /// <summary>
     /// 发送密码重置验证码

@@ -16,7 +16,6 @@ namespace Platform.ApiService.Services;
 public class PasswordService : IPasswordService
 {
     private readonly DbContext _context;
-    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IUserService _userService;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IFieldValidationService _validationService;
@@ -27,7 +26,6 @@ public class PasswordService : IPasswordService
 
     public PasswordService(
         DbContext context,
-        IHttpContextAccessor httpContextAccessor,
         IUserService userService,
         IPasswordHasher passwordHasher,
         IFieldValidationService validationService,
@@ -37,7 +35,6 @@ public class PasswordService : IPasswordService
         ILogger<PasswordService> logger)
     {
         _context = context;
-        _httpContextAccessor = httpContextAccessor;
         _userService = userService;
         _passwordHasher = passwordHasher;
         _validationService = validationService;
@@ -48,11 +45,10 @@ public class PasswordService : IPasswordService
     }
 
     /// <inheritdoc/>
-    public async Task<bool> ChangePasswordAsync(ChangePasswordRequest request)
+    public async Task<bool> ChangePasswordAsync(string userId, ChangePasswordRequest request, string? ipAddress = null, string? userAgent = null)
     {
         try
         {
-            var userId = _httpContextAccessor.HttpContext?.User?.FindFirst("userId")?.Value;
             if (string.IsNullOrEmpty(userId))
                 throw new ArgumentException("未授权访问");
 
@@ -71,8 +67,6 @@ public class PasswordService : IPasswordService
             user.PasswordHash = _passwordHasher.HashPassword(newPassword);
             await _context.SaveChangesAsync();
 
-            var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
-            var userAgent = _httpContextAccessor.HttpContext?.Request?.Headers["User-Agent"].ToString();
             await _userService.LogUserActivityAsync(userId, "change_password", "修改密码", ipAddress, userAgent);
 
             return true;

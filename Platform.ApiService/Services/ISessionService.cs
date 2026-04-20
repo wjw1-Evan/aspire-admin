@@ -4,5 +4,5 @@ namespace Platform.ApiService.Services;
 
 public interface ISessionService
 {
-    Task<CurrentUser?> GetCurrentUserAsync();
+    Task<CurrentUser?> GetCurrentUserAsync(string? userId = null);
 }

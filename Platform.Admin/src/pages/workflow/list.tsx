@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
-import { Button, Space, Tag, App, Input, Modal } from 'antd';
+import { PageContainer, ModalForm } from '@ant-design/pro-components';
+import { Button, Space, Tag, App, Input } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ApiOutlined, SearchOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { getWorkflowList, deleteWorkflow, type WorkflowDefinition } from '@/services/workflow/api';
@@ -96,9 +96,16 @@ const WorkflowManagement: React.FC = () => {
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { setEditingWorkflow(null); setPreviewMode(false); setDesignerVisible(true); }}>{intl.formatMessage({ id: 'pages.workflow.create' })}</Button>,
         ]}
       />
-      <Modal title={editingWorkflow ? intl.formatMessage({ id: 'pages.workflow.action.edit' }) : intl.formatMessage({ id: 'pages.workflow.create.title' })} open={designerVisible} onCancel={() => { setDesignerVisible(false); setEditingWorkflow(null); }} footer={null} width="95%" style={{ top: 20 }} styles={{ body: { height: 'calc(100vh - 100px)', padding: '12px 24px' } }} destroyOnHidden>
+      <ModalForm
+        title={editingWorkflow ? intl.formatMessage({ id: 'pages.workflow.action.edit' }) : intl.formatMessage({ id: 'pages.workflow.create.title' })}
+        open={designerVisible}
+        onOpenChange={(open) => { if (!open) { setDesignerVisible(false); setEditingWorkflow(null); setPreviewMode(false); } }}
+        width="95%"
+        style={{ top: 20 }}
+        modalProps={{ bodyStyle: { height: 'calc(100vh - 100px)', padding: '12px 24px' }, destroyOnClose: true }}
+      >
         <WorkflowDesignerModal workflow={editingWorkflow} readOnly={previewMode} onSuccess={() => { setDesignerVisible(false); setEditingWorkflow(null); actionRef.current?.reload(); }} onCancel={() => { setDesignerVisible(false); setEditingWorkflow(null); }} />
-      </Modal>
+      </ModalForm>
     </PageContainer>
   );
 };

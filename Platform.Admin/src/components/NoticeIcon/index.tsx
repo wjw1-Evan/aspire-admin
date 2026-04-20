@@ -85,10 +85,15 @@ const NoticeIcon: React.FC = () => {
     }
   }, [loadingMore, hasMore, loading, currentPage, loadNotifications]);
 
+  const refreshList = useCallback(() => {
+    loadNotifications(1, true);
+  }, [loadNotifications]);
+
   const handleMarkAsRead = async (e: React.MouseEvent, id: string) => {
     if (e) e.stopPropagation();
     try {
       await markAsRead(id);
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, status: 'Read' } : n));
     } catch (e) {
       console.error(e);
     }
@@ -98,6 +103,7 @@ const NoticeIcon: React.FC = () => {
     if (e) e.stopPropagation();
     try {
       await markAsUnread(id);
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, status: 'Unread' } : n));
     } catch (e) {
       console.error(e);
     }
@@ -107,6 +113,9 @@ const NoticeIcon: React.FC = () => {
     setLoading(true);
     try {
       await markAllAsRead(category);
+      setNotifications(prev => prev.map(n => ({ ...n, status: 'Read' })));
+      setShowUnreadOnly(false);
+      refreshList();
     } catch (e) {
       console.error(e);
     } finally {

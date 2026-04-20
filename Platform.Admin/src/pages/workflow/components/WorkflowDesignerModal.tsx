@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Spin, Result, Input, Switch } from 'antd';
+import { Button, Spin, Result, Input, Switch, Select } from 'antd';
 import { InfoCircleOutlined, SaveOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import { useMessage } from '@/hooks/useMessage';
@@ -18,12 +18,12 @@ const WorkflowDesignerModal: React.FC<WorkflowDesignerModalProps> = ({ workflow,
   const message = useMessage();
   const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(!!(workflow?.id));
-  const [formData, setFormData] = useState({ name: workflow?.name || '', isActive: workflow?.isActive ?? true });
+  const [formData, setFormData] = useState({ name: workflow?.name || '', isActive: workflow?.isActive ?? true, category: workflow?.category || 'default', version: workflow?.version || { major: 1, minor: 0 } });
   const [fullWorkflow, setFullWorkflow] = useState<WorkflowDefinition | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const isCreate = !workflow?.id;
-  console.log('[WorkflowDesignerModal] isCreate:', isCreate, 'workflow.id:', workflow?.id);
+  const currentVersion = formData.version ? `v${formData.version.major}.${formData.version.minor}` : 'v1.0';
 
   useEffect(() => {
     const workflowId = workflow?.id;
@@ -36,7 +36,7 @@ const WorkflowDesignerModal: React.FC<WorkflowDesignerModalProps> = ({ workflow,
           const response = await getWorkflowDetail(workflowId);
           if (response.success && response.data) {
             setFullWorkflow(response.data);
-            setFormData({ name: response.data.name, isActive: response.data.isActive });
+            setFormData({ name: response.data.name, isActive: response.data.isActive, category: response.data.category || 'default', version: response.data.version || { major: 1, minor: 0 } });
           } else {
             setLoadError('加载工作流详情失败');
           }
@@ -63,8 +63,8 @@ const WorkflowDesignerModal: React.FC<WorkflowDesignerModalProps> = ({ workflow,
     try {
       setLoading(true);
       const response = !workflowId
-        ? await createWorkflow({ name: formData.name, description: '', category: 'default', graph, isActive: formData.isActive })
-        : await updateWorkflow(workflowId, { name: formData.name, description: fullWorkflow?.description || '', category: fullWorkflow?.category || 'default', isActive: formData.isActive, graph });
+        ? await createWorkflow({ name: formData.name, description: '', category: formData.category, graph, isActive: formData.isActive })
+        : await updateWorkflow(workflowId, { name: formData.name, description: fullWorkflow?.description || '', category: formData.category, isActive: formData.isActive, graph });
       if (response.success) {
         message.success(intl.formatMessage({ id: 'pages.workflow.message.saveSuccess' }));
         onSuccess();
@@ -113,6 +113,23 @@ const WorkflowDesignerModal: React.FC<WorkflowDesignerModalProps> = ({ workflow,
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             style={{ width: 200 }}
+          />
+        )}
+        {!isCreate && <span style={{ color: '#52c41a', fontWeight: 500, fontSize: 13 }}>{currentVersion}</span>}
+        {readOnly ? (
+          <span style={{ color: '#8c8c8c', fontSize: 13 }}>{formData.category}</span>
+        ) : (
+          <Select
+            value={formData.category}
+            onChange={(v) => setFormData({ ...formData, category: v })}
+            style={{ width: 120 }}
+            options={[
+              { value: 'default', label: '默认' },
+              { value: 'approval', label: '审批' },
+              { value: 'notification', label: '通知' },
+              { value: 'task', label: '任务' },
+            ]}
+            disabled={readOnly}
           />
         )}
         <Switch checkedChildren="启用" unCheckedChildren="禁用" checked={formData.isActive} onChange={(v) => setFormData({ ...formData, isActive: v })} disabled={readOnly} />

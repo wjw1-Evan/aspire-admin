@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { PageContainer, ModalForm } from '@ant-design/pro-components';
-import { Button, Space, Tag, App, Input } from 'antd';
+import { PageContainer } from '@ant-design/pro-components';
+import { Button, Space, Tag, App, Input, Drawer } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ApiOutlined, SearchOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { getWorkflowList, deleteWorkflow, type WorkflowDefinition } from '@/services/workflow/api';
@@ -96,17 +96,10 @@ const WorkflowManagement: React.FC = () => {
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { setEditingWorkflow(null); setPreviewMode(false); setDesignerVisible(true); }}>{intl.formatMessage({ id: 'pages.workflow.create' })}</Button>,
         ]}
       />
-      <ModalForm
-        title={editingWorkflow ? intl.formatMessage({ id: 'pages.workflow.action.edit' }) : intl.formatMessage({ id: 'pages.workflow.create.title' })}
-        open={designerVisible}
-        onOpenChange={(open) => { if (!open) { setDesignerVisible(false); setEditingWorkflow(null); setPreviewMode(false); } }}
-        width="95%"
-        style={{ top: 20, height: '90vh' }}
-        modalProps={{ bodyStyle: { height: 'calc(100vh - 150px)', padding: '12px 24px' }, destroyOnClose: true }}
-        submitter={false}
-      >
+      <Drawer title={editingWorkflow ? intl.formatMessage({ id: 'pages.workflow.action.edit' }) : intl.formatMessage({ id: 'pages.workflow.create.title' })} width="100%" open={designerVisible}
+        onClose={() => { setDesignerVisible(false); setEditingWorkflow(null); setPreviewMode(false); }} placement="left">
         <WorkflowDesignerModal workflow={editingWorkflow} readOnly={previewMode} onSuccess={() => { setDesignerVisible(false); setEditingWorkflow(null); actionRef.current?.reload(); }} onCancel={() => { setDesignerVisible(false); setEditingWorkflow(null); }} />
-      </ModalForm>
+      </Drawer>
     </PageContainer>
   );
 };

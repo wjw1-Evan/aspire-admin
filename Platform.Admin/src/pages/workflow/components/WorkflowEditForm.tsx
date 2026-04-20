@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Spin, Result } from 'antd';
-import { ProCard, ProFormText, ProFormTextArea, ProFormSwitch } from '@ant-design/pro-components';
+import { ProCard, ProFormText, ProFormTextArea, ProFormSwitch, ProForm } from '@ant-design/pro-components';
+import type { ProFormInstance } from '@ant-design/pro-components';
 import { InfoCircleOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import { useMessage } from '@/hooks/useMessage';
@@ -21,6 +22,7 @@ const WorkflowEditForm: React.FC<WorkflowEditFormProps> = ({ workflow, onSuccess
     const [detailLoading, setDetailLoading] = useState(true);
     const [fullWorkflow, setFullWorkflow] = useState<WorkflowDefinition | null>(null);
     const [loadError, setLoadError] = useState<string | null>(null);
+    const formRef = React.useRef<ProFormInstance>(null);
 
     // 从详情 API 加载完整工作流数据
     useEffect(() => {
@@ -52,13 +54,14 @@ const WorkflowEditForm: React.FC<WorkflowEditFormProps> = ({ workflow, onSuccess
     const handleSave = async (graph: WorkflowGraph) => {
         if (readOnly || !fullWorkflow?.id) return;
         try {
+            const formValues = formRef.current?.getFieldsValue();
             setLoading(true);
 
             const response = await updateWorkflow(fullWorkflow.id, {
-                name: fullWorkflow.name,
-                description: fullWorkflow.description || '',
-                category: fullWorkflow.category || 'default',
-                isActive: fullWorkflow.isActive,
+                name: formValues?.name || fullWorkflow.name,
+                description: formValues?.description || fullWorkflow.description || '',
+                category: formValues?.category || fullWorkflow.category || 'default',
+                isActive: formValues?.isActive ?? fullWorkflow.isActive,
                 graph: graph,
             });
 
@@ -105,36 +108,38 @@ const WorkflowEditForm: React.FC<WorkflowEditFormProps> = ({ workflow, onSuccess
                 }
                 style={{ padding: '16px 24px 0 24px' }}
             >
-                <ProFormText
-                    name="name"
-                    label={intl.formatMessage({ id: 'pages.workflow.table.name' })}
-                    rules={[{ required: true, message: intl.formatMessage({ id: 'pages.workflow.create.form.nameRequired' }) }]}
-                    placeholder={intl.formatMessage({ id: 'pages.workflow.create.form.namePlaceholder' })}
-                    disabled={readOnly}
-                    initialValue={fullWorkflow.name}
-                />
-                <ProFormText
-                    name="category"
-                    label={intl.formatMessage({ id: 'pages.workflow.table.category' })}
-                    placeholder={intl.formatMessage({ id: 'pages.workflow.create.form.categoryPlaceholder' })}
-                    disabled={readOnly}
-                    initialValue={fullWorkflow.category}
-                />
-                <ProFormSwitch
-                    name="isActive"
-                    label={intl.formatMessage({ id: 'pages.workflow.table.status' })}
-                    checkedChildren={intl.formatMessage({ id: 'pages.workflow.status.enabled' })}
-                    unCheckedChildren={intl.formatMessage({ id: 'pages.workflow.status.disabled' })}
-                    disabled={readOnly}
-                    initialValue={fullWorkflow.isActive}
-                />
-                <ProFormTextArea
-                    name="description"
-                    label={intl.formatMessage({ id: 'pages.workflow.create.form.description' })}
-                    placeholder={intl.formatMessage({ id: 'pages.workflow.create.form.descriptionPlaceholder' })}
-                    disabled={readOnly}
-                    initialValue={fullWorkflow.description}
-                />
+                <ProForm formRef={formRef}>
+                    <ProFormText
+                        name="name"
+                        label={intl.formatMessage({ id: 'pages.workflow.table.name' })}
+                        rules={[{ required: true, message: intl.formatMessage({ id: 'pages.workflow.create.form.nameRequired' }) }]}
+                        placeholder={intl.formatMessage({ id: 'pages.workflow.create.form.namePlaceholder' })}
+                        disabled={readOnly}
+                        initialValue={fullWorkflow.name}
+                    />
+                    <ProFormText
+                        name="category"
+                        label={intl.formatMessage({ id: 'pages.workflow.table.category' })}
+                        placeholder={intl.formatMessage({ id: 'pages.workflow.create.form.categoryPlaceholder' })}
+                        disabled={readOnly}
+                        initialValue={fullWorkflow.category}
+                    />
+                    <ProFormSwitch
+                        name="isActive"
+                        label={intl.formatMessage({ id: 'pages.workflow.table.status' })}
+                        checkedChildren={intl.formatMessage({ id: 'pages.workflow.status.enabled' })}
+                        unCheckedChildren={intl.formatMessage({ id: 'pages.workflow.status.disabled' })}
+                        disabled={readOnly}
+                        initialValue={fullWorkflow.isActive}
+                    />
+                    <ProFormTextArea
+                        name="description"
+                        label={intl.formatMessage({ id: 'pages.workflow.create.form.description' })}
+                        placeholder={intl.formatMessage({ id: 'pages.workflow.create.form.descriptionPlaceholder' })}
+                        disabled={readOnly}
+                        initialValue={fullWorkflow.description}
+                    />
+                </ProForm>
             </ProCard>
 
             <div style={{ flex: 1, minHeight: 0 }}>

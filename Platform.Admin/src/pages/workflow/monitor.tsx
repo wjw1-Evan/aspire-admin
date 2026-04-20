@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { Tag, Space, Button, Modal, Input } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
@@ -26,6 +26,7 @@ const WorkflowMonitor: React.FC = () => {
   const [nodeFormInitial, setNodeFormInitial] = useState<Record<string, any> | null>(null);
   const [nodeFormLoading, setNodeFormLoading] = useState(false);
   const [currentFormInstanceId, setCurrentFormInstanceId] = useState<string | null>(null);
+  const actionRef = useRef<any>(null);
   const [search, setSearch] = useState('');
 
   const getFlowStatus = (status?: WorkflowStatus | null) => getStatusMeta(intl, status, workflowStatusMap);
@@ -144,11 +145,12 @@ const WorkflowMonitor: React.FC = () => {
             <Space><MonitorOutlined />{intl.formatMessage({ id: 'pages.workflow.monitor.title' })}</Space>
           </Space>
         }
-        actionRef={undefined}
+        actionRef={actionRef as any}
         rowKey="id"
         search={false}
-        request={async (params: any, sort: any, filter: any) => {
-          const response = await getWorkflowInstances({ ...params, search, sort, filter });
+        request={async (params: any) => {
+          const { current, pageSize } = params;
+          const response = await getWorkflowInstances({ page: current, pageSize, search });
           if (response.success && response.data) {
             return { data: response.data.queryable || [], total: response.data.rowCount || 0, success: true };
           }
@@ -163,7 +165,7 @@ const WorkflowMonitor: React.FC = () => {
             allowClear
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            onSearch={(value) => setSearch(value)}
+            onSearch={(value) => { setSearch(value); (actionRef.current as any)?.reload(); }}
             style={{ width: 260 }}
           />,
         ]}

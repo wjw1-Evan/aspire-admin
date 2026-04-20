@@ -11,14 +11,25 @@ import {
 import { useIntl, history } from '@umijs/max';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import StatCard from './StatCard';
-import type { Document, DocumentStatistics } from '@/services/document/api';
+import type { DocumentStatistics } from '@/services/document/api';
 import dayjs from 'dayjs';
 
 const { Text } = Typography;
 
+interface TodoItem {
+  id: string;
+  documentId: string;
+  currentNodeId: string;
+  startedBy: string;
+  startedAt?: string;
+  definitionName: string;
+  currentStatus: number;
+  document?: { id: string; title: string; status: number; documentType: string; category: string; createdAt: string; createdBy: string };
+}
+
 interface ApprovalOverviewCardProps {
   readonly statistics: DocumentStatistics | null;
-  readonly pendingDocuments: Document[];
+  readonly pendingDocuments: TodoItem[];
   readonly loading: boolean;
 }
 
@@ -102,9 +113,9 @@ const ApprovalOverviewCard: React.FC<ApprovalOverviewCardProps> = ({
           />
         ) : (
           <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            {pendingDocuments.slice(0, 5).map((doc) => (
+            {pendingDocuments.slice(0, 5).map((item) => (
               <li
-                key={doc.id}
+                key={item.id}
                 style={{
                   padding: '8px 0',
                   borderBottom: '1px solid #f0f0f0',
@@ -117,11 +128,11 @@ const ApprovalOverviewCard: React.FC<ApprovalOverviewCardProps> = ({
               >
                 <Space orientation="vertical" size={2} style={{ flex: 1 }}>
                   <Space>
-                    <Text strong>{doc.title}</Text>
-                    <Tag color="blue">{doc.documentType}</Tag>
+                    <Text strong>{item.document?.title || item.definitionName}</Text>
+                    {item.document?.documentType && <Tag color="blue">{item.document.documentType}</Tag>}
                   </Space>
                   <Text type="secondary" style={{ fontSize: 12 }}>
-                    {doc.createdBy} · {doc.createdAt ? dayjs(doc.createdAt).format('YYYY-MM-DD HH:mm:ss') : ''}
+                    {item.startedBy} · {item.startedAt ? dayjs(item.startedAt).format('YYYY-MM-DD HH:mm') : ''}
                   </Text>
                 </Space>
                 <Button type="link" icon={<EyeOutlined />}>

@@ -5,7 +5,8 @@ import { theme, Row, Col, message as antMessage } from 'antd';
 import { getUserStatistics } from '@/services/ant-design-pro/api';
 import { getTaskStatistics, getMyTodoTasks } from '@/services/task/api';
 import { getCurrentCompany } from '@/services/company';
-import { getDocumentStatistics, getPendingDocuments } from '@/services/document/api';
+import { getDocumentStatistics } from '@/services/document/api';
+import { getTodoInstances } from '@/services/workflow/api';
 import { saveWelcomeLayout, getWelcomeLayout } from '@/services/welcome/layout';
 import type { CardLayoutConfig } from '@/services/welcome/layout';
 
@@ -135,7 +136,7 @@ const Welcome: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   const [docStatistics, setDocStatistics] = useState<import('@/services/document/api').DocumentStatistics | null>(null);
-  const [pendingDocs, setPendingDocs] = useState<import('@/services/document/api').Document[]>([]);
+  const [pendingDocs, setPendingDocs] = useState<any[]>([]);
 
   const access = useAccess();
   const canAccessApproval = access.canAccessPath('/document/approval');
@@ -174,11 +175,14 @@ const Welcome: React.FC = () => {
       try {
         const [docStatsRes, pendingDocsRes] = await Promise.all([
           getDocumentStatistics(),
-          getPendingDocuments({ page: 1 })
+          getTodoInstances({ page: 1, pageSize: 5 })
         ]);
 
         if (docStatsRes?.success && docStatsRes.data) setDocStatistics(docStatsRes.data);
-        if (pendingDocsRes?.success && pendingDocsRes.data?.queryable) setPendingDocs(pendingDocsRes.data.queryable);
+        if (pendingDocsRes?.success && pendingDocsRes.data) {
+          const todoData = pendingDocsRes.data as any;
+          setPendingDocs(todoData.queryable || []);
+        }
       } catch (docError) {
         console.warn('获取审批统计失败', docError);
       }

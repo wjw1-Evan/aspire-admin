@@ -58,15 +58,8 @@ public class DocumentController : BaseApiController
         [FromQuery] string? createdBy = null,
         [FromQuery] string? filterType = null)
     {
-        try
-        {
-            var result = await _documentService.GetDocumentsAsync(pageParams, status, documentType, category, createdBy, filterType);
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        var result = await _documentService.GetDocumentsAsync(pageParams, status, documentType, category, createdBy, filterType);
+        return Success(result);
     }
 
     /// <summary>
@@ -76,15 +69,8 @@ public class DocumentController : BaseApiController
     [RequireMenu("document-list")]
     public async Task<IActionResult> GetStatistics()
     {
-        try
-        {
-            var statistics = await _documentService.GetStatisticsAsync();
-            return Success(statistics);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        var statistics = await _documentService.GetStatisticsAsync();
+        return Success(statistics);
     }
 
     /// <summary>
@@ -94,20 +80,11 @@ public class DocumentController : BaseApiController
     [RequireMenu("document-list", "document-approval")]
     public async Task<IActionResult> GetDocument(string id)
     {
-        try
-        {
-            var document = await _documentService.GetDocumentAsync(id);
-            if (document == null)
-            {
-                throw new ArgumentException("公文 {id} 不存在");
-            }
+        var document = await _documentService.GetDocumentAsync(id);
+        if (document == null)
+            throw new KeyNotFoundException($"公文 {id} 不存在");
 
-            return Success(document);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        return Success(document);
     }
 
     /// <summary>
@@ -117,20 +94,11 @@ public class DocumentController : BaseApiController
     [RequireMenu("document-list")]
     public async Task<IActionResult> CreateDocument([FromBody] CreateDocumentRequest request)
     {
-        try
-        {
-            if (string.IsNullOrEmpty(request.Title))
-            {
-                throw new ArgumentException("公文标题不能为空");
-            }
+        if (string.IsNullOrEmpty(request.Title))
+            throw new ArgumentException("公文标题不能为空");
 
-            var document = await _documentService.CreateDocumentAsync(request);
-            return Success(document);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        var document = await _documentService.CreateDocumentAsync(request);
+        return Success(document);
     }
 
     /// <summary>
@@ -140,20 +108,11 @@ public class DocumentController : BaseApiController
     [RequireMenu("document-list")]
     public async Task<IActionResult> UpdateDocument(string id, [FromBody] UpdateDocumentRequest request)
     {
-        try
-        {
-            var document = await _documentService.UpdateDocumentAsync(id, request);
-            if (document == null)
-            {
-                throw new ArgumentException("公文 {id} 不存在");
-            }
+        var document = await _documentService.UpdateDocumentAsync(id, request);
+        if (document == null)
+            throw new KeyNotFoundException($"公文 {id} 不存在");
 
-            return Success(document);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        return Success(document);
     }
 
     /// <summary>
@@ -163,20 +122,11 @@ public class DocumentController : BaseApiController
     [RequireMenu("document-list")]
     public async Task<IActionResult> DeleteDocument(string id)
     {
-        try
-        {
-            var result = await _documentService.DeleteDocumentAsync(id);
-            if (!result)
-            {
-                throw new ArgumentException("公文 {id} 不存在");
-            }
+        var result = await _documentService.DeleteDocumentAsync(id);
+        if (!result)
+            throw new KeyNotFoundException($"公文 {id} 不存在");
 
-            return Success(null, "公文已删除");
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        return Success(null, "公文已删除");
     }
 
     /// <summary>
@@ -186,20 +136,11 @@ public class DocumentController : BaseApiController
     [RequireMenu("document-list", "document-approval")]
     public async Task<IActionResult> SubmitDocument(string id, [FromBody] SubmitDocumentRequest request)
     {
-        try
-        {
-            if (string.IsNullOrEmpty(request.WorkflowDefinitionId))
-            {
-                throw new ArgumentException("流程定义ID不能为空");
-            }
+        if (string.IsNullOrEmpty(request.WorkflowDefinitionId))
+            throw new ArgumentException("流程定义ID不能为空");
 
-            var instance = await _documentService.SubmitDocumentAsync(id, request.WorkflowDefinitionId, request.Variables);
-            return Success(instance);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        var instance = await _documentService.SubmitDocumentAsync(id, request.WorkflowDefinitionId, request.Variables);
+        return Success(instance);
     }
 
     /// <summary>
@@ -209,52 +150,33 @@ public class DocumentController : BaseApiController
     [RequireMenu("document-approval")]
     public async Task<IActionResult> ApproveDocument(string id, [FromBody] ApprovalRequest request)
     {
-        try
-        {
-            // 输入验证
-            if (string.IsNullOrEmpty(id))
-            {
-                throw new ArgumentException("文档ID不能为空");
-            }
+        if (string.IsNullOrEmpty(id))
+            throw new ArgumentException("文档ID不能为空");
 
-            if (request == null)
-            {
-                throw new ArgumentException("请求参数不能为空");
-            }
+        if (request == null)
+            throw new ArgumentException("请求参数不能为空");
 
-            var document = await _documentService.GetDocumentAsync(id);
-            if (document == null || string.IsNullOrEmpty(document.WorkflowInstanceId))
-            {
-                throw new ArgumentException("公文或流程实例 {id} 不存在");
-            }
+        var document = await _documentService.GetDocumentAsync(id);
+        if (document == null || string.IsNullOrEmpty(document.WorkflowInstanceId))
+            throw new KeyNotFoundException($"公文或流程实例 {id} 不存在");
 
-            var instance = await _workflowEngine.GetInstanceAsync(document.WorkflowInstanceId);
-            if (instance == null)
-            {
-                throw new ArgumentException("流程实例 {document.WorkflowInstanceId} 不存在");
-            }
+        var instance = await _workflowEngine.GetInstanceAsync(document.WorkflowInstanceId);
+        if (instance == null)
+            throw new KeyNotFoundException($"流程实例 {document.WorkflowInstanceId} 不存在");
 
-            // Bug 25 修复：检查 CurrentNodeId
-            if (string.IsNullOrEmpty(instance.CurrentNodeId))
-            {
-                throw new ArgumentException("流程实例当前无待处理节点");
-            }
+        if (string.IsNullOrEmpty(instance.CurrentNodeId))
+            throw new InvalidOperationException("流程实例当前无待处理节点");
 
-            var userId = RequiredUserId;
-            var result = await _workflowEngine.ProcessApprovalAsync(
-                document.WorkflowInstanceId,
-                instance.CurrentNodeId,
-                ApprovalAction.Approve,
-                userId,
-                request.Comment
-            );
+        var userId = RequiredUserId;
+        var result = await _workflowEngine.ProcessApprovalAsync(
+            document.WorkflowInstanceId,
+            instance.CurrentNodeId,
+            ApprovalAction.Approve,
+            userId,
+            request.Comment
+        );
 
-            return Success(result, "审批通过");
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        return Success(result, "审批通过");
     }
 
     /// <summary>
@@ -264,57 +186,36 @@ public class DocumentController : BaseApiController
     [RequireMenu("document-approval")]
     public async Task<IActionResult> RejectDocument(string id, [FromBody] ApprovalRequest request)
     {
-        try
-        {
-            // 输入验证
-            if (string.IsNullOrEmpty(id))
-            {
-                throw new ArgumentException("文档ID不能为空");
-            }
+        if (string.IsNullOrEmpty(id))
+            throw new ArgumentException("文档ID不能为空");
 
-            if (request == null)
-            {
-                throw new ArgumentException("请求参数不能为空");
-            }
+        if (request == null)
+            throw new ArgumentException("请求参数不能为空");
 
-            if (string.IsNullOrEmpty(request.Comment))
-            {
-                throw new ArgumentException("拒绝原因不能为空");
-            }
+        if (string.IsNullOrEmpty(request.Comment))
+            throw new ArgumentException("拒绝原因不能为空");
 
-            var document = await _documentService.GetDocumentAsync(id);
-            if (document == null || string.IsNullOrEmpty(document.WorkflowInstanceId))
-            {
-                throw new ArgumentException("公文或流程实例 {id} 不存在");
-            }
+        var document = await _documentService.GetDocumentAsync(id);
+        if (document == null || string.IsNullOrEmpty(document.WorkflowInstanceId))
+            throw new KeyNotFoundException($"公文或流程实例 {id} 不存在");
 
-            var instance = await _workflowEngine.GetInstanceAsync(document.WorkflowInstanceId);
-            if (instance == null)
-            {
-                throw new ArgumentException("流程实例 {document.WorkflowInstanceId} 不存在");
-            }
+        var instance = await _workflowEngine.GetInstanceAsync(document.WorkflowInstanceId);
+        if (instance == null)
+            throw new KeyNotFoundException($"流程实例 {document.WorkflowInstanceId} 不存在");
 
-            // Bug 25 修复：检查 CurrentNodeId
-            if (string.IsNullOrEmpty(instance.CurrentNodeId))
-            {
-                throw new ArgumentException("流程实例当前无待处理节点");
-            }
+        if (string.IsNullOrEmpty(instance.CurrentNodeId))
+            throw new InvalidOperationException("流程实例当前无待处理节点");
 
-            var userId = RequiredUserId;
-            var result = await _workflowEngine.ProcessApprovalAsync(
-                document.WorkflowInstanceId,
-                instance.CurrentNodeId,
-                ApprovalAction.Reject,
-                userId,
-                request.Comment
-            );
+        var userId = RequiredUserId;
+        var result = await _workflowEngine.ProcessApprovalAsync(
+            document.WorkflowInstanceId,
+            instance.CurrentNodeId,
+            ApprovalAction.Reject,
+            userId,
+            request.Comment
+        );
 
-            return Success(result, "审批已拒绝");
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        return Success(result, "审批已拒绝");
     }
 
     /// <summary>
@@ -324,39 +225,26 @@ public class DocumentController : BaseApiController
     [RequireMenu("document-approval")]
     public async Task<IActionResult> ReturnDocument(string id, [FromBody] ReturnDocumentRequest request)
     {
-        try
-        {
-            var userId = RequiredUserId;
+        var userId = RequiredUserId;
 
-            if (string.IsNullOrEmpty(request.TargetNodeId))
-            {
-                throw new ArgumentException("退回目标节点不能为空");
-            }
+        if (string.IsNullOrEmpty(request.TargetNodeId))
+            throw new ArgumentException("退回目标节点不能为空");
 
-            if (string.IsNullOrEmpty(request.Comment))
-            {
-                throw new ArgumentException("退回原因不能为空");
-            }
+        if (string.IsNullOrEmpty(request.Comment))
+            throw new ArgumentException("退回原因不能为空");
 
-            var document = await _documentService.GetDocumentAsync(id);
-            if (document == null || string.IsNullOrEmpty(document.WorkflowInstanceId))
-            {
-                throw new ArgumentException("公文或流程实例 {id} 不存在");
-            }
+        var document = await _documentService.GetDocumentAsync(id);
+        if (document == null || string.IsNullOrEmpty(document.WorkflowInstanceId))
+            throw new KeyNotFoundException($"公文或流程实例 {id} 不存在");
 
-            var result = await _workflowEngine.ReturnToNodeAsync(
-                document.WorkflowInstanceId,
-                request.TargetNodeId,
-                request.Comment,
-                userId
-            );
+        var result = await _workflowEngine.ReturnToNodeAsync(
+            document.WorkflowInstanceId,
+            request.TargetNodeId,
+            request.Comment,
+            userId
+        );
 
-            return Success(result, "已退回");
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        return Success(result, "已退回");
     }
 
     /// <summary>
@@ -366,47 +254,31 @@ public class DocumentController : BaseApiController
     [RequireMenu("document-approval")]
     public async Task<IActionResult> DelegateDocument(string id, [FromBody] DelegateDocumentRequest request)
     {
-        try
-        {
-            if (string.IsNullOrEmpty(request.DelegateToUserId))
-            {
-                throw new ArgumentException("转办目标用户不能为空");
-            }
+        if (string.IsNullOrEmpty(request.DelegateToUserId))
+            throw new ArgumentException("转办目标用户不能为空");
 
-            var document = await _documentService.GetDocumentAsync(id);
-            if (document == null || string.IsNullOrEmpty(document.WorkflowInstanceId))
-            {
-                throw new ArgumentException("公文或流程实例 {id} 不存在");
-            }
+        var document = await _documentService.GetDocumentAsync(id);
+        if (document == null || string.IsNullOrEmpty(document.WorkflowInstanceId))
+            throw new KeyNotFoundException($"公文或流程实例 {id} 不存在");
 
-            var instance = await _workflowEngine.GetInstanceAsync(document.WorkflowInstanceId);
-            if (instance == null)
-            {
-                throw new ArgumentException("流程实例 {document.WorkflowInstanceId} 不存在");
-            }
+        var instance = await _workflowEngine.GetInstanceAsync(document.WorkflowInstanceId);
+        if (instance == null)
+            throw new KeyNotFoundException($"流程实例 {document.WorkflowInstanceId} 不存在");
 
-            // Bug 25 修复：检查 CurrentNodeId
-            if (string.IsNullOrEmpty(instance.CurrentNodeId))
-            {
-                throw new ArgumentException("流程实例当前无待处理节点");
-            }
+        if (string.IsNullOrEmpty(instance.CurrentNodeId))
+            throw new InvalidOperationException("流程实例当前无待处理节点");
 
-            var userId = RequiredUserId;
-            var result = await _workflowEngine.ProcessApprovalAsync(
-                document.WorkflowInstanceId,
-                instance.CurrentNodeId,
-                ApprovalAction.Delegate,
-                userId,
-                request.Comment,
-                request.DelegateToUserId
-            );
+        var userId = RequiredUserId;
+        var result = await _workflowEngine.ProcessApprovalAsync(
+            document.WorkflowInstanceId,
+            instance.CurrentNodeId,
+            ApprovalAction.Delegate,
+            userId,
+            request.Comment,
+            request.DelegateToUserId
+        );
 
-            return Success(result, "已转办");
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        return Success(result, "已转办");
     }
 
     /// <summary>
@@ -416,15 +288,8 @@ public class DocumentController : BaseApiController
     [RequireMenu("document-list", "document-approval")]
     public async Task<IActionResult> UploadAttachment([FromForm] IFormFile file)
     {
-        try
-        {
-            var result = await _documentService.UploadAttachmentAsync(file);
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        var result = await _documentService.UploadAttachmentAsync(file);
+        return Success(result);
     }
 
     /// <summary>
@@ -434,95 +299,72 @@ public class DocumentController : BaseApiController
     [RequireMenu("document-list", "document-approval")]
     public async Task<IActionResult> GetDocumentInstanceForm(string id)
     {
-        try
+        var document = await _documentService.GetDocumentAsync(id);
+        if (document == null || string.IsNullOrEmpty(document.WorkflowInstanceId))
+            throw new KeyNotFoundException($"公文或流程实例 {id} 不存在");
+
+        var instance = await _workflowEngine.GetInstanceAsync(document.WorkflowInstanceId);
+        if (instance == null)
+            throw new KeyNotFoundException($"流程实例 {document.WorkflowInstanceId} 不存在");
+
+        WorkflowDefinition? definition = instance.WorkflowDefinitionSnapshot;
+        if (definition == null)
         {
-            var document = await _documentService.GetDocumentAsync(id);
-            if (document == null || string.IsNullOrEmpty(document.WorkflowInstanceId))
-            {
-                throw new ArgumentException("公文或流程实例 {id} 不存在");
-            }
-
-            var instance = await _workflowEngine.GetInstanceAsync(document.WorkflowInstanceId);
-            if (instance == null)
-            {
-                throw new ArgumentException("流程实例 {document.WorkflowInstanceId} 不存在");
-            }
-
-            // 优先使用实例中的流程定义快照
-            WorkflowDefinition? definition = instance.WorkflowDefinitionSnapshot;
+            definition = await _documentService.GetWorkflowDefinitionAsync(instance.WorkflowDefinitionId);
             if (definition == null)
-            {
-                // 如果没有快照，使用最新定义（向后兼容）
-                definition = await _documentService.GetWorkflowDefinitionAsync(instance.WorkflowDefinitionId);
-                if (definition == null)
-                {
-                    throw new ArgumentException("流程定义 {instance.WorkflowDefinitionId} 不存在");
-                }
-            }
-
-            // 优先起始节点
-            var startNode = definition.Graph.Nodes.FirstOrDefault(n => n.Data.NodeType == "start");
-            FormBinding? binding = startNode?.Data.Config?.Form;
-
-            if (binding == null || binding.Target != FormTarget.Document)
-            {
-                // 取第一个绑定了文档表单的节点
-                var nodeWithDocForm = definition.Graph.Nodes
-                    .FirstOrDefault(n => n.Data.Config?.Form?.Target == FormTarget.Document);
-                binding = nodeWithDocForm?.Data.Config?.Form;
-            }
-
-            if (binding == null)
-            {
-                return Success(new { form = (FormDefinition?)null, dataScopeKey = (string?)null, initialValues = (object?)null });
-            }
-
-            // 优先使用实例中的表单定义快照（使用起始节点ID或第一个文档表单节点ID）
-            FormDefinition? form = null;
-            var formNodeId = startNode?.Id ?? definition.Graph.Nodes.FirstOrDefault(n => n.Data.Config?.Form?.Target == FormTarget.Document)?.Id;
-            if (!string.IsNullOrEmpty(formNodeId))
-            {
-                var snapshot = instance.FormDefinitionSnapshots?.FirstOrDefault(s => s.NodeId == formNodeId);
-                if (!string.IsNullOrEmpty(snapshot?.FormDefinitionJson))
-                {
-                    form = JsonSerializer.Deserialize<FormDefinition>(snapshot.FormDefinitionJson);
-                }
-            }
-            else
-            {
-                if (string.IsNullOrEmpty(binding.FormDefinitionId))
-                {
-                    throw new ArgumentException("流程节点未配置表单定义ID");
-                }
-                // 如果没有快照，使用最新定义（向后兼容）
-                form = await _formDefinitionService.GetFormByIdAsync(binding.FormDefinitionId);
-                if (form == null)
-                {
-                    throw new ArgumentException("表单定义 {binding.FormDefinitionId} 不存在");
-                }
-            }
-
-            // 从文档中获取初始值
-            var initialValues = new Dictionary<string, object>();
-            var sourceFormData = document.FormData ?? new Dictionary<string, object>();
-            if (!string.IsNullOrWhiteSpace(binding.DataScopeKey))
-            {
-                if (sourceFormData.TryGetValue(binding.DataScopeKey, out var scopedData) && scopedData is Dictionary<string, object> scopedDict)
-                {
-                    initialValues = scopedDict;
-                }
-            }
-            else
-            {
-                initialValues = sourceFormData;
-            }
-
-            return Success(new { form, dataScopeKey = binding.DataScopeKey, initialValues });
+                throw new KeyNotFoundException($"流程定义 {instance.WorkflowDefinitionId} 不存在");
         }
-        catch (Exception ex)
+
+        var startNode = definition.Graph.Nodes.FirstOrDefault(n => n.Data.NodeType == "start");
+        FormBinding? binding = startNode?.Data.Config?.Form;
+
+        if (binding == null || binding.Target != FormTarget.Document)
         {
-            throw new ArgumentException(ex.Message);
+            var nodeWithDocForm = definition.Graph.Nodes
+                .FirstOrDefault(n => n.Data.Config?.Form?.Target == FormTarget.Document);
+            binding = nodeWithDocForm?.Data.Config?.Form;
         }
+
+        if (binding == null)
+        {
+            return Success(new { form = (FormDefinition?)null, dataScopeKey = (string?)null, initialValues = (object?)null });
+        }
+
+        FormDefinition? form = null;
+        var formNodeId = startNode?.Id ?? definition.Graph.Nodes.FirstOrDefault(n => n.Data.Config?.Form?.Target == FormTarget.Document)?.Id;
+        if (!string.IsNullOrEmpty(formNodeId))
+        {
+            var snapshot = instance.FormDefinitionSnapshots?.FirstOrDefault(s => s.NodeId == formNodeId);
+            if (!string.IsNullOrEmpty(snapshot?.FormDefinitionJson))
+            {
+                form = JsonSerializer.Deserialize<FormDefinition>(snapshot.FormDefinitionJson);
+            }
+        }
+        else
+        {
+            if (string.IsNullOrEmpty(binding.FormDefinitionId))
+                throw new ArgumentException("流程节点未配置表单定义ID");
+
+            form = await _formDefinitionService.GetFormByIdAsync(binding.FormDefinitionId);
+            if (form == null)
+                throw new KeyNotFoundException($"表单定义 {binding.FormDefinitionId} 不存在");
+        }
+
+        var initialValues = new Dictionary<string, object>();
+        var sourceFormData = document.FormData ?? new Dictionary<string, object>();
+        if (!string.IsNullOrWhiteSpace(binding.DataScopeKey))
+        {
+            if (sourceFormData.TryGetValue(binding.DataScopeKey, out var scopedData) && scopedData is Dictionary<string, object> scopedDict)
+            {
+                initialValues = scopedDict;
+            }
+        }
+        else
+        {
+            initialValues = sourceFormData;
+        }
+
+        return Success(new { form, dataScopeKey = binding.DataScopeKey, initialValues });
     }
 
     /// <summary>
@@ -532,21 +374,12 @@ public class DocumentController : BaseApiController
     [RequireMenu("document-list", "document-approval")]
     public async Task<IActionResult> DownloadAttachment(string attachmentId)
     {
-        try
-        {
-            var result = await _documentService.DownloadAttachmentAsync(attachmentId);
-            if (result == null)
-            {
-                throw new ArgumentException("附件 {attachmentId} 不存在");
-            }
+        var result = await _documentService.DownloadAttachmentAsync(attachmentId);
+        if (result == null)
+            throw new KeyNotFoundException($"附件 {attachmentId} 不存在");
 
-            Response.Headers.ContentLength = result.ContentLength;
-            return File(result.Content, result.ContentType, result.FileName);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        Response.Headers.ContentLength = result.ContentLength;
+        return File(result.Content, result.ContentType, result.FileName);
     }
 
     /// <summary>
@@ -561,18 +394,7 @@ public class DocumentController : BaseApiController
         [FromQuery] string? category = null,
         [FromQuery] string? createdBy = null)
     {
-        try
-        {
-            var result = await _documentService.GetDocumentsAsync(pageParams, status, documentType, category, createdBy, "pending");
-            return Success(result);
-        }
-        catch (ArgumentException ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException($"获取待审批公文失败: {ex.Message}");
-        }
+        var result = await _documentService.GetDocumentsAsync(pageParams, status, documentType, category, createdBy, "pending");
+        return Success(result);
     }
 }

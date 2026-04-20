@@ -75,7 +75,8 @@ const WorkflowManagement: React.FC = () => {
         rowKey="id"
         search={false}
         request={async (params: any, sort: any, filter: any) => {
-          const response = await getWorkflowList({ ...params, search: searchText, sort, filter });
+          const { current, pageSize } = params;
+          const response = await getWorkflowList({ page: current, pageSize, search: searchText, sort, filter });
           if (response.success && response.data) {
             return { data: response.data.queryable || [], total: response.data.rowCount || 0, success: true };
           }

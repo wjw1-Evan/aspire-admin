@@ -1,8 +1,8 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { PageContainer, ProDescriptions, ModalForm, ProFormSelect, ProForm, ProFormText } from '@ant-design/pro-components';
-import { Space, Tag, Button, message, Input, Popconfirm, Upload, Row, Col } from 'antd';
+import { PageContainer, ProDescriptions, ModalForm, ProFormSelect } from '@ant-design/pro-components';
+import { Space, Tag, Button, App, Input, Popconfirm } from 'antd';
 import { Drawer } from 'antd';
-import { FileTextOutlined, PlusOutlined, EyeOutlined, EditOutlined, SendOutlined, DeleteOutlined, CopyOutlined, CheckCircleOutlined, UploadOutlined } from '@ant-design/icons';
+import { FileTextOutlined, PlusOutlined, EyeOutlined, SendOutlined, DeleteOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import dayjs from 'dayjs';
 import { request } from '@umijs/max';
@@ -11,6 +11,7 @@ import {
   type Document,
   type DocumentStatistics,
   DocumentStatus,
+  submitDocument,
 } from '@/services/document/api';
 import { getWorkflowList } from '@/services/workflow/api';
 
@@ -30,6 +31,7 @@ const api = {
 };
 
 const DocumentManagement: React.FC = () => {
+  const { message, modal } = App.useApp();
   const actionRef = useRef<ActionType | undefined>(undefined);
   const [state, setState] = useState({
     statistics: null as DocumentStatistics | null,
@@ -37,6 +39,8 @@ const DocumentManagement: React.FC = () => {
     viewingId: '',
     search: '',
     formVisible: false,
+    submitVisible: false,
+    submittingId: '',
   });
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
@@ -60,8 +64,7 @@ const DocumentManagement: React.FC = () => {
           <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => set({ viewingId: r.id, detailVisible: true })}>查看</Button>
           {r.status === DocumentStatus.Draft && (
             <>
-              <Button type="link" size="small" icon={<EditOutlined />} onClick={() => window.location.href = `/document/edit/${r.id}`}>编辑</Button>
-              <Button type="link" size="small" icon={<SendOutlined />} onClick={() => message.info('请在编辑页面提交审批')}>提交</Button>
+              <Button type="link" size="small" icon={<SendOutlined />} onClick={() => set({ submitVisible: true, submittingId: r.id! })}>提交</Button>
             </>
           )}
           <Popconfirm title={`确定删除「${r.title}」？`} onConfirm={async () => { await api.delete(r.id!); actionRef.current?.reload(); api.statistics().then(res => { if (res.success && res.data) set({ statistics: res.data }); }); }}>
@@ -91,7 +94,8 @@ const DocumentManagement: React.FC = () => {
           </Space>
         }
         request={async (params: any, sort: any, filter: any) => {
-          const res = await api.list({ ...params, search: state.search, sort, filter });
+          const { current, pageSize } = params;
+          const res = await api.list({ page: current, pageSize, search: state.search, sort, filter });
           api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
         }}
@@ -153,6 +157,56 @@ const DocumentManagement: React.FC = () => {
       <Drawer title="公文详情" placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingId: '' })} size="large">
         <DocumentDetail id={state.viewingId} />
       </Drawer>
+
+      <ModalForm
+        title="提交审批"
+        open={state.submitVisible}
+        onOpenChange={(open) => { if (!open) set({ submitVisible: false, submittingId: '' }); }}
+        onFinish={async (values) => {
+          if (!values.workflowDefinitionId) {
+            message.error('请选择流程');
+            return false;
+          }
+          try {
+            const res = await submitDocument(state.submittingId, { workflowDefinitionId: values.workflowDefinitionId });
+            if (res.success) {
+              message.success('已提交审批');
+              set({ submitVisible: false, submittingId: '' });
+              actionRef.current?.reload();
+              api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
+              return true;
+            }
+            return false;
+          } catch {
+            message.error('提交失败');
+            return false;
+          }
+        }}
+        width={500}
+      >
+        <ProFormSelect
+          name="workflowDefinitionId"
+          label="选择流程"
+          placeholder="请选择流程定义"
+          rules={[{ required: true, message: '请选择流程定义' }]}
+          request={async () => {
+            try {
+              const resp = await getWorkflowList({ page: 1 });
+              if (resp.success && resp.data) {
+                return (resp.data.queryable || []).map((wf: any) => ({ label: wf.name, value: wf.id! }));
+              }
+            } catch (e) {
+              console.error('加载流程列表失败:', e);
+            }
+            return [];
+          }}
+          fieldProps={{
+            showSearch: true,
+            filterOption: (input: string, option: any) =>
+              (option?.label as string)?.toLowerCase().includes(input.toLowerCase()),
+          }}
+        />
+      </ModalForm>
     </PageContainer>
   );
 };

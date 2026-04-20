@@ -808,6 +808,33 @@ set(prev => ({ ...prev, editingEntry: newValue }));
 
 ### 7.7 表单处理规范
 
+#### 新建/编辑组件
+使用 `@ant-design/pro-components` 的 `ModalForm` 组件：
+
+```typescript
+import { ModalForm, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-components';
+```
+
+#### ModalForm 关键配置
+| 属性 | 说明 | 示例 |
+|------|------|------|
+| `key` | 强制重新挂载，区分新建和编辑 | `key={editingEntry?.id \|\| 'create'}` |
+| `title` | 弹窗标题 | `title={editingEntry ? '编辑' : '新建'}` |
+| `open` | 控制显示 | `open={state.formVisible}` |
+| `onOpenChange` | 关闭时重置状态 | `onOpenChange={(open) => { if (!open) set({ formVisible: false, editingEntry: null }); }}` |
+| `initialValues` | 编辑时回填数据 | `initialValues={editingEntry \|\| undefined}` |
+| `onFinish` | 表单提交回调 | `onFinish={handleFinish}` |
+| `autoFocusFirstInput` | 自动聚焦首输入框 | `autoFocusFirstInput` |
+| `width` | 弹窗宽度 | `width={600}` |
+
+#### 表单字段组件
+| 组件 | 用途 | 示例 |
+|------|------|------|
+| `ProFormText` | 单行文本输入 | `<ProFormText name="name" label="名称" rules={[{ required: true }]} />` |
+| `ProFormSelect` | 下拉选择 | `<ProFormSelect name="category" mode="tags" />` |
+| `ProFormTextArea` | 多行文本 | `<ProFormTextArea name="notes" />` |
+| `Form.Item` + `Input.Password` | 密码输入 | `<Form.Item name="password"><Input.Password /></Form.Item>` |
+
 #### ModalForm 配置
 - 使用 `key={editingEntry?.id || 'create'}` 强制重新挂载，区分新建和编辑
 - `onOpenChange` 中重置编辑状态

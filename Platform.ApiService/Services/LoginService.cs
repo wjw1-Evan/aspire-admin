@@ -14,7 +14,6 @@ public class LoginService : ILoginService
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IUserService _userService;
     private readonly ILogger<LoginService> _logger;
-    private readonly IImageCaptchaService _imageCaptchaService;
     private readonly IConfiguration _configuration;
     private readonly IPasswordEncryptionService _encryptionService;
     private readonly IPasswordHasher _passwordHasher;
@@ -27,7 +26,6 @@ public class LoginService : ILoginService
         IHttpContextAccessor httpContextAccessor,
         IUserService userService,
         ILogger<LoginService> logger,
-        IImageCaptchaService imageCaptchaService,
         IConfiguration configuration,
         IPasswordEncryptionService encryptionService,
         IPasswordHasher passwordHasher,
@@ -39,7 +37,6 @@ public class LoginService : ILoginService
         _httpContextAccessor = httpContextAccessor;
         _userService = userService;
         _logger = logger;
-        _imageCaptchaService = imageCaptchaService;
         _configuration = configuration;
         _encryptionService = encryptionService;
         _passwordHasher = passwordHasher;
@@ -49,17 +46,6 @@ public class LoginService : ILoginService
 
     public async Task<LoginResult> LoginAsync(LoginRequest request)
     {
-        if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
-        {
-            throw new ArgumentException("LOGIN_ERROR:CAPTCHA_REQUIRED");
-        }
-
-        var captchaValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.CaptchaAnswer, "login");
-        if (!captchaValid)
-        {
-            throw new ArgumentException("LOGIN_ERROR:CAPTCHA_INVALID");
-        }
-
         var user = await _context.Set<AppUser>().FirstOrDefaultAsync(u => u.Username == request.Username && u.IsActive == true);
 
         if (user == null)

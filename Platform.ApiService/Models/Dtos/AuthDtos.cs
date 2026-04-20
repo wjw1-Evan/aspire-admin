@@ -67,10 +67,6 @@ public class LoginRequest
     public bool AutoLogin { get; set; }
 
     public string? Type { get; set; }
-
-    public string? CaptchaId { get; set; }
-
-    public string? CaptchaAnswer { get; set; }
 }
 
 public class LoginResult

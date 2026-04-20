@@ -16,13 +16,12 @@ import { SelectLang } from '@/components';
 import { App, Button, Form, Input, Space } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { createStyles } from 'antd-style';
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { Footer } from '@/components';
-import ImageCaptcha, { type ImageCaptchaRef } from '@/components/ImageCaptcha';
 import { checkUsernameExists, register } from '@/services/ant-design-pro/api';
 import { PasswordEncryption } from '@/utils/encryption';
 import Settings from '../../../../config/defaultSettings';
-import { REGISTER_KNOWN_ERRORS, CAPTCHA_INVALID, CAPTCHA_REQUIRED } from '@/constants/errorCodes';
+import { REGISTER_KNOWN_ERRORS } from '@/constants/errorCodes';
 
 const useStyles = createStyles(({ token }) => {
   return {
@@ -189,9 +188,6 @@ export default function Register() {
   const intl = useIntl();
   const { message } = App.useApp();
   const { styles } = useStyles();
-  const [captchaId, setCaptchaId] = useState<string>('');
-  const [captchaAnswer, setCaptchaAnswer] = useState<string>('');
-  const captchaRef = useRef<ImageCaptchaRef>(null);
 
   // 用户名检测状态
   const [usernameStatus, setUsernameStatus] = useState<
@@ -204,7 +200,6 @@ export default function Register() {
 
   const handleSubmit = async (values: API.RegisterParams) => {
     try {
-      // 🔒 安全增强：在发送前加密密码
       const encryptedPassword = values.password
         ? await PasswordEncryption.encrypt(values.password)
         : '';
@@ -212,14 +207,11 @@ export default function Register() {
       const response = await register({
         ...values,
         password: encryptedPassword,
-        captchaId: captchaId || undefined,
-        captchaAnswer: captchaAnswer || undefined,
       });
 
       if (response.success && response.data) {
         message.success(intl.formatMessage({ id: 'pages.message.registerSuccess' }));
 
-        // 自动登录（注册成功后）
         setTimeout(() => {
           history.push('/user/login');
         }, 1500);
@@ -227,39 +219,14 @@ export default function Register() {
         return;
       }
 
-      // 注册失败，处理业务逻辑（显示验证码），然后抛出错误让全局错误处理显示错误提示
-      const errorCode = response.code;
       const errorMsg = response.message || intl.formatMessage({ id: 'pages.login.failure' });
 
-      // 注册失败后刷新验证码
-      if (REGISTER_KNOWN_ERRORS.includes(errorCode as any)) {
-        if ([CAPTCHA_INVALID, CAPTCHA_REQUIRED].includes(errorCode as any)) {
-          if (captchaRef.current) {
-            await captchaRef.current.refresh();
-          }
-        }
-      }
-
-      // 抛出错误，由全局错误处理统一显示错误提示
       throw new Error(errorMsg);
     } catch (error: any) {
-      // 从错误对象中提取 code
-      const errorCode =
-        error?.info?.code ||
-        error?.code ||
-        error?.response?.data?.code;
-
-      // 注册失败后刷新验证码
-      if (REGISTER_KNOWN_ERRORS.includes(errorCode as any)) {
-        if ([CAPTCHA_INVALID, CAPTCHA_REQUIRED].includes(errorCode as any)) {
-          if (captchaRef.current) {
-            await captchaRef.current.refresh();
-          }
-        }
+      const errorMsg = error?.info?.message || error?.message || error?.response?.data?.message;
+      if (errorMsg) {
+        message.error(errorMsg);
       }
-
-      // 不再重新抛出错误，避免触发 Unhandled Rejection Overlay
-      // 错误已经通过 setRegisterError 显示在界面上了
     }
   };
 
@@ -487,18 +454,6 @@ export default function Register() {
                     })}
                   />
                 </Form.Item>
-
-                <ImageCaptcha
-                    ref={captchaRef}
-                    value={captchaAnswer}
-                    onChange={setCaptchaAnswer}
-                    onCaptchaIdChange={setCaptchaId}
-                    type="register"
-                    placeholder={intl.formatMessage({
-                      id: 'pages.register.captcha.placeholder',
-                    })}
-                    size="large"
-                  />
 
                 <div className={styles.infoBox}>
                   <div className="info-title">

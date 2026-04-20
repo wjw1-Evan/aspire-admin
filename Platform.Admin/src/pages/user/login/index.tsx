@@ -14,15 +14,14 @@ import { SelectLang } from '@/components';
 import { Alert, App, Button, Tabs, Form, Input, Checkbox, Space } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { createStyles } from 'antd-style';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { flushSync } from 'react-dom';
 import { Footer } from '@/components';
-import ImageCaptcha, { type ImageCaptchaRef } from '@/components/ImageCaptcha';
 import { login } from '@/services/ant-design-pro/api';
 import { tokenUtils } from '@/utils/token';
 import { PasswordEncryption } from '@/utils/encryption';
 import Settings from '../../../../config/defaultSettings';
-import { LOGIN_KNOWN_ERRORS, INVALID_CREDENTIALS, CAPTCHA_INVALID, CAPTCHA_REQUIRED, CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN } from '@/constants/errorCodes';
+import { LOGIN_KNOWN_ERRORS, INVALID_CREDENTIALS } from '@/constants/errorCodes';
 
 const useStyles = createStyles(({ token }) => {
   return {
@@ -182,11 +181,7 @@ const LoginMessage: React.FC<{
 const Login: React.FC = () => {
   const [userLoginState, setUserLoginState] = useState<API.LoginResult>({});
   const [loading, setLoading] = useState(false);
-  const type = 'account'; // 仅保留账号模式
-  const [captchaId, setCaptchaId] = useState<string>('');
-  const [captchaAnswer, setCaptchaAnswer] = useState<string>('');
-  const [showCaptcha] = useState<boolean>(true); // 始终显示验证码
-  const captchaRef = useRef<ImageCaptchaRef>(null);
+  const type = 'account';
   const { initialState, setInitialState } = useModel('@@initialState');
   const { styles } = useStyles();
   const { message } = App.useApp();
@@ -206,21 +201,14 @@ const Login: React.FC = () => {
   const handleSubmit = async (values: API.LoginParams) => {
     setLoading(true);
     try {
-      // 🔒 安全增强：在发送前加密密码
       const encryptedPassword = values.password
         ? await PasswordEncryption.encrypt(values.password)
         : undefined;
 
-      // 获取当前验证码ID（确保使用最新的）
-      const currentCaptchaId = captchaRef.current?.getCaptchaId() || captchaId;
-
-      // 登录
       const loginData = {
         ...values,
         password: encryptedPassword,
         type,
-        captchaId: currentCaptchaId || undefined,
-        captchaAnswer: (captchaAnswer || '').trim() || undefined,
       };
       const response = await login(loginData);
 
@@ -254,7 +242,6 @@ const Login: React.FC = () => {
         return;
       }
 
-      // 如果失败，处理业务逻辑（显示验证码），然后显示友好的错误提示
       const errorCode = response.code;
       const backendMessage = response.message;
 
@@ -270,36 +257,22 @@ const Login: React.FC = () => {
         errorMsg = intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' });
       }
 
-      // 登录失败后刷新验证码
-      if (captchaRef.current) {
-        await captchaRef.current.refresh();
-      }
-
-      // 设置错误状态（用于表单显示）
       setUserLoginState({ status: 'error', message: errorMsg });
-      // 显示友好的错误提示
       message.error(errorMsg);
 
-      // 登录错误已在当前函数中处理，直接返回，不抛出错误
-      // 避免触发全局错误处理器的技术性错误页面
       return;
     } catch (error: any) {
-      // 标记错误已被登录页面处理
       error.skipGlobalHandler = true;
       setLoading(false);
 
-      // 从错误对象中提取 errorCode
-      // 优先从 error.response.data 获取（HTTP 错误响应）
       const errorCode =
         error?.response?.data?.code ||
         error?.info?.code ||
         error?.code;
 
-      // 检测是否是验证错误（HTTP 400 with errors）
       const validationErrors = error?.response?.data?.errors;
       const isValidationError = error?.response?.status === 400 && validationErrors;
 
-      // 处理验证错误
       if (isValidationError) {
         const firstError = Object.values(validationErrors).flat().find((msg: any) => msg) as string | undefined;
         if (firstError) {
@@ -307,14 +280,9 @@ const Login: React.FC = () => {
         } else {
           message.error(intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }));
         }
-        // 登录失败后刷新验证码
-        if (captchaRef.current) {
-          await captchaRef.current.refresh();
-        }
         return;
       }
 
-      // 设置错误状态（用于表单显示）
       const backendMessage = error?.response?.data?.message || error?.info?.message || error?.message;
 
       let errorMsg = backendMessage;
@@ -328,12 +296,6 @@ const Login: React.FC = () => {
       }
       setUserLoginState({ status: 'error', message: errorMsg });
 
-      // 登录失败后刷新验证码
-      if (captchaRef.current) {
-        await captchaRef.current.refresh();
-      }
-
-      // 显示友好的错误提示，不再抛出错误，避免显示技术性错误页面
       message.error(errorMsg);
     }
   };
@@ -445,37 +407,6 @@ const Login: React.FC = () => {
                         })}
                       />
                     </Form.Item>
-                    {showCaptcha && (
-                      <Form.Item
-                        name="captchaAnswer"
-                        validateTrigger="onBlur"
-                        rules={[
-                          {
-                            required: true,
-                            message: intl.formatMessage({
-                              id: 'pages.login.imageCaptcha.required',
-                              defaultMessage: '请输入图形验证码',
-                            }),
-                          },
-                        ]}
-                      >
-                        <ImageCaptcha
-                          ref={captchaRef}
-                          value={captchaAnswer}
-                          onChange={(value) => {
-                            setCaptchaAnswer(value);
-                            form.setFieldValue('captchaAnswer', value);
-                          }}
-                          onCaptchaIdChange={setCaptchaId}
-                          type="login"
-                          placeholder={intl.formatMessage({
-                            id: 'pages.login.imageCaptcha.placeholder',
-                            defaultMessage: '请输入图形验证码',
-                          })}
-                          size="large"
-                        />
-                      </Form.Item>
-                    )}
                   </>
                 )}
 

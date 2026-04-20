@@ -9,7 +9,6 @@ import {
     Platform,
     ScrollView,
     ActivityIndicator,
-    Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,14 +23,9 @@ export default function LoginScreen() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    const [captchaId, setCaptchaId] = useState('');
-    const [captchaImage, setCaptchaImage] = useState('');
-    const [captchaAnswer, setCaptchaAnswer] = useState('');
-    const [needCaptcha, setNeedCaptcha] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [usernameFocused, setUsernameFocused] = useState(false);
     const [passwordFocused, setPasswordFocused] = useState(false);
-    const [captchaFocused, setCaptchaFocused] = useState(false);
 
     // 显示错误消息（参考退出登录 Modal 的样式设计）
     const showErrorToast = (message: string) => {
@@ -45,29 +39,10 @@ export default function LoginScreen() {
         });
     };
 
-    // Fetch captcha image
-    const fetchCaptcha = async () => {
-        try {
-            const response = await authService.getImageCaptcha('login');
-            if (response.success && response.data) {
-                setCaptchaId(response.data.captchaId);
-                setCaptchaImage(response.data.imageData); // Fixed: use imageData not imageBase64
-                setNeedCaptcha(true);
-            }
-        } catch (error) {
-            console.error('Failed to fetch captcha:', error);
-        }
-    };
-
     const handleLogin = async () => {
         // Basic validation
         if (!username.trim() || !password.trim()) {
             showErrorToast('请输入用户名和密码');
-            return;
-        }
-
-        if (needCaptcha && !captchaAnswer.trim()) {
-            showErrorToast('请输入验证码');
             return;
         }
 
@@ -80,8 +55,6 @@ export default function LoginScreen() {
             const request: LoginRequest = {
                 username: username.trim(),
                 password: encryptedPassword,
-                captchaId: needCaptcha ? captchaId : undefined,
-                captchaAnswer: needCaptcha ? captchaAnswer.trim() : undefined,
             };
 
             const response = await authService.login(request);
@@ -104,12 +77,6 @@ export default function LoginScreen() {
                 const errorMsg = response.errorMessage || '用户名或密码错误，请检查后重试';
                 console.error('Login failed:', errorMsg);
 
-                // Always fetch captcha on login failure
-                await fetchCaptcha();
-
-                // Clear captcha answer
-                setCaptchaAnswer('');
-
                 // Show error message using Toast
                 showErrorToast(errorMsg);
             }
@@ -119,9 +86,6 @@ export default function LoginScreen() {
             const errorMsg = error.errorMessage
                 || error.message
                 || '登录过程中发生错误，请稍后重试';
-
-            // Fetch captcha on error
-            await fetchCaptcha();
 
             // Show error message using Toast
             showErrorToast(errorMsg);
@@ -223,59 +187,6 @@ export default function LoginScreen() {
                             </TouchableOpacity>
                         </View>
                     </View>
-
-                    {needCaptcha && (
-                        <View style={styles.inputContainer}>
-                            <Text style={styles.label}>验证码</Text>
-                            <View style={styles.captchaContainer}>
-                                <View style={[
-                                    styles.inputWrapper,
-                                    { flex: 1 },
-                                    captchaFocused && styles.inputWrapperFocused
-                                ]}>
-                                    <Ionicons
-                                        name="shield-outline"
-                                        size={20}
-                                        color={captchaFocused ? '#667eea' : '#999'}
-                                        style={styles.inputIcon}
-                                    />
-                                    <TextInput
-                                        style={styles.input}
-                                        placeholder="请输入验证码"
-                                        placeholderTextColor="#999"
-                                        value={captchaAnswer}
-                                        onChangeText={setCaptchaAnswer}
-                                        onFocus={() => setCaptchaFocused(true)}
-                                        onBlur={() => setCaptchaFocused(false)}
-                                        autoCapitalize="characters"
-                                        autoCorrect={false}
-                                        editable={!loading}
-                                        maxLength={6}
-                                    />
-                                </View>
-                                <TouchableOpacity
-                                    style={styles.captchaImageContainer}
-                                    onPress={fetchCaptcha}
-                                    disabled={loading}
-                                    activeOpacity={0.7}
-                                >
-                                    {captchaImage ? (
-                                        <Image
-                                            source={{ uri: `data:image/png;base64,${captchaImage}` }}
-                                            style={styles.captchaImage}
-                                            resizeMode="contain"
-                                        />
-                                    ) : (
-                                        <View style={styles.captchaPlaceholderContainer}>
-                                            <Ionicons name="refresh-outline" size={20} color="#999" />
-                                            <Text style={styles.captchaPlaceholder}>点击刷新</Text>
-                                        </View>
-                                    )}
-                                </TouchableOpacity>
-                            </View>
-                            <Text style={styles.captchaHint}>点击图片可刷新验证码</Text>
-                        </View>
-                    )}
 
                     <TouchableOpacity
                         activeOpacity={0.8}

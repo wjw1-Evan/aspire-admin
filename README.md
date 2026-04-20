@@ -360,17 +360,8 @@ dotnet run --project Platform.AppHost
 - 后端逻辑优先考虑 **多租户隔离**（业务实体必须继承 `MultiTenantEntity`） 与 **DbContext 兼容性**
 - 代码通过编译且无警告
 - 添加必要的单元测试
-- 更新相关文档
 
-## 📚 相关文档
-
-- [MCP 服务设计问题分析报告](Platform.ApiService/docs/MCP服务设计问题分析报告.md)
-- [MCP 服务简化版本说明](Platform.ApiService/docs/MCP服务简化版本说明.md)
-- [MCP 处理器详尽指南](docs/features/MCP-HANDLERS-GUIDE.md)
-- [工作流引擎设计指南](docs/features/WORKFLOW-ENGINE.md)
-- [物联网平台开发指南](docs/features/IOT-PLATFORM-GUIDE.md)
-- [移动端应用开发指南](docs/features/MOBILE-APPS-GUIDE.md)
-- [Ant Design 6 迁移总结](Platform.Admin/docs/ANTD_MIGRATION_SUMMARY.md)
+## 📄 开源协议
 
 ## 📄 开源协议 (License)
 

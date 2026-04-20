@@ -18,6 +18,7 @@ public class TenantContextMiddleware
         var userId = GetUserIdFromToken(context.User);
         if (!string.IsNullOrEmpty(userId))
         {
+            context.Items["UserId"] = userId;
             PlatformDbContext.SetContext(null, userId);
         }
 

@@ -85,7 +85,7 @@ function SortableField({ field, selected, onSelect, onDelete }: {
             case 'Select': return <Select placeholder={field.placeholder} disabled>{field.options?.map(o => <Select.Option key={o.value} value={o.value}>{o.label}</Select.Option>)}</Select>;
             case 'Radio': return <RadioGroup disabled>{field.options?.map(o => <Radio key={o.value} value={o.value}>{o.label}</Radio>)}</RadioGroup>;
             case 'Checkbox': return <Checkbox.Group options={field.options?.map(o => ({ label: o.label, value: o.value }))} disabled />;
-            case 'Switch': return <Switch disabled checkedChildren="是" unCheckedChildren="否" style={{ width: 'auto' }} />;
+            case 'Switch': return <Switch disabled checkedChildren="是" unCheckedChildren="否" />;
             case 'Attachment': return <Upload disabled><Button icon={<UploadOutlined />}>上传附件</Button></Upload>;
             default: return <AntInput placeholder={field.placeholder} disabled />;
         }
@@ -366,6 +366,7 @@ const FormDefinitionManagement: React.FC = () => {
                 .field-label-preview { font-size: 14px; color: rgba(0,0,0,0.88); font-weight: 400; }
                 .required-mark { color: #ff4d4f; margin-left: 4px; }
                 .field-preview-wrapper .ant-input, .field-preview-wrapper .ant-select { width: 100%; }
+                .field-preview-wrapper .ant-switch { width: auto !important; }
                 .field-delete-btn { position: absolute; top: 8px; right: 8px; opacity: 0; transition: opacity 0.2s; }
                 .canvas-field:hover .field-delete-btn { opacity: 1; }
                 .field-property-panel { height: 100%; }

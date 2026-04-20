@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Spin, Result } from 'antd';
-import { ProCard, ProFormText, ProFormTextArea, ProFormSwitch, ProForm } from '@ant-design/pro-components';
-import type { ProFormInstance } from '@ant-design/pro-components';
-import { InfoCircleOutlined } from '@ant-design/icons';
+import { InfoCircleOutlined, SaveOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import { useMessage } from '@/hooks/useMessage';
 import { updateWorkflow, getWorkflowDetail, type WorkflowDefinition, type WorkflowGraph } from '@/services/workflow/api';
@@ -22,7 +20,6 @@ const WorkflowEditForm: React.FC<WorkflowEditFormProps> = ({ workflow, onSuccess
     const [detailLoading, setDetailLoading] = useState(true);
     const [fullWorkflow, setFullWorkflow] = useState<WorkflowDefinition | null>(null);
     const [loadError, setLoadError] = useState<string | null>(null);
-    const formRef = React.useRef<ProFormInstance>(null);
 
     // 从详情 API 加载完整工作流数据
     useEffect(() => {
@@ -54,14 +51,13 @@ const WorkflowEditForm: React.FC<WorkflowEditFormProps> = ({ workflow, onSuccess
     const handleSave = async (graph: WorkflowGraph) => {
         if (readOnly || !fullWorkflow?.id) return;
         try {
-            const formValues = formRef.current?.getFieldsValue();
             setLoading(true);
 
             const response = await updateWorkflow(fullWorkflow.id, {
-                name: formValues?.name || fullWorkflow.name,
-                description: formValues?.description || fullWorkflow.description || '',
-                category: formValues?.category || fullWorkflow.category || 'default',
-                isActive: formValues?.isActive ?? fullWorkflow.isActive,
+                name: fullWorkflow.name,
+                description: fullWorkflow.description || '',
+                category: fullWorkflow.category || 'default',
+                isActive: fullWorkflow.isActive,
                 graph: graph,
             });
 
@@ -97,56 +93,27 @@ const WorkflowEditForm: React.FC<WorkflowEditFormProps> = ({ workflow, onSuccess
     }
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '16px' }}>
-            <ProCard
-                size="small"
-                title={
-                    <span>
-                        <InfoCircleOutlined style={{ color: '#1890ff', marginRight: 8 }} />
-                        {intl.formatMessage({ id: 'pages.workflow.bulk.operationConfig' })}
-                    </span>
-                }
-                style={{ padding: '16px 24px 0 24px' }}
-            >
-                <ProForm formRef={formRef}>
-                    <ProFormText
-                        name="name"
-                        label={intl.formatMessage({ id: 'pages.workflow.table.name' })}
-                        rules={[{ required: true, message: intl.formatMessage({ id: 'pages.workflow.create.form.nameRequired' }) }]}
-                        placeholder={intl.formatMessage({ id: 'pages.workflow.create.form.namePlaceholder' })}
-                        disabled={readOnly}
-                        initialValue={fullWorkflow.name}
-                    />
-                    <ProFormText
-                        name="category"
-                        label={intl.formatMessage({ id: 'pages.workflow.table.category' })}
-                        placeholder={intl.formatMessage({ id: 'pages.workflow.create.form.categoryPlaceholder' })}
-                        disabled={readOnly}
-                        initialValue={fullWorkflow.category}
-                    />
-                    <ProFormSwitch
-                        name="isActive"
-                        label={intl.formatMessage({ id: 'pages.workflow.table.status' })}
-                        checkedChildren={intl.formatMessage({ id: 'pages.workflow.status.enabled' })}
-                        unCheckedChildren={intl.formatMessage({ id: 'pages.workflow.status.disabled' })}
-                        disabled={readOnly}
-                        initialValue={fullWorkflow.isActive}
-                    />
-                    <ProFormTextArea
-                        name="description"
-                        label={intl.formatMessage({ id: 'pages.workflow.create.form.description' })}
-                        placeholder={intl.formatMessage({ id: 'pages.workflow.create.form.descriptionPlaceholder' })}
-                        disabled={readOnly}
-                        initialValue={fullWorkflow.description}
-                    />
-                </ProForm>
-            </ProCard>
-
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', background: '#fafafa', display: 'flex', alignItems: 'center', gap: 16 }}>
+                <InfoCircleOutlined style={{ color: '#1890ff', fontSize: 18 }} />
+                <span style={{ fontWeight: 500, fontSize: 15 }}>{fullWorkflow.name}</span>
+                {fullWorkflow.isActive ? (
+                    <span style={{ background: '#52c41a', color: '#fff', padding: '2px 8px', borderRadius: 4, fontSize: 12 }}>已启用</span>
+                ) : (
+                    <span style={{ background: '#8c8c8c', color: '#fff', padding: '2px 8px', borderRadius: 4, fontSize: 12 }}>已禁用</span>
+                )}
+                <span style={{ color: '#8c8c8c', fontSize: 13, marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {!readOnly && (
+                        <Button type="primary" size="small" icon={<SaveOutlined />} onClick={() => handleSave(fullWorkflow.graph)}>保存</Button>
+                    )}
+                    <Button size="small" onClick={onCancel}>退出</Button>
+                </span>
+            </div>
             <div style={{ flex: 1, minHeight: 0 }}>
                 <WorkflowDesigner
                     open={true}
                     graph={fullWorkflow.graph}
-                    onSave={readOnly ? undefined : handleSave}
+                    onSave={undefined}
                     onClose={onCancel}
                     readOnly={readOnly}
                 />

@@ -7,7 +7,7 @@ import styles from './index.less';
 // 支持的语言列表 (18种语言)
 const locales = [
     { label: '简体中文', value: 'zh-CN', icon: '🇨🇳' },
-    { label: '繁體中文', value: 'zh-TW', icon: '🇹🇼' },
+    { label: '繁體中文', value: 'zh-TW', icon: '🇨🇳' },
     { label: 'English', value: 'en-US', icon: '🇺🇸' },
     { label: '日本語', value: 'ja-JP', icon: '🇯🇵' },
     { label: '한국어', value: 'ko-KR', icon: '🇰🇷' },

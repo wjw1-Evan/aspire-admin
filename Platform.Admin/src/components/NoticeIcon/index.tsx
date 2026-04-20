@@ -85,10 +85,6 @@ const NoticeIcon: React.FC = () => {
     }
   }, [loadingMore, hasMore, loading, currentPage, loadNotifications]);
 
-  const refreshList = useCallback(() => {
-    loadNotifications(1, true);
-  }, [loadNotifications]);
-
   const handleMarkAsRead = async (e: React.MouseEvent, id: string) => {
     if (e) e.stopPropagation();
     try {
@@ -115,7 +111,6 @@ const NoticeIcon: React.FC = () => {
       await markAllAsRead(category);
       setNotifications(prev => prev.map(n => ({ ...n, status: 'Read' })));
       setShowUnreadOnly(false);
-      refreshList();
     } catch (e) {
       console.error(e);
     } finally {

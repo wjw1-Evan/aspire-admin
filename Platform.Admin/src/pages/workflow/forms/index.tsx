@@ -366,6 +366,7 @@ const FormDefinitionManagement: React.FC = () => {
                 .field-label-preview { font-size: 14px; color: rgba(0,0,0,0.88); font-weight: 400; }
                 .required-mark { color: #ff4d4f; margin-left: 4px; }
                 .field-preview-wrapper .ant-input, .field-preview-wrapper .ant-select { width: 100%; }
+                .field-preview-wrapper .ant-switch { }
                 .field-delete-btn { position: absolute; top: 8px; right: 8px; opacity: 0; transition: opacity 0.2s; }
                 .canvas-field:hover .field-delete-btn { opacity: 1; }
                 .field-property-panel { height: 100%; }

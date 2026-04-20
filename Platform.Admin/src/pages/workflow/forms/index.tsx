@@ -74,17 +74,24 @@ function SortableField({ field, selected, onSelect, onDelete }: {
         transition,
         opacity: isDragging ? 0.5 : 1,
     };
-    const fieldType = FIELD_TYPES.find(f => f.type === field.type);
 
     return (
         <div ref={setNodeRef} style={style} {...attributes} {...listeners}
-            className={`field-item ${selected ? 'selected' : ''}`}
+            className={`canvas-field ${selected ? 'selected' : ''}`}
             onClick={onSelect}>
-            <span className="field-icon">{fieldType?.icon}</span>
-            <span className="field-label">{field.label}</span>
-            <span className="field-type">{fieldType?.label}</span>
-            {field.required && <Tag color="red">必填</Tag>}
-            <Button type="text" size="small" danger icon={<CloseOutlined />} onClick={(e) => { e.stopPropagation(); onDelete(); }} style={{ marginLeft: 'auto' }} />
+            <Form.Item label={field.label} required={field.required}>
+                {field.type === 'Text' && <AntInput placeholder={field.placeholder} disabled />}
+                {field.type === 'TextArea' && <TextArea rows={2} placeholder={field.placeholder} disabled />}
+                {field.type === 'Number' && <AntInput type="number" placeholder={field.placeholder} disabled />}
+                {field.type === 'Date' && <AntInput type="date" placeholder={field.placeholder} disabled />}
+                {field.type === 'DateTime' && <AntInput type="datetime-local" placeholder={field.placeholder} disabled />}
+                {field.type === 'Select' && <Select placeholder={field.placeholder} disabled>{field.options?.map(o => <Select.Option key={o.value} value={o.value}>{o.label}</Select.Option>)}</Select>}
+                {field.type === 'Radio' && <RadioGroup disabled>{field.options?.map(o => <Radio key={o.value} value={o.value}>{o.label}</Radio>)}</RadioGroup>}
+                {field.type === 'Checkbox' && <Checkbox.Group options={field.options?.map(o => ({ label: o.label, value: o.value }))} disabled />}
+                {field.type === 'Switch' && <Switch disabled checkedChildren="是" unCheckedChildren="否" />}
+                {field.type === 'Attachment' && <Upload disabled><Button icon={<UploadOutlined />}>上传附件</Button></Upload>}
+            </Form.Item>
+            <Button type="text" size="small" danger icon={<CloseOutlined />} className="field-delete-btn" onClick={(e) => { e.stopPropagation(); onDelete(); }} />
         </div>
     );
 }
@@ -326,11 +333,12 @@ const FormDefinitionManagement: React.FC = () => {
                 .form-canvas { flex: 1; display: flex; flex-direction: column; background: #fafafa; }
                 .canvas-header { padding: 12px 16px; font-weight: 500; border-bottom: 1px solid #f0f0f0; background: #fff; }
                 .canvas-content { flex: 1; padding: 16px; overflow-y: auto; }
-                .field-item { display: flex; align-items: center; padding: 8px 12px; margin-bottom: 8px; background: #fff; border: 1px solid #d9d9d9; border-radius: 4px; cursor: move; }
-                .field-item.selected { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.2); }
-                .field-icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: #52c41a; color: #fff; border-radius: 4px; margin-right: 8px; font-size: 12px; }
-                .field-label { flex: 1; font-weight: 500; }
-                .field-type { margin-right: 8px; color: #888; font-size: 12px; }
+                .canvas-field { position: relative; padding: 8px 12px; margin-bottom: 8px; background: #fff; border: 1px solid #d9d9d9; border-radius: 4px; cursor: move; transition: all 0.2s; }
+                .canvas-field:hover { border-color: #1890ff; }
+                .canvas-field.selected { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.2); }
+                .canvas-field .ant-form-item { margin-bottom: 0; }
+                .canvas-field .field-delete-btn { position: absolute; top: 8px; right: 8px; opacity: 0; transition: opacity 0.2s; }
+                .canvas-field:hover .field-delete-btn { opacity: 1; }
                 .field-property-panel { height: 100%; }
                 .panel-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #d9d9d9; margin-bottom: 12px; font-weight: 500; }
                 .property-group { margin-bottom: 12px; }

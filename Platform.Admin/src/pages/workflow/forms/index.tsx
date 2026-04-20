@@ -362,11 +362,8 @@ const FormDefinitionManagement: React.FC = () => {
                 .canvas-field { position: relative; padding: 12px 16px; margin-bottom: 8px; background: #fff; border: 1px solid #d9d9d9; border-radius: 8px; cursor: move; transition: all 0.2s; }
                 .canvas-field:hover { border-color: #1890ff; }
                 .canvas-field.selected { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.2); }
-                .field-preview-wrapper { display: flex; flex-direction: column; gap: 6px; }
                 .field-label-preview { font-size: 14px; color: rgba(0,0,0,0.88); font-weight: 400; }
                 .required-mark { color: #ff4d4f; margin-left: 4px; }
-                .field-preview-wrapper .ant-input, .field-preview-wrapper .ant-select { }
-                .field-preview-wrapper .ant-switch { width: auto !important; }
                 .field-delete-btn { position: absolute; top: 8px; right: 8px; opacity: 0; transition: opacity 0.2s; }
                 .canvas-field:hover .field-delete-btn { opacity: 1; }
                 .field-property-panel { height: 100%; }

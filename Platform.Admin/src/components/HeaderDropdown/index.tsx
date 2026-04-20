@@ -43,6 +43,8 @@ export type HeaderDropdownProps = {
   dropdownRender?: DropDownProps['dropdownRender'];
 } & Omit<DropDownProps, 'overlay'>;
 
+const DEFAULT_TRIGGER: ('contextMenu' | 'click' | 'hover')[] = ['click'];
+
 const HeaderDropdown: React.FC<HeaderDropdownProps> = ({
   overlayClassName: cls,
   overlayStyle: style,
@@ -55,6 +57,7 @@ const HeaderDropdown: React.FC<HeaderDropdownProps> = ({
 
   return (
     <Dropdown
+      trigger={DEFAULT_TRIGGER}
       classNames={{ root: classNames(cls) }}
       styles={{ root: style }}
       arrow={{ pointAtCenter: true }}

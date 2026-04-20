@@ -63,7 +63,7 @@ const SelectLang: React.FC = () => {
                 selectedKeys: [currentLocaleInfo?.value || currentLocale],
             }}
             placement="bottomRight"
-            trigger={['hover']}
+            trigger={['click']}
         >
             <span className={styles.headerActionButton}>
                 {currentLocaleInfo && (

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Space } from 'antd';
-import { ProCard, ProFormText, ProFormTextArea, ProFormSwitch } from '@ant-design/pro-components';
+import { ProCard, ProFormText, ProFormTextArea, ProFormSwitch, ProForm } from '@ant-design/pro-components';
+import type { ProFormInstance } from '@ant-design/pro-components';
 import { InfoCircleOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import { useMessage } from '@/hooks/useMessage';
@@ -16,6 +17,7 @@ const WorkflowCreateForm: React.FC<WorkflowCreateFormProps> = ({ onSuccess, onCa
   const intl = useIntl();
   const message = useMessage();
   const [loading, setLoading] = useState(false);
+  const formRef = React.useRef<ProFormInstance>(null);
 
   const handleSave = async (workflowGraph: WorkflowGraph) => {
     try {
@@ -24,14 +26,20 @@ const WorkflowCreateForm: React.FC<WorkflowCreateFormProps> = ({ onSuccess, onCa
         return;
       }
 
+      const formValues = formRef.current?.getFieldsValue();
+      if (!formValues?.name) {
+        message.error(intl.formatMessage({ id: 'pages.workflow.create.form.nameRequired' }));
+        return;
+      }
+
       setLoading(true);
 
       const response = await createWorkflow({
-        name: '新工作流',
-        description: '',
-        category: 'default',
+        name: formValues.name,
+        description: formValues.description || '',
+        category: formValues.category || 'default',
         graph: workflowGraph,
-        isActive: true,
+        isActive: formValues.isActive ?? true,
       });
 
       if (response.success) {
@@ -58,7 +66,8 @@ const WorkflowCreateForm: React.FC<WorkflowCreateFormProps> = ({ onSuccess, onCa
         }
         style={{ padding: '16px 24px 0 24px' }}
       >
-        <ProFormText
+        <ProForm formRef={formRef}>
+          <ProFormText
           name="name"
           label={intl.formatMessage({ id: 'pages.workflow.create.form.name' })}
           rules={[
@@ -86,6 +95,7 @@ const WorkflowCreateForm: React.FC<WorkflowCreateFormProps> = ({ onSuccess, onCa
           label={intl.formatMessage({ id: 'pages.workflow.create.form.description' })}
           placeholder={intl.formatMessage({ id: 'pages.workflow.create.form.descriptionPlaceholder' })}
         />
+        </ProForm>
       </ProCard>
 
       <div style={{ flex: 1, minHeight: 0 }}>

@@ -149,9 +149,9 @@ const NoticeIcon: React.FC = () => {
               renderItem={(item) => (
                 <div 
                   className={styles.notificationItem}
-                  style={{ opacity: item.status === NotificationStatus.Read ? 0.6 : 1 }}
+                  style={{ opacity: (item.status as any) === (NotificationStatus.Read as any) ? 0.6 : 1 }}
                   onClick={(e) => {
-                    if (item.status === NotificationStatus.Unread) {
+                    if ((item.status as any) === (NotificationStatus.Unread as any)) {
                       handleMarkAsRead(e, item.id);
                     }
                   }}
@@ -168,9 +168,9 @@ const NoticeIcon: React.FC = () => {
                       </span>
                     </div>
                     <div className={styles.notificationDesc}>{item.content}</div>
-                    <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Tag color={item.status === NotificationStatus.Unread ? 'blue' : 'default'}>{item.category}</Tag>
-                      {item.status === NotificationStatus.Read ? (
+<div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Tag color={(item.status as any) === (NotificationStatus.Unread as any) ? 'blue' : 'default'}>{item.category}</Tag>
+                      {(item.status as any) === (NotificationStatus.Read as any) ? (
                         <Button size="small" type="link" style={{ padding: 0, fontSize: 12 }} onClick={(e) => handleMarkAsUnread(e, item.id)}>标记为未读</Button>
                       ) : (
                         <Button size="small" type="link" style={{ padding: 0, fontSize: 12 }} onClick={(e) => handleMarkAsRead(e, item.id)}>标为已读</Button>

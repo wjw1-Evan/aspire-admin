@@ -52,8 +52,6 @@ public class AppNotification : MultiTenantEntity
     /// <summary>
     /// 状态 (0=Unread, 1=Read, 2=Archived)
     /// </summary>
-    [BsonRepresentation(BsonType.String)]
-    [JsonConverter(typeof(JsonStringEnumConverter))]
     public NotificationStatus Status { get; set; } = NotificationStatus.Unread;
 
     /// <summary>

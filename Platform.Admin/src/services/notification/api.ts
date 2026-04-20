@@ -42,7 +42,7 @@ export interface AppNotification {
   title: string;
   content?: string;
   actionUrl?: string;
-  status: NotificationStatus;
+  status: string;
   metadata: Record<string, string>;
   createdAt?: string;
   readAt?: string;

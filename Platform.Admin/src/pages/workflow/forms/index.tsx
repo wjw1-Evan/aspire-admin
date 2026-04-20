@@ -1,8 +1,8 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { Button, Space, Tag, Popconfirm, Input, Empty, Drawer, Form, Input as AntInput, Select, Switch, message, Radio, Upload, Checkbox } from 'antd';
 const { Group: RadioGroup } = Radio;
-import { PageContainer, ProTable, ProColumns, ActionType, ProFormText, ProFormDigit, ProFormSwitch, ModalForm } from '@ant-design/pro-components';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, SaveOutlined, DragOutlined, LeftOutlined, RightOutlined, CloseOutlined, PartitionOutlined, UploadOutlined } from '@ant-design/icons';
+import { PageContainer, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
+import { PlusOutlined, DeleteOutlined, EyeOutlined, SaveOutlined, DragOutlined, CloseOutlined, PartitionOutlined, UploadOutlined, EditOutlined } from '@ant-design/icons';
 import { request } from '@umijs/max';
 import { ApiResponse, PagedResult } from '@/types';
 import type { DragEndEvent } from '@dnd-kit/core';
@@ -15,7 +15,7 @@ const { TextArea } = AntInput;
 interface FormDefinition {
     id?: string;
     name: string;
-    key: string;
+    key?: string;
     version?: number;
     isActive?: boolean;
     description?: string;
@@ -306,7 +306,6 @@ const FormDefinitionManagement: React.FC = () => {
             title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 200, render: (_, r) => (
                 <Space size={4}>
                     <Button type="link" size="small" icon={<PartitionOutlined />} onClick={() => set({ editingForm: r, designerVisible: true })}>设计</Button>
-                    <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingForm: r, formVisible: true })}>编辑</Button>
                     <Popconfirm title={`确定删除「${r.name}」？`} onConfirm={async () => { await api.delete(r.id!); actionRef.current?.reload(); api.statistics().then(res => { if (res.success && res.data) set({ statistics: res.data }); }); }}>
                         <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
                     </Popconfirm>
@@ -316,11 +315,16 @@ const FormDefinitionManagement: React.FC = () => {
     ];
 
     const handleDesignerSave = async (form: FormDefinition) => {
-        if (!state.editingForm?.id) return;
-        const res = await api.update(state.editingForm.id, form);
+        let res;
+        if (state.editingForm?.id) {
+            res = await api.update(state.editingForm.id, form);
+        } else {
+            res = await api.create(form);
+        }
         if (res.success) {
             set({ designerVisible: false, editingForm: null });
             actionRef.current?.reload();
+            api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
         }
     };
 
@@ -382,39 +386,14 @@ const FormDefinitionManagement: React.FC = () => {
                         onChange={(e) => set({ search: e.target.value })}
                         onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
                         style={{ width: 260, marginRight: 8 }} />,
-                    <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingForm: null, formVisible: true })}>新建表单</Button>,
+                    <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingForm: { id: '', name: '新表单', key: '', version: 1, isActive: true, fields: [] }, designerVisible: true })}>新建表单</Button>,
                 ]}
             />
 
-            <ModalForm
-                key={state.editingForm?.id || 'create'}
-                width={600}
-                open={state.formVisible}
-                title={state.editingForm ? '编辑表单' : '新建表单'}
-                onOpenChange={(open) => { if (!open) set({ formVisible: false, editingForm: null }); }}
-                initialValues={state.editingForm ? { name: state.editingForm.name, version: state.editingForm.version, isActive: state.editingForm.isActive, description: state.editingForm.description } : { version: 1, isActive: true }}
-                onFinish={async (values) => {
-                    const data = { name: values.name, version: values.version, isActive: values.isActive, description: values.description };
-                    let res;
-                    if (state.editingForm?.id) {
-                        res = await api.update(state.editingForm.id, data);
-                    } else {
-                        res = await api.create(data);
-                    }
-                    if (res.success) { set({ formVisible: false, editingForm: null }); actionRef.current?.reload(); }
-                    return res.success;
-                }}
-            >
-                <ProFormText name="name" label="名称" rules={[{ required: true, message: '请输入名称' }]} placeholder="请输入表单名称" />
-                <ProFormDigit name="version" label="版本" rules={[{ required: true, message: '请输入版本' }]} min={1} placeholder="请输入版本号" />
-                <ProFormText name="description" label="描述" placeholder="请输入描述" />
-                <ProFormSwitch name="isActive" label="启用" />
-            </ModalForm>
-
-            <Drawer title={state.editingForm ? `设计表单: ${state.editingForm.name}` : '新建表单'} width="100%" open={state.designerVisible}
+            <Drawer title={state.editingForm?.id ? `设计表单: ${state.editingForm.name}` : '新建表单'} width="100%" open={state.designerVisible}
                 onClose={() => set({ designerVisible: false, editingForm: null })}>
-                {state.designerVisible && state.editingForm && (
-                    <FormDesigner form={state.editingForm} onSave={handleDesignerSave} />
+                {state.designerVisible && (
+                    <FormDesigner form={state.editingForm || { id: '', name: '新表单', version: 1, isActive: true, fields: [] }} onSave={handleDesignerSave} />
                 )}
             </Drawer>
         </PageContainer>

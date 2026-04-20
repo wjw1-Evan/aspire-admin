@@ -1,4 +1,3 @@
-using Platform.ApiService.Attributes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,7 +18,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/stream")]
-[SkipGlobalAuthentication("SSE端点通过查询参数自主验证Token")]
+[AllowAnonymous]
 public class StreamController : BaseApiController
 {
     private readonly IChatSseConnectionManager _connectionManager;

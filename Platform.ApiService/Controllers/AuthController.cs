@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Platform.ApiService.Attributes;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
@@ -15,7 +14,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/auth")]
-[SkipGlobalAuthentication("认证相关的公共接口，无需预先认证")]
+[AllowAnonymous]
 public class AuthController : BaseApiController
 {
     private readonly IAuthService _authService;

@@ -2,17 +2,13 @@
 using Microsoft.OpenApi;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.Features;
-using Microsoft.Extensions.Options;
 using Platform.ApiService.Options;
-using Platform.ApiService.Services;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Middleware;
-using Platform.ApiService.BackgroundServices;
 using Platform.ServiceDefaults.Extensions;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
@@ -294,7 +290,6 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseTenantContext();
-// app.UseGlobalAuthentication(); // 移除此冗余中间件，它无法正确处理 SSE Token 并导致 401
 app.UseApiLogging();
 
 // 端点映射

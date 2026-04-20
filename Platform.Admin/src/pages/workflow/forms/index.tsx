@@ -239,11 +239,9 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
     return (
         <div className="form-designer">
             <div className="designer-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <Input.Group compact>
-                    <Input placeholder="表单名称" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} style={{ width: 160 }} />
-                    <Input placeholder="版本" type="number" value={formData.version} onChange={e => setFormData({ ...formData, version: parseInt(e.target.value) || 1 })} style={{ width: 80 }} />
-                    <Switch checkedChildren="启用" unCheckedChildren="禁用" checked={formData.isActive} onChange={v => setFormData({ ...formData, isActive: v })} />
-                </Input.Group>
+                <Input placeholder="表单名称" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} style={{ width: 200 }} />
+                <Input placeholder="版本" type="number" value={formData.version} onChange={e => setFormData({ ...formData, version: parseInt(e.target.value) || 1 })} style={{ width: 80 }} />
+                <Switch checkedChildren="启用" unCheckedChildren="禁用" checked={formData.isActive} onChange={v => setFormData({ ...formData, isActive: v })} />
                 <Space>
                     <Button type="primary" icon={<SaveOutlined />} onClick={handleSave}>保存</Button>
                     <Button icon={<EyeOutlined />} onClick={() => setPreviewMode(true)}>预览</Button>
@@ -321,11 +319,13 @@ const FormDefinitionManagement: React.FC = () => {
     ];
 
     const handleDesignerSave = async (form: FormDefinition) => {
+        const isNew = !state.editingForm?.id;
+        const dataToSave = { name: form.name, version: form.version, isActive: form.isActive, fields: form.fields };
         let res;
-        if (state.editingForm?.id) {
-            res = await api.update(state.editingForm.id, form);
+        if (isNew) {
+            res = await api.create(dataToSave);
         } else {
-            res = await api.create(form);
+            res = await api.update(state.editingForm.id, dataToSave);
         }
         if (res.success) {
             set({ designerVisible: false, editingForm: null });
@@ -392,7 +392,7 @@ const FormDefinitionManagement: React.FC = () => {
                         onChange={(e) => set({ search: e.target.value })}
                         onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
                         style={{ width: 260, marginRight: 8 }} />,
-                    <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingForm: { id: '', name: '新表单', key: '', version: 1, isActive: true, fields: [] }, designerVisible: true })}>新建表单</Button>,
+                    <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingForm: { name: '新表单', version: 1, isActive: true, fields: [] }, designerVisible: true })}>新建表单</Button>,
                 ]}
             />
 

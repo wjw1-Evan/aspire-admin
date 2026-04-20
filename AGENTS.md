@@ -514,7 +514,7 @@ catch (Exception ex)
 - 避免大量重复的 try-catch 代码
 - 保持控制器层职责单一
 
-### 6.6 批量查询规范（N+1 防护）
+### 6.7 批量查询规范（N+1 防护）
 
 **[强制]** 严禁在循环内调用单条查询：
 
@@ -531,7 +531,7 @@ foreach (var task in tasks)
 }
 ```
 
-### 6.7 后台任务与租户上下文
+### 6.8 后台任务与租户上下文
 
 在后台任务（如 `Task.Run`、后台服务、定时任务）中，无法直接使用 HTTP 请求上下文，需要手动设置租户上下文。
 
@@ -832,7 +832,14 @@ const PasswordBook: React.FC = () => {
           </Space>
         }
         request={async (params: any, sort: any, filter: any) => {
-          const res = await api.list({ ...params, search: state.search, sort, filter });
+          const { current, pageSize } = params;
+          const res = await api.list({
+            page: current,
+            pageSize,
+            search: state.search,
+            sort: sort ? JSON.stringify(sort) : undefined,
+            filter: filter ? JSON.stringify(filter) : undefined,
+          });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
         }}
         columns={columns}
@@ -954,14 +961,31 @@ const handleFinish = async (values: Record<string, any>) => {
 
 | 参数 | 说明 | 备注 |
 |------|------|------|
-| `page` | 当前页码 | 必须显式传递 |
+| `page` | 当前页码 | 必须显式传递（ProTable 传入 `current`，需映射为 `page`） |
 | `pageSize` | 每页数量 | ProTable 自动传递 |
 | `search` | 搜索关键词 | 存储在 state 中 |
+| `sort` | 排序规则 | **必须 `JSON.stringify`**，如 `{"platform":"ascend"}` |
+| `filter` | 筛选规则 | **必须 `JSON.stringify`**，如 `{"category":["work"]}` |
+
+> **[强制]** ProTable 回调传入的 `sort`/`filter` 是 JS 对象，后端 `ProTableRequest.Sort`/`Filter` 期望 JSON 字符串。**不做 `JSON.stringify` 会导致排序和筛选完全失效。**
 
 ```typescript
-const { current, pageSize, ...filters } = params;
-const res = await api.list({ page: current, pageSize, search: state.search });
+// ✅ 正确：映射 current→page + JSON.stringify sort/filter
+const { current, pageSize } = params;
+const res = await api.list({
+  page: current,
+  pageSize,
+  search: state.search,
+  sort: sort ? JSON.stringify(sort) : undefined,
+  filter: filter ? JSON.stringify(filter) : undefined,
+});
 return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+
+// ❌ 禁止：直接展开 params（current 不映射为 page，分页永远在第1页）
+const res = await api.list({ ...params, sort, filter });
+
+// ❌ 禁止：sort/filter 不 JSON.stringify（后端收到 null，排序筛选失效）
+const res = await api.list({ page: current, pageSize, sort, filter });
 ```
 
 ### 7.9 列渲染规范

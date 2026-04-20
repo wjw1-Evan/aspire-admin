@@ -97,7 +97,7 @@ const WorkflowManagement: React.FC = () => {
         ]}
       />
       <Drawer title={editingWorkflow ? intl.formatMessage({ id: 'pages.workflow.action.edit' }) : intl.formatMessage({ id: 'pages.workflow.create.title' })} width="100%" open={designerVisible}
-        onClose={() => { setDesignerVisible(false); setEditingWorkflow(null); setPreviewMode(false); }} placement="left">
+        onClose={() => { setDesignerVisible(false); setEditingWorkflow(null); setPreviewMode(false); }}>
         <WorkflowDesignerModal workflow={editingWorkflow} readOnly={previewMode} onSuccess={() => { setDesignerVisible(false); setEditingWorkflow(null); actionRef.current?.reload(); }} onCancel={() => { setDesignerVisible(false); setEditingWorkflow(null); }} />
       </Drawer>
     </PageContainer>

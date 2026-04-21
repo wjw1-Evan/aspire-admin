@@ -138,7 +138,7 @@ export function useSseConnection(
     }, 30000);
   }, [triggerSilentTimeoutReconnect]);
 
-// 连接（单例模式）
+  // 连接（单例模式）
   const connect = useCallback(async () => {
     // 检查全局是否已连接
     if (globalEventSource && globalEventSource.readyState === EventSource.OPEN) {
@@ -188,16 +188,16 @@ export function useSseConnection(
 
       // 处理 connected 事件，获取 connectionId（必须在 onopen 之前注册）
       eventSource.addEventListener('connected', (event: MessageEvent) => {
-          try {
-            const data = JSON.parse(event.data);
-            if (data.connectionId) {
-              setConnectionId(data.connectionId);
-              globalConnectionId = data.connectionId;
-            }
-          } catch (e) {
-            onConnected?.();
+        try {
+          const data = JSON.parse(event.data);
+          if (data.connectionId) {
+            setConnectionId(data.connectionId);
+            globalConnectionId = data.connectionId;
           }
-        });
+        } catch (e) {
+          onConnected?.();
+        }
+      });
 
       // 添加连接超时检查（5秒）
       statusCheckTimer = setTimeout(() => {
@@ -211,7 +211,7 @@ export function useSseConnection(
         }
       }, 5000);
 
-// 连接打开
+      // 连接打开
       eventSource.onopen = () => {
         if (statusCheckTimer) clearTimeout(statusCheckTimer);
         if (!isMountedRef.current) {
@@ -223,54 +223,55 @@ export function useSseConnection(
         globalIsConnected = true;
         setIsConnecting(false);
 
-        resetSilentTimeout();
-
         globalEventSource = eventSource;
       };
 
-      // 监听通知相关事件（仅当 enableNotifications 为 true 时）
-      if (enableNotifications) {
-        eventSource.addEventListener('connected', (event: MessageEvent) => {
-          try {
-            const data = event.data ? JSON.parse(event.data) : null;
-            if (data?.connectionId) {
-              setConnectionId(data.connectionId);
-            }
-          } catch (e) { }
-        });
-
-        eventSource.addEventListener('notification', (event: MessageEvent) => {
-          try {
-            const data = event.data ? JSON.parse(event.data) : null;
-            if (!data?.notification) return;
-            console.info('[SSE] 收到新通知推送:', data.notification);
-            const newNotif = data.notification as AppNotification;
-            // 弹出全局 Toast（统计更新由 stats 事件统一处理）
-            notification[newNotif.level.toLowerCase() as 'info' | 'success' | 'warning' | 'error']({
-              message: newNotif.title,
-              description: newNotif.content,
-              placement: 'bottomRight',
-            });
-          } catch (e) {
-            console.error('Parse notification failed', e);
+      eventSource.addEventListener('connected', (event: MessageEvent) => {
+        try {
+          const data = event.data ? JSON.parse(event.data) : null;
+          if (data?.connectionId) {
+            setConnectionId(data.connectionId);
           }
-        });
+        } catch (e) { }
+      });
 
-        eventSource.addEventListener('stats', (event: MessageEvent) => {
-          try {
-            const data = event.data ? JSON.parse(event.data) : null;
-            const rawStats = data?.statistics ?? data?.Statistics;
-            if (rawStats) {
-              const newState: NotificationState = {
-                statistics: { ...rawStats },
-                unreadCount: rawStats.UnreadTotal ?? rawStats.Total ?? 0,
-              };
-              Object.assign(globalNotificationState, newState);
-              setNotificationState(() => newState);
-            }
-          } catch (e) { console.error('[SSE] stats 解析失败:', e); }
-        });
-      }
+      eventSource.addEventListener('notification', (event: MessageEvent) => {
+        try {
+          const data = event.data ? JSON.parse(event.data) : null;
+          if (!data?.notification) return;
+          console.info('[SSE] 收到新通知推送:', data.notification);
+          const newNotif = data.notification as AppNotification;
+          // 弹出全局 Toast（统计更新由 stats 事件统一处理）
+          notification[newNotif.level.toLowerCase() as 'info' | 'success' | 'warning' | 'error']({
+            message: newNotif.title,
+            description: newNotif.content,
+            placement: 'bottomRight',
+          });
+        } catch (e) {
+          console.error('Parse notification failed', e);
+        }
+      });
+
+      eventSource.addEventListener('stats', (event: MessageEvent) => {
+        try {
+          const data = event.data ? JSON.parse(event.data) : null;
+          const rawStats = data?.statistics ?? data?.Statistics;
+          if (rawStats) {
+            const newState: NotificationState = {
+              statistics: { ...rawStats },
+              unreadCount: rawStats.UnreadTotal ?? rawStats.Total ?? 0,
+            };
+            Object.assign(globalNotificationState, newState);
+            setNotificationState(() => newState);
+          }
+        } catch (e) { console.error('[SSE] stats 解析失败:', e); }
+      });
+
+
+      // 监听 ping 事件（服务器每 15 秒发送，保持连接活跃）
+      eventSource.addEventListener('ping', () => {
+        resetSilentTimeout();
+      });
 
       // 连接错误
       eventSource.onerror = (error) => {
@@ -315,7 +316,6 @@ export function useSseConnection(
       ];
       eventNames.forEach(eventName => {
         eventSource.addEventListener(eventName, (event: MessageEvent) => {
-          resetSilentTimeout();
           const handlers = eventHandlersRef.current.get(eventName);
           if (handlers) {
             try {
@@ -336,7 +336,6 @@ export function useSseConnection(
 
       // 监听默认的 'message' 事件 (没有任何 event 头的 data)
       eventSource.onmessage = (event: MessageEvent) => {
-        resetSilentTimeout();
         try {
           const data = event.data ? JSON.parse(event.data) : null;
           const handlers = (data?.type && eventHandlersRef.current.get(data.type)) || eventHandlersRef.current.get('message');

@@ -336,6 +336,7 @@ const FormDefinitionManagement: React.FC = () => {
     const columns: ProColumns<FormDefinition>[] = [
         { title: '名称', dataIndex: 'name', key: 'name', ellipsis: true, sorter: true },
         { title: '版本', dataIndex: 'version', key: 'version', valueType: 'digit', width: 80, sorter: true },
+        { title: '字段数', dataIndex: 'fields', key: 'fields', valueType: 'digit', width: 80, render: (_, r) => r.fields?.length || 0 },
         { title: '启用', dataIndex: 'isActive', key: 'isActive', render: (_, r) => <Tag color={r.isActive ? 'success' : 'default'}>{r.isActive ? '是' : '否'}</Tag> },
         {
             title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 250, render: (_, r) => (

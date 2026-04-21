@@ -30,7 +30,21 @@ public class FormDefinitionService : IFormDefinitionService
             query = query.Where(f => f.Name.ToLower().Contains(search) || (f.Description != null && f.Description.ToLower().Contains(search)));
         }
 
-        return query.ToPagedList(request);
+        var result = query.ToPagedList(request);
+
+        foreach (var form in result.Queryable)
+        {
+            if (!string.IsNullOrEmpty(form.LatestVersionId))
+            {
+                var version = await _context.Set<FormVersion>().FirstOrDefaultAsync(x => x.Id == form.LatestVersionId);
+                if (version != null)
+                {
+                    form.Fields = version.Fields;
+                }
+            }
+        }
+
+        return result;
     }
 
     public async Task<FormDefinition?> GetFormByIdAsync(string id)

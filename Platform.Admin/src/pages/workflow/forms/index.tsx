@@ -68,6 +68,7 @@ const FIELD_TYPES = [
 
 const api = {
     list: (params: any) => request<ApiResponse<PagedResult<FormDefinition>>>('/apiservice/api/forms', { params }),
+    get: (id: string) => request<ApiResponse<FormDefinition>>(`/apiservice/api/forms/${id}`),
     create: (data: Partial<FormDefinition>) => request<ApiResponse<FormDefinition>>('/apiservice/api/forms', { method: 'POST', data }),
     update: (id: string, data: Partial<FormDefinition>) => request<ApiResponse<boolean>>(`/apiservice/api/forms/${id}`, { method: 'PUT', data }),
     delete: (id: string) => request<ApiResponse<boolean>>(`/apiservice/api/forms/${id}`, { method: 'DELETE' }),
@@ -335,6 +336,16 @@ const FormDefinitionManagement: React.FC = () => {
         }
     }, [state.viewingFormId]);
 
+    useEffect(() => {
+        if (state.designerVisible && state.editingForm?.id) {
+            api.get(state.editingForm.id).then(r => {
+                if (r.success && r.data) {
+                    set({ editingForm: { ...r.data, fields: r.data.fields || [] } });
+                }
+            });
+        }
+    }, [state.designerVisible]);
+
     const columns: ProColumns<FormDefinition>[] = [
         { title: '名称', dataIndex: 'name', key: 'name', ellipsis: true, sorter: true },
         { title: '版本', dataIndex: 'version', key: 'version', valueType: 'digit', width: 80, sorter: true },
@@ -344,7 +355,10 @@ const FormDefinitionManagement: React.FC = () => {
             title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 250, render: (_, r) => (
                 <Space size={4}>
                     <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => set({ viewingFormId: r.id!, versionsDrawerVisible: true })}>查看</Button>
-                    <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingForm: r, designerVisible: true })}>编辑</Button>
+                    <Button type="link" size="small" icon={<EditOutlined />} onClick={() => {
+                        const fields = r.fields?.length ? r.fields : [];
+                        set({ editingForm: { ...r, fields: fields || [] }, designerVisible: true });
+                    }}>编辑</Button>
                     <Popconfirm title={`确定删除「${r.name}」？`} onConfirm={async () => { await api.delete(r.id!); actionRef.current?.reload(); api.statistics().then(res => { if (res.success && res.data) set({ statistics: res.data }); }); }}>
                         <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
                     </Popconfirm>

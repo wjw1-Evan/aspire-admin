@@ -321,6 +321,8 @@ const FormDefinitionManagement: React.FC = () => {
         versions: [] as FormVersion[],
         versionsDrawerVisible: false,
         viewingFormId: null as string | null,
+        previewVersionId: null as string | null,
+        previewFields: [] as FormField[],
         search: '' as string,
     });
     const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
@@ -434,21 +436,49 @@ const FormDefinitionManagement: React.FC = () => {
                 )}
             </Drawer>
 
-            <Drawer title={`版本历史: ${state.viewingFormId ? state.versions.find(v => v.formDefinitionId === state.viewingFormId)?.name : ''}`} width={600} open={state.versionsDrawerVisible}
-                onClose={() => set({ versionsDrawerVisible: false, viewingFormId: null, versions: [] })}>
-                {state.versionsDrawerVisible && state.versions.length > 0 && (
-                    <List
-                        dataSource={state.versions}
-                        renderItem={(item) => (
-                            <List.Item>
-                                <List.Item.Meta
-                                    title={`版本 v${item.version}`}
-                                    description={`字段数: ${item.fields?.length || 0} | 启用: ${item.isActive ? '是' : '否'} | 创建时间: ${item.createdAt ? dayjs(item.createdAt).format('YYYY-MM-DD HH:mm') : '-'}`}
-                                />
-                            </List.Item>
+            <Drawer title={`版本历史: ${state.viewingFormId ? state.versions.find(v => v.formDefinitionId === state.viewingFormId)?.name : ''}`} width={800} open={state.versionsDrawerVisible}
+                onClose={() => set({ versionsDrawerVisible: false, viewingFormId: null, versions: [], previewVersionId: null, previewFields: [] })}>
+                <div style={{ display: 'flex', gap: 24 }}>
+                    <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 500, marginBottom: 8 }}>历史版本</div>
+                        <List
+                            size="small"
+                            dataSource={state.versions}
+                            renderItem={(item) => (
+                                <List.Item style={{ cursor: 'pointer', background: state.previewVersionId === item.id ? '#e6f7ff' : undefined }}
+                                    onClick={() => set({ previewVersionId: item.id!, previewFields: item.fields || [] })}>
+                                    <List.Item.Meta
+                                        title={`v${item.version}`}
+                                        description={`${item.fields?.length || 0}个字段 | ${item.isActive ? '启用' : '禁用'}`}
+                                    />
+                                </List.Item>
+                            )}
+                        />
+                    </div>
+                    <div style={{ flex: 2, borderLeft: '1px solid #f0f0f0', paddingLeft: 24 }}>
+                        <div style={{ fontWeight: 500, marginBottom: 8 }}>表单预览 {state.previewVersionId ? ` v${state.versions.find(v => v.id === state.previewVersionId)?.version}` : ''}</div>
+                        {state.previewFields.length > 0 ? (
+                            <Form layout="vertical">
+                                {state.previewFields.map(field => (
+                                    <Form.Item key={field.id} label={field.label} required={field.required}>
+                                        {field.type === 'Text' && <AntInput placeholder={field.placeholder} />}
+                                        {field.type === 'TextArea' && <TextArea rows={2} placeholder={field.placeholder} />}
+                                        {field.type === 'Number' && <AntInput type="number" placeholder={field.placeholder} />}
+                                        {field.type === 'Date' && <AntInput type="date" placeholder={field.placeholder} />}
+                                        {field.type === 'DateTime' && <AntInput type="datetime-local" placeholder={field.placeholder} />}
+                                        {field.type === 'Select' && <Select placeholder={field.placeholder}>{field.options?.map(o => <Select.Option key={o.value} value={o.value}>{o.label}</Select.Option>)}</Select>}
+                                        {field.type === 'Radio' && <RadioGroup>{field.options?.map(o => <Radio key={o.value} value={o.value}>{o.label}</Radio>)}</RadioGroup>}
+                                        {field.type === 'Checkbox' && <Checkbox.Group options={field.options?.map(o => ({ label: o.label, value: o.value }))} />}
+                                        {field.type === 'Switch' && <Switch checkedChildren="是" unCheckedChildren="否" />}
+                                        {field.type === 'Attachment' && <Upload><Button icon={<UploadOutlined />}>上传</Button></Upload>}
+                                    </Form.Item>
+                                ))}
+                            </Form>
+                        ) : (
+                            <Empty description="点击左侧版本查看预览" />
                         )}
-                    />
-                )}
+                    </div>
+                </div>
             </Drawer>
         </PageContainer>
     );

@@ -96,6 +96,7 @@ export function useSseConnection(
   const reconnectAttemptsRef = useRef(0);
   const eventHandlersRef = useRef<Map<string, Set<(data: any) => void>>>(globalEventHandlers);
   const isMountedRef = useRef(true);
+  const connectRef = useRef<(() => Promise<void>) | null>(null);
 
   // 检查是否已存在全局连接
   const eventSourceRef = useRef<EventSource | null>(globalEventSource);
@@ -112,6 +113,30 @@ export function useSseConnection(
     if (attempts === 4) return 16000;
     return 30000; // 最大 30 秒
   }, []);
+
+  // 静默超时触发重连
+  const triggerSilentTimeoutReconnect = useCallback(() => {
+    console.warn('[SSE] 静默超时，触发重连');
+    setIsConnected(false);
+    globalIsConnected = false;
+    const es = eventSourceRef.current;
+    if (es) es.close();
+    globalEventSource = null;
+    connectRef.current?.().catch((err) => onError?.(err instanceof Error ? err : new Error(String(err))));
+  }, [onError]);
+
+  // 重置静默超时定时器
+  const resetSilentTimeout = useCallback(() => {
+    lastMessageTimeRef.current = Date.now();
+    if (silentTimeoutRef.current) {
+      clearTimeout(silentTimeoutRef.current);
+    }
+    silentTimeoutRef.current = setTimeout(() => {
+      if (isMountedRef.current && globalIsConnected) {
+        triggerSilentTimeoutReconnect();
+      }
+    }, 30000);
+  }, [triggerSilentTimeoutReconnect]);
 
 // 连接（单例模式）
   const connect = useCallback(async () => {
@@ -198,28 +223,8 @@ export function useSseConnection(
         globalIsConnected = true;
         setIsConnecting(false);
 
-        // 重置消息时间，启动静默超时检测
-        lastMessageTimeRef.current = Date.now();
-        if (silentTimeoutRef.current) {
-          clearTimeout(silentTimeoutRef.current);
-        }
-        silentTimeoutRef.current = setTimeout(() => {
-          if (isMountedRef.current && globalIsConnected) {
-            console.warn('[SSE] 静默超时，触发重连');
-            setIsConnected(false);
-            globalIsConnected = false;
-            const currentEs = eventSourceRef.current;
-            if (currentEs) {
-              currentEs.close();
-            }
-            globalEventSource = null;
-            connect().catch((err) => {
-              onError?.(err instanceof Error ? err : new Error(String(err)));
-            });
-          }
-        }, 60000);
+        resetSilentTimeout();
 
-        // 保存全局 EventSource
         globalEventSource = eventSource;
       };
 
@@ -310,24 +315,7 @@ export function useSseConnection(
       ];
       eventNames.forEach(eventName => {
         eventSource.addEventListener(eventName, (event: MessageEvent) => {
-          // 更新最后收到消息时间
-          lastMessageTimeRef.current = Date.now();
-          // 重置静默超时定时器
-          if (silentTimeoutRef.current) {
-            clearTimeout(silentTimeoutRef.current);
-          }
-          silentTimeoutRef.current = setTimeout(() => {
-            if (isMountedRef.current && globalIsConnected) {
-              console.warn('[SSE] 静默超时，触发重连');
-              setIsConnected(false);
-              globalIsConnected = false;
-              eventSource.close();
-              globalEventSource = null;
-              connect().catch((err) => {
-                onError?.(err instanceof Error ? err : new Error(String(err)));
-              });
-            }
-          }, 60000);
+          resetSilentTimeout();
           const handlers = eventHandlersRef.current.get(eventName);
           if (handlers) {
             try {
@@ -348,28 +336,9 @@ export function useSseConnection(
 
       // 监听默认的 'message' 事件 (没有任何 event 头的 data)
       eventSource.onmessage = (event: MessageEvent) => {
-        // 更新最后收到消息时间
-        lastMessageTimeRef.current = Date.now();
-        // 重置静默超时定时器
-        if (silentTimeoutRef.current) {
-          clearTimeout(silentTimeoutRef.current);
-        }
-        silentTimeoutRef.current = setTimeout(() => {
-          if (isMountedRef.current && globalIsConnected) {
-            console.warn('[SSE] 静默超时，触发重连');
-            setIsConnected(false);
-            globalIsConnected = false;
-            eventSource.close();
-            globalEventSource = null;
-            // 触发重连
-            connect().catch((err) => {
-              onError?.(err instanceof Error ? err : new Error(String(err)));
-            });
-          }
-        }, 60000); // 60 秒无消息视为静默超时
+        resetSilentTimeout();
         try {
           const data = event.data ? JSON.parse(event.data) : null;
-          // 如果 data 中有 type，则尝试寻找特定 type 的 handler，否则调用 'message' handler
           const handlers = (data?.type && eventHandlersRef.current.get(data.type)) || eventHandlersRef.current.get('message');
           handlers?.forEach((handler: (data: any) => void) => handler(data));
         } catch (e) { }
@@ -382,7 +351,10 @@ export function useSseConnection(
       onError?.(err);
       throw err;
     }
-  }, [onConnected, onError, getReconnectDelay]);
+  }, [onConnected, onError, getReconnectDelay, resetSilentTimeout]);
+
+  // 保存 connect 引用供异步回调使用
+  connectRef.current = connect;
 
   // 断开连接（全局）
   const disconnect = useCallback(() => {

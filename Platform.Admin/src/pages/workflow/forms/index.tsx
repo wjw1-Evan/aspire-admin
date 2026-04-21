@@ -5,7 +5,7 @@ import { PageContainer, ProTable, ProColumns, ActionType } from '@ant-design/pro
 import { PlusOutlined, DeleteOutlined, EyeOutlined, SaveOutlined, DragOutlined, CloseOutlined, PartitionOutlined, UploadOutlined, EditOutlined } from '@ant-design/icons';
 import { request } from '@umijs/max';
 import { ApiResponse, PagedResult } from '@/types';
-import type { DragEndEvent, DragStartEvent, DragOverEvent } from '@dnd-kit/core';
+import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, useDroppable, useDraggable, DragOverlay } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import dayjs from 'dayjs';
@@ -113,14 +113,13 @@ const api = {
     getVersion: (versionId: string) => request<ApiResponse<FormVersion>>(`/apiservice/api/forms/version/${versionId}`),
 };
 
-function SortableField({ field, selected, onSelect, onDelete, showPlaceholder }: {
+function SortableField({ field, selected, onSelect, onDelete }: {
     field: FormField;
     selected: boolean;
     onSelect: () => void;
     onDelete: () => void;
-    showPlaceholder?: boolean;
 }) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging, isOver } = useSortable({ id: field.id });
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: field.id });
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
@@ -145,9 +144,8 @@ function SortableField({ field, selected, onSelect, onDelete, showPlaceholder }:
 
     return (
         <div ref={setNodeRef} style={style} {...attributes} {...listeners}
-            className={`canvas-field ${selected ? 'selected' : ''} ${showPlaceholder ? 'sortable-over' : ''}`}
+            className={`canvas-field ${selected ? 'selected' : ''}`}
             onClick={onSelect}>
-            {showPlaceholder && <div className="canvas-field-placeholder" />}
             <div className="field-preview-wrapper">
                 <div className="field-label-preview">{field.label}{field.required && <span className="required-mark">*</span>}</div>
                 {renderFieldPreview()}
@@ -219,7 +217,6 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
     const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
     const [previewMode, setPreviewMode] = useState(false);
     const [activeId, setActiveId] = useState<string | null>(null);
-    const [overId, setOverId] = useState<string | null>(null);
 
     useEffect(() => {
         const normalized = (form.fields || []).map(f => ({ ...f, type: normalizeFieldType(f.type) }));
@@ -228,7 +225,6 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
         setSelectedFieldId(null);
         setPreviewMode(false);
         setActiveId(null);
-        setOverId(null);
     }, [form]);
 
     const sensors = useSensors(
@@ -260,24 +256,9 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
         setActiveId(event.active.id as string);
     };
 
-    const handleDragOver = (event: DragOverEvent) => {
-        const { over } = event;
-        if (!over) {
-            setOverId(null);
-            return;
-        }
-        const overId = String(over.id);
-        if (overId === 'canvas-droppable' || overId.startsWith('field_')) {
-            setOverId(overId);
-        } else {
-            setOverId(null);
-        }
-    };
-
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
         setActiveId(null);
-        setOverId(null);
 
         if (!over) return;
 
@@ -383,7 +364,6 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
                     sensors={sensors}
                     collisionDetection={closestCenter}
                     onDragStart={handleDragStart}
-                    onDragOver={handleDragOver}
                     onDragEnd={handleDragEnd}
                     onDragCancel={handleDragCancel}
                 >
@@ -404,10 +384,8 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
                                 <SortableContext items={fields.map(f => f.id)} strategy={verticalListSortingStrategy}>
                                     {fields.map(field => (
                                         <SortableField key={field.id} field={field} selected={field.id === selectedFieldId}
-                                            showPlaceholder={overId === field.id}
                                             onSelect={() => setSelectedFieldId(field.id)} onDelete={() => deleteField(field.id)} />
                                     ))}
-                                    {overId === 'canvas-droppable' && fields.length > 0 && <div className="canvas-field-placeholder" />}
                                 </SortableContext>
                             )}
                         </DroppableCanvas>
@@ -534,9 +512,6 @@ const FormDefinitionManagement: React.FC = () => {
                 .canvas-field { position: relative; padding: 12px 16px; margin-bottom: 8px; background: #fff; border: 1px solid #d9d9d9; border-radius: 8px; cursor: move; transition: all 0.2s; display: flex; flex-direction: column; gap: 6px; }
                 .canvas-field:hover { border-color: #1890ff; }
                 .canvas-field.selected { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.2); }
-                .canvas-field.sortable-over { border-color: #1890ff; }
-                .canvas-field-placeholder { height: 70px; margin-bottom: 8px; border: 2px dashed #1890ff; border-radius: 8px; background: #e6f7ff; animation: pulse 1s infinite; }
-                @keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
                 .field-label-preview { font-size: 14px; color: rgba(0,0,0,0.88); font-weight: 400; }
                 .required-mark { color: #ff4d4f; margin-left: 4px; }
                 .field-delete-btn { position: absolute; top: 8px; right: 8px; opacity: 0; transition: opacity 0.2s; }

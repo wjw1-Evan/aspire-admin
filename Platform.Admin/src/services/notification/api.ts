@@ -56,6 +56,7 @@ export interface NotificationStatistics {
   Work: number;
   Social: number;
   Security: number;
+  UnreadTotal: number;
   Total: number;
 }
 

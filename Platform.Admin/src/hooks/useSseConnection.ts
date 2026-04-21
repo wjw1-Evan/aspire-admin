@@ -20,7 +20,7 @@ let globalAutoConnectAttempted = false;
 // 全局状态（供所有 hook 实例共享）
 const globalNotificationState: NotificationState = {
   unreadCount: 0,
-  statistics: { System: 0, Work: 0, Social: 0, Security: 0, Total: 0 },
+  statistics: { System: 0, Work: 0, Social: 0, Security: 0, UnreadTotal: 0, Total: 0 },
 };
 
 // HMR 检测：使用 sessionStorage 标记来跨 HMR 持久化状态
@@ -40,7 +40,7 @@ if (isAfterHmr) {
   globalConnectionId = null;
   // 重置通知状态
   globalNotificationState.unreadCount = 0;
-  globalNotificationState.statistics = { System: 0, Work: 0, Social: 0, Security: 0, Total: 0 };
+  globalNotificationState.statistics = { System: 0, Work: 0, Social: 0, Security: 0, UnreadTotal: 0, Total: 0 };
 }
 
 function notifyAllListeners() {
@@ -235,7 +235,7 @@ export function useSseConnection(
             if (rawStats) {
               const newState: NotificationState = {
                 statistics: { ...rawStats },
-                unreadCount: rawStats.Total ?? 0,
+                unreadCount: rawStats.UnreadTotal ?? rawStats.Total ?? 0,
               };
               Object.assign(globalNotificationState, newState);
               setNotificationState(() => newState);

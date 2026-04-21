@@ -39,6 +39,9 @@ const NoticeIcon: React.FC = () => {
   const [hasMore, setHasMore] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const listRef = useRef<HTMLDivElement>(null);
+  const unread = unreadCount;
+  const read = statistics.Total - unreadCount;
+  const total = statistics.Total;
   const isInitialLoad = useRef(true);
 
   const loadNotifications = useCallback(async (page: number, reset: boolean = false) => {
@@ -139,6 +142,11 @@ const NoticeIcon: React.FC = () => {
             全部已读
           </Button>
         </Space>
+      </div>
+      <div className={styles.notificationStats}>
+        <span style={{ color: '#1677ff' }}>未读：{unread}</span>
+        <span style={{ color: '#52c41a' }}>已读：{read}</span>
+        <span>合计：{total}</span>
       </div>
       
       <div className={styles.notificationList} ref={listRef} onScroll={handleScroll}>

@@ -270,17 +270,16 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
             const fieldType = String(active.id).replace(LIBRARY_PREFIX, '');
             const newField = createField(fieldType);
 
-            if (over.id === 'canvas-droppable') {
-                setFields(prev => [...prev, newField]);
-            } else {
-                setFields(prev => {
-                    const overIndex = prev.findIndex(f => f.id === over.id);
-                    if (overIndex >= 0) {
-                        return [...prev.slice(0, overIndex), newField, ...prev.slice(overIndex)];
-                    }
+            setFields(prev => {
+                if (over.id === 'canvas-droppable') {
                     return [...prev, newField];
-                });
-            }
+                }
+                const overIndex = prev.findIndex(f => f.id === over.id);
+                if (overIndex >= 0) {
+                    return [...prev.slice(0, overIndex), newField, ...prev.slice(overIndex)];
+                }
+                return [...prev, newField];
+            });
             setSelectedFieldId(newField.id);
             setActiveId(newField.id);
             dragInsertedRef.current = newField.id;
@@ -289,20 +288,25 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
+        const insertedId = dragInsertedRef.current;
         setActiveId(null);
+        dragInsertedRef.current = null;
 
         if (!over) return;
 
-        const activeFromLibrary = String(active.id).startsWith(LIBRARY_PREFIX);
-        if (activeFromLibrary) return;
+        if (active.id === over.id) return;
 
-        if (active.id !== over.id && over.id !== 'canvas-droppable') {
-            const oldIndex = fields.findIndex(f => f.id === active.id);
-            const newIndex = fields.findIndex(f => f.id === over.id);
+        const activeId = insertedId || (active.id as string);
+        if (over.id === 'canvas-droppable') return;
+
+        setFields(prev => {
+            const oldIndex = prev.findIndex(f => f.id === activeId);
+            const newIndex = prev.findIndex(f => f.id === over.id);
             if (oldIndex >= 0 && newIndex >= 0) {
-                setFields(arrayMove(fields, oldIndex, newIndex));
+                return arrayMove(prev, oldIndex, newIndex);
             }
-        }
+            return prev;
+        });
     };
 
     const handleDragCancel = () => {

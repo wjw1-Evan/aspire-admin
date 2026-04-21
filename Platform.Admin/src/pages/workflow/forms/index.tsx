@@ -113,11 +113,12 @@ const api = {
     getVersion: (versionId: string) => request<ApiResponse<FormVersion>>(`/apiservice/api/forms/version/${versionId}`),
 };
 
-function SortableField({ field, selected, onSelect, onDelete }: {
+function SortableField({ field, selected, onSelect, onDelete, onChange }: {
     field: FormField;
     selected: boolean;
     onSelect: () => void;
     onDelete: () => void;
+    onChange?: (field: FormField) => void;
 }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: field.id });
     const style = {
@@ -127,18 +128,19 @@ function SortableField({ field, selected, onSelect, onDelete }: {
     };
 
     const renderFieldPreview = () => {
+        const handleChange = (val: string) => onChange?.({ ...field, defaultValue: val });
         switch (normalizeFieldType(field.type)) {
-            case 'Text': return <AntInput placeholder={field.placeholder} defaultValue={field.defaultValue} />;
-            case 'TextArea': return <TextArea rows={2} placeholder={field.placeholder} defaultValue={field.defaultValue} />;
-            case 'Number': return <AntInput type="number" placeholder={field.placeholder} defaultValue={field.defaultValue} />;
-            case 'Date': return <AntInput type="date" placeholder={field.placeholder} defaultValue={field.defaultValue} />;
-            case 'DateTime': return <AntInput type="datetime-local" placeholder={field.placeholder} defaultValue={field.defaultValue} />;
-            case 'Select': return <Select placeholder={field.placeholder} defaultValue={field.defaultValue}>{field.options?.map(o => <Select.Option key={o.value} value={o.value}>{o.label}</Select.Option>)}</Select>;
-            case 'Radio': return <RadioGroup defaultValue={field.defaultValue}>{field.options?.map(o => <Radio key={o.value} value={o.value}>{o.label}</Radio>)}</RadioGroup>;
-            case 'Checkbox': return <Checkbox.Group options={field.options?.map(o => ({ label: o.label, value: o.value }))} defaultValue={field.defaultValue?.split(',').filter(Boolean)} />;
-            case 'Switch': return <Switch defaultChecked={field.defaultValue === 'true'} checkedChildren="是" unCheckedChildren="否" />;
+            case 'Text': return <AntInput placeholder={field.placeholder} value={field.defaultValue} onChange={e => handleChange(e.target.value)} />;
+            case 'TextArea': return <TextArea rows={2} placeholder={field.placeholder} value={field.defaultValue} onChange={e => handleChange(e.target.value)} />;
+            case 'Number': return <AntInput type="number" placeholder={field.placeholder} value={field.defaultValue} onChange={e => handleChange(e.target.value)} />;
+            case 'Date': return <AntInput type="date" placeholder={field.placeholder} value={field.defaultValue} onChange={e => handleChange(e.target.value)} />;
+            case 'DateTime': return <AntInput type="datetime-local" placeholder={field.placeholder} value={field.defaultValue} onChange={e => handleChange(e.target.value)} />;
+            case 'Select': return <Select placeholder={field.placeholder} value={field.defaultValue} onChange={val => handleChange(val)}>{field.options?.map(o => <Select.Option key={o.value} value={o.value}>{o.label}</Select.Option>)}</Select>;
+            case 'Radio': return <RadioGroup value={field.defaultValue} onChange={e => handleChange(e.target.value)}>{field.options?.map(o => <Radio key={o.value} value={o.value}>{o.label}</Radio>)}</RadioGroup>;
+            case 'Checkbox': return <Checkbox.Group options={field.options?.map(o => ({ label: o.label, value: o.value }))} value={field.defaultValue?.split(',').filter(Boolean)} onChange={val => handleChange(val?.join(','))} />;
+            case 'Switch': return <Switch checked={field.defaultValue === 'true'} onChange={val => handleChange(String(val))} checkedChildren="是" unCheckedChildren="否" />;
             case 'Attachment': return <Upload><Button icon={<UploadOutlined />}>上传附件</Button></Upload>;
-            default: return <AntInput placeholder={field.placeholder} defaultValue={field.defaultValue} />;
+            default: return <AntInput placeholder={field.placeholder} value={field.defaultValue} onChange={e => handleChange(e.target.value)} />;
         }
     };
 
@@ -440,7 +442,7 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
                                         <React.Fragment key={field.id}>
                                             {overId === field.id && index > 0 && <div className="canvas-field-placeholder" />}
                                             <SortableField field={field} selected={field.id === selectedFieldId}
-                                                onSelect={() => setSelectedFieldId(field.id)} onDelete={() => deleteField(field.id)} />
+                                                onSelect={() => setSelectedFieldId(field.id)} onDelete={() => deleteField(field.id)} onChange={updateField} />
                                         </React.Fragment>
                                     ))}
                                     {overId === 'canvas-droppable' && fields.length > 0 && <div className="canvas-field-placeholder" />}

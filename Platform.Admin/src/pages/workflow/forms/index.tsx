@@ -15,14 +15,15 @@ const { TextArea } = AntInput;
 
 const LIBRARY_PREFIX = 'lib_';
 
-function DraggableLibraryItem({ ft }: { ft: typeof FIELD_TYPES[number] }) {
+function DraggableLibraryItem({ ft, onAdd }: { ft: typeof FIELD_TYPES[number]; onAdd: (type: string) => void }) {
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
         id: `${LIBRARY_PREFIX}${ft.type}`,
         data: { type: ft.type, fromLibrary: true },
     });
     return (
         <div ref={setNodeRef} {...attributes} {...listeners}
-            className={`library-item ${isDragging ? 'dragging' : ''}`}>
+            className={`library-item ${isDragging ? 'dragging' : ''}`}
+            onClick={() => onAdd(ft.type)}>
             <span className="item-icon">{ft.icon}</span>
             <span className="item-label">{ft.label}</span>
         </div>
@@ -427,7 +428,7 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
                         <div className="library-header">字段组件</div>
                         <div className="library-content">
                             {FIELD_TYPES.map(ft => (
-                                <DraggableLibraryItem key={ft.type} ft={ft} />
+                                <DraggableLibraryItem key={ft.type} ft={ft} onAdd={addField} />
                             ))}
                         </div>
                     </div>

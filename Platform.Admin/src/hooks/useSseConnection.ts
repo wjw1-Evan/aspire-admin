@@ -23,34 +23,7 @@ const globalNotificationState: NotificationState = {
   statistics: { System: 0, Work: 0, Social: 0, Security: 0, UnreadTotal: 0, Total: 0 },
 };
 
-// localStorage 持久化
-const SSE_STATE_KEY = 'sse_connection_state';
 
-interface SsePersistedState {
-  connectionId: string | null;
-  lastConnectedAt: number | null;
-}
-
-function loadSseState(): SsePersistedState {
-  try {
-    const stored = localStorage.getItem(SSE_STATE_KEY);
-    return stored ? JSON.parse(stored) : { connectionId: null, lastConnectedAt: null };
-  } catch { return { connectionId: null, lastConnectedAt: null }; }
-}
-
-function saveSseState(state: SsePersistedState): void {
-  try { localStorage.setItem(SSE_STATE_KEY, JSON.stringify(state)); } catch {}
-}
-
-function clearSseState(): void {
-  try { localStorage.removeItem(SSE_STATE_KEY); } catch {}
-}
-
-// 初始化持久化状态
-const persistedState = loadSseState();
-if (persistedState.connectionId) {
-  globalConnectionId = persistedState.connectionId;
-}
 
 interface UseSseConnectionOptions {
   onConnected?: () => void;
@@ -196,8 +169,6 @@ export function useSseConnection(
           if (data.connectionId) {
             setConnectionId(data.connectionId);
             globalConnectionId = data.connectionId;
-            // 持久化 connectionId
-            saveSseState({ connectionId: data.connectionId, lastConnectedAt: Date.now() });
           }
         } catch (e) {
           onConnected?.();
@@ -227,9 +198,6 @@ export function useSseConnection(
         setIsConnected(true);
         globalIsConnected = true;
         setIsConnecting(false);
-
-        // 持久化连接状态
-        saveSseState({ connectionId: globalConnectionId, lastConnectedAt: Date.now() });
 
         globalEventSource = eventSource;
       };
@@ -292,9 +260,6 @@ export function useSseConnection(
 
         setIsConnected(false);
         setIsConnecting(false);
-
-        // 清除持久化状态
-        clearSseState();
 
         // 重置全局状态，触发重连
         globalEventSource = null;
@@ -378,9 +343,6 @@ export function useSseConnection(
       globalEventSource.close();
       globalEventSource = null;
     }
-
-    // 清除持久化状态
-    clearSseState();
 
     globalIsConnected = false;
     globalConnectionId = null;

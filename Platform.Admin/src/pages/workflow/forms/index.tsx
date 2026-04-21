@@ -78,6 +78,17 @@ interface FormStatistics {
     activeForms: number;
 }
 
+const FIELD_TYPE_MAP: Record<string, FormField['type']> = {
+    text: 'Text', textarea: 'TextArea', number: 'Number',
+    date: 'Date', datetime: 'DateTime', select: 'Select',
+    radio: 'Radio', checkbox: 'Checkbox', switch: 'Switch', attachment: 'Attachment',
+};
+
+const normalizeFieldType = (t: string | undefined): FormField['type'] => {
+    if (!t) return 'Text';
+    return FIELD_TYPE_MAP[t.toLowerCase()] || (t as FormField['type']);
+};
+
 const FIELD_TYPES = [
     { type: 'Text', label: '文本', icon: 'T' },
     { type: 'TextArea', label: '多行文本', icon: 'T-' },
@@ -116,7 +127,7 @@ function SortableField({ field, selected, onSelect, onDelete }: {
     };
 
     const renderFieldPreview = () => {
-        switch (field.type) {
+        switch (normalizeFieldType(field.type)) {
             case 'Text': return <AntInput placeholder={field.placeholder} disabled />;
             case 'TextArea': return <TextArea rows={2} placeholder={field.placeholder} disabled />;
             case 'Number': return <AntInput placeholder={field.placeholder} disabled />;
@@ -209,7 +220,8 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
     const dragInsertedRef = useRef<string | null>(null);
 
     useEffect(() => {
-        setFields(form.fields || []);
+        const normalized = (form.fields || []).map(f => ({ ...f, type: normalizeFieldType(f.type) }));
+        setFields(normalized);
         setFormData({ name: form.name, version: form.version || 1, isActive: form.isActive ?? true });
         setSelectedFieldId(null);
         setPreviewMode(false);

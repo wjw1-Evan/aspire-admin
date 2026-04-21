@@ -70,6 +70,7 @@ public class FormField
 
     /// <summary>字段类型</summary>
     [BsonRepresentation(BsonType.String)]
+    [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
     public FormFieldType Type { get; set; } = FormFieldType.Text;
 
     /// <summary>是否必填</summary>

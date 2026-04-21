@@ -5,13 +5,38 @@ import { PageContainer, ProTable, ProColumns, ActionType } from '@ant-design/pro
 import { PlusOutlined, DeleteOutlined, EyeOutlined, SaveOutlined, DragOutlined, CloseOutlined, PartitionOutlined, UploadOutlined, EditOutlined } from '@ant-design/icons';
 import { request } from '@umijs/max';
 import { ApiResponse, PagedResult } from '@/types';
-import type { DragEndEvent } from '@dnd-kit/core';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import type { DragEndEvent, DragStartEvent, DragOverEvent } from '@dnd-kit/core';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, useDroppable, useDraggable, DragOverlay } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import dayjs from 'dayjs';
 import { CSS } from '@dnd-kit/utilities';
 
 const { TextArea } = AntInput;
+
+const LIBRARY_PREFIX = 'lib_';
+
+function DraggableLibraryItem({ ft }: { ft: typeof FIELD_TYPES[number] }) {
+    const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+        id: `${LIBRARY_PREFIX}${ft.type}`,
+        data: { type: ft.type, fromLibrary: true },
+    });
+    return (
+        <div ref={setNodeRef} {...attributes} {...listeners}
+            className={`library-item ${isDragging ? 'dragging' : ''}`}>
+            <span className="item-icon">{ft.icon}</span>
+            <span className="item-label">{ft.label}</span>
+        </div>
+    );
+}
+
+function DroppableCanvas({ children }: { children: React.ReactNode }) {
+    const { setNodeRef, isOver } = useDroppable({ id: 'canvas-droppable' });
+    return (
+        <div ref={setNodeRef} className={`canvas-content ${isOver ? 'canvas-drop-active' : ''}`}>
+            {children}
+        </div>
+    );
+}
 
 interface FormDefinition {
     id?: string;
@@ -180,6 +205,8 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
     const [formData, setFormData] = useState({ name: form.name, version: form.version || 1, isActive: form.isActive ?? true });
     const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
     const [previewMode, setPreviewMode] = useState(false);
+    const [activeId, setActiveId] = useState<string | null>(null);
+    const dragInsertedRef = useRef<string | null>(null);
 
     useEffect(() => {
         setFields(form.fields || []);
@@ -195,17 +222,9 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
 
     const selectedField = fields.find(f => f.id === selectedFieldId);
 
-    const handleDragEnd = (event: DragEndEvent) => {
-        const { active, over } = event;
-        if (!over || active.id === over.id) return;
-        const oldIndex = fields.findIndex(f => f.id === active.id);
-        const newIndex = fields.findIndex(f => f.id === over.id);
-        setFields(arrayMove(fields, oldIndex, newIndex));
-    };
-
-    const addField = (type: string) => {
+    const createField = (type: string): FormField => {
         const fieldType = FIELD_TYPES.find(f => f.type === type)!;
-        const newField: FormField = {
+        return {
             id: `field_${Date.now()}`,
             label: `${fieldType.label}_${fields.length + 1}`,
             type: type as FormField['type'],
@@ -213,8 +232,69 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
             dataKey: `field_${fields.length + 1}`,
             options: type === 'Select' || type === 'Radio' || type === 'Checkbox' ? [{ label: '选项1', value: 'option1' }, { label: '选项2', value: 'option2' }] : undefined,
         };
+    };
+
+    const addField = (type: string) => {
+        const newField = createField(type);
         setFields([...fields, newField]);
         setSelectedFieldId(newField.id);
+    };
+
+    const handleDragStart = (event: DragStartEvent) => {
+        setActiveId(event.active.id as string);
+        dragInsertedRef.current = null;
+    };
+
+    const handleDragOver = (event: DragOverEvent) => {
+        const { active, over } = event;
+        if (!over) return;
+
+        const activeFromLibrary = String(active.id).startsWith(LIBRARY_PREFIX);
+        if (!activeFromLibrary) return;
+
+        if (dragInsertedRef.current) return;
+
+        if (over.id === 'canvas-droppable' || String(over.id).startsWith('field_')) {
+            const fieldType = String(active.id).replace(LIBRARY_PREFIX, '');
+            const newField = createField(fieldType);
+
+            if (over.id === 'canvas-droppable') {
+                setFields(prev => [...prev, newField]);
+            } else {
+                setFields(prev => {
+                    const overIndex = prev.findIndex(f => f.id === over.id);
+                    if (overIndex >= 0) {
+                        return [...prev.slice(0, overIndex), newField, ...prev.slice(overIndex)];
+                    }
+                    return [...prev, newField];
+                });
+            }
+            setSelectedFieldId(newField.id);
+            setActiveId(newField.id);
+            dragInsertedRef.current = newField.id;
+        }
+    };
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        setActiveId(null);
+
+        if (!over) return;
+
+        const activeFromLibrary = String(active.id).startsWith(LIBRARY_PREFIX);
+        if (activeFromLibrary) return;
+
+        if (active.id !== over.id && over.id !== 'canvas-droppable') {
+            const oldIndex = fields.findIndex(f => f.id === active.id);
+            const newIndex = fields.findIndex(f => f.id === over.id);
+            if (oldIndex >= 0 && newIndex >= 0) {
+                setFields(arrayMove(fields, oldIndex, newIndex));
+            }
+        }
+    };
+
+    const handleDragCancel = () => {
+        setActiveId(null);
     };
 
     const updateField = (updated: FormField) => {
@@ -278,35 +358,54 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
                     <Button icon={<EyeOutlined />} onClick={() => setPreviewMode(true)}>预览</Button>
                 </Space>
             </div>
-            <div className="designer-body">
-                <div className="field-library">
-                    <div className="library-header">字段组件</div>
-                    <div className="library-content">
-                        {FIELD_TYPES.map(ft => (
-                            <div key={ft.type} className="library-item" onClick={() => addField(ft.type)}>
-                                <span className="item-icon">{ft.icon}</span>
-                                <span className="item-label">{ft.label}</span>
-                            </div>
-                        ))}
+<div className="designer-body">
+                <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragStart={handleDragStart}
+                    onDragOver={handleDragOver}
+                    onDragEnd={handleDragEnd}
+                    onDragCancel={handleDragCancel}
+                >
+                    <div className="field-library">
+                        <div className="library-header">字段组件</div>
+                        <div className="library-content">
+                            {FIELD_TYPES.map(ft => (
+                                <DraggableLibraryItem key={ft.type} ft={ft} />
+                            ))}
+                        </div>
                     </div>
-                </div>
-                <div className="form-canvas">
-                    <div className="canvas-header">表单画布</div>
-                    <div className="canvas-content">
-                        {fields.length === 0 ? (
-                            <Empty description="从左侧拖拽或点击添加字段" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-                        ) : (
-                            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <div className="form-canvas">
+                        <div className="canvas-header">表单画布</div>
+                        <DroppableCanvas>
+                            {fields.length === 0 ? (
+                                <Empty description="从左侧拖拽或点击添加字段" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                            ) : (
                                 <SortableContext items={fields.map(f => f.id)} strategy={verticalListSortingStrategy}>
                                     {fields.map(field => (
                                         <SortableField key={field.id} field={field} selected={field.id === selectedFieldId}
                                             onSelect={() => setSelectedFieldId(field.id)} onDelete={() => deleteField(field.id)} />
                                     ))}
                                 </SortableContext>
-                            </DndContext>
-                        )}
+                            )}
+                        </DroppableCanvas>
                     </div>
-                </div>
+                    <DragOverlay>
+                        {activeId && String(activeId).startsWith(LIBRARY_PREFIX) ? (
+                            <div className="library-item drag-overlay">
+                                <span className="item-icon">{FIELD_TYPES.find(f => `${LIBRARY_PREFIX}${f.type}` === activeId)?.icon}</span>
+                                <span className="item-label">{FIELD_TYPES.find(f => `${LIBRARY_PREFIX}${f.type}` === activeId)?.label}</span>
+                            </div>
+                        ) : activeId ? (
+                            <div className="canvas-field drag-overlay">
+                                {(() => {
+                                    const f = fields.find(x => x.id === activeId);
+                                    return f ? <div className="field-preview-wrapper"><div className="field-label-preview">{f.label}</div></div> : null;
+                                })()}
+                            </div>
+                        ) : null}
+                    </DragOverlay>
+                </DndContext>
                 <div className="field-properties" style={{ width: 280, borderLeft: '1px solid #f0f0f0', background: '#fafafa', padding: 12 }}>
                     {selectedField ? (
                         <FieldPropertyPanel field={selectedField} onChange={updateField} onClose={() => setSelectedFieldId(null)} />
@@ -399,8 +498,12 @@ const FormDefinitionManagement: React.FC = () => {
                 .field-library { width: 180px; background: #fff; border-right: 1px solid #f0f0f0; display: flex; flex-direction: column; }
                 .library-header { padding: 12px 16px; font-weight: 500; border-bottom: 1px solid #f0f0f0; }
                 .library-content { flex: 1; padding: 8px; overflow-y: auto; }
-                .library-item { display: flex; align-items: center; padding: 8px 12px; margin-bottom: 4px; border-radius: 4px; cursor: pointer; background: #f5f5f5; }
+                .library-item { display: flex; align-items: center; padding: 8px 12px; margin-bottom: 4px; border-radius: 4px; cursor: grab; background: #f5f5f5; user-select: none; }
                 .library-item:hover { background: #e6f7ff; border-color: #1890ff; }
+                .library-item:active { cursor: grabbing; }
+                .library-item.dragging { opacity: 0.5; }
+                .drag-overlay { z-index: 1000; opacity: 0.85; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+                .canvas-drop-active { background: #e6f7ff !important; outline: 2px dashed #1890ff; outline-offset: -4px; }
                 .item-icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: #1890ff; color: #fff; border-radius: 4px; margin-right: 8px; font-size: 12px; }
                 .item-label { font-size: 13px; }
                 .form-canvas { flex: 1; display: flex; flex-direction: column; background: #fafafa; }

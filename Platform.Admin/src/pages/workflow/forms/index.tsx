@@ -181,6 +181,13 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
     const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
     const [previewMode, setPreviewMode] = useState(false);
 
+    useEffect(() => {
+        setFields(form.fields || []);
+        setFormData({ name: form.name, version: form.version || 1, isActive: form.isActive ?? true });
+        setSelectedFieldId(null);
+        setPreviewMode(false);
+    }, [form]);
+
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -448,7 +455,7 @@ const FormDefinitionManagement: React.FC = () => {
             <Drawer title={state.editingForm?.id ? `编辑表单: ${state.editingForm.name}` : '新建表单'} width="100%" open={state.designerVisible}
                 onClose={() => set({ designerVisible: false, editingForm: null })}>
                 {state.designerVisible && (
-                    <FormDesigner form={state.editingForm || { id: '', name: '新表单', version: 1, isActive: true, fields: [] }} onSave={handleDesignerSave} />
+                    <FormDesigner key={state.editingForm?.id || 'new'} form={state.editingForm || { id: '', name: '新表单', version: 1, isActive: true, fields: [] }} onSave={handleDesignerSave} />
                 )}
             </Drawer>
 

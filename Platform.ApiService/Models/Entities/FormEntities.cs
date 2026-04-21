@@ -78,9 +78,8 @@ public class FormField
     /// <summary>占位符</summary>
     public string? Placeholder { get; set; }
 
-    /// <summary>默认值</summary>
-    [NotMapped]
-    public object? DefaultValue { get; set; }
+    /// <summary>默认值（以 JSON 形式序列化存储）</summary>
+    public string? DefaultValue { get; set; }
 
     /// <summary>选项列表（用于 Select/Radio/Checkbox）</summary>
     public List<FormOption>? Options { get; set; }

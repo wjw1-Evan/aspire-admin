@@ -274,8 +274,13 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
     };
 
     const handleDragOver = (event: DragOverEvent) => {
-        const { over } = event;
+        const { active, over } = event;
         if (!over) {
+            setOverId(null);
+            return;
+        }
+        const isFromLibrary = String(active.id).startsWith(LIBRARY_PREFIX);
+        if (!isFromLibrary) {
             setOverId(null);
             return;
         }

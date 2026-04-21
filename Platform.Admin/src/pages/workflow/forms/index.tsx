@@ -253,32 +253,63 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
     };
 
     const handleDragStart = (event: DragStartEvent) => {
-        setActiveId(event.active.id as string);
+        const activeId = event.active.id as string;
+        setActiveId(activeId);
+
+        const isFromLibrary = activeId.startsWith(LIBRARY_PREFIX);
+        if (isFromLibrary) {
+            const fieldType = activeId.replace(LIBRARY_PREFIX, '');
+            const tempId = `temp_${Date.now()}`;
+            const tempField: FormField = {
+                id: tempId,
+                label: FIELD_TYPES.find(f => f.type === fieldType)?.label || '新字段',
+                type: fieldType as FormField['type'],
+                required: false,
+                dataKey: '',
+            };
+            setFields(prev => [...prev, tempField]);
+        }
     };
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
         setActiveId(null);
 
-        if (!over) return;
+        if (!over) {
+            setFields(prev => prev.filter(f => !f.id.startsWith('temp_')));
+            return;
+        }
 
         const isFromLibrary = String(active.id).startsWith(LIBRARY_PREFIX);
 
         if (isFromLibrary) {
-            if (over.id === 'canvas-droppable' || String(over.id).startsWith('field_')) {
-                const fieldType = String(active.id).replace(LIBRARY_PREFIX, '');
-                const newField = createField(fieldType);
+            const tempField = fields.find(f => f.id.startsWith('temp_'));
+            if (!tempField) return;
 
-                setFields(prev => {
-                    if (over.id === 'canvas-droppable') return [...prev, newField];
-                    const overIndex = prev.findIndex(f => f.id === over.id);
-                    if (overIndex >= 0) {
-                        return [...prev.slice(0, overIndex), newField, ...prev.slice(overIndex)];
-                    }
-                    return [...prev, newField];
-                });
-                setSelectedFieldId(newField.id);
-            }
+            const targetId = String(over.id);
+            const fieldType = String(active.id).replace(LIBRARY_PREFIX, '');
+            const finalField: FormField = {
+                ...tempField,
+                id: `field_${Date.now()}`,
+                type: fieldType as FormField['type'],
+                label: `${FIELD_TYPES.find(f => f.type === fieldType)?.label || '字段'}_${fields.length + 1}`,
+                dataKey: `field_${fields.length + 1}`,
+                options: fieldType === 'Select' || fieldType === 'Radio' || fieldType === 'Checkbox' 
+                    ? [{ label: '选项1', value: 'option1' }, { label: '选项2', value: 'option2' }] : undefined,
+            };
+
+            setFields(prev => {
+                const filtered = prev.filter(f => f.id !== tempField.id);
+                if (targetId === 'canvas-droppable') {
+                    return [...filtered, finalField];
+                }
+                const overIndex = filtered.findIndex(f => f.id === targetId);
+                if (overIndex >= 0) {
+                    return [...filtered.slice(0, overIndex), finalField, ...filtered.slice(overIndex)];
+                }
+                return [...filtered, finalField];
+            });
+            setSelectedFieldId(finalField.id);
             return;
         }
 

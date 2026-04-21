@@ -5,7 +5,7 @@ import { PageContainer, ProTable, ProColumns, ActionType } from '@ant-design/pro
 import { PlusOutlined, DeleteOutlined, EyeOutlined, SaveOutlined, DragOutlined, CloseOutlined, PartitionOutlined, UploadOutlined, EditOutlined } from '@ant-design/icons';
 import { request } from '@umijs/max';
 import { ApiResponse, PagedResult } from '@/types';
-import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
+import type { DragEndEvent, DragStartEvent, DragOverEvent } from '@dnd-kit/core';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, useDroppable, useDraggable, DragOverlay } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import dayjs from 'dayjs';
@@ -217,6 +217,7 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
     const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
     const [previewMode, setPreviewMode] = useState(false);
     const [activeId, setActiveId] = useState<string | null>(null);
+    const [overId, setOverId] = useState<string | null>(null);
 
     useEffect(() => {
         const normalized = (form.fields || []).map(f => ({ ...f, type: normalizeFieldType(f.type) }));
@@ -224,6 +225,8 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
         setFormData({ name: form.name, version: form.version || 1, isActive: form.isActive ?? true });
         setSelectedFieldId(null);
         setPreviewMode(false);
+        setActiveId(null);
+        setOverId(null);
     }, [form]);
 
     const sensors = useSensors(
@@ -255,9 +258,24 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
         setActiveId(event.active.id as string);
     };
 
+    const handleDragOver = (event: DragOverEvent) => {
+        const { over } = event;
+        if (!over) {
+            setOverId(null);
+            return;
+        }
+        const isFromLibrary = String(event.active.id).startsWith(LIBRARY_PREFIX);
+        if (isFromLibrary && (over.id === 'canvas-droppable' || String(over.id).startsWith('field_'))) {
+            setOverId(String(over.id));
+        } else {
+            setOverId(null);
+        }
+    };
+
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
         setActiveId(null);
+        setOverId(null);
 
         if (!over) return;
 
@@ -363,6 +381,7 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
                     sensors={sensors}
                     collisionDetection={closestCenter}
                     onDragStart={handleDragStart}
+                    onDragOver={handleDragOver}
                     onDragEnd={handleDragEnd}
                     onDragCancel={handleDragCancel}
                 >
@@ -381,10 +400,17 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
                                 <Empty description="从左侧拖拽或点击添加字段" image={Empty.PRESENTED_IMAGE_SIMPLE} />
                             ) : (
                                 <SortableContext items={fields.map(f => f.id)} strategy={verticalListSortingStrategy}>
-                                    {fields.map(field => (
-                                        <SortableField key={field.id} field={field} selected={field.id === selectedFieldId}
-                                            onSelect={() => setSelectedFieldId(field.id)} onDelete={() => deleteField(field.id)} />
-                                    ))}
+                                    {fields.map(field => {
+                                        const showPlaceholder = overId === field.id;
+                                        return (
+                                            <React.Fragment key={field.id}>
+                                                {showPlaceholder && <div className="canvas-field-placeholder" />}
+                                                <SortableField field={field} selected={field.id === selectedFieldId}
+                                                    onSelect={() => setSelectedFieldId(field.id)} onDelete={() => deleteField(field.id)} />
+                                            </React.Fragment>
+                                        );
+                                    })}
+                                    {overId === 'canvas-droppable' && fields.length > 0 && <div className="canvas-field-placeholder" />}
                                 </SortableContext>
                             )}
                         </DroppableCanvas>
@@ -511,6 +537,8 @@ const FormDefinitionManagement: React.FC = () => {
                 .canvas-field { position: relative; padding: 12px 16px; margin-bottom: 8px; background: #fff; border: 1px solid #d9d9d9; border-radius: 8px; cursor: move; transition: all 0.2s; display: flex; flex-direction: column; gap: 6px; }
                 .canvas-field:hover { border-color: #1890ff; }
                 .canvas-field.selected { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.2); }
+                .canvas-field-placeholder { height: 70px; margin-bottom: 8px; border: 2px dashed #1890ff; border-radius: 8px; background: #e6f7ff; animation: pulse 1s infinite; }
+                @keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
                 .field-label-preview { font-size: 14px; color: rgba(0,0,0,0.88); font-weight: 400; }
                 .required-mark { color: #ff4d4f; margin-left: 4px; }
                 .field-delete-btn { position: absolute; top: 8px; right: 8px; opacity: 0; transition: opacity 0.2s; }

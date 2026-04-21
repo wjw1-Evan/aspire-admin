@@ -385,13 +385,15 @@ const FormDefinitionManagement: React.FC = () => {
                 .form-canvas { flex: 1; display: flex; flex-direction: column; background: #fafafa; }
                 .canvas-header { padding: 12px 16px; font-weight: 500; border-bottom: 1px solid #f0f0f0; background: #fff; }
                 .canvas-content { flex: 1; padding: 16px; overflow-y: auto; }
-                .canvas-field { position: relative; padding: 12px 16px; margin-bottom: 8px; background: #fff; border: 1px solid #d9d9d9; border-radius: 8px; cursor: move; transition: all 0.2s; }
+                .canvas-field { position: relative; padding: 12px 16px; margin-bottom: 8px; background: #fff; border: 1px solid #d9d9d9; border-radius: 8px; cursor: move; transition: all 0.2s; display: flex; flex-direction: column; gap: 6px; }
                 .canvas-field:hover { border-color: #1890ff; }
                 .canvas-field.selected { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.2); }
                 .field-label-preview { font-size: 14px; color: rgba(0,0,0,0.88); font-weight: 400; }
                 .required-mark { color: #ff4d4f; margin-left: 4px; }
                 .field-delete-btn { position: absolute; top: 8px; right: 8px; opacity: 0; transition: opacity 0.2s; }
                 .canvas-field:hover .field-delete-btn { opacity: 1; }
+                .field-preview-wrapper { display: block; }
+                .field-preview-wrapper .ant-input, .field-preview-wrapper .ant-select, .field-preview-wrapper .ant-radio-group, .field-preview-wrapper .ant-checkbox-group, .field-preview-wrapper .ant-switch { display: block; }
                 .field-property-panel { height: 100%; }
                 .panel-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #d9d9d9; margin-bottom: 12px; font-weight: 500; }
                 .property-group { margin-bottom: 12px; }

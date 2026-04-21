@@ -1,14 +1,14 @@
 /**
  * SSE 连接管理 Hook
  * 提供统一的 SSE 连接生命周期管理（单例模式）
- * 支持 HMR 热更新后自动重连
+ * 支持 localStorage 持久化连接状态
  */
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { tokenUtils } from '@/utils/token';
 import { getApiBaseUrl } from '@/utils/request';
 import { notification } from 'antd';
-import { NotificationCategory, NotificationStatistics, AppNotification } from '@/services/notification/api';
+import { NotificationStatistics, AppNotification } from '@/services/notification/api';
 
 // 全局单例 EventSource（所有组件共享）
 let globalEventSource: EventSource | null = null;
@@ -23,30 +23,33 @@ const globalNotificationState: NotificationState = {
   statistics: { System: 0, Work: 0, Social: 0, Security: 0, UnreadTotal: 0, Total: 0 },
 };
 
-// HMR 检测：使用 sessionStorage 标记来跨 HMR 持久化状态
-const HMR_SESSION_KEY = 'sse_hmr_refresh_' + (window.location.pathname || '');
-let lastHmrTime = 0;
-try {
-  lastHmrTime = parseInt(sessionStorage.getItem(HMR_SESSION_KEY) || '0', 10);
-} catch (e) { }
+// localStorage 持久化
+const SSE_STATE_KEY = 'sse_connection_state';
 
-// 检查是否刚发生 HMR（当前时间与 sessionStorage 时间接近）
-const isAfterHmr = Date.now() - lastHmrTime < 2000;
-if (isAfterHmr) {
-  // 刚发生 HMR，需要重连
-  globalAutoConnectAttempted = false;
-  globalIsConnected = false;
-  globalEventSource = null;
-  globalConnectionId = null;
-  // 重置通知状态
-  globalNotificationState.unreadCount = 0;
-  globalNotificationState.statistics = { System: 0, Work: 0, Social: 0, Security: 0, UnreadTotal: 0, Total: 0 };
+interface SsePersistedState {
+  connectionId: string | null;
+  lastConnectedAt: number | null;
 }
 
-function notifyAllListeners() {
-  globalEventHandlers.forEach((handlers) => {
-    handlers.forEach((handler) => handler(null));
-  });
+function loadSseState(): SsePersistedState {
+  try {
+    const stored = localStorage.getItem(SSE_STATE_KEY);
+    return stored ? JSON.parse(stored) : { connectionId: null, lastConnectedAt: null };
+  } catch { return { connectionId: null, lastConnectedAt: null }; }
+}
+
+function saveSseState(state: SsePersistedState): void {
+  try { localStorage.setItem(SSE_STATE_KEY, JSON.stringify(state)); } catch {}
+}
+
+function clearSseState(): void {
+  try { localStorage.removeItem(SSE_STATE_KEY); } catch {}
+}
+
+// 初始化持久化状态
+const persistedState = loadSseState();
+if (persistedState.connectionId) {
+  globalConnectionId = persistedState.connectionId;
 }
 
 interface UseSseConnectionOptions {
@@ -193,6 +196,8 @@ export function useSseConnection(
           if (data.connectionId) {
             setConnectionId(data.connectionId);
             globalConnectionId = data.connectionId;
+            // 持久化 connectionId
+            saveSseState({ connectionId: data.connectionId, lastConnectedAt: Date.now() });
           }
         } catch (e) {
           onConnected?.();
@@ -222,6 +227,9 @@ export function useSseConnection(
         setIsConnected(true);
         globalIsConnected = true;
         setIsConnecting(false);
+
+        // 持久化连接状态
+        saveSseState({ connectionId: globalConnectionId, lastConnectedAt: Date.now() });
 
         globalEventSource = eventSource;
       };
@@ -284,6 +292,9 @@ export function useSseConnection(
 
         setIsConnected(false);
         setIsConnecting(false);
+
+        // 清除持久化状态
+        clearSseState();
 
         // 重置全局状态，触发重连
         globalEventSource = null;
@@ -367,6 +378,9 @@ export function useSseConnection(
       globalEventSource.close();
       globalEventSource = null;
     }
+
+    // 清除持久化状态
+    clearSseState();
 
     globalIsConnected = false;
     globalConnectionId = null;

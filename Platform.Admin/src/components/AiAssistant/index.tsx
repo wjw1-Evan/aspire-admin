@@ -11,6 +11,7 @@ import {
 import { useSseConnection } from '@/hooks/useSseConnection';
 import type { ChatMessage, ChatSession } from '@/services/chat/api';
 import { AI_ASSISTANT_ID, AI_ASSISTANT_NAME, AI_ASSISTANT_AVATAR } from '@/constants/ai';
+import { getUserAvatar } from '@/utils/avatar';
 
 const { TextArea } = Input;
 
@@ -724,6 +725,8 @@ const AiAssistant: React.FC = () => {
                   // 注意：实际用户ID由后端从token中获取，这里只是用于前端显示判断
                   const currentUserId = currentUser?.id;
                   const isUser = currentUserId && msg.senderId === currentUserId;
+                  const senderAvatar = isAssistant ? AI_ASSISTANT_AVATAR : getUserAvatar(currentUser?.avatar);
+                  const senderName = isAssistant ? AI_ASSISTANT_NAME : (msg.senderName || currentUser?.displayName || currentUser?.username || '我');
 
                   return (
                     <div
@@ -732,13 +735,19 @@ const AiAssistant: React.FC = () => {
                         display: 'flex',
                         justifyContent: isAssistant ? 'flex-start' : 'flex-end',
                         marginBottom: 16,
+                        alignItems: 'flex-end',
+                        gap: 8,
                       }}
                     >
+                      {isAssistant && <Avatar src={senderAvatar} size={32} />}
                       <div
                         style={{
                           maxWidth: '70%',
                         }}
                       >
+                        {isAssistant && (
+                          <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>{senderName}</div>
+                        )}
                         <div
                           style={{
                             padding: '8px 12px',
@@ -763,6 +772,7 @@ const AiAssistant: React.FC = () => {
                           )}
                         </div>
                       </div>
+                      {!isUser && !isAssistant && <Avatar src={senderAvatar} size={32} />}
                     </div>
                   );
                 })}

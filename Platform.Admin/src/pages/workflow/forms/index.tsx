@@ -113,11 +113,12 @@ const api = {
     getVersion: (versionId: string) => request<ApiResponse<FormVersion>>(`/apiservice/api/forms/version/${versionId}`),
 };
 
-function SortableField({ field, selected, onSelect, onDelete }: {
+function SortableField({ field, selected, onSelect, onDelete, showPlaceholder }: {
     field: FormField;
     selected: boolean;
     onSelect: () => void;
     onDelete: () => void;
+    showPlaceholder?: boolean;
 }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging, isOver } = useSortable({ id: field.id });
     const style = {
@@ -144,9 +145,9 @@ function SortableField({ field, selected, onSelect, onDelete }: {
 
     return (
         <div ref={setNodeRef} style={style} {...attributes} {...listeners}
-            className={`canvas-field ${selected ? 'selected' : ''} ${isOver ? 'sortable-over' : ''}`}
+            className={`canvas-field ${selected ? 'selected' : ''} ${showPlaceholder ? 'sortable-over' : ''}`}
             onClick={onSelect}>
-            {isOver && <div className="canvas-field-placeholder" />}
+            {showPlaceholder && <div className="canvas-field-placeholder" />}
             <div className="field-preview-wrapper">
                 <div className="field-label-preview">{field.label}{field.required && <span className="required-mark">*</span>}</div>
                 {renderFieldPreview()}
@@ -265,9 +266,9 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
             setOverId(null);
             return;
         }
-        const isFromLibrary = String(event.active.id).startsWith(LIBRARY_PREFIX);
-        if (isFromLibrary && (over.id === 'canvas-droppable' || String(over.id).startsWith('field_'))) {
-            setOverId(String(over.id));
+        const overId = String(over.id);
+        if (overId === 'canvas-droppable' || overId.startsWith('field_')) {
+            setOverId(overId);
         } else {
             setOverId(null);
         }
@@ -403,6 +404,7 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
                                 <SortableContext items={fields.map(f => f.id)} strategy={verticalListSortingStrategy}>
                                     {fields.map(field => (
                                         <SortableField key={field.id} field={field} selected={field.id === selectedFieldId}
+                                            showPlaceholder={overId === field.id}
                                             onSelect={() => setSelectedFieldId(field.id)} onDelete={() => deleteField(field.id)} />
                                     ))}
                                     {overId === 'canvas-droppable' && fields.length > 0 && <div className="canvas-field-placeholder" />}

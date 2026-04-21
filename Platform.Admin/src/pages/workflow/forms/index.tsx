@@ -5,7 +5,7 @@ import { PageContainer, ProTable, ProColumns, ActionType } from '@ant-design/pro
 import { PlusOutlined, DeleteOutlined, EyeOutlined, SaveOutlined, DragOutlined, CloseOutlined, PartitionOutlined, UploadOutlined, EditOutlined } from '@ant-design/icons';
 import { request } from '@umijs/max';
 import { ApiResponse, PagedResult } from '@/types';
-import type { DragEndEvent, DragStartEvent, DragOverEvent } from '@dnd-kit/core';
+import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, useDroppable, useDraggable, DragOverlay } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import dayjs from 'dayjs';
@@ -217,7 +217,6 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
     const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
     const [previewMode, setPreviewMode] = useState(false);
     const [activeId, setActiveId] = useState<string | null>(null);
-    const dragInsertedRef = useRef<string | null>(null);
 
     useEffect(() => {
         const normalized = (form.fields || []).map(f => ({ ...f, type: normalizeFieldType(f.type) }));
@@ -254,59 +253,44 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
 
     const handleDragStart = (event: DragStartEvent) => {
         setActiveId(event.active.id as string);
-        dragInsertedRef.current = null;
-    };
-
-    const handleDragOver = (event: DragOverEvent) => {
-        const { active, over } = event;
-        if (!over) return;
-
-        const activeFromLibrary = String(active.id).startsWith(LIBRARY_PREFIX);
-        if (!activeFromLibrary) return;
-
-        if (dragInsertedRef.current) return;
-
-        if (over.id === 'canvas-droppable' || String(over.id).startsWith('field_')) {
-            const fieldType = String(active.id).replace(LIBRARY_PREFIX, '');
-            const newField = createField(fieldType);
-
-            setFields(prev => {
-                if (over.id === 'canvas-droppable') {
-                    return [...prev, newField];
-                }
-                const overIndex = prev.findIndex(f => f.id === over.id);
-                if (overIndex >= 0) {
-                    return [...prev.slice(0, overIndex), newField, ...prev.slice(overIndex)];
-                }
-                return [...prev, newField];
-            });
-            setSelectedFieldId(newField.id);
-            setActiveId(newField.id);
-            dragInsertedRef.current = newField.id;
-        }
     };
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
-        const insertedId = dragInsertedRef.current;
         setActiveId(null);
-        dragInsertedRef.current = null;
 
         if (!over) return;
 
-        if (active.id === over.id) return;
+        const isFromLibrary = String(active.id).startsWith(LIBRARY_PREFIX);
 
-        const activeId = insertedId || (active.id as string);
-        if (over.id === 'canvas-droppable') return;
+        if (isFromLibrary) {
+            if (over.id === 'canvas-droppable' || String(over.id).startsWith('field_')) {
+                const fieldType = String(active.id).replace(LIBRARY_PREFIX, '');
+                const newField = createField(fieldType);
 
-        setFields(prev => {
-            const oldIndex = prev.findIndex(f => f.id === activeId);
-            const newIndex = prev.findIndex(f => f.id === over.id);
-            if (oldIndex >= 0 && newIndex >= 0) {
-                return arrayMove(prev, oldIndex, newIndex);
+                setFields(prev => {
+                    if (over.id === 'canvas-droppable') return [...prev, newField];
+                    const overIndex = prev.findIndex(f => f.id === over.id);
+                    if (overIndex >= 0) {
+                        return [...prev.slice(0, overIndex), newField, ...prev.slice(overIndex)];
+                    }
+                    return [...prev, newField];
+                });
+                setSelectedFieldId(newField.id);
             }
-            return prev;
-        });
+            return;
+        }
+
+        if (active.id !== over.id && String(over.id).startsWith('field_')) {
+            setFields(prev => {
+                const oldIndex = prev.findIndex(f => f.id === active.id);
+                const newIndex = prev.findIndex(f => f.id === over.id);
+                if (oldIndex >= 0 && newIndex >= 0) {
+                    return arrayMove(prev, oldIndex, newIndex);
+                }
+                return prev;
+            });
+        }
     };
 
     const handleDragCancel = () => {
@@ -379,7 +363,6 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
                     sensors={sensors}
                     collisionDetection={closestCenter}
                     onDragStart={handleDragStart}
-                    onDragOver={handleDragOver}
                     onDragEnd={handleDragEnd}
                     onDragCancel={handleDragCancel}
                 >

@@ -119,7 +119,7 @@ function SortableField({ field, selected, onSelect, onDelete }: {
     onSelect: () => void;
     onDelete: () => void;
 }) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: field.id });
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging, isOver } = useSortable({ id: field.id });
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
@@ -144,8 +144,9 @@ function SortableField({ field, selected, onSelect, onDelete }: {
 
     return (
         <div ref={setNodeRef} style={style} {...attributes} {...listeners}
-            className={`canvas-field ${selected ? 'selected' : ''}`}
+            className={`canvas-field ${selected ? 'selected' : ''} ${isOver ? 'sortable-over' : ''}`}
             onClick={onSelect}>
+            {isOver && <div className="canvas-field-placeholder" />}
             <div className="field-preview-wrapper">
                 <div className="field-label-preview">{field.label}{field.required && <span className="required-mark">*</span>}</div>
                 {renderFieldPreview()}
@@ -400,16 +401,10 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
                                 <Empty description="从左侧拖拽或点击添加字段" image={Empty.PRESENTED_IMAGE_SIMPLE} />
                             ) : (
                                 <SortableContext items={fields.map(f => f.id)} strategy={verticalListSortingStrategy}>
-                                    {fields.map(field => {
-                                        const showPlaceholder = overId === field.id;
-                                        return (
-                                            <React.Fragment key={field.id}>
-                                                {showPlaceholder && <div className="canvas-field-placeholder" />}
-                                                <SortableField field={field} selected={field.id === selectedFieldId}
-                                                    onSelect={() => setSelectedFieldId(field.id)} onDelete={() => deleteField(field.id)} />
-                                            </React.Fragment>
-                                        );
-                                    })}
+                                    {fields.map(field => (
+                                        <SortableField key={field.id} field={field} selected={field.id === selectedFieldId}
+                                            onSelect={() => setSelectedFieldId(field.id)} onDelete={() => deleteField(field.id)} />
+                                    ))}
                                     {overId === 'canvas-droppable' && fields.length > 0 && <div className="canvas-field-placeholder" />}
                                 </SortableContext>
                             )}
@@ -537,6 +532,7 @@ const FormDefinitionManagement: React.FC = () => {
                 .canvas-field { position: relative; padding: 12px 16px; margin-bottom: 8px; background: #fff; border: 1px solid #d9d9d9; border-radius: 8px; cursor: move; transition: all 0.2s; display: flex; flex-direction: column; gap: 6px; }
                 .canvas-field:hover { border-color: #1890ff; }
                 .canvas-field.selected { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.2); }
+                .canvas-field.sortable-over { border-color: #1890ff; }
                 .canvas-field-placeholder { height: 70px; margin-bottom: 8px; border: 2px dashed #1890ff; border-radius: 8px; background: #e6f7ff; animation: pulse 1s infinite; }
                 @keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
                 .field-label-preview { font-size: 14px; color: rgba(0,0,0,0.88); font-weight: 400; }

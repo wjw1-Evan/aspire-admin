@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useNavigate } from '@umijs/max';
 import { Badge, Tabs, Button, List, Space, Empty, Spin, Tag, Typography } from 'antd';
 import { BellOutlined, CheckCircleOutlined, InfoCircleOutlined, WarningOutlined, CloseCircleOutlined, DeleteOutlined, LoadingOutlined } from '@ant-design/icons';
 import HeaderDropdown from '@/components/HeaderDropdown';
@@ -25,6 +26,7 @@ const LevelIcon: React.FC<{ level: NotificationLevel }> = ({ level }) => {
 const PAGE_SIZE = 20;
 
 const NoticeIcon: React.FC = () => {
+  const navigate = useNavigate();
   const [popoverOpen, setPopoverOpen] = useState(false);
   const sseResult = useSseConnection({ enableNotifications: true });
   const notificationState = sseResult.notificationState;
@@ -163,7 +165,9 @@ const NoticeIcon: React.FC = () => {
                   className={styles.notificationItem}
                   style={{ opacity: item.status === 'Read' || item.status === 'read' ? 0.6 : 1 }}
                   onClick={(e) => {
-                    if (item.status === 'Unread' || item.status === 'unread') {
+                    if (item.actionUrl) {
+                      navigate(item.actionUrl);
+                    } else if (item.status === 'Unread' || item.status === 'unread') {
                       handleMarkAsRead(e, item.id);
                     }
                   }}

@@ -148,8 +148,8 @@ function SortableField({ field, selected, onSelect, onDelete, onChange }: {
         <div ref={setNodeRef} style={style} {...attributes} {...listeners}
             className={`canvas-field ${selected ? 'selected' : ''}`}
             onClick={onSelect}>
-            <div className="field-preview-wrapper">
-                <div className="field-label-preview">{field.label}{field.required && <span className="required-mark">*</span>}</div>
+            <div  >
+                <div style={{  marginBottom:10 }  } >{field.required && <span className="required-mark">*</span>} {field.label}</div>
                 {renderFieldPreview()}
             </div>
             <Button type="text" size="small" danger icon={<CloseOutlined />} className="field-delete-btn" onClick={(e) => { e.stopPropagation(); onDelete(); }} />
@@ -322,7 +322,7 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
                 type: fieldType as FormField['type'],
                 label: `${FIELD_TYPES.find(f => f.type === fieldType)?.label || '字段'}_${fields.length + 1}`,
                 dataKey: `field_${fields.length + 1}`,
-                options: fieldType === 'Select' || fieldType === 'Radio' || fieldType === 'Checkbox' 
+                options: fieldType === 'Select' || fieldType === 'Radio' || fieldType === 'Checkbox'
                     ? [{ label: '选项1', value: 'option1' }, { label: '选项2', value: 'option2' }] : undefined,
             };
 
@@ -414,7 +414,7 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
                     <Button icon={<EyeOutlined />} onClick={() => setPreviewMode(true)}>预览</Button>
                 </Space>
             </div>
-<div className="designer-body">
+            <div className="designer-body">
                 <DndContext
                     sensors={sensors}
                     collisionDetection={closestCenter}
@@ -460,7 +460,7 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
                             <div className="canvas-field drag-overlay">
                                 {(() => {
                                     const f = fields.find(x => x.id === activeId);
-                                    return f ? <div className="field-preview-wrapper"><div className="field-label-preview">{f.label}</div></div> : null;
+                                    return f ? <div  ><div  >{f.label}</div></div> : null;
                                 })()}
                             </div>
                         ) : null}
@@ -574,12 +574,11 @@ const FormDefinitionManagement: React.FC = () => {
                 .canvas-field.selected { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.2); }
                 .canvas-field-placeholder { height: 70px; margin-bottom: 8px; border: 2px dashed #1890ff; border-radius: 8px; background: #e6f7ff; animation: pulse 1s infinite; }
                 @keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
-                .field-label-preview { font-size: 14px; color: rgba(0,0,0,0.88); font-weight: 400; }
-                .required-mark { color: #ff4d4f; margin-left: 4px; }
+
+                .required-mark { color: #ff4d4f;  }
                 .field-delete-btn { position: absolute; top: 8px; right: 8px; opacity: 0; transition: opacity 0.2s; }
                 .canvas-field:hover .field-delete-btn { opacity: 1; }
-                .field-preview-wrapper { display: block; }
-                .field-preview-wrapper .ant-input, .field-preview-wrapper .ant-select, .field-preview-wrapper .ant-radio-group, .field-preview-wrapper .ant-checkbox-group, .field-preview-wrapper .ant-switch { display: block; }
+
                 .field-property-panel { height: 100%; }
                 .panel-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #d9d9d9; margin-bottom: 12px; font-weight: 500; }
                 .property-group { margin-bottom: 12px; }
@@ -649,15 +648,15 @@ const FormDefinitionManagement: React.FC = () => {
                             <Form layout="vertical">
                                 {state.previewFields.map(field => (
                                     <Form.Item key={field.id} label={field.label} required={field.required}>
-                                        {field.type === 'Text' && <AntInput placeholder={field.placeholder} />}
-                                        {field.type === 'TextArea' && <TextArea rows={2} placeholder={field.placeholder} />}
-                                        {field.type === 'Number' && <AntInput type="number" placeholder={field.placeholder} />}
-                                        {field.type === 'Date' && <AntInput type="date" placeholder={field.placeholder} />}
-                                        {field.type === 'DateTime' && <AntInput type="datetime-local" placeholder={field.placeholder} />}
-                                        {field.type === 'Select' && <Select placeholder={field.placeholder}>{field.options?.map(o => <Select.Option key={o.value} value={o.value}>{o.label}</Select.Option>)}</Select>}
-                                        {field.type === 'Radio' && <RadioGroup>{field.options?.map(o => <Radio key={o.value} value={o.value}>{o.label}</Radio>)}</RadioGroup>}
-                                        {field.type === 'Checkbox' && <Checkbox.Group options={field.options?.map(o => ({ label: o.label, value: o.value }))} />}
-                                        {field.type === 'Switch' && <Switch checkedChildren="是" unCheckedChildren="否" />}
+                                        {field.type === 'Text' && <AntInput placeholder={field.placeholder} defaultValue={field.defaultValue} />}
+                                        {field.type === 'TextArea' && <TextArea rows={2} placeholder={field.placeholder} defaultValue={field.defaultValue} />}
+                                        {field.type === 'Number' && <AntInput type="number" placeholder={field.placeholder} defaultValue={field.defaultValue} />}
+                                        {field.type === 'Date' && <AntInput type="date" placeholder={field.placeholder} defaultValue={field.defaultValue} />}
+                                        {field.type === 'DateTime' && <AntInput type="datetime-local" placeholder={field.placeholder} defaultValue={field.defaultValue} />}
+                                        {field.type === 'Select' && <Select placeholder={field.placeholder} defaultValue={field.defaultValue}>{field.options?.map(o => <Select.Option key={o.value} value={o.value}>{o.label}</Select.Option>)}</Select>}
+                                        {field.type === 'Radio' && <RadioGroup defaultValue={field.defaultValue}>{field.options?.map(o => <Radio key={o.value} value={o.value}>{o.label}</Radio>)}</RadioGroup>}
+                                        {field.type === 'Checkbox' && <Checkbox.Group options={field.options?.map(o => ({ label: o.label, value: o.value }))} defaultValue={field.defaultValue?.split(',').filter(Boolean)} />}
+                                        {field.type === 'Switch' && <Switch defaultChecked={field.defaultValue === 'true'} checkedChildren="是" unCheckedChildren="否" />}
                                         {field.type === 'Attachment' && <Upload><Button icon={<UploadOutlined />}>上传</Button></Upload>}
                                     </Form.Item>
                                 ))}

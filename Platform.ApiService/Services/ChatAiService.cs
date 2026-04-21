@@ -458,7 +458,8 @@ public class ChatAiService : IChatAiService
         await _context.Set<ChatMessage>().AddAsync(message);
         await _context.SaveChangesAsync();
 
-        await _sessionService.UpdateSessionAfterMessageAsync(session, message, AiAssistantConstants.AssistantUserId);
+        // 不在此处更新会话，等流式完成时再更新（避免空内容时触发 SessionUpdated）
+        // await _sessionService.UpdateSessionAfterMessageAsync(session, message, AiAssistantConstants.AssistantUserId);
 
         var payload = new ChatMessageRealtimePayload { SessionId = session.Id, Message = message, BroadcastAtUtc = DateTime.UtcNow };
         await _broadcaster.BroadcastMessageAsync(session.Participants, payload);
@@ -486,6 +487,13 @@ public class ChatAiService : IChatAiService
         msg.Content = finalContent;
         msg.Metadata = meta;
         await _context.SaveChangesAsync();
+
+        // 流式完成后更新会话（仅一次）
+        var session = await _context.Set<ChatSession>().FirstOrDefaultAsync(s => s.Id == msg.SessionId);
+        if (session != null)
+        {
+            await _sessionService.UpdateSessionAfterMessageAsync(session, msg, AiAssistantConstants.AssistantUserId);
+        }
     }
 
     public bool ShouldSkipAutomaticAssistantReply(ChatMessage triggerMessage)

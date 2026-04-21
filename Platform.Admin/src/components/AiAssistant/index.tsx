@@ -96,7 +96,6 @@ const AiAssistant: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [sending, setSending] = useState(false);
-  const [isThinking, setIsThinking] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
   const initialInputValueRef = useRef<string>('');
@@ -141,8 +140,6 @@ const AiAssistant: React.FC = () => {
       console.log('[AiAssistant] 收到 MessageChunk:', data);
 
       if (data.sessionId === session.id) {
-        // 收到第一个chunk时结束思考状态
-        setIsThinking(false);
         const { messageId, delta } = data;
         setStreamingMessages((prev) => {
           const currentContent = prev[messageId] || '';
@@ -174,7 +171,6 @@ const AiAssistant: React.FC = () => {
       const msg = data.message;
       if (msg.sessionId === session.id) {
         // 确保结束思考状态
-        setIsThinking(false);
         setStreamingMessages((prev) => {
           const { [msg.id]: _, ...rest } = prev;
           return rest;
@@ -328,10 +324,8 @@ const AiAssistant: React.FC = () => {
     try {
       // 先添加用户消息到界面（乐观更新）
       setMessages((prev) => [...prev, optimisticMessage]);
-      // 显示思考中状态
-      setIsThinking(true);
 
-// 发送消息（通过 SSE 接收 AI 回复）
+      // 发送消息（通过 SSE 接收 AI 回复）
       console.log('[AiAssistant] 发送消息到后端:', userMessage);
 
       try {
@@ -355,7 +349,7 @@ const AiAssistant: React.FC = () => {
         setMessages((prev) => prev.filter((msg) => msg.id !== optimisticMessage.id));
       } finally {
         setSending(false);
-        setIsThinking(false);
+
       }
     } catch (error) {
       console.error('[AiAssistant] 发送��息异常:', error);
@@ -363,7 +357,7 @@ const AiAssistant: React.FC = () => {
       setMessages((prev) => prev.filter((msg) => msg.id !== optimisticMessage.id));
     } finally {
       setSending(false);
-      setIsThinking(false);
+
     }
   }, [inputValue, sending, session, currentUser, message, sse]);
 
@@ -757,7 +751,7 @@ const AiAssistant: React.FC = () => {
                         >
                           {isAssistant ? (
                             <TypewriterContent
-                              content={msg.content || ''}
+                              content={msg.content || '思考中...'}
                               isStreaming={msg.id in streamingMessages}
                               onUpdate={scrollToBottom}
                             />
@@ -765,7 +759,7 @@ const AiAssistant: React.FC = () => {
                             msg.content || ''
                           )}
                           {isAssistant && msg.id in streamingMessages && (
-                            <span style={{ opacity: 0.5, marginLeft: 4 }}>▊</span>
+                            <span style={{ opacity: 0.5, marginLeft: 4 }}></span>
                           )}
                         </div>
                       </div>
@@ -773,53 +767,7 @@ const AiAssistant: React.FC = () => {
                   );
                 })}
 
-                {/* 思考中状态 */}
-                {isThinking && (
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'flex-start',
-                      marginBottom: 16,
-                    }}
-                  >
-                    <div
-                      style={{
-                        maxWidth: '70%',
-                      }}
-                    >
-                      <div
-                        style={{
-                          padding: '8px 12px',
-                          borderRadius: 8,
-                          backgroundColor: '#fff',
-                          color: '#000',
-                          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
-                          wordBreak: 'break-word',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                        }}
-                      >
-                        <span>小科正在思考</span>
-                        <span className="thinking-dots">
-                          <style>{`
-                            .thinking-dots::after {
-                              content: '';
-                              animation: thinking 1.4s infinite both;
-                            }
-                            @keyframes thinking {
-                              0% { content: ''; }
-                              25% { content: '.'; }
-                              50% { content: '..'; }
-                              75% { content: '...'; }
-                              100% { content: ''; }
-                            }
-                          `}</style>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
+
 
               </>
             )}

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { Button, Space, Tag, Popconfirm, Input, Empty, Drawer, Form, Input as AntInput, Select, Switch, message, Radio, Upload, Checkbox } from 'antd';
+import { Button, Space, Tag, Popconfirm, Input, Empty, Drawer, Form, Input as AntInput, Select, Switch, message, Radio, Upload, Checkbox, List } from 'antd';
 const { Group: RadioGroup } = Radio;
 import { PageContainer, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
 import { PlusOutlined, DeleteOutlined, EyeOutlined, SaveOutlined, DragOutlined, CloseOutlined, PartitionOutlined, UploadOutlined, EditOutlined } from '@ant-design/icons';
@@ -8,6 +8,7 @@ import { ApiResponse, PagedResult } from '@/types';
 import type { DragEndEvent } from '@dnd-kit/core';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import dayjs from 'dayjs';
 import { CSS } from '@dnd-kit/utilities';
 
 const { TextArea } = AntInput;
@@ -17,11 +18,22 @@ interface FormDefinition {
     name: string;
     key?: string;
     version?: number;
+    latestVersionId?: string;
     isActive?: boolean;
     description?: string;
     fields?: FormField[];
     createdAt?: string;
     updatedAt?: string;
+}
+
+interface FormVersion {
+    id?: string;
+    formDefinitionId?: string;
+    version?: number;
+    name?: string;
+    fields?: FormField[];
+    isActive?: boolean;
+    createdAt?: string;
 }
 
 interface FormField {
@@ -60,6 +72,8 @@ const api = {
     update: (id: string, data: Partial<FormDefinition>) => request<ApiResponse<boolean>>(`/apiservice/api/forms/${id}`, { method: 'PUT', data }),
     delete: (id: string) => request<ApiResponse<boolean>>(`/apiservice/api/forms/${id}`, { method: 'DELETE' }),
     statistics: () => request<ApiResponse<FormStatistics>>('/apiservice/api/forms/statistics'),
+    getVersions: (formId: string) => request<ApiResponse<FormVersion[]>>(`/apiservice/api/forms/${formId}/versions`),
+    getVersion: (versionId: string) => request<ApiResponse<FormVersion>>(`/apiservice/api/forms/version/${versionId}`),
 };
 
 function SortableField({ field, selected, onSelect, onDelete }: {
@@ -304,20 +318,29 @@ const FormDefinitionManagement: React.FC = () => {
         editingForm: null as FormDefinition | null,
         formVisible: false,
         designerVisible: false,
+        versions: [] as FormVersion[],
+        versionsDrawerVisible: false,
+        viewingFormId: null as string | null,
         search: '' as string,
     });
     const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
     useEffect(() => { api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }, []);
 
+    useEffect(() => {
+        if (state.viewingFormId) {
+            api.getVersions(state.viewingFormId).then(r => { if (r.success && r.data) set({ versions: r.data }); });
+        }
+    }, [state.viewingFormId]);
+
     const columns: ProColumns<FormDefinition>[] = [
         { title: '名称', dataIndex: 'name', key: 'name', ellipsis: true, sorter: true },
         { title: '版本', dataIndex: 'version', key: 'version', valueType: 'digit', width: 80, sorter: true },
-        { title: '字段数', dataIndex: 'fields', key: 'fields', valueType: 'digit', width: 80, render: (_, r) => r.fields?.length || 0 },
         { title: '启用', dataIndex: 'isActive', key: 'isActive', render: (_, r) => <Tag color={r.isActive ? 'success' : 'default'}>{r.isActive ? '是' : '否'}</Tag> },
         {
-            title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 200, render: (_, r) => (
+            title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 250, render: (_, r) => (
                 <Space size={4}>
+                    <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => set({ viewingFormId: r.id!, versionsDrawerVisible: true })}>查看</Button>
                     <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingForm: r, designerVisible: true })}>编辑</Button>
                     <Popconfirm title={`确定删除「${r.name}」？`} onConfirm={async () => { await api.delete(r.id!); actionRef.current?.reload(); api.statistics().then(res => { if (res.success && res.data) set({ statistics: res.data }); }); }}>
                         <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
@@ -334,7 +357,7 @@ const FormDefinitionManagement: React.FC = () => {
         if (isNew) {
             res = await api.create(dataToSave);
         } else {
-            res = await api.update(state.editingForm.id, dataToSave);
+            res = await api.update(state.editingForm!.id!, dataToSave);
         }
         if (res.success) {
             set({ designerVisible: false, editingForm: null });
@@ -403,10 +426,27 @@ const FormDefinitionManagement: React.FC = () => {
                 ]}
             />
 
-            <Drawer title={state.editingForm?.id ? `设计表单: ${state.editingForm.name}` : '新建表单'} width="100%" open={state.designerVisible}
+            <Drawer title={state.editingForm?.id ? `编辑表单: ${state.editingForm.name}` : '新建表单'} width="100%" open={state.designerVisible}
                 onClose={() => set({ designerVisible: false, editingForm: null })}>
                 {state.designerVisible && (
                     <FormDesigner form={state.editingForm || { id: '', name: '新表单', version: 1, isActive: true, fields: [] }} onSave={handleDesignerSave} />
+                )}
+            </Drawer>
+
+            <Drawer title={`版本历史: ${state.viewingFormId ? state.versions.find(v => v.formDefinitionId === state.viewingFormId)?.name : ''}`} width={600} open={state.versionsDrawerVisible}
+                onClose={() => set({ versionsDrawerVisible: false, viewingFormId: null, versions: [] })}>
+                {state.versionsDrawerVisible && state.versions.length > 0 && (
+                    <List
+                        dataSource={state.versions}
+                        renderItem={(item) => (
+                            <List.Item>
+                                <List.Item.Meta
+                                    title={`版本 v${item.version}`}
+                                    description={`字段数: ${item.fields?.length || 0} | 启用: ${item.isActive ? '是' : '否'} | 创建时间: ${item.createdAt ? dayjs(item.createdAt).format('YYYY-MM-DD HH:mm') : '-'}`}
+                                />
+                            </List.Item>
+                        )}
+                    />
                 )}
             </Drawer>
         </PageContainer>

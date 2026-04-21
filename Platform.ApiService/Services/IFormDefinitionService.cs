@@ -7,6 +7,8 @@ public interface IFormDefinitionService
 {
     Task<System.Linq.Dynamic.Core.PagedResult<FormDefinition>> GetFormsAsync(Platform.ServiceDefaults.Models.ProTableRequest request, bool? isActive);
     Task<FormDefinition?> GetFormByIdAsync(string id);
+    Task<FormVersion?> GetFormVersionByIdAsync(string versionId);
+    Task<List<FormVersion>> GetFormVersionsAsync(string formId);
     Task<List<FormDefinition>> GetFormsByIdsAsync(List<string> ids);
     Task<FormDefinition> CreateFormAsync(FormDefinition form);
     Task<FormDefinition?> UpdateFormAsync(string id, FormDefinition form);

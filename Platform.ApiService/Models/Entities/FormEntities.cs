@@ -19,11 +19,36 @@ public class FormDefinition : MultiTenantEntity
     /// <summary>唯一键（用于引用）</summary>
     public string Key { get; set; } = string.Empty;
 
-    /// <summary>版本</summary>
+    /// <summary>当前版本号</summary>
     public int Version { get; set; } = 1;
+
+    /// <summary>最新版本ID</summary>
+    public string? LatestVersionId { get; set; }
 
     /// <summary>描述</summary>
     public string? Description { get; set; }
+
+    /// <summary>是否启用</summary>
+    public bool IsActive { get; set; } = true;
+
+    /// <summary>字段集合（运行时从版本获取，不持久化）</summary>
+    [NotMapped]
+    public List<FormField> Fields { get; set; } = new();
+}
+
+/// <summary>
+/// 表单版本历史
+/// </summary>
+public class FormVersion : MultiTenantEntity
+{
+    /// <summary>表单定义ID</summary>
+    public string FormDefinitionId { get; set; } = string.Empty;
+
+    /// <summary>版本号</summary>
+    public int Version { get; set; } = 1;
+
+    /// <summary>表单名称</summary>
+    public string Name { get; set; } = string.Empty;
 
     /// <summary>字段集合</summary>
     public List<FormField> Fields { get; set; } = new();

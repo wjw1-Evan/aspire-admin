@@ -146,4 +146,44 @@ public class FormController : BaseApiController
             throw new ArgumentException(ex.Message);
         }
     }
+
+    /// <summary>
+    /// 获取表单版本历史
+    /// </summary>
+    [HttpGet("{id}/versions")]
+    [RequireMenu("workflow-list")]
+    public async Task<IActionResult> GetFormVersions(string id)
+    {
+        try
+        {
+            var versions = await _formService.GetFormVersionsAsync(id);
+            return Success(versions);
+        }
+        catch (Exception ex)
+        {
+            throw new ArgumentException(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// 获取指定版本详情
+    /// </summary>
+    [HttpGet("version/{versionId}")]
+    [RequireMenu("workflow-list")]
+    public async Task<IActionResult> GetFormVersion(string versionId)
+    {
+        try
+        {
+            var version = await _formService.GetFormVersionByIdAsync(versionId);
+            if (version == null)
+            {
+                throw new ArgumentException("版本不存在");
+            }
+            return Success(version);
+        }
+        catch (Exception ex)
+        {
+            throw new ArgumentException(ex.Message);
+        }
+    }
 }

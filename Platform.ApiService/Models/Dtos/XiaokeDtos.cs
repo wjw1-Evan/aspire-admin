@@ -98,6 +98,8 @@ public class ChatHistoryListItemDto
     public DateTime? LastMessageAt { get; set; }
 
     public int MessageCount { get; set; }
+
+    public DateTime? CreatedAt { get; set; }
 }
 
 public class ChatHistoryDetailResponse

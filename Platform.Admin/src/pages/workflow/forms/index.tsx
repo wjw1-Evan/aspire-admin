@@ -400,10 +400,6 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
                     <Input placeholder="请输入表单名称" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} style={{ width: 200 }} />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ width: 40 }}>版本</span>
-                    <Input placeholder="版本" type="number" value={formData.version} onChange={e => setFormData({ ...formData, version: parseInt(e.target.value) || 1 })} style={{ width: 80 }} />
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ width: 40 }}>启用</span>
                     <Switch checkedChildren="启用" unCheckedChildren="禁用" checked={formData.isActive} onChange={v => setFormData({ ...formData, isActive: v })} />
                 </div>

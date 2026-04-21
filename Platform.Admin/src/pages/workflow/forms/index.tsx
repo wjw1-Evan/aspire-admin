@@ -149,7 +149,7 @@ function SortableField({ field, selected, onSelect, onDelete, onChange }: {
             className={`canvas-field ${selected ? 'selected' : ''}`}
             onClick={onSelect}>
             <div  >
-                <div style={{  marginBottom:10 }  } >{field.required && <span className="required-mark">*</span>} {field.label}</div>
+                <div style={{ marginBottom: 10 }} >{field.required && <span className="required-mark">*</span>} {field.label}</div>
                 {renderFieldPreview()}
             </div>
             <Button type="text" size="small" danger icon={<CloseOutlined />} className="field-delete-btn" onClick={(e) => { e.stopPropagation(); onDelete(); }} />
@@ -498,10 +498,10 @@ const FormDefinitionManagement: React.FC = () => {
 
     useEffect(() => {
         if (state.viewingFormId) {
-            api.getVersions(state.viewingFormId).then(r => { 
+            api.getVersions(state.viewingFormId).then(r => {
                 if (r.success && r.data) {
                     const versions = r.data;
-                    set({ versions, previewVersionId: versions[0]?.id || null, previewFields: versions[0]?.fields || [] }); 
+                    set({ versions, previewVersionId: versions[0]?.id || null, previewFields: versions[0]?.fields || [] });
                 }
             });
         }
@@ -621,25 +621,26 @@ const FormDefinitionManagement: React.FC = () => {
                 ]}
             />
 
-            <Drawer title={state.editingForm?.id ? `编辑表单: ${state.editingForm.name}` : '新建表单'} style={{ width: '100%' }} open={state.designerVisible}
+            <Drawer title={state.editingForm?.id ? `编辑表单: ${state.editingForm.name}` : '新建表单'} size="100%" open={state.designerVisible}
                 onClose={() => set({ designerVisible: false, editingForm: null })}>
                 {state.designerVisible && (
                     <FormDesigner key={state.editingForm?.id || 'new'} form={state.editingForm || { id: '', name: '新表单', version: 1, isActive: true, fields: [] }} onSave={handleDesignerSave} />
                 )}
             </Drawer>
 
-            <Drawer title={`版本历史: ${state.viewingFormId ? state.versions.find(v => v.formDefinitionId === state.viewingFormId)?.name : ''}`} style={{ width: 800 }} open={state.versionsDrawerVisible}
+
+            <Drawer title={`版本历史: ${state.viewingFormId ? state.versions.find(v => v.formDefinitionId === state.viewingFormId)?.name : ''}`} size={800} open={state.versionsDrawerVisible}
                 onClose={() => set({ versionsDrawerVisible: false, viewingFormId: null, versions: [], previewVersionId: null, previewFields: [] })}>
                 <div style={{ display: 'flex', gap: 24 }}>
                     <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: 500, marginBottom: 8 }}>历史版本</div>
                         <div>
                             {state.versions.map(item => (
-                                <div key={item.id} style={{ 
-                                    padding: '12px', 
-                                    cursor: 'pointer', 
+                                <div key={item.id} style={{
+                                    padding: '12px',
+                                    cursor: 'pointer',
                                     borderBottom: '1px solid #f0f0f0',
-                                    background: state.previewVersionId === item.id ? '#e6f7ff' : undefined 
+                                    background: state.previewVersionId === item.id ? '#e6f7ff' : undefined
                                 }}
                                     onClick={() => set({ previewVersionId: item.id!, previewFields: item.fields || [] })}>
                                     <div style={{ fontWeight: 500 }}>v{item.version}</div>

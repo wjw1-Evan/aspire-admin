@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { Button, Space, Tag, Popconfirm, Input, Empty, Drawer, Form, Input as AntInput, Select, Switch, message, Radio, Upload, Checkbox, List } from 'antd';
+import { Button, Space, Tag, Popconfirm, Input, Empty, Drawer, Form, Input as AntInput, Select, Switch, message, Radio, Upload, Checkbox } from 'antd';
 const { Group: RadioGroup } = Radio;
 import { PageContainer, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
 import { PlusOutlined, DeleteOutlined, EyeOutlined, SaveOutlined, DragOutlined, CloseOutlined, PartitionOutlined, UploadOutlined, EditOutlined } from '@ant-design/icons';
@@ -621,31 +621,32 @@ const FormDefinitionManagement: React.FC = () => {
                 ]}
             />
 
-            <Drawer title={state.editingForm?.id ? `编辑表单: ${state.editingForm.name}` : '新建表单'} width="100%" open={state.designerVisible}
+            <Drawer title={state.editingForm?.id ? `编辑表单: ${state.editingForm.name}` : '新建表单'} style={{ width: '100%' }} open={state.designerVisible}
                 onClose={() => set({ designerVisible: false, editingForm: null })}>
                 {state.designerVisible && (
                     <FormDesigner key={state.editingForm?.id || 'new'} form={state.editingForm || { id: '', name: '新表单', version: 1, isActive: true, fields: [] }} onSave={handleDesignerSave} />
                 )}
             </Drawer>
 
-            <Drawer title={`版本历史: ${state.viewingFormId ? state.versions.find(v => v.formDefinitionId === state.viewingFormId)?.name : ''}`} width={800} open={state.versionsDrawerVisible}
+            <Drawer title={`版本历史: ${state.viewingFormId ? state.versions.find(v => v.formDefinitionId === state.viewingFormId)?.name : ''}`} style={{ width: 800 }} open={state.versionsDrawerVisible}
                 onClose={() => set({ versionsDrawerVisible: false, viewingFormId: null, versions: [], previewVersionId: null, previewFields: [] })}>
                 <div style={{ display: 'flex', gap: 24 }}>
                     <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: 500, marginBottom: 8 }}>历史版本</div>
-                        <List
-                            size="small"
-                            dataSource={state.versions}
-                            renderItem={(item) => (
-                                <List.Item style={{ cursor: 'pointer', background: state.previewVersionId === item.id ? '#e6f7ff' : undefined }}
+                        <div>
+                            {state.versions.map(item => (
+                                <div key={item.id} style={{ 
+                                    padding: '12px', 
+                                    cursor: 'pointer', 
+                                    borderBottom: '1px solid #f0f0f0',
+                                    background: state.previewVersionId === item.id ? '#e6f7ff' : undefined 
+                                }}
                                     onClick={() => set({ previewVersionId: item.id!, previewFields: item.fields || [] })}>
-                                    <List.Item.Meta
-                                        title={`v${item.version}`}
-                                        description={`${item.fields?.length || 0}个字段 | ${item.isActive ? '启用' : '禁用'}`}
-                                    />
-                                </List.Item>
-                            )}
-                        />
+                                    <div style={{ fontWeight: 500 }}>v{item.version}</div>
+                                    <div style={{ fontSize: 12, color: '#666' }}>{item.fields?.length || 0}个字段 | {item.isActive ? '启用' : '禁用'}</div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                     <div style={{ flex: 2, borderLeft: '1px solid #f0f0f0', paddingLeft: 24 }}>
                         <div style={{ fontWeight: 500, marginBottom: 8 }}>表单预览 {state.previewVersionId ? ` v${state.versions.find(v => v.id === state.previewVersionId)?.version}` : ''}</div>

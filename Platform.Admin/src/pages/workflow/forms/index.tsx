@@ -381,15 +381,15 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
                 <Form layout="vertical" style={{ maxWidth: 600, margin: '0 auto' }}>
                     {fields.map(field => (
                         <Form.Item key={field.id} label={field.label} required={field.required}>
-                            {field.type === 'Text' && <AntInput placeholder={field.placeholder} />}
-                            {field.type === 'TextArea' && <TextArea rows={4} placeholder={field.placeholder} />}
-                            {field.type === 'Number' && <AntInput type="number" placeholder={field.placeholder} />}
-                            {field.type === 'Date' && <AntInput type="date" placeholder={field.placeholder} />}
-                            {field.type === 'DateTime' && <AntInput type="datetime-local" placeholder={field.placeholder} />}
-                            {field.type === 'Select' && <Select placeholder={field.placeholder}>{field.options?.map(o => <Select.Option key={o.value} value={o.value}>{o.label}</Select.Option>)}</Select>}
-                            {field.type === 'Radio' && <RadioGroup>{field.options?.map(o => <Radio key={o.value} value={o.value}>{o.label}</Radio>)}</RadioGroup>}
-                            {field.type === 'Checkbox' && <Checkbox.Group options={field.options?.map(o => ({ label: o.label, value: o.value }))} />}
-                            {field.type === 'Switch' && <Switch checkedChildren="是" unCheckedChildren="否" />}
+                            {field.type === 'Text' && <AntInput placeholder={field.placeholder} defaultValue={field.defaultValue} />}
+                            {field.type === 'TextArea' && <TextArea rows={4} placeholder={field.placeholder} defaultValue={field.defaultValue} />}
+                            {field.type === 'Number' && <AntInput type="number" placeholder={field.placeholder} defaultValue={field.defaultValue} />}
+                            {field.type === 'Date' && <AntInput type="date" placeholder={field.placeholder} defaultValue={field.defaultValue} />}
+                            {field.type === 'DateTime' && <AntInput type="datetime-local" placeholder={field.placeholder} defaultValue={field.defaultValue} />}
+                            {field.type === 'Select' && <Select placeholder={field.placeholder} defaultValue={field.defaultValue}>{field.options?.map(o => <Select.Option key={o.value} value={o.value}>{o.label}</Select.Option>)}</Select>}
+                            {field.type === 'Radio' && <RadioGroup defaultValue={field.defaultValue}>{field.options?.map(o => <Radio key={o.value} value={o.value}>{o.label}</Radio>)}</RadioGroup>}
+                            {field.type === 'Checkbox' && <Checkbox.Group options={field.options?.map(o => ({ label: o.label, value: o.value }))} defaultValue={field.defaultValue?.split(',').filter(Boolean)} />}
+                            {field.type === 'Switch' && <Switch defaultChecked={field.defaultValue === 'true'} checkedChildren="是" unCheckedChildren="否" />}
                             {field.type === 'Attachment' && <Upload><Button icon={<UploadOutlined />}>上传附件</Button></Upload>}
                         </Form.Item>
                     ))}

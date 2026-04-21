@@ -128,17 +128,17 @@ function SortableField({ field, selected, onSelect, onDelete }: {
 
     const renderFieldPreview = () => {
         switch (normalizeFieldType(field.type)) {
-            case 'Text': return <AntInput placeholder={field.placeholder} disabled />;
-            case 'TextArea': return <TextArea rows={2} placeholder={field.placeholder} disabled />;
-            case 'Number': return <AntInput placeholder={field.placeholder} disabled />;
-            case 'Date': return <AntInput placeholder={field.placeholder} disabled />;
-            case 'DateTime': return <AntInput placeholder={field.placeholder} disabled />;
-            case 'Select': return <Select placeholder={field.placeholder} disabled>{field.options?.map(o => <Select.Option key={o.value} value={o.value}>{o.label}</Select.Option>)}</Select>;
-            case 'Radio': return <RadioGroup disabled>{field.options?.map(o => <Radio key={o.value} value={o.value}>{o.label}</Radio>)}</RadioGroup>;
-            case 'Checkbox': return <Checkbox.Group options={field.options?.map(o => ({ label: o.label, value: o.value }))} disabled />;
-            case 'Switch': return <Switch disabled checkedChildren="是" unCheckedChildren="否" />;
-            case 'Attachment': return <Upload disabled><Button icon={<UploadOutlined />}>上传附件</Button></Upload>;
-            default: return <AntInput placeholder={field.placeholder} disabled />;
+            case 'Text': return <AntInput placeholder={field.placeholder} />;
+            case 'TextArea': return <TextArea rows={2} placeholder={field.placeholder} />;
+            case 'Number': return <AntInput type="number" placeholder={field.placeholder} />;
+            case 'Date': return <AntInput type="date" placeholder={field.placeholder} />;
+            case 'DateTime': return <AntInput type="datetime-local" placeholder={field.placeholder} />;
+            case 'Select': return <Select placeholder={field.placeholder}>{field.options?.map(o => <Select.Option key={o.value} value={o.value}>{o.label}</Select.Option>)}</Select>;
+            case 'Radio': return <RadioGroup>{field.options?.map(o => <Radio key={o.value} value={o.value}>{o.label}</Radio>)}</RadioGroup>;
+            case 'Checkbox': return <Checkbox.Group options={field.options?.map(o => ({ label: o.label, value: o.value }))} />;
+            case 'Switch': return <Switch checkedChildren="是" unCheckedChildren="否" />;
+            case 'Attachment': return <Upload><Button icon={<UploadOutlined />}>上传附件</Button></Upload>;
+            default: return <AntInput placeholder={field.placeholder} />;
         }
     };
 

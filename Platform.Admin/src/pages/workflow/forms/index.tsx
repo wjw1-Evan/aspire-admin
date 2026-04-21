@@ -128,17 +128,17 @@ function SortableField({ field, selected, onSelect, onDelete }: {
 
     const renderFieldPreview = () => {
         switch (normalizeFieldType(field.type)) {
-            case 'Text': return <AntInput placeholder={field.placeholder} />;
-            case 'TextArea': return <TextArea rows={2} placeholder={field.placeholder} />;
-            case 'Number': return <AntInput type="number" placeholder={field.placeholder} />;
-            case 'Date': return <AntInput type="date" placeholder={field.placeholder} />;
-            case 'DateTime': return <AntInput type="datetime-local" placeholder={field.placeholder} />;
-            case 'Select': return <Select placeholder={field.placeholder}>{field.options?.map(o => <Select.Option key={o.value} value={o.value}>{o.label}</Select.Option>)}</Select>;
-            case 'Radio': return <RadioGroup>{field.options?.map(o => <Radio key={o.value} value={o.value}>{o.label}</Radio>)}</RadioGroup>;
-            case 'Checkbox': return <Checkbox.Group options={field.options?.map(o => ({ label: o.label, value: o.value }))} />;
-            case 'Switch': return <Switch checkedChildren="是" unCheckedChildren="否" />;
+            case 'Text': return <AntInput placeholder={field.placeholder} defaultValue={field.defaultValue} />;
+            case 'TextArea': return <TextArea rows={2} placeholder={field.placeholder} defaultValue={field.defaultValue} />;
+            case 'Number': return <AntInput type="number" placeholder={field.placeholder} defaultValue={field.defaultValue} />;
+            case 'Date': return <AntInput type="date" placeholder={field.placeholder} defaultValue={field.defaultValue} />;
+            case 'DateTime': return <AntInput type="datetime-local" placeholder={field.placeholder} defaultValue={field.defaultValue} />;
+            case 'Select': return <Select placeholder={field.placeholder} defaultValue={field.defaultValue}>{field.options?.map(o => <Select.Option key={o.value} value={o.value}>{o.label}</Select.Option>)}</Select>;
+            case 'Radio': return <RadioGroup defaultValue={field.defaultValue}>{field.options?.map(o => <Radio key={o.value} value={o.value}>{o.label}</Radio>)}</RadioGroup>;
+            case 'Checkbox': return <Checkbox.Group options={field.options?.map(o => ({ label: o.label, value: o.value }))} defaultValue={field.defaultValue?.split(',').filter(Boolean)} />;
+            case 'Switch': return <Switch defaultChecked={field.defaultValue === 'true'} checkedChildren="是" unCheckedChildren="否" />;
             case 'Attachment': return <Upload><Button icon={<UploadOutlined />}>上传附件</Button></Upload>;
-            default: return <AntInput placeholder={field.placeholder} />;
+            default: return <AntInput placeholder={field.placeholder} defaultValue={field.defaultValue} />;
         }
     };
 
@@ -188,6 +188,10 @@ function FieldPropertyPanel({ field, onChange, onClose }: {
                 <div className="property-group">
                     <label>占位符</label>
                     <AntInput value={field.placeholder} onChange={e => onChange({ ...field, placeholder: e.target.value })} placeholder="请输入占位符" />
+                </div>
+                <div className="property-group">
+                    <label>默认值</label>
+                    <AntInput value={field.defaultValue} onChange={e => onChange({ ...field, defaultValue: e.target.value })} placeholder="请输入默认值" />
                 </div>
                 {['Select', 'Radio', 'Checkbox'].includes(field.type) && (
                     <div className="property-group">

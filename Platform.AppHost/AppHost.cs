@@ -24,8 +24,8 @@ var internalServiceApiKey = builder.Configuration["InternalService:ApiKey"]
 var openAiEndpoint = builder.Configuration["Parameters:openai-openai-endpoint"]
     ?? throw new InvalidOperationException("缺少 OpenAI 终端配置项 'Parameters:openai-openai-endpoint'。");
 
-var modelName = builder.Configuration["OpenAI:Model"]
-    ?? throw new InvalidOperationException("缺少 OpenAI 模型配置项 'OpenAI:Model'。");
+var modelName = builder.Configuration["Parameters:Model"]
+    ?? throw new InvalidOperationException("缺少 OpenAI 模型配置项 'Parameters:Model'。");
 
 var openai = builder.AddOpenAI("openai").WithEndpoint(openAiEndpoint);
 

@@ -498,7 +498,12 @@ const FormDefinitionManagement: React.FC = () => {
 
     useEffect(() => {
         if (state.viewingFormId) {
-            api.getVersions(state.viewingFormId).then(r => { if (r.success && r.data) set({ versions: r.data }); });
+            api.getVersions(state.viewingFormId).then(r => { 
+                if (r.success && r.data) {
+                    const versions = r.data;
+                    set({ versions, previewVersionId: versions[0]?.id || null, previewFields: versions[0]?.fields || [] }); 
+                }
+            });
         }
     }, [state.viewingFormId]);
 

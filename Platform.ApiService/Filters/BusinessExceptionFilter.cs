@@ -21,15 +21,13 @@ public class BusinessExceptionFilter : IExceptionFilter
     {
         var exception = context.Exception;
         var message = exception.Message;
-        string? code = null;
 
         if (exception is ArgumentException)
         {
             var response = new ApiResponse(
                 success: false,
                 message: message,
-                traceId: context.HttpContext.TraceIdentifier,
-                code: code
+                traceId: context.HttpContext.TraceIdentifier
             );
 
             context.Result = new BadRequestObjectResult(response);
@@ -42,8 +40,7 @@ public class BusinessExceptionFilter : IExceptionFilter
             var response = new ApiResponse(
                 success: false,
                 message: message,
-                traceId: context.HttpContext.TraceIdentifier,
-                code: code
+                traceId: context.HttpContext.TraceIdentifier
             );
 
             context.Result = new NotFoundObjectResult(response);
@@ -56,8 +53,7 @@ public class BusinessExceptionFilter : IExceptionFilter
             var response = new ApiResponse(
                 success: false,
                 message: message,
-                traceId: context.HttpContext.TraceIdentifier,
-                code: code
+                traceId: context.HttpContext.TraceIdentifier
             );
 
             context.Result = new UnauthorizedObjectResult(response);
@@ -70,8 +66,7 @@ public class BusinessExceptionFilter : IExceptionFilter
             var response = new ApiResponse(
                 success: false,
                 message: message,
-                traceId: context.HttpContext.TraceIdentifier,
-                code: code
+                traceId: context.HttpContext.TraceIdentifier
             );
 
             context.Result = new BadRequestObjectResult(response);

@@ -9,8 +9,7 @@ public class ApiResponse(
     object? data = default,
     string? traceId = null,
     object? errors = null,
-    object? details = null,
-    string? code = null)
+    object? details = null)
 {
     public bool Success { get; set; } = success;
     public string? Message { get; set; } = message;
@@ -19,5 +18,4 @@ public class ApiResponse(
     public object? Details { get; set; } = details;
     public string Timestamp { get; set; } = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
     public string? TraceId { get; set; } = traceId;
-    public string? Code { get; set; } = code;
 }

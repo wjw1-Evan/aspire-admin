@@ -74,7 +74,7 @@ export default function LoginScreen() {
                 authService.notifyLoginSuccess();
             } else {
                 // Display error message from backend
-                const errorMsg = response.errorMessage || '用户名或密码错误，请检查后重试';
+                const errorMsg = response.message || '登录失败，请检查后重试';
                 console.error('Login failed:', errorMsg);
 
                 // Show error message using Toast
@@ -83,8 +83,7 @@ export default function LoginScreen() {
         } catch (error: any) {
             console.error('Login error:', error);
             // Display error message - could be from network error or API error
-            const errorMsg = error.errorMessage
-                || error.message
+            const errorMsg = error.message
                 || '登录过程中发生错误，请稍后重试';
 
             // Show error message using Toast

@@ -130,6 +130,117 @@ public static class ErrorCode
     public const string AvatarTooLarge = "AVATAR_TOO_LARGE";
 
     // ──────────────────────────────────────────────
+    // 角色/权限相关 (Role/Permission)
+    // ──────────────────────────────────────────────
+
+    /// <summary>角色不存在</summary>
+    public const string RoleNotFound = "ROLE_NOT_FOUND";
+
+    /// <summary>角色名称已存在</summary>
+    public const string RoleNameExists = "ROLE_NAME_EXISTS";
+
+    /// <summary>不能删除系统管理员角色</summary>
+    public const string SystemRoleCannotDelete = "SYSTEM_ROLE_CANNOT_DELETE";
+
+    /// <summary>不能移除最后一个管理员的角色</summary>
+    public const string CannotRemoveLastAdmin = "CANNOT_REMOVE_LAST_ADMIN";
+
+    /// <summary>权限不存在</summary>
+    public const string PermissionNotFound = "PERMISSION_NOT_FOUND";
+
+    /// <summary>权限代码已存在</summary>
+    public const string PermissionCodeExists = "PERMISSION_CODE_EXISTS";
+
+    // ──────────────────────────────────────────────
+    // 菜单/通知相关 (Menu/Notice)
+    // ──────────────────────────────────────────────
+
+    /// <summary>菜单不存在</summary>
+    public const string MenuNotFound = "MENU_NOT_FOUND";
+
+    /// <summary>菜单名称已存在</summary>
+    public const string MenuNameExists = "MENU_NAME_EXISTS";
+
+    /// <summary>不能删除有子菜单的菜单</summary>
+    public const string CannotDeleteMenuWithChildren = "CANNOT_DELETE_MENU_WITH_CHILDREN";
+
+    /// <summary>通知不存在</summary>
+    public const string NoticeNotFound = "NOTICE_NOT_FOUND";
+
+    // ──────────────────────────────────────────────
+    // 用户/企业扩展 (User/Company Extended)
+    // ──────────────────────────────────────────────
+
+    /// <summary>用户已被禁用</summary>
+    public const string UserInactive = "USER_INACTIVE";
+
+    /// <summary>不能删除自己的账户</summary>
+    public const string CannotDeleteSelf = "CANNOT_DELETE_SELF";
+
+    /// <summary>不能修改自己的角色</summary>
+    public const string CannotModifyOwnRole = "CANNOT_MODIFY_OWN_ROLE";
+
+    /// <summary>已达到最大用户数限制</summary>
+    public const string MaxUsersReached = "MAX_USERS_REACHED";
+
+    /// <summary>企业代码已存在</summary>
+    public const string CompanyCodeExists = "COMPANY_CODE_EXISTS";
+
+    /// <summary>企业代码格式不正确</summary>
+    public const string InvalidCompanyCode = "INVALID_COMPANY_CODE";
+
+    /// <summary>未找到企业信息</summary>
+    public const string CompanyRequired = "COMPANY_REQUIRED";
+
+    // ──────────────────────────────────────────────
+    // 组织架构相关 (Organization)
+    // ──────────────────────────────────────────────
+
+    /// <summary>组织节点不存在</summary>
+    public const string OrganizationNotFound = "ORGANIZATION_NOT_FOUND";
+
+    /// <summary>组织节点名称已存在</summary>
+    public const string OrganizationNameExists = "ORGANIZATION_NAME_EXISTS";
+
+    /// <summary>组织节点编码已存在</summary>
+    public const string OrganizationCodeExists = "ORGANIZATION_CODE_EXISTS";
+
+    /// <summary>父级不能是当前节点</summary>
+    public const string ParentCannotBeSelf = "PARENT_CANNOT_BE_SELF";
+
+    /// <summary>父级不能是当前节点的子节点</summary>
+    public const string ParentCannotBeDescendant = "PARENT_CANNOT_BE_DESCENDANT";
+
+    /// <summary>请先删除下级节点后再删除当前节点</summary>
+    public const string CannotDeleteWithChildren = "CANNOT_DELETE_WITH_CHILDREN";
+
+    // ──────────────────────────────────────────────
+    // 格式验证相关 (Format Validation)
+    // ──────────────────────────────────────────────
+
+    /// <summary>邮箱格式不正确</summary>
+    public const string InvalidEmailFormat = "INVALID_EMAIL_FORMAT";
+
+    /// <summary>手机号格式不正确</summary>
+    public const string InvalidPhoneFormat = "INVALID_PHONE_FORMAT";
+
+    /// <summary>用户名格式不正确</summary>
+    public const string InvalidUsernameFormat = "INVALID_USERNAME_FORMAT";
+
+    /// <summary>密码长度过短</summary>
+    public const string PasswordTooShort = "PASSWORD_TOO_SHORT";
+
+    /// <summary>密码长度过长</summary>
+    public const string PasswordTooLong = "PASSWORD_TOO_LONG";
+
+    // ──────────────────────────────────────────────
+    // 通用操作 (General Operation)
+    // ──────────────────────────────────────────────
+
+    /// <summary>操作失败</summary>
+    public const string OperationFailed = "OPERATION_FAILED";
+
+    // ──────────────────────────────────────────────
     // 服务器错误 (Server)
     // ──────────────────────────────────────────────
 
@@ -184,6 +295,41 @@ public static class ErrorCode
         [CompanySoleAdminCannotLeave] = "企业唯一管理员不允许退出",
         [CompanyInactive] = "企业未激活，请联系管理员",
         [CompanyExpired] = "企业已过期，请联系管理员续费",
+        // 角色/权限
+        [RoleNotFound] = "角色不存在",
+        [RoleNameExists] = "角色名称已存在",
+        [SystemRoleCannotDelete] = "不能删除系统管理员角色",
+        [CannotRemoveLastAdmin] = "不能移除最后一个管理员的角色",
+        [PermissionNotFound] = "权限不存在",
+        [PermissionCodeExists] = "权限代码已存在",
+        // 菜单/通知
+        [MenuNotFound] = "菜单不存在",
+        [MenuNameExists] = "菜单名称已存在",
+        [CannotDeleteMenuWithChildren] = "不能删除有子菜单的菜单，请先删除子菜单",
+        [NoticeNotFound] = "通知不存在",
+        // 用户/企业扩展
+        [UserInactive] = "用户已被禁用",
+        [CannotDeleteSelf] = "不能删除自己的账户",
+        [CannotModifyOwnRole] = "不能修改自己的角色",
+        [MaxUsersReached] = "已达到最大用户数限制",
+        [CompanyCodeExists] = "企业代码已存在",
+        [InvalidCompanyCode] = "企业代码格式不正确",
+        [CompanyRequired] = "未找到企业信息",
+        // 组织架构
+        [OrganizationNotFound] = "组织节点不存在",
+        [OrganizationNameExists] = "组织节点名称已存在",
+        [OrganizationCodeExists] = "组织节点编码已存在",
+        [ParentCannotBeSelf] = "父级不能选择当前节点",
+        [ParentCannotBeDescendant] = "父级不能选择当前节点的子节点",
+        [CannotDeleteWithChildren] = "请先删除下级节点后再删除当前节点",
+        // 格式验证
+        [InvalidEmailFormat] = "邮箱格式不正确",
+        [InvalidPhoneFormat] = "手机号格式不正确",
+        [InvalidUsernameFormat] = "用户名格式不正确",
+        [PasswordTooShort] = "密码长度不能少于6个字符",
+        [PasswordTooLong] = "密码长度不能超过50个字符",
+        // 通用操作
+        [OperationFailed] = "操作失败",
         // 文件
         [AvatarTooLarge] = "头像数据过大，请选择小于 2MB 的图片",
         // 服务器

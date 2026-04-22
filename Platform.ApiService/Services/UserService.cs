@@ -160,7 +160,7 @@ public class UserService : IUserService
             var currentUserCount = await _context.Set<UserCompany>().CountAsync(uc => uc.CompanyId == companyId && uc.Status == SystemConstants.UserStatus.Active);
             if (currentUserCount >= company.MaxUsers)
             {
-                throw new InvalidOperationException(ErrorMessages.MaxUsersReached);
+                throw new InvalidOperationException(ErrorCode.MaxUsersReached);
             }
         }
 

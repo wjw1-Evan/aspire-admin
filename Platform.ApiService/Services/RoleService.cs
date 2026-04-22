@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Models;
-using Platform.ApiService.Constants;
 using Platform.ApiService.Models;
 using System.Linq.Dynamic.Core;
 
@@ -133,7 +132,7 @@ public class RoleService : IRoleService
         var existingRole = await GetRoleByNameAsync(request.Name);
         if (existingRole != null)
         {
-            throw new InvalidOperationException(string.Format(ErrorMessages.ResourceAlreadyExists, "角色名称"));
+            throw new InvalidOperationException(ErrorCode.RoleNameExists);
         }
 
         var role = new Role
@@ -159,7 +158,7 @@ public class RoleService : IRoleService
             var existingRole = await GetRoleByNameAsync(request.Name);
             if (existingRole != null && existingRole.Id != id)
             {
-                throw new InvalidOperationException(string.Format(ErrorMessages.ResourceAlreadyExists, "角色名称"));
+throw new InvalidOperationException(ErrorCode.RoleNameExists);
             }
         }
 

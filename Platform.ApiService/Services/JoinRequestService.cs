@@ -172,7 +172,7 @@ public class JoinRequestService : IJoinRequestService
 
         if (company != null && currentMemberCount >= company.MaxUsers)
         {
-            throw new InvalidOperationException(ErrorMessages.MaxUsersReached);
+            throw new InvalidOperationException(ErrorCode.MaxUsersReached);
         }
 
         var roleIds = reviewRequest?.DefaultRoleIds ?? new List<string>();

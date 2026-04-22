@@ -49,7 +49,7 @@ public class UserController : BaseApiController
     [HttpPost]
     [RequireMenu(SystemConstants.Permissions.UserManagement)]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserManagementRequest request)
-        => Success(await _userService.CreateUserManagementAsync(request), ErrorMessages.CreateSuccess);
+        => Success(await _userService.CreateUserManagementAsync(request), SuccessMessages.CreateSuccess);
 
     /// <summary>
     /// 更新用户
@@ -57,7 +57,7 @@ public class UserController : BaseApiController
     [HttpPut("{id}")]
     [RequireMenu(SystemConstants.Permissions.UserManagement)]
     public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateUserManagementRequest request)
-        => Success(await _userService.UpdateUserManagementAsync(id, request), ErrorMessages.UpdateSuccess);
+        => Success(await _userService.UpdateUserManagementAsync(id, request), SuccessMessages.UpdateSuccess);
 
     /// <summary>
     /// 删除用户
@@ -106,8 +106,8 @@ public class UserController : BaseApiController
     public async Task<IActionResult> BulkUserAction([FromBody] BulkUserActionRequest request)
     {
         var success = await _userService.BulkUpdateUsersAsync(request, request.Reason);
-        if (!success) throw new InvalidOperationException(ErrorMessages.OperationFailed);
-        return Success(null, ErrorMessages.OperationSuccess);
+        if (!success) throw new InvalidOperationException(ErrorCode.OperationFailed);
+        return Success(null, SuccessMessages.OperationSuccess);
     }
 
     /// <summary>

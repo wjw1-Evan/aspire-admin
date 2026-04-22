@@ -71,12 +71,12 @@ if (user == null)
             {
                 if (!company.IsActive)
                 {
-                    throw new ArgumentException(ErrorMessages.CompanyInactive);
+                    throw new ArgumentException(ErrorCode.CompanyInactive);
                 }
 
                 if (company.ExpiresAt.HasValue && company.ExpiresAt.Value < DateTime.UtcNow)
                 {
-                    throw new ArgumentException(ErrorMessages.CompanyExpired);
+                    throw new ArgumentException(ErrorCode.CompanyExpired);
                 }
             }
         }

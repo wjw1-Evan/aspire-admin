@@ -9,7 +9,7 @@ namespace Platform.ServiceDefaults.Filters;
 
 /// <summary>
 /// 业务异常过滤器 - 将特定异常映射为统一的 HTTP 响应（含标准错误码）
-/// 
+///
 /// 优先级：
 /// 1. 如果异常消息是已知错误码（存在于 ErrorCode.ErrorMessages 字典中），
 ///    则自动将 errorCode 设为该错误码，message 设为字典中的中文消息

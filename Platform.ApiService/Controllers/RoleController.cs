@@ -80,7 +80,7 @@ public class RoleController : BaseApiController
     public async Task<IActionResult> CreateRole([FromBody] CreateRoleRequest request)
     {
         var role = await _roleService.CreateRoleAsync(request);
-        return Success(role, ErrorMessages.CreateSuccess);
+        return Success(role, SuccessMessages.CreateSuccess);
     }
 
     /// <summary>
@@ -91,7 +91,7 @@ public class RoleController : BaseApiController
     public async Task<IActionResult> UpdateRole(string id, [FromBody] UpdateRoleRequest request)
     {
         var success = await _roleService.UpdateRoleAsync(id, request);
-        return Success(null, ErrorMessages.UpdateSuccess);
+        return Success(null, SuccessMessages.UpdateSuccess);
     }
 
     /// <summary>
@@ -104,7 +104,7 @@ public class RoleController : BaseApiController
     public async Task<IActionResult> DeleteRole(string id, [FromQuery] string? reason = null)
     {
         var success = await _roleService.DeleteRoleAsync(id, reason);
-        return Success(null, ErrorMessages.DeleteSuccess);
+        return Success(null, SuccessMessages.DeleteSuccess);
     }
 
     /// <summary>

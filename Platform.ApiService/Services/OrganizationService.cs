@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using MongoDB.Bson;
 using Platform.ApiService.Constants;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using Microsoft.Extensions.Logging;
 using System;
@@ -81,12 +82,12 @@ public class OrganizationService : IOrganizationService
         NormalizeRequest(request);
         ValidateRequest(request);
         var existing = await _context.Set<OrganizationUnit>().FirstOrDefaultAsync(x => x.Id == id);
-        if (existing == null) throw new KeyNotFoundException(OrganizationErrorMessages.OrganizationNotFound);
+        if (existing == null) throw new KeyNotFoundException(ErrorCode.OrganizationNotFound);
 
         if (!string.IsNullOrEmpty(request.ParentId))
         {
             await EnsureParentExistsAsync(request.ParentId!);
-            if (id == request.ParentId) throw new InvalidOperationException(OrganizationErrorMessages.ParentCannotBeSelf);
+            if (id == request.ParentId) throw new InvalidOperationException(ErrorCode.ParentCannotBeSelf);
             await EnsureParentIsNotDescendantAsync(id, request.ParentId!);
         }
 
@@ -100,8 +101,8 @@ public class OrganizationService : IOrganizationService
     public async Task<bool> DeleteAsync(string id)
     {
         var existing = await _context.Set<OrganizationUnit>().FirstOrDefaultAsync(x => x.Id == id);
-        if (existing == null) throw new KeyNotFoundException(OrganizationErrorMessages.OrganizationNotFound);
-        if (await _context.Set<OrganizationUnit>().AnyAsync(o => o.ParentId == id)) throw new InvalidOperationException(OrganizationErrorMessages.CannotDeleteWithChildren);
+        if (existing == null) throw new KeyNotFoundException(ErrorCode.OrganizationNotFound);
+        if (await _context.Set<OrganizationUnit>().AnyAsync(o => o.ParentId == id)) throw new InvalidOperationException(ErrorCode.CannotDeleteWithChildren);
 
         _context.Set<OrganizationUnit>().Remove(existing);
         await _context.SaveChangesAsync();
@@ -119,13 +120,13 @@ public class OrganizationService : IOrganizationService
             if (item.SortOrder < 1) throw new ArgumentException(string.Format(ErrorMessages.ParameterInvalid, "排序"));
             if (!string.IsNullOrEmpty(item.ParentId))
             {
-                if (!parentMap.ContainsKey(item.ParentId)) throw new KeyNotFoundException(OrganizationErrorMessages.OrganizationNotFound);
-                if (item.Id == item.ParentId) throw new InvalidOperationException(OrganizationErrorMessages.ParentCannotBeSelf);
+                if (!parentMap.ContainsKey(item.ParentId)) throw new KeyNotFoundException(ErrorCode.OrganizationNotFound);
+                if (item.Id == item.ParentId) throw new InvalidOperationException(ErrorCode.ParentCannotBeSelf);
                 
                 var cursor = item.ParentId;
                 while (!string.IsNullOrEmpty(cursor))
                 {
-                    if (cursor == item.Id) throw new InvalidOperationException(OrganizationErrorMessages.ParentCannotBeDescendant);
+                    if (cursor == item.Id) throw new InvalidOperationException(ErrorCode.ParentCannotBeDescendant);
                     if (!parentMap.TryGetValue(cursor, out cursor)) break;
                 }
                 parentMap[item.Id] = item.ParentId;
@@ -136,7 +137,7 @@ public class OrganizationService : IOrganizationService
         foreach (var item in items)
         {
             var entity = await _context.Set<OrganizationUnit>().FirstOrDefaultAsync(x => x.Id == item.Id);
-            if (entity == null) throw new KeyNotFoundException(OrganizationErrorMessages.OrganizationNotFound);
+            if (entity == null) throw new KeyNotFoundException(ErrorCode.OrganizationNotFound);
             entity.ParentId = item.ParentId;
             entity.SortOrder = item.SortOrder;
         }
@@ -172,10 +173,10 @@ public class OrganizationService : IOrganizationService
         if (string.IsNullOrWhiteSpace(request.UserId)) throw new ArgumentException(string.Format(ErrorMessages.ParameterRequired, "用户ID"));
         if (string.IsNullOrWhiteSpace(request.OrganizationUnitId)) throw new ArgumentException(string.Format(ErrorMessages.ParameterRequired, "组织ID"));
 
-        if (!await _context.Set<OrganizationUnit>().AnyAsync(x => x.Id == request.OrganizationUnitId)) throw new KeyNotFoundException(OrganizationErrorMessages.OrganizationNotFound);
+        if (!await _context.Set<OrganizationUnit>().AnyAsync(x => x.Id == request.OrganizationUnitId)) throw new KeyNotFoundException(ErrorCode.OrganizationNotFound);
 
         var user = await FindUserByIdOrUsernameAsync(request.UserId);
-        if (user == null) throw new KeyNotFoundException(ErrorMessages.UserNotFound);
+        if (user == null) throw new KeyNotFoundException(ErrorCode.UserNotFound);
 
         var existing = await _context.Set<UserOrganization>().FirstOrDefaultAsync(m => m.UserId == user.Id && m.OrganizationUnitId == request.OrganizationUnitId);
         if (existing != null)
@@ -196,7 +197,7 @@ public class OrganizationService : IOrganizationService
         if (string.IsNullOrWhiteSpace(request.OrganizationUnitId)) throw new ArgumentException(string.Format(ErrorMessages.ParameterRequired, "组织ID"));
 
         var user = await FindUserByIdOrUsernameAsync(request.UserId);
-        if (user == null) throw new KeyNotFoundException(ErrorMessages.UserNotFound);
+        if (user == null) throw new KeyNotFoundException(ErrorCode.UserNotFound);
 
         var mapping = await _context.Set<UserOrganization>().FirstOrDefaultAsync(m => m.UserId == user.Id && m.OrganizationUnitId == request.OrganizationUnitId);
         if (mapping == null) return false;
@@ -250,7 +251,7 @@ public class OrganizationService : IOrganizationService
 
     private async Task EnsureParentExistsAsync(string parentId)
     {
-        if (!await _context.Set<OrganizationUnit>().AnyAsync(x => x.Id == parentId)) throw new KeyNotFoundException(OrganizationErrorMessages.OrganizationNotFound);
+        if (!await _context.Set<OrganizationUnit>().AnyAsync(x => x.Id == parentId)) throw new KeyNotFoundException(ErrorCode.OrganizationNotFound);
     }
 
     private async Task EnsureParentIsNotDescendantAsync(string currentId, string parentId)
@@ -260,7 +261,7 @@ public class OrganizationService : IOrganizationService
         var cursor = parentId;
         while (!string.IsNullOrEmpty(cursor))
         {
-            if (cursor == currentId) throw new InvalidOperationException(OrganizationErrorMessages.ParentCannotBeDescendant);
+            if (cursor == currentId) throw new InvalidOperationException(ErrorCode.ParentCannotBeDescendant);
             if (!parentMap.TryGetValue(cursor, out cursor)) break;
         }
     }
@@ -268,10 +269,10 @@ public class OrganizationService : IOrganizationService
     private async Task EnsureUniqueAsync(string name, string? code, string? parentId, string? excludeId = null)
     {
         if (await _context.Set<OrganizationUnit>().AnyAsync(o => o.Name == name && o.ParentId == parentId && o.Id != excludeId))
-            throw new InvalidOperationException(OrganizationErrorMessages.OrganizationNameExists);
+            throw new InvalidOperationException(ErrorCode.OrganizationNameExists);
 
         if (!string.IsNullOrEmpty(code) && await _context.Set<OrganizationUnit>().AnyAsync(o => o.Code == code && o.Id != excludeId))
-            throw new InvalidOperationException(OrganizationErrorMessages.OrganizationCodeExists);
+            throw new InvalidOperationException(ErrorCode.OrganizationCodeExists);
     }
 
     public async Task<int> CountAsync() => (int)await _context.Set<OrganizationUnit>().LongCountAsync();

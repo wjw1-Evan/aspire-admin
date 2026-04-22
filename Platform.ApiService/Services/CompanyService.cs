@@ -115,7 +115,7 @@ public class CompanyService : ICompanyService
             var existingCompany = await GetCompanyByCodeAsync(request.Code);
             if (existingCompany != null)
             {
-                throw new InvalidOperationException(CompanyErrorMessages.CompanyCodeExists);
+                throw new InvalidOperationException(ErrorCode.CompanyCodeExists);
             }
             companyCode = request.Code.ToLower();
         }
@@ -329,7 +329,7 @@ public class CompanyService : ICompanyService
         var company = await GetCompanyByIdAsync(companyId);
         if (company == null)
         {
-            throw new KeyNotFoundException(CompanyErrorMessages.CompanyNotFound);
+            throw new KeyNotFoundException(ErrorCode.CompanyNotFound);
         }
 
         var totalUsers = await _context.Set<UserCompany>()

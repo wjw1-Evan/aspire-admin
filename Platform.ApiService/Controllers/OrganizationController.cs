@@ -62,7 +62,7 @@ public class OrganizationController : BaseApiController
     public async Task<IActionResult> Create([FromBody] CreateOrganizationUnitRequest request)
     {
         var node = await _organizationService.CreateAsync(request).ConfigureAwait(false);
-        return Success(node, ErrorMessages.CreateSuccess);
+        return Success(node, SuccessMessages.CreateSuccess);
     }
 
     /// <summary>
@@ -73,7 +73,7 @@ public class OrganizationController : BaseApiController
     public async Task<IActionResult> Update(string id, [FromBody] UpdateOrganizationUnitRequest request)
     {
         var updated = await _organizationService.UpdateAsync(id, request).ConfigureAwait(false);
-        return Success(null, ErrorMessages.UpdateSuccess);
+        return Success(null, SuccessMessages.UpdateSuccess);
     }
 
     /// <summary>
@@ -84,7 +84,7 @@ public class OrganizationController : BaseApiController
     public async Task<IActionResult> Delete(string id)
     {
         var deleted = await _organizationService.DeleteAsync(id).ConfigureAwait(false);
-        return Success(null, ErrorMessages.DeleteSuccess);
+        return Success(null, SuccessMessages.DeleteSuccess);
     }
 
     /// <summary>
@@ -95,7 +95,7 @@ public class OrganizationController : BaseApiController
     public async Task<IActionResult> Reorder([FromBody] List<OrganizationReorderItem> items)
     {
         var ok = await _organizationService.ReorderAsync(items).ConfigureAwait(false);
-        return Success(null, ErrorMessages.UpdateSuccess);
+        return Success(null, SuccessMessages.UpdateSuccess);
     }
 
     /// <summary>
@@ -141,7 +141,7 @@ public class OrganizationController : BaseApiController
     public async Task<IActionResult> AssignUser([FromBody] AssignUserOrganizationRequest request)
     {
         var ok = await _organizationService.AssignUserAsync(request).ConfigureAwait(false);
-        return Success(null, ErrorMessages.OperationSuccess);
+        return Success(null, SuccessMessages.OperationSuccess);
     }
 
     /// <summary>
@@ -152,6 +152,6 @@ public class OrganizationController : BaseApiController
     public async Task<IActionResult> RemoveUser([FromBody] RemoveUserOrganizationRequest request)
     {
         var ok = await _organizationService.RemoveUserAsync(request).ConfigureAwait(false);
-        return Success(null, ErrorMessages.DeleteSuccess);
+        return Success(null, SuccessMessages.DeleteSuccess);
     }
 }

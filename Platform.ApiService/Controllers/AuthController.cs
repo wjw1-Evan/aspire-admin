@@ -64,7 +64,7 @@ public class AuthController : BaseApiController
     /// </summary>
     /// <remarks>
     /// 前端在提交登录或注册请求前，应先获取此公钥并对密码字段进行 RSA 加密。
-    /// 
+    ///
     /// 示例响应：
     /// ```json
     /// {
@@ -86,13 +86,13 @@ public class AuthController : BaseApiController
     /// </summary>
     /// <remarks>
     /// 获取当前登录用户的详细信息，包括用户基本信息、权限、企业信息等。
-    /// 
+    ///
     /// 示例请求：
     /// ```
     /// GET /api/auth/current-user
     /// Authorization: Bearer {token}
     /// ```
-    /// 
+    ///
     /// 示例响应：
     /// ```json
     /// {
@@ -125,19 +125,19 @@ public class AuthController : BaseApiController
     /// <param name="request">登录请求</param>
     /// <remarks>
     /// 用户通过用户名和密码进行登录，成功后返回访问令牌和刷新令牌。
-    /// 
+    ///
     /// 示例请求：
     /// ```json
     /// POST /api/auth/login
     /// Content-Type: application/json
-    /// 
+    ///
     /// {
     ///   "username": "admin",
     ///   "password": "admin123",
     ///   "autoLogin": true
     /// }
     /// ```
-    /// 
+    ///
     /// 示例响应：
     /// ```json
     /// {
@@ -169,13 +169,13 @@ public class AuthController : BaseApiController
     /// </summary>
     /// <remarks>
     /// 用户登出，清除服务器端的会话信息。
-    /// 
+    ///
     /// 示例请求：
     /// ```
     /// POST /api/auth/logout
     /// Authorization: Bearer {token}
     /// ```
-    /// 
+    ///
     /// 示例响应：
     /// ```json
     /// {
@@ -204,12 +204,12 @@ public class AuthController : BaseApiController
     /// <param name="type">验证码类型（login, register）</param>
     /// <remarks>
     /// 生成图形验证码，用于登录和注册时的安全验证。
-    /// 
+    ///
     /// 示例请求：
     /// ```
     /// GET /api/captcha/image?type=login
     /// ```
-    /// 
+    ///
     /// 示例响应：
     /// ```json
     /// {
@@ -246,19 +246,19 @@ public class AuthController : BaseApiController
     /// <param name="request">图形验证码验证请求</param>
     /// <remarks>
     /// 验证图形验证码是否正确，主要用于测试环境。
-    /// 
+    ///
     /// 示例请求：
     /// ```json
     /// POST /api/captcha/verify-image
     /// Content-Type: application/json
-    /// 
+    ///
     /// {
     ///   "captchaId": "abc123def456",
     ///   "answer": "ABC123",
     ///   "type": "login"
     /// }
     /// ```
-    /// 
+    ///
     /// 示例响应：
     /// ```json
     /// {
@@ -293,19 +293,19 @@ public class AuthController : BaseApiController
     /// <param name="request">注册请求</param>
     /// <remarks>
     /// 注册新用户账户，系统会自动创建个人企业。
-    /// 
+    ///
     /// 示例请求：
     /// ```json
     /// POST /api/register
     /// Content-Type: application/json
-    /// 
+    ///
     /// {
     ///   "username": "newuser",
     ///   "password": "password123",
     ///   "email": "newuser@example.com"
     /// }
     /// ```
-    /// 
+    ///
     /// 示例响应：
     /// ```json
     /// {
@@ -335,20 +335,20 @@ public class AuthController : BaseApiController
     /// <param name="request">修改密码请求</param>
     /// <remarks>
     /// 修改当前用户的登录密码，需要提供当前密码进行验证。
-    /// 
+    ///
     /// 示例请求：
     /// ```json
     /// POST /api/change-password
     /// Authorization: Bearer {token}
     /// Content-Type: application/json
-    /// 
+    ///
     /// {
     ///   "currentPassword": "oldpassword",
     ///   "newPassword": "newpassword123",
     ///   "confirmPassword": "newpassword123"
     /// }
     /// ```
-    /// 
+    ///
     /// 示例响应：
     /// ```json
     /// {
@@ -377,17 +377,17 @@ public class AuthController : BaseApiController
     /// <param name="request">刷新令牌请求</param>
     /// <remarks>
     /// 使用刷新令牌获取新的访问令牌，延长会话时间。
-    /// 
+    ///
     /// 示例请求：
     /// ```json
     /// POST /api/refresh-token
     /// Content-Type: application/json
-    /// 
+    ///
     /// {
     ///   "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
     /// }
     /// ```
-    /// 
+    ///
     /// 示例响应：
     /// ```json
     /// {

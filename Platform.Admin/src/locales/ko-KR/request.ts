@@ -22,4 +22,22 @@ export default {
     'USER_NAME_EXISTS': '이미 존재하는 사용자 이름입니다',
     'EMAIL_EXISTS': '이미 존재하는 이메일입니다',
     'PHONE_NUMBER_EXISTS': '이미 존재하는 전화번호입니다',
+
+    // ── Error Codes ──
+    'UNAUTHENTICATED': 'Unauthorized access, please log in again',
+    'INVALID_TOKEN': 'Invalid or expired authentication token',
+    'TOKEN_EXPIRED': 'Session expired, please log in again',
+    'USER_INFO_INVALID': 'Invalid user information',
+    'CAPTCHA_REQUIRED': 'Please enter the captcha',
+    'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN': 'Captcha required after failed login',
+    'UNAUTHORIZED_ACCESS': 'Unauthorized access',
+    'FORBIDDEN': 'Access forbidden',
+    'MENU_ACCESS_DENIED': 'No permission to access this feature',
+    'MENU_SERVICE_NOT_CONFIGURED': 'Menu access service not configured',
+    'VIEW_PERMISSION_DENIED': 'No permission to view other user information',
+    'VALIDATION_ERROR': 'Request validation failed',
+    'RESOURCE_NOT_FOUND': 'Resource not found',
+    'INVALID_OPERATION': 'Invalid operation',
+    'OPERATION_NOT_SUPPORTED': 'Operation not supported',
+    'SERVER_ERROR': 'Internal server error',
 };

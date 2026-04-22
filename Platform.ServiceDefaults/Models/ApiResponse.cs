@@ -7,9 +7,9 @@ public class ApiResponse(
     bool success,
     string? message = null,
     object? data = default,
+    string? errorCode = null,
     string? traceId = null,
-    object? errors = null,
-    object? details = null)
+    object? errors = null)
 {
     /// <summary>
     /// 操作是否成功的标志位
@@ -19,7 +19,7 @@ public class ApiResponse(
 
     /// <summary>
     /// 响应消息，用于向前端传递提示信息（如错误描述、操作结果等）
-    /// Success 为 false 时，前端应优先读取此字段显示错误提示
+    /// 前端应优先读取 ErrorCode 进行翻译，此字段作为 fallback 显示
     /// </summary>
     public string? Message { get; set; } = message;
 
@@ -30,16 +30,17 @@ public class ApiResponse(
     public object? Data { get; set; } = data;
 
     /// <summary>
-    /// 错误详情对象，用于传递结构化的错误信息（如 ValidationProblemDetails、多个字段的错误列表）
-    /// 通常在 Success 为 false 且需要详细错误信息时使用
+    /// 标准化错误码，用于前端 i18n 翻译的优先键
+    /// 前端应优先根据 ErrorCode 查找翻译文本，找不到时再 fallback 到 Message
+    /// Success 为 false 时此字段有值，Success 为 true 时为 null
     /// </summary>
-    public object? Errors { get; set; } = errors;
+    public string? ErrorCode { get; set; } = errorCode;
 
     /// <summary>
-    /// 附加详细信息，用于传递额外的调试信息或辅助数据
-    /// 如内部错误码、堆栈信息、额外上下文等
+    /// 错误详情对象，用于传递结构化的验证错误信息（如字段级验证错误）
+    /// 格式为 Dictionary&lt;string, string[]&gt;，键为字段名，值为错误消息数组
     /// </summary>
-    public object? Details { get; set; } = details;
+    public object? Errors { get; set; } = errors;
 
     /// <summary>
     /// 响应生成时间（UTC 时间），格式为 ISO 8601: yyyy-MM-ddTHH:mm:ss.fffZ

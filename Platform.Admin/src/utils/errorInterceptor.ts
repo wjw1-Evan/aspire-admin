@@ -1,6 +1,7 @@
 /**
  * 统一错误拦截器
  * 提供统一的错误处理、日志记录和用户提示
+ * errorCode 优先翻译，message 作为 fallback
  */
 
 import { getMessage, getNotification } from './antdAppInstance';
@@ -15,9 +16,20 @@ const runAfterRender = (fn: () => void) => {
   }
 };
 
-// 翻译辅助函数
-const translateMessage = (msg: string): string => {
-  if (!msg) return msg;
+// 翻译辅助函数：优先翻译 errorCode，fallback 到 message
+const translateMessage = (msg: string, errorCode?: string): string => {
+  if (errorCode) {
+    try {
+      const intl = getIntl();
+      const translated = intl.formatMessage({ id: errorCode, defaultMessage: '' });
+      if (translated && translated !== errorCode) {
+        return translated;
+      }
+    } catch {
+      // errorCode 没有翻译，继续 fallback
+    }
+  }
+  if (!msg) return msg || errorCode || '';
   const trimmed = msg.trim();
   try {
     const intl = getIntl();
@@ -60,6 +72,7 @@ export interface ErrorInfo {
   type: ErrorType;
   severity: ErrorSeverity;
   code?: string;
+  errorCode?: string;
   message: string;
   details?: any;
   timestamp: Date;
@@ -219,6 +232,12 @@ class UnifiedErrorInterceptor {
 
     // 添加额外信息
     // 优先从 error.info 中提取（UmiJS errorThrower 存储的位置）
+    if (error.info?.errorCode) {
+      errorInfo.errorCode = error.info.errorCode;
+    } else if (error.response?.data?.errorCode) {
+      errorInfo.errorCode = error.response.data.errorCode;
+    }
+
     if (error.info?.code) {
       errorInfo.code = error.info.code;
       errorInfo.details = error.info;
@@ -290,7 +309,14 @@ class UnifiedErrorInterceptor {
       return validationErrors[0]; // extractValidationErrors 已经做了翻译
     }
 
-    // 2. 最后的兜底
+    // 2. 优先使用 errorCode 翻译，fallback 到 message
+    const errorCode = error?.info?.errorCode || error?.response?.data?.errorCode;
+    if (errorCode) {
+      const translated = translateMessage('', errorCode);
+      if (translated) return translated;
+    }
+
+    // 3. 最后的兜底
     if (error.message) {
       return translateMessage(error.message);
     }
@@ -307,6 +333,15 @@ class UnifiedErrorInterceptor {
    */
   extractValidationErrors(error: any): string[] {
     const errors: string[] = [];
+
+    // 0. 优先使用 errorCode 翻译
+    const errorCode = error?.info?.errorCode || error?.response?.data?.errorCode;
+    if (errorCode) {
+      const translated = translateMessage('', errorCode);
+      if (translated && translated !== errorCode) {
+        errors.push(translated);
+      }
+    }
 
     // 1. ProblemDetails 格式 (.NET 标准)
     if (error?.response?.data?.errors) {
@@ -361,6 +396,7 @@ class UnifiedErrorInterceptor {
     const logMessage = `[${errorInfo.type}] ${errorInfo.message}`;
     const logData = {
       code: errorInfo.code,
+      errorCode: errorInfo.errorCode,
       url: errorInfo.url,
       method: errorInfo.method,
       timestamp: errorInfo.timestamp,

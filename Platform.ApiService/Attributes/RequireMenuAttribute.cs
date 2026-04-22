@@ -41,8 +41,8 @@ public class RequireMenuAttribute : Attribute, IAsyncAuthorizationFilter
         {
             var response = new ApiResponse(
                 success: false,
-                
                 message: "未授权访问",
+                errorCode: ErrorCode.Unauthenticated,
                 traceId: traceId
             );
             context.Result = new UnauthorizedObjectResult(response);
@@ -55,8 +55,8 @@ public class RequireMenuAttribute : Attribute, IAsyncAuthorizationFilter
         {
             var response = new ApiResponse(
                 success: false,
-                
                 message: "用户信息无效",
+                errorCode: ErrorCode.UserInfoInvalid,
                 traceId: traceId
             );
             context.Result = new UnauthorizedObjectResult(response);
@@ -71,8 +71,8 @@ public class RequireMenuAttribute : Attribute, IAsyncAuthorizationFilter
         {
             var response = new ApiResponse(
                 success: false,
-                
                 message: "菜单访问服务未配置",
+                errorCode: ErrorCode.MenuServiceNotConfigured,
                 traceId: traceId
             );
             context.Result = new ObjectResult(response)
@@ -90,8 +90,8 @@ public class RequireMenuAttribute : Attribute, IAsyncAuthorizationFilter
             var menuList = string.Join(", ", MenuNames);
             var response = new ApiResponse(
                 success: false,
-                
                 message: $"无权访问: {menuList}",
+                errorCode: ErrorCode.MenuAccessDenied,
                 traceId: traceId
             );
             context.Result = new ObjectResult(response)

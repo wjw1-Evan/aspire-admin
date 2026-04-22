@@ -85,7 +85,8 @@ public abstract class BaseApiController : ControllerBase
     /// <param name="success">是否成功</param>
     /// <param name="message">响应消息</param>
     /// <param name="data">业务数据</param>
+    /// <param name="errorCode">错误码（失败时使用 ErrorCode 常量）</param>
     /// <returns>完整的 ApiResponse 对象</returns>
-    private ApiResponse CreateResponse(bool success, string? message, object? data)
-        => new(success, message, data, HttpContext.TraceIdentifier);
+    private ApiResponse CreateResponse(bool success, string? message, object? data, string? errorCode = null)
+        => new(success, message, data, errorCode, HttpContext.TraceIdentifier);
 }

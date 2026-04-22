@@ -74,9 +74,9 @@ public class ApiResponseWrapperFilter : IAsyncResultFilter
                     {
                         var hasSuccess = t.GetProperty("success", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase) != null;
                         var hasData = t.GetProperty("data", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase) != null;
-                        var hasCode = t.GetProperty("code", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase) != null;
+                        var hasErrorCode = t.GetProperty("errorCode", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase) != null;
 
-                        return hasSuccess && (hasData || hasCode);
+                        return hasSuccess && (hasData || hasErrorCode);
                     });
 
                     if (!isAlreadyFormatted)

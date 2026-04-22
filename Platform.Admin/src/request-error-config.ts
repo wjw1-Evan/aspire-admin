@@ -28,9 +28,11 @@ interface ResponseStructure {
   success: boolean;
   data?: any;
   message?: string;
+  errorCode?: string;
   timestamp?: string;
   traceId?: string;
   showType?: ErrorShowType;
+  errors?: any;
 }
 
 // .NET ProblemDetails 错误响应格式
@@ -78,13 +80,14 @@ export const errorConfig: RequestConfig = {
       const tempRes = res as any;
       const success = tempRes.success;
       const message = tempRes.message;
+      const errorCode = tempRes.errorCode;
       const data = tempRes.data;
       const showType = tempRes.showType;
 
       if (success === false) {
         const error: any = new Error(message || '请求失败');
         error.name = 'BizError';
-        error.info = { message, showType, data, errors: tempRes.errors };
+        error.info = { message, errorCode, showType, data, errors: tempRes.errors };
         throw error;
       }
 

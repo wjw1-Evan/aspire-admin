@@ -72,6 +72,7 @@ builder.Services.AddControllers(options =>
             var errorResponse = new ApiResponse(
                 success: false,
                 message: errorCode ?? firstError,
+                errorCode: ErrorCode.ValidationError,
                 traceId: context.HttpContext.TraceIdentifier,
                 errors: errors
             );
@@ -242,8 +243,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
                 var errorResponse = new ApiResponse(
                     success: false,
-
                     message: "未提供有效的认证令牌或令牌已过期。请重新登录。",
+                    errorCode: ErrorCode.Unauthenticated,
                     traceId: context.HttpContext.TraceIdentifier
                 );
                 return context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse, jsonOptions));
@@ -255,8 +256,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
                 var errorResponse = new ApiResponse(
                     success: false,
-
                     message: "您只是此资源的访问者，无权进行操作 (403 Forbidden)",
+                    errorCode: ErrorCode.Forbidden,
                     traceId: context.HttpContext.TraceIdentifier
                 );
                 return context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse, jsonOptions));

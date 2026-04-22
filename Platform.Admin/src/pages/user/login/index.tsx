@@ -206,9 +206,9 @@ const Login: React.FC = () => {
       if (isValidationError) {
         const firstError = Object.values(validationErrors).flat().find((msg: any) => msg) as string | undefined;
         if (firstError) {
-          message.error(firstError as string);
+          setUserLoginState({ status: 'error', message: firstError as string });
         } else {
-          message.error(intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }));
+          setUserLoginState({ status: 'error', message: intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }) });
         }
         return;
       }
@@ -231,8 +231,6 @@ const Login: React.FC = () => {
         errorMsg = intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' });
       }
       setUserLoginState({ status: 'error', message: errorMsg });
-
-      message.error(errorMsg);
     }
   };
   const { status, type: loginType } = userLoginState;

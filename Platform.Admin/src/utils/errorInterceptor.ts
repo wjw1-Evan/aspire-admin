@@ -327,6 +327,7 @@ class UnifiedErrorInterceptor {
 
   /**
    * 提取所有验证错误消息（用于需要显示多个错误的场景）
+   * 规则：优先使用 errors 显示到对应字段，message 只作为全局提示（当 errors 不存在时）
    */
   extractValidationErrors(error: any): string[] {
     const errors: string[] = [];
@@ -340,7 +341,7 @@ class UnifiedErrorInterceptor {
       }
     }
 
-    // 1. ProblemDetails 格式 (.NET 标准)
+    // 1. ProblemDetails 格式 (.NET 标准) - errors 字段包含各字段验证错误
     if (error?.response?.data?.errors) {
       const validationErrors = error.response.data.errors;
       Object.keys(validationErrors).forEach((field) => {
@@ -353,7 +354,8 @@ class UnifiedErrorInterceptor {
       });
     }
 
-    // 2. 我们的标准 message (包含在 data 中或 Umi 的 error.info 中)
+    // 2. 只有当没有 errors 时才取 message（message 是全局错误提示，不是字段级错误）
+    // 如果 errors 已存在，说明字段错误已经显示，不再重复显示 message
     if (errors.length === 0) {
       // UmiJS 可能把响应体放在 error.info
       const customMessage = error.info?.message ||

@@ -16,43 +16,20 @@ const runAfterRender = (fn: () => void) => {
   }
 };
 
-// 翻译辅助函数：优先翻译 errorCode，fallback 到 message
+// 翻译辅助函数：优先翻译 errorCode，errorCode 翻译失败时直接返回 message
 const translateMessage = (msg: string, errorCode?: string): string => {
-  // 优先使用 errorCode 翻译
   if (errorCode) {
     try {
       const intl = getIntl();
       const translated = intl.formatMessage({ id: errorCode, defaultMessage: '' });
-      // 如果翻译成功且不是返回 errorCode 本身，说明翻译存在
       if (translated && translated !== errorCode) {
         return translated;
       }
     } catch {
-      // errorCode 没有翻译，继续 fallback
+      // errorCode 翻译失败，不尝试翻译 message
     }
   }
-  // 如果有原始消息且不是纯中文，跳过翻译尝试（中文消息不应作为 i18n key）
-  if (msg) {
-    const trimmed = msg.trim();
-    if (/^[A-Z][A-Z0-9_]+$/.test(trimmed)) {
-      return trimmed;
-    }
-    if (/[\u4e00-\u9fa5]/.test(trimmed)) {
-      return trimmed;
-    }
-    try {
-      const intl = getIntl();
-      const translated = intl.formatMessage({ id: trimmed, defaultMessage: trimmed });
-      if (translated !== trimmed) {
-        return translated;
-      }
-    } catch {
-      // 翻译失败，返回原始消息
-    }
-    return trimmed;
-  }
-  // 如果都没有，返回 errorCode 或空字符串
-  return errorCode || '';
+  return msg || errorCode || '';
 };
 
 // 错误类型枚举

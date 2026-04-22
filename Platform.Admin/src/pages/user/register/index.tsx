@@ -87,6 +87,7 @@ export default function Register() {
   const intl = useIntl();
   const { message } = App.useApp();
   const { styles } = useStyles();
+  const [form] = Form.useForm();
 
   // 用户名检测状态
   const [usernameStatus, setUsernameStatus] = useState<
@@ -122,9 +123,20 @@ export default function Register() {
 
       throw new Error(errorMsg);
     } catch (error: any) {
-      const errorMsg = error?.info?.message || error?.message || error?.response?.data?.message;
-      if (errorMsg) {
-        message.error(errorMsg);
+      const validationErrors = error?.response?.data?.errors;
+      const isValidationError = error?.response?.status === 400 && validationErrors;
+
+      if (isValidationError && validationErrors) {
+        const fieldErrors = Object.entries(validationErrors).map(([field, msgs]) => ({
+          name: field as any,
+          errors: Array.isArray(msgs) ? [msgs[0] as string] : [msgs as string],
+        }));
+        form.setFields(fieldErrors);
+      } else {
+        const errorMsg = error?.info?.message || error?.message || error?.response?.data?.message;
+        if (errorMsg) {
+          message.error(errorMsg);
+        }
       }
     }
   };
@@ -206,6 +218,7 @@ export default function Register() {
                 </div>
               </div>
               <ProForm
+                form={form}
                 onFinish={async (values) => {
                   await handleSubmit(values as API.RegisterParams);
                 }}

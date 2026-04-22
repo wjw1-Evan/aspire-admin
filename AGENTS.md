@@ -679,6 +679,43 @@ _ = Task.Run(async () =>
 
 > **重要**：`errors` 和 `message` 不应同时显示相同内容。errors 包含各字段的具体错误时，message 应为空或仅作为全局兜底。前端 errorInterceptor 的 `extractValidationErrors()` 方法已实现此逻辑：只有当 `errors` 为空时才取 `message`。
 
+#### 前端字段错误显示规范
+
+**强制**：表单验证错误必须显示在对应字段上，禁止使用弹窗统一显示：
+
+```typescript
+import { Form } from 'antd';
+
+// 1. 使用 Form.useForm() 获取 form 实例
+const [form] = Form.useForm();
+
+// 2. ProForm/Form 绑定 form 实例
+<ProForm form={form} onFinish={handleSubmit}>
+
+// 3. catch 块中使用 form.setFields() 设置字段错误
+catch (error: any) {
+  const validationErrors = error?.response?.data?.errors;
+  const isValidationError = error?.response?.status === 400 && validationErrors;
+
+  if (isValidationError && validationErrors) {
+    // 将错误显示在对应字段上
+    form.setFields(
+      Object.entries(validationErrors).map(([field, msgs]) => ({
+        name: field as any,
+        errors: Array.isArray(msgs) ? [msgs[0]] : [msgs],
+      }))
+    );
+  }
+}
+```
+
+**错误示例**（禁止）：
+- 在 catch 块中使用 `message.error()` 显示字段错误
+- 在页面顶部统一显示所有错误
+
+**正确示例**：
+- 使用 `form.setFields()` 将每个字段的错误显示在该字段下方
+
 控制器返回：
 ```csharp
 return Success(entity);           // 返回数据

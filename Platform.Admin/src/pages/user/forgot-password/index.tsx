@@ -83,8 +83,20 @@ const ForgotPasswordContainer: React.FC = () => {
       }
     } catch (error: any) {
       error.skipGlobalHandler = true;
-      const errorMsg = error?.response?.data?.message || error?.message || '验证码发送失败';
-      message.error(errorMsg);
+      const validationErrors = error?.response?.data?.errors;
+      const isValidationError = error?.response?.status === 400 && validationErrors;
+
+      if (isValidationError && validationErrors) {
+        formEmail.setFields(
+          Object.entries(validationErrors).map(([field, msgs]) => ({
+            name: field as any,
+            errors: Array.isArray(msgs) ? [msgs[0] as string] : [msgs as string],
+          }))
+        );
+      } else {
+        const errorMsg = error?.response?.data?.message || error?.message || '验证码发送失败';
+        message.error(errorMsg);
+      }
     } finally {
       setLoading(false);
     }
@@ -129,8 +141,20 @@ const ForgotPasswordContainer: React.FC = () => {
       }
     } catch (error: any) {
       error.skipGlobalHandler = true;
-      const errorMsg = error?.response?.data?.message || error?.message || '重置密码失败';
-      message.error(errorMsg);
+      const validationErrors = error?.response?.data?.errors;
+      const isValidationError = error?.response?.status === 400 && validationErrors;
+
+      if (isValidationError && validationErrors) {
+        formReset.setFields(
+          Object.entries(validationErrors).map(([field, msgs]) => ({
+            name: field as any,
+            errors: Array.isArray(msgs) ? [msgs[0] as string] : [msgs as string],
+          }))
+        );
+      } else {
+        const errorMsg = error?.response?.data?.message || error?.message || '重置密码失败';
+        message.error(errorMsg);
+      }
     } finally {
       setLoading(false);
     }

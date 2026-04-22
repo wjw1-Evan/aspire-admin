@@ -1,4 +1,4 @@
-curl -sSL <https://aspire.dev/install.sh> | bash
+curl -sSL https://aspire.dev/install.sh | bash
 
 aspire update
 

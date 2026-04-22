@@ -9,7 +9,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # 安装依赖
-RUN npm ci --only=production=false
+RUN npm ci --legacy-peer-deps
 
 # 阶段 2: 构建应用
 FROM node:20-alpine AS builder

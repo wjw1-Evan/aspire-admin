@@ -53,7 +53,7 @@ builder.Services.AddMemoryCache(); // 添加内存缓存服务
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<Platform.ApiService.Filters.ApiResponseWrapperFilter>();
-    options.Filters.Add<Platform.ApiService.Filters.BusinessExceptionFilter>();
+    options.Filters.Add<Platform.ServiceDefaults.Filters.BusinessExceptionFilter>();
 })
     .ConfigureApiBehaviorOptions(options =>
     {

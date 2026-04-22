@@ -500,7 +500,7 @@ catch (Exception ex)
 }
 ```
 
-**全局异常映射**（`BusinessExceptionFilter` 自动处理）：
+**全局异常映射**（`BusinessExceptionFilter` 自动处理，处理位置已迁移至 `Platform.ServiceDefaults.Filters`）：
 
 | 异常类型 | HTTP 状态码 | 说明 |
 |---------|-----------|------|
@@ -1040,7 +1040,7 @@ cd Platform.Admin && npm run lint  # 实际执行 tsc --noEmit
 | 审计接口 | `Platform.ServiceDefaults/Models/OperationTracking.cs` |
 | 权限注解 | `Platform.ApiService/Attributes/RequireMenuAttribute.cs` |
 | 响应包装 | `Platform.ApiService/Filters/ApiResponseWrapperFilter.cs` |
-| 异常过滤 | `Platform.ApiService/Filters/BusinessExceptionFilter.cs` |
+| 异常过滤 | `Platform.ServiceDefaults/Filters/BusinessExceptionFilter.cs` |
 | SSE 控制器 | `Platform.ApiService/Controllers/StreamController.cs` |
 | 租户中间件 | `Platform.ServiceDefaults/Services/TenantContextMiddleware.cs` |
 | 前端统一类型 | `Platform.Admin/src/types/api-response.ts` |

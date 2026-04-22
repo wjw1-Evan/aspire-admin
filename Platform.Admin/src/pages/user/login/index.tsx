@@ -11,7 +11,7 @@ import {
   history,
 } from '@umijs/max';
 import { SelectLang } from '@/components';
-import { Alert, App, Form, Input, Space } from 'antd';
+import { Alert, App, Space } from 'antd';
 import { ProCard, ProForm, ProFormText } from '@ant-design/pro-components';
 import { createStyles } from 'antd-style';
 import React, { useState, useEffect } from 'react';
@@ -285,25 +285,23 @@ const Login: React.FC = () => {
                       fieldProps={{ prefix: <UserOutlined /> }}
                       rules={[{ required: true, message: intl.formatMessage({ id: 'pages.login.username.required', defaultMessage: '请输入用户名!' }) }]}
                     />
-                    <ProForm.Item name="password" rules={[{ required: true, message: intl.formatMessage({ id: 'pages.login.password.required', defaultMessage: '请输入密码！' }) }]}>
-                      <Input.Password
-                        size="middle"
-                        prefix={<LockOutlined />}
-                        placeholder={intl.formatMessage({
-                          id: 'pages.login.password.placeholder',
-                          defaultMessage: '密码',
-                        })}
-                      />
-                    </ProForm.Item>
+                    <ProFormText
+                      name="password"
+                      placeholder={intl.formatMessage({
+                        id: 'pages.login.password.placeholder',
+                        defaultMessage: '密码',
+                      })}
+                      fieldProps={{ prefix: <LockOutlined /> }}
+                      rules={[{ required: true, message: intl.formatMessage({ id: 'pages.login.password.required', defaultMessage: '请输入密码！' })}]}
+                    />
                   </>
                 )}
-
-                <div style={{ marginBottom: 24, textAlign: 'right' }}>
-                  <Link to="/user/forgot-password">
-                    <FormattedMessage id="pages.login.forgotPassword" defaultMessage="忘记密码" />
-                  </Link>
-                </div>
               </ProForm>
+              <div style={{ marginBottom: 24, textAlign: 'right' }}>
+                <Link to="/user/forgot-password">
+                  <FormattedMessage id="pages.login.forgotPassword" defaultMessage="忘记密码" />
+                </Link>
+              </div>
               <div style={{ textAlign: 'center', marginTop: 16 }}>
                 <Link to="/user/register">
                   <FormattedMessage id="pages.login.register" defaultMessage="没有账号？立即注册" />

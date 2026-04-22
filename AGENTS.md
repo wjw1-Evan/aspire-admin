@@ -671,11 +671,13 @@ _ = Task.Run(async () =>
 
 **字段职责**：
 
-| 字段 | 用途 | 显示优先级 |
-|------|------|----------|
+| 字段 | 用途 | 说明 |
+|------|------|------|
 | `errorCode` | 标准错误分类码，前端优先用于 i18n 翻译 | 1 (优先翻译) |
-| `message` | 动态错误描述，作为 fallback 显示 | 2 |
-| `errors` | 结构化字段验证错误 `Dictionary<string, string[]>` | 3 |
+| `message` | 全局错误提示，当 errors 不存在时显示 | 仅当 errors为空时的兜底显示 |
+| `errors` | **字段级别验证错误** `Dictionary<string, string[]>` | 各表单字段的验证错误，优先于 message 显示 |
+
+> **重要**：`errors` 和 `message` 不应同时显示相同内容。errors 包含各字段的具体错误时，message 应为空或仅作为全局兜底。前端 errorInterceptor 的 `extractValidationErrors()` 方法已实现此逻辑：只有当 `errors` 为空时才取 `message`。
 
 控制器返回：
 ```csharp

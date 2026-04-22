@@ -21,7 +21,7 @@ import { login } from '@/services/ant-design-pro/api';
 import { tokenUtils } from '@/utils/token';
 import { PasswordEncryption } from '@/utils/encryption';
 import Settings from '../../../../config/defaultSettings';
-import { LOGIN_KNOWN_ERRORS, INVALID_CREDENTIALS } from '@/constants/errorCodes';
+import { LOGIN_KNOWN_ERRORS, INVALID_CREDENTIALS, LOGIN_ERROR_INVALID_CREDENTIALS } from '@/constants/errorCodes';
 
 const useStyles = createStyles(({ token }) => {
   return {

@@ -551,8 +551,8 @@ throw new UnauthorizedAccessException(ErrorCode.CurrentCompanyNotFound);
 | 场景 | 使用常量 | 文件 |
 |------|---------|------|
 | 业务错误码（throw 异常） | `ErrorCode.InvalidCredentials` | `Platform.ServiceDefaults/Models/ErrorCode.cs` |
-| 成功消息（Success 返回） | `SuccessMessages.CreateSuccess` | `Platform.ApiService/Constants/SuccessMessages.cs` |
-| 格式化验证消息（string.Format） | `string.Format(ErrorMessages.ParameterRequired, "用户名")` | `Platform.ApiService/Constants/UserConstants.cs` |
+| 成功消息（Success 返回） | `SuccessMessages.CreateSuccess` | `Platform.ServiceDefaults/Models/SuccessMessages.cs` |
+| 格式化验证消息（string.Format） | `string.Format(ErrorMessages.ParameterRequired, "用户名")` | `Platform.ServiceDefaults/Models/UserConstants.cs` |
 
 > **注意**：`ErrorMessages` 类仅保留格式化字符串（含 `{0}`/`{1}` 占位符），固定文本错误消息已统一迁移至 `ErrorCode.ErrorMessages` 字典，成功消息已迁移至 `SuccessMessages` 类。
 
@@ -1160,8 +1160,8 @@ export function getErrorMessage(
 | 实体基类 | `Platform.ServiceDefaults/Models/BaseEntity.cs` |
 | 审计接口 | `Platform.ServiceDefaults/Models/OperationTracking.cs` |
 | 错误码常量与消息字典 | `Platform.ServiceDefaults/Models/ErrorCode.cs` |
-| 成功消息常量 | `Platform.ApiService/Constants/SuccessMessages.cs` |
-| 格式化错误消息 | `Platform.ApiService/Constants/UserConstants.cs`（`ErrorMessages` 类） |
+| 成功消息常量 | `Platform.ServiceDefaults/Models/SuccessMessages.cs` |
+| 格式化错误消息 | `Platform.ServiceDefaults/Models/UserConstants.cs`（`ErrorMessages` 类） |
 | 权限注解 | `Platform.ApiService/Attributes/RequireMenuAttribute.cs` |
 | 响应包装 | `Platform.ApiService/Filters/ApiResponseWrapperFilter.cs` |
 | 异常过滤 | `Platform.ServiceDefaults/Filters/BusinessExceptionFilter.cs` |

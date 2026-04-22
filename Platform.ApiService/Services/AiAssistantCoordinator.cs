@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Constants;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
+using System.Security.Authentication;
 
 namespace Platform.ApiService.Services;
 
@@ -45,7 +47,7 @@ public class AiAssistantCoordinator : IAiAssistantCoordinator
     public async Task<ChatSession> EnsureAssistantSessionForCurrentUserAsync()
     {
         
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
         var user = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == currentUserId)
             ?? throw new InvalidOperationException("未找到当前用户信息，无法创建 AI 助手会话。");
 

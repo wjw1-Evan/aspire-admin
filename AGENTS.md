@@ -473,13 +473,17 @@ var paged = query.Skip((page - 1) * pageSize).Take(pageSize);
 **[强制]** 控制器和服务层出现错误时，**直接抛出异常**：
 
 ```csharp
-// ✅ 正确：直接抛出异常
-if (entity == null)
-    throw new KeyNotFoundException("资源不存在");
+// ✅ 正确：使用 ErrorCode 常量作为异常消息（BusinessExceptionFilter 自动识别并翻译）
+if (user == null)
+    throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
 
-if (!hasPermission)
-    throw new UnauthorizedAccessException("无权访问此资源");
+if (string.IsNullOrEmpty(companyId))
+    throw new UnauthorizedAccessException(ErrorCode.CurrentCompanyNotFound);
 
+if (!await _uniquenessChecker.IsUsernameUniqueAsync(username))
+    throw new InvalidOperationException(ErrorCode.UserNameExists);
+
+// ✅ 正确：参数校验等简单场景可使用人类可读消息（走异常类型映射）
 if (string.IsNullOrEmpty(name))
     throw new ArgumentException("名称不能为空", nameof(name));
 ```
@@ -502,6 +506,25 @@ catch (Exception ex)
 
 **全局异常映射**（`BusinessExceptionFilter` 自动处理，处理位置已迁移至 `Platform.ServiceDefaults.Filters`）：
 
+**优先级 1：已知错误码自动识别**
+
+当异常消息是 `ErrorCode.ErrorMessages` 字典中的已知错误码时，`BusinessExceptionFilter` 自动将 `errorCode` 设为该错误码，`message` 设为字典中的中文消息：
+
+```csharp
+// 服务层：抛出异常时使用 ErrorCode 常量作为消息
+throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
+throw new ArgumentException(ErrorCode.InvalidCredentials);
+throw new UnauthorizedAccessException(ErrorCode.CurrentCompanyNotFound);
+
+// BusinessExceptionFilter 自动检测：
+// exception.Message == "USER_NOT_AUTHENTICATED" → 查字典得到 "未找到用户认证信息"
+// 结果: { errorCode: "USER_NOT_AUTHENTICATED", message: "未找到用户认证信息" }
+```
+
+**优先级 2：异常类型映射（回退）**
+
+当异常消息不是已知错误码时，按异常类型映射：
+
 | 异常类型 | HTTP 状态码 | errorCode | 说明 |
 |---------|-----------|-----------|------|
 | `ArgumentException` | 400 | `VALIDATION_ERROR` | 参数校验失败 |
@@ -513,10 +536,21 @@ catch (Exception ex)
 | `NotSupportedException` | 405 | `OPERATION_NOT_SUPPORTED` | 不支持 |
 | `IOException` | 404 | `RESOURCE_NOT_FOUND` | IO 异常 |
 
+**服务层异常类型选择规范**：
+
+| 场景 | 异常类型 | HTTP 状态码 | 说明 |
+|------|---------|-----------|------|
+| 用户未认证 | `AuthenticationException` | 401 | 语义明确：未登录/Token 无效 |
+| 无权操作 | `UnauthorizedAccessException` | 403 | 语义明确：权限不足 |
+| 资源不存在 | `KeyNotFoundException` | 404 | 语义明确：找不到目标资源 |
+| 参数校验失败 | `ArgumentException` | 400 | 通用参数错误 |
+| 业务规则冲突 | `InvalidOperationException` | 400 | 唯一性冲突等 |
+
 **错误码优先规范**：
 - `ApiResponse` 包含 `errorCode` 和 `message` 两个字段
 - **前端应优先读取 `errorCode` 进行 i18n 翻译**，`message` 作为 fallback 显示
 - 错误码常量定义见 `Platform.ServiceDefaults/Models/ErrorCode.cs`
+- 错误码→消息字典也定义在 `ErrorCode.ErrorMessages`，`BusinessExceptionFilter` 自动查表
 - 前端错误码常量定义见 `Platform.Admin/src/constants/errorCodes.ts`
 - 所有 locale 的 `request.ts` 应包含完整错误码翻译
 
@@ -1114,7 +1148,7 @@ export function getErrorMessage(
 | DbContext | `Platform.ServiceDefaults/Services/PlatformDbContext.cs` |
 | 实体基类 | `Platform.ServiceDefaults/Models/BaseEntity.cs` |
 | 审计接口 | `Platform.ServiceDefaults/Models/OperationTracking.cs` |
-| 错误码常量 | `Platform.ServiceDefaults/Models/ErrorCode.cs` |
+| 错误码常量与消息字典 | `Platform.ServiceDefaults/Models/ErrorCode.cs` |
 | 权限注解 | `Platform.ApiService/Attributes/RequireMenuAttribute.cs` |
 | 响应包装 | `Platform.ApiService/Filters/ApiResponseWrapperFilter.cs` |
 | 异常过滤 | `Platform.ServiceDefaults/Filters/BusinessExceptionFilter.cs` |

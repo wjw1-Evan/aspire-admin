@@ -47,14 +47,14 @@ public class LoginService : ILoginService
 
 if (user == null)
         {
-            throw new ArgumentException(ErrorCodes.INVALID_CREDENTIALS);
+            throw new ArgumentException(ErrorCode.InvalidCredentials);
         }
 
         var rawPassword = _encryptionService.TryDecryptPassword(request.Password ?? string.Empty);
 
         if (!_passwordHasher.VerifyPassword(rawPassword, user.PasswordHash))
         {
-            throw new ArgumentException(ErrorCodes.INVALID_CREDENTIALS);
+            throw new ArgumentException(ErrorCode.InvalidCredentials);
         }
 
         bool shouldClearInvalidCompanyId = false;

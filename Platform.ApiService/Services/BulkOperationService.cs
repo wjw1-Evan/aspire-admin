@@ -7,6 +7,7 @@ using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Extensions;
 using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
+using System.Security.Authentication;
 
 namespace Platform.ApiService.Services;
 
@@ -176,7 +177,7 @@ public class BulkOperationService : IBulkOperationService
     /// <returns>批量操作列表</returns>
     public Task<System.Linq.Dynamic.Core.PagedResult<BulkOperation>> GetUserBulkOperationsAsync(int page = 1, int pageSize = 20)
     {
-        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var userId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
 
         Expression<Func<BulkOperation, bool>> filter = b =>
             b.CreatedBy == userId &&

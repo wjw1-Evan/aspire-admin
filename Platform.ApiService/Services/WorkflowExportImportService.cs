@@ -2,8 +2,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
+using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using System.Linq.Expressions;
+using System.Security.Authentication;
 using System.Text.Json;
 
 namespace Platform.ApiService.Services;
@@ -278,8 +280,8 @@ public class WorkflowExportImportService : IWorkflowExportImportService
                 return result;
             }
 
-            var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-            var companyId =  _tenantContext.GetCurrentCompanyId() ?? throw new InvalidOperationException("COMPANY_NOT_FOUND");
+            var userId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
+            var companyId =  _tenantContext.GetCurrentCompanyId() ?? throw new KeyNotFoundException(ErrorCode.CompanyNotFound);
 
             // 根据解决方案处理每个工作流
             foreach (var workflowItem in importData.Workflows)

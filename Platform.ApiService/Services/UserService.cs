@@ -8,6 +8,7 @@ using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Extensions;
 using System.Linq.Expressions;
 using System.Linq.Dynamic.Core;
+using System.Security.Authentication;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -63,11 +64,11 @@ public class UserService : IUserService
     /// <inheritdoc/>
     public async Task<List<AppUser>> GetAllUsersAsync()
     {
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
         var currentUser = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == currentUserId);
         if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
         {
-            throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
+            throw new UnauthorizedAccessException(ErrorCode.CurrentCompanyNotFound);
         }
         var currentCompanyId = currentUser.CurrentCompanyId;
 
@@ -136,7 +137,7 @@ public class UserService : IUserService
         var hasMenuAccess = await _menuAccessService.HasMenuAccessAsync(SystemConstants.Permissions.UserManagement, currentUserId);
         if (!hasMenuAccess)
         {
-            throw new UnauthorizedAccessException("USER_VIEW_PERMISSION_DENIED");
+            throw new UnauthorizedAccessException(ErrorCode.ViewPermissionDenied);
         }
     }
 
@@ -145,12 +146,12 @@ public class UserService : IUserService
     {
         _validationService.ValidateUsername(request.Username);
 
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
         var companyId = _tenantContext.GetCurrentCompanyId();
 
         if (string.IsNullOrEmpty(companyId))
         {
-            throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
+            throw new UnauthorizedAccessException(ErrorCode.CurrentCompanyNotFound);
         }
 
         var company = await _context.Set<Company>().FirstOrDefaultAsync(c => c.Id == companyId);
@@ -236,11 +237,11 @@ public class UserService : IUserService
 
         if (request.RoleIds != null)
         {
-            var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+            var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
             var companyId = _tenantContext.GetCurrentCompanyId();
             if (string.IsNullOrEmpty(companyId))
             {
-                throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
+                throw new UnauthorizedAccessException(ErrorCode.CurrentCompanyNotFound);
             }
 
             if (request.RoleIds.Any())
@@ -279,7 +280,7 @@ public class UserService : IUserService
         var currentCompanyId = _tenantContext.GetCurrentCompanyId();
         if (string.IsNullOrEmpty(currentCompanyId))
         {
-            throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
+            throw new UnauthorizedAccessException(ErrorCode.CurrentCompanyNotFound);
         }
 
         var membership = await _context.Set<UserCompany>()
@@ -386,7 +387,7 @@ public class UserService : IUserService
     public async Task<UserStatisticsResponse> GetUserStatisticsAsync()
     {
         var currentCompanyId = _tenantContext.GetCurrentCompanyId();
-        if (string.IsNullOrEmpty(currentCompanyId)) throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
+        if (string.IsNullOrEmpty(currentCompanyId)) throw new UnauthorizedAccessException(ErrorCode.CurrentCompanyNotFound);
 
         var memberships = await _context.Set<UserCompany>().Where(uc => uc.CompanyId == currentCompanyId && uc.Status == SystemConstants.UserStatus.Active).ToListAsync();
         var memberUserIds = memberships.Select(uc => uc.UserId).Distinct().ToList();
@@ -429,9 +430,9 @@ public class UserService : IUserService
     /// <inheritdoc/>
     public async Task<bool> BulkUpdateUsersAsync(BulkUserActionRequest request, string? reason = null)
     {
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
         var currentCompanyId = _tenantContext.GetCurrentCompanyId();
-        if (string.IsNullOrEmpty(currentCompanyId)) throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
+        if (string.IsNullOrEmpty(currentCompanyId)) throw new UnauthorizedAccessException(ErrorCode.CurrentCompanyNotFound);
 
         var memberships = await _context.Set<UserCompany>().Where(uc => uc.CompanyId == currentCompanyId && request.UserIds.Contains(uc.UserId)).ToListAsync();
         var validUserIds = memberships.Select(uc => uc.UserId).ToList();
@@ -550,7 +551,7 @@ public class UserService : IUserService
         }
 
         var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == userId);
-        if (user == null) throw new KeyNotFoundException($"USER_NOT_FOUND");
+        if (user == null) throw new KeyNotFoundException(ErrorCode.UserNotFound);
 
         if (!string.IsNullOrEmpty(request.Email)) user.Email = request.Email;
         if (!string.IsNullOrEmpty(request.Name)) user.Name = request.Name;

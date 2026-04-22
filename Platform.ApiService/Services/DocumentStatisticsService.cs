@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
+using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using Microsoft.Extensions.Logging;
+using System.Security.Authentication;
 
 namespace Platform.ApiService.Services;
 
@@ -21,7 +23,7 @@ public class DocumentStatisticsService : IDocumentStatisticsService
 
     public async Task<DocumentStatisticsResponse> GetStatisticsAsync()
     {
-        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var userId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
 
         var totalDocuments = await _context.Set<Document>().LongCountAsync(d => true);
         var draftCount = await _context.Set<Document>().LongCountAsync(d => d.Status == DocumentStatus.Draft);

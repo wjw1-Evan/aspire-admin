@@ -1,9 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
+using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using Platform.ApiService.Extensions;
 using Microsoft.Extensions.Logging;
+using System.Security.Authentication;
 using System.Security.Cryptography;
 
 namespace Platform.ApiService.Services;
@@ -36,7 +38,7 @@ public class DocumentWorkflowService : IDocumentWorkflowService
         if (document.Status != DocumentStatus.Draft)
             throw new InvalidOperationException("只有草稿状态的公文可以提交");
 
-        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var userId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
 
         var allVariables = new Dictionary<string, object?>();
 

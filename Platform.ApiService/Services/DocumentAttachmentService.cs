@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Http;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using Microsoft.Extensions.Logging;
+using System.Security.Authentication;
 using System.Security.Cryptography;
 
 namespace Platform.ApiService.Services;
@@ -29,7 +31,7 @@ public class DocumentAttachmentService : IDocumentAttachmentService
         if (file.Length <= 0)
             throw new ArgumentException("附件内容为空", nameof(file));
 
-        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var userId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
 
         await using var fileStream = file.OpenReadStream();
 

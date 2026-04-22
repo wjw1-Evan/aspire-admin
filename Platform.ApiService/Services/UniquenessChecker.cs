@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using User = Platform.ApiService.Models.AppUser;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using System.Linq.Expressions;
 
@@ -82,7 +83,7 @@ public class UniquenessChecker : IUniquenessChecker
         
         if (!await IsUsernameUniqueAsync(username, excludeUserId))
         {
-            throw new InvalidOperationException("USER_NAME_EXISTS");
+            throw new InvalidOperationException(ErrorCode.UserNameExists);
         }
     }
 
@@ -93,7 +94,7 @@ public class UniquenessChecker : IUniquenessChecker
     {
         if (!await IsEmailUniqueAsync(email, excludeUserId))
         {
-            throw new InvalidOperationException("EMAIL_EXISTS");
+            throw new InvalidOperationException(ErrorCode.EmailExists);
         }
     }
 
@@ -104,7 +105,7 @@ public class UniquenessChecker : IUniquenessChecker
     {
         if (!await IsPhoneUniqueAsync(phone, excludeUserId))
         {
-            throw new InvalidOperationException("PHONE_NUMBER_EXISTS");
+            throw new InvalidOperationException(ErrorCode.PhoneNumberExists);
         }
     }
 

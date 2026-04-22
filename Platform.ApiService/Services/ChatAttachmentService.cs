@@ -3,12 +3,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 
@@ -42,7 +44,7 @@ public class ChatAttachmentService : IChatAttachmentService
         if (file.Length <= 0) throw new ArgumentException("附件内容为空", nameof(file));
 
         var session = await _sessionService.EnsureSessionAccessibleAsync(sessionId);
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
 
         using var memoryStream = new MemoryStream();
         await file.CopyToAsync(memoryStream);

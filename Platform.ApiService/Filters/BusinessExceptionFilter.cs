@@ -20,13 +20,16 @@ public class BusinessExceptionFilter : IExceptionFilter
     public void OnException(ExceptionContext context)
     {
         var exception = context.Exception;
+        var message = exception.Message;
+        var code = exception is BusinessException be ? be.Code : null;
 
         if (exception is ArgumentException)
         {
             var response = new ApiResponse(
                 success: false,
-                message: exception.Message,
-                traceId: context.HttpContext.TraceIdentifier
+                message: message,
+                traceId: context.HttpContext.TraceIdentifier,
+                code: code
             );
 
             context.Result = new BadRequestObjectResult(response);
@@ -38,8 +41,9 @@ public class BusinessExceptionFilter : IExceptionFilter
         {
             var response = new ApiResponse(
                 success: false,
-                message: exception.Message,
-                traceId: context.HttpContext.TraceIdentifier
+                message: message,
+                traceId: context.HttpContext.TraceIdentifier,
+                code: code
             );
 
             context.Result = new NotFoundObjectResult(response);
@@ -51,8 +55,9 @@ public class BusinessExceptionFilter : IExceptionFilter
         {
             var response = new ApiResponse(
                 success: false,
-                message: exception.Message,
-                traceId: context.HttpContext.TraceIdentifier
+                message: message,
+                traceId: context.HttpContext.TraceIdentifier,
+                code: code
             );
 
             context.Result = new UnauthorizedObjectResult(response);
@@ -64,8 +69,9 @@ public class BusinessExceptionFilter : IExceptionFilter
         {
             var response = new ApiResponse(
                 success: false,
-                message: exception.Message,
-                traceId: context.HttpContext.TraceIdentifier
+                message: message,
+                traceId: context.HttpContext.TraceIdentifier,
+                code: code
             );
 
             context.Result = new BadRequestObjectResult(response);
@@ -75,6 +81,4 @@ public class BusinessExceptionFilter : IExceptionFilter
 
         _logger.LogError(exception, "未处理的异常: {Message}", exception.Message);
     }
-
-
 }

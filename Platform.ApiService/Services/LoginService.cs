@@ -47,14 +47,14 @@ public class LoginService : ILoginService
 
         if (user == null)
         {
-            throw new ArgumentException("LOGIN_ERROR:INVALID_CREDENTIALS");
+            throw new BusinessException(ErrorCodes.INVALID_CREDENTIALS, "用户名或密码错误");
         }
 
         var rawPassword = _encryptionService.TryDecryptPassword(request.Password ?? string.Empty);
 
         if (!_passwordHasher.VerifyPassword(rawPassword, user.PasswordHash))
         {
-            throw new ArgumentException("LOGIN_ERROR:INVALID_CREDENTIALS");
+            throw new BusinessException(ErrorCodes.INVALID_CREDENTIALS, "用户名或密码错误");
         }
 
         bool shouldClearInvalidCompanyId = false;

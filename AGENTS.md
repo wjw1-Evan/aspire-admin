@@ -546,6 +546,16 @@ throw new UnauthorizedAccessException(ErrorCode.CurrentCompanyNotFound);
 | 参数校验失败 | `ArgumentException` | 400 | 通用参数错误 |
 | 业务规则冲突 | `InvalidOperationException` | 400 | 唯一性冲突等 |
 
+**后端消息常量使用规范**：
+
+| 场景 | 使用常量 | 文件 |
+|------|---------|------|
+| 业务错误码（throw 异常） | `ErrorCode.InvalidCredentials` | `Platform.ServiceDefaults/Models/ErrorCode.cs` |
+| 成功消息（Success 返回） | `SuccessMessages.CreateSuccess` | `Platform.ApiService/Constants/SuccessMessages.cs` |
+| 格式化验证消息（string.Format） | `string.Format(ErrorMessages.ParameterRequired, "用户名")` | `Platform.ApiService/Constants/UserConstants.cs` |
+
+> **注意**：`ErrorMessages` 类仅保留格式化字符串（含 `{0}`/`{1}` 占位符），固定文本错误消息已统一迁移至 `ErrorCode.ErrorMessages` 字典，成功消息已迁移至 `SuccessMessages` 类。
+
 **错误码优先规范**：
 - `ApiResponse` 包含 `errorCode` 和 `message` 两个字段
 - **前端应优先读取 `errorCode` 进行 i18n 翻译**，`message` 作为 fallback 显示
@@ -630,6 +640,7 @@ _ = Task.Run(async () =>
 | 请求/响应类后缀 | `CreateXxxRequest`、`XxxResponse`、`XxxDto` |
 | 实体类命名 | 使用领域名称：`PasswordBookEntry`、`WorkTask`、`IoTGateway` |
 | 实体+请求共位 | 同模块实体与 Request/DTO 放在同一文件（参考 `PasswordBookEntities.cs`） |
+| 错误消息常量 | 错误码用 `ErrorCode.*`，成功消息用 `SuccessMessages.*`，格式化消息用 `ErrorMessages.*` |
 
 ### 6.10 统一响应格式
 
@@ -1149,6 +1160,8 @@ export function getErrorMessage(
 | 实体基类 | `Platform.ServiceDefaults/Models/BaseEntity.cs` |
 | 审计接口 | `Platform.ServiceDefaults/Models/OperationTracking.cs` |
 | 错误码常量与消息字典 | `Platform.ServiceDefaults/Models/ErrorCode.cs` |
+| 成功消息常量 | `Platform.ApiService/Constants/SuccessMessages.cs` |
+| 格式化错误消息 | `Platform.ApiService/Constants/UserConstants.cs`（`ErrorMessages` 类） |
 | 权限注解 | `Platform.ApiService/Attributes/RequireMenuAttribute.cs` |
 | 响应包装 | `Platform.ApiService/Filters/ApiResponseWrapperFilter.cs` |
 | 异常过滤 | `Platform.ServiceDefaults/Filters/BusinessExceptionFilter.cs` |

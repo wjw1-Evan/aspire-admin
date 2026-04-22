@@ -1036,6 +1036,55 @@ const blob = await response.blob();
 cd Platform.Admin && npm run lint  # 实际执行 tsc --noEmit
 ```
 
+### 7.19 错误处理与 errorCode 翻译优先规范
+
+**[强制]** 前端显示错误信息时，必须优先使用 `errorCode` 进行 i18n 翻译，`message` 作为 fallback：
+
+```typescript
+// ✅ 正确：使用 getErrorMessage 工具函数
+import { getErrorMessage } from '@/utils/getErrorMessage';
+message.error(getErrorMessage(response, 'pages.xxx.operationFailed'));
+
+// ✅ 正确：手动优先翻译 errorCode
+const errorMsg = response.errorCode
+  ? intl.formatMessage({ id: response.errorCode, defaultMessage: response.message || '操作失败' })
+  : (response.message || intl.formatMessage({ id: 'pages.xxx.operationFailed' }));
+message.error(errorMsg);
+
+// ❌ 禁止：直接使用 response.message，跳过 errorCode 翻译
+message.error(response.message || intl.formatMessage({ id: 'pages.xxx.operationFailed' }));
+```
+
+#### getErrorMessage 工具函数
+
+`src/utils/getErrorMessage.ts` 提供统一的错误消息翻译：
+
+```typescript
+import { getIntl } from '@umijs/max';
+
+export function getErrorMessage(
+  response: { errorCode?: string; message?: string },
+  fallbackId: string,
+): string {
+  const intl = getIntl();
+  if (response.errorCode) {
+    return intl.formatMessage({ id: response.errorCode, defaultMessage: response.message || intl.formatMessage({ id: fallbackId }) });
+  }
+  return response.message || intl.formatMessage({ id: fallbackId });
+}
+```
+
+#### ErrorInfo 接口说明
+
+`errorInterceptor.ts` 中 `ErrorInfo` 接口的关键字段：
+
+| 字段 | 用途 | 说明 |
+|------|------|------|
+| `errorCode` | 标准错误分类码 | 优先用于 i18n 翻译 |
+| `httpCode` | HTTP 状态码或 ProblemDetails type | 来自 `HTTP_{status}` 或 `problemDetails.type` |
+| `message` | 错误消息文本 | fallback 显示 |
+| `debugData` | 原始错误负载 | 用于调试日志 |
+
 ## 8. 移动端开发规范（Expo）
 
 ### 8.1 路由与导航
@@ -1073,6 +1122,9 @@ cd Platform.Admin && npm run lint  # 实际执行 tsc --noEmit
 | 租户中间件 | `Platform.ServiceDefaults/Services/TenantContextMiddleware.cs` |
 | 前端统一类型 | `Platform.Admin/src/types/api-response.ts` |
 | 前端错误码常量 | `Platform.Admin/src/constants/errorCodes.ts` |
+| 前端错误消息工具 | `Platform.Admin/src/utils/getErrorMessage.ts` |
+| 错误拦截器 | `Platform.Admin/src/utils/errorInterceptor.ts` |
+| 错误配置 | `Platform.Admin/src/request-error-config.ts` |
 | 页面开发标准 | `Platform.Admin/src/pages/password-book/index.tsx` |
 | SSE Hook | `Platform.Admin/src/hooks/useSseConnection.ts` |
 | Token 工具 | `Platform.Admin/src/utils/token.ts` |

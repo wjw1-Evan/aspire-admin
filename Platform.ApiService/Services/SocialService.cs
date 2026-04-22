@@ -2,11 +2,13 @@ using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Constants;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Security.Authentication;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -114,7 +116,7 @@ public class SocialService : ISocialService
     {
         ValidateCoordinates(request.Center.Latitude, request.Center.Longitude);
 
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
         var radius = Math.Clamp(request.RadiusMeters ?? DefaultRadiusMeters, 100, 20000);
         var limit = Math.Clamp(request.Limit ?? DefaultLimit, 1, 50);
         var staleThreshold = DateTime.UtcNow - BeaconTtl;
@@ -178,8 +180,8 @@ public class SocialService : ISocialService
 
     public async Task<UserLocationBeacon?> GetCurrentUserLocationAsync()
     {
-        var uid = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        var cid =  _tenantContext.GetCurrentCompanyId() ?? throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
+        var uid = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
+        var cid =  _tenantContext.GetCurrentCompanyId() ?? throw new UnauthorizedAccessException(ErrorCode.CurrentCompanyNotFound);
         return await _context.Set<UserLocationBeacon>().Where(b => b.UserId == uid && b.CompanyId == cid).OrderByDescending(b => b.LastSeenAt).FirstOrDefaultAsync();
     }
 

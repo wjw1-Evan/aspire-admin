@@ -2,12 +2,14 @@ using Microsoft.EntityFrameworkCore;
 #pragma warning disable CS1591
 using Microsoft.Extensions.Logging;
 using Platform.ApiService.Models;
-using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Extensions;
+using Platform.ServiceDefaults.Models;
+using Platform.ServiceDefaults.Services;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
+using System.Security.Authentication;
 using System.Threading.Tasks;
 
 namespace Platform.ApiService.Services;
@@ -39,7 +41,7 @@ public class ChatSessionService : IChatSessionService
     {
         await _aiAssistantCoordinator.EnsureAssistantSessionForCurrentUserAsync();
         request ??= new Platform.ServiceDefaults.Models.ProTableRequest { PageSize = 20 };
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
 
         var query = _context.Set<ChatSession>().Where(session => session.Participants.Contains(currentUserId));
 
@@ -57,7 +59,7 @@ public class ChatSessionService : IChatSessionService
     {
         var session = await EnsureSessionAccessibleAsync(sessionId);
         request ??= new ChatMessageListRequest();
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
 
         Expression<Func<ChatMessage, bool>> filter = m => m.SessionId == session.Id;
         if (!string.IsNullOrWhiteSpace(request.Cursor))
@@ -117,7 +119,7 @@ public class ChatSessionService : IChatSessionService
 
     public async Task<ChatSession> GetOrCreateDirectSessionAsync(string participantUserId)
     {
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
         if (currentUserId == participantUserId) throw new InvalidOperationException("无法与自己创建会话");
 
         var participants = new[] { currentUserId, participantUserId }.OrderBy(id => id).ToList();
@@ -150,7 +152,7 @@ public class ChatSessionService : IChatSessionService
     public async Task MarkSessionReadAsync(string sessionId, string lastMessageId)
     {
         var session = await EnsureSessionAccessibleAsync(sessionId);
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
         var message = await _context.Set<ChatMessage>().FirstOrDefaultAsync(x => x.Id == lastMessageId);
         if (message == null || message.SessionId != session.Id) throw new KeyNotFoundException("消息不存在");
 
@@ -171,7 +173,7 @@ public class ChatSessionService : IChatSessionService
     {
         var session = await _context.Set<ChatSession>().FirstOrDefaultAsync(x => x.Id == sessionId);
         if (session == null) throw new KeyNotFoundException("会话不存在");
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
         if (!session.Participants.Contains(currentUserId)) throw new UnauthorizedAccessException("无权访问该会话");
         return session;
     }
@@ -252,7 +254,7 @@ public class ChatSessionService : IChatSessionService
         if (string.IsNullOrWhiteSpace(request.SessionId))
             throw new ArgumentException("会话标识不能为空", nameof(request.SessionId));
 
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
         var session = await EnsureSessionAccessibleAsync(request.SessionId);
 
         if (request.Type == ChatMessageType.Text && string.IsNullOrWhiteSpace(request.Content))

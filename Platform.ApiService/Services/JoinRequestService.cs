@@ -9,6 +9,7 @@ using Platform.ServiceDefaults.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Authentication;
 using System.Threading.Tasks;
 
 namespace Platform.ApiService.Services;
@@ -41,7 +42,7 @@ public class JoinRequestService : IJoinRequestService
     /// <inheritdoc/>
     public async Task<CompanyJoinRequest> ApplyToJoinCompanyAsync(ApplyToJoinCompanyRequest request)
     {
-        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var userId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
         var companyId = request.CompanyId;
 
         var company = await _context.Set<Company>().FirstOrDefaultAsync(x => x.Id == companyId);
@@ -88,7 +89,7 @@ public class JoinRequestService : IJoinRequestService
     /// <inheritdoc/>
     public async Task<List<JoinRequestDetail>> GetMyRequestsAsync(string? keyword = null)
     {
-        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var userId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
 
         var requests = await _context.Set<CompanyJoinRequest>()
             .Where(jr => jr.UserId == userId)
@@ -109,7 +110,7 @@ public class JoinRequestService : IJoinRequestService
     /// <inheritdoc/>
     public async Task<bool> CancelRequestAsync(string requestId)
     {
-        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var userId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
 
         var request = await _context.Set<CompanyJoinRequest>()
             .FirstOrDefaultAsync(jr => jr.Id == requestId && jr.UserId == userId && jr.Status == "pending");
@@ -127,7 +128,7 @@ public class JoinRequestService : IJoinRequestService
     /// <inheritdoc/>
     public async Task<List<JoinRequestDetail>> GetPendingRequestsAsync(string companyId, string? keyword = null)
     {
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
         if (!await _userCompanyService.IsUserAdminInCompanyAsync(currentUserId, companyId))
         {
             throw new UnauthorizedAccessException("只有企业管理员可以查看待审核申请");
@@ -155,7 +156,7 @@ public class JoinRequestService : IJoinRequestService
     /// <inheritdoc/>
     public async Task<bool> ApproveRequestAsync(string requestId, ReviewJoinRequestRequest? reviewRequest = null)
     {
-        var adminUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var adminUserId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
 
         var request = await _context.Set<CompanyJoinRequest>().FirstOrDefaultAsync(x => x.Id == requestId);
         if (request == null) throw new KeyNotFoundException("申请不存在");
@@ -219,7 +220,7 @@ public class JoinRequestService : IJoinRequestService
     /// <inheritdoc/>
     public async Task<bool> RejectRequestAsync(string requestId, string rejectReason)
     {
-        var adminUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var adminUserId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
 
         var request = await _context.Set<CompanyJoinRequest>().FirstOrDefaultAsync(x => x.Id == requestId);
         if (request == null) throw new KeyNotFoundException("申请不存在");

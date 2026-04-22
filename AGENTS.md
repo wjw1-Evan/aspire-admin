@@ -504,15 +504,21 @@ catch (Exception ex)
 
 | 异常类型 | HTTP 状态码 | 说明 |
 |---------|-----------|------|
-| `ArgumentException` | 400 | 参数校验失败 |
-| `KeyNotFoundException` | 404 | 资源不存在 |
-| `UnauthorizedAccessException` | 401 | 未授权 |
-| `InvalidOperationException` | 400 | 业务规则冲突 |
+| `ArgumentException` | 400 | 参数校验失败，通过 `Exception.Message` 传递错误信息 |
+| `KeyNotFoundException` | 404 | 资源不存在，通过 `Exception.Message` 传递错误信息 |
+| `UnauthorizedAccessException` | 401 | 未授权，通过 `Exception.Message` 传递错误信息 |
+| `InvalidOperationException` | 400 | 业务规则冲突，通过 `Exception.Message` 传递错误信息 |
+
+**消息传递规范**：
+- 所有业务异常统一通过 `Exception.Message` 向前端传递错误信息
+- **`ApiResponse` 不再使用 `code` 字段**，前端通过 `message` 字段获取错误描述
+- 前端错误拦截器应优先读取 `response.message` 显示错误提示
 
 **原因**：
 - 全局异常处理中间件统一捕获并格式化异常
 - 避免大量重复的 try-catch 代码
 - 保持控制器层职责单一
+- 统一错误信息传递格式，简化前后端错误处理逻辑
 
 ### 6.7 批量查询规范（N+1 防护）
 
@@ -718,7 +724,6 @@ export interface ApiResponse<T = any> {
   details?: any;
   timestamp?: string;
   traceId?: string;
-  code?: string;
 }
 
 export interface PagedResult<T> {

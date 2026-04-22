@@ -44,15 +44,15 @@ public class BusinessExceptionFilter : IExceptionFilter
 
         // 优先检测：异常消息是否是已知错误码
         // 如果是，使用错误码作为 errorCode，字典中的中文消息作为 message
-        if (!string.IsNullOrEmpty(exception.Message) &&
-            ErrorCode.ErrorMessages.TryGetValue(exception.Message, out var humanMessage))
+        if (!string.IsNullOrEmpty(exception.Message)
+            )
         {
             // 根据异常类型确定 HTTP 状态码
             var statusCode = GetStatusCodeForType(exceptionType);
 
             context.Result = new ObjectResult(new ApiResponse(
                 success: false,
-                message: humanMessage,
+                message: ErrorCode.ErrorMessages.TryGetValue(exception.Message, out var humanMessage) ? humanMessage : exception.Message,
                 errorCode: exception.Message,
                 traceId: traceId))
             {
@@ -60,24 +60,6 @@ public class BusinessExceptionFilter : IExceptionFilter
             };
             context.ExceptionHandled = true;
             return;
-        }
-
-        // 回退到异常类型映射
-        for (var type = exceptionType; type != null && type != typeof(Exception); type = type.BaseType)
-        {
-            if (_exceptionMap.TryGetValue(type, out var mapping))
-            {
-                context.Result = new ObjectResult(new ApiResponse(
-                    success: false,
-                    message: exception.Message,
-                    errorCode: exception.Message,
-                    traceId: traceId))
-                {
-                    StatusCode = mapping
-                };
-                context.ExceptionHandled = true;
-                return;
-            }
         }
 
         _logger.LogError(exception, "未处理的异常: {Message}", exception.Message);

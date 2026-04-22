@@ -298,8 +298,8 @@ const Login: React.FC = () => {
                   </>
                 )}
 
-                <div style={{ marginBottom: 24 }}>
-                  <Link to="/user/forgot-password" style={{ float: 'right', padding: 0, lineHeight: '22px' }}>
+                <div style={{ marginBottom: 24, textAlign: 'right' }}>
+                  <Link to="/user/forgot-password">
                     <FormattedMessage id="pages.login.forgotPassword" defaultMessage="忘记密码" />
                   </Link>
                 </div>

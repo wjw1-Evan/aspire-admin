@@ -36,3 +36,16 @@ export const REGISTER_KNOWN_ERRORS = [
   CAPTCHA_REQUIRED,
   SERVER_ERROR,
 ] as const;
+
+/** 所有已知错误码 */
+export const ALL_KNOWN_ERRORS = [
+  ...LOGIN_KNOWN_ERRORS,
+  ...REGISTER_KNOWN_ERRORS,
+] as const;
+
+/**
+ * 检查是否是已知的 errorCode
+ */
+export const isKnownErrorCode = (code: string): boolean => {
+  return ALL_KNOWN_ERRORS.includes(code as any);
+};

@@ -23,7 +23,6 @@ const translateMessage = (msg: string): string => {
     const intl = getIntl();
     return intl.formatMessage({ id: trimmed, defaultMessage: trimmed });
   } catch (e) {
-    console.warn('Translation failed for key:', trimmed, e);
     return trimmed;
   }
 };

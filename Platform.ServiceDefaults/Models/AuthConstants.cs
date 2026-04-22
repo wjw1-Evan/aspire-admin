@@ -1,4 +1,4 @@
-namespace Platform.ApiService.Constants;
+namespace Platform.ServiceDefaults.Models;
 
 /// <summary>
 /// 认证相关常量

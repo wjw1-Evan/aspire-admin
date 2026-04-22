@@ -1,4 +1,4 @@
-using Platform.ApiService.Constants;
+using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Models;
 using System.Text.Json;
 

@@ -1,4 +1,4 @@
-namespace Platform.ApiService.Constants;
+namespace Platform.ServiceDefaults.Models;
 
 /// <summary>
 /// 企业相关常量

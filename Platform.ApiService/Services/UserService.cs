@@ -1,5 +1,5 @@
 using User = Platform.ApiService.Models.AppUser;
-using Platform.ApiService.Constants;
+using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Response;

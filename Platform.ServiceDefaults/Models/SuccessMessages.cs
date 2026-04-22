@@ -1,4 +1,4 @@
-namespace Platform.ApiService.Constants;
+namespace Platform.ServiceDefaults.Models;
 
 /// <summary>
 /// 成功操作消息常量

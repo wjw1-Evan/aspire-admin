@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Attributes;
-using Platform.ApiService.Constants;
+using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Response;
 using Platform.ApiService.Services;

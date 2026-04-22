@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Platform.ApiService.Constants;
+using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Entities;
 using Platform.ApiService.Models.Response;

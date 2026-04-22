@@ -1,4 +1,4 @@
-namespace Platform.ApiService.Constants;
+namespace Platform.ServiceDefaults.Models;
 
 /// <summary>
 /// 验证规则常量
@@ -65,4 +65,3 @@ public static class ValidationRules
     /// </summary>
     public const int MaxPageSize = 100;
 }
-

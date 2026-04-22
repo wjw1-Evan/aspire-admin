@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MongoDB.Bson;
-using Platform.ApiService.Constants;
+using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;

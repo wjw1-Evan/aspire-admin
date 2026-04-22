@@ -1,4 +1,4 @@
-using Platform.ApiService.Constants;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Validators;
 

@@ -1,4 +1,4 @@
-namespace Platform.ApiService.Constants;
+namespace Platform.ServiceDefaults.Models;
 
 /// <summary>
 /// 系统常量定义

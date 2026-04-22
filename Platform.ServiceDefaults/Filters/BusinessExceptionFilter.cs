@@ -19,16 +19,16 @@ public class BusinessExceptionFilter : IExceptionFilter
 {
     private readonly ILogger<BusinessExceptionFilter> _logger;
 
-    private static readonly Dictionary<Type, (int StatusCode, string ErrorCode)> _exceptionMap = new()
+    private static readonly Dictionary<Type, int> _exceptionMap = new()
     {
-        { typeof(ArgumentException), (400, ErrorCode.ValidationError) },
-        { typeof(InvalidOperationException), (400, ErrorCode.InvalidOperation) },
-        { typeof(NotImplementedException), (405, ErrorCode.OperationNotSupported) },
-        { typeof(NotSupportedException), (405, ErrorCode.OperationNotSupported) },
-        { typeof(IOException), (404, ErrorCode.ResourceNotFound) },
-        { typeof(KeyNotFoundException), (404, ErrorCode.ResourceNotFound) },
-        { typeof(System.Security.Authentication.AuthenticationException), (401, ErrorCode.Unauthenticated) },
-        { typeof(UnauthorizedAccessException), (403, ErrorCode.UnauthorizedAccess) },
+        { typeof(ArgumentException), 400 },
+        { typeof(InvalidOperationException), 400 },
+        { typeof(NotImplementedException), 405},
+        { typeof(NotSupportedException), 405   },
+        { typeof(IOException), 404 },
+        { typeof(KeyNotFoundException), 404 },
+        { typeof(System.Security.Authentication.AuthenticationException), 401 },
+        { typeof(UnauthorizedAccessException), 403 },
     };
 
     public BusinessExceptionFilter(ILogger<BusinessExceptionFilter> logger)
@@ -70,10 +70,10 @@ public class BusinessExceptionFilter : IExceptionFilter
                 context.Result = new ObjectResult(new ApiResponse(
                     success: false,
                     message: exception.Message,
-                    errorCode: mapping.ErrorCode,
+                    errorCode: exception.Message,
                     traceId: traceId))
                 {
-                    StatusCode = mapping.StatusCode
+                    StatusCode = mapping
                 };
                 context.ExceptionHandled = true;
                 return;
@@ -91,9 +91,10 @@ public class BusinessExceptionFilter : IExceptionFilter
     {
         for (var type = exceptionType; type != null && type != typeof(Exception); type = type.BaseType)
         {
+
             if (_exceptionMap.TryGetValue(type, out var mapping))
             {
-                return mapping.StatusCode;
+                return mapping;
             }
         }
         return 500;

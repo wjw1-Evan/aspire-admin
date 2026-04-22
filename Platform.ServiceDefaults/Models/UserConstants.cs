@@ -1,4 +1,4 @@
-namespace Platform.ApiService.Constants;
+namespace Platform.ServiceDefaults.Models;
 
 /// <summary>
 /// 用户相关常量
@@ -87,4 +87,3 @@ public static class ErrorMessages
     /// <summary>参数长度过短（{0} = 参数名称，{1} = 最小长度）</summary>
     public const string ParameterTooShort = "{0}长度不能少于{1}个字符";
 }
-

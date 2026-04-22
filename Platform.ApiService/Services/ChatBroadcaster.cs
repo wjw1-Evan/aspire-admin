@@ -1,5 +1,5 @@
 using Platform.ApiService.Models;
-using Platform.ApiService.Constants;
+using Platform.ServiceDefaults.Models;
 using System.Text.Json;
 
 namespace Platform.ApiService.Services;

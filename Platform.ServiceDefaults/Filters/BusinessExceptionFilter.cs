@@ -13,7 +13,15 @@ namespace Platform.ServiceDefaults.Filters;
 /// </summary>
 public class BusinessExceptionFilter : IExceptionFilter
 {
+    /// <summary>
+    /// 日志记录器，用于记录未处理的异常信息
+    /// </summary>
     private readonly ILogger<BusinessExceptionFilter> _logger;
+
+    /// <summary>
+    /// 异常类型到 HTTP 响应创建器的静态映射表
+    /// Key: 异常类型，Value: 创建对应 HTTP 状态码响应 ObjectResult 的委托
+    /// </summary>
     private static readonly Dictionary<Type, Func<ApiResponse, ObjectResult>> _exceptionMappings = new()
     {
         { typeof(ArgumentException), r => new BadRequestObjectResult(r) },
@@ -45,11 +53,20 @@ public class BusinessExceptionFilter : IExceptionFilter
     /// | UnauthorizedAccessException | 403 | 无权限 |
     /// </remarks>
 
+    /// <summary>
+    /// 构造 BusinessExceptionFilter 实例
+    /// </summary>
+    /// <param name="logger">日志记录器，用于输出未处理异常的详细信息</param>
     public BusinessExceptionFilter(ILogger<BusinessExceptionFilter> logger)
     {
         _logger = logger;
     }
 
+    /// <summary>
+    /// 处理 Action/Controller 抛出的异常
+    /// 将已映射的异常转换为统一的 API 响应，未映射的异常记录日志
+    /// </summary>
+    /// <param name="context">异常上下文，包含异常对象和 HTTP 请求信息</param>
     public void OnException(ExceptionContext context)
     {
         var exception = context.Exception;

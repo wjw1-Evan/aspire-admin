@@ -1,5 +1,5 @@
 /**
- * 前端错误码常量 - 与后端 ErrorCode.cs 保持一致
+ * 前端错误码常量 - 与后端 ErrorCode.cs 完全一致
  * errorCode 优先用于 i18n 翻译，message 作为 fallback
  */
 
@@ -57,6 +57,9 @@ export const VIEW_PERMISSION_DENIED = 'VIEW_PERMISSION_DENIED';
 /** 请求参数验证失败 */
 export const VALIDATION_ERROR = 'VALIDATION_ERROR';
 
+/** 原密码错误 */
+export const INVALID_OLD_PASSWORD = 'INVALID_OLD_PASSWORD';
+
 // ──────────────────────────────────────────────
 // 资源相关 (Resource)
 // ──────────────────────────────────────────────
@@ -86,7 +89,10 @@ export const PHONE_NUMBER_EXISTS = 'PHONE_NUMBER_EXISTS';
 /** 用户不存在 */
 export const USER_NOT_FOUND = 'USER_NOT_FOUND';
 
-// ──────────────────────────────────────────────
+/** 用户未认证 */
+export const USER_NOT_AUTHENTICATED = 'USER_NOT_AUTHENTICATED';
+
+// ─────────────��────────────────────────────────
 // 企业相关 (Company)
 // ──────────────────────────────────────────────
 
@@ -102,12 +108,132 @@ export const COMPANY_SOLE_ADMIN_CANNOT_LEAVE = 'COMPANY_SOLE_ADMIN_CANNOT_LEAVE'
 /** 未找到当前企业信息 */
 export const CURRENT_COMPANY_NOT_FOUND = 'CURRENT_COMPANY_NOT_FOUND';
 
+/** 企业不存在 */
+export const COMPANY_NOT_FOUND = 'COMPANY_NOT_FOUND';
+
+/** 企业未激活 */
+export const COMPANY_INACTIVE = 'COMPANY_INACTIVE';
+
+/** 企业已过期 */
+export const COMPANY_EXPIRED = 'COMPANY_EXPIRED';
+
 // ──────────────────────────────────────────────
 // 文件相关 (File)
 // ──────────────────────────────────────────────
 
 /** 头像数据过大 */
 export const AVATAR_TOO_LARGE = 'AVATAR_TOO_LARGE';
+
+// ──────────────────────────────────────────────
+// 角色/权限相关 (Role/Permission)
+// ──────────────────────────────────────────────
+
+/** 角色不存在 */
+export const ROLE_NOT_FOUND = 'ROLE_NOT_FOUND';
+
+/** 角色名称已存在 */
+export const ROLE_NAME_EXISTS = 'ROLE_NAME_EXISTS';
+
+/** 不能删除系统管理员角色 */
+export const SYSTEM_ROLE_CANNOT_DELETE = 'SYSTEM_ROLE_CANNOT_DELETE';
+
+/** 不能移除最后一个管理员的角色 */
+export const CANNOT_REMOVE_LAST_ADMIN = 'CANNOT_REMOVE_LAST_ADMIN';
+
+/** 权限不存在 */
+export const PERMISSION_NOT_FOUND = 'PERMISSION_NOT_FOUND';
+
+/** 权限代码已存在 */
+export const PERMISSION_CODE_EXISTS = 'PERMISSION_CODE_EXISTS';
+
+// ──────────────────────────────────────────────
+// 菜单/通知相关 (Menu/Notice)
+// ──────────────────────────────────────────────
+
+/** 菜单不存在 */
+export const MENU_NOT_FOUND = 'MENU_NOT_FOUND';
+
+/** 菜单名称已存在 */
+export const MENU_NAME_EXISTS = 'MENU_NAME_EXISTS';
+
+/** 不能删除有子菜单的菜单 */
+export const CANNOT_DELETE_MENU_WITH_CHILDREN = 'CANNOT_DELETE_MENU_WITH_CHILDREN';
+
+/** 通知不存在 */
+export const NOTICE_NOT_FOUND = 'NOTICE_NOT_FOUND';
+
+// ──────────────────────────────────────────────
+// 用户/企业扩展 (User/Company Extended)
+// ──────────────────────────────────────────────
+
+/** 用户已被禁用 */
+export const USER_INACTIVE = 'USER_INACTIVE';
+
+/** 不能删除自己的账户 */
+export const CANNOT_DELETE_SELF = 'CANNOT_DELETE_SELF';
+
+/** 不能修改自己的角色 */
+export const CANNOT_MODIFY_OWN_ROLE = 'CANNOT_MODIFY_OWN_ROLE';
+
+/** 已达到最大用户数限制 */
+export const MAX_USERS_REACHED = 'MAX_USERS_REACHED';
+
+/** 企业代码已存在 */
+export const COMPANY_CODE_EXISTS = 'COMPANY_CODE_EXISTS';
+
+/** 企业代码格式不正确 */
+export const INVALID_COMPANY_CODE = 'INVALID_COMPANY_CODE';
+
+/** 未找到企业信息 */
+export const COMPANY_REQUIRED = 'COMPANY_REQUIRED';
+
+// ──────────────────���───────────────────────────
+// 组织架构相关 (Organization)
+// ──────────────────────────────────────────────
+
+/** 组织节点不存在 */
+export const ORGANIZATION_NOT_FOUND = 'ORGANIZATION_NOT_FOUND';
+
+/** 组织节点名称已存在 */
+export const ORGANIZATION_NAME_EXISTS = 'ORGANIZATION_NAME_EXISTS';
+
+/** 组织节点编码已存在 */
+export const ORGANIZATION_CODE_EXISTS = 'ORGANIZATION_CODE_EXISTS';
+
+/** 父级不能是当前节点 */
+export const PARENT_CANNOT_BE_SELF = 'PARENT_CANNOT_BE_SELF';
+
+/** 父级不能是当前节点的子节点 */
+export const PARENT_CANNOT_BE_DESCENDANT = 'PARENT_CANNOT_BE_DESCENDANT';
+
+/** 请先删除下级节点后再删除当前节点 */
+export const CANNOT_DELETE_WITH_CHILDREN = 'CANNOT_DELETE_WITH_CHILDREN';
+
+// ──────────────────────────────────────────────
+// 格式验证相关 (Format Validation)
+// ──────────────────────────────────────────────
+
+/** 邮箱格式不正确 */
+export const INVALID_EMAIL_FORMAT = 'INVALID_EMAIL_FORMAT';
+
+/** 手机号格式不正确 */
+export const INVALID_PHONE_FORMAT = 'INVALID_PHONE_FORMAT';
+
+/** 用户名格式不正确 */
+export const INVALID_USERNAME_FORMAT = 'INVALID_USERNAME_FORMAT';
+
+/** 密码长度过短 */
+export const PASSWORD_TOO_SHORT = 'PASSWORD_TOO_SHORT';
+
+/** 密码长度过长 */
+export const PASSWORD_TOO_LONG = 'PASSWORD_TOO_LONG';
+
+// ──────────────────────────────────────────────
+// 通用操作 (General Operation)
+// ──────────────────────────────────────────────
+
+/** 操作失败 */
+export const OPERATION_FAILED = 'OPERATION_FAILED';
 
 // ──────────────────────────────────────────────
 // 服务器错误 (Server)
@@ -137,15 +263,88 @@ export const REGISTER_KNOWN_ERRORS = [
   SERVER_ERROR,
 ] as const;
 
-/** 所有已知错误码 */
-export const ALL_KNOWN_ERRORS = [
-  ...LOGIN_KNOWN_ERRORS,
-  ...REGISTER_KNOWN_ERRORS,
+/** 所有错误码常量（用于类型检查） */
+export const ALL_ERROR_CODES = [
+  // 认证
+  UNAUTHENTICATED,
+  INVALID_TOKEN,
+  TOKEN_EXPIRED,
+  USER_INFO_INVALID,
+  INVALID_CREDENTIALS,
+  CAPTCHA_REQUIRED,
+  CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN,
+  CAPTCHA_INVALID,
+  // 授权
+  UNAUTHORIZED_ACCESS,
+  FORBIDDEN,
+  MENU_ACCESS_DENIED,
+  MENU_SERVICE_NOT_CONFIGURED,
+  VIEW_PERMISSION_DENIED,
+  // 验证
+  VALIDATION_ERROR,
+  INVALID_OLD_PASSWORD,
+  // 资源
+  RESOURCE_NOT_FOUND,
+  // 业务
+  INVALID_OPERATION,
+  OPERATION_NOT_SUPPORTED,
+  USER_NAME_EXISTS,
+  EMAIL_EXISTS,
+  PHONE_NUMBER_EXISTS,
+  USER_NOT_FOUND,
+  USER_NOT_AUTHENTICATED,
+  // 企业
+  COMPANY_NOT_MEMBER,
+  COMPANY_CREATOR_CANNOT_LEAVE,
+  COMPANY_SOLE_ADMIN_CANNOT_LEAVE,
+  CURRENT_COMPANY_NOT_FOUND,
+  COMPANY_NOT_FOUND,
+  COMPANY_INACTIVE,
+  COMPANY_EXPIRED,
+  // 文件
+  AVATAR_TOO_LARGE,
+  // 角色/权限
+  ROLE_NOT_FOUND,
+  ROLE_NAME_EXISTS,
+  SYSTEM_ROLE_CANNOT_DELETE,
+  CANNOT_REMOVE_LAST_ADMIN,
+  PERMISSION_NOT_FOUND,
+  PERMISSION_CODE_EXISTS,
+  // 菜单/通知
+  MENU_NOT_FOUND,
+  MENU_NAME_EXISTS,
+  CANNOT_DELETE_MENU_WITH_CHILDREN,
+  NOTICE_NOT_FOUND,
+  // 用户/企业扩展
+  USER_INACTIVE,
+  CANNOT_DELETE_SELF,
+  CANNOT_MODIFY_OWN_ROLE,
+  MAX_USERS_REACHED,
+  COMPANY_CODE_EXISTS,
+  INVALID_COMPANY_CODE,
+  COMPANY_REQUIRED,
+  // 组织架构
+  ORGANIZATION_NOT_FOUND,
+  ORGANIZATION_NAME_EXISTS,
+  ORGANIZATION_CODE_EXISTS,
+  PARENT_CANNOT_BE_SELF,
+  PARENT_CANNOT_BE_DESCENDANT,
+  CANNOT_DELETE_WITH_CHILDREN,
+  // 格式验证
+  INVALID_EMAIL_FORMAT,
+  INVALID_PHONE_FORMAT,
+  INVALID_USERNAME_FORMAT,
+  PASSWORD_TOO_SHORT,
+  PASSWORD_TOO_LONG,
+  // 通用操作
+  OPERATION_FAILED,
+  // 服务器
+  SERVER_ERROR,
 ] as const;
 
 /**
  * 检查是否是已知的 errorCode
  */
 export const isKnownErrorCode = (code: string): boolean => {
-  return ALL_KNOWN_ERRORS.includes(code as any);
+  return ALL_ERROR_CODES.includes(code as (typeof ALL_ERROR_CODES)[number]);
 };

@@ -18,10 +18,12 @@ const runAfterRender = (fn: () => void) => {
 
 // 翻译辅助函数：优先翻译 errorCode，fallback 到 message
 const translateMessage = (msg: string, errorCode?: string): string => {
+  // 优先使用 errorCode 翻译
   if (errorCode) {
     try {
       const intl = getIntl();
       const translated = intl.formatMessage({ id: errorCode, defaultMessage: '' });
+      // 如果翻译成功且不是返回 errorCode 本身，说明翻译存在
       if (translated && translated !== errorCode) {
         return translated;
       }
@@ -29,14 +31,27 @@ const translateMessage = (msg: string, errorCode?: string): string => {
       // errorCode 没有翻译，继续 fallback
     }
   }
-  if (!msg) return msg || errorCode || '';
-  const trimmed = msg.trim();
-  try {
-    const intl = getIntl();
-    return intl.formatMessage({ id: trimmed, defaultMessage: trimmed });
-  } catch (e) {
+  // 如果有原始消息，尝试翻译
+  if (msg) {
+    const trimmed = msg.trim();
+    // 如果原始消息看起来像 errorCode（如全大写+下划线），不要当作 key 翻译
+    if (/^[A-Z][A-Z0-9_]+$/.test(trimmed)) {
+      return trimmed;
+    }
+    try {
+      const intl = getIntl();
+      const translated = intl.formatMessage({ id: trimmed, defaultMessage: trimmed });
+      // 如果翻译成功且返回的不是原始消息，说明翻译存在
+      if (translated !== trimmed) {
+        return translated;
+      }
+    } catch {
+      // 翻译失败，返回原始消息
+    }
     return trimmed;
   }
+  // 如果都没有，返回 errorCode 或空字符串
+  return errorCode || '';
 };
 
 // 错误类型枚举

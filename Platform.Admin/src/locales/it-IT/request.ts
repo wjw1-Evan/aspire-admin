@@ -1,42 +1,99 @@
 export default {
-    'request.error.validation': 'Validation Error',
-    'request.error.login-failed': 'Login failed, please check your username and password',
-    'request.error.token-expired': 'Session expired, please login again',
-    'request.error.unknown': 'Unknown Error',
-    'request.error.network': 'Network error, please check your connection',
-    'request.error.server': 'Server error, please try again later',
-    'request.error.forbidden': 'Forbidden resource',
-    'request.error.not-found': 'Resource not found',
-    'COMPANY_NOT_MEMBER': 'You are not a member of this company',
-    'COMPANY_CREATOR_CANNOT_LEAVE': 'You are the creator of this company and cannot leave',
-    'COMPANY_SOLE_ADMIN_CANNOT_LEAVE': 'You are the sole administrator of this company, please transfer admin rights or delete the company first',
-    'CURRENT_COMPANY_NOT_FOUND': 'Current company information not found',
-    'USER_VIEW_PERMISSION_DENIED': 'Permission denied to view other user information',
-    'AVATAR_TOO_LARGE': 'Avatar image is too large, please select an image smaller than 2MB',
-    'USER_NOT_FOUND': 'User not found',
-    'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN': 'Captcha required after failed login, please get captcha first',
-    'CAPTCHA_INVALID': 'Invalid captcha, please try again',
-    'INVALID_CREDENTIALS': 'Invalid username or password, please check and try again',
-    'CAPTCHA_REQUIRED_AFTER_FAILED_REGISTER': 'Captcha required after failed register, please get captcha first',
-    'REGISTER_SUCCESS_PERSONAL_COMPANY_CREATED': 'Registration successful! A personal company has been created for you',
-    'USER_NAME_EXISTS': 'Username already exists',
-    'EMAIL_EXISTS': 'Email already exists',
-    'PHONE_NUMBER_EXISTS': 'Phone number already exists',
+  'request.error.validation': 'Errore di validazione',
+  'request.error.login-failed': 'Login fallito, verifica nome utente e password',
+  'request.error.token-expired': 'Sessione scaduta, effettua nuovamente il login',
+  'request.error.unknown': 'Errore sconosciuto',
+  'request.error.network': 'Errore di rete, verifica la connessione',
+  'request.error.server': 'Errore del server, riprova più tardi',
+  'request.error.forbidden': 'Risorsa proibita',
+  'request.error.not-found': 'Risorsa non trovata',
 
-    // ── Error Codes ──
-    'UNAUTHENTICATED': 'Unauthorized access, please log in again',
-    'INVALID_TOKEN': 'Invalid or expired authentication token',
-    'TOKEN_EXPIRED': 'Session expired, please log in again',
-    'USER_INFO_INVALID': 'Invalid user information',
-    'CAPTCHA_REQUIRED': 'Please enter the captcha',
-    'UNAUTHORIZED_ACCESS': 'Unauthorized access',
-    'FORBIDDEN': 'Access forbidden',
-    'MENU_ACCESS_DENIED': 'No permission to access this feature',
-    'MENU_SERVICE_NOT_CONFIGURED': 'Menu access service not configured',
-    'VIEW_PERMISSION_DENIED': 'No permission to view other user information',
-    'VALIDATION_ERROR': 'Request validation failed',
-    'RESOURCE_NOT_FOUND': 'Resource not found',
-    'INVALID_OPERATION': 'Invalid operation',
-    'OPERATION_NOT_SUPPORTED': 'Operation not supported',
-    'SERVER_ERROR': 'Internal server error',
+  // Autenticazione
+  'UNAUTHENTICATED': 'Accesso non autorizzato, effettua nuovamente il login',
+  'INVALID_CREDENTIALS': 'Nome utente o password non validi',
+  'CAPTCHA_REQUIRED': 'Inserisci il captcha',
+  'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN': 'Captcha richiesto dopo login fallito',
+  'CAPTCHA_INVALID': 'Captcha non valido',
+  'INVALID_TOKEN': 'Token di autenticazione non valido o scaduto',
+  'TOKEN_EXPIRED': 'Sessione scaduta, effettua nuovamente il login',
+  'USER_INFO_INVALID': 'Informazioni utente non valide',
+
+  // Autorizzazione
+  'UNAUTHORIZED_ACCESS': 'Accesso non autorizzato',
+  'VIEW_PERMISSION_DENIED': 'Nessun permesso per visualizzare informazioni altri utenti',
+  'CURRENT_COMPANY_NOT_FOUND': 'Informazioni azienda corrente non trovate',
+  'MENU_ACCESS_DENIED': 'Nessun permesso per accedere a questo menu',
+  'MENU_SERVICE_NOT_CONFIGURED': 'Servizio accesso menu non configurato',
+  'FORBIDDEN': 'Accesso proibito',
+
+  // Validazione
+  'VALIDATION_ERROR': 'Validazione richiesta fallita',
+  'INVALID_OLD_PASSWORD': 'Password originale errata',
+
+  // Risorsa
+  'RESOURCE_NOT_FOUND': 'Risorsa non trovata',
+  'USER_NOT_FOUND': 'Utente non trovato',
+  'COMPANY_NOT_FOUND': 'Azienda non trovata',
+
+  // Operazione aziendale
+  'INVALID_OPERATION': 'Operazione non valida',
+  'OPERATION_NOT_SUPPORTED': 'Operazione non supportata',
+  'USER_NAME_EXISTS': 'Nome utente già esistente',
+  'EMAIL_EXISTS': 'Email già esistente',
+  'PHONE_NUMBER_EXISTS': 'Numero di telefono già esistente',
+  'USER_NOT_AUTHENTICATED': 'Informazioni autenticazione utente non trovate',
+
+  // Azienda
+  'COMPANY_NOT_MEMBER': 'Non sei membro di questa azienda',
+  'COMPANY_CREATOR_CANNOT_LEAVE': 'Sei il creatore di questa azienda e non puoi lasciarla',
+  'COMPANY_SOLE_ADMIN_CANNOT_LEAVE': 'Sei il solo amministratore di questa azienda',
+  'COMPANY_INACTIVE': 'Azienda non attiva, contatta l\'amministratore',
+  'COMPANY_EXPIRED': 'Azienda scaduta, contatta l\'amministratore per rinnovare',
+
+  // Ruolo/Permesso
+  'ROLE_NOT_FOUND': 'Ruolo non trovato',
+  'ROLE_NAME_EXISTS': 'Nome ruolo già esistente',
+  'SYSTEM_ROLE_CANNOT_DELETE': 'Impossibile eliminare ruolo amministratore sistema',
+  'CANNOT_REMOVE_LAST_ADMIN': 'Impossibile rimuovere ultimo ruolo amministratore',
+  'PERMISSION_NOT_FOUND': 'Permesso non trovato',
+  'PERMISSION_CODE_EXISTS': 'Codice permesso già esistente',
+
+  // Menu/Notifica
+  'MENU_NOT_FOUND': 'Menu non trovato',
+  'MENU_NAME_EXISTS': 'Nome menu già esistente',
+  'CANNOT_DELETE_MENU_WITH_CHILDREN': 'Impossibile eliminare menu con sottomenu',
+  'NOTICE_NOT_FOUND': 'Notifica non trovata',
+
+  // Utente/Azienda esteso
+  'USER_INACTIVE': 'Account utente disabilitato',
+  'CANNOT_DELETE_SELF': 'Impossibile eliminare il proprio account',
+  'CANNOT_MODIFY_OWN_ROLE': 'Impossibile modificare il proprio ruolo',
+  'MAX_USERS_REACHED': 'Numero massimo utenti raggiunto',
+  'COMPANY_CODE_EXISTS': 'Codice azienda già esistente',
+  'INVALID_COMPANY_CODE': 'Formato codice azienda non valido',
+  'COMPANY_REQUIRED': 'Informazioni azienda non trovate',
+
+  // Organizzazione
+  'ORGANIZATION_NOT_FOUND': 'Nodo organizzazione non trovato',
+  'ORGANIZATION_NAME_EXISTS': 'Nome nodo organizzazione già esistente',
+  'ORGANIZATION_CODE_EXISTS': 'Codice nodo organizzazione già esistente',
+  'PARENT_CANNOT_BE_SELF': 'Il genitore non può essere il nodo corrente',
+  'PARENT_CANNOT_BE_DESCENDANT': 'Il genitore non può essere un nodo figlio',
+  'CANNOT_DELETE_WITH_CHILDREN': 'Elimina prima i nodi figli',
+
+  // Validazione formato
+  'INVALID_EMAIL_FORMAT': 'Formato email non valido',
+  'INVALID_PHONE_FORMAT': 'Formato numero telefono non valido',
+  'INVALID_USERNAME_FORMAT': 'Formato nome utente non valido',
+  'PASSWORD_TOO_SHORT': 'La password deve avere almeno 6 caratteri',
+  'PASSWORD_TOO_LONG': 'La password non può superare 50 caratteri',
+
+  // Operazione generale
+  'OPERATION_FAILED': 'Operazione fallita',
+
+  // File
+  'AVATAR_TOO_LARGE': 'Immagine avatar troppo grande',
+
+  // Server
+  'SERVER_ERROR': 'Errore interno del server',
 };

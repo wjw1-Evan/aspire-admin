@@ -2,6 +2,9 @@
  * 前端错误码常量 - 与后端 ErrorCodes.cs 保持一致
  */
 
+/** 用户名或密码错误 */
+export const INVALID_CREDENTIALS = 'INVALID_CREDENTIALS';
+
 /** 需要验证码 */
 export const CAPTCHA_REQUIRED = 'CAPTCHA_REQUIRED';
 
@@ -19,6 +22,11 @@ export const EMAIL_EXISTS = 'EMAIL_EXISTS';
 
 /** 服务器错误 */
 export const SERVER_ERROR = 'SERVER_ERROR';
+
+/** 登录相关已知错误码 */
+export const LOGIN_KNOWN_ERRORS = [
+  INVALID_CREDENTIALS,
+] as const;
 
 /** 注册相关已知错误码 */
 export const REGISTER_KNOWN_ERRORS = [

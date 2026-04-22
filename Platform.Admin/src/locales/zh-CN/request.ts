@@ -14,6 +14,7 @@ export default {
     'USER_VIEW_PERMISSION_DENIED': '无权查看其他用户信息',
     'AVATAR_TOO_LARGE': '头像数据过大，请选择小于 2MB 的图片',
     'USER_NOT_FOUND': '用户不存在',
+    'INVALID_CREDENTIALS': '用户名或密码错误',
     'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN': '登录失败后需要输入验证码，请先获取验证码',
     'CAPTCHA_INVALID': '图形验证码错误，请重新输入',
     'CAPTCHA_REQUIRED_AFTER_FAILED_REGISTER': '注册失败后需要输入验证码，请先获取验证码',

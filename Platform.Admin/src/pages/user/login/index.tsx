@@ -21,6 +21,7 @@ import { login } from '@/services/ant-design-pro/api';
 import { tokenUtils } from '@/utils/token';
 import { PasswordEncryption } from '@/utils/encryption';
 import Settings from '../../../../config/defaultSettings';
+import { LOGIN_KNOWN_ERRORS } from '@/constants/errorCodes';
 
 const useStyles = createStyles(({ token }) => {
   return {
@@ -175,7 +176,15 @@ const Login: React.FC = () => {
 
       setLoading(false);
 
-      let errorMsg = backendMessage || intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' });
+      let errorMsg = backendMessage;
+      if (LOGIN_KNOWN_ERRORS.includes(backendMessage as any)) {
+        errorMsg = intl.formatMessage({
+          id: `pages.login.error.${backendMessage}`,
+          defaultMessage: intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }),
+        });
+      } else if (!errorMsg) {
+        errorMsg = intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' });
+      }
 
       setUserLoginState({ status: 'error', message: errorMsg });
       message.error(errorMsg);
@@ -200,7 +209,15 @@ const Login: React.FC = () => {
 
       const backendMessage = error?.response?.data?.message || error?.info?.message || error?.message;
 
-      let errorMsg = backendMessage || intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' });
+      let errorMsg = backendMessage;
+      if (LOGIN_KNOWN_ERRORS.includes(backendMessage as any)) {
+        errorMsg = intl.formatMessage({
+          id: `pages.login.error.${backendMessage}`,
+          defaultMessage: intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }),
+        });
+      } else if (!errorMsg) {
+        errorMsg = intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' });
+      }
       setUserLoginState({ status: 'error', message: errorMsg });
 
       message.error(errorMsg);

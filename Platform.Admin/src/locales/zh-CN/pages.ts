@@ -9,6 +9,7 @@ export default {
   'pages.login.accountLogin.errorMessage': '账户名或密码不正确，请重新输入',
   'pages.login.failure': '登录失败，请重试！',
   'pages.login.success': '登录成功！',
+  'pages.login.error.INVALID_CREDENTIALS': '用户名或密码错误',
   'pages.login.error.CAPTCHA_INVALID': '验证码不正确，请点击图片刷新重试',
   'pages.login.error.CAPTCHA_REQUIRED': '请输入图形验证码',
   'pages.login.error.CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN': '为了安全，此后登录需输入图形验证码',

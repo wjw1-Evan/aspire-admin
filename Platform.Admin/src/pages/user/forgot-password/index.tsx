@@ -27,17 +27,6 @@ const useStyles = createStyles(({ token }) => {
       minHeight: '100vh',
       overflow: 'auto',
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      position: 'relative',
-      '&::before': {
-        content: '""',
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: 'radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.3) 0%, transparent 50%)',
-        pointerEvents: 'none',
-      },
     },
     contentWrapper: {
       flex: 1,
@@ -45,42 +34,10 @@ const useStyles = createStyles(({ token }) => {
       alignItems: 'center',
       justifyContent: 'center',
       padding: '32px 16px',
-      position: 'relative',
-      zIndex: 1,
     },
     formWrapper: {
       width: '100%',
       maxWidth: '500px',
-      '& .ant-input-affix-wrapper': {
-        borderRadius: '8px',
-        border: '1px solid #e0e0e0',
-        transition: 'all 0.3s',
-        '&:hover': {
-          borderColor: '#667eea',
-        },
-        '&.ant-input-affix-wrapper-focused': {
-          borderColor: '#667eea',
-          boxShadow: '0 0 0 2px rgba(102, 126, 234, 0.1)',
-        },
-      },
-      '& .ant-btn-primary': {
-        height: '44px',
-        borderRadius: '8px',
-        fontSize: '16px',
-        fontWeight: 500,
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        border: 'none',
-        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
-        transition: 'all 0.3s',
-        '&:hover': {
-          transform: 'translateY(-2px)',
-          boxShadow: '0 6px 16px rgba(102, 126, 234, 0.5)',
-        },
-      },
-      '& .ant-steps-item-process .ant-steps-item-icon': {
-        background: '#667eea',
-        borderColor: '#667eea',
-      },
     },
   };
 });

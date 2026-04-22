@@ -4,7 +4,6 @@ import { errorInterceptor } from '@/utils/errorInterceptor';
 import AuthenticationService from '@/utils/authService';
 import { tokenUtils } from '@/utils/token';
 import { getMessage } from '@/utils/antdAppInstance';
-import { LOGIN_KNOWN_ERRORS } from '@/constants/errorCodes';
 
 // 将提示操作调度到渲染阶段之外，避免 React 18 并发模式警告
 const runAfterRender = (fn: () => void) => {
@@ -115,7 +114,6 @@ export const errorConfig: RequestConfig = {
         error?.response?.data?.title ||
         error?.message;
 
-      const errorCode = error?.response?.data?.code;
       const isLoginRequest = error.config?.url?.includes('/apiservice/api/auth/login') ||
         error.config?.url?.includes('/login');
 
@@ -134,7 +132,7 @@ export const errorConfig: RequestConfig = {
 
       // 2. 特殊处理登录错误：只显示友好的消息提示，不显示技术性错误页面
       // 注意：登录错误应该在登录页面中自己处理，这里只做兜底处理
-      if (isLoginRequest && (LOGIN_KNOWN_ERRORS.includes(errorCode as any) || error.name === 'BizError')) {
+      if (isLoginRequest && error.name === 'BizError') {
         // 登录错误已经在登录页面中处理了，这里静默处理即可
         // 避免显示技术性错误页面
         return;

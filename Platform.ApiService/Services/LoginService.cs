@@ -45,16 +45,16 @@ public class LoginService : ILoginService
     {
         var user = await _context.Set<AppUser>().FirstOrDefaultAsync(u => u.Username == request.Username && u.IsActive == true);
 
-        if (user == null)
+if (user == null)
         {
-            throw new ArgumentException("用户名或密码错误");
+            throw new ArgumentException(ErrorCodes.INVALID_CREDENTIALS);
         }
 
         var rawPassword = _encryptionService.TryDecryptPassword(request.Password ?? string.Empty);
 
         if (!_passwordHasher.VerifyPassword(rawPassword, user.PasswordHash))
         {
-            throw new ArgumentException("用户名或密码错误");
+            throw new ArgumentException(ErrorCodes.INVALID_CREDENTIALS);
         }
 
         bool shouldClearInvalidCompanyId = false;

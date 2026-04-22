@@ -21,7 +21,6 @@ import { login } from '@/services/ant-design-pro/api';
 import { tokenUtils } from '@/utils/token';
 import { PasswordEncryption } from '@/utils/encryption';
 import Settings from '../../../../config/defaultSettings';
-import { LOGIN_KNOWN_ERRORS, INVALID_CREDENTIALS, LOGIN_ERROR_INVALID_CREDENTIALS } from '@/constants/errorCodes';
 
 const useStyles = createStyles(({ token }) => {
   return {
@@ -172,20 +171,11 @@ const Login: React.FC = () => {
         return;
       }
 
-      const errorCode = response.code;
       const backendMessage = response.message;
 
       setLoading(false);
 
-      let errorMsg = backendMessage;
-      if (errorCode && LOGIN_KNOWN_ERRORS.includes(errorCode as any)) {
-        errorMsg = intl.formatMessage({
-          id: `pages.login.error.${errorCode}`,
-          defaultMessage: backendMessage || intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }),
-        });
-      } else if (!errorMsg) {
-        errorMsg = intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' });
-      }
+      let errorMsg = backendMessage || intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' });
 
       setUserLoginState({ status: 'error', message: errorMsg });
       message.error(errorMsg);
@@ -194,11 +184,6 @@ const Login: React.FC = () => {
     } catch (error: any) {
       error.skipGlobalHandler = true;
       setLoading(false);
-
-      const errorCode =
-        error?.response?.data?.code ||
-        error?.info?.code ||
-        error?.code;
 
       const validationErrors = error?.response?.data?.errors;
       const isValidationError = error?.response?.status === 400 && validationErrors;
@@ -215,15 +200,7 @@ const Login: React.FC = () => {
 
       const backendMessage = error?.response?.data?.message || error?.info?.message || error?.message;
 
-      let errorMsg = backendMessage;
-      if (errorCode && LOGIN_KNOWN_ERRORS.includes(errorCode as any)) {
-        errorMsg = intl.formatMessage({
-          id: `pages.login.error.${errorCode}`,
-          defaultMessage: backendMessage || intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }),
-        });
-      } else if (!errorMsg) {
-        errorMsg = intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' });
-      }
+      let errorMsg = backendMessage || intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' });
       setUserLoginState({ status: 'error', message: errorMsg });
 
       message.error(errorMsg);

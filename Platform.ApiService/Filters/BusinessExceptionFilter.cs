@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Platform.ServiceDefaults.Models;
 using System.Net;
-using System.Linq;
 
 namespace Platform.ApiService.Filters;
 
@@ -21,13 +20,14 @@ public class BusinessExceptionFilter : IExceptionFilter
     public void OnException(ExceptionContext context)
     {
         var exception = context.Exception;
-        var (code, userMessage) = ExtractErrorCodeAndMessage(exception.Message);
+        var message = exception.Message;
+        var code = exception is BusinessException be ? be.Code : null;
 
         if (exception is ArgumentException)
         {
             var response = new ApiResponse(
                 success: false,
-                message: userMessage,
+                message: message,
                 traceId: context.HttpContext.TraceIdentifier,
                 code: code
             );
@@ -41,7 +41,7 @@ public class BusinessExceptionFilter : IExceptionFilter
         {
             var response = new ApiResponse(
                 success: false,
-                message: userMessage,
+                message: message,
                 traceId: context.HttpContext.TraceIdentifier,
                 code: code
             );
@@ -55,7 +55,7 @@ public class BusinessExceptionFilter : IExceptionFilter
         {
             var response = new ApiResponse(
                 success: false,
-                message: userMessage,
+                message: message,
                 traceId: context.HttpContext.TraceIdentifier,
                 code: code
             );
@@ -69,7 +69,7 @@ public class BusinessExceptionFilter : IExceptionFilter
         {
             var response = new ApiResponse(
                 success: false,
-                message: userMessage,
+                message: message,
                 traceId: context.HttpContext.TraceIdentifier,
                 code: code
             );
@@ -81,28 +81,4 @@ public class BusinessExceptionFilter : IExceptionFilter
 
         _logger.LogError(exception, "未处理的异常: {Message}", exception.Message);
     }
-
-    private static (string? code, string message) ExtractErrorCodeAndMessage(string message)
-    {
-        if (string.IsNullOrEmpty(message) || !message.Contains(':'))
-            return (null, message);
-
-        var colonIndex = message.IndexOf(':');
-        if (colonIndex > 0 && colonIndex < 50)
-        {
-            var prefix = message.Substring(0, colonIndex);
-            if (prefix.All(c => char.IsUpper(c) || c == '_' || char.IsDigit(c)))
-            {
-                var code = message;
-                var userMessage = message.Substring(colonIndex + 1);
-                if (string.IsNullOrWhiteSpace(userMessage))
-                    userMessage = "操作失败";
-                return (code, userMessage.Trim());
-            }
-        }
-
-        return (null, message);
-    }
-
-
 }

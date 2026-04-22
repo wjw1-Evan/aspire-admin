@@ -10,6 +10,7 @@ export default {
   'pages.login.failure': '登录失败，请重试！',
   'pages.login.success': '登录成功！',
   'pages.login.error.INVALID_CREDENTIALS': '用户名或密码错误',
+  'pages.login.error.LOGIN_ERROR:INVALID_CREDENTIALS': '用户名或密码错误',
   'pages.login.error.ACCOUNT_LOCKED': '账户已被锁定，请联系管理员',
   'pages.login.error.ACCOUNT_DISABLED': '账户已被禁用，请联系管理员',
   'pages.login.error.USER_NOT_FOUND': '用户不存在',

@@ -31,17 +31,18 @@ const translateMessage = (msg: string, errorCode?: string): string => {
       // errorCode 没有翻译，继续 fallback
     }
   }
-  // 如果有原始消息，尝试翻译
+  // 如果有原始消息且不是纯中文，跳过翻译尝试（中文消息不应作为 i18n key）
   if (msg) {
     const trimmed = msg.trim();
-    // 如果原始消息看起来像 errorCode（如全大写+下划线），不要当作 key 翻译
     if (/^[A-Z][A-Z0-9_]+$/.test(trimmed)) {
+      return trimmed;
+    }
+    if (/[\u4e00-\u9fa5]/.test(trimmed)) {
       return trimmed;
     }
     try {
       const intl = getIntl();
       const translated = intl.formatMessage({ id: trimmed, defaultMessage: trimmed });
-      // 如果翻译成功且返回的不是原始消息，说明翻译存在
       if (translated !== trimmed) {
         return translated;
       }

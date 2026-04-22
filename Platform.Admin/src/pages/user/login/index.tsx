@@ -11,8 +11,8 @@ import {
   history,
 } from '@umijs/max';
 import { SelectLang } from '@/components';
-import { Alert, App, Button, Tabs, Form, Input, Checkbox, Space } from 'antd';
-import { ProCard } from '@ant-design/pro-components';
+import { Alert, App, Form, Input, Space } from 'antd';
+import { ProCard, ProForm, ProFormText } from '@ant-design/pro-components';
 import { createStyles } from 'antd-style';
 import React, { useState, useEffect } from 'react';
 import { flushSync } from 'react-dom';
@@ -300,7 +300,6 @@ const Login: React.FC = () => {
     }
   };
   const { status, type: loginType } = userLoginState;
-  const [form] = Form.useForm();
 
   const pageTitle = intl.formatMessage({
     id: 'menu.login',
@@ -339,18 +338,14 @@ const Login: React.FC = () => {
                   })}
                 </div>
               </div>
-              <Form
-                form={form}
-                initialValues={{
-                  autoLogin: true,
-                }}
+              <ProForm
                 onFinish={async (values) => {
                   await handleSubmit(values as API.LoginParams);
                 }}
-                layout="vertical"
+                submitter={{
+                  submitButtonProps: { loading, size: 'large', block: true },
+                }}
               >
-
-
                 {status === 'error' && loginType === 'account' && (
                   <LoginMessage
                     content={intl.formatMessage({
@@ -361,43 +356,16 @@ const Login: React.FC = () => {
                 )}
                 {type === 'account' && (
                   <>
-                    <Form.Item
+                    <ProFormText
                       name="username"
-                      rules={[
-                        {
-                          required: true,
-                          message: (
-                            <FormattedMessage
-                              id="pages.login.username.required"
-                              defaultMessage="请输入用户名!"
-                            />
-                          ),
-                        },
-                      ]}
-                    >
-                      <Input
-                        size="large"
-                        prefix={<UserOutlined />}
-                        placeholder={intl.formatMessage({
-                          id: 'pages.login.username.placeholder',
-                          defaultMessage: '用户名',
-                        })}
-                      />
-                    </Form.Item>
-                    <Form.Item
-                      name="password"
-                      rules={[
-                        {
-                          required: true,
-                          message: (
-                            <FormattedMessage
-                              id="pages.login.password.required"
-                              defaultMessage="请输入密码！"
-                            />
-                          ),
-                        },
-                      ]}
-                    >
+                      placeholder={intl.formatMessage({
+                        id: 'pages.login.username.placeholder',
+                        defaultMessage: '用户名',
+                      })}
+                      fieldProps={{ prefix: <UserOutlined /> }}
+                      rules={[{ required: true, message: intl.formatMessage({ id: 'pages.login.username.required', defaultMessage: '请输入用户名!' }) }]}
+                    />
+                    <ProForm.Item name="password" rules={[{ required: true, message: intl.formatMessage({ id: 'pages.login.password.required', defaultMessage: '请输入密码！' }) }]}>
                       <Input.Password
                         size="large"
                         prefix={<LockOutlined />}
@@ -406,51 +374,21 @@ const Login: React.FC = () => {
                           defaultMessage: '密码',
                         })}
                       />
-                    </Form.Item>
+                    </ProForm.Item>
                   </>
                 )}
 
-
                 <div style={{ marginBottom: 24 }}>
-                  <Form.Item name="autoLogin" valuePropName="checked" style={{ marginBottom: 0 }}>
-                    <Checkbox>
-                      <FormattedMessage
-                        id="pages.login.rememberMe"
-                        defaultMessage="自动登录"
-                      />
-                    </Checkbox>
-                  </Form.Item>
-                  <Link
-                    to="/user/forgot-password"
-                    style={{
-                      float: 'right',
-                      padding: 0,
-                      lineHeight: '22px',
-                    }}
-                  >
-                    <FormattedMessage
-                      id="pages.login.forgotPassword"
-                      defaultMessage="忘记密码"
-                    />
+                  <Link to="/user/forgot-password" style={{ float: 'right', padding: 0, lineHeight: '22px' }}>
+                    <FormattedMessage id="pages.login.forgotPassword" defaultMessage="忘记密码" />
                   </Link>
                 </div>
-                <Form.Item>
-                  <Button type="primary" htmlType="submit" size="large" block loading={loading}>
-                    <FormattedMessage
-                      id="pages.login.submit"
-                      defaultMessage="登录"
-                    />
-                  </Button>
-                </Form.Item>
-                <div style={{ textAlign: 'center', marginTop: 16 }}>
-                  <Link to="/user/register">
-                    <FormattedMessage
-                      id="pages.login.register"
-                      defaultMessage="没有账号？立即注册"
-                    />
-                  </Link>
-                </div>
-              </Form>
+              </ProForm>
+              <div style={{ textAlign: 'center', marginTop: 16 }}>
+                <Link to="/user/register">
+                  <FormattedMessage id="pages.login.register" defaultMessage="没有账号？立即注册" />
+                </Link>
+              </div>
             </ProCard>
           </div>
         </div>

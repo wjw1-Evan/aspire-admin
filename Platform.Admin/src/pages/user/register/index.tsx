@@ -14,7 +14,7 @@ import {
 } from '@umijs/max';
 import { SelectLang } from '@/components';
 import { App, Button, Form, Input, Space } from 'antd';
-import { ProCard } from '@ant-design/pro-components';
+import { ProCard, ProForm, ProFormText } from '@ant-design/pro-components';
 import { createStyles } from 'antd-style';
 import React, { useState } from 'react';
 import { Footer } from '@/components';
@@ -289,8 +289,6 @@ export default function Register() {
     }
   };
 
-  const [form] = Form.useForm();
-
   return (
     <>
       <title>{pageTitle}</title>
@@ -308,152 +306,60 @@ export default function Register() {
                   <FormattedMessage id="pages.register.subTitle" />
                 </div>
               </div>
-              <Form
-                form={form}
+              <ProForm
                 onFinish={async (values) => {
                   await handleSubmit(values as API.RegisterParams);
                 }}
-                layout="vertical"
+                submitter={{
+                  submitButtonProps: { size: 'large', block: true },
+                }}
               >
-                <Form.Item
+                <ProFormText
                   name="username"
-                  extra={
-                    usernameMessage ? (
-                      <Space style={{ color: usernameStatus === 'exists' ? '#ff4d4f' : '#52c41a', fontSize: '12px', marginTop: '4px' }}>
-                        {usernameMessage}
-                      </Space>
-                    ) : null
-                  }
-                  rules={[
-                    {
-                      required: true,
-                      message: <FormattedMessage id="pages.register.username.required" />,
-                    },
-                    {
-                      min: 3,
-                      message: <FormattedMessage id="pages.register.username.min" />,
-                    },
-                    {
-                      pattern: /^\w+$/,
-                      message: <FormattedMessage id="pages.register.username.pattern" />,
-                    },
-                    {
-                      validator: async (_: any, value: string) => {
-                        if (!value || value.length < 3) {
-                          return Promise.resolve();
-                        }
-
-                        // 如果用户名格式不正确，不进行检测
-                        if (!/^\w+$/.test(value)) {
-                          return Promise.resolve();
-                        }
-
-                        // 如果已经检测过且存在，直接拒绝
-                        if (usernameStatus === 'exists' && usernameValue === value) {
-                          return Promise.reject(new Error(intl.formatMessage({ id: 'pages.register.username.exists' })));
-                        }
-
-                        // 如果检测结果为可用，通过验证
-                        if (usernameStatus === 'available' && usernameValue === value) {
-                          return Promise.resolve();
-                        }
-
-                        // 如果用户名变化了或还没检测过，进行检测
-                        if (usernameValue !== value || usernameStatus === null) {
-                          try {
-                            const response = await checkUsernameExists(value);
-
-                            if (response.success && response.data) {
-                              if (response.data.exists) {
-                                // 更新状态
-                                setUsernameStatus('exists');
-                                setUsernameMessage('');
-                                setUsernameValue(value);
-                                return Promise.reject(new Error(intl.formatMessage({ id: 'pages.register.username.exists' })));
-                              } else {
-                                // 更新状态
-                                setUsernameStatus('available');
-                                setUsernameMessage(intl.formatMessage({ id: 'pages.register.username.available' }));
-                                setUsernameValue(value);
-                                return Promise.resolve();
-                              }
-                            }
-                          } catch (error) {
-                            console.error('验证用户名失败:', error);
-                            // 检测失败时允许提交，后端会再次验证
-                            return Promise.resolve();
-                          }
-                        }
-
-                        // 如果检测失败或未检测，允许提交（后端会再次验证）
-                        return Promise.resolve();
-                      },
-                    },
-                  ]}
-                >
-                  <Input
-                    size="large"
-                    prefix={<UserOutlined />}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      handleUsernameChange(e.target.value);
-                    }}
-                    onBlur={handleUsernameBlur}
-                    suffix={usernameStatus === 'checking' ? (
+                  placeholder={intl.formatMessage({ id: 'pages.register.username.placeholder' })}
+                  fieldProps={{
+                    prefix: <UserOutlined />,
+                    onChange: (e: React.ChangeEvent<HTMLInputElement>) => handleUsernameChange(e.target.value),
+                    onBlur: handleUsernameBlur,
+                    suffix: usernameStatus === 'checking' ? (
                       <span style={{ color: '#1890ff' }}>
                         <FormattedMessage id="pages.register.username.checking" />
                       </span>
                     ) : usernameStatus === 'available' ? (
                       <CheckCircleOutlined style={{ color: '#52c41a' }} />
-                    ) : null}
-                    placeholder={intl.formatMessage({
-                      id: 'pages.register.username.placeholder',
-                    })}
-                  />
-                </Form.Item>
+                    ) : null,
+                  }}
+                  extra={usernameMessage ? (
+                    <Space style={{ color: usernameStatus === 'exists' ? '#ff4d4f' : '#52c41a', fontSize: '12px', marginTop: '4px' }}>
+                      {usernameMessage}
+                    </Space>
+                  ) : null}
+                  rules={[
+                    { required: true, message: <FormattedMessage id="pages.register.username.required" /> },
+                    { min: 3, message: <FormattedMessage id="pages.register.username.min" /> },
+                    { pattern: /^\w+$/, message: <FormattedMessage id="pages.register.username.pattern" /> },
+                  ]}
+                />
 
-                <Form.Item
+                <ProFormText
                   name="email"
+                  placeholder={intl.formatMessage({ id: 'pages.register.email.placeholder' })}
+                  fieldProps={{ prefix: <MailOutlined /> }}
                   rules={[
-                    {
-                      required: true,
-                      message: <FormattedMessage id="pages.register.email.required" />,
-                    },
-                    {
-                      type: 'email',
-                      message: <FormattedMessage id="pages.register.email.invalid" />,
-                    },
+                    { required: true, message: <FormattedMessage id="pages.register.email.required" /> },
+                    { type: 'email', message: <FormattedMessage id="pages.register.email.invalid" /> },
                   ]}
-                >
-                  <Input
-                    size="large"
-                    prefix={<MailOutlined />}
-                    placeholder={intl.formatMessage({
-                      id: 'pages.register.email.placeholder',
-                    })}
-                  />
-                </Form.Item>
+                />
 
-                <Form.Item
+                <ProFormText
                   name="password"
+                  placeholder={intl.formatMessage({ id: 'pages.register.password.placeholder' })}
+                  fieldProps={{ prefix: <LockOutlined /> }}
                   rules={[
-                    {
-                      required: true,
-                      message: <FormattedMessage id="pages.register.password.required" />,
-                    },
-                    {
-                      min: 6,
-                      message: <FormattedMessage id="pages.register.password.min" />,
-                    },
+                    { required: true, message: <FormattedMessage id="pages.register.password.required" /> },
+                    { min: 6, message: <FormattedMessage id="pages.register.password.min" /> },
                   ]}
-                >
-                  <Input.Password
-                    size="large"
-                    prefix={<LockOutlined />}
-                    placeholder={intl.formatMessage({
-                      id: 'pages.register.password.placeholder',
-                    })}
-                  />
-                </Form.Item>
+                />
 
                 <div className={styles.infoBox}>
                   <div className="info-title">
@@ -466,22 +372,12 @@ export default function Register() {
                     <FormattedMessage id="pages.register.info.item3" />
                   </div>
                 </div>
-
-                <Form.Item>
-                  <Button type="primary" htmlType="submit" size="large" block>
-                    <FormattedMessage id="pages.register.submit" />
-                  </Button>
-                </Form.Item>
-
-                <div style={{ textAlign: 'center', marginTop: 16 }}>
-                  <Link
-                    to="/user/login"
-                    style={{ color: '#667eea', fontWeight: 500 }}
-                  >
-                    <FormattedMessage id="pages.register.login" />
-                  </Link>
-                </div>
-              </Form>
+              </ProForm>
+              <div style={{ textAlign: 'center', marginTop: 16 }}>
+                <Link to="/user/login" style={{ color: '#667eea', fontWeight: 500 }}>
+                  <FormattedMessage id="pages.register.login" />
+                </Link>
+              </div>
             </ProCard>
           </div>
         </div>

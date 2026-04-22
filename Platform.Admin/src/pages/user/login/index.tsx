@@ -11,7 +11,7 @@ import {
   history,
 } from '@umijs/max';
 import { SelectLang } from '@/components';
-import { Alert, App, Space } from 'antd';
+import { Alert, App, Form, Space } from 'antd';
 import { ProCard, ProForm, ProFormText } from '@ant-design/pro-components';
 import { createStyles } from 'antd-style';
 import React, { useState, useEffect } from 'react';
@@ -116,6 +116,7 @@ const Login: React.FC = () => {
   const { styles } = useStyles();
   const { message } = App.useApp();
   const intl = useIntl();
+  const [form] = Form.useForm();
 
   const fetchUserInfo = async () => {
     const userInfo = await initialState?.fetchUserInfo?.();
@@ -203,13 +204,14 @@ const Login: React.FC = () => {
       const validationErrors = error?.response?.data?.errors;
       const isValidationError = error?.response?.status === 400 && validationErrors;
 
-      if (isValidationError) {
-        const firstError = Object.values(validationErrors).flat().find((msg: any) => msg) as string | undefined;
-        if (firstError) {
-          setUserLoginState({ status: 'error', message: firstError as string });
-        } else {
-          setUserLoginState({ status: 'error', message: intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }) });
-        }
+      if (isValidationError && validationErrors) {
+        const fieldErrors = Object.entries(validationErrors).map(([field, msgs]) => ({
+          name: field as any,
+          errors: Array.isArray(msgs) ? [msgs[0] as string] : [msgs as string],
+        }));
+        form.setFields(fieldErrors);
+        const firstFieldError = fieldErrors[0]?.errors?.[0];
+        setUserLoginState({ status: 'error', message: firstFieldError || intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }) });
         return;
       }
 
@@ -263,6 +265,7 @@ const Login: React.FC = () => {
                 </div>
               </div>
               <ProForm
+                form={form}
                 onFinish={async (values) => {
                   await handleSubmit(values as API.LoginParams);
                 }}

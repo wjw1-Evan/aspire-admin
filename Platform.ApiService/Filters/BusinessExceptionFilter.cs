@@ -1,16 +1,26 @@
+using System;
+using System.IO;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Platform.ServiceDefaults.Models;
-using System.Net;
 
 namespace Platform.ApiService.Filters;
 
-/// <summary>
-/// 业务异常过滤器 - 自动捕捉业务异常并转换为标准 API 响应
-/// </summary>
 public class BusinessExceptionFilter : IExceptionFilter
 {
     private readonly ILogger<BusinessExceptionFilter> _logger;
+    private static readonly Dictionary<Type, Func<ApiResponse, ObjectResult>> _exceptionMappings = new()
+    {
+        { typeof(ArgumentException), r => new BadRequestObjectResult(r) },
+        { typeof(FormatException), r => new BadRequestObjectResult(r) },
+        { typeof(InvalidOperationException), r => new BadRequestObjectResult(r) },
+        { typeof(NotImplementedException), r => new ObjectResult(r) { StatusCode = 405 } },
+        { typeof(NotSupportedException), r => new ObjectResult(r) { StatusCode = 405 } },
+        { typeof(FileNotFoundException), r => new NotFoundObjectResult(r) },
+        { typeof(KeyNotFoundException), r => new NotFoundObjectResult(r) },
+        { typeof(System.Security.Authentication.AuthenticationException), r => new UnauthorizedObjectResult(r) },
+        { typeof(UnauthorizedAccessException), r => new ObjectResult(r) { StatusCode = 403 } },
+    };
 
     public BusinessExceptionFilter(ILogger<BusinessExceptionFilter> logger)
     {
@@ -20,56 +30,16 @@ public class BusinessExceptionFilter : IExceptionFilter
     public void OnException(ExceptionContext context)
     {
         var exception = context.Exception;
-        var message = exception.Message;
 
-        if (exception is ArgumentException)
+        if (_exceptionMappings.TryGetValue(exception.GetType(), out var createResult))
         {
             var response = new ApiResponse(
                 success: false,
-                message: message,
+                message: exception.Message,
                 traceId: context.HttpContext.TraceIdentifier
             );
 
-            context.Result = new BadRequestObjectResult(response);
-            context.ExceptionHandled = true;
-            return;
-        }
-
-        if (exception is KeyNotFoundException)
-        {
-            var response = new ApiResponse(
-                success: false,
-                message: message,
-                traceId: context.HttpContext.TraceIdentifier
-            );
-
-            context.Result = new NotFoundObjectResult(response);
-            context.ExceptionHandled = true;
-            return;
-        }
-
-        if (exception is UnauthorizedAccessException)
-        {
-            var response = new ApiResponse(
-                success: false,
-                message: message,
-                traceId: context.HttpContext.TraceIdentifier
-            );
-
-            context.Result = new UnauthorizedObjectResult(response);
-            context.ExceptionHandled = true;
-            return;
-        }
-
-        if (exception is InvalidOperationException)
-        {
-            var response = new ApiResponse(
-                success: false,
-                message: message,
-                traceId: context.HttpContext.TraceIdentifier
-            );
-
-            context.Result = new BadRequestObjectResult(response);
+            context.Result = createResult(response);
             context.ExceptionHandled = true;
             return;
         }

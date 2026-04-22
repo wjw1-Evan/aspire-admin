@@ -50,7 +50,11 @@ const useStyles = createStyles(({ token }) => {
     },
     formWrapper: {
       width: '100%',
-      maxWidth: '440px',
+      maxWidth: 440,
+    },
+    card: {
+      width: '100%',
+      maxWidth: '100%',
     },
     header: {
       textAlign: 'center',

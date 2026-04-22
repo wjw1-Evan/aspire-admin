@@ -50,7 +50,11 @@ const useStyles = createStyles(({ token }) => {
     },
     formWrapper: {
       width: '100%',
-      maxWidth: '440px',
+      maxWidth: 440,
+    },
+    card: {
+      width: '100%',
+      maxWidth: '100%',
     },
   };
 });
@@ -241,17 +245,7 @@ const Login: React.FC = () => {
         <Lang />
         <div className={styles.contentWrapper}>
           <div className={styles.formWrapper}>
-            <ProCard
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                backdropFilter: 'blur(20px)',
-                borderRadius: '16px',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                minWidth: 280,
-                maxWidth: '100%',
-              }}
-            >
+            <ProCard className={styles.card}>
               <div style={{ textAlign: 'center', marginBottom: 24 }}>
                 <img alt="logo" src="/logo.svg" style={{ width: 64, height: 64, marginBottom: 16 }} />
                 <div style={{ fontSize: 28, fontWeight: 600, color: '#1a1a1a', marginBottom: 8 }}>

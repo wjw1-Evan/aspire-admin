@@ -134,8 +134,7 @@ const createApiInstance = (): AxiosInstance => {
                 return Promise.reject({
                     success: false,
                     errorCode: data?.errorCode || 'UNKNOWN_ERROR',
-                    errorMessage: data?.errorMessage || error.message || 'An error occurred',
-                    showType: data?.showType || 2,
+                    message: data?.message || error.message || 'An error occurred',
                     traceId: data?.traceId,
                 } as ErrorResponse);
             }
@@ -144,8 +143,7 @@ const createApiInstance = (): AxiosInstance => {
             return Promise.reject({
                 success: false,
                 errorCode: 'NETWORK_ERROR',
-                errorMessage: 'Network error. Please check your connection.',
-                showType: 2,
+                message: 'Network error. Please check your connection.',
             } as ErrorResponse);
         }
     );

@@ -502,17 +502,23 @@ catch (Exception ex)
 
 **全局异常映射**（`BusinessExceptionFilter` 自动处理，处理位置已迁移至 `Platform.ServiceDefaults.Filters`）：
 
-| 异常类型 | HTTP 状态码 | 说明 |
-|---------|-----------|------|
-| `ArgumentException` | 400 | 参数校验失败，通过 `Exception.Message` 传递错误信息 |
-| `KeyNotFoundException` | 404 | 资源不存在，通过 `Exception.Message` 传递错误信息 |
-| `UnauthorizedAccessException` | 401 | 未授权，通过 `Exception.Message` 传递错误信息 |
-| `InvalidOperationException` | 400 | 业务规则冲突，通过 `Exception.Message` 传递错误信息 |
+| 异常类型 | HTTP 状态码 | errorCode | 说明 |
+|---------|-----------|-----------|------|
+| `ArgumentException` | 400 | `VALIDATION_ERROR` | 参数校验失败 |
+| `KeyNotFoundException` | 404 | `RESOURCE_NOT_FOUND` | 资源不存在 |
+| `AuthenticationException` | 401 | `UNAUTHENTICATED` | 未认证 |
+| `UnauthorizedAccessException` | 403 | `UNAUTHORIZED_ACCESS` | 无权访问 |
+| `InvalidOperationException` | 400 | `INVALID_OPERATION` | 业务规则冲突 |
+| `NotImplementedException` | 405 | `OPERATION_NOT_SUPPORTED` | 未实现 |
+| `NotSupportedException` | 405 | `OPERATION_NOT_SUPPORTED` | 不支持 |
+| `IOException` | 404 | `RESOURCE_NOT_FOUND` | IO 异常 |
 
-**消息传递规范**：
-- 所有业务异常统一通过 `Exception.Message` 向前端传递错误信息
-- **`ApiResponse` 不再使用 `code` 字段**，前端通过 `message` 字段获取错误描述
-- 前端错误拦截器应优先读取 `response.message` 显示错误提示
+**错误码优先规范**：
+- `ApiResponse` 包含 `errorCode` 和 `message` 两个字段
+- **前端应优先读取 `errorCode` 进行 i18n 翻译**，`message` 作为 fallback 显示
+- 错误码常量定义见 `Platform.ServiceDefaults/Models/ErrorCode.cs`
+- 前端错误码常量定义见 `Platform.Admin/src/constants/errorCodes.ts`
+- 所有 locale 的 `request.ts` 应包含完整错误码翻译
 
 **原因**：
 - 全局异常处理中间件统一捕获并格式化异常
@@ -598,12 +604,33 @@ _ = Task.Run(async () =>
   "success": true,
   "data": { ... },
   "message": null,
+  "errorCode": null,
   "errors": null,
-  "details": null,
   "timestamp": "2024-01-01T00:00:00.000Z",
   "traceId": "xxx"
 }
 ```
+
+**错误响应示例**：
+```json
+{
+  "success": false,
+  "data": null,
+  "message": "用户名或密码错误",
+  "errorCode": "INVALID_CREDENTIALS",
+  "errors": null,
+  "timestamp": "2024-01-01T00:00:00.000Z",
+  "traceId": "xxx"
+}
+```
+
+**字段职责**：
+
+| 字段 | 用途 | 显示优先级 |
+|------|------|----------|
+| `errorCode` | 标准错误分类码，前端优先用于 i18n 翻译 | 1 (优先翻译) |
+| `message` | 动态错误描述，作为 fallback 显示 | 2 |
+| `errors` | 结构化字段验证错误 `Dictionary<string, string[]>` | 3 |
 
 控制器返回：
 ```csharp
@@ -720,8 +747,8 @@ export interface ApiResponse<T = any> {
   success: boolean;
   message?: string;
   data?: T;
+  errorCode?: string;
   errors?: any;
-  details?: any;
   timestamp?: string;
   traceId?: string;
 }
@@ -1038,12 +1065,14 @@ cd Platform.Admin && npm run lint  # 实际执行 tsc --noEmit
 | DbContext | `Platform.ServiceDefaults/Services/PlatformDbContext.cs` |
 | 实体基类 | `Platform.ServiceDefaults/Models/BaseEntity.cs` |
 | 审计接口 | `Platform.ServiceDefaults/Models/OperationTracking.cs` |
+| 错误码常量 | `Platform.ServiceDefaults/Models/ErrorCode.cs` |
 | 权限注解 | `Platform.ApiService/Attributes/RequireMenuAttribute.cs` |
 | 响应包装 | `Platform.ApiService/Filters/ApiResponseWrapperFilter.cs` |
 | 异常过滤 | `Platform.ServiceDefaults/Filters/BusinessExceptionFilter.cs` |
 | SSE 控制器 | `Platform.ApiService/Controllers/StreamController.cs` |
 | 租户中间件 | `Platform.ServiceDefaults/Services/TenantContextMiddleware.cs` |
 | 前端统一类型 | `Platform.Admin/src/types/api-response.ts` |
+| 前端错误码常量 | `Platform.Admin/src/constants/errorCodes.ts` |
 | 页面开发标准 | `Platform.Admin/src/pages/password-book/index.tsx` |
 | SSE Hook | `Platform.Admin/src/hooks/useSseConnection.ts` |
 | Token 工具 | `Platform.Admin/src/utils/token.ts` |

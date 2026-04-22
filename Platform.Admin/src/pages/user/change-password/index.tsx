@@ -76,9 +76,10 @@ const ChangePassword: React.FC = () => {
       }));
     } catch (error: any) {
       // 设置错误状态用于表单显示
-      if (error?.info?.code || error?.code) {
+      const errorCode = error?.info?.errorCode || error?.response?.data?.errorCode;
+      if (errorCode || error?.info?.code || error?.code) {
         setChangePasswordState({
-          code: error.info?.code || error.code,
+          code: errorCode || error.info?.code || error.code,
           message: error.info?.message || error.message,
         });
       }

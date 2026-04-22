@@ -78,7 +78,7 @@ export default function RegisterScreen() {
                 Toast.show({
                     type: 'error',
                     text1: '注册失败',
-                    text2: response.errorMessage || '注册失败，请稍后重试',
+                    text2: response.message || '注册失败，请稍后重试',
                     position: 'top',
                     visibilityTime: 3000,
                 });
@@ -88,7 +88,7 @@ export default function RegisterScreen() {
             Toast.show({
                 type: 'error',
                 text1: '注册失败',
-                text2: error.errorMessage || '注册过程中发生错误，请稍后重试',
+                text2: error.message || '注册过程中发生错误，请稍后重试',
                 position: 'top',
                 visibilityTime: 3000,
             });

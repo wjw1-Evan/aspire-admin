@@ -173,11 +173,17 @@ const Login: React.FC = () => {
       }
 
       const backendMessage = response.message;
+      const errorCode = response.errorCode;
 
       setLoading(false);
 
       let errorMsg = backendMessage;
-      if (LOGIN_KNOWN_ERRORS.includes(backendMessage as any)) {
+      if (errorCode) {
+        errorMsg = intl.formatMessage({
+          id: errorCode,
+          defaultMessage: intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }),
+        });
+      } else if (LOGIN_KNOWN_ERRORS.includes(backendMessage as any)) {
         errorMsg = intl.formatMessage({
           id: `pages.login.error.${backendMessage}`,
           defaultMessage: intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }),
@@ -208,9 +214,15 @@ const Login: React.FC = () => {
       }
 
       const backendMessage = error?.response?.data?.message || error?.info?.message || error?.message;
+      const errorCode = error?.info?.errorCode || error?.response?.data?.errorCode;
 
       let errorMsg = backendMessage;
-      if (LOGIN_KNOWN_ERRORS.includes(backendMessage as any)) {
+      if (errorCode) {
+        errorMsg = intl.formatMessage({
+          id: errorCode,
+          defaultMessage: intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }),
+        });
+      } else if (LOGIN_KNOWN_ERRORS.includes(backendMessage as any)) {
         errorMsg = intl.formatMessage({
           id: `pages.login.error.${backendMessage}`,
           defaultMessage: intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }),

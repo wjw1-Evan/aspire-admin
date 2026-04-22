@@ -92,7 +92,7 @@ export default function ProfileScreen() {
                 Toast.show({
                     type: 'error',
                     text1: '切换企业失败',
-                    text2: response?.errorMessage || '请稍后重试',
+                    text2: response?.message || '请稍后重试',
                     position: 'top',
                     visibilityTime: 3000,
                 });
@@ -102,7 +102,7 @@ export default function ProfileScreen() {
             Toast.show({
                 type: 'error',
                 text1: '切换企业失败',
-                text2: error?.errorMessage || error?.message || '切换企业时发生错误',
+                text2: error?.message || '切换企业时发生错误',
                 position: 'top',
                 visibilityTime: 3000,
             });
@@ -149,7 +149,7 @@ export default function ProfileScreen() {
                 Toast.show({
                     type: 'error',
                     text1: '更新失败',
-                    text2: response.errorMessage || '请稍后重试',
+                    text2: response.message || '请稍后重试',
                     position: 'top',
                     visibilityTime: 3000,
                 });
@@ -158,7 +158,7 @@ export default function ProfileScreen() {
             Toast.show({
                 type: 'error',
                 text1: '更新失败',
-                text2: error.errorMessage || '更新时发生错误',
+                text2: error.message || '更新时发生错误',
                 position: 'top',
                 visibilityTime: 3000,
             });

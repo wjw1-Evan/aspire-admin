@@ -21,7 +21,7 @@ public class BusinessExceptionFilter : IExceptionFilter
     {
         var exception = context.Exception;
         var message = exception.Message;
-        var code = exception is BusinessException be ? be.Code : null;
+        string? code = null;
 
         if (exception is ArgumentException)
         {

@@ -343,7 +343,7 @@ const Login: React.FC = () => {
                   await handleSubmit(values as API.LoginParams);
                 }}
                 submitter={{
-                  submitButtonProps: { loading, size: 'large', block: true },
+                  submitButtonProps: { loading, size: 'middle', block: true },
                 }}
               >
                 {status === 'error' && loginType === 'account' && (
@@ -367,7 +367,7 @@ const Login: React.FC = () => {
                     />
                     <ProForm.Item name="password" rules={[{ required: true, message: intl.formatMessage({ id: 'pages.login.password.required', defaultMessage: '请输入密码！' }) }]}>
                       <Input.Password
-                        size="large"
+                        size="middle"
                         prefix={<LockOutlined />}
                         placeholder={intl.formatMessage({
                           id: 'pages.login.password.placeholder',

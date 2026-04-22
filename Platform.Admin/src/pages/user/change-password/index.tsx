@@ -130,7 +130,7 @@ const ChangePassword: React.FC = () => {
               ]}
             >
               <Input.Password
-                size="large"
+                size="middle"
                 prefix={<LockOutlined />}
                 placeholder={intl.formatMessage({
                   id: 'pages.changePassword.currentPassword.placeholder',
@@ -163,7 +163,7 @@ const ChangePassword: React.FC = () => {
               ]}
             >
               <Input.Password
-                size="large"
+                size="middle"
                 prefix={<LockOutlined />}
                 placeholder={intl.formatMessage({
                   id: 'pages.changePassword.newPassword.placeholder',
@@ -196,7 +196,7 @@ const ChangePassword: React.FC = () => {
               ]}
             >
               <Input.Password
-                size="large"
+                size="middle"
                 prefix={<LockOutlined />}
                 placeholder={intl.formatMessage({
                   id: 'pages.changePassword.confirmPassword.placeholder',
@@ -209,7 +209,7 @@ const ChangePassword: React.FC = () => {
               <Button
                 type="primary"
                 htmlType="submit"
-                size="large"
+                size="middle"
                 block
               >
                 {intl.formatMessage({

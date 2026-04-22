@@ -222,13 +222,13 @@ const ForgotPasswordContainer: React.FC = () => {
                   ]}
                 >
                   <Input
-                    size="large"
+                    size="middle"
                     prefix={<MailOutlined />}
                     placeholder={intl.formatMessage({ id: 'pages.forgotPassword.emailPlaceholder', defaultMessage: '注册时使用的邮箱' })}
                   />
                 </Form.Item>
                 <Form.Item>
-                  <Button type="primary" htmlType="submit" size="large" block loading={loading}>
+                  <Button type="primary" htmlType="submit" size="middle" block loading={loading}>
                     <FormattedMessage id="pages.forgotPassword.nextStep" defaultMessage="下一步" />
                   </Button>
                 </Form.Item>
@@ -247,13 +247,13 @@ const ForgotPasswordContainer: React.FC = () => {
                 >
                   <Space.Compact style={{ width: '100%' }}>
                     <Input
-                      size="large"
+                      size="middle"
                       prefix={<SafetyCertificateOutlined />}
                       placeholder={intl.formatMessage({ id: 'pages.forgotPassword.codePlaceholder', defaultMessage: '6位邮箱验证码' })}
                       maxLength={6}
                     />
                     <Button 
-                      size="large" 
+                      size="middle" 
                       onClick={handleResendCode} 
                       disabled={countdown > 0}
                       style={{ width: '120px' }}
@@ -270,7 +270,7 @@ const ForgotPasswordContainer: React.FC = () => {
                   ]}
                 >
                   <Input.Password
-                    size="large"
+                    size="middle"
                     prefix={<LockOutlined />}
                     placeholder={intl.formatMessage({ id: 'pages.forgotPassword.newPasswordPlaceholder', defaultMessage: '新密码' })}
                   />
@@ -291,13 +291,13 @@ const ForgotPasswordContainer: React.FC = () => {
                   ]}
                 >
                   <Input.Password
-                    size="large"
+                    size="middle"
                     prefix={<LockOutlined />}
                     placeholder={intl.formatMessage({ id: 'pages.forgotPassword.confirmPasswordPlaceholder', defaultMessage: '确认新密码' })}
                   />
                 </Form.Item>
                 <Form.Item>
-                  <Button type="primary" htmlType="submit" size="large" block loading={loading}>
+                  <Button type="primary" htmlType="submit" size="middle" block loading={loading}>
                     <FormattedMessage id="pages.forgotPassword.submit" defaultMessage="重置密码" />
                   </Button>
                 </Form.Item>
@@ -312,7 +312,7 @@ const ForgotPasswordContainer: React.FC = () => {
                     <FormattedMessage id="pages.forgotPassword.successTitle" defaultMessage="密码重置成功！" />
                   </span>
                 </div>
-                <Button type="primary" size="large" onClick={() => history.push('/user/login')} block>
+                <Button type="primary" size="middle" onClick={() => history.push('/user/login')} block>
                   <FormattedMessage id="pages.forgotPassword.backToLogin" defaultMessage="返回登录界面" />
                 </Button>
               </div>

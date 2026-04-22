@@ -311,7 +311,7 @@ export default function Register() {
                   await handleSubmit(values as API.RegisterParams);
                 }}
                 submitter={{
-                  submitButtonProps: { size: 'large', block: true },
+                  submitButtonProps: { size: 'middle', block: true },
                 }}
               >
                 <ProFormText

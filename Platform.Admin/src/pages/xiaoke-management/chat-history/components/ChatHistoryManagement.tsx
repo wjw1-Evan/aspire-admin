@@ -9,6 +9,7 @@ import {
 } from '@ant-design/icons';
 import { useMessage } from '@/hooks/useMessage';
 import { useModal } from '@/hooks/useModal';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 import {
   getChatHistory,
   deleteChatHistory,
@@ -37,7 +38,7 @@ const ChatHistoryManagement: React.FC = () => {
         setDetailData(response.data);
         setDetailVisible(true);
       } else {
-        message.error(response.message || intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.getDetailFailed' }));
+        message.error(getErrorMessage(response, 'pages.xiaokeManagement.chatHistory.message.getDetailFailed'));
       }
     } catch (error: any) {
       message.error(error.message || intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.getDetailFailed' }));
@@ -58,7 +59,7 @@ const ChatHistoryManagement: React.FC = () => {
             message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.deleteSuccess' }));
             actionRef.current?.reload();
           } else {
-            message.error(response.message || intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.deleteFailed' }));
+            message.error(getErrorMessage(response, 'pages.xiaokeManagement.chatHistory.message.deleteFailed'));
           }
         } catch (error: any) {
           message.error(error.message || intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.deleteFailed' }));

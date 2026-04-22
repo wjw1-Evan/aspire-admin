@@ -10,6 +10,7 @@ import {
 } from '@ant-design/icons';
 import { useMessage } from '@/hooks/useMessage';
 import { useModal } from '@/hooks/useModal';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 import {
   getXiaokeConfigs,
   deleteXiaokeConfig,
@@ -54,7 +55,7 @@ const ConfigManagement: React.FC = () => {
             message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.deleteSuccess' }));
             actionRef.current?.reload();
           } else {
-            message.error(response.message || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.deleteFailed' }));
+            message.error(getErrorMessage(response, 'pages.xiaokeManagement.config.message.deleteFailed'));
           }
         } catch (error: any) {
           message.error(error.message || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.deleteFailed' }));
@@ -70,7 +71,7 @@ const ConfigManagement: React.FC = () => {
         message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.setDefaultSuccess' }));
         actionRef.current?.reload();
       } else {
-        message.error(response.message || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.setDefaultFailed' }));
+        message.error(getErrorMessage(response, 'pages.xiaokeManagement.config.message.setDefaultFailed'));
       }
     } catch (error: any) {
       message.error(error.message || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.setDefaultFailed' }));

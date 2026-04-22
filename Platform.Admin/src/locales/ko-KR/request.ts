@@ -29,7 +29,6 @@ export default {
     'TOKEN_EXPIRED': 'Session expired, please log in again',
     'USER_INFO_INVALID': 'Invalid user information',
     'CAPTCHA_REQUIRED': 'Please enter the captcha',
-    'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN': 'Captcha required after failed login',
     'UNAUTHORIZED_ACCESS': 'Unauthorized access',
     'FORBIDDEN': 'Access forbidden',
     'MENU_ACCESS_DENIED': 'No permission to access this feature',

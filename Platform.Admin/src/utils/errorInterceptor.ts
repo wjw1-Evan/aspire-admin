@@ -71,10 +71,10 @@ export enum ErrorDisplayType {
 export interface ErrorInfo {
   type: ErrorType;
   severity: ErrorSeverity;
-  code?: string;
+  httpCode?: string;
   errorCode?: string;
   message: string;
-  details?: any;
+  debugData?: any;
   timestamp: Date;
   requestId?: string;
   userId?: string;
@@ -239,14 +239,14 @@ class UnifiedErrorInterceptor {
     }
 
     if (error.info?.code) {
-      errorInfo.code = error.info.code;
-      errorInfo.details = error.info;
+      errorInfo.httpCode = error.info.code;
+      errorInfo.debugData = error.info;
     } else if (error.response?.data?.code) {
-      errorInfo.code = error.response.data.code;
-      errorInfo.details = error.response.data;
+      errorInfo.httpCode = error.response.data.code;
+      errorInfo.debugData = error.response.data;
     } else if (error.response?.status) {
-      errorInfo.code = `HTTP_${error.response.status}`;
-      errorInfo.details = error.response.data;
+      errorInfo.httpCode = `HTTP_${error.response.status}`;
+      errorInfo.debugData = error.response.data;
     }
 
     if (context) {
@@ -395,12 +395,12 @@ class UnifiedErrorInterceptor {
     const logLevel = this.getLogLevel(errorInfo.severity);
     const logMessage = `[${errorInfo.type}] ${errorInfo.message}`;
     const logData = {
-      code: errorInfo.code,
+      httpCode: errorInfo.httpCode,
       errorCode: errorInfo.errorCode,
       url: errorInfo.url,
       method: errorInfo.method,
       timestamp: errorInfo.timestamp,
-      details: errorInfo.details,
+      debugData: errorInfo.debugData,
     };
 
     switch (logLevel) {
@@ -482,7 +482,7 @@ class UnifiedErrorInterceptor {
       case ErrorDisplayType.NOTIFICATION:
         runAfterRender(() =>
           notification.error({
-            message: errorInfo.code || '错误',
+            message: errorInfo.errorCode || errorInfo.httpCode || '错误',
             description: errorInfo.message,
             duration: 4.5,
           }),

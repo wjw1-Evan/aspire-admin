@@ -3,6 +3,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useIntl } from '@umijs/max';
 import { ModalForm, ProFormText, ProFormTextArea, ProFormSwitch, ProForm } from '@ant-design/pro-components';
 import { createRole, updateRole, getRoleMenus } from '@/services/role/api';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 import { getMenuTree } from '@/services/menu/api';
 import type {
   Role,
@@ -213,7 +214,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
           message.success(intl.formatMessage({ id: 'pages.roleForm.updateSuccess' }));
           onSuccess();
         } else {
-          message.error(response.message || intl.formatMessage({ id: 'pages.roleForm.updateFailed' }));
+          message.error(getErrorMessage(response, 'pages.roleForm.updateFailed'));
         }
       } else {
         const createData: CreateRoleRequest = {
@@ -228,7 +229,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
           message.success(intl.formatMessage({ id: 'pages.roleForm.createSuccess' }));
           onSuccess();
         } else {
-          message.error(response.message || intl.formatMessage({ id: 'pages.roleForm.createFailed' }));
+          message.error(getErrorMessage(response, 'pages.roleForm.createFailed'));
         }
       }
     } finally {

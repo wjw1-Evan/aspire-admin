@@ -67,11 +67,10 @@ builder.Services.AddControllers(options =>
                 );
 
             var firstError = errors.Values.FirstOrDefault()?.FirstOrDefault() ?? "请求参数验证失败";
-            var errorCode = ExtractErrorCode(firstError);
 
             var errorResponse = new ApiResponse(
                 success: false,
-                message: errorCode ?? firstError,
+                message: firstError,
                 errorCode: ErrorCode.ValidationError,
                 traceId: context.HttpContext.TraceIdentifier,
                 errors: errors
@@ -315,12 +314,6 @@ static string ConvertToErrorCode(string errorMessage, string fieldName)
         return $"VALIDATION:{field}:invalid";
 
     return $"VALIDATION:{field}:{errorMessage}";
-}
-
-static string? ExtractErrorCode(string? message)
-{
-    if (string.IsNullOrEmpty(message)) return null;
-    return message.StartsWith("VALIDATION:") ? message : null;
 }
 
 await app.RunAsync();

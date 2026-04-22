@@ -3,6 +3,7 @@ import { Tag, App, Popconfirm, theme, Button, Space } from 'antd';
 import { request, useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import { cancelJoinRequest } from '@/services/company';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 import { UndoOutlined, TeamOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns } from '@ant-design/pro-table';
 
@@ -28,7 +29,7 @@ const MyJoinRequestsTable: React.FC = () => {
             if (response.success) {
                 message.success('申请已撤销');
             } else {
-                message.error(response.message || '撤销失败');
+                message.error(getErrorMessage(response, 'pages.company.cancelFailed'));
             }
         } catch (error) {
             console.error('撤销失败:', error);

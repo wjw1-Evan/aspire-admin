@@ -11,6 +11,7 @@ import {
 } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import { useMessage } from '@/hooks/useMessage';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 import {
   createXiaokeConfig,
   updateXiaokeConfig,
@@ -56,7 +57,7 @@ const ConfigForm: React.FC<ConfigFormProps> = ({ config, open, onOpenChange, onS
         const response = await updateXiaokeConfig(config!.id, updateData);
 
         if (!response.success) {
-          throw new Error(response.message || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.updateFailed' }));
+          throw new Error(getErrorMessage(response, 'pages.xiaokeManagement.config.message.updateFailed'));
         }
 
         message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.updateSuccess' }));
@@ -77,7 +78,7 @@ const ConfigForm: React.FC<ConfigFormProps> = ({ config, open, onOpenChange, onS
         const response = await createXiaokeConfig(createData);
 
         if (!response.success) {
-          throw new Error(response.message || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.createFailed' }));
+          throw new Error(getErrorMessage(response, 'pages.xiaokeManagement.config.message.createFailed'));
         }
 
         message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.createSuccess' }));

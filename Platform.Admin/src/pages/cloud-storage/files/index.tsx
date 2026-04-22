@@ -307,7 +307,10 @@ const CloudStorageFilesPage: React.FC = () => {
                         if (info.file.status === 'done') {
                             const response = info.file.response as any;
                             if (response?.success === false) {
-                                message.error(response.message || `${info.file.name} 上传失败`);
+                                const errorMsg = response?.errorCode
+                                    ? intl.formatMessage({ id: response.errorCode, defaultMessage: response.message || `${info.file.name} 上传失败` })
+                                    : (response.message || `${info.file.name} 上传失败`);
+                                message.error(errorMsg);
                             } else {
                                 message.success(`${info.file.name} 上传成功`);
                                 if (info.fileList.every(f => f.status !== 'uploading')) {
@@ -317,7 +320,10 @@ const CloudStorageFilesPage: React.FC = () => {
                             }
                         } else if (info.file.status === 'error') {
                             const response = info.file.response as any;
-                            message.error(response?.message || `${info.file.name} 上传失败`);
+                            const errorMsg = response?.errorCode
+                                ? intl.formatMessage({ id: response.errorCode, defaultMessage: response?.message || `${info.file.name} 上传失败` })
+                                : (response?.message || `${info.file.name} 上传失败`);
+                            message.error(errorMsg);
                         }
                     }}
                 >

@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { request, useModel, useIntl } from '@umijs/max';
 import type { ApiResponse } from '@/types';
 import type { UserCompanyItem, SwitchCompanyResult } from '@/types';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 import { CreateCompanyModal } from '../CreateCompanyModal';
 import styles from './index.less';
 
@@ -42,7 +43,7 @@ export const CompanySwitcher: React.FC = () => {
       if (response.success && response.data) {
         setCompanies(response.data);
       } else {
-        message.error(response.message || intl.formatMessage({ id: 'pages.company.loadFailed' }));
+        message.error(getErrorMessage(response, 'pages.company.loadFailed'));
       }
     } catch (error: any) {
       console.error('加载企业列表失败:', error);
@@ -100,7 +101,7 @@ export const CompanySwitcher: React.FC = () => {
           window.location.reload();
         }, 500);
       } else {
-        message.error(response.message || intl.formatMessage({ id: 'pages.company.switchFailed' }));
+        message.error(getErrorMessage(response, 'pages.company.switchFailed'));
       }
     } catch (error: any) {
       message.error(error.message || intl.formatMessage({ id: 'pages.company.switchFailed' }));

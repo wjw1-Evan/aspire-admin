@@ -8,6 +8,7 @@ import React, { useEffect, useState } from 'react';
 import { getUserAvatar } from '@/utils/avatar';
 import dayjs from 'dayjs';
 import { getCurrentUserProfile, updateUserProfile } from '@/services/ant-design-pro/api';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 import type { ApiResponse } from '@/types';
 import Settings from '../../../../config/defaultSettings';
 
@@ -97,7 +98,7 @@ const UserCenter: React.FC = () => {
         return { ...s, currentUser: { ...s.currentUser, ...updateData, displayName: updateData.displayName || s.currentUser.displayName, avatar: updateData.avatar || s.currentUser.avatar } };
       });
     } else {
-      throw new Error(response.message || intl.formatMessage({ id: 'pages.account.center.updateFailed', defaultMessage: '更新失败' }));
+      throw new Error(getErrorMessage(response, 'pages.account.center.updateFailed'));
     }
   };
 

@@ -2,6 +2,7 @@ import { PlusOutlined, SearchOutlined, CheckCircleOutlined } from '@ant-design/i
 import { Button, Input, Modal, Space, App as AntApp, Tag, Divider, Typography, Flex } from 'antd';
 import React, { useState, useMemo } from 'react';
 import { applyToJoinCompany, searchCompanies, leaveCompany, cancelJoinRequest } from '@/services/company';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 import type { CompanySearchResult } from '@/types';
 
 const { Text } = Typography;
@@ -59,7 +60,7 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
           message.info('未找到匹配的企业');
         }
       } else {
-        message.error(response.message || '搜索失败');
+        message.error(getErrorMessage(response, 'pages.company.searchFailed'));
         setSearchResults([]);
       }
     } catch (error: any) {
@@ -120,7 +121,7 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
         onClose();
         onSuccess?.();
       } else {
-        message.error(response.message || '申请提交失败');
+        message.error(getErrorMessage(response, 'pages.company.applyFailed'));
       }
     } catch (error: any) {
       // 提交申请失败，由错误处理机制处理

@@ -2,6 +2,7 @@ import { ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-form';
 import { useIntl } from '@umijs/max';
 import Settings from '../../../../config/defaultSettings';
 import { updateCurrentCompany } from '@/services/company';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 import type { Company } from '@/types';
 import React from 'react';
 import { Tooltip } from 'antd';
@@ -42,7 +43,7 @@ export default function EditCompanyModal({
             return true;
           }
 
-          throw new Error(response.message || intl.formatMessage({ id: 'pages.companySettings.edit.updateFailed' }));
+          throw new Error(getErrorMessage(response, 'pages.companySettings.edit.updateFailed'));
         } catch (error) {
           return false;
         }

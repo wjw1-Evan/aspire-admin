@@ -118,7 +118,9 @@ export async function getSessions(
   });
 
   if (!response.success || !response.data) {
-    throw new Error(response.message || '获取会话列表失败');
+    const error: any = new Error(response.message || '获取会话列表失败');
+    error.errorCode = response.errorCode;
+    throw error;
   }
 
   return response.data;
@@ -161,7 +163,9 @@ export async function sendMessage(
   });
 
   if (!response.success || !response.data) {
-    throw new Error(response.message || '发送消息失败');
+    const error: any = new Error(response.message || '发送消息失败');
+    error.errorCode = response.errorCode;
+    throw error;
   }
 
   return response.data;
@@ -187,7 +191,9 @@ export async function getMessages(
   });
 
   if (!response.success || !response.data) {
-    throw new Error(response.message || '获取消息列表失败');
+    const error: any = new Error(response.message || '获取消息列表失败');
+    error.errorCode = response.errorCode;
+    throw error;
   }
 
   return response.data;

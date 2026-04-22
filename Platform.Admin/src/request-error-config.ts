@@ -14,15 +14,6 @@ const runAfterRender = (fn: () => void) => {
   }
 };
 
-// 错误处理方案： 错误类型
-enum ErrorShowType {
-  SILENT = 0,
-  WARN_MESSAGE = 1,
-  ERROR_MESSAGE = 2,
-  NOTIFICATION = 3,
-  REDIRECT = 9,
-}
-
 // 与后端约定的响应数据格式 - 统一 API 标准
 interface ResponseStructure {
   success: boolean;
@@ -31,7 +22,6 @@ interface ResponseStructure {
   errorCode?: string;
   timestamp?: string;
   traceId?: string;
-  showType?: ErrorShowType;
   errors?: any;
 }
 
@@ -69,9 +59,8 @@ export const errorConfig: RequestConfig = {
         error.info = {
           code: problemDetails.type || `HTTP_${problemDetails.status}`,
           message: problemDetails.title || problemDetails.detail || '请求失败',
-          showType: ErrorShowType.ERROR_MESSAGE,
           data: problemDetails,
-          errors: problemDetails.errors, // 验证错误字段（用于表单验证）
+          errors: problemDetails.errors,
         };
         throw error;
       }
@@ -82,12 +71,11 @@ export const errorConfig: RequestConfig = {
       const message = tempRes.message;
       const errorCode = tempRes.errorCode;
       const data = tempRes.data;
-      const showType = tempRes.showType;
 
       if (success === false) {
         const error: any = new Error(message || '请求失败');
         error.name = 'BizError';
-        error.info = { message, errorCode, showType, data, errors: tempRes.errors };
+        error.info = { message, errorCode, data, errors: tempRes.errors };
         throw error;
       }
 

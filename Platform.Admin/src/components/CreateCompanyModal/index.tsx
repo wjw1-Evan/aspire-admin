@@ -3,6 +3,7 @@ import { Modal, Form, Input } from 'antd';
 import { useMessage } from '@/hooks/useMessage';
 import { useIntl } from '@umijs/max';
 import { createCompany } from '@/services/company';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 import type { CreateCompanyRequest } from '@/types';
 
 interface CreateCompanyModalProps {
@@ -34,7 +35,7 @@ export const CreateCompanyModal: React.FC<CreateCompanyModalProps> = ({
         onClose();
         return true;
       } else {
-        message.error(response.message || intl.formatMessage({ id: 'pages.company.createFailed' }));
+        message.error(getErrorMessage(response, 'pages.company.createFailed'));
         return false;
       }
     } catch (error: any) {

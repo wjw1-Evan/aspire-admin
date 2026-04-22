@@ -18,18 +18,22 @@ const runAfterRender = (fn: () => void) => {
 
 // 翻译辅助函数：优先翻译 errorCode，errorCode 翻译失败时直接返回 message
 const translateMessage = (msg: string, errorCode?: string): string => {
+  console.debug('[translateMessage] 开始翻译', { errorCode, message: msg });
   if (errorCode) {
     try {
       const intl = getIntl();
       const translated = intl.formatMessage({ id: errorCode, defaultMessage: '' });
+      console.debug('[translateMessage] errorCode翻译结果', { errorCode, translated });
       if (translated && translated !== errorCode) {
         return translated;
       }
-    } catch {
-      // errorCode 翻译失败，不尝试翻译 message
+    } catch (e) {
+      console.debug('[translateMessage] errorCode翻译异常', { errorCode, error: e });
     }
   }
-  return msg || errorCode || '';
+  const result = msg || errorCode || '';
+  console.debug('[translateMessage] 返回结果', { result });
+  return result;
 };
 
 // 错误类型枚举

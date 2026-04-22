@@ -44,8 +44,7 @@ public class BusinessExceptionFilter : IExceptionFilter
 
         // 优先检测：异常消息是否是已知错误码
         // 如果是，使用错误码作为 errorCode，字典中的中文消息作为 message
-        if (!string.IsNullOrEmpty(exception.Message)
-            )
+        if (!string.IsNullOrEmpty(exception.Message))
         {
             // 根据异常类型确定 HTTP 状态码
             var statusCode = GetStatusCodeForType(exceptionType);

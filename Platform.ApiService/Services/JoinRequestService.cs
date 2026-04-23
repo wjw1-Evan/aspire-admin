@@ -154,52 +154,16 @@ public class JoinRequestService : IJoinRequestService
     }
 
     /// <inheritdoc/>
-    public async Task<PagedResult<JoinRequestDetail>> GetPendingRequestsAsync(ProTableRequest request, string companyId)
+    public async Task<PagedResult<CompanyJoinRequest>> GetPendingRequestsAsync(ProTableRequest request, string companyId)
     {
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
-        if (!await _userCompanyService.IsUserAdminInCompanyAsync(currentUserId, companyId))
-        {
-            throw new UnauthorizedAccessException("只有企业管理员可以查看待审核申请");
-        }
+        if (string.IsNullOrEmpty(companyId))
+            throw new ArgumentException("企业ID不能为空", nameof(companyId));
 
         var query = _context.Set<CompanyJoinRequest>()
             .Where(jr => jr.CompanyId == companyId && jr.Status == "pending")
             .OrderByDescending(jr => jr.CreatedAt);
 
-        var pagedResult = query.ToPagedList(request);
-        var requests = await pagedResult.Queryable.ToListAsync();
-
-        if (!requests.Any())
-        {
-            return new PagedResult<JoinRequestDetail>
-            {
-                Queryable = Enumerable.Empty<JoinRequestDetail>().AsQueryable(),
-                CurrentPage = request.Page,
-                PageSize = request.PageSize,
-                RowCount = 0,
-                PageCount = 0
-            };
-        }
-
-        var details = await BuildJoinRequestDetailsAsync(requests);
-
-        if (!string.IsNullOrEmpty(request.Search))
-        {
-            var keyword = request.Search.ToLower();
-            details = details.Where(d =>
-                (d.Username != null && d.Username.ToLower().Contains(keyword)) ||
-                (d.UserEmail != null && d.UserEmail.ToLower().Contains(keyword))
-            ).ToList();
-        }
-
-        return new PagedResult<JoinRequestDetail>
-        {
-            Queryable = details.AsQueryable(),
-            CurrentPage = request.Page,
-            PageSize = request.PageSize,
-            RowCount = pagedResult.RowCount,
-            PageCount = pagedResult.PageCount
-        };
+        return query.ToPagedList(request);
     }
 
     /// <inheritdoc/>

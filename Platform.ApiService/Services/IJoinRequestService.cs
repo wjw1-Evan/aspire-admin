@@ -36,7 +36,7 @@ public interface IJoinRequestService
     /// <summary>
     /// 获取待审核申请列表（仅管理员，分页）
     /// </summary>
-    Task<PagedResult<JoinRequestDetail>> GetPendingRequestsAsync(ProTableRequest request, string companyId);
+    Task<PagedResult<CompanyJoinRequest>> GetPendingRequestsAsync(ProTableRequest request, string companyId);
 
     /// <summary>
     /// 批准申请

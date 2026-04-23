@@ -132,69 +132,74 @@ const Login: React.FC = () => {
   };
   const handleSubmit = async (values: API.LoginParams) => {
     setLoading(true);
-    const encryptedPassword = values.password
-      ? await PasswordEncryption.encrypt(values.password)
-      : undefined;
+    try {
+      const encryptedPassword = values.password
+        ? await PasswordEncryption.encrypt(values.password)
+        : undefined;
 
-    const loginData = {
-      ...values,
-      password: encryptedPassword,
-      type,
-    };
-    const response = await login(loginData);
+      const loginData = {
+        ...values,
+        password: encryptedPassword,
+        type,
+      };
+      const response = await login(loginData);
 
-    // 处理统一的 API 响应格式
-    if (response.success && response.data) {
-      const msg = response.data;
+      // 处理统一的 API 响应格式
+      if (response?.success && response?.data) {
+        const msg = response.data;
 
-      // 保存 token 和刷新token到本地存储
-      if (msg.token && msg.refreshToken) {
-        const expiresAt = msg.expiresAt
-          ? new Date(msg.expiresAt).getTime()
-          : undefined;
-        tokenUtils.setTokens(msg.token, msg.refreshToken, expiresAt);
-      } else if (msg.token) {
-        // 兼容旧版本，只保存token
-        tokenUtils.setToken(msg.token);
+        // 保存 token 和刷新token到本地存储
+        if (msg.token && msg.refreshToken) {
+          const expiresAt = msg.expiresAt
+            ? new Date(msg.expiresAt).getTime()
+            : undefined;
+          tokenUtils.setTokens(msg.token, msg.refreshToken, expiresAt);
+        } else if (msg.token) {
+          // 兼容旧版本，只保存token
+          tokenUtils.setToken(msg.token);
+        }
+
+        const defaultLoginSuccessMessage = intl.formatMessage({
+          id: 'pages.login.success',
+          defaultMessage: '登录成功！',
+        });
+        message.success(defaultLoginSuccessMessage);
+        await fetchUserInfo();
+
+        // 使用 UmiJS history 进行客户端路由跳转，保持 SPA 特性
+        const urlParams = new URL(window.location.href).searchParams;
+        const redirect = urlParams.get('redirect');
+        history.push(redirect || '/');
+        return;
       }
 
-      const defaultLoginSuccessMessage = intl.formatMessage({
-        id: 'pages.login.success',
-        defaultMessage: '登录成功！',
-      });
-      message.success(defaultLoginSuccessMessage);
-      await fetchUserInfo();
+      const backendMessage = response?.message;
+      const errorCode = response?.errorCode;
 
-      // 使用 UmiJS history 进行客户端路由跳转，保持 SPA 特性
-      const urlParams = new URL(window.location.href).searchParams;
-      const redirect = urlParams.get('redirect');
-      history.push(redirect || '/');
+      let errorMsg = backendMessage;
+      if (errorCode) {
+        errorMsg = intl.formatMessage({
+          id: errorCode,
+          defaultMessage: intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }),
+        });
+      } else if (LOGIN_KNOWN_ERRORS.includes(backendMessage as any)) {
+        errorMsg = intl.formatMessage({
+          id: `pages.login.error.${backendMessage}`,
+          defaultMessage: intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }),
+        });
+      } else if (!errorMsg) {
+        errorMsg = intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' });
+      }
+
+      setUserLoginState({ status: 'error', message: errorMsg });
+      message.error(errorMsg);
+    } catch (error: any) {
+      const errorMsg = intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' });
+      setUserLoginState({ status: 'error', message: errorMsg });
+      message.error(errorMsg);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const backendMessage = response.message;
-    const errorCode = response.errorCode;
-
-    setLoading(false);
-
-    let errorMsg = backendMessage;
-    if (errorCode) {
-      errorMsg = intl.formatMessage({
-        id: errorCode,
-        defaultMessage: intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }),
-      });
-    } else if (LOGIN_KNOWN_ERRORS.includes(backendMessage as any)) {
-      errorMsg = intl.formatMessage({
-        id: `pages.login.error.${backendMessage}`,
-        defaultMessage: intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }),
-      });
-    } else if (!errorMsg) {
-      errorMsg = intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' });
-    }
-
-    setUserLoginState({ status: 'error', message: errorMsg });
-    message.error(errorMsg);
   };
   const { status, type: loginType } = userLoginState;
 

@@ -4,45 +4,42 @@
  * 解决静态方法无法消费动态主题的问题
  */
 
-import { App } from 'antd';
+import { App, message, notification } from 'antd';
 import type { useAppProps } from 'antd/es/app/context';
 
+// 预加载静态方法作为 fallback
+const staticMessage = message;
+const staticNotification = notification;
+
 let appInstance: useAppProps | null = null;
+let cachedMessage: any = null;
+let cachedNotification: any = null;
 
 /**
  * 设置 App 实例
  */
 export function setAppInstance(app: useAppProps) {
   appInstance = app;
+  cachedMessage = app.message;
+  cachedNotification = app.notification;
 }
 
 /**
- * 获取 App 实例
- */
-export function getAppInstance(): useAppProps | null {
-  return appInstance;
-}
-
-/**
- * 获取 message API
+ * 获取 message API - 优先使用 App 实例，回退到静态方法
  */
 export function getMessage() {
-  if (!appInstance) {
-    // 如果还没有设置实例，回退到静态方法（会显示警告，但不影响功能）
-    const { message } = require('antd');
-    return message;
+  if (cachedMessage) {
+    return cachedMessage;
   }
-  return appInstance.message;
+  return staticMessage;
 }
 
 /**
- * 获取 notification API
+ * 获取 notification API - 优先使用 App 实例，回退到静态方法
  */
 export function getNotification() {
-  if (!appInstance) {
-    // 如果还没有设置实例，回退到静态方法（会显示警告，但不影响功能）
-    const { notification } = require('antd');
-    return notification;
+  if (cachedNotification) {
+    return cachedNotification;
   }
-  return appInstance.notification;
+  return staticNotification;
 }

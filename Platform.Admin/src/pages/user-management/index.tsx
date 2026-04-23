@@ -236,7 +236,10 @@ const UserManagement: React.FC = () => {
       ) : (
         <ProTable
           headerTitle="申请加入列表"
-          request={async () => ({ data: pendingReqs, total: pendingReqs.length, success: true })}
+          request={async () => {
+            await loadJoinRequests();
+            return { data: pendingReqs, total: pendingReqs.length, success: true };
+          }}
           columns={pendingColumns}
           rowKey="id"
           search={false}

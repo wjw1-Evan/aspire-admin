@@ -279,4 +279,25 @@ public interface IUserService
     /// <param name="request">保存布局请求</param>
     /// <returns>是否成功保存</returns>
     Task<bool> SaveWelcomeLayoutAsync(string userId, SaveWelcomeLayoutRequest request);
+
+    /// <summary>
+    /// 根据ID获取用户
+    /// </summary>
+    /// <param name="id">用户ID</param>
+    /// <returns>用户信息</returns>
+    Task<User?> GetByIdAsync(string id);
+
+    /// <summary>
+    /// 根据邮箱获取用户
+    /// </summary>
+    /// <param name="email">邮箱</param>
+    /// <returns>用户信息</returns>
+    Task<User?> GetByEmailAsync(string email);
+
+    /// <summary>
+    /// 更新用户
+    /// </summary>
+    /// <param name="user">用户</param>
+    /// <returns>操作结果</returns>
+    Task<bool> UpdateAsync(User user);
 }

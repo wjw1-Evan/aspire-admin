@@ -259,6 +259,7 @@ export interface LoginParams {
 export interface RegisterParams {
   username: string;
   password: string;
+  confirmPassword: string;
   email: string;
   captchaId?: string;
   captchaAnswer?: string;

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
@@ -21,6 +22,8 @@ public class RegistrationService : IRegistrationService
     private readonly IPasswordHasher _passwordHasher;
     private readonly IImageCaptchaService _imageCaptchaService;
     private readonly IPasswordEncryptionService _encryptionService;
+    private readonly IEmailService _emailService;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<RegistrationService> _logger;
 
     public RegistrationService(
@@ -31,6 +34,8 @@ public class RegistrationService : IRegistrationService
         IPasswordHasher passwordHasher,
         IImageCaptchaService imageCaptchaService,
         IPasswordEncryptionService encryptionService,
+        IEmailService emailService,
+        IConfiguration configuration,
         ILogger<RegistrationService> logger)
     {
         _context = context;
@@ -40,6 +45,8 @@ public class RegistrationService : IRegistrationService
         _passwordHasher = passwordHasher;
         _imageCaptchaService = imageCaptchaService;
         _encryptionService = encryptionService;
+        _emailService = emailService;
+        _configuration = configuration;
         _logger = logger;
     }
 
@@ -60,6 +67,19 @@ public class RegistrationService : IRegistrationService
         _validationService.ValidateUsername(request.Username);
         _validationService.ValidatePassword(request.Password);
         _validationService.ValidateEmail(request.Email);
+
+        if (request.Password != request.ConfirmPassword)
+        {
+            throw new ArgumentException("两次输入的密码不一致");
+        }
+
+        if (!string.IsNullOrEmpty(request.Email) && !string.IsNullOrEmpty(request.ConfirmPassword))
+        {
+            if (request.Password == request.Email)
+            {
+                throw new ArgumentException("密码不能与邮箱相同");
+            }
+        }
 
         try
         {
@@ -135,6 +155,10 @@ public class RegistrationService : IRegistrationService
             user.CurrentCompanyId = personalCompany.Id;
             user.PersonalCompanyId = personalCompany.Id;
 
+            if (!string.IsNullOrWhiteSpace(user.Email))
+            {
+                await SendVerificationEmailAsync(user);
+            }
 
             return user;
         }
@@ -262,5 +286,54 @@ public class RegistrationService : IRegistrationService
             _logger.LogError(ex, "创建个人企业失败: {CompanyName}", company?.Name);
             throw;
         }
+    }
+
+    private async Task SendVerificationEmailAsync(User user)
+    {
+        try
+        {
+            var verificationToken = Guid.NewGuid().ToString("N");
+            var expiresAt = DateTime.UtcNow.AddHours(24);
+            var baseUrl = _configuration["AppSettings:BaseUrl"] ?? "http://localhost:15001";
+            var verifyUrl = $"{baseUrl}/user/verify-email?token={verificationToken}&userId={user.Id}";
+
+            user.EmailVerificationToken = verificationToken;
+            user.EmailVerificationExpiresAt = expiresAt;
+            await _context.SaveChangesAsync();
+
+            var htmlBody = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <title>验证邮箱</title>
+</head>
+<body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;'>
+    <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px 10px 0 0;'>
+        <h1 style='color: white; margin: 0;'>验证您的邮箱地址</h1>
+    </div>
+    <div style='background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;'>
+        <p>您好，{user.Username}：</p>
+        <p>感谢您注册成为我们的会员！请点击以下按钮验证您的邮箱地址：</p>
+        <div style='text-align: center; margin: 30px 0;'>
+            <a href='{verifyUrl}' style='display: inline-block; background: #667eea; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;'>验证邮箱</a>
+        </div>
+        <p style='font-size: 12px; color: #666;'>该链接将在 24 小时后过期。如未注册，请忽略此邮件。</p>
+    </div>
+</body>
+</html>";
+
+            await _emailService.SendEmailAsync(user.Email!, "验证您的邮箱地址", htmlBody);
+            _logger.LogInformation("已发送验证邮件至 {Email}", user.Email);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "发送验证邮件失败: {Email}", user.Email);
+        }
+    }
+
+    public async Task UpdateUserVerificationTokenAsync(User user)
+    {
+        await _context.SaveChangesAsync();
     }
 }

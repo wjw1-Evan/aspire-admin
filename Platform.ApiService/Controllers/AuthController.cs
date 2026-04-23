@@ -440,4 +440,77 @@ public class AuthController : BaseApiController
         await _authService.ResetPasswordAsync(request);
         return Success(true, "密码重置成功");
     }
+
+    /// <summary>
+    /// 验证邮箱链接
+    /// </summary>
+    /// <param name="token">验证令牌</param>
+    /// <param name="userId">用户ID</param>
+    /// <returns>验证结果</returns>
+    [HttpGet("verify-email")]
+    [AllowAnonymous]
+    public async Task<IActionResult> VerifyEmail([FromQuery] string token, [FromQuery] string userId)
+    {
+        if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(userId))
+        {
+            throw new ArgumentException("无效的验证链接");
+        }
+
+        var user = await _userService.GetByIdAsync(userId);
+        if (user == null)
+        {
+            throw new ArgumentException("用户不存在");
+        }
+
+        if (user.EmailVerifiedAt.HasValue)
+        {
+            return Success(true, "邮箱已验证，请前往登录");
+        }
+
+        if (user.EmailVerificationToken != token)
+        {
+            throw new ArgumentException("验证链接无效");
+        }
+
+        if (user.EmailVerificationExpiresAt.HasValue && user.EmailVerificationExpiresAt.Value < DateTime.UtcNow)
+        {
+            throw new ArgumentException("验证链接已过期，请重新发送验证邮件");
+        }
+
+        user.EmailVerifiedAt = DateTime.UtcNow;
+        user.EmailVerificationToken = null;
+        user.EmailVerificationExpiresAt = null;
+        await _userService.UpdateAsync(user);
+
+        return Success(true, "邮箱验证成功");
+    }
+
+    /// <summary>
+    /// 重新发送验证邮件
+    /// </summary>
+    /// <param name="request">请求数据</param>
+    /// <returns>发送结果</returns>
+    [HttpPost("resend-verification")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ResendVerificationEmail([FromBody] ResendVerificationRequest request)
+    {
+        if (string.IsNullOrEmpty(request.Email))
+        {
+            throw new ArgumentException("邮箱不能为空");
+        }
+
+        var user = await _userService.GetByEmailAsync(request.Email);
+        if (user == null)
+        {
+            return Success(true, "如果邮箱存在，验证邮件已发送");
+        }
+
+        if (user.EmailVerifiedAt.HasValue)
+        {
+            return Success(true, "邮箱已验证");
+        }
+
+        await _authService.SendVerificationEmailAsync(user);
+        return Success(true, "验证邮件已发送至您的邮箱");
+    }
 }

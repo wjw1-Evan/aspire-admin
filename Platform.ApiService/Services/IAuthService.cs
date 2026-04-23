@@ -72,4 +72,11 @@ public interface IAuthService
     /// <param name="request">重置密码请求</param>
     /// <returns>操作结果</returns>
     Task<bool> ResetPasswordAsync(ResetPasswordRequest request);
+
+    /// <summary>
+    /// 发送邮箱验证邮件
+    /// </summary>
+    /// <param name="user">用户</param>
+    /// <returns>操作结果</returns>
+    Task<bool> SendVerificationEmailAsync(User user);
 }

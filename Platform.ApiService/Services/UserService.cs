@@ -665,4 +665,24 @@ public class UserService : IUserService
             return node == _oldParameter ? _newParameter : base.VisitParameter(node);
         }
     }
+
+    /// <inheritdoc/>
+    public async Task<User?> GetByIdAsync(string id)
+    {
+        return await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == id);
+    }
+
+    /// <inheritdoc/>
+    public async Task<User?> GetByEmailAsync(string email)
+    {
+        return await _context.Set<User>().FirstOrDefaultAsync(u => u.Email == email);
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> UpdateAsync(User user)
+    {
+        _context.Set<User>().Update(user);
+        await _context.SaveChangesAsync();
+        return true;
+    }
 }

@@ -48,6 +48,22 @@ public class AppUser : BaseEntity
     public string? Email { get; set; }
 
     /// <summary>
+    /// 邮箱验证时间
+    /// </summary>
+    public DateTime? EmailVerifiedAt { get; set; }
+
+    /// <summary>
+    /// 邮箱验证Token
+    /// </summary>
+    [StringLength(64)]
+    public string? EmailVerificationToken { get; set; }
+
+    /// <summary>
+    /// 邮箱验证Token过期时间
+    /// </summary>
+    public DateTime? EmailVerificationExpiresAt { get; set; }
+
+    /// <summary>
     /// 头像地址
     /// </summary>
     [StringLength(500)]

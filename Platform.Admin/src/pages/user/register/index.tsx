@@ -125,7 +125,7 @@ export default function Register() {
 
         setTimeout(() => {
           history.push('/user/login');
-        }, 1500);
+        }, 2000);
 
         return;
       }

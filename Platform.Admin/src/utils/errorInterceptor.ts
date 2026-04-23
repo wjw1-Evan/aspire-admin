@@ -328,9 +328,9 @@ class UnifiedErrorInterceptor {
   }
 
 /**
-   * 提取所有验证错误消息（用于需要显示多个错误的场景）
-   * 规则：errors -> message -> errorCode
-   * 优先使用 errors 显示到对应字段，message 只作为全局提示（当 errors 不存在时）
+   * 提取所有验证错误消息
+   * 优先级: errors (字段错误) -> errorCode -> message
+   * 有 errorCode 时只翻译 errorCode，不再显示 message
    */
   extractValidationErrors(error: any): string[] {
     const errors: string[] = [];
@@ -343,7 +343,6 @@ class UnifiedErrorInterceptor {
         const fieldErrors = validationErrors[field];
         if (Array.isArray(fieldErrors)) {
           fieldErrors.forEach((err) => {
-            // 翻译错误码为人类可读消息
             const translated = intl.formatMessage({ id: err as string, defaultMessage: err as string });
             errors.push(translated);
           });
@@ -353,33 +352,32 @@ class UnifiedErrorInterceptor {
         }
       });
       if (errors.length > 0) {
-        return errors; // 有字段错误，直接返回，不取 message
+        return errors;
       }
     }
 
-    // 2. 当没有字段错误时，取 message 作为全局错误
-    const message = error?.response?.data?.message || error?.info?.message;
-    if (message && message !== error?.response?.data?.errorCode) {
-      // 翻译 message（可能是错误码或人类可读消息）
-      const translated = intl.formatMessage({ id: message as string, defaultMessage: message as string });
-      if (translated !== message && translated !== message) {
+    // 2. 有 errorCode 时只翻译 errorCode，不显示 message
+    const errorCode = error?.response?.data?.errorCode || error?.info?.errorCode;
+    if (errorCode) {
+      const translated = intl.formatMessage({ id: errorCode as string, defaultMessage: errorCode as string });
+      if (translated !== errorCode) {
         errors.push(translated);
       } else {
-        errors.push(message);
+        errors.push('操作失败');
       }
+      return errors;
     }
 
-    // 3. 最后的 fallback 是 errorCode 翻译
-    if (errors.length === 0) {
-      const errorCode = error?.response?.data?.errorCode || error?.info?.errorCode;
-      if (errorCode) {
-        const translated = intl.formatMessage({ id: errorCode as string, defaultMessage: errorCode as string });
-        errors.push(translated !== errorCode ? translated : '操作失败');
-      }
+    // 3. 无 errorCode 时取 message
+    const message = error?.response?.data?.message || error?.info?.message;
+    if (message) {
+      const translated = intl.formatMessage({ id: message as string, defaultMessage: message as string });
+      errors.push(translated);
+      return errors;
     }
 
-    // 4. Axios 错误消息 (最后的 fallback)
-    if (errors.length === 0 && error.message && !error.message.startsWith('Request failed')) {
+    // 4. 最后的 fallback 是 Axios 错误消息
+    if (error.message && !error.message.startsWith('Request failed')) {
       errors.push(error.message);
     }
 

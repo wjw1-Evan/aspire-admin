@@ -300,6 +300,22 @@ var companyId = User.FindFirst("companyId")?.Value;
 
 ### 6.2 服务层规范
 
+#### 标准服务模板（分页查询）
+```csharp
+public async Task<PagedResult<PasswordBookEntry>> GetEntriesAsync(
+    ProTableRequest request,
+    string userId)
+{
+    if (string.IsNullOrEmpty(userId))
+        throw new ArgumentException("用户ID不能为空", nameof(userId));
+
+    var query = _context.Set<PasswordBookEntry>()
+        .Where(e => e.UserId == userId || e.IsPublic);
+
+    return query.ToPagedList(request);
+}
+```
+
 #### 标准服务模板
 ```csharp
 public class XxxService : IXxxService

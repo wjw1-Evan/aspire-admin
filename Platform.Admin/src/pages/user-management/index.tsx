@@ -259,10 +259,9 @@ const UserManagement: React.FC = () => {
       {state.activeTab === 'joined' ? (
         <ProTable
           actionRef={actionRef}
-          params={state}
+          params={{ search: state.search }}
           request={async (params: any, sort: any, filter: any) => {
-            const res = await api.list({ ...params, search: state.search, sort, filter });
-            loadStatistics();
+            const res = await api.list({ ...params, sort, filter });
             return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
           }}
           columns={columns}

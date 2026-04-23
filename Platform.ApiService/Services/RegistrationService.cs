@@ -46,17 +46,20 @@ public class RegistrationService : IRegistrationService
 
     public async Task<User> RegisterAsync(RegisterRequest request)
     {
-        _validationService.ValidateUsername(request.Username);
-        _validationService.ValidatePassword(request.Password);
-        _validationService.ValidateEmail(request.Email);
-
         var rawPassword = _encryptionService.TryDecryptPassword(request.Password);
-        var rawConfirmPassword = _encryptionService.TryDecryptPassword(request.ConfirmPassword);
 
-        if (rawPassword != rawConfirmPassword)
+        if (string.IsNullOrEmpty(rawPassword))
         {
-            throw new ArgumentException("两次输入的密码不一致");
+            throw new ArgumentException("密码不能为空");
         }
+
+        if (rawPassword.Length < 6 || rawPassword.Length > 50)
+        {
+            throw new ArgumentException("密码长度必须在6-50个字符之间");
+        }
+
+        _validationService.ValidateUsername(request.Username);
+        _validationService.ValidateEmail(request.Email);
 
         try
         {

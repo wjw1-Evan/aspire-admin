@@ -114,14 +114,11 @@ export default function Register() {
       const encryptedPassword = values.password
         ? await PasswordEncryption.encrypt(values.password)
         : '';
-      const encryptedConfirmPassword = values.confirmPassword
-        ? await PasswordEncryption.encrypt(values.confirmPassword)
-        : '';
 
       const response = await register({
         username: values.username,
         password: encryptedPassword,
-        confirmPassword: encryptedConfirmPassword,
+        confirmPassword: encryptedPassword,
         email: values.email,
       });
 

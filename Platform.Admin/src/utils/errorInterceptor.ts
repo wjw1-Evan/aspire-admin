@@ -299,31 +299,32 @@ class UnifiedErrorInterceptor {
 
   /**
    * 提取错误消息
+   * 规则：errors -> errorCode -> message
    */
   private extractErrorMessage(error: any): string {
-    // 1. 尝试提取验证错误（包含 ProblemDetails 和我们的标准 errorMessage）
+    // 1. 如果有 errors，直接返回错误码数组的第一个（不做翻译，由调用处处理）
     const validationErrors = this.extractValidationErrors(error);
     if (validationErrors.length > 0) {
-      return validationErrors[0]; // extractValidationErrors 已经做了翻译
+      return validationErrors[0];
     }
 
-    // 2. 优先使用 errorCode 翻译，fallback 到 message
+    // 2. 如果有 errorCode，翻译 errorCode
     const errorCode = error?.info?.errorCode || error?.response?.data?.errorCode;
     if (errorCode) {
       const translated = translateMessage('', errorCode);
       if (translated) return translated;
     }
 
-    // 3. 最后的兜底
+    // 3. 最后的 fallback 是 message
     if (error.message) {
-      return translateMessage(error.message);
+      return error.message;
     }
 
     if (error.response?.status) {
       return `HTTP ${error.response.status} Error`;
     }
 
-    return translateMessage('request.error.unknown') || '未知错误';
+    return '未知错误';
   }
 
   /**
@@ -498,25 +499,33 @@ class UnifiedErrorInterceptor {
         runAfterRender(() => message.error(errorInfo.message));
         break;
       case ErrorDisplayType.NOTIFICATION:
-        // 如果有 validationErrors，则不显示 errorCode，只显示通用的标题
+        // 错误显示优先级：errors > errorCode > message
+        // - 如果有 errors，显示 "验证错误" 标题
+        // - 否则如果有 errorCode，显示 errorCode 标题
+        // - 否则显示 "错误" 标题
         const hasValidationErrors = originalError?.response?.data?.errors && Object.keys(originalError.response.data.errors).length > 0;
+        const hasErrorCode = errorInfo.errorCode;
+        let title = '错误';
+        if (hasValidationErrors) {
+          title = '验证错误';
+        } else if (hasErrorCode) {
+          // errorCode 已经是翻译后的结果
+          title = errorInfo.message;
+        }
         runAfterRender(() =>
           notification.error({
-            message: hasValidationErrors ? '验证错误' : (errorInfo.errorCode || errorInfo.httpCode || '错误'),
+            message: title,
             description: errorInfo.message,
             duration: 4.5,
           }),
         );
         break;
       case ErrorDisplayType.MODAL:
-        // 实现模态框显示
         runAfterRender(() => message.error(errorInfo.message));
         break;
       case ErrorDisplayType.REDIRECT:
-        // 实现重定向逻辑
         break;
       case ErrorDisplayType.SILENT:
-        // 静默处理，不显示
         break;
     }
   }

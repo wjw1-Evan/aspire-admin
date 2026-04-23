@@ -104,10 +104,10 @@ public class SingletonPasswordEncryptionService : IPasswordEncryptionService
         {
             return DecryptPassword(actualPassword);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            _logger.LogWarning("密码解密失败，尝试使用原始值进行处理。");
-            return password;
+            _logger.LogError(ex, "密码解密失败，加密数据长度: {Len}", actualPassword.Length);
+            throw new InvalidOperationException("密码解密失败，请刷新页面后重试。");
         }
     }
 }

@@ -15,7 +15,13 @@ namespace Platform.ApiService.Services;
 
 /// <summary>
 /// 密码传输加密服务实现
-/// 使用国密 SM2 非对称加密算法保护传输中的敏感数据
+/// 使用国密 SM2 非对称加密算法（GM/T 0003 / GM/T 0009）保护传输中的敏感数据
+/// 
+/// 密文格式遵循 GM/T 0009-2012 标准 C1C3C2 模式：
+///   04 || C1_x(32B) || C1_y(32B) || C3(SM3,32B) || C2(密文)
+/// 
+/// 公钥格式遵循 GM/T 0003.1-2012 非压缩点表示：
+///   04 || x(32B) || y(32B)
 /// </summary>
 public class SingletonPasswordEncryptionService : IPasswordEncryptionService
 {
@@ -23,10 +29,6 @@ public class SingletonPasswordEncryptionService : IPasswordEncryptionService
     private readonly ILogger<SingletonPasswordEncryptionService> _logger;
     private readonly string _publicKeyHex;
 
-    /// <summary>
-    /// 初始化密码传输加密服务并生成 SM2 密钥对
-    /// </summary>
-    /// <param name="logger">日志记录器</param>
     public SingletonPasswordEncryptionService(ILogger<SingletonPasswordEncryptionService> logger)
     {
         _logger = logger;
@@ -54,7 +56,7 @@ public class SingletonPasswordEncryptionService : IPasswordEncryptionService
     }
 
     /// <summary>
-    /// 获取 SM2 公钥（十六进制编码字符串）
+    /// 获取 SM2 公钥（GM/T 0003.1-2012 非压缩点格式：04 || x || y）
     /// </summary>
     public string GetPublicKey()
     {
@@ -62,27 +64,22 @@ public class SingletonPasswordEncryptionService : IPasswordEncryptionService
     }
 
     /// <summary>
-    /// SM2 解密密码
+    /// SM2 解密密码（GM/T 0009-2012 C1C3C2 模式）
+    /// 
+    /// 前端 sm-crypto 库 doEncrypt 输出不带 04 前缀，
+    /// 前端已按国密标准拼接为 04 || C1_x || C1_y || C3 || C2，
+    /// BouncyCastle SM2Engine 要求密文包含 04 前缀（非压缩点 C1），
+    /// 因此密文字符串直接 Hex.Decode 即可传入 ProcessBlock。
     /// </summary>
-    /// <param name="encryptedPassword">前端传来的 SM2 加密数据</param>
+    /// <param name="encryptedPassword">前端传来的 SM2 加密数据（GM/T 0009 格式，含 04 前缀）</param>
     public string DecryptPassword(string encryptedPassword)
     {
         if (string.IsNullOrEmpty(encryptedPassword))
             return string.Empty;
 
-        var actualPassword = encryptedPassword;
-        if (actualPassword.StartsWith("04"))
-        {
-            actualPassword = actualPassword.Substring(2);
-        }
-
         try
         {
-            _logger.LogInformation("SM2解密 - 原始长度: {OrigLen}, 处理后长度: {ActualLen}, 前20字符: {Prefix}",
-                encryptedPassword.Length, actualPassword.Length,
-                actualPassword.Length > 20 ? actualPassword.Substring(0, 20) : actualPassword);
-
-            byte[] cipherText = Hex.Decode(actualPassword);
+            byte[] cipherText = Hex.Decode(encryptedPassword);
 
             var sm2Engine = new SM2Engine(new SM3Digest(), SM2Engine.Mode.C1C3C2);
             sm2Engine.Init(false, _keyPair.Private);
@@ -92,13 +89,13 @@ public class SingletonPasswordEncryptionService : IPasswordEncryptionService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "SM2 解密失败. 原始长度: {Len}, 是否带04: {Has04}", encryptedPassword.Length, encryptedPassword.StartsWith("04"));
+            _logger.LogError(ex, "SM2 解密失败. 密文长度: {Len}", encryptedPassword.Length);
             throw new CryptographicException("密码解密失败，请检查加密格式或重试获取公钥。");
         }
     }
 
     /// <summary>
-    /// 尝试解密，如果失败则返回原字符串
+    /// 尝试解密，如果失败则返回原字符串（用于兼容未加密的旧请求）
     /// </summary>
     public string TryDecryptPassword(string password)
     {
@@ -110,13 +107,7 @@ public class SingletonPasswordEncryptionService : IPasswordEncryptionService
 
         try
         {
-            var actualPassword = password;
-            if (actualPassword.StartsWith("04"))
-            {
-                actualPassword = actualPassword.Substring(2);
-            }
-
-            byte[] cipherText = Hex.Decode(actualPassword);
+            byte[] cipherText = Hex.Decode(password);
 
             var sm2Engine = new SM2Engine(new SM3Digest(), SM2Engine.Mode.C1C3C2);
             sm2Engine.Init(false, _keyPair.Private);
@@ -126,7 +117,7 @@ public class SingletonPasswordEncryptionService : IPasswordEncryptionService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "密码解密失败 - 加密数据长度: {Len}", password.Length);
+            _logger.LogError(ex, "密码解密失败 - 密文长度: {Len}", password.Length);
             throw new InvalidOperationException("密码解密失败，请刷新页面后重试。");
         }
     }

@@ -9,6 +9,7 @@ import {
   useIntl,
   useModel,
   history,
+  getIntl,
 } from '@umijs/max';
 import { SelectLang } from '@/components';
 import { Alert, App, Form, Space } from 'antd';
@@ -205,12 +206,14 @@ const Login: React.FC = () => {
       const isValidationError = error?.response?.status === 400 && validationErrors;
 
       if (isValidationError && validationErrors) {
+        const intl = getIntl();
         const fieldErrors = Object.entries(validationErrors).map(([field, msgs]) => {
           const errMsg = Array.isArray(msgs) ? msgs[0] : msgs;
-          // 直接使用错误码，不需要翻译（errors 中的值应该是错误码，由 errorInterceptor 统一处理）
+          // 翻译错误码为人类可读消息
+          const translatedErr = intl.formatMessage({ id: errMsg as string, defaultMessage: errMsg as string });
           return {
             name: field as any,
-            errors: [errMsg as string],
+            errors: [translatedErr],
           };
         });
         form.setFields(fieldErrors);

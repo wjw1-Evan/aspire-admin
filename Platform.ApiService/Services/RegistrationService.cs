@@ -10,9 +10,6 @@ using User = Platform.ApiService.Models.AppUser;
 
 namespace Platform.ApiService.Services;
 
-/// <summary>
-/// 用户注册服务实现
-/// </summary>
 public class RegistrationService : IRegistrationService
 {
     private readonly DbContext _context;
@@ -20,7 +17,6 @@ public class RegistrationService : IRegistrationService
     private readonly IUniquenessChecker _uniquenessChecker;
     private readonly IFieldValidationService _validationService;
     private readonly IPasswordHasher _passwordHasher;
-    private readonly IImageCaptchaService _imageCaptchaService;
     private readonly IPasswordEncryptionService _encryptionService;
     private readonly IEmailService _emailService;
     private readonly IConfiguration _configuration;
@@ -32,7 +28,6 @@ public class RegistrationService : IRegistrationService
         IUniquenessChecker uniquenessChecker,
         IFieldValidationService validationService,
         IPasswordHasher passwordHasher,
-        IImageCaptchaService imageCaptchaService,
         IPasswordEncryptionService encryptionService,
         IEmailService emailService,
         IConfiguration configuration,
@@ -43,31 +38,24 @@ public class RegistrationService : IRegistrationService
         _uniquenessChecker = uniquenessChecker;
         _validationService = validationService;
         _passwordHasher = passwordHasher;
-        _imageCaptchaService = imageCaptchaService;
         _encryptionService = encryptionService;
         _emailService = emailService;
         _configuration = configuration;
         _logger = logger;
     }
 
-    /// <inheritdoc/>
     public async Task<User> RegisterAsync(RegisterRequest request)
     {
         _validationService.ValidateUsername(request.Username);
         _validationService.ValidatePassword(request.Password);
         _validationService.ValidateEmail(request.Email);
 
-        if (request.Password != request.ConfirmPassword)
+        var rawPassword = _encryptionService.TryDecryptPassword(request.Password);
+        var rawConfirmPassword = _encryptionService.TryDecryptPassword(request.ConfirmPassword);
+
+        if (rawPassword != rawConfirmPassword)
         {
             throw new ArgumentException("两次输入的密码不一致");
-        }
-
-        if (!string.IsNullOrEmpty(request.Email) && !string.IsNullOrEmpty(request.ConfirmPassword))
-        {
-            if (request.Password == request.Email)
-            {
-                throw new ArgumentException("密码不能与邮箱相同");
-            }
         }
 
         try
@@ -91,28 +79,13 @@ public class RegistrationService : IRegistrationService
             }
         }
 
-        if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
-        {
-            try
-            {
-                await _uniquenessChecker.EnsurePhoneUniqueAsync(request.PhoneNumber.Trim());
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-        }
-
-        User? user = null;
         Company? personalCompany = null;
         Role? adminRole = null;
         UserCompany? userCompany = null;
 
         try
         {
-            var rawPassword = _encryptionService.TryDecryptPassword(request.Password);
-
-            user = new User
+            var user = new User
             {
                 Username = request.Username.Trim(),
                 PasswordHash = _passwordHasher.HashPassword(rawPassword),
@@ -153,23 +126,22 @@ public class RegistrationService : IRegistrationService
         }
         catch (ArgumentException ex)
         {
-            await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
+            await RollbackUserRegistrationAsync(null, personalCompany, adminRole, userCompany);
             throw new ArgumentException(ex.Message);
         }
         catch (InvalidOperationException ex)
         {
-            await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
+            await RollbackUserRegistrationAsync(null, personalCompany, adminRole, userCompany);
             throw new ArgumentException(ex.Message);
         }
         catch (Exception ex)
         {
-            await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
+            await RollbackUserRegistrationAsync(null, personalCompany, adminRole, userCompany);
             _logger.LogError(ex, "用户注册失败，已执行回滚操作");
             throw new ArgumentException($"注册失败: {ex.Message}");
         }
     }
 
-    /// <inheritdoc/>
     public async Task RollbackUserRegistrationAsync(User? user, Company? company, Role? role, UserCompany? userCompany)
     {
         try
@@ -195,7 +167,6 @@ public class RegistrationService : IRegistrationService
                 var userToDelete = await _context.Set<User>().FirstOrDefaultAsync(x => x.Id == user.Id!);
                 if (userToDelete != null) { _context.Set<User>().Remove(userToDelete); await _context.SaveChangesAsync(); }
             }
-
         }
         catch (Exception ex)
         {

@@ -43,6 +43,7 @@ const UserManagement: React.FC = () => {
   const intl = useIntl();
   const { message, modal } = App.useApp();
   const actionRef = useRef<ActionType>(null);
+  const pendingActionRef = useRef<ActionType>(null);
   const [state, setState] = useState({
     editingUser: null as AppUser | null, formVisible: false,
     detailVisible: false, viewingUser: null as AppUser | null, statistics: null as UserStats | null,
@@ -170,6 +171,7 @@ const UserManagement: React.FC = () => {
     if (res.success) {
       message.success('已批准该用户加入');
       loadJoinRequests();
+      pendingActionRef.current?.reload();
     }
   }, [message]);
 
@@ -184,6 +186,7 @@ const UserManagement: React.FC = () => {
       message.success('已拒绝该用户加入');
       setJ({ rejectModal: false, rejectId: '', rejectReason: '' });
       loadJoinRequests();
+      pendingActionRef.current?.reload();
     }
   }, [join.rejectId, join.rejectReason, message]);
 
@@ -232,7 +235,6 @@ const UserManagement: React.FC = () => {
         />
       ) : (
         <ProTable
-          actionRef={actionRef}
           headerTitle="申请加入列表"
           request={async () => ({ data: pendingReqs, total: pendingReqs.length, success: true })}
           columns={pendingColumns}
@@ -241,6 +243,7 @@ const UserManagement: React.FC = () => {
           scroll={{ x: 'max-content' }}
           pagination={false}
           loading={join.loading}
+          actionRef={pendingActionRef}
         />
       )}
         <ModalForm key={state.editingUser?.id || 'create'} title={state.editingUser ? intl.formatMessage({ id: 'pages.userManagement.editUser' }) : '添加成员'}

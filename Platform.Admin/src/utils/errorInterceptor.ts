@@ -498,9 +498,11 @@ class UnifiedErrorInterceptor {
         runAfterRender(() => message.error(errorInfo.message));
         break;
       case ErrorDisplayType.NOTIFICATION:
+        // 如果有 validationErrors，则不显示 errorCode，只显示通用的标题
+        const hasValidationErrors = originalError?.response?.data?.errors && Object.keys(originalError.response.data.errors).length > 0;
         runAfterRender(() =>
           notification.error({
-            message: errorInfo.errorCode || errorInfo.httpCode || '错误',
+            message: hasValidationErrors ? '验证错误' : (errorInfo.errorCode || errorInfo.httpCode || '错误'),
             description: errorInfo.message,
             duration: 4.5,
           }),

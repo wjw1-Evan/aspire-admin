@@ -1,11 +1,11 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { useIntl, request } from '@umijs/max';
-import { App, Button, Tag, Space, Modal, Badge, Spin, Input, Typography, Form, Select, Popconfirm } from 'antd';
+import { App, Button, Tag, Space, Modal, Badge, Spin, Input, Typography, Form, Select, Popconfirm, Tabs, Segmented } from 'antd';
 import { Drawer } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormSwitch, ProFormDatePicker, ProFormDateRangePicker } from '@ant-design/pro-form';
-import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, CrownOutlined, SearchOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, CrownOutlined, SearchOutlined, CheckOutlined, CloseOutlined, UserAddOutlined } from '@ant-design/icons';
 import { ApiResponse, PagedResult } from '@/types';
 import dayjs from 'dayjs';
 import type { Role } from '@/services/role/api';
@@ -20,7 +20,7 @@ interface AppUser {
   roleIds?: string[]; organizations?: Array<{ id?: string; name?: string; fullPath?: string; isPrimary?: boolean }>; remark?: string;
 }
 interface UserStats { totalUsers: number; activeUsers: number; adminUsers: number; newUsersThisMonth: number; }
-interface JoinReq { id: string; username: string; userEmail?: string; reason?: string; status: 'pending' | 'approved' | 'rejected' | 'cancelled'; rejectReason?: string; reviewedByName?: string; reviewedAt?: string; createdAt: string; }
+interface JoinReq { id: string; username: string; name?: string; userEmail?: string; phoneNumber?: string; reason?: string; status: 'pending' | 'approved' | 'rejected' | 'cancelled'; rejectReason?: string; reviewedByName?: string; reviewedAt?: string; createdAt: string; }
 
 // ==================== API ====================
 const api = {
@@ -47,7 +47,7 @@ const UserManagement: React.FC = () => {
     editingUser: null as AppUser | null, formVisible: false,
     detailVisible: false, viewingUser: null as AppUser | null, statistics: null as UserStats | null,
     roleMap: {} as Record<string, string>, currentCompany: null as { id?: string; createdBy?: string } | null,
-    search: '',
+    search: '', activeTab: 'joined' as 'joined' | 'pending',
   });
   const [form, setForm] = useState({ roles: [] as Role[], searchingUsers: false, userOptions: [] as AppUser[], selectedUser: null as AppUser | null });
   const [join, setJoin] = useState({ data: [] as JoinReq[], loading: false, rejectModal: false, rejectId: '', rejectReason: '' });
@@ -60,6 +60,17 @@ const UserManagement: React.FC = () => {
     if (res.success && res.data) set({ statistics: res.data });
   }, []);
 
+  const loadJoinRequests = useCallback(async () => {
+    if (!state.currentCompany?.id) return;
+    setJ({ loading: true });
+    try {
+      const res = await api.joinReqs(state.currentCompany.id);
+      if (res.success && res.data) setJ({ data: res.data });
+    } finally {
+      setJ({ loading: false });
+    }
+  }, [state.currentCompany?.id]);
+
   useEffect(() => {
     api.roles().then(r => {
       if (r.success && r.data) {
@@ -69,7 +80,17 @@ const UserManagement: React.FC = () => {
         setF({ roles: r.data.queryable || [] });
       }
     });
+    getCurrentCompany().then(c => {
+      if (c.success && c.data) {
+        set({ currentCompany: c.data });
+        loadJoinRequests();
+      }
+    });
   }, []);
+
+  useEffect(() => {
+    if (state.activeTab === 'pending') loadJoinRequests();
+  }, [state.activeTab]);
 
   const handleToggle = useCallback(async (user: AppUser) => {
     const res = user.isActive ? await api.deactivate(user.id) : await api.activate(user.id);
@@ -126,39 +147,102 @@ const UserManagement: React.FC = () => {
     { label: intl.formatMessage({ id: 'pages.userManagement.statistics.newUsersThisMonth' }), value: state.statistics?.newUsersThisMonth ?? 0, color: '#722ed1' },
   ];
 
+  const pendingReqs = useMemo(() => join.data.filter(r => r.status === 'pending'), [join.data]);
+  const pendingColumns: ProColumns<JoinReq>[] = useMemo(() => [
+    { title: '用户名', dataIndex: 'username', key: 'username', render: (dom, r) => <Space><UserAddOutlined /><span>{dom}</span>{r.name && <Typography.Text type="secondary">({r.name})</Typography.Text>}</Space> },
+    { title: '邮箱', dataIndex: 'userEmail', key: 'userEmail', ellipsis: true },
+    { title: '手机号', dataIndex: 'phoneNumber', key: 'phoneNumber', ellipsis: true },
+    { title: '申请理由', dataIndex: 'reason', key: 'reason', ellipsis: true },
+    { title: '申请时间', dataIndex: 'createdAt', key: 'createdAt', valueType: 'dateTime' },
+    {
+      title: '操作', key: 'action', fixed: 'right', width: 180,
+      render: (_, r) => (
+        <Space size={4}>
+          <Button type="link" size="small" icon={<CheckOutlined />} onClick={() => handleApprove(r.id)}>批准</Button>
+          <Button type="link" size="small" danger icon={<CloseOutlined />} onClick={() => handleReject(r.id)}>拒绝</Button>
+        </Space>
+      ),
+    },
+  ], []);
+
+  const handleApprove = useCallback(async (id: string) => {
+    const res = await api.approveJoin(id);
+    if (res.success) {
+      message.success('已批准该用户加入');
+      loadJoinRequests();
+    }
+  }, [message]);
+
+  const handleReject = useCallback((id: string) => {
+    setJ({ rejectModal: true, rejectId: id });
+  }, []);
+
+  const confirmReject = useCallback(async () => {
+    if (!join.rejectReason.trim()) { message.error('请输入拒绝理由'); return; }
+    const res = await api.rejectJoin(join.rejectId, { rejectReason: join.rejectReason });
+    if (res.success) {
+      message.success('已拒绝该用户加入');
+      setJ({ rejectModal: false, rejectId: '', rejectReason: '' });
+      loadJoinRequests();
+    }
+  }, [join.rejectId, join.rejectReason, message]);
+
+  const handleTabChange = useCallback((key: string) => {
+    set({ activeTab: key as 'joined' | 'pending' });
+    if (key === 'pending') loadJoinRequests();
+  }, [loadJoinRequests]);
+
   return (
     <PageContainer>
-      <ProTable actionRef={actionRef} headerTitle={
-        <Space size={24}>
-          <Space><UserOutlined />成员管理</Space>
-          <Space size={12}>
-            <Tag color="blue">总成员 {state.statistics?.totalUsers || 0}</Tag>
-            <Tag color="green">已激活 {state.statistics?.activeUsers || 0}</Tag>
-            <Tag color="orange">管理员 {state.statistics?.adminUsers || 0}</Tag>
-            <Tag color="purple">本月新增 {state.statistics?.newUsersThisMonth || 0}</Tag>
+      <Tabs activeKey={state.activeTab} onChange={handleTabChange} items={[
+        { key: 'joined', label: <span><UserOutlined />已加入成员</span> },
+        { key: 'pending', label: <span><UserAddOutlined />申请加入{pendingReqs.length > 0 && <Badge count={pendingReqs.length} style={{ marginLeft: 8 }} />}</span> },
+      ]} />
+      {state.activeTab === 'joined' ? (
+        <ProTable actionRef={actionRef} headerTitle={
+          <Space size={24}>
+            <Space><UserOutlined />成员管理</Space>
+            <Space size={12}>
+              <Tag color="blue">总成员 {state.statistics?.totalUsers || 0}</Tag>
+              <Tag color="green">已激活 {state.statistics?.activeUsers || 0}</Tag>
+              <Tag color="orange">管理员 {state.statistics?.adminUsers || 0}</Tag>
+              <Tag color="purple">本月新增 {state.statistics?.newUsersThisMonth || 0}</Tag>
+            </Space>
           </Space>
-        </Space>
-      } request={async (params: any, sort: any, filter: any) => {
-        const res = await api.list({ ...params, search: state.search, sort, filter });
-        api.stats().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
-        return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
-      }} columns={columns} rowKey="id"
-        search={false}
-        scroll={{ x: 'max-content' }}
-        toolBarRender={() => [
-          <Input.Search
-            key="search"
-            placeholder="搜索..."
-            allowClear
-            value={state.search}
-            onChange={(e) => set({ search: e.target.value })}
-            onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
-            style={{ width: 260, marginRight: 8 }}
-            prefix={<SearchOutlined />}
-          />,
-          <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingUser: null, formVisible: true })}>{intl.formatMessage({ id: 'pages.userManagement.addUser' })}</Button>,
-        ]}
-      />
+        } request={async (params: any, sort: any, filter: any) => {
+          const res = await api.list({ ...params, search: state.search, sort, filter });
+          api.stats().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
+          return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+        }} columns={columns} rowKey="id"
+          search={false}
+          scroll={{ x: 'max-content' }}
+          toolBarRender={() => [
+            <Input.Search
+              key="search"
+              placeholder="搜索..."
+              allowClear
+              value={state.search}
+              onChange={(e) => set({ search: e.target.value })}
+              onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+              style={{ width: 260, marginRight: 8 }}
+              prefix={<SearchOutlined />}
+            />,
+            <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingUser: null, formVisible: true })}>{intl.formatMessage({ id: 'pages.userManagement.addUser' })}</Button>,
+          ]}
+        />
+      ) : (
+        <ProTable
+          actionRef={actionRef}
+          headerTitle="申请加入列表"
+          request={async () => ({ data: pendingReqs, total: pendingReqs.length, success: true })}
+          columns={pendingColumns}
+          rowKey="id"
+          search={false}
+          scroll={{ x: 'max-content' }}
+          pagination={false}
+          loading={join.loading}
+        />
+      )}
         <ModalForm key={state.editingUser?.id || 'create'} title={state.editingUser ? intl.formatMessage({ id: 'pages.userManagement.editUser' }) : '添加成员'}
           open={state.formVisible} onOpenChange={(open) => { if (!open) set({ formVisible: false, editingUser: null }); setF({ selectedUser: null }); }}
           initialValues={state.editingUser ? { roleIds: state.editingUser.roleIds || [], isActive: state.editingUser.isActive, remark: state.editingUser.remark } : { isActive: true }}
@@ -209,6 +293,20 @@ const UserManagement: React.FC = () => {
         <Drawer title={intl.formatMessage({ id: 'pages.userDetail.title' })} placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingUser: null })} size="large" destroyOnClose>
           <React.Suspense fallback={<div style={{ textAlign: 'center', padding: '20px' }}><Spin /></div>}>{state.viewingUser && <UserDetail user={state.viewingUser} onClose={() => set({ detailVisible: false, viewingUser: null })} />}</React.Suspense>
         </Drawer>
+        <Modal
+          title="拒绝理由"
+          open={join.rejectModal}
+          onCancel={() => setJ({ rejectModal: false, rejectId: '', rejectReason: '' })}
+          onOk={confirmReject}
+        >
+          <Input.TextArea
+            rows={4}
+            placeholder="请输入拒绝理由"
+            value={join.rejectReason}
+            onChange={(e) => setJ({ rejectReason: e.target.value })}
+            maxLength={200}
+          />
+        </Modal>
     </PageContainer>
   );
 };

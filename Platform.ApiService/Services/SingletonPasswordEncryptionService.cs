@@ -58,7 +58,7 @@ public class SingletonPasswordEncryptionService : IPasswordEncryptionService
     /// </summary>
     public string GetPublicKey()
     {
-        return "04" + _publicKeyHex;
+        return _publicKeyHex;
     }
 
     /// <summary>
@@ -95,21 +95,16 @@ public class SingletonPasswordEncryptionService : IPasswordEncryptionService
         if (string.IsNullOrEmpty(password))
             return password;
 
-        var actualPassword = password.StartsWith("04") ? password.Substring(2) : password;
-
-        _logger.LogInformation("密码解密 - 原始长度: {OrigLen}, 去除04后长度: {ActualLen}, 公钥长度: {KeyLen}",
-            password.Length, actualPassword.Length, _publicKeyHex.Length);
-
-        if (actualPassword.Length < 64)
+        if (password.Length < 64)
             return password;
 
         try
         {
-            return DecryptPassword(actualPassword);
+            return DecryptPassword(password);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "密码解密失败 - 加密数据长度: {Len}, 公钥长度: {KeyLen}", actualPassword.Length, _publicKeyHex.Length);
+            _logger.LogError(ex, "密码解密失败 - 加密数据长度: {Len}", password.Length);
             throw new InvalidOperationException("密码解密失败，请刷新页面后重试。");
         }
     }

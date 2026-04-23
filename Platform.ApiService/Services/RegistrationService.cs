@@ -53,9 +53,9 @@ public class RegistrationService : IRegistrationService
             throw new ArgumentException("密码不能为空");
         }
 
-        if (rawPassword.Length < 6 || rawPassword.Length > 50)
+        if (rawPassword.Length < 6 || rawPassword.Length > 100)
         {
-            throw new ArgumentException("密码长度必须在6-50个字符之间");
+            throw new ArgumentException("密码长度必须在6-100个字符之间");
         }
 
         _validationService.ValidateUsername(request.Username);

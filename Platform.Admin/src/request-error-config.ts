@@ -126,8 +126,11 @@ export const errorConfig: RequestConfig = {
       if (isLoginRequest && error.name === 'BizError') {
         // 登录错误已经在登录页面中处理了，这里静默处理即可
         // 避免显示技术性错误页面
+        console.log('[errorHandler] Login request with BizError - returning early');
         return;
       }
+
+      console.log('[errorHandler] Proceeding to errorInterceptor.handleError');
 
       if (isAuthError || isAuthErrorMessage || isMissingCurrentUser) {
         // 检查是否已经尝试过 token 刷新（由 responseInterceptors 处理）

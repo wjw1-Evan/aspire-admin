@@ -447,11 +447,11 @@ class UnifiedErrorInterceptor {
    * 显示错误给用户
    */
   private displayError(errorInfo: ErrorInfo, config: ErrorHandlerConfig, originalError?: any) {
-    const message = getMessage();
-    const notification = getNotification();
+    const msgApi = getMessage();
+    const notifApi = getNotification();
 
     // 检查 message 和 notification 是否可用
-    if (!message?.error || !notification?.error) {
+    if (!msgApi?.error || !notifApi?.error) {
       console.error('Message/Notification API not available:', errorInfo.message);
       return;
     }
@@ -464,10 +464,10 @@ class UnifiedErrorInterceptor {
         validationErrors.forEach((msg, index) => {
           setTimeout(() => {
             if (config.displayType === ErrorDisplayType.MESSAGE) {
-              runAfterRender(() => message.error(msg, 3));
+              runAfterRender(() => msgApi.error(msg, 3));
             } else if (config.displayType === ErrorDisplayType.NOTIFICATION) {
               runAfterRender(() =>
-                notification.error({
+                notifApi.error({
                   message: `验证错误 ${index + 1}`,
                   description: msg,
                   duration: 3,
@@ -485,7 +485,7 @@ class UnifiedErrorInterceptor {
 
     switch (config.displayType) {
       case ErrorDisplayType.MESSAGE:
-        runAfterRender(() => message.error(errorInfo.message));
+        runAfterRender(() => msgApi.error(errorInfo.message));
         break;
       case ErrorDisplayType.NOTIFICATION:
         // 错误显示优先级：errors > errorCode > message
@@ -502,7 +502,7 @@ class UnifiedErrorInterceptor {
           title = errorInfo.message;
         }
         runAfterRender(() =>
-          notification.error({
+          notifApi.error({
             message: title,
             description: errorInfo.message,
             duration: 4.5,
@@ -510,7 +510,7 @@ class UnifiedErrorInterceptor {
         );
         break;
       case ErrorDisplayType.MODAL:
-        runAfterRender(() => message.error(errorInfo.message));
+        runAfterRender(() => msgApi.error(errorInfo.message));
         break;
       case ErrorDisplayType.REDIRECT:
         break;

@@ -1,7 +1,5 @@
 using System.Security.Authentication;
 using Microsoft.EntityFrameworkCore;
-using Platform.ServiceDefaults.Services;
-using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;

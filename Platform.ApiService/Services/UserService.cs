@@ -1,9 +1,5 @@
 using User = Platform.ApiService.Models.AppUser;
-using Platform.ServiceDefaults.Models;
-using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
-using Platform.ApiService.Models.Response;
-using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Extensions;
 using System.Linq.Expressions;

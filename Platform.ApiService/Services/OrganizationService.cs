@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using MongoDB.Bson;
 using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Models;
-using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using Microsoft.Extensions.Logging;
 using System;

@@ -3,10 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Attributes;
 using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Models;
-using Platform.ApiService.Models.Response;
-using Platform.ApiService.Services;
-using Platform.ServiceDefaults.Controllers;
-using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Controllers;
 

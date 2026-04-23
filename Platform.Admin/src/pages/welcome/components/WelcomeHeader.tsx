@@ -56,7 +56,7 @@ const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({ currentUser, companyInfo 
                 overflow: 'hidden',
                 position: 'relative'
             }}
-            bodyStyle={{ padding: '32px', position: 'relative', zIndex: 1 }}
+            styles={{ body: { padding: '32px', position: 'relative', zIndex: 1 } }}
         >
             {/* Decorative elements */}
             <div style={{

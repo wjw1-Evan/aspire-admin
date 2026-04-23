@@ -32,7 +32,7 @@ const QuickAction: React.FC<QuickActionProps> = ({ title, description, icon, onC
                 opacity: disabled ? 0.6 : 1,
                 backgroundColor: token?.colorBgContainer || themeToken.colorBgContainer,
             }}
-            bodyStyle={{ padding: '16px', display: 'flex', flexDirection: 'column' }}
+            styles={{ body: { padding: '16px', display: 'flex', flexDirection: 'column' } }}
         >
             <div style={{ display: 'flex', alignItems: 'flex-start' }}>
                 <div

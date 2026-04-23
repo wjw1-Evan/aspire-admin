@@ -225,21 +225,18 @@ const WebScraper: React.FC = () => {
         }
         return '-';
       },
-      hideInSearch: true,
     },
     {
       title: '抓取深度',
       dataIndex: 'crawlDepth',
       key: 'crawlDepth',
       render: (dom) => `深度${dom}`,
-      hideInSearch: true,
     },
     {
       title: '每层最大',
       dataIndex: 'maxPagesPerLevel',
       key: 'maxPagesPerLevel',
       render: (dom) => `${dom} 页`,
-      hideInSearch: true,
     },
     {
       title: '抓取模式',
@@ -253,7 +250,6 @@ const WebScraper: React.FC = () => {
         };
         return modeMap[dom?.toString().toLowerCase() as string] || dom || '-';
       },
-      hideInSearch: true,
     },
     {
       title: '定时',
@@ -265,7 +261,6 @@ const WebScraper: React.FC = () => {
           <span style={{ color: '#999', fontSize: 12 }}>({explainCron(dom as string)})</span>
         </Space>
       ) : '-',
-      hideInSearch: true,
     },
     {
       title: '最后执行',

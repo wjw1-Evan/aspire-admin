@@ -21,7 +21,7 @@ const ResourceCard: React.FC<ResourceCardProps> = React.memo(({ title, value, ic
   return (
     <ProCard
       size="small"
-      bodyStyle={{ padding: '16px', display: 'flex', flexDirection: 'column', height: '100%' }}
+      styles={{ body: { padding: '16px', display: 'flex', flexDirection: 'column', height: '100%' } }}
       style={{
         borderRadius: '16px',
         border: `1px solid ${token?.colorBorderSecondary || themeToken.colorBorderSecondary}`,

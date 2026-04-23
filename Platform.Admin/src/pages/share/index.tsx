@@ -177,7 +177,7 @@ const SharePage: React.FC = () => {
         }
 
         return (
-            <ProCard bordered={false} style={{ maxWidth: 520, margin: '0 auto' }}>
+            <ProCard style={{ maxWidth: 520, margin: '0 auto' }}>
                 <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
                     <div>
                         <Title level={3} style={{ marginBottom: 4 }}>{state.shareInfo.fileName}</Title>

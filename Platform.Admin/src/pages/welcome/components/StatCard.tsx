@@ -21,7 +21,7 @@ const StatCard: React.FC<StatCardProps> = React.memo(({ title, value, suffix, ic
   return (
     <ProCard
       className="quick-action-card"
-      bodyStyle={{ padding: '16px', position: 'relative', overflow: 'hidden' }}
+      styles={{ body: { padding: '16px', position: 'relative', overflow: 'hidden' } }}
       style={{
         borderRadius: '16px',
         border: `1px solid ${token?.colorBorderSecondary || themeToken.colorBorderSecondary}`,

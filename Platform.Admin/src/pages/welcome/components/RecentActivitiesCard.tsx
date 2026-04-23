@@ -84,7 +84,7 @@ const RecentActivitiesCard: React.FC<RecentActivitiesCardProps> = ({ currentUser
             }
             className={styles.card}
             style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
-            bodyStyle={{ flex: 1, overflow: 'hidden', padding: '12px 24px' }}
+            styles={{ body: { flex: 1, overflow: 'hidden', padding: '12px 24px' } }}
         >
             <div
                 ref={scrollRef}

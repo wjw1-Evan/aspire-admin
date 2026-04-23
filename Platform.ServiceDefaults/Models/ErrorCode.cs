@@ -234,6 +234,52 @@ public static class ErrorCode
     public const string PasswordTooLong = "PASSWORD_TOO_LONG";
 
     // ──────────────────────────────────────────────
+    // DataAnnotation 验证错误码 (Validation Attributes)
+    // ──────────────────────────────────────────────
+
+    /// <summary>用户名必填</summary>
+    public const string ValidationUsernameRequired = "VALIDATION_USERNAME_REQUIRED";
+
+    /// <summary>用户名长度超出限制</summary>
+    public const string ValidationUsernameTooLong = "VALIDATION_USERNAME_TOO_LONG";
+
+    /// <summary>用户名长度不足</summary>
+    public const string ValidationUsernameTooShort = "VALIDATION_USERNAME_TOO_SHORT";
+
+    /// <summary>密码必填</summary>
+    public const string ValidationPasswordRequired = "VALIDATION_PASSWORD_REQUIRED";
+
+    /// <summary>密码长度不足</summary>
+    public const string ValidationPasswordTooShort = "VALIDATION_PASSWORD_TOO_SHORT";
+
+    /// <summary>密码长度超限</summary>
+    public const string ValidationPasswordTooLong = "VALIDATION_PASSWORD_TOO_LONG";
+
+    /// <summary>邮箱必填</summary>
+    public const string ValidationEmailRequired = "VALIDATION_EMAIL_REQUIRED";
+
+    /// <summary>邮箱格式无效</summary>
+    public const string ValidationEmailInvalid = "VALIDATION_EMAIL_INVALID";
+
+    /// <summary>验证码必填</summary>
+    public const string ValidationCaptchaRequired = "VALIDATION_CAPTCHA_REQUIRED";
+
+    /// <summary>验证码长度无效</summary>
+    public const string ValidationCaptchaInvalid = "VALIDATION_CAPTCHA_INVALID";
+
+    /// <summary>当前密码必填</summary>
+    public const string ValidationCurrentPasswordRequired = "VALIDATION_CURRENT_PASSWORD_REQUIRED";
+
+    /// <summary>新密码必填</summary>
+    public const string ValidationNewPasswordRequired = "VALIDATION_NEW_PASSWORD_REQUIRED";
+
+    /// <summary>确认密码必填</summary>
+    public const string ValidationConfirmPasswordRequired = "VALIDATION_CONFIRM_PASSWORD_REQUIRED";
+
+    /// <summary>刷新令牌必填</summary>
+    public const string ValidationRefreshTokenRequired = "VALIDATION_REFRESH_TOKEN_REQUIRED";
+
+    // ──────────────────────────────────────────────
     // 通用操作 (General Operation)
     // ──────────────────────────────────────────────
 
@@ -328,6 +374,21 @@ public static class ErrorCode
         [InvalidUsernameFormat] = "用户名格式不正确",
         [PasswordTooShort] = "密码长度不能少于6个字符",
         [PasswordTooLong] = "密码长度不能超过50个字符",
+        // DataAnnotation 验证
+        [ValidationUsernameRequired] = "用户名不能为空",
+        [ValidationUsernameTooLong] = "用户名长度不能超过50个字符",
+        [ValidationUsernameTooShort] = "用户名长度不能少于3个字符",
+        [ValidationPasswordRequired] = "密码不能为空",
+        [ValidationPasswordTooLong] = "密码长度不能超过50个字符",
+        [ValidationPasswordTooShort] = "密码长度不能少于6个字符",
+        [ValidationEmailRequired] = "邮箱不能为空",
+        [ValidationEmailInvalid] = "邮箱格式不正确",
+        [ValidationCaptchaRequired] = "验证码不能为空",
+        [ValidationCaptchaInvalid] = "验证码必须为6位",
+        [ValidationCurrentPasswordRequired] = "当前密码不能为空",
+        [ValidationNewPasswordRequired] = "新密码不能为空",
+        [ValidationConfirmPasswordRequired] = "确认密码不能为空",
+        [ValidationRefreshTokenRequired] = "刷新令牌不能为空",
         // 通用操作
         [OperationFailed] = "操作失败",
         // 文件

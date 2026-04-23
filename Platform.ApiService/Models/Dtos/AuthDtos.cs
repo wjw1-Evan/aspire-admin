@@ -4,6 +4,8 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Collections.Generic;
 
+using Platform.ServiceDefaults.Models;
+
 namespace Platform.ApiService.Models;
 
 public class CurrentUser
@@ -56,12 +58,12 @@ public class UserTag
 
 public class LoginRequest
 {
-    [Required(ErrorMessage = "用户名不能为空")]
-    [StringLength(50, MinimumLength = 3, ErrorMessage = "用户名长度必须在3-50个字符之间")]
+    [Required(ErrorMessage = ErrorCode.ValidationUsernameRequired)]
+    [StringLength(50, MinimumLength = 3, ErrorMessage = ErrorCode.ValidationUsernameTooShort)]
     public string? Username { get; set; }
 
-    [Required(ErrorMessage = "密码不能为空")]
-    [StringLength(2000, MinimumLength = 6, ErrorMessage = "密码长度不符合要求")]
+    [Required(ErrorMessage = ErrorCode.ValidationPasswordRequired)]
+    [StringLength(2000, MinimumLength = 6, ErrorMessage = ErrorCode.ValidationPasswordTooShort)]
     public string? Password { get; set; }
 
     public bool AutoLogin { get; set; }

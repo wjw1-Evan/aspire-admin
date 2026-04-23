@@ -92,12 +92,17 @@ public class SingletonPasswordEncryptionService : IPasswordEncryptionService
     /// </summary>
     public string TryDecryptPassword(string password)
     {
-        if (string.IsNullOrEmpty(password) || password.Length < 90)
+        if (string.IsNullOrEmpty(password))
+            return password;
+
+        var actualPassword = password.StartsWith("04") ? password.Substring(2) : password;
+
+        if (actualPassword.Length < 64)
             return password;
 
         try
         {
-            return DecryptPassword(password);
+            return DecryptPassword(actualPassword);
         }
         catch (Exception)
         {

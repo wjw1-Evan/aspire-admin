@@ -1,11 +1,11 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { useIntl, request } from '@umijs/max';
-import { App, Button, Tag, Space, Modal, Badge, Spin, Input, Typography, Form, Select, Popconfirm, Tabs } from 'antd';
+import { App, Button, Tag, Space, Modal, Badge, Spin, Input, Typography, Popconfirm, Tabs } from 'antd';
 import { Drawer } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormSelect, ProFormSwitch, ProFormTextArea } from '@ant-design/pro-form';
-import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, CrownOutlined, SearchOutlined, CheckOutlined, CloseOutlined, UserAddOutlined } from '@ant-design/icons';
+import { ModalForm, ProFormSelect, ProFormSwitch, ProFormTextArea } from '@ant-design/pro-form';
+import { EditOutlined, DeleteOutlined, UserOutlined, CrownOutlined, SearchOutlined, CheckOutlined, CloseOutlined, UserAddOutlined } from '@ant-design/icons';
 import { ApiResponse, PagedResult } from '@/types';
 import type { Role } from '@/services/role/api';
 
@@ -59,9 +59,7 @@ const api = {
   del: (id: string, reason?: string) => request<ApiResponse<unknown>>(`/apiservice/api/users/${id}`, { method: 'DELETE', params: reason ? { reason } : undefined }),
   activate: (id: string) => request<ApiResponse<unknown>>(`/apiservice/api/users/${id}/activate`, { method: 'PUT' }),
   deactivate: (id: string) => request<ApiResponse<unknown>>(`/apiservice/api/users/${id}/deactivate`, { method: 'PUT' }),
-  create: (data: unknown) => request<ApiResponse<AppUser>>('/apiservice/api/users', { method: 'POST', data }),
   update: (id: string, data: unknown) => request<ApiResponse<AppUser>>(`/apiservice/api/users/${id}`, { method: 'PUT', data }),
-  searchUsers: (s: string) => request<ApiResponse<{ users: AppUser[]; total: number }>>('/apiservice/api/users/all', { params: { search: s } }),
   roles: () => request<ApiResponse<PagedResult<Role>>>('/apiservice/api/role', { method: 'GET' }),
   currentCompany: () => request<ApiResponse<CompanyInfo>>('/apiservice/api/company/current', { method: 'GET' }),
   joinReqs: (cid: string) => request<ApiResponse<JoinReq[]>>(`/apiservice/api/company/${cid}/join-requests`),
@@ -95,15 +93,13 @@ const UserManagement: React.FC = () => {
     rejectReason: '',
   });
 
-  const [formState, setFormState] = useState({
+  const [roleState, setRoleState] = useState({
     roles: [] as Role[],
-    userOptions: [] as AppUser[],
-    selectedUser: null as AppUser | null,
   });
 
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
   const setJ = useCallback((partial: Partial<typeof joinState>) => setJoinState(prev => ({ ...prev, ...partial })), []);
-  const setF = useCallback((partial: Partial<typeof formState>) => setFormState(prev => ({ ...prev, ...partial })), []);
+  const setR = useCallback((partial: Partial<typeof roleState>) => setRoleState(prev => ({ ...prev, ...partial })), []);
 
   const handleTabChange = useCallback((key: string) => {
     set({ activeTab: key as 'joined' | 'pending' });
@@ -119,10 +115,10 @@ const UserManagement: React.FC = () => {
         const map: Record<string, string> = {};
         r.data.queryable?.forEach(role => { if (role.id) map[role.id] = role.name; });
         set({ roleMap: map });
-        setF({ roles: r.data.queryable || [] });
+        setR({ roles: r.data.queryable || [] });
       }
     });
-  }, [set, setF]);
+  }, [set, setR]);
 
   const loadJoinRequests = useCallback(() => {
     if (!state.currentCompany?.id) return;
@@ -245,8 +241,8 @@ const UserManagement: React.FC = () => {
   ], [handleApprove, handleReject]);
 
   const roleOptions = useMemo(() => 
-    formState.roles.filter((r): r is Role & { id: string } => Boolean(r.id)).map(r => ({ label: r.name, value: r.id })),
-    [formState.roles]
+    roleState.roles.filter((r): r is Role & { id: string } => Boolean(r.id)).map(r => ({ label: r.name, value: r.id })),
+    [roleState.roles]
   );
 
   return (
@@ -276,9 +272,8 @@ const UserManagement: React.FC = () => {
               value={state.search}
               onChange={(e) => set({ search: e.target.value })}
               onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
-              style={{ width: 260, marginRight: 8 }}
+              style={{ width: 260 }}
             />,
-            <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => set({ formVisible: true, editingUser: null })}>添加成员</Button>,
           ]}
         />
       ) : (
@@ -300,44 +295,19 @@ const UserManagement: React.FC = () => {
       )}
 
       <ModalForm
-        title={state.editingUser ? '编辑成员' : '添加成员'}
+        title="编辑成员"
         open={state.formVisible}
-        onOpenChange={(open) => { if (!open) set({ formVisible: false, editingUser: null }); setF({ selectedUser: null }); }}
+        onOpenChange={(open) => { if (!open) set({ formVisible: false, editingUser: null }); }}
         initialValues={state.editingUser ? { roleIds: state.editingUser.roleIds || [], isActive: state.editingUser.isActive, remark: state.editingUser.remark } : { isActive: true }}
         onFinish={async (values) => {
-          if (!state.editingUser && !formState.selectedUser) { message.error('请选择用户'); return false; }
-          if (state.editingUser) {
-            const res = await api.update(state.editingUser.id, { roleIds: values.roleIds || [], isActive: values.isActive, remark: values.remark });
-            if (res.success) { message.success('更新成功'); set({ formVisible: false, editingUser: null }); loadStatistics(); actionRef.current?.reload(); }
-            return res.success;
-          }
-          const res = await api.create({ userId: formState.selectedUser?.id, roleIds: values.roleIds || [], isActive: values.isActive, remark: values.remark });
-          if (res.success) { message.success('添加成功'); set({ formVisible: false, editingUser: null }); loadStatistics(); actionRef.current?.reload(); }
+          if (!state.editingUser) return false;
+          const res = await api.update(state.editingUser.id, { roleIds: values.roleIds || [], isActive: values.isActive, remark: values.remark });
+          if (res.success) { message.success('更新成功'); set({ formVisible: false, editingUser: null }); loadStatistics(); actionRef.current?.reload(); }
           return res.success;
         }}
         autoFocusFirstInput
         width={600}
       >
-        {!state.editingUser && (
-          <Form.Item name="username" label="选择用户" rules={[{ required: true, message: '请搜索并选择用户' }]}>
-            <Select
-              showSearch
-              placeholder="搜索并选择用户"
-              filterOption={false}
-              onSearch={async (v: string) => {
-                if (!v || v.length < 2) { setF({ userOptions: [] }); return; }
-                const res = await api.searchUsers(v);
-                if (res.success && res.data) setF({ userOptions: res.data.users || [] });
-              }}
-              onChange={(v, option) => {
-                const opt = option as { user?: AppUser };
-                if (opt?.user) setF({ selectedUser: opt.user });
-                if (!v) setF({ selectedUser: null });
-              }}
-              options={formState.userOptions.map(u => ({ label: `${u.username}${u.email ? `(${u.email})` : ''}`, value: u.username, user: u }))}
-            />
-          </Form.Item>
-        )}
         <ProFormSelect name="roleIds" label="角色" mode="multiple" placeholder="请选择角色" options={roleOptions} rules={[{ required: true, message: '请选择至少一个角色' }]} />
         <ProFormSwitch name="isActive" label="启用" checkedChildren="启用" unCheckedChildren="禁用" />
         <ProFormTextArea name="remark" label="备注" />

@@ -18,23 +18,18 @@ const runAfterRender = (fn: () => void) => {
 
 // 翻译辅助函数：只翻译 errorCode，不翻译 message
 const translateMessage = (msg: string, errorCode?: string): string => {
-  console.debug('[translateMessage] 开始翻译', { errorCode, message: msg });
-  // 只翻译 errorCode，不翻译 message（message 已经是处理过的）
   if (errorCode) {
     try {
       const intl = getIntl();
       const translated = intl.formatMessage({ id: errorCode, defaultMessage: '' });
-      console.debug('[translateMessage] errorCode翻译结果', { errorCode, translated });
       if (translated && translated !== errorCode) {
         return translated;
       }
     } catch (e) {
-      console.debug('[translateMessage] errorCode翻译异常', { errorCode, error: e });
+      // 翻译失败，使用原消息
     }
   }
-  const result = msg || errorCode || '';
-  console.debug('[translateMessage] 返回结果', { result });
-  return result;
+  return msg || errorCode || '';
 };
 
 // 错误类型枚举
@@ -451,7 +446,6 @@ class UnifiedErrorInterceptor {
     // 验证错误应该由页面自己处理显示（如登录页的 form.setFields）
     const hasErrors = originalError?.response?.data?.errors;
     if (hasErrors) {
-      console.debug('[displayError] 有errors字段，验证错误静默处理，由页面负责显示');
       return;
     }
 
@@ -460,7 +454,6 @@ class UnifiedErrorInterceptor {
 
     // 检查 message 和 notification 是否可用
     if (!msgApi?.error || !notifApi?.error) {
-      console.debug('[displayError] Message API 不可用:', errorInfo.message);
       return;
     }
 

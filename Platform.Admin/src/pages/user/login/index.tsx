@@ -217,8 +217,7 @@ const Login: React.FC = () => {
           };
         });
         form.setFields(fieldErrors);
-        const firstFieldError = fieldErrors[0]?.errors?.[0];
-        setUserLoginState({ status: 'error', message: firstFieldError || intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }) });
+        // 验证错误已在输入框下显示，不需要再设置顶部错误消息
         return;
       }
 

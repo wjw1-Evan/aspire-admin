@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { useIntl, request } from '@umijs/max';
-import { App, Button, Tag, Space, Modal, Badge, Spin, Input, Typography, Form, Select, Popconfirm } from 'antd';
+import { App, Button, Tag, Space, Modal, Badge, Spin, Input, Typography, Form, Select, Popconfirm, Tabs } from 'antd';
 import { Drawer } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormSwitch, ProFormTextArea } from '@ant-design/pro-form';
@@ -84,6 +84,7 @@ const UserManagement: React.FC = () => {
     editingUser: null as AppUser | null,
     detailVisible: false,
     viewingUser: null as AppUser | null,
+    activeTab: 'joined' as 'joined' | 'pending',
   });
 
   const [joinState, setJoinState] = useState({
@@ -103,6 +104,10 @@ const UserManagement: React.FC = () => {
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
   const setJ = useCallback((partial: Partial<typeof joinState>) => setJoinState(prev => ({ ...prev, ...partial })), []);
   const setF = useCallback((partial: Partial<typeof formState>) => setFormState(prev => ({ ...prev, ...partial })), []);
+
+  const handleTabChange = useCallback((key: string) => {
+    set({ activeTab: key as 'joined' | 'pending' });
+  }, [set]);
 
   const loadStatistics = useCallback(() => {
     api.stats().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
@@ -140,6 +145,12 @@ const UserManagement: React.FC = () => {
   useEffect(() => { 
     loadCurrentCompany();
   }, [loadCurrentCompany]);
+
+  useEffect(() => {
+    if (state.currentCompany?.id && state.activeTab === 'pending') {
+      loadJoinRequests();
+    }
+  }, [state.currentCompany?.id, state.activeTab, loadJoinRequests]);
 
   const handleToggle = useCallback(async (user: AppUser) => {
     const res = user.isActive ? await api.deactivate(user.id) : await api.activate(user.id);
@@ -240,31 +251,52 @@ const UserManagement: React.FC = () => {
 
   return (
     <PageContainer>
-      <ProTable
-        actionRef={actionRef}
-        params={state}
-        request={async (params: any, sort: any, filter: any) => {
-          const res = await api.list({ ...params, search: state.search, sort, filter });
-          loadStatistics();
-          return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
-        }}
-        columns={columns}
-        rowKey="id"
-        search={false}
-        scroll={{ x: 'max-content' }}
-        toolBarRender={() => [
-          <Input.Search
-            key="search"
-            placeholder="搜索..."
-            allowClear
-            value={state.search}
-            onChange={(e) => set({ search: e.target.value })}
-            onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
-            style={{ width: 260, marginRight: 8 }}
-          />,
-          <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => set({ formVisible: true, editingUser: null })}>添加成员</Button>,
-        ]}
-      />
+      <Tabs activeKey={state.activeTab} onChange={handleTabChange} items={[
+        { key: 'joined', label: <span><UserOutlined />已加入成员</span> },
+        { key: 'pending', label: <span><UserAddOutlined />申请加入{pendingReqs.length > 0 && <Badge count={pendingReqs.length} style={{ marginLeft: 8 }} />}</span> },
+      ]} />
+      {state.activeTab === 'joined' ? (
+        <ProTable
+          actionRef={actionRef}
+          params={state}
+          request={async (params: any, sort: any, filter: any) => {
+            const res = await api.list({ ...params, search: state.search, sort, filter });
+            loadStatistics();
+            return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+          }}
+          columns={columns}
+          rowKey="id"
+          search={false}
+          scroll={{ x: 'max-content' }}
+          toolBarRender={() => [
+            <Input.Search
+              key="search"
+              placeholder="搜索..."
+              allowClear
+              value={state.search}
+              onChange={(e) => set({ search: e.target.value })}
+              onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+              style={{ width: 260, marginRight: 8 }}
+            />,
+            <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => set({ formVisible: true, editingUser: null })}>添加成员</Button>,
+          ]}
+        />
+      ) : (
+        <ProTable
+          actionRef={pendingActionRef}
+          params={joinState}
+          request={async () => {
+            await loadJoinRequests();
+            return { data: pendingReqs, total: pendingReqs.length, success: true };
+          }}
+          columns={pendingColumns}
+          rowKey="id"
+          search={false}
+          scroll={{ x: 'max-content' }}
+          pagination={false}
+          loading={joinState.loading}
+        />
+      )}
 
       <ModalForm
         title={state.editingUser ? '编辑成员' : '添加成员'}

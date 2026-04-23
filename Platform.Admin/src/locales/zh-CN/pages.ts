@@ -1288,6 +1288,8 @@ export default {
   'pages.workflow.monitor.table.startedBy': '发起人',
   'pages.workflow.monitor.table.startedAt': '开始时间',
   'pages.workflow.monitor.table.completedAt': '完成时间',
+  'pages.workflow.monitor.table.currentNode': '当前节点',
+  'pages.workflow.monitor.history.empty': '暂无审批历史',
   'pages.workflow.monitor.table.action': '操作',
   'pages.workflow.monitor.status.running': '运行中',
   'pages.workflow.monitor.status.completed': '已完成',
@@ -1629,6 +1631,8 @@ export default {
   // Document List
   'pages.document.search.keyword': '关键词',
   'pages.document.search.keywordPlaceholder': '搜索标题或编号',
+  'pages.document.search.placeholder': '搜索标题或编号',
+  'pages.document.approval.detail': '公文详情',
   'pages.document.search.status': '状态',
   'pages.document.search.statusPlaceholder': '请选择状态',
   'pages.document.stat.total': '总公文',

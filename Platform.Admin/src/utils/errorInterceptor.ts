@@ -447,40 +447,20 @@ class UnifiedErrorInterceptor {
    * 显示错误给用户
    */
   private displayError(errorInfo: ErrorInfo, config: ErrorHandlerConfig, originalError?: any) {
+    // 静默处理验证错误（400），避免在非 React 上下文中调用 message.error
+    // 验证错误应该由页面自己处理显示（如登录页的 form.setFields）
+    if (errorInfo.type === ErrorType.VALIDATION) {
+      console.debug('[displayError] 验证错误静默处理，由页面负责显示');
+      return;
+    }
+
     const msgApi = getMessage();
     const notifApi = getNotification();
 
     // 检查 message 和 notification 是否可用
     if (!msgApi?.error || !notifApi?.error) {
-      console.error('Message/Notification API not available:', errorInfo.message);
+      console.debug('[displayError] Message API 不可用:', errorInfo.message);
       return;
-    }
-
-    // 如果是验证错误（400状态码），尝试显示所有验证错误
-    if (errorInfo.type === ErrorType.VALIDATION && originalError) {
-      const validationErrors = this.extractValidationErrors(originalError);
-      if (validationErrors.length > 1) {
-        // 多个验证错误，依次显示所有错误
-        validationErrors.forEach((msg, index) => {
-          setTimeout(() => {
-            if (config.displayType === ErrorDisplayType.MESSAGE) {
-              runAfterRender(() => msgApi.error(msg, 3));
-            } else if (config.displayType === ErrorDisplayType.NOTIFICATION) {
-              runAfterRender(() =>
-                notifApi.error({
-                  message: `验证错误 ${index + 1}`,
-                  description: msg,
-                  duration: 3,
-                }),
-              );
-            }
-          }, index * 500);
-        });
-        return;
-      } else if (validationErrors.length === 1) {
-        // 单个验证错误，使用提取的错误消息
-        errorInfo.message = validationErrors[0];
-      }
     }
 
     switch (config.displayType) {

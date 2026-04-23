@@ -570,6 +570,89 @@ throw new UnauthorizedAccessException(ErrorCode.CurrentCompanyNotFound);
 - 保持控制器层职责单一
 - 统一错误信息传递格式，简化前后端错误处理逻辑
 
+### 6.6.1 DataAnnotation 验证错误消息多语言规范
+
+**核心思路**：复用 `ErrorCode` 模式，为 DataAnnotation 验证属性（如 `[Required]`、`[StringLength]`、`[EmailAddress]`）的错误消息使用错误码常量，实现多语言支持。
+
+#### 步骤 1：添加验证错误码常量
+
+在 `ErrorCode.cs` 中添加验证相关的错误码常量（格式：`VALIDATION_{属性}_{验证类型}`）：
+
+```csharp
+// ──────────────────────────────────────────────
+// DataAnnotation 验证错误码 (Validation Attributes)
+// ──────────────────────────────────────────────
+
+/// <summary>用户名必填</summary>
+public const string ValidationUsernameRequired = "VALIDATION_USERNAME_REQUIRED";
+
+/// <summary>用户名长度超出限制</summary>
+public const string ValidationUsernameTooLong = "VALIDATION_USERNAME_TOO_LONG";
+
+/// <summary>用户名长度不足</summary>
+public const string ValidationUsernameTooShort = "VALIDATION_USERNAME_TOO_SHORT";
+
+/// <summary>密码必填</summary>
+public const string ValidationPasswordRequired = "VALIDATION_PASSWORD_REQUIRED";
+
+/// <summary>密码长度不足</summary>
+public const string ValidationPasswordTooShort = "VALIDATION_PASSWORD_TOO_SHORT";
+
+/// <summary>邮箱必填</summary>
+public const string ValidationEmailRequired = "VALIDATION_EMAIL_REQUIRED";
+
+/// <summary>邮箱格式无效</summary>
+public const string ValidationEmailInvalid = "VALIDATION_EMAIL_INVALID";
+```
+
+#### 步骤 2：添加入错误消息字典
+
+在 `ErrorCode.ErrorMessages` 字典中添加中文 fallback 消息：
+
+```csharp
+// DataAnnotation 验证
+[ValidationUsernameRequired] = "用户名不能为空",
+[ValidationUsernameTooLong] = "用户名长度不能超过50个字符",
+[ValidationUsernameTooShort] = "用户名长度不能少于3个字符",
+[ValidationPasswordRequired] = "密码不能为空",
+[ValidationPasswordTooLong] = "密码长度不能超过50个字符",
+[ValidationPasswordTooShort] = "密码长度不能少于6个字符",
+[ValidationEmailRequired] = "邮箱不能为空",
+[ValidationEmailInvalid] = "邮箱格式不正确",
+```
+
+#### 步骤 3：在 DTO 中使用错误码常量
+
+```csharp
+using Platform.ServiceDefaults.Models;
+
+public class LoginRequest
+{
+    [Required(ErrorMessage = ErrorCode.ValidationUsernameRequired)]
+    [StringLength(50, MinimumLength = 3, ErrorMessage = ErrorCode.ValidationUsernameTooShort)]
+    public string? Username { get; set; }
+
+    [Required(ErrorMessage = ErrorCode.ValidationPasswordRequired)]
+    [StringLength(2000, MinimumLength = 6, ErrorMessage = ErrorCode.ValidationPasswordTooShort)]
+    public string? Password { get; set; }
+}
+```
+
+#### 工作原理
+
+1. DataAnnotation 验证失败时，返回的错误消息是错误码字符串（如 `VALIDATION_USERNAME_REQUIRED`）
+2. 后端 `BusinessExceptionFilter` 或验证中间件自动检测已知错误码，将 `errorCode` 设为该错误码，`message` 设为字典中的中文
+3. 前端通过 `errorCode` 调用 `intl.formatMessage` 翻译，消息字典中的中文作为 fallback
+
+#### 优点
+
+| 优点 | 说明 |
+|------|------|
+| **复用现有架构** | 无需新增基础设施，完全复用 `ErrorCode` + `BusinessExceptionFilter` 模式 |
+| **统一错误码** | 验证错误码与业务错误码格式一致，便于管理和翻译 |
+| **渐进式改造** | 可逐步将现有硬编码消息替换为错误码常量 |
+| **前端零改动** | 前端 locale 机制已支持，只需添加翻译键 |
+
 ### 6.7 批量查询规范（N+1 防护）
 
 **[强制]** 严禁在循环内调用单条查询：

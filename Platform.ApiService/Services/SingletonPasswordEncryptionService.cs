@@ -72,6 +72,8 @@ public class SingletonPasswordEncryptionService : IPasswordEncryptionService
 
         try
         {
+            _logger.LogInformation("SM2解密 - 输入长度: {Len}, 前10字符: {Prefix}", encryptedPassword.Length, encryptedPassword.Length > 10 ? encryptedPassword.Substring(0, 10) : encryptedPassword);
+
             byte[] cipherText = Hex.Decode(encryptedPassword);
 
             var sm2Engine = new SM2Engine(new SM3Digest(), SM2Engine.Mode.C1C3C2);

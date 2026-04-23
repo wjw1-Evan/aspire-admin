@@ -205,10 +205,14 @@ const Login: React.FC = () => {
       const isValidationError = error?.response?.status === 400 && validationErrors;
 
       if (isValidationError && validationErrors) {
-        const fieldErrors = Object.entries(validationErrors).map(([field, msgs]) => ({
-          name: field as any,
-          errors: Array.isArray(msgs) ? [msgs[0] as string] : [msgs as string],
-        }));
+        const fieldErrors = Object.entries(validationErrors).map(([field, msgs]) => {
+          const errMsg = Array.isArray(msgs) ? msgs[0] : msgs;
+          const translatedErr = intl.formatMessage({ id: errMsg as string, defaultMessage: errMsg as string });
+          return {
+            name: field as any,
+            errors: [translatedErr],
+          };
+        });
         form.setFields(fieldErrors);
         const firstFieldError = fieldErrors[0]?.errors?.[0];
         setUserLoginState({ status: 'error', message: firstFieldError || intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }) });

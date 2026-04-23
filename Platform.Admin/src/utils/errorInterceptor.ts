@@ -376,6 +376,23 @@ class UnifiedErrorInterceptor {
     return errors.map((msg) => translateMessage('', msg));
   }
 
+  // 翻译 errors 字典中的错误码
+  translateErrorsToString(error: any): string[] {
+    const errors: string[] = [];
+    if (error?.response?.data?.errors) {
+      const validationErrors = error.response.data.errors;
+      Object.keys(validationErrors).forEach((field) => {
+        const fieldErrors = validationErrors[field];
+        if (Array.isArray(fieldErrors)) {
+          fieldErrors.forEach((err) => errors.push(err));
+        } else if (typeof fieldErrors === 'string') {
+          errors.push(fieldErrors);
+        }
+      });
+    }
+    return errors.map((msg) => translateMessage('', msg));
+  }
+
   /**
    * 获取错误处理配置
    */

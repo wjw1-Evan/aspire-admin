@@ -274,13 +274,30 @@ export default function Register() {
                   ]}
                 />
 
-                <ProFormText
+<ProFormText
                   name="password"
                   placeholder={intl.formatMessage({ id: 'pages.register.password.placeholder' })}
                   fieldProps={{ prefix: <LockOutlined />, type: 'password' }}
                   rules={[
                     { required: true, message: <FormattedMessage id="pages.register.password.required" /> },
                     { min: 6, message: <FormattedMessage id="pages.register.password.min" /> },
+                  ]}
+                />
+
+                <ProFormText
+                  name="confirmPassword"
+                  placeholder={intl.formatMessage({ id: 'pages.register.confirmPassword.placeholder' })}
+                  fieldProps={{ prefix: <LockOutlined />, type: 'password' }}
+                  rules={[
+                    { required: true, message: <FormattedMessage id="pages.register.confirmPassword.required" /> },
+                    ({ getFieldValue }) => ({
+                      validator(_, value) {
+                        if (!value || getFieldValue('password') === value) {
+                          return Promise.resolve();
+                        }
+                        return Promise.reject(new Error(intl.formatMessage({ id: 'pages.register.confirmPassword.mismatch' })));
+                      },
+                    }),
                   ]}
                 />
 

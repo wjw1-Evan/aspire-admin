@@ -25,7 +25,7 @@ export async function login(body: { username: string; password?: string; type?: 
   return request('/apiservice/api/auth/login', { method: 'POST', data: body });
 }
 
-export async function register(body: { username: string; password: string; confirmPassword: string; email?: string }): Promise<ApiResponse<unknown>> {
+export async function register(body: { username: string; password: string; email?: string }): Promise<ApiResponse<unknown>> {
   return request('/apiservice/api/auth/register', { method: 'POST', data: body });
 }
 

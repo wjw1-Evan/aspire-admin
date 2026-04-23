@@ -96,9 +96,6 @@ public class RegisterRequest
     [StringLength(2000, MinimumLength = 6, ErrorMessage = "密码长度不符合要求")]
     public string Password { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "确认密码不能为空")]
-    public string ConfirmPassword { get; set; } = string.Empty;
-
     [Required(ErrorMessage = "邮箱不能为空")]
     [EmailAddress(ErrorMessage = "邮箱格式不正确")]
     public string Email { get; set; } = string.Empty;

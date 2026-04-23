@@ -95,11 +95,6 @@ public class SingletonPasswordEncryptionService : IPasswordEncryptionService
         if (string.IsNullOrEmpty(password))
             return password;
 
-        if (password.StartsWith("04") && password.Length > 66)
-        {
-            return DecryptPassword(password);
-        }
-
         if (password.Length < 64)
             return password;
 

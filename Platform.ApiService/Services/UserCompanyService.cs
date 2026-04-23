@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Services;
 using System.Linq.Expressions;
 
 namespace Platform.ApiService.Services;

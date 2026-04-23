@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Extensions;
 using Platform.ServiceDefaults.Services;
+using Platform.ApiService.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;

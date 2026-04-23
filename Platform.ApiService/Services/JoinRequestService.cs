@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Models;
+using Platform.ApiService.Models.Entities;
 using Platform.ServiceDefaults.Services;
 using System;
 using System.Collections.Generic;

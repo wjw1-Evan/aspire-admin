@@ -311,7 +311,7 @@ const Login: React.FC = () => {
                         id: 'pages.login.password.placeholder',
                         defaultMessage: '密码',
                       })}
-                      fieldProps={{ prefix: <LockOutlined /> }}
+                      fieldProps={{ prefix: <LockOutlined />, type: 'password' }}
                       rules={[{ required: true, message: intl.formatMessage({ id: 'pages.login.password.required', defaultMessage: '请输入密码！' })}]}
                     />
                   </>

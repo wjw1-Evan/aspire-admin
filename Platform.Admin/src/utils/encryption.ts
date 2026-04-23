@@ -52,7 +52,7 @@ export class PasswordEncryption {
 
         try {
             const keyHex = await this.getValidPublicKey();
-            if (!keyHex || keyHex.length !== 128) {
+            if (!keyHex || keyHex.length !== 130) {
                 throw new Error('无效的公钥格式: ' + (keyHex?.substring(0, 10) || 'undefined'));
             }
             const encryptedData = sm2.doEncrypt(password, keyHex, 1);
@@ -61,7 +61,7 @@ export class PasswordEncryption {
             console.error('SM2 加密失败，清除缓存后重试', error);
             this.clearCache();
             const keyHex = await this.getValidPublicKey();
-            if (!keyHex || keyHex.length !== 128) {
+            if (!keyHex || keyHex.length !== 130) {
                 throw new Error('无效的公钥格式: ' + (keyHex?.substring(0, 10) || 'undefined'));
             }
             const encryptedData = sm2.doEncrypt(password, keyHex, 1);

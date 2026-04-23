@@ -261,6 +261,4 @@ export interface RegisterParams {
   password: string;
   confirmPassword: string;
   email: string;
-  captchaId?: string;
-  captchaAnswer?: string;
 }

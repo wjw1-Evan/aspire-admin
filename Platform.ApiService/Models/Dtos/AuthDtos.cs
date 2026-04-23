@@ -104,10 +104,6 @@ public class RegisterRequest
     public string Email { get; set; } = string.Empty;
 
     public string? PhoneNumber { get; set; }
-
-    public string? CaptchaId { get; set; }
-
-    public string? CaptchaAnswer { get; set; }
 }
 
 public class ChangePasswordRequest

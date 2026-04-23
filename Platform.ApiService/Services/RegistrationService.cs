@@ -53,17 +53,6 @@ public class RegistrationService : IRegistrationService
     /// <inheritdoc/>
     public async Task<User> RegisterAsync(RegisterRequest request)
     {
-        if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
-        {
-            throw new ArgumentException("请输入图形验证码");
-        }
-
-        var captchaValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.CaptchaAnswer, "register");
-        if (!captchaValid)
-        {
-            throw new ArgumentException("验证码无效");
-        }
-
         _validationService.ValidateUsername(request.Username);
         _validationService.ValidatePassword(request.Password);
         _validationService.ValidateEmail(request.Email);

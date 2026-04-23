@@ -111,7 +111,6 @@ export default function Register() {
 
   const handleSubmit = async (values: API.RegisterParams) => {
     try {
-      PasswordEncryption.clearCache();
       const encryptedPassword = values.password
         ? await PasswordEncryption.encrypt(values.password)
         : undefined;

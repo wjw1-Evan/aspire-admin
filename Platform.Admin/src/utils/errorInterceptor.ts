@@ -178,6 +178,19 @@ class UnifiedErrorInterceptor {
         sendToMonitoring: true,
       },
     });
+
+    // 400 验证错误规则 - 静默处理，由调用处（页面）负责显示
+    this.addRule({
+      condition: (error) => {
+        return error.response?.status === 400;
+      },
+      config: {
+        displayType: ErrorDisplayType.SILENT,
+        showToUser: false,
+        logToConsole: false,
+        sendToMonitoring: false,
+      },
+    });
   }
 
   /**

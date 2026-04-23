@@ -284,7 +284,6 @@ const UserManagement: React.FC = () => {
       ) : (
         <ProTable
           actionRef={pendingActionRef}
-          params={joinState}
           request={async () => {
             await loadJoinRequests();
             return { data: pendingReqs, total: pendingReqs.length, success: true };

@@ -283,7 +283,7 @@ const Login: React.FC = () => {
                   await handleSubmit(values as API.LoginParams);
                 }}
                 submitter={{
-                  submitButtonProps: { loading, size: 'middle', block: true },
+                  submitButtonProps: { loading, block: true },
                 }}
               >
                 {status === 'error' && loginType === 'account' && (
@@ -312,7 +312,7 @@ const Login: React.FC = () => {
                         defaultMessage: '密码',
                       })}
                       fieldProps={{ prefix: <LockOutlined />, type: 'password' }}
-                      rules={[{ required: true, message: intl.formatMessage({ id: 'pages.login.password.required', defaultMessage: '请输入密码！' })}]}
+                      rules={[{ required: true, message: intl.formatMessage({ id: 'pages.login.password.required', defaultMessage: '请输入密码！' }) }]}
                     />
                   </>
                 )}

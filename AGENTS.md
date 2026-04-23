@@ -1159,7 +1159,7 @@ useEffect(() => {
 - **Token 存储**：`localStorage`，键名 `auth_token`、`refresh_token`、`token_expires_at`
 - **Token 工具**：`src/utils/token.ts`（`tokenUtils`），提供 `setTokens()`、`getToken()`、`clearAllTokens()`、`isTokenExpired()`
 - **自动刷新**：`src/utils/tokenRefreshManager.ts`（`TokenRefreshManager` 单例），401 时自动调用 `/apiservice/api/auth/refresh-token` 刷新并重试
-- **密码加密**：登录密码使用 `src/utils/encryption.ts`（RSA/JSEncrypt）+ `sm-crypto`（国密算法）加密传输
+- **密码加密**：登录密码使用国密 SM2 非对称加密算法传输（见 7.20 节）
 
 ### 7.14 SSE 连接管理
 
@@ -1251,6 +1251,73 @@ export function getErrorMessage(
 | `httpCode` | HTTP 状态码或 ProblemDetails type | 来自 `HTTP_{status}` 或 `problemDetails.type` |
 | `message` | 错误消息文本 | fallback 显示 |
 | `debugData` | 原始错误负载 | 用于调试日志 |
+
+### 7.20 国密 SM2 密码加密规范（GM/T 0003 / GM/T 0009）
+
+本项目使用国密 SM2 非对称加密算法保护前端到后端的敏感数据传输，遵循 GM/T 0003.1-2012 和 GM/T 0009-2012 标准。
+
+#### 技术标准
+
+| 标准 | 内容 |
+|------|------|
+| GM/T 0003.1-2012 | SM2 椭圆曲线公钥密码算法（公钥格式） |
+| GM/T 0009-2012 | SM2 密码算法使用规范（加密模式 C1C3C2） |
+
+#### 数据格式
+
+**公钥格式（非压缩点表示法）**：
+```
+04 || x(32字节) || y(32字节) = 130 个十六进制字符
+```
+
+**密文格式（C1C3C2 模式）**：
+```
+04 || C1_x(32字节) || C1_y(32字节) || C3(SM3摘要,32字节) || C2(密文)
+```
+
+#### 前后端协作
+
+| 端 | 库/组件 | 职责 |
+|----|---------|------|
+| 前端 | `sm-crypto` v0.4.0 | `sm2.doEncrypt(msg, publicKey, 1)` 输出不含 `04`，需手动拼接 |
+| 后端 | BouncyCastle `SM2Engine` | 解密时密文必须包含 `04` 前缀（C1 非压缩点格式） |
+
+#### 关键代码位置
+
+| 文件 | 说明 |
+|------|------|
+| `Platform.Admin/src/utils/encryption.ts` | 前端 SM2 加密实现，`encrypt()` 返回带 `04` 前缀的密文 |
+| `Platform.ApiService/Services/SingletonPasswordEncryptionService.cs` | 后端 SM2 解密实现，`DecryptPassword()` 直接 `Hex.Decode` 密文（含 04） |
+| `Platform.ApiService/Services/IPasswordEncryptionService.cs` | 加密服务接口定义 |
+
+#### 前端加密流程
+
+```typescript
+import { sm2 } from 'sm-crypto';
+
+// sm-crypto doEncrypt(cipherMode=1) 输出: C1_x || C1_y || C3 || C2（无 04 前缀）
+// 国密标准要求完整密文格式: 04 || C1_x || C1_y || C3 || C2
+const encryptedData = sm2.doEncrypt(password, publicKey, 1);
+return '04' + encryptedData; // 拼接 04 前缀
+```
+
+#### 后端解密流程
+
+```csharp
+// BouncyCastle SM2Engine.ProcessBlock 期望密文包含 04 前缀
+byte[] cipherText = Hex.Decode(encryptedPassword); // 密文���式: 04 || C1 || C3 || C2
+
+var sm2Engine = new SM2Engine(new SM3Digest(), SM2Engine.Mode.C1C3C2);
+sm2Engine.Init(false, _keyPair.Private);
+
+var decryptedData = sm2Engine.ProcessBlock(cipherText, 0, cipherText.Length);
+```
+
+#### 禁止事项
+
+- ❌ **前端**：禁止将 `04` 前缀硬编码在后端返回的公钥中（公钥本身已含 `04`）
+- ❌ **后端**：禁止在解密前剥离 `04` 前缀（`SM2Engine` 需要 `04` 作为 C1 非压缩点标识）
+- ❌ **两端**：禁止使用非国密算法（如 RSA）处理密码传输
 
 ## 8. 移动端开发规范（Expo）
 

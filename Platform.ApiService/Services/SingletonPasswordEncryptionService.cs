@@ -70,11 +70,19 @@ public class SingletonPasswordEncryptionService : IPasswordEncryptionService
         if (string.IsNullOrEmpty(encryptedPassword))
             return string.Empty;
 
+        var actualPassword = encryptedPassword;
+        if (actualPassword.StartsWith("04"))
+        {
+            actualPassword = actualPassword.Substring(2);
+        }
+
         try
         {
-            _logger.LogInformation("SM2解密 - 输入长度: {Len}, 前10字符: {Prefix}", encryptedPassword.Length, encryptedPassword.Length > 10 ? encryptedPassword.Substring(0, 10) : encryptedPassword);
+            _logger.LogInformation("SM2解密 - 原始长度: {OrigLen}, 处理后长度: {ActualLen}, 前20字符: {Prefix}",
+                encryptedPassword.Length, actualPassword.Length,
+                actualPassword.Length > 20 ? actualPassword.Substring(0, 20) : actualPassword);
 
-            byte[] cipherText = Hex.Decode(encryptedPassword);
+            byte[] cipherText = Hex.Decode(actualPassword);
 
             var sm2Engine = new SM2Engine(new SM3Digest(), SM2Engine.Mode.C1C3C2);
             sm2Engine.Init(false, _keyPair.Private);
@@ -84,7 +92,7 @@ public class SingletonPasswordEncryptionService : IPasswordEncryptionService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "SM2 解密失败. Cipher length: {Len}", encryptedPassword.Length);
+            _logger.LogError(ex, "SM2 解密失败. 原始长度: {Len}, 是否带04: {Has04}", encryptedPassword.Length, encryptedPassword.StartsWith("04"));
             throw new CryptographicException("密码解密失败，请检查加密格式或重试获取公钥。");
         }
     }
@@ -102,7 +110,19 @@ public class SingletonPasswordEncryptionService : IPasswordEncryptionService
 
         try
         {
-            return DecryptPassword(password);
+            var actualPassword = password;
+            if (actualPassword.StartsWith("04"))
+            {
+                actualPassword = actualPassword.Substring(2);
+            }
+
+            byte[] cipherText = Hex.Decode(actualPassword);
+
+            var sm2Engine = new SM2Engine(new SM3Digest(), SM2Engine.Mode.C1C3C2);
+            sm2Engine.Init(false, _keyPair.Private);
+
+            var decryptedData = sm2Engine.ProcessBlock(cipherText, 0, cipherText.Length);
+            return Encoding.UTF8.GetString(decryptedData);
         }
         catch (Exception ex)
         {

@@ -509,4 +509,20 @@ export default {
   'pages.forgotPassword.passwordMismatch': 'The two passwords do not match!',
   'pages.forgotPassword.confirmPasswordPlaceholder': 'Confirm New Password',
   'pages.park.statistics.reportPeriod': 'Report Period',
+
+  // DataAnnotation যাচাই ত্রুটি কোড
+  'VALIDATION_USERNAME_REQUIRED': 'ব্যবহারকারীর নাম প্রয়োজন',
+  'VALIDATION_USERNAME_TOO_LONG': 'ব্যবহারকারীর নাম 50 অক্ষরের বেশি হতে পারবে না',
+  'VALIDATION_USERNAME_TOO_SHORT': 'ব্যবহারকারীর নাম কমপক্ষে 3 অক্ষরের হতে হবে',
+  'VALIDATION_PASSWORD_REQUIRED': 'পাসওয়ার্ড প্রয়োজন',
+  'VALIDATION_PASSWORD_TOO_LONG': 'পাসওয়ার্ড 50 অক্ষরের বেশি হতে পারবে না',
+  'VALIDATION_PASSWORD_TOO_SHORT': 'পাসওয়ার্ড কমপক্ষে 6 অক্ষরের হতে হবে',
+  'VALIDATION_EMAIL_REQUIRED': 'ইমেইল প্রয়োজন',
+  'VALIDATION_EMAIL_INVALID': 'ইমেইল ফরম্যাট অবৈধ',
+  'VALIDATION_CAPTCHA_REQUIRED': 'ক্যাপচা প্রয়োজন',
+  'VALIDATION_CAPTCHA_INVALID': 'ক্যাপচা 6 সংখ্যার হতে হবে',
+  'VALIDATION_CURRENT_PASSWORD_REQUIRED': 'বর্তমান পাসওয়ার্ড প্রয়োজন',
+  'VALIDATION_NEW_PASSWORD_REQUIRED': 'নতুন পাসওয়ার্ড প্রয়োজন',
+  'VALIDATION_CONFIRM_PASSWORD_REQUIRED': 'পাসওয়ার্ড নিশ্চিত করা প্রয়োজন',
+  'VALIDATION_REFRESH_TOKEN_REQUIRED': 'রিফ্রেশ টোকেন প্রয়োজন',
 };

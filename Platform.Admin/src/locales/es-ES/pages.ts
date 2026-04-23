@@ -1590,5 +1590,21 @@ export default {
   'pages.forgotPassword.passwordMismatch': 'The two passwords do not match!',
   'pages.forgotPassword.confirmPasswordPlaceholder': 'Confirm New Password',
   'pages.park.statistics.reportPeriod': 'Período de informe',
+
+  // Códigos de error de validación DataAnnotation
+  'VALIDATION_USERNAME_REQUIRED': 'El nombre de usuario es obligatorio',
+  'VALIDATION_USERNAME_TOO_LONG': 'El nombre de usuario no debe exceder 50 caracteres',
+  'VALIDATION_USERNAME_TOO_SHORT': 'El nombre de usuario debe tener al menos 3 caracteres',
+  'VALIDATION_PASSWORD_REQUIRED': 'La contraseña es obligatoria',
+  'VALIDATION_PASSWORD_TOO_LONG': 'La contraseña no debe exceder 50 caracteres',
+  'VALIDATION_PASSWORD_TOO_SHORT': 'La contraseña debe tener al menos 6 caracteres',
+  'VALIDATION_EMAIL_REQUIRED': 'El correo electrónico es obligatorio',
+  'VALIDATION_EMAIL_INVALID': 'El formato del correo electrónico es inválido',
+  'VALIDATION_CAPTCHA_REQUIRED': 'El captcha es obligatorio',
+  'VALIDATION_CAPTCHA_INVALID': 'El captcha debe tener 6 dígitos',
+  'VALIDATION_CURRENT_PASSWORD_REQUIRED': 'La contraseña actual es obligatoria',
+  'VALIDATION_NEW_PASSWORD_REQUIRED': 'La nueva contraseña es obligatoria',
+  'VALIDATION_CONFIRM_PASSWORD_REQUIRED': 'La confirmación de contraseña es obligatoria',
+  'VALIDATION_REFRESH_TOKEN_REQUIRED': 'El token de actualización es obligatorio',
 };
 

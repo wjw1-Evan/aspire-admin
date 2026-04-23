@@ -1331,5 +1331,21 @@ export default {
   'pages.forgotPassword.newPasswordPlaceholder': '新密码',
   'pages.forgotPassword.passwordMismatch': '两次输入的密码不匹配！',
   'pages.forgotPassword.confirmPasswordPlaceholder': '确认新密码',
+
+  // DataAnnotation 驗證錯誤碼
+  'VALIDATION_USERNAME_REQUIRED': '用戶名不能為空',
+  'VALIDATION_USERNAME_TOO_LONG': '用戶名長度不能超過50個字符',
+  'VALIDATION_USERNAME_TOO_SHORT': '用戶名長度不能少於3個字符',
+  'VALIDATION_PASSWORD_REQUIRED': '密碼不能為空',
+  'VALIDATION_PASSWORD_TOO_LONG': '密碼長度不能超過50個字符',
+  'VALIDATION_PASSWORD_TOO_SHORT': '密碼長度不能少於6個字符',
+  'VALIDATION_EMAIL_REQUIRED': '郵箱不能為空',
+  'VALIDATION_EMAIL_INVALID': '郵箱格式不正確',
+  'VALIDATION_CAPTCHA_REQUIRED': '驗證碼不能為空',
+  'VALIDATION_CAPTCHA_INVALID': '驗證碼必須為6位',
+  'VALIDATION_CURRENT_PASSWORD_REQUIRED': '當前密碼不能為空',
+  'VALIDATION_NEW_PASSWORD_REQUIRED': '新密碼不能為空',
+  'VALIDATION_CONFIRM_PASSWORD_REQUIRED': '確認密碼不能為空',
+  'VALIDATION_REFRESH_TOKEN_REQUIRED': '刷新令牌不能為空',
 };
 

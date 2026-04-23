@@ -2097,5 +2097,21 @@ export default {
   'pages.forgotPassword.newPasswordPlaceholder': 'New Password',
   'pages.forgotPassword.passwordMismatch': 'The two passwords do not match!',
   'pages.forgotPassword.confirmPasswordPlaceholder': 'Confirm New Password',
+
+  // DataAnnotation validation error codes
+  'VALIDATION_USERNAME_REQUIRED': 'Username is required',
+  'VALIDATION_USERNAME_TOO_LONG': 'Username must not exceed 50 characters',
+  'VALIDATION_USERNAME_TOO_SHORT': 'Username must be at least 3 characters',
+  'VALIDATION_PASSWORD_REQUIRED': 'Password is required',
+  'VALIDATION_PASSWORD_TOO_LONG': 'Password must not exceed 50 characters',
+  'VALIDATION_PASSWORD_TOO_SHORT': 'Password must be at least 6 characters',
+  'VALIDATION_EMAIL_REQUIRED': 'Email is required',
+  'VALIDATION_EMAIL_INVALID': 'Invalid email format',
+  'VALIDATION_CAPTCHA_REQUIRED': 'Captcha is required',
+  'VALIDATION_CAPTCHA_INVALID': 'Captcha must be 6 digits',
+  'VALIDATION_CURRENT_PASSWORD_REQUIRED': 'Current password is required',
+  'VALIDATION_NEW_PASSWORD_REQUIRED': 'New password is required',
+  'VALIDATION_CONFIRM_PASSWORD_REQUIRED': 'Confirm password is required',
+  'VALIDATION_REFRESH_TOKEN_REQUIRED': 'Refresh token is required',
 };
 

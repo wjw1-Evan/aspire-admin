@@ -1559,4 +1559,20 @@ export default {
   'pages.forgotPassword.passwordMismatch': 'The two passwords do not match!',
   'pages.forgotPassword.confirmPasswordPlaceholder': 'Confirm New Password',
   'pages.park.statistics.reportPeriod': 'Отчётный период',
+
+  // Коды ошибок проверки DataAnnotation
+  'VALIDATION_USERNAME_REQUIRED': 'Имя пользователя обязательно',
+  'VALIDATION_USERNAME_TOO_LONG': 'Имя пользователя не должно превышать 50 символов',
+  'VALIDATION_USERNAME_TOO_SHORT': 'Имя пользователя должно содержать не менее 3 символов',
+  'VALIDATION_PASSWORD_REQUIRED': 'Пароль обязателен',
+  'VALIDATION_PASSWORD_TOO_LONG': 'Пароль не должен превышать 50 символов',
+  'VALIDATION_PASSWORD_TOO_SHORT': 'Пароль должен содержать не менее 6 символов',
+  'VALIDATION_EMAIL_REQUIRED': 'Электронная почта обязательна',
+  'VALIDATION_EMAIL_INVALID': 'Неверный формат электронной почты',
+  'VALIDATION_CAPTCHA_REQUIRED': 'Капча обязательна',
+  'VALIDATION_CAPTCHA_INVALID': 'Капча должна состоять из 6 цифр',
+  'VALIDATION_CURRENT_PASSWORD_REQUIRED': 'Текущий пароль обязателен',
+  'VALIDATION_NEW_PASSWORD_REQUIRED': 'Новый пароль обязателен',
+  'VALIDATION_CONFIRM_PASSWORD_REQUIRED': 'Подтверждение пароля обязательно',
+  'VALIDATION_REFRESH_TOKEN_REQUIRED': 'Токен обновления обязателен',
 };

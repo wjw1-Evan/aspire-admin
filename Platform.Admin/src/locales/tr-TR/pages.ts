@@ -1559,4 +1559,20 @@ export default {
   'pages.forgotPassword.passwordMismatch': 'The two passwords do not match!',
   'pages.forgotPassword.confirmPasswordPlaceholder': 'Confirm New Password',
   'pages.park.statistics.reportPeriod': 'Rapor Dönemi',
+
+  // DataAnnotation doğrulama hata kodları
+  'VALIDATION_USERNAME_REQUIRED': 'Kullanıcı adı gereklidir',
+  'VALIDATION_USERNAME_TOO_LONG': 'Kullanıcı adı 50 karakteri geçemez',
+  'VALIDATION_USERNAME_TOO_SHORT': 'Kullanıcı adı en az 3 karakter olmalıdır',
+  'VALIDATION_PASSWORD_REQUIRED': 'Parola gereklidir',
+  'VALIDATION_PASSWORD_TOO_LONG': 'Parola 50 karakteri geçemez',
+  'VALIDATION_PASSWORD_TOO_SHORT': 'Parola en az 6 karakter olmalıdır',
+  'VALIDATION_EMAIL_REQUIRED': 'E-posta gereklidir',
+  'VALIDATION_EMAIL_INVALID': 'Geçersiz e-posta biçimi',
+  'VALIDATION_CAPTCHA_REQUIRED': 'Captcha gereklidir',
+  'VALIDATION_CAPTCHA_INVALID': 'Captcha 6 basamaklı olmalıdır',
+  'VALIDATION_CURRENT_PASSWORD_REQUIRED': 'Mevcut parola gereklidir',
+  'VALIDATION_NEW_PASSWORD_REQUIRED': 'Yeni parola gereklidir',
+  'VALIDATION_CONFIRM_PASSWORD_REQUIRED': 'Parola doğrulama gereklidir',
+  'VALIDATION_REFRESH_TOKEN_REQUIRED': 'Yenileme belirteci gereklidir',
 };

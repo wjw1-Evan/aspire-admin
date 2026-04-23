@@ -2027,4 +2027,20 @@ export default {
   'pages.forgotPassword.newPasswordPlaceholder': 'New Password',
   'pages.forgotPassword.passwordMismatch': 'The two passwords do not match!',
   'pages.forgotPassword.confirmPasswordPlaceholder': 'Confirm New Password',
+
+  // Mã lỗi xác thực DataAnnotation
+  'VALIDATION_USERNAME_REQUIRED': 'Tên người dùng là bắt buộc',
+  'VALIDATION_USERNAME_TOO_LONG': 'Tên người dùng không được quá 50 ký tự',
+  'VALIDATION_USERNAME_TOO_SHORT': 'Tên người dùng phải có ít nhất 3 ký tự',
+  'VALIDATION_PASSWORD_REQUIRED': 'Mật khẩu là bắt buộc',
+  'VALIDATION_PASSWORD_TOO_LONG': 'Mật khẩu không được quá 50 ký tự',
+  'VALIDATION_PASSWORD_TOO_SHORT': 'Mật khẩu phải có ít nhất 6 ký tự',
+  'VALIDATION_EMAIL_REQUIRED': 'Email là bắt buộc',
+  'VALIDATION_EMAIL_INVALID': 'Định dạng email không hợp lệ',
+  'VALIDATION_CAPTCHA_REQUIRED': 'Captcha là bắt buộc',
+  'VALIDATION_CAPTCHA_INVALID': 'Captcha phải có 6 chữ số',
+  'VALIDATION_CURRENT_PASSWORD_REQUIRED': 'Mật khẩu hiện tại là bắt buộc',
+  'VALIDATION_NEW_PASSWORD_REQUIRED': 'Mật khẩu mới là bắt buộc',
+  'VALIDATION_CONFIRM_PASSWORD_REQUIRED': 'Xác nhận mật khẩu là bắt buộc',
+  'VALIDATION_REFRESH_TOKEN_REQUIRED': 'Mã thông báo làm mới là bắt buộc',
 };

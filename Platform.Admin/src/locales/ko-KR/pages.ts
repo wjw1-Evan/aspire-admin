@@ -1903,5 +1903,21 @@ export default {
   'pages.forgotPassword.newPasswordPlaceholder': 'New Password',
   'pages.forgotPassword.passwordMismatch': 'The two passwords do not match!',
   'pages.forgotPassword.confirmPasswordPlaceholder': 'Confirm New Password',
+
+  // DataAnnotation 검증 오류 코드
+  'VALIDATION_USERNAME_REQUIRED': '사용자 이름은 필수입니다',
+  'VALIDATION_USERNAME_TOO_LONG': '사용자 이름은 50자를 초과할 수 없습니다',
+  'VALIDATION_USERNAME_TOO_SHORT': '사용자 이름은 3자 이상이어야 합니다',
+  'VALIDATION_PASSWORD_REQUIRED': '비밀번호는 필수입니다',
+  'VALIDATION_PASSWORD_TOO_LONG': '비밀번호는 50자를 초과할 수 없습니다',
+  'VALIDATION_PASSWORD_TOO_SHORT': '비밀번호는 6자 이상이어야 합니다',
+  'VALIDATION_EMAIL_REQUIRED': '이메일은 필수입니다',
+  'VALIDATION_EMAIL_INVALID': '이메일 형식이 올바르지 않습니다',
+  'VALIDATION_CAPTCHA_REQUIRED': '캡차는 필수입니다',
+  'VALIDATION_CAPTCHA_INVALID': '캡차는 6자리여야 합니다',
+  'VALIDATION_CURRENT_PASSWORD_REQUIRED': '현재 비밀번호는 필수입니다',
+  'VALIDATION_NEW_PASSWORD_REQUIRED': '새 비밀번호는 필수입니다',
+  'VALIDATION_CONFIRM_PASSWORD_REQUIRED': '비밀번호 확인은 필수입니다',
+  'VALIDATION_REFRESH_TOKEN_REQUIRED': '새로고침 토큰은 필수입니다',
 };
 

@@ -1766,5 +1766,21 @@ export default {
   'pages.forgotPassword.passwordMismatch': 'The two passwords do not match!',
   'pages.forgotPassword.confirmPasswordPlaceholder': 'Confirm New Password',
   'pages.park.statistics.reportPeriod': 'Berichtszeitraum',
+
+  // DataAnnotation Validierungsfehlercodes
+  'VALIDATION_USERNAME_REQUIRED': 'Benutzername ist erforderlich',
+  'VALIDATION_USERNAME_TOO_LONG': 'Benutzername darf maximal 50 Zeichen haben',
+  'VALIDATION_USERNAME_TOO_SHORT': 'Benutzername muss mindestens 3 Zeichen haben',
+  'VALIDATION_PASSWORD_REQUIRED': 'Passwort ist erforderlich',
+  'VALIDATION_PASSWORD_TOO_LONG': 'Passwort darf maximal 50 Zeichen haben',
+  'VALIDATION_PASSWORD_TOO_SHORT': 'Passwort muss mindestens 6 Zeichen haben',
+  'VALIDATION_EMAIL_REQUIRED': 'E-Mail ist erforderlich',
+  'VALIDATION_EMAIL_INVALID': 'Ungültiges E-Mail-Format',
+  'VALIDATION_CAPTCHA_REQUIRED': 'Captcha ist erforderlich',
+  'VALIDATION_CAPTCHA_INVALID': 'Captcha muss 6-stellig sein',
+  'VALIDATION_CURRENT_PASSWORD_REQUIRED': 'Aktuelles Passwort ist erforderlich',
+  'VALIDATION_NEW_PASSWORD_REQUIRED': 'Neues Passwort ist erforderlich',
+  'VALIDATION_CONFIRM_PASSWORD_REQUIRED': 'Passwortbestätigung ist erforderlich',
+  'VALIDATION_REFRESH_TOKEN_REQUIRED': 'Aktualisierungstoken ist erforderlich',
 };
 

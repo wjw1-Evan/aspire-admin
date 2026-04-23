@@ -1085,5 +1085,21 @@ export default {
   'pages.forgotPassword.newPasswordPlaceholder': 'New Password',
   'pages.forgotPassword.passwordMismatch': 'The two passwords do not match!',
   'pages.forgotPassword.confirmPasswordPlaceholder': 'Confirm New Password',
+
+  // DataAnnotation 検証エラーコード
+  'VALIDATION_USERNAME_REQUIRED': 'ユーザー名は必須です',
+  'VALIDATION_USERNAME_TOO_LONG': 'ユーザー名は50文字以内で入力してください',
+  'VALIDATION_USERNAME_TOO_SHORT': 'ユーザー名は3文字以上で入力してください',
+  'VALIDATION_PASSWORD_REQUIRED': 'パスワードは必須です',
+  'VALIDATION_PASSWORD_TOO_LONG': 'パスワードは50文字以内で入力してください',
+  'VALIDATION_PASSWORD_TOO_SHORT': 'パスワードは6文字以上で入力してください',
+  'VALIDATION_EMAIL_REQUIRED': 'メールアドレスは必須です',
+  'VALIDATION_EMAIL_INVALID': 'メールアドレスの形式が不正です',
+  'VALIDATION_CAPTCHA_REQUIRED': 'キャプチャは必須です',
+  'VALIDATION_CAPTCHA_INVALID': 'キャプチャは6桁で入力してください',
+  'VALIDATION_CURRENT_PASSWORD_REQUIRED': '現在のパスワードは必須です',
+  'VALIDATION_NEW_PASSWORD_REQUIRED': '新しいパスワードは必須です',
+  'VALIDATION_CONFIRM_PASSWORD_REQUIRED': '確認パスワードは必須です',
+  'VALIDATION_REFRESH_TOKEN_REQUIRED': '更新トークンは必須です',
 };
 

@@ -1558,5 +1558,21 @@ export default {
   'pages.forgotPassword.newPasswordPlaceholder': 'New Password',
   'pages.forgotPassword.passwordMismatch': 'The two passwords do not match!',
   'pages.forgotPassword.confirmPasswordPlaceholder': 'Confirm New Password',
-  'pages.park.statistics.reportPeriod': 'فترة التقرير',
+  'pages.park.statistics.reportPeriod': ' فترة التقرير',
+
+  // رموز خطأ التحقق من DataAnnotation
+  'VALIDATION_USERNAME_REQUIRED': 'اسم المستخدم مطلوب',
+  'VALIDATION_USERNAME_TOO_LONG': 'لا يجب أن يتجاوز اسم المستخدم 50 حرفًا',
+  'VALIDATION_USERNAME_TOO_SHORT': 'يجب أن يكون اسم المستخدم 3 أحرف على الأقل',
+  'VALIDATION_PASSWORD_REQUIRED': 'كلمة المرور مطلوبة',
+  'VALIDATION_PASSWORD_TOO_LONG': 'يجب ألا تتجاوز كلمة المرور 50 حرفًا',
+  'VALIDATION_PASSWORD_TOO_SHORT': 'يجب أن تتكون كلمة المرور 6 أحرف على الأقل',
+  'VALIDATION_EMAIL_REQUIRED': 'البريد الإلكتروني مطلوب',
+  'VALIDATION_EMAIL_INVALID': 'تنسيق البريد الإلكتروني غير صالح',
+  'VALIDATION_CAPTCHA_REQUIRED': 'مطلوب CAPTCHA',
+  'VALIDATION_CAPTCHA_INVALID': 'يجب أن يكون CAPTCHA 6 أرقام',
+  'VALIDATION_CURRENT_PASSWORD_REQUIRED': 'مطلوب كلمة المرور الحالية',
+  'VALIDATION_NEW_PASSWORD_REQUIRED': 'مطلوب كلمة المرور الجديدة',
+  'VALIDATION_CONFIRM_PASSWORD_REQUIRED': 'مطلوب تأكيد كلمة المرور',
+  'VALIDATION_REFRESH_TOKEN_REQUIRED': 'مطلوب رمز التحديث',
 };

@@ -510,4 +510,20 @@ export default {
   'pages.forgotPassword.passwordMismatch': 'The two passwords do not match!',
   'pages.forgotPassword.confirmPasswordPlaceholder': 'Confirm New Password',
   'pages.park.statistics.reportPeriod': 'Laporan Periode',
+
+  // Kode kesalahan validasi DataAnnotation
+  'VALIDATION_USERNAME_REQUIRED': 'Nama pengguna wajib',
+  'VALIDATION_USERNAME_TOO_LONG': 'Nama pengguna tidak boleh lebih dari 50 karakter',
+  'VALIDATION_USERNAME_TOO_SHORT': 'Nama pengguna harus minimal 3 karakter',
+  'VALIDATION_PASSWORD_REQUIRED': 'Kata sandi wajib',
+  'VALIDATION_PASSWORD_TOO_LONG': 'Kata sandi tidak boleh lebih dari 50 karakter',
+  'VALIDATION_PASSWORD_TOO_SHORT': 'Kata sandi harus minimal 6 karakter',
+  'VALIDATION_EMAIL_REQUIRED': 'Email wajib',
+  'VALIDATION_EMAIL_INVALID': 'Format email tidak valid',
+  'VALIDATION_CAPTCHA_REQUIRED': 'Captcha wajib',
+  'VALIDATION_CAPTCHA_INVALID': 'Captcha harus 6 digit',
+  'VALIDATION_CURRENT_PASSWORD_REQUIRED': 'Kata sandi saat ini wajib',
+  'VALIDATION_NEW_PASSWORD_REQUIRED': 'Kata sandi baru wajib',
+  'VALIDATION_CONFIRM_PASSWORD_REQUIRED': 'Konfirmasi kata sandi wajib',
+  'VALIDATION_REFRESH_TOKEN_REQUIRED': 'Token refresh wajib',
 };

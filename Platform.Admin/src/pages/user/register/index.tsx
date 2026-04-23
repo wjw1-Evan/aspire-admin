@@ -60,6 +60,17 @@ const useStyles = createStyles(({ token }) => {
       textAlign: 'center',
       marginBottom: 24,
     },
+    title: {
+      fontSize: 28,
+      fontWeight: 600,
+      color: '#1a1a1a',
+      marginBottom: 8,
+    },
+    subTitle: {
+      fontSize: 14,
+      color: '#666',
+      marginBottom: 32,
+    },
     infoBox: {
       marginTop: 16,
       textAlign: 'center',
@@ -209,11 +220,11 @@ export default function Register() {
           <div className={styles.formWrapper}>
             <ProCard className={styles.card}>
               <div className={styles.header}>
-                <img alt="logo" src="/logo.svg" />
-                <div className="title">
+                <img alt="logo" src="/logo.svg" style={{ width: 64, height: 64, marginBottom: 16 }} />
+                <div className={styles.title}>
                   <FormattedMessage id="pages.register.title" />
                 </div>
-                <div className="subTitle">
+                <div className={styles.subTitle}>
                   <FormattedMessage id="pages.register.subTitle" />
                 </div>
               </div>

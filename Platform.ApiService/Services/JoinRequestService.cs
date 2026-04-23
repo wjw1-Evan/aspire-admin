@@ -163,9 +163,24 @@ public class JoinRequestService : IJoinRequestService
         }
 
         var query = _context.Set<CompanyJoinRequest>()
-            .Where(jr => jr.CompanyId == companyId && jr.Status == "pending");
+            .Where(jr => jr.CompanyId == companyId && jr.Status == "pending")
+            .OrderByDescending(jr => jr.CreatedAt);
 
-        var requests = await query.OrderByDescending(jr => jr.CreatedAt).ToListAsync();
+        var pagedResult = query.ToPagedList(request);
+        var requests = await pagedResult.Queryable.ToListAsync();
+
+        if (!requests.Any())
+        {
+            return new PagedResult<JoinRequestDetail>
+            {
+                Queryable = Enumerable.Empty<JoinRequestDetail>().AsQueryable(),
+                CurrentPage = request.Page,
+                PageSize = request.PageSize,
+                RowCount = 0,
+                PageCount = 0
+            };
+        }
+
         var details = await BuildJoinRequestDetailsAsync(requests);
 
         if (!string.IsNullOrEmpty(request.Search))
@@ -177,16 +192,13 @@ public class JoinRequestService : IJoinRequestService
             ).ToList();
         }
 
-        var total = details.Count;
-        var paged = details.Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToList();
-
         return new PagedResult<JoinRequestDetail>
         {
-            Queryable = paged.AsQueryable(),
+            Queryable = details.AsQueryable(),
             CurrentPage = request.Page,
             PageSize = request.PageSize,
-            RowCount = total,
-            PageCount = (int)Math.Ceiling(total / (double)request.PageSize)
+            RowCount = pagedResult.RowCount,
+            PageCount = pagedResult.PageCount
         };
     }
 

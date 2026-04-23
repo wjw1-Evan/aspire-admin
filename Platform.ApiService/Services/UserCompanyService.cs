@@ -250,12 +250,24 @@ public class UserCompanyService : IUserCompanyService
         var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
         await this.RequireAdminAsync(currentUserId, companyId, "只有管理员可以查看申请列表");
 
-        var query = _context.Set<CompanyJoinRequest>().Where(r => r.CompanyId == companyId);
-        var requests = await query.OrderByDescending(r => r.CreatedAt).ToListAsync();
+        var query = _context.Set<CompanyJoinRequest>()
+            .Where(r => r.CompanyId == companyId)
+            .OrderByDescending(r => r.CreatedAt);
 
-        var result = new List<JoinRequestDetail>();
+        var pagedResult = query.ToPagedList(request);
+        var requests = await pagedResult.Queryable.ToListAsync();
+
         if (!requests.Any())
-            return new PagedResult<JoinRequestDetail> { Queryable = result.AsQueryable(), CurrentPage = request.Page, PageSize = request.PageSize, RowCount = 0, PageCount = 0 };
+        {
+            return new PagedResult<JoinRequestDetail>
+            {
+                Queryable = Enumerable.Empty<JoinRequestDetail>().AsQueryable(),
+                CurrentPage = request.Page,
+                PageSize = request.PageSize,
+                RowCount = 0,
+                PageCount = 0
+            };
+        }
 
         var userIds = requests.Select(r => r.UserId).Distinct().ToList();
         var reviewerIds = requests.Where(r => r.ReviewedBy != null).Select(r => r.ReviewedBy!).Distinct().ToList();
@@ -266,6 +278,7 @@ public class UserCompanyService : IUserCompanyService
         var userDict = users.ToDictionary(u => u.Id!, u => u);
         var company = await _context.Set<Company>().FirstOrDefaultAsync(c => c.Id == companyId);
 
+        var result = new List<JoinRequestDetail>();
         foreach (var req in requests)
         {
             var user = userDict.GetValueOrDefault(req.UserId);
@@ -296,15 +309,13 @@ public class UserCompanyService : IUserCompanyService
             ).ToList();
         }
 
-        var total = result.Count;
-        var paged = result.Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToList();
         return new PagedResult<JoinRequestDetail>
         {
-            Queryable = paged.AsQueryable(),
+            Queryable = result.AsQueryable(),
             CurrentPage = request.Page,
             PageSize = request.PageSize,
-            RowCount = total,
-            PageCount = (int)Math.Ceiling(total / (double)request.PageSize)
+            RowCount = pagedResult.RowCount,
+            PageCount = pagedResult.PageCount
         };
     }
 

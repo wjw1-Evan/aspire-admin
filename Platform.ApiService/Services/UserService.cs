@@ -308,7 +308,16 @@ public class UserService : IUserService
     /// <inheritdoc/>
     public async Task<System.Linq.Dynamic.Core.PagedResult<User>> GetUsersWithPaginationAsync(Platform.ServiceDefaults.Models.ProTableRequest request)
     {
-        var query = _context.Set<User>().Where(u => u.IsActive);
+        var companyId = _tenantContext.GetCurrentCompanyId() ?? throw new UnauthorizedAccessException(ErrorCode.CurrentCompanyNotFound);
+        
+        var memberUserIds = await _context.Set<UserCompany>()
+            .Where(uc => uc.CompanyId == companyId && uc.Status == SystemConstants.UserStatus.Active)
+            .Select(uc => uc.UserId)
+            .Distinct()
+            .ToListAsync();
+
+        var query = _context.Set<User>()
+            .Where(u => u.IsActive && memberUserIds.Contains(u.Id));
 
         return query.ToPagedList(request);
     }
@@ -341,9 +350,14 @@ public class UserService : IUserService
 
     private async Task<List<UserWithRolesResponse>> EnrichUsersWithRolesAsync(List<User> users)
     {
+        if (!users.Any()) return new List<UserWithRolesResponse>();
+        
+        var companyId = _tenantContext.GetCurrentCompanyId();
+        if (string.IsNullOrEmpty(companyId)) return new List<UserWithRolesResponse>();
+        
         var userIds = users.Select(u => u.Id!).ToList();
         var userCompanies = await _context.Set<UserCompany>()
-            .Where(uc => userIds.Contains(uc.UserId) && uc.Status == SystemConstants.UserStatus.Active)
+            .Where(uc => userIds.Contains(uc.UserId) && uc.CompanyId == companyId && uc.Status == SystemConstants.UserStatus.Active)
             .ToListAsync();
 
         var allRoleIds = userCompanies.SelectMany(uc => uc.RoleIds).Distinct().ToList();

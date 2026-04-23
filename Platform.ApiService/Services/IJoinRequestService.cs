@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Response;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Services;
 
@@ -30,6 +32,11 @@ public interface IJoinRequestService
     /// 获取待审核申请列表（仅管理员）
     /// </summary>
     Task<List<JoinRequestDetail>> GetPendingRequestsAsync(string companyId, string? keyword = null);
+
+    /// <summary>
+    /// 获取待审核申请列表（仅管理员，分页）
+    /// </summary>
+    Task<PagedResult<JoinRequestDetail>> GetPendingRequestsAsync(ProTableRequest request, string companyId);
 
     /// <summary>
     /// 批准申请

@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
+using Platform.ApiService.Attributes;
 using Platform.ServiceDefaults.Controllers;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Controllers;
 
@@ -64,8 +66,8 @@ public class JoinRequestController : BaseApiController
     /// 获取待审核的申请列表（管理员）
     /// </summary>
     [HttpGet("pending")]
-
-    public async Task<IActionResult> GetPendingRequests([FromQuery] string? companyIdQuery = null, [FromQuery] string? keyword = null)
+    [RequireMenu("organization")]
+    public async Task<IActionResult> GetPendingRequests([FromQuery] ProTableRequest request, [FromQuery] string? companyIdQuery = null)
     {
         var companyId = companyIdQuery;
         // 如果没有指定企业ID，使用当前企业
@@ -74,8 +76,8 @@ public class JoinRequestController : BaseApiController
             companyId = RequiredCompanyId;
         }
 
-        var requests = await _joinRequestService.GetPendingRequestsAsync(companyId!, keyword);
-        return Success(requests);
+        var result = await _joinRequestService.GetPendingRequestsAsync(request, companyId);
+        return Success(result);
     }
 
     /// <summary>

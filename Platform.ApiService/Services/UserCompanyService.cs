@@ -1,10 +1,12 @@
 using System.Security.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Platform.ServiceDefaults.Models;
+using Platform.ServiceDefaults.Extensions;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using System.Linq.Expressions;
+using System.Linq.Dynamic.Core;
 
 namespace Platform.ApiService.Services;
 
@@ -32,6 +34,11 @@ public interface IUserCompanyService
     /// 获取企业加入申请列表（管理员）
     /// </summary>
     Task<List<JoinRequestDetail>> GetJoinRequestsAsync(string companyId, string? status = null);
+
+    /// <summary>
+    /// 获取企业加入申请列表（管理员，分页）
+    /// </summary>
+    Task<PagedResult<JoinRequestDetail>> GetJoinRequestsAsync(ProTableRequest request, string companyId);
 
     /// <summary>
     /// 审核加入申请（管理员）
@@ -131,7 +138,7 @@ public class UserCompanyService : IUserCompanyService
         ILogger<UserCompanyService> logger
     ) {
         _context = context;
-        
+
         _menuService = menuService;
         _tenantContext = tenantContext;
         _jwtService = jwtService;
@@ -143,7 +150,7 @@ public class UserCompanyService : IUserCompanyService
     /// </summary>
     public async Task<bool> ApplyToJoinCompanyAsync(string userId, string companyId, string? reason)
     {
-        
+
         // 1. 验证企业是否存在
         var company = await _context.Set<Company>().FirstOrDefaultAsync(x => x.Id == companyId);
         if (company == null)
@@ -233,6 +240,72 @@ public class UserCompanyService : IUserCompanyService
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// 获取企业加入申请列表（管理员，分页）
+    /// </summary>
+    public async Task<PagedResult<JoinRequestDetail>> GetJoinRequestsAsync(ProTableRequest request, string companyId)
+    {
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
+        await this.RequireAdminAsync(currentUserId, companyId, "只有管理员可以查看申请列表");
+
+        var query = _context.Set<CompanyJoinRequest>().Where(r => r.CompanyId == companyId);
+        var requests = await query.OrderByDescending(r => r.CreatedAt).ToListAsync();
+
+        var result = new List<JoinRequestDetail>();
+        if (!requests.Any())
+            return new PagedResult<JoinRequestDetail> { Queryable = result.AsQueryable(), CurrentPage = request.Page, PageSize = request.PageSize, RowCount = 0, PageCount = 0 };
+
+        var userIds = requests.Select(r => r.UserId).Distinct().ToList();
+        var reviewerIds = requests.Where(r => r.ReviewedBy != null).Select(r => r.ReviewedBy!).Distinct().ToList();
+        userIds.AddRange(reviewerIds);
+        userIds = userIds.Distinct().ToList();
+
+        var users = await _context.Set<AppUser>().Where(u => userIds.Contains(u.Id)).ToListAsync();
+        var userDict = users.ToDictionary(u => u.Id!, u => u);
+        var company = await _context.Set<Company>().FirstOrDefaultAsync(c => c.Id == companyId);
+
+        foreach (var req in requests)
+        {
+            var user = userDict.GetValueOrDefault(req.UserId);
+            var reviewer = req.ReviewedBy != null ? userDict.GetValueOrDefault(req.ReviewedBy) : null;
+            result.Add(new JoinRequestDetail
+            {
+                Id = req.Id!,
+                UserId = req.UserId,
+                Username = user?.Username ?? "Unknown",
+                UserEmail = user?.Email,
+                CompanyId = req.CompanyId,
+                CompanyName = company?.Name ?? "Unknown",
+                Status = req.Status,
+                Reason = req.Reason,
+                ReviewedBy = req.ReviewedBy,
+                ReviewedByName = reviewer?.Username ?? reviewer?.Name,
+                ReviewedAt = req.ReviewedAt,
+                RejectReason = req.RejectReason
+            });
+        }
+
+        if (!string.IsNullOrEmpty(request.Search))
+        {
+            var keyword = request.Search.ToLower();
+            result = result.Where(r =>
+                (r.Username != null && r.Username.ToLower().Contains(keyword)) ||
+                (r.UserEmail != null && r.UserEmail.ToLower().Contains(keyword))
+            ).ToList();
+        }
+
+        var total = result.Count;
+        var paged = result.Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToList();
+        return new PagedResult<JoinRequestDetail>
+        {
+            Queryable = paged.AsQueryable(),
+            CurrentPage = request.Page,
+            PageSize = request.PageSize,
+            RowCount = total,
+            PageCount = (int)Math.Ceiling(total / (double)request.PageSize)
+        };
     }
 
     /// <summary>
@@ -369,7 +442,7 @@ public class UserCompanyService : IUserCompanyService
         var existingRequest = await _context.Set<CompanyJoinRequest>().FirstOrDefaultAsync(x => x.Id == requestId);
         if (existingRequest != null)
         {
-    
+
             existingRequest.Status = approved ? "approved" : "rejected";
             existingRequest.ReviewedBy = currentUserId;
             existingRequest.ReviewedAt = DateTime.UtcNow;
@@ -755,7 +828,7 @@ public class UserCompanyService : IUserCompanyService
         var existingRequest = await _context.Set<UserCompany>().FirstOrDefaultAsync(x => x.Id == membership.Id!);
         if (existingRequest != null)
         {
-    
+
             existingRequest.IsAdmin = isAdmin;
             await _context.SaveChangesAsync();
         }
@@ -832,7 +905,7 @@ public class UserCompanyService : IUserCompanyService
             var existingRequest = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == userId);
         if (existingRequest != null)
         {
-    
+
                 existingRequest.CurrentCompanyId = user.PersonalCompanyId ?? "";
             await _context.SaveChangesAsync();
         }

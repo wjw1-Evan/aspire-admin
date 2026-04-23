@@ -6,6 +6,7 @@ using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
 using Platform.ServiceDefaults.Services;
+using Platform.ApiService.Attributes;
 using Microsoft.EntityFrameworkCore;
 
 namespace Platform.ApiService.Controllers;
@@ -392,8 +393,8 @@ public class CompanyController : BaseApiController
     /// v3.1: 获取企业加入申请列表（管理员）
     /// </summary>
     [HttpGet("{companyId}/join-requests")]
-
-    public async Task<IActionResult> GetJoinRequests(string companyId, [FromQuery] string? status = null)
+    [RequireMenu("organization")]
+    public async Task<IActionResult> GetJoinRequests(string companyId, [FromQuery] ProTableRequest request)
     {
         // 验证当前用户是否是该企业的管理员
         if (!await _userCompanyService.IsUserAdminInCompanyAsync(RequiredUserId, companyId))
@@ -401,8 +402,8 @@ public class CompanyController : BaseApiController
             throw new UnauthorizedAccessException("只有企业管理员可以查看申请列表");
         }
 
-        var requests = await _userCompanyService.GetJoinRequestsAsync(companyId, status);
-        return Success(requests);
+        var result = await _userCompanyService.GetJoinRequestsAsync(request, companyId);
+        return Success(result);
     }
 
     /// <summary>

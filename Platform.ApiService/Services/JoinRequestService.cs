@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Platform.ServiceDefaults.Models;
+using Platform.ServiceDefaults.Extensions;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Entities;
 using Platform.ServiceDefaults.Services;
@@ -9,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Authentication;
 using System.Threading.Tasks;
+using System.Linq.Dynamic.Core;
 
 namespace Platform.ApiService.Services;
 
@@ -149,6 +151,43 @@ public class JoinRequestService : IJoinRequestService
         }
 
         return details;
+    }
+
+    /// <inheritdoc/>
+    public async Task<PagedResult<JoinRequestDetail>> GetPendingRequestsAsync(ProTableRequest request, string companyId)
+    {
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
+        if (!await _userCompanyService.IsUserAdminInCompanyAsync(currentUserId, companyId))
+        {
+            throw new UnauthorizedAccessException("只有企业管理员可以查看待审核申请");
+        }
+
+        var query = _context.Set<CompanyJoinRequest>()
+            .Where(jr => jr.CompanyId == companyId && jr.Status == "pending");
+
+        var requests = await query.OrderByDescending(jr => jr.CreatedAt).ToListAsync();
+        var details = await BuildJoinRequestDetailsAsync(requests);
+
+        if (!string.IsNullOrEmpty(request.Search))
+        {
+            var keyword = request.Search.ToLower();
+            details = details.Where(d =>
+                (d.Username != null && d.Username.ToLower().Contains(keyword)) ||
+                (d.UserEmail != null && d.UserEmail.ToLower().Contains(keyword))
+            ).ToList();
+        }
+
+        var total = details.Count;
+        var paged = details.Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToList();
+
+        return new PagedResult<JoinRequestDetail>
+        {
+            Queryable = paged.AsQueryable(),
+            CurrentPage = request.Page,
+            PageSize = request.PageSize,
+            RowCount = total,
+            PageCount = (int)Math.Ceiling(total / (double)request.PageSize)
+        };
     }
 
     /// <inheritdoc/>

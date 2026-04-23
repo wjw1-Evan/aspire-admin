@@ -212,6 +212,9 @@ public class JoinRequestService : IJoinRequestService
         request.ReviewedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
+
+        await NotifyApplicantAsync(requestId, request.UserId, request.CompanyId, true);
+
         return true;
     }
 
@@ -241,6 +244,9 @@ public class JoinRequestService : IJoinRequestService
         request.RejectReason = rejectReason;
 
         await _context.SaveChangesAsync();
+
+        await NotifyApplicantAsync(requestId, request.UserId, request.CompanyId, false, rejectReason);
+
         return true;
     }
 
@@ -278,6 +284,36 @@ public class JoinRequestService : IJoinRequestService
         catch (Exception ex)
         {
             _logger.LogError(ex, "发送加入申请通知失败，企业: {CompanyId}, 申请人: {ApplicantUserId}", companyId, applicantUserId);
+        }
+    }
+
+    private async Task NotifyApplicantAsync(string requestId, string applicantUserId, string companyId, bool approved, string? rejectReason = null)
+    {
+        try
+        {
+            var company = await _context.Set<Company>().FirstOrDefaultAsync(x => x.Id == companyId);
+            var companyName = company?.Name ?? "未知企业";
+            var adminUser = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == _tenantContext.GetCurrentUserId());
+            var reviewerName = adminUser?.Username ?? "管理员";
+
+            var title = approved ? "加入企业申请已通过" : "加入企业申请被拒绝";
+            var content = approved
+                ? $"恭喜！您的加入企业 {companyName} 申请已通过，您现在是该企业的成员了。"
+                : $"很遗憾，您的加入企业 {companyName} 申请被拒绝。" + (string.IsNullOrEmpty(rejectReason) ? "" : $" 原因：{rejectReason}");
+
+            await _notificationService.PublishAsync(
+                applicantUserId,
+                title,
+                content,
+                NotificationCategory.System,
+                NotificationLevel.Info,
+                actionUrl: approved ? $"/account/companies" : null,
+                metadata: new Dictionary<string, string> { { "RequestId", requestId }, { "Approved", approved.ToString() } }
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "发送审批结果通知失败，申请: {RequestId}, 申请人: {ApplicantUserId}", requestId, applicantUserId);
         }
     }
 

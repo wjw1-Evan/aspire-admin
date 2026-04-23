@@ -62,7 +62,7 @@ const api = {
   update: (id: string, data: unknown) => request<ApiResponse<AppUser>>(`/apiservice/api/users/${id}`, { method: 'PUT', data }),
   roles: () => request<ApiResponse<PagedResult<Role>>>('/apiservice/api/role', { method: 'GET' }),
   currentCompany: () => request<ApiResponse<CompanyInfo>>('/apiservice/api/company/current', { method: 'GET' }),
-  joinReqs: (cid: string) => request<ApiResponse<JoinReq[]>>(`/apiservice/api/company/${cid}/join-requests`),
+  joinReqs: (cid: string, params?: any) => request<ApiResponse<PagedResult<JoinReq>>>(`/apiservice/api/company/${cid}/join-requests`, { method: 'GET', params }),
   approveJoin: (id: string) => request<ApiResponse<unknown>>(`/apiservice/api/company/join-requests/${id}/approve`, { method: 'POST', data: {} }),
   rejectJoin: (id: string, data: { rejectReason: string }) => request<ApiResponse<unknown>>(`/apiservice/api/company/join-requests/${id}/reject`, { method: 'POST', data }),
 };
@@ -91,6 +91,7 @@ const UserManagement: React.FC = () => {
     rejectModal: false,
     rejectId: '',
     rejectReason: '',
+    pagination: { current: 1, pageSize: 20, total: 0 },
   });
 
   const [roleState, setRoleState] = useState({
@@ -102,8 +103,11 @@ const UserManagement: React.FC = () => {
   const setR = useCallback((partial: Partial<typeof roleState>) => setRoleState(prev => ({ ...prev, ...partial })), []);
 
   const handleTabChange = useCallback((key: string) => {
+    if (key === 'pending') {
+      setJ({ data: [], pagination: { current: 1, pageSize: 20, total: 0 } });
+    }
     set({ activeTab: key as 'joined' | 'pending' });
-  }, [set]);
+  }, [set, setJ]);
 
   const loadStatistics = useCallback(() => {
     api.stats().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
@@ -120,11 +124,18 @@ const UserManagement: React.FC = () => {
     });
   }, [set, setR]);
 
-  const loadJoinRequests = useCallback(() => {
+  const loadJoinRequests = useCallback((current?: number, pageSize?: number) => {
     if (!state.currentCompany?.id) return;
     setJ({ loading: true });
-    api.joinReqs(state.currentCompany.id)
-      .then(r => { if (r.success && r.data) setJ({ data: r.data }); })
+    api.joinReqs(state.currentCompany.id, { page: current || 1, pageSize: pageSize || 20 })
+      .then(r => { 
+        if (r.success && r.data) {
+          setJ({ 
+            data: r.data.queryable || [], 
+            pagination: { current: current || 1, pageSize: pageSize || 20, total: r.data.rowCount } 
+          }); 
+        }
+      })
       .finally(() => setJ({ loading: false }));
   }, [state.currentCompany?.id, setJ]);
 
@@ -141,12 +152,6 @@ const UserManagement: React.FC = () => {
   useEffect(() => { 
     loadCurrentCompany();
   }, [loadCurrentCompany]);
-
-  useEffect(() => {
-    if (state.currentCompany?.id && state.activeTab === 'pending') {
-      loadJoinRequests();
-    }
-  }, [state.currentCompany?.id, state.activeTab, loadJoinRequests]);
 
   const handleToggle = useCallback(async (user: AppUser) => {
     const res = user.isActive ? await api.deactivate(user.id) : await api.activate(user.id);
@@ -249,7 +254,7 @@ const UserManagement: React.FC = () => {
     <PageContainer>
       <Tabs activeKey={state.activeTab} onChange={handleTabChange} items={[
         { key: 'joined', label: <span><UserOutlined />已加入成员</span> },
-        { key: 'pending', label: <span><UserAddOutlined />申请加入{pendingReqs.length > 0 && <Badge count={pendingReqs.length} style={{ marginLeft: 8 }} />}</span> },
+        { key: 'pending', label: <span><UserAddOutlined />申请加入{joinState.pagination.total > 0 && <Badge count={joinState.pagination.total} style={{ marginLeft: 8 }} />}</span> },
       ]} />
       {state.activeTab === 'joined' ? (
         <ProTable
@@ -279,17 +284,24 @@ const UserManagement: React.FC = () => {
       ) : (
         <Spin spinning={joinState.loading}>
           <ProTable
-            request={async () => {
-              if (!joinState.data.length && state.currentCompany?.id) {
-                await loadJoinRequests();
+            actionRef={pendingActionRef}
+            request={async (params: any) => {
+              const { current = 1, pageSize = 20 } = params;
+              if (!state.currentCompany?.id) return { data: [], total: 0, success: true };
+              setJ({ loading: true });
+              const r = await api.joinReqs(state.currentCompany.id, { page: current, pageSize });
+              if (r.success && r.data) {
+                setJ({ data: r.data.queryable || [], pagination: { current, pageSize, total: r.data.rowCount }, loading: false });
+                return { data: r.data.queryable || [], total: r.data.rowCount, success: true };
               }
-              return { data: pendingReqs, total: pendingReqs.length, success: true };
+              setJ({ loading: false });
+              return { data: [], total: 0, success: false };
             }}
             columns={pendingColumns}
             rowKey="id"
             search={false}
             scroll={{ x: 'max-content' }}
-            pagination={false}
+            params={{}}
           />
         </Spin>
       )}

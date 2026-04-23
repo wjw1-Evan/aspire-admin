@@ -372,7 +372,8 @@ class UnifiedErrorInterceptor {
       errors.push(error.message);
     }
 
-    return errors.map(msg => translateMessage(msg));
+    // 4. 翻译：将错误码字符串当作 errorCode 翻译（如 VALIDATION_USERNAME_TOO_SHORT）
+    return errors.map((msg) => translateMessage('', msg));
   }
 
   /**

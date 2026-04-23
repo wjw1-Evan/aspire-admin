@@ -2278,4 +2278,20 @@ export default {
   'pages.passwordBook.export.securityWarning': '安全提示',
   'pages.passwordBook.export.securityMessage': '导出的文件包含您的明文密码，请妥善保管，不要在不安全的环境中打开。',
   'pages.passwordBook.search.placeholder': '搜索平台、账号、分类、标签...',
+
+  // DataAnnotation 验证错误码翻译
+  'VALIDATION_USERNAME_REQUIRED': '用户名不能为空',
+  'VALIDATION_USERNAME_TOO_LONG': '用户名长度不能超过50个字符',
+  'VALIDATION_USERNAME_TOO_SHORT': '用户名长度不能少于3个字符',
+  'VALIDATION_PASSWORD_REQUIRED': '密码不能为空',
+  'VALIDATION_PASSWORD_TOO_LONG': '密码长度不能超过50个字符',
+  'VALIDATION_PASSWORD_TOO_SHORT': '密码长度不能少于6个字符',
+  'VALIDATION_EMAIL_REQUIRED': '邮箱不能为空',
+  'VALIDATION_EMAIL_INVALID': '邮箱格式不正确',
+  'VALIDATION_CAPTCHA_REQUIRED': '验证码不能为空',
+  'VALIDATION_CAPTCHA_INVALID': '验证码必须为6位',
+  'VALIDATION_CURRENT_PASSWORD_REQUIRED': '当前密码不能为空',
+  'VALIDATION_NEW_PASSWORD_REQUIRED': '新密码不能为空',
+  'VALIDATION_CONFIRM_PASSWORD_REQUIRED': '确认密码不能为空',
+  'VALIDATION_REFRESH_TOKEN_REQUIRED': '刷新令牌不能为空',
 };

@@ -225,8 +225,6 @@ const Login: React.FC = () => {
       const backendMessage = error?.response?.data?.message || error?.info?.message || error?.message;
       const errorCode = error?.info?.errorCode || error?.response?.data?.errorCode;
 
-      error.skipGlobalHandler = true; // 阻止全局错误拦截器重复处理
-
       let errorMsg = backendMessage;
       if (errorCode) {
         errorMsg = intl.formatMessage({

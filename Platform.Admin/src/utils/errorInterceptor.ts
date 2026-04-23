@@ -178,19 +178,6 @@ class UnifiedErrorInterceptor {
         sendToMonitoring: true,
       },
     });
-
-    // 400 验证错误规则 - 静默处理，由调用处（页面）负责显示
-    this.addRule({
-      condition: (error) => {
-        return error.response?.status === 400;
-      },
-      config: {
-        displayType: ErrorDisplayType.SILENT,
-        showToUser: false,
-        logToConsole: false,
-        sendToMonitoring: false,
-      },
-    });
   }
 
   /**
@@ -340,72 +327,63 @@ class UnifiedErrorInterceptor {
     return '未知错误';
   }
 
-  /**
+/**
    * 提取所有验证错误消息（用于需要显示多个错误的场景）
-   * 规则：优先使用 errors 显示到对应字段，message 只作为全局提示（当 errors 不存在时）
+   * 规则：errors -> message -> errorCode
+   * 优先使用 errors 显示到对应字段，message 只作为全局提示（当 errors 不存在时）
    */
   extractValidationErrors(error: any): string[] {
     const errors: string[] = [];
+    const intl = getIntl();
 
-    // 0. 优先使用 errorCode 翻译
-    const errorCode = error?.info?.errorCode || error?.response?.data?.errorCode;
-    if (errorCode) {
-      const translated = translateMessage('', errorCode);
-      if (translated && translated !== errorCode) {
-        errors.push(translated);
-      }
-    }
-
-    // 1. ProblemDetails 格式 (.NET 标准) - errors 字段包含各字段验证错误
+    // 1. 优先从 errors 字典中提取字段级验证错误（.NET ProblemDetails 格式）
     if (error?.response?.data?.errors) {
       const validationErrors = error.response.data.errors;
       Object.keys(validationErrors).forEach((field) => {
         const fieldErrors = validationErrors[field];
         if (Array.isArray(fieldErrors)) {
-          fieldErrors.forEach((err) => errors.push(err));
+          fieldErrors.forEach((err) => {
+            // 翻译错误码为人类可读消息
+            const translated = intl.formatMessage({ id: err as string, defaultMessage: err as string });
+            errors.push(translated);
+          });
         } else if (typeof fieldErrors === 'string') {
-          errors.push(fieldErrors);
+          const translated = intl.formatMessage({ id: fieldErrors as string, defaultMessage: fieldErrors as string });
+          errors.push(translated);
         }
       });
-    }
-
-    // 2. 只有当没有 errors 时才取 message（message 是全局错误提示，不是字段级错误）
-    // 如果 errors 已存在，说明字段错误已经显示，不再重复显示 message
-    if (errors.length === 0) {
-      // UmiJS 可能把响应体放在 error.info
-      const customMessage = error.info?.message ||
-        error.response?.data?.message ||
-        error.response?.data?.title; // ProblemDetail title
-
-      if (customMessage) {
-        errors.push(customMessage);
+      if (errors.length > 0) {
+        return errors; // 有字段错误，直接返回，不取 message
       }
     }
 
-    // 3. Axios 错误消息 (作为最后的 fallback，但忽略通用网络错误文案)
+    // 2. 当没有字段错误时，取 message 作为全局错误
+    const message = error?.response?.data?.message || error?.info?.message;
+    if (message && message !== error?.response?.data?.errorCode) {
+      // 翻译 message（可能是错误码或人类可读消息）
+      const translated = intl.formatMessage({ id: message as string, defaultMessage: message as string });
+      if (translated !== message && translated !== message) {
+        errors.push(translated);
+      } else {
+        errors.push(message);
+      }
+    }
+
+    // 3. 最后的 fallback 是 errorCode 翻译
+    if (errors.length === 0) {
+      const errorCode = error?.response?.data?.errorCode || error?.info?.errorCode;
+      if (errorCode) {
+        const translated = intl.formatMessage({ id: errorCode as string, defaultMessage: errorCode as string });
+        errors.push(translated !== errorCode ? translated : '操作失败');
+      }
+    }
+
+    // 4. Axios 错误消息 (最后的 fallback)
     if (errors.length === 0 && error.message && !error.message.startsWith('Request failed')) {
       errors.push(error.message);
     }
 
-    // 4. 翻译：将错误码字符串当作 errorCode 翻译（如 VALIDATION_USERNAME_TOO_SHORT）
-    return errors.map((msg) => translateMessage('', msg));
-  }
-
-  // 翻译 errors 字典中的错误码
-  translateErrorsToString(error: any): string[] {
-    const errors: string[] = [];
-    if (error?.response?.data?.errors) {
-      const validationErrors = error.response.data.errors;
-      Object.keys(validationErrors).forEach((field) => {
-        const fieldErrors = validationErrors[field];
-        if (Array.isArray(fieldErrors)) {
-          fieldErrors.forEach((err) => errors.push(err));
-        } else if (typeof fieldErrors === 'string') {
-          errors.push(fieldErrors);
-        }
-      });
-    }
-    return errors.map((msg) => translateMessage('', msg));
+    return errors;
   }
 
   /**

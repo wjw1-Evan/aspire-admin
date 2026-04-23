@@ -266,24 +266,14 @@ export default function Register() {
                 <ProFormText
                   name="password"
                   placeholder={intl.formatMessage({ id: 'pages.register.password.placeholder' })}
-                  fieldProps={{ prefix: <LockOutlined /> }}
+                  fieldProps={{ prefix: <LockOutlined />, type: 'password' }}
                   rules={[
                     { required: true, message: <FormattedMessage id="pages.register.password.required" /> },
                     { min: 6, message: <FormattedMessage id="pages.register.password.min" /> },
                   ]}
                 />
 
-                <div className={styles.infoBox}>
-                  <div className="info-title">
-                    <FormattedMessage id="pages.register.info.title" />
-                  </div>
-                  <div className="info-item">
-                    <FormattedMessage id="pages.register.info.item1" />
-                  </div>
-                  <div className="info-item">
-                    <FormattedMessage id="pages.register.info.item3" />
-                  </div>
-                </div>
+
               </ProForm>
               <div style={{ textAlign: 'center', marginTop: 16 }}>
                 <Link to="/user/login" style={{ color: '#667eea', fontWeight: 500 }}>

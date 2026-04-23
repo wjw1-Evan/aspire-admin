@@ -191,6 +191,19 @@ const Login: React.FC = () => {
         errorMsg = intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' });
       }
 
+      // 处理字段级验证错误
+      if (response?.errors) {
+        const fieldErrors = Object.entries(response.errors).map(([field, msgs]) => {
+          const errMsg = Array.isArray(msgs) ? msgs[0] : msgs;
+          const translatedErr = intl.formatMessage({ id: errMsg as string, defaultMessage: errMsg as string });
+          return { name: field as any, errors: [translatedErr] };
+        });
+        form.setFields(fieldErrors);
+        // 验证错误已在输入框下显示
+        setLoading(false);
+        return;
+      }
+
       setUserLoginState({ status: 'error', message: errorMsg });
       message.error(errorMsg);
     } catch (error: any) {

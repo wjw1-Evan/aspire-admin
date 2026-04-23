@@ -282,19 +282,21 @@ const UserManagement: React.FC = () => {
           ]}
         />
       ) : (
-        <ProTable
-          actionRef={pendingActionRef}
-          request={async () => {
-            await loadJoinRequests();
-            return { data: pendingReqs, total: pendingReqs.length, success: true };
-          }}
-          columns={pendingColumns}
-          rowKey="id"
-          search={false}
-          scroll={{ x: 'max-content' }}
-          pagination={false}
-          loading={joinState.loading}
-        />
+        <Spin spinning={joinState.loading}>
+          <ProTable
+            request={async () => {
+              if (!joinState.data.length && state.currentCompany?.id) {
+                await loadJoinRequests();
+              }
+              return { data: pendingReqs, total: pendingReqs.length, success: true };
+            }}
+            columns={pendingColumns}
+            rowKey="id"
+            search={false}
+            scroll={{ x: 'max-content' }}
+            pagination={false}
+          />
+        </Spin>
       )}
 
       <ModalForm

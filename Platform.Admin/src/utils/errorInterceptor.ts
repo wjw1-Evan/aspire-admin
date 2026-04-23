@@ -447,10 +447,11 @@ class UnifiedErrorInterceptor {
    * 显示错误给用户
    */
   private displayError(errorInfo: ErrorInfo, config: ErrorHandlerConfig, originalError?: any) {
-    // 静默处理验证错误（400），避免在非 React 上下文中调用 message.error
+    // 静默处理有 errors 字段的验证错误，避免重复显示
     // 验证错误应该由页面自己处理显示（如登录页的 form.setFields）
-    if (errorInfo.type === ErrorType.VALIDATION) {
-      console.debug('[displayError] 验证错误静默处理，由页面负责显示');
+    const hasErrors = originalError?.response?.data?.errors;
+    if (hasErrors) {
+      console.debug('[displayError] 有errors字段，验证错误静默处理，由页面负责显示');
       return;
     }
 

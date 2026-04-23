@@ -213,9 +213,8 @@ const Login: React.FC = () => {
       setUserLoginState({ status: 'error', message: errorMsg });
       message.error(errorMsg);
     } catch (error: any) {
-      // 处理 API 错误响应
-      const response = error?.response?.data;
       const intl = getIntl();
+      const response = error?.response?.data;
 
       // 处理字段级验证错误
       if (response?.errors) {
@@ -229,9 +228,22 @@ const Login: React.FC = () => {
         return;
       }
 
-      // 处理普通错误
-      const errorMsg = intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' });
+      // 处理普通错误（errorCode 优先）
+      const backendMessage = response?.message || error?.message;
+      const errorCode = response?.errorCode || error?.info?.errorCode;
+
+      let errorMsg = backendMessage;
+      if (errorCode) {
+        errorMsg = intl.formatMessage({
+          id: errorCode,
+          defaultMessage: intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }),
+        });
+      } else if (!errorMsg) {
+        errorMsg = intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' });
+      }
+
       setUserLoginState({ status: 'error', message: errorMsg });
+      message.error(errorMsg);
     } finally {
       setLoading(false);
     }

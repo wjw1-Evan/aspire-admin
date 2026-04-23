@@ -16,10 +16,10 @@ const runAfterRender = (fn: () => void) => {
   }
 };
 
-// 翻译辅助函数：优先翻译 errorCode，errorCode 翻译失败时翻译 message
+// 翻译辅助函数：只翻译 errorCode，不翻译 message
 const translateMessage = (msg: string, errorCode?: string): string => {
   console.debug('[translateMessage] 开始翻译', { errorCode, message: msg });
-  // 1. 先尝试翻译 errorCode
+  // 只翻译 errorCode，不翻译 message（message 已经是处理过的）
   if (errorCode) {
     try {
       const intl = getIntl();
@@ -30,18 +30,6 @@ const translateMessage = (msg: string, errorCode?: string): string => {
       }
     } catch (e) {
       console.debug('[translateMessage] errorCode翻译异常', { errorCode, error: e });
-    }
-  }
-  // 2. errorCode 翻译失败时，尝试翻译 message（但不翻译中文消息）
-  if (msg && !/[\u4e00-\u9fa5]/.test(msg)) {
-    try {
-      const intl = getIntl();
-      const translated = intl.formatMessage({ id: msg, defaultMessage: '' });
-      if (translated && translated !== msg) {
-        return translated;
-      }
-    } catch (e) {
-      // 忽略翻译异常
     }
   }
   const result = msg || errorCode || '';

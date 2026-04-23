@@ -207,10 +207,10 @@ const Login: React.FC = () => {
       if (isValidationError && validationErrors) {
         const fieldErrors = Object.entries(validationErrors).map(([field, msgs]) => {
           const errMsg = Array.isArray(msgs) ? msgs[0] : msgs;
-          const translatedErr = intl.formatMessage({ id: errMsg as string, defaultMessage: errMsg as string });
+          // 直接使用错误码，不需要翻译（errors 中的值应该是错误码，由 errorInterceptor 统一处理）
           return {
             name: field as any,
-            errors: [translatedErr],
+            errors: [errMsg as string],
           };
         });
         form.setFields(fieldErrors);

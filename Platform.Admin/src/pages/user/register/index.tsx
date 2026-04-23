@@ -233,15 +233,13 @@ export default function Register() {
                   <FormattedMessage id="pages.register.subTitle" />
                 </div>
               </div>
-              <ProForm
-                form={form}
-                onFinish={async (values) => {
-                  await handleSubmit(values as API.RegisterParams);
-                }}
-                submitter={{
-                  submitButtonProps: { size: 'middle', block: true },
-                }}
-              >
+               <ProForm
+                 form={form}
+                 onFinish={async (values) => {
+                   await handleSubmit(values as API.RegisterParams);
+                 }}
+                 submitter={false}
+               >
                 <ProFormText
                   name="username"
                   placeholder={intl.formatMessage({ id: 'pages.register.username.placeholder' })}
@@ -289,25 +287,33 @@ export default function Register() {
                   ]}
                 />
 
-                <ProFormText
-                  name="confirmPassword"
-                  placeholder={intl.formatMessage({ id: 'pages.register.confirmPassword.placeholder' })}
-                  fieldProps={{ prefix: <LockOutlined />, type: 'password' }}
-                  rules={[
-                    { required: true, message: <FormattedMessage id="pages.register.confirmPassword.required" /> },
-                    ({ getFieldValue }) => ({
-                      validator(_, value) {
-                        if (!value || getFieldValue('password') === value) {
-                          return Promise.resolve();
-                        }
-                        return Promise.reject(new Error(intl.formatMessage({ id: 'pages.register.confirmPassword.mismatch' })));
-                      },
-                    }),
-                  ]}
-                />
+                 <ProFormText
+                   name="confirmPassword"
+                   placeholder={intl.formatMessage({ id: 'pages.register.confirmPassword.placeholder' })}
+                   fieldProps={{ prefix: <LockOutlined />, type: 'password' }}
+                   rules={[
+                     { required: true, message: <FormattedMessage id="pages.register.confirmPassword.required" /> },
+                     ({ getFieldValue }) => ({
+                       validator(_, value) {
+                         if (!value || getFieldValue('password') === value) {
+                           return Promise.resolve();
+                         }
+                         return Promise.reject(new Error(intl.formatMessage({ id: 'pages.register.confirmPassword.mismatch' })));
+                       },
+                     }),
+                   ]}
+                 />
 
+                 <div style={{ textAlign: 'center', marginTop: 24 }}>
+                   <Button type="primary" htmlType="submit" size="middle" block>
+                     <FormattedMessage id="pages.common.submit" defaultMessage="提交" />
+                   </Button>
+                   <Button type="default" htmlType="button" onClick={() => form.resetFields()} size="middle" block style={{ marginTop: 8 }}>
+                     <FormattedMessage id="pages.common.reset" defaultMessage="重置" />
+                   </Button>
+                 </div>
 
-              </ProForm>
+               </ProForm>
               <div style={{ textAlign: 'center', marginTop: 16 }}>
                 <Link to="/user/login" style={{ color: '#667eea', fontWeight: 500 }}>
                   <FormattedMessage id="pages.register.login" />

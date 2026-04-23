@@ -193,23 +193,45 @@ const Login: React.FC = () => {
 
       // 处理字段级验证错误
       if (response?.errors) {
+        console.log('[login] response.errors:', response.errors);
         const fieldErrors = Object.entries(response.errors).map(([field, msgs]) => {
           const errMsg = Array.isArray(msgs) ? msgs[0] : msgs;
           const translatedErr = intl.formatMessage({ id: errMsg as string, defaultMessage: errMsg as string });
+          console.log('[login] field error:', field, translatedErr);
           return { name: field as any, errors: [translatedErr] };
         });
+        console.log('[login] calling form.setFields:', fieldErrors);
         form.setFields(fieldErrors);
         // 验证错误已在输入框下显示
         setLoading(false);
         return;
       }
 
+      // 打印响应用于调试
+      console.log('[login] response:', response);
+
       setUserLoginState({ status: 'error', message: errorMsg });
       message.error(errorMsg);
     } catch (error: any) {
+      // 处理 API 错误响应
+      const response = error?.response?.data;
+      const intl = getIntl();
+
+      // 处理字段级验证错误
+      if (response?.errors) {
+        const fieldErrors = Object.entries(response.errors).map(([field, msgs]) => {
+          const errMsg = Array.isArray(msgs) ? msgs[0] : msgs;
+          const translatedErr = intl.formatMessage({ id: errMsg as string, defaultMessage: errMsg as string });
+          return { name: field as any, errors: [translatedErr] };
+        });
+        form.setFields(fieldErrors);
+        setLoading(false);
+        return;
+      }
+
+      // 处理普通错误
       const errorMsg = intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' });
       setUserLoginState({ status: 'error', message: errorMsg });
-      message.error(errorMsg);
     } finally {
       setLoading(false);
     }

@@ -213,72 +213,155 @@ git push origin main
 - **禁止**在控制器注入/操作 `DbContext`，所有数据访问必须下沉到服务层。
 
 #### 标准控制器模板
-```csharp
-[ApiController]
-[Route("api/xxx")]
-public class XxxController : BaseApiController
-{
-    private readonly IXxxService _xxxService;
-    private readonly ILogger<XxxController> _logger;
+以下为密码本控制器开发标准（`Platform.ApiService/Controllers/PasswordBookController.cs`）：
 
-    public XxxController(IXxxService xxxService, ILogger<XxxController> logger)
+```csharp
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Platform.ApiService.Attributes;
+using Platform.ApiService.Models;
+using Platform.ApiService.Services;
+using Platform.ServiceDefaults.Controllers;
+
+namespace Platform.ApiService.Controllers;
+
+/// <summary>
+/// 密码本管理控制器
+/// </summary>
+[ApiController]
+[Route("api/password-book")]
+
+public class PasswordBookController : BaseApiController
+{
+    private readonly IPasswordBookService _passwordBookService;
+    private readonly IPasswordGeneratorService _passwordGeneratorService;
+    private readonly IPasswordStrengthService _passwordStrengthService;
+    private readonly ILogger<PasswordBookController> _logger;
+
+    public PasswordBookController(
+        IPasswordBookService passwordBookService,
+        IPasswordGeneratorService passwordGeneratorService,
+        IPasswordStrengthService passwordStrengthService,
+        ILogger<PasswordBookController> logger)
     {
-        _xxxService = xxxService ?? throw new ArgumentNullException(nameof(xxxService));
+        _passwordBookService = passwordBookService ?? throw new ArgumentNullException(nameof(passwordBookService));
+        _passwordGeneratorService = passwordGeneratorService ?? throw new ArgumentNullException(nameof(passwordGeneratorService));
+        _passwordStrengthService = passwordStrengthService ?? throw new ArgumentNullException(nameof(passwordStrengthService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>
+    /// 创建密码本条目
+    /// </summary>
     [HttpPost]
-    [RequireMenu("xxx")]
-    public async Task<IActionResult> Create([FromBody] CreateXxxRequest request)
+    [RequireMenu("password-book")]
+    public async Task<IActionResult> CreateEntry([FromBody] CreatePasswordBookEntryRequest request)
     {
-        if (string.IsNullOrEmpty(request.Name))
-            throw new ArgumentException("名称不能为空");
+        if (string.IsNullOrEmpty(request.Platform))
+            throw new ArgumentException("平台名称不能为空");
+        if (string.IsNullOrEmpty(request.Account))
+            throw new ArgumentException("账号不能为空");
+        if (string.IsNullOrEmpty(request.Password))
+            throw new ArgumentException("密码不能为空");
 
         var userId = RequiredUserId;
-        var result = await _xxxService.CreateAsync(request, userId);
-        return Success(result);
+        var entry = await _passwordBookService.CreateEntryAsync(request, userId);
+        return Success(entry);
     }
 
+    /// <summary>
+    /// 获取条目详情（包含解密后的密码）
+    /// </summary>
     [HttpGet("{id}")]
-    [RequireMenu("xxx")]
-    public async Task<IActionResult> GetById(string id)
+    [RequireMenu("password-book")]
+    public async Task<IActionResult> GetEntry(string id)
     {
         var userId = RequiredUserId;
-        var result = await _xxxService.GetByIdAsync(id, userId);
-        if (result == null)
-            throw new ArgumentException("资源不存在");
-        return Success(result);
+        var entry = await _passwordBookService.GetEntryByIdAsync(id, userId);
+        if (entry == null)
+            throw new ArgumentException("条目不存在");
+        return Success(entry);
     }
 
+    /// <summary>
+    /// 分页查询条目列表
+    /// </summary>
     [HttpGet("list")]
-    [RequireMenu("xxx")]
-    public async Task<IActionResult> GetList([FromQuery] ProTableRequest request)
+    [RequireMenu("password-book")]
+    public async Task<IActionResult> GetEntries(
+        [FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request)
     {
         var userId = RequiredUserId;
-        var result = await _xxxService.GetListAsync(request, userId);
+        var result = await _passwordBookService.GetEntriesAsync(request, userId);
         return Success(result);
     }
 
+    /// <summary>
+    /// 更新密码本条目
+    /// </summary>
     [HttpPut("{id}")]
-    [RequireMenu("xxx")]
-    public async Task<IActionResult> Update(string id, [FromBody] UpdateXxxRequest request)
+    [RequireMenu("password-book")]
+    public async Task<IActionResult> UpdateEntry(string id, [FromBody] UpdatePasswordBookEntryRequest request)
     {
         var userId = RequiredUserId;
-        var result = await _xxxService.UpdateAsync(id, request, userId);
-        if (result == null)
-            throw new ArgumentException("资源不存在");
-        return Success(result);
+        var entry = await _passwordBookService.UpdateEntryAsync(id, request, userId);
+        if (entry == null)
+            throw new ArgumentException("条目不存在");
+        return Success(entry);
     }
 
+    /// <summary>
+    /// 删除条目
+    /// </summary>
     [HttpDelete("{id}")]
-    [RequireMenu("xxx")]
-    public async Task<IActionResult> Delete(string id)
+    [RequireMenu("password-book")]
+    public async Task<IActionResult> DeleteEntry(string id)
     {
         var userId = RequiredUserId;
-        var success = await _xxxService.DeleteAsync(id, userId);
-        if (!success)
-            throw new ArgumentException("资源不存在或无权删除");
-        return Success(true);
+        try
+        {
+            var result = await _passwordBookService.DeleteEntryAsync(id, userId);
+            if (!result)
+                throw new ArgumentException("条目不存在");
+            return Success(true);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            throw new ArgumentException("无权删除此条目");
+        }
+    }
+
+    /// <summary>
+    /// 获取所有分类
+    /// </summary>
+    [HttpGet("categories")]
+    [RequireMenu("password-book")]
+    public async Task<IActionResult> GetCategories()
+    {
+        var categories = await _passwordBookService.GetCategoriesAsync();
+        return Success(categories);
+    }
+
+    /// <summary>
+    /// 获取所有标签
+    /// </summary>
+    [HttpGet("tags")]
+    [RequireMenu("password-book")]
+    public async Task<IActionResult> GetTags()
+    {
+        var tags = await _passwordBookService.GetTagsAsync();
+        return Success(tags);
+    }
+
+    /// <summary>
+    /// 获取统计信息
+    /// </summary>
+    [HttpGet("statistics")]
+    [RequireMenu("password-book")]
+    public async Task<IActionResult> GetStatistics()
+    {
+        var statistics = await _passwordBookService.GetStatisticsAsync();
+        return Success(statistics);
     }
 }
 ```
@@ -300,19 +383,254 @@ var companyId = User.FindFirst("companyId")?.Value;
 
 ### 6.2 服务层规范
 
-#### 标准服务模板（分页查询）
+#### 标准服务模板
+以下为密码本服务开发标准（`Platform.ApiService/Services/PasswordBookService.cs`）：
+
 ```csharp
-public async Task<PagedResult<PasswordBookEntry>> GetEntriesAsync(
-    ProTableRequest request,
-    string userId)
+using Microsoft.EntityFrameworkCore;
+using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
+using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Extensions;
+using System.Linq.Dynamic.Core;
+
+namespace Platform.ApiService.Services;
+
+/// <summary>
+/// 密码本服务实现
+/// </summary>
+public class PasswordBookService : IPasswordBookService
 {
-    if (string.IsNullOrEmpty(userId))
-        throw new ArgumentException("用户ID不能为空", nameof(userId));
+    private readonly DbContext _context;
+    private readonly IEncryptionService _encryptionService;
+    private readonly ILogger<PasswordBookService> _logger;
 
-    var query = _context.Set<PasswordBookEntry>()
-        .Where(e => e.UserId == userId || e.IsPublic);
+    public PasswordBookService(
+        DbContext context,
+        IEncryptionService encryptionService,
+        ILogger<PasswordBookService> logger)
+    {
+        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _encryptionService = encryptionService ?? throw new ArgumentNullException(nameof(encryptionService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
 
-    return query.ToPagedList(request);
+    /// <summary>
+    /// 创建密码本条目
+    /// </summary>
+    public async Task<PasswordBookEntry> CreateEntryAsync(CreatePasswordBookEntryRequest request, string userId)
+    {
+        if (string.IsNullOrEmpty(userId))
+            throw new ArgumentException("用户ID不能为空", nameof(userId));
+
+        var encryptedPassword = await _encryptionService.EncryptAsync(request.Password, userId);
+
+        var entry = new PasswordBookEntry
+        {
+            Platform = request.Platform,
+            Account = request.Account,
+            EncryptedPassword = encryptedPassword,
+            Url = request.Url,
+            Category = request.Category,
+            Tags = request.Tags ?? new List<string>(),
+            Notes = request.Notes,
+            UserId = userId,
+            IsPublic = request.IsPublic
+        };
+
+        await _context.Set<PasswordBookEntry>().AddAsync(entry);
+        await _context.SaveChangesAsync();
+        return entry;
+    }
+
+    /// <summary>
+    /// 获取条目详情（包含解密后的密码）
+    /// </summary>
+    public async Task<PasswordBookEntryDetailDto?> GetEntryByIdAsync(string id, string userId)
+    {
+        if (string.IsNullOrEmpty(userId))
+            throw new ArgumentException("用户ID不能为空", nameof(userId));
+
+        var entry = await _context.Set<PasswordBookEntry>().FirstOrDefaultAsync(x => x.Id == id);
+        if (entry == null)
+            return null;
+
+        if (entry.UserId != userId && !entry.IsPublic)
+            throw new UnauthorizedAccessException("无权访问此条目");
+
+        var password = await _encryptionService.DecryptAsync(entry.EncryptedPassword, entry.UserId);
+
+        if (entry.UserId == userId)
+        {
+            entry.LastUsedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+
+        return new PasswordBookEntryDetailDto
+        {
+            Id = entry.Id,
+            Platform = entry.Platform,
+            Account = entry.Account,
+            Password = password,
+            Url = entry.Url,
+            Category = entry.Category,
+            Tags = entry.Tags,
+            Notes = entry.Notes,
+            LastUsedAt = entry.LastUsedAt,
+            IsPublic = entry.IsPublic
+        };
+    }
+
+    /// <summary>
+    /// 分页查询条目列表（不返回密码）
+    /// 可见范围：自己的私有条目 + 企业内所有公有条目
+    /// </summary>
+    public async Task<PagedResult<PasswordBookEntry>> GetEntriesAsync(
+        ProTableRequest request,
+        string userId)
+    {
+        if (string.IsNullOrEmpty(userId))
+            throw new ArgumentException("用户ID不能为空", nameof(userId));
+
+        var query = _context.Set<PasswordBookEntry>()
+            .Where(e => e.UserId == userId || e.IsPublic);
+
+        return query.ToPagedList(request);
+    }
+
+    /// <summary>
+    /// 更新密码本条目
+    /// </summary>
+    public async Task<PasswordBookEntry?> UpdateEntryAsync(string id, UpdatePasswordBookEntryRequest request, string userId)
+    {
+        if (string.IsNullOrEmpty(userId))
+            throw new ArgumentException("用户ID不能为空", nameof(userId));
+
+        var entry = await _context.Set<PasswordBookEntry>().FirstOrDefaultAsync(x => x.Id == id);
+        if (entry == null)
+            return null;
+
+        if (entry.UserId != userId)
+            throw new UnauthorizedAccessException("无权更新此条目");
+
+        string? encryptedPassword = null;
+        if (!string.IsNullOrEmpty(request.Password))
+        {
+            encryptedPassword = await _encryptionService.EncryptAsync(request.Password, userId);
+        }
+
+        if (!string.IsNullOrEmpty(request.Platform))
+            entry.Platform = request.Platform;
+        if (!string.IsNullOrEmpty(request.Account))
+            entry.Account = request.Account;
+        if (!string.IsNullOrEmpty(encryptedPassword))
+            entry.EncryptedPassword = encryptedPassword;
+        if (request.Url != null)
+            entry.Url = request.Url;
+
+        entry.Category = string.IsNullOrWhiteSpace(request.Category) ? null : request.Category;
+
+        if (request.Tags != null)
+            entry.Tags = request.Tags;
+        if (request.Notes != null)
+            entry.Notes = request.Notes;
+        if (request.IsPublic.HasValue)
+            entry.IsPublic = request.IsPublic.Value;
+
+        await _context.SaveChangesAsync();
+
+        return entry;
+    }
+
+    /// <summary>
+    /// 删除条目（软删除）
+    /// </summary>
+    public async Task<bool> DeleteEntryAsync(string id, string userId)
+    {
+        if (string.IsNullOrEmpty(userId))
+            throw new ArgumentException("用户ID不能为空", nameof(userId));
+
+        var entry = await _context.Set<PasswordBookEntry>().FirstOrDefaultAsync(x => x.Id == id);
+        if (entry == null)
+            return false;
+
+        if (entry.UserId != userId)
+            throw new UnauthorizedAccessException("无权删除此条目");
+
+        _context.Set<PasswordBookEntry>().Remove(entry);
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+    /// <summary>
+    /// 获取所有分类
+    /// </summary>
+    public async Task<List<string>> GetCategoriesAsync()
+    {
+        var categories = await _context.Set<PasswordBookEntry>()
+            .Where(e => e.Category != null && e.Category != "")
+            .Select(e => e.Category!)
+            .Distinct()
+            .OrderBy(c => c)
+            .ToListAsync();
+
+        return categories;
+    }
+
+    /// <summary>
+    /// 获取所有标签
+    /// </summary>
+    public async Task<List<string>> GetTagsAsync()
+    {
+        var allEntries = await _context.Set<PasswordBookEntry>()
+            .Where(e => e.Tags != null && e.Tags.Count > 0)
+            .Select(e => e.Tags)
+            .ToListAsync();
+
+        var tags = allEntries
+            .SelectMany(tags => tags)
+            .Distinct()
+            .OrderBy(t => t)
+            .ToList();
+
+        return tags;
+    }
+
+    /// <summary>
+    /// 获取统计信息
+    /// </summary>
+    public async Task<PasswordBookStatistics> GetStatisticsAsync()
+    {
+        var totalEntries = await _context.Set<PasswordBookEntry>().CountAsync();
+
+        var categories = await _context.Set<PasswordBookEntry>()
+            .Where(e => e.Category != null && e.Category != "")
+            .Select(e => e.Category!)
+            .Distinct()
+            .CountAsync();
+
+        var allEntriesForTags = await _context.Set<PasswordBookEntry>()
+            .Where(e => e.Tags != null && e.Tags.Count > 0)
+            .Select(e => e.Tags)
+            .ToListAsync();
+        var tags = allEntriesForTags
+            .SelectMany(tags => tags)
+            .Distinct()
+            .Count();
+
+        var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
+        var recentUsedCount = await _context.Set<PasswordBookEntry>()
+            .CountAsync(e => e.LastUsedAt.HasValue && e.LastUsedAt.Value >= sevenDaysAgo);
+
+        return new PasswordBookStatistics
+        {
+            TotalEntries = totalEntries,
+            CategoryCount = categories,
+            TagCount = tags,
+            RecentUsedCount = recentUsedCount
+        };
+    }
 }
 ```
 
@@ -471,7 +789,21 @@ public sealed class ProTableRequest
 }
 ```
 
-#### 后端实现
+#### 返回结果类型
+`ToPagedList()` 返回 `PagedResult<T>`：
+
+```csharp
+public class PagedResult<T>
+{
+    public List<T> Queryable { get; set; } = new();
+    public int CurrentPage { get; set; }
+    public int PageSize { get; set; }
+    public int RowCount { get; set; }
+    public int PageCount { get; set; }
+}
+```
+
+#### 后端实现（开发标准）
 ```csharp
 // ✅ 正确：使用 ToPagedList
 var result = _context.Set<User>()
@@ -483,6 +815,39 @@ var paged = query.Skip((page - 1) * pageSize).Take(pageSize);
 ```
 
 > **[强制]** 必须使用 `ToPagedList()` 扩展方法，禁止手动 `Skip/Take`。
+
+#### 排序规则处理
+- 默认排序字段：`createdAt`，降序 `desc`
+- 前端传入 `Sort` JSON 格式如 `{"fieldName":"ascend"}`，自动转换 SQL 排序
+- 字段名脱杠转换：`createdAt` 支持，前端传 `created-at` 自动映射
+
+#### 搜索与过滤
+- `Search`：模糊搜索所有 `string` 类型字段，使用 `Contains` 匹配
+- `Filter`：支持数组（`Contains`）和单值（精确匹配）两种格式
+  - 数组：`{"category":["work","personal"]}` → `category.Contains("work") || category.Contains("personal")`
+  - 单值：`{"status":"active"}` → `status == "active"`
+
+#### 开发标准：密码本分页查询
+参考 `PasswordBookService.GetEntriesAsync()`（第 156-169 行）：
+
+```csharp
+/// <summary>
+/// 分页查询条目列表（不返回密码）
+/// 可见范围：自己的私有条目 + 企业内所有公有条目
+/// </summary>
+public async Task<PagedResult<PasswordBookEntry>> GetEntriesAsync(
+    ProTableRequest request,
+    string userId)
+{
+    if (string.IsNullOrEmpty(userId))
+        throw new ArgumentException("用户ID不能为空", nameof(userId));
+
+    var query = _context.Set<PasswordBookEntry>()
+        .Where(e => e.UserId == userId || e.IsPublic);
+
+    return query.ToPagedList(request);
+}
+```
 
 ### 6.6 异常处理规范
 

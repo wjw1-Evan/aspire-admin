@@ -39,22 +39,13 @@ public class KnowledgeDocumentController : BaseApiController
         string knowledgeBaseId,
         [FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request)
     {
-        try
-        {
-            if (request.Page < 1 || request.Page > 10000) throw new ArgumentException("page 必须在 1-10000 之间");
-            if (request.PageSize < 1 || request.PageSize > 100) throw new ArgumentException("pageSize 必须在 1-100 之间");
 
-            var kb = await _knowledgeService.GetByIdAsync(knowledgeBaseId);
-            if (kb == null) throw new ArgumentException("知识库 {knowledgeBaseId} 不存在");
+        var kb = await _knowledgeService.GetByIdAsync(knowledgeBaseId);
+        if (kb == null) throw new ArgumentException("知识库 {knowledgeBaseId} 不存在");
 
-            var pagedResult = await _documentService.GetDocumentsAsync(knowledgeBaseId, request);
-            return Success(pagedResult);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取知识库文档列表失败");
-            throw new ArgumentException(ex.Message);
-        }
+        var pagedResult = await _documentService.GetDocumentsAsync(knowledgeBaseId, request);
+        return Success(pagedResult);
+
     }
 
     /// <summary>

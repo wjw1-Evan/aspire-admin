@@ -104,7 +104,7 @@ public class TaskCrudService : ITaskCrudService
         return new System.Linq.Dynamic.Core.PagedResult<TaskDto>
         {
             Queryable = taskDtos.AsQueryable(),
-            CurrentPage = request.Page,
+            CurrentPage = request.Current,
             PageSize = request.PageSize,
             RowCount = total,
             PageCount = (int)Math.Ceiling((double)total / request.PageSize)

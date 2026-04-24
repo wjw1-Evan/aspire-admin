@@ -262,7 +262,7 @@ public class UserCompanyService : IUserCompanyService
             return new PagedResult<JoinRequestDetail>
             {
                 Queryable = Enumerable.Empty<JoinRequestDetail>().AsQueryable(),
-                CurrentPage = request.Page,
+                CurrentPage = request.Current,
                 PageSize = request.PageSize,
                 RowCount = 0,
                 PageCount = 0
@@ -312,7 +312,7 @@ public class UserCompanyService : IUserCompanyService
         return new PagedResult<JoinRequestDetail>
         {
             Queryable = result.AsQueryable(),
-            CurrentPage = request.Page,
+            CurrentPage = request.Current,
             PageSize = request.PageSize,
             RowCount = pagedResult.RowCount,
             PageCount = pagedResult.PageCount

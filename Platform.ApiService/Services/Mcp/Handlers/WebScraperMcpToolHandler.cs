@@ -59,7 +59,7 @@ public class WebScraperMcpToolHandler : McpToolHandlerBase
 
                 var pageParams = new Platform.ServiceDefaults.Models.ProTableRequest
                 {
-                    Page = page,
+                    Current = page,
                     PageSize = pageSize
                 };
 
@@ -126,7 +126,7 @@ public class WebScraperMcpToolHandler : McpToolHandlerBase
 
                 var pageParams = new Platform.ServiceDefaults.Models.ProTableRequest
                 {
-                    Page = page,
+                    Current = page,
                     PageSize = pageSize
                 };
 

@@ -184,7 +184,7 @@ public class BulkOperationService : IBulkOperationService
             b.IsDeleted != true;
 
         var query = _context.Set<BulkOperation>().Where(filter);
-        return Task.FromResult(query.ToPagedList(new Platform.ServiceDefaults.Models.ProTableRequest { Page = page, PageSize = pageSize }));
+        return Task.FromResult(query.ToPagedList(new Platform.ServiceDefaults.Models.ProTableRequest { Current = page, PageSize = pageSize }));
     }
 
     /// <summary>

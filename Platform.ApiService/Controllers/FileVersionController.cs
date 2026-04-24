@@ -46,19 +46,10 @@ public class FileVersionController : BaseApiController
         if (string.IsNullOrWhiteSpace(fileId))
             throw new ArgumentException("文件ID不能为空");
 
-        if (request.Page < 1 || request.PageSize < 1 || request.PageSize > 500)
-            throw new ArgumentException("分页参数不合法");
 
-        try
-        {
-            var pagedResult = await _fileVersionService.GetVersionHistoryPaginatedAsync(fileId, request);
-            return Success(pagedResult);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取版本列表失败, FileId: {FileId}", fileId);
-            throw new ArgumentException("服务器内部错误");
-        }
+        var pagedResult = await _fileVersionService.GetVersionHistoryPaginatedAsync(fileId, request);
+        return Success(pagedResult);
+
     }
 
     /// <summary>

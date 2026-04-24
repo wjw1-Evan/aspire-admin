@@ -40,7 +40,7 @@ public class FormMcpToolHandler : McpToolHandlerBase
                 var query = _context.Set<FormDefinition>().Where(
                     f => (string.IsNullOrEmpty(keyword) || f.Name.Contains(keyword)) &&
                          (!args.ContainsKey("isActive") || f.IsActive == (args.GetValueOrDefault("isActive") as bool? ?? true)));
-                var pageParams = new Platform.ServiceDefaults.Models.ProTableRequest { Page = page, PageSize = pageSize };
+                var pageParams = new Platform.ServiceDefaults.Models.ProTableRequest { Current = page, PageSize = pageSize };
                 var pagedResult = query.ToPagedList(pageParams);
                 var items = await pagedResult.Queryable.ToListAsync();
                 return new { items, rowCount = pagedResult.RowCount, currentPage = page, pageSize, pageCount = (int)Math.Ceiling((double)pagedResult.RowCount / pageSize) };

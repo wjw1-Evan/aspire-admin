@@ -12,7 +12,7 @@ public static class QueryableExtensions
         this IQueryable<T> query,
         Models.ProTableRequest? request)
     {
-        var page = request?.Page ?? 1;
+        var page = request?.Current ?? 1;
         var pageSize = request?.PageSize ?? 20;
         var search = request?.Search;
 

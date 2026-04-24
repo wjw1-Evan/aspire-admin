@@ -45,7 +45,7 @@ public class DocumentMcpToolHandler : McpToolHandlerBase
                 var (page, pageSize) = ParsePaginationArgs(args, defaultPageSize: 20, maxPageSize: 100);
                 var pageParams = new Platform.ServiceDefaults.Models.ProTableRequest
                 {
-                    Page = page,
+                    Current = page,
                     PageSize = pageSize,
                     Search = args.GetValueOrDefault("keyword")?.ToString()
                 };
@@ -124,7 +124,7 @@ public class DocumentMcpToolHandler : McpToolHandlerBase
         if (arguments.ContainsKey("search"))
             return await HandleSearchFilesAsync(arguments, currentUserId);
 
-        var query = new Platform.ServiceDefaults.Models.ProTableRequest { Page = page, PageSize = pageSize };
+        var query = new Platform.ServiceDefaults.Models.ProTableRequest { Current = page, PageSize = pageSize };
 
         var response = await _cloudStorageService.GetFileItemsAsync(parentId, query);
         var items = await response.Queryable.ToListAsync();
@@ -144,7 +144,7 @@ public class DocumentMcpToolHandler : McpToolHandlerBase
         if (string.IsNullOrEmpty(keyword)) return new { error = "关键词必填" };
 
         var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
-        var request = new Platform.ServiceDefaults.Models.ProTableRequest { Search = keyword, Page = page, PageSize = pageSize };
+        var request = new Platform.ServiceDefaults.Models.ProTableRequest { Search = keyword, Current = page, PageSize = pageSize };
         var response = await _cloudStorageService.SearchFilesAsync(request);
         var items = await response.Queryable.ToListAsync();
         return new

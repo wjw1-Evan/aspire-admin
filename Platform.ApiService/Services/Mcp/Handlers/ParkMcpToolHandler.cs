@@ -50,7 +50,7 @@ public class ParkMcpToolHandler : McpToolHandlerBase
                 return await _assetService.GetBuildingsAsync(new Platform.ServiceDefaults.Models.ProTableRequest
                 {
                     Search = args.GetValueOrDefault("keyword")?.ToString(),
-                    Page = page,
+                    Current = page,
                     PageSize = pageSize
                 });
             });
@@ -64,7 +64,7 @@ public class ParkMcpToolHandler : McpToolHandlerBase
                 return await _investmentService.GetLeadsAsync(new Platform.ServiceDefaults.Models.ProTableRequest
                 {
                     Search = args.GetValueOrDefault("keyword")?.ToString(),
-                    Page = page,
+                    Current = page,
                     PageSize = pageSize
                 });
             });
@@ -92,7 +92,7 @@ public class ParkMcpToolHandler : McpToolHandlerBase
                 return await _tenantService.GetTenantsAsync(new Platform.ServiceDefaults.Models.ProTableRequest
                 {
                     Search = args.GetValueOrDefault("keyword")?.ToString(),
-                    Page = page,
+                    Current = page,
                     PageSize = pageSize
                 });
             });
@@ -106,7 +106,7 @@ public class ParkMcpToolHandler : McpToolHandlerBase
                 return await _tenantService.GetContractsAsync(new Platform.ServiceDefaults.Models.ProTableRequest
                 {
                     Search = args.GetValueOrDefault("status")?.ToString(),
-                    Page = page,
+                    Current = page,
                     PageSize = pageSize
                 });
             });
@@ -120,7 +120,7 @@ public class ParkMcpToolHandler : McpToolHandlerBase
                 return await _visitService.GetVisitTasksAsync(new Platform.ServiceDefaults.Models.ProTableRequest
                 {
                     Search = args.GetValueOrDefault("keyword")?.ToString(),
-                    Page = page,
+                    Current = page,
                     PageSize = pageSize
                 });
             });
@@ -134,7 +134,7 @@ public class ParkMcpToolHandler : McpToolHandlerBase
                 return await _enterpriseService.GetRequestsAsync(new Platform.ServiceDefaults.Models.ProTableRequest
                 {
                     Search = args.GetValueOrDefault("status")?.ToString(),
-                    Page = page,
+                    Current = page,
                     PageSize = pageSize
                 });
             });
@@ -152,7 +152,7 @@ public class ParkMcpToolHandler : McpToolHandlerBase
                 if (!string.IsNullOrEmpty(id)) return await _assetService.GetBuildingByIdAsync(id);
                 if (!string.IsNullOrEmpty(name))
                 {
-                    var list = await _assetService.GetBuildingsAsync(new Platform.ServiceDefaults.Models.ProTableRequest { Search = name, Page = 1, PageSize = 1 });
+                    var list = await _assetService.GetBuildingsAsync(new Platform.ServiceDefaults.Models.ProTableRequest { Search = name, Current = 1, PageSize = 1 });
                     var buildingItems = await list.Queryable.ToListAsync();
                     if (buildingItems.Any()) return await _assetService.GetBuildingByIdAsync(buildingItems.First().Id);
                 }
@@ -177,7 +177,7 @@ public class ParkMcpToolHandler : McpToolHandlerBase
                 if (!string.IsNullOrEmpty(id)) return await _investmentService.GetLeadByIdAsync(id);
                 if (!string.IsNullOrEmpty(name))
                 {
-                    var list = await _investmentService.GetLeadsAsync(new Platform.ServiceDefaults.Models.ProTableRequest { Search = name, Page = 1, PageSize = 1 });
+                    var list = await _investmentService.GetLeadsAsync(new Platform.ServiceDefaults.Models.ProTableRequest { Search = name, Current = 1, PageSize = 1 });
                     var leadItems = await list.Queryable.ToListAsync();
                     if (leadItems.Any()) return await _investmentService.GetLeadByIdAsync(leadItems.First().Id);
                 }
@@ -206,7 +206,7 @@ public class ParkMcpToolHandler : McpToolHandlerBase
                 if (!string.IsNullOrEmpty(id)) return await _tenantService.GetTenantByIdAsync(id);
                 if (!string.IsNullOrEmpty(name))
                 {
-                    var list = await _tenantService.GetTenantsAsync(new Platform.ServiceDefaults.Models.ProTableRequest { Search = name, Page = 1, PageSize = 1 });
+                    var list = await _tenantService.GetTenantsAsync(new Platform.ServiceDefaults.Models.ProTableRequest { Search = name, Current = 1, PageSize = 1 });
                     var tenantItems = await list.Queryable.ToListAsync();
                     if (tenantItems.Any()) return await _tenantService.GetTenantByIdAsync(tenantItems.First().Id);
                 }

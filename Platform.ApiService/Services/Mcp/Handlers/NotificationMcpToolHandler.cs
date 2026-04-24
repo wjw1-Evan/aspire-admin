@@ -47,7 +47,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
             async (args, uid) =>
             {
                 var (page, pageSize) = ParsePaginationArgs(args, defaultPageSize: 10, maxPageSize: 100);
-                var pageParams = new Platform.ServiceDefaults.Models.ProTableRequest { Page = page, PageSize = pageSize };
+                var pageParams = new Platform.ServiceDefaults.Models.ProTableRequest { Current = page, PageSize = pageSize };
                 
                 // 这里我们直接查库，因为 INotificationService 可能没有全量过滤接口
                 var query = _context.Set<AppNotification>().Where(n => n.RecipientId == uid);

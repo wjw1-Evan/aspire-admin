@@ -33,7 +33,7 @@ public class PasswordBookMcpToolHandler : McpToolHandlerBase
             {
                 var (page, pageSize) = ParsePaginationArgs(args);
                 var keyword = args.GetValueOrDefault("keyword")?.ToString();
-                var result = await _passwordBookService.GetEntriesAsync(new ProTableRequest { Page = page, PageSize = pageSize, Search = keyword }, uid);
+                var result = await _passwordBookService.GetEntriesAsync(new ProTableRequest { Current = page, PageSize = pageSize, Search = keyword }, uid);
                 var items = await result.Queryable.ToListAsync();
                 return new { items, rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount };
             });

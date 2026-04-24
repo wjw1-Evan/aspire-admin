@@ -729,7 +729,7 @@ public class StorageQuotaService : IStorageQuotaService
         return new System.Linq.Dynamic.Core.PagedResult<StorageQuotaListItem>
         {
             Queryable = sortedItems.AsQueryable(),
-            CurrentPage = request.Page,
+            CurrentPage = request.Current,
             PageSize = request.PageSize,
             RowCount = sortedItems.Count,
             PageCount = (int)Math.Ceiling((double)sortedItems.Count / request.PageSize)

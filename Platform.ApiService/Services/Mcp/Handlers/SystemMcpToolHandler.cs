@@ -43,7 +43,7 @@ public class SystemMcpToolHandler : McpToolHandlerBase
             {
                 var (page, pageSize) = ParsePaginationArgs(args);
                 var actionArg = args.GetValueOrDefault("action")?.ToString();
-                var result = await _logService.GetAllActivityLogsAsync(new ProTableRequest { Page = page, PageSize = pageSize, Search = actionArg });
+                var result = await _logService.GetAllActivityLogsAsync(new ProTableRequest { Current = page, PageSize = pageSize, Search = actionArg });
                 var items = await result.Queryable.ToListAsync();
                 return new { items = items, rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount };
             });

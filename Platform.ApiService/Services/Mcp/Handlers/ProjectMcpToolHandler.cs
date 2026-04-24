@@ -37,7 +37,7 @@ public class ProjectMcpToolHandler : McpToolHandlerBase
                 var (page, pageSize) = ParsePaginationArgs(args);
                 var keyword = args.GetValueOrDefault("keyword")?.ToString();
                 var status = args.GetValueOrDefault("status")?.ToString();
-                var request = new Platform.ServiceDefaults.Models.ProTableRequest { Page = page, PageSize = pageSize, Search = keyword };
+                var request = new Platform.ServiceDefaults.Models.ProTableRequest { Current = page, PageSize = pageSize, Search = keyword };
                 var result = await _projectService.GetProjectsListAsync(request, uid);
                 var items = await result.Queryable.ToListAsync();
                 return new { items, rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount };
@@ -56,7 +56,7 @@ public class ProjectMcpToolHandler : McpToolHandlerBase
                 if (!string.IsNullOrEmpty(id)) return await _projectService.GetProjectByIdAsync(id);
                 if (!string.IsNullOrEmpty(name))
                 {
-                    var result = await _projectService.GetProjectsListAsync(new Platform.ServiceDefaults.Models.ProTableRequest { Search = name, Page = 1, PageSize = 1 }, uid);
+                    var result = await _projectService.GetProjectsListAsync(new Platform.ServiceDefaults.Models.ProTableRequest { Search = name, Current = 1, PageSize = 1 }, uid);
                     var items = await result.Queryable.ToListAsync();
                     var first = items.FirstOrDefault();
                     if (first != null && !string.IsNullOrEmpty(first.Id)) return await _projectService.GetProjectByIdAsync(first.Id);

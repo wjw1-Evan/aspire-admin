@@ -781,13 +781,15 @@ public class JwtOptions
 ```csharp
 public sealed class ProTableRequest
 {
-    public int Page { get; set; } = 1;
+    public int Current { get; set; } = 1;
     public int PageSize { get; set; } = 20;
     public string? Search { get; set; }
     public string? Sort { get; set; }      // JSON: {"fieldName":"ascend"}
     public string? Filter { get; set; }     // JSON 对象筛选
 }
 ```
+
+> **注意**：`Current` 属性与前端 ProTable 的 `current` 参数名保持一致，无需参数映射。
 
 #### 返回结果类型
 `ToPagedList()` 返回 `PagedResult<T>`：
@@ -1328,8 +1330,7 @@ const api = {
 
 // request 回调（必须 current→page 映射）
 request={async (params: any, sort: any, filter: any) => {
-  const { current, pageSize } = params;
-  const res = await api.list({ page: current, pageSize, search: state.search, sort, filter });
+  const res = await api.list({ ...params, search: state.search, sort, filter });
   return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
 }}
 
@@ -1449,26 +1450,16 @@ const handleFinish = async (values: Record<string, any>) => {
 
 | 参数 | 说明 | 备注 |
 |------|------|------|
-| `page` | 当前页码 | 必须显式传递（ProTable 传入 `current`，需映射为 `page`） |
-| `pageSize` | 每页数量 | ProTable 自动传递 |
+| `current` | 当前页码 | ProTable 自动传入，后端 `ProTableRequest.Current` 匹配 |
+| `pageSize` | 每页数量 | ProTable 自动传入 |
 | `search` | 搜索关键词 | 存储在 state 中 |
 | `sort` | 排序规则 | 如 `{"fieldName":"ascend"}`，UmiJS 自动序列化 |
 | `filter` | 筛选规则 | 如 `{"category":["work"]}`，UmiJS 自动序列化 |
 
 ```typescript
-// ✅ 正确：映射 current→page + sort/filter
-const { current, pageSize } = params;
-const res = await api.list({
-  page: current,
-  pageSize,
-  search: state.search,
-  sort,
-  filter,
-});
+// ✅ 正确：直接展开 params（Current 属性名已与前端 current 参数名匹配）
+const res = await api.list({ ...params, search: state.search, sort, filter });
 return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
-
-// ❌ 禁止：直接展开 params（current 不映射为 page，分页永远在第1页）
-const res = await api.list({ ...params, sort, filter });
 ```
 
 ### 7.9 列渲染规范

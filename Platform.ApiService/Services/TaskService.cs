@@ -52,14 +52,14 @@ public class TaskService : ITaskService
 
     public async Task<List<TaskDto>> GetTasksByProjectIdAsync(string projectId)
     {
-        var all = await _crudService.QueryTasksAsync(new ServiceDefaults.Models.ProTableRequest { Page = 1, PageSize = int.MaxValue });
+        var all = await _crudService.QueryTasksAsync(new ServiceDefaults.Models.ProTableRequest { Current = 1, PageSize = int.MaxValue });
         var projectTasks = all.Queryable.Where(t => t.ProjectId == projectId).ToList();
         return BuildTaskTree(projectTasks);
     }
 
     public async Task<List<TaskDto>> GetTaskTreeAsync(string? projectId = null)
     {
-        var all = await _crudService.QueryTasksAsync(new ServiceDefaults.Models.ProTableRequest { Page = 1, PageSize = int.MaxValue });
+        var all = await _crudService.QueryTasksAsync(new ServiceDefaults.Models.ProTableRequest { Current = 1, PageSize = int.MaxValue });
         var tasks = string.IsNullOrEmpty(projectId)
             ? all.Queryable.ToList()
             : all.Queryable.Where(t => t.ProjectId == projectId).ToList();

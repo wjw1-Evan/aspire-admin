@@ -536,7 +536,7 @@ public class UserService : IUserService
         int page = 1, int pageSize = 20, string? createdBy = null, string? action = null, string? httpMethod = null,
         int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null)
     {
-        return await _userActivityLogService.GetAllActivityLogsAsync(new ProTableRequest { Page = page, PageSize = pageSize, Search = action });
+        return await _userActivityLogService.GetAllActivityLogsAsync(new ProTableRequest { Current = page, PageSize = pageSize, Search = action });
     }
 
     /// <inheritdoc/>
@@ -544,7 +544,7 @@ public class UserService : IUserService
         int page = 1, int pageSize = 20, string? createdBy = null, string? action = null, string? httpMethod = null,
         int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null)
     {
-        return await _userActivityLogService.GetAllActivityLogsWithUsersAsync(new ProTableRequest { Page = page, PageSize = pageSize, Search = action });
+        return await _userActivityLogService.GetAllActivityLogsWithUsersAsync(new ProTableRequest { Current = page, PageSize = pageSize, Search = action });
     }
 
     /// <inheritdoc/>

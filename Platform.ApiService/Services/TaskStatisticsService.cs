@@ -77,14 +77,14 @@ public class TaskStatisticsService : ITaskStatisticsService
         }).ToList();
 
         var total = dtos.Count;
-        var skip = (request.Page - 1) * request.PageSize;
+        var skip = (request.Current - 1) * request.PageSize;
         var paged = dtos.Skip(skip).Take(request.PageSize).ToList();
 
         return new System.Linq.Dynamic.Core.PagedResult<TaskExecutionLogDto>
         {
             Queryable = paged.AsQueryable(),
             PageCount = (int)Math.Ceiling(total / (double)request.PageSize),
-            CurrentPage = request.Page,
+            CurrentPage = request.Current,
             PageSize = request.PageSize,
             RowCount = total
         };

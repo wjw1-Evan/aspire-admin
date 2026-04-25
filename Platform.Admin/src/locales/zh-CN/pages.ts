@@ -2377,6 +2377,7 @@ export default {
   'pages.passwordBook.form.accountRequired': '请输入账号',
   'pages.passwordBook.form.passwordPlaceholder': '请输入密码',
   'pages.passwordBook.form.passwordRequired': '请输入密码',
+  'pages.passwordBook.form.url': '网址',
   'pages.passwordBook.form.urlPlaceholder': 'https://example.com',
   'pages.passwordBook.form.categoryPlaceholder': '选择或输入分类（仅保留第一个）',
   'pages.passwordBook.form.tagsPlaceholder': '输入标签后按回车',

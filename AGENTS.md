@@ -1565,9 +1565,236 @@ const blob = await response.blob();
 - **配置**：默认 `zh-CN`，支持 18 种语言
 - **翻译文件**：`src/locales/zh-CN/` 目录（menu.ts、pages.ts、component.ts 等）
 - **使用方式**：通过 `useIntl().formatMessage({ id: 'key' })` 获取翻译文本
-- **[注意]** 当前代码中 i18n 使用不一致：部分页面（task-management、iot-platform、workflow）全面使用 `intl.formatMessage`，部分页面（password-book、document/list、cloud-storage）使用硬编码中文字符串。新代码应优先使用 `intl.formatMessage`
+- **[强制]** 所有新页面必须使用 `intl.formatMessage` 替代硬编码中文文本
+- **[强制]** 所有现有页面应逐步迁移到使用 `intl.formatMessage`
 
-### 7.18 Lint 检查
+### 7.18 统一开发规范
+
+> **开发标准参考**：`src/templates/StandardPageTemplate.tsx` 是所有列表页面的统一标准模板。
+
+#### 7.18.1 十大统一标准
+
+| 标准项 | 说明 | 示例 |
+|--------|------|------|
+| **1. 状态管理** | 使用 `useState` + `useCallback` 模式，统一状态更新 | `const [state, setState] = useState({...}); const set = useCallback((partial) => setState(prev => ({...prev, ...partial})), []);` |
+| **2. 表单组件** | 统一使用 `ModalForm` 替代自定义表单 | `<ModalForm key={editingEntry?.id \|\| 'create'} ... />` |
+| **3. 国际化** | 所有文本使用 `intl.formatMessage` | `intl.formatMessage({ id: 'pages.xxx.title' })` |
+| **4. 统计信息** | 页面顶部显示统计卡片（如总数、分类数等） | `<Statistic title="总数" value={statistics.total} />` |
+| **5. 详情显示** | 使用 `Drawer` + `ProDescriptions` 显示详情 | `<Drawer><ProDescriptions column={1} bordered /></Drawer>` |
+| **6. 列操作** | 统一使用 `Space` + `Button` + `Popconfirm` | `<Space><Button>查看</Button><Button>编辑</Button><Popconfirm><Button>删除</Button></Popconfirm></Space>` |
+| **7. 布局样式** | 使用 `ProCard` 包裹，统一间距和样式 | `<ProCard><ProTable /></ProCard>` |
+| **8. API 调用** | 统一使用 `request` + `ApiResponse` 类型 | `request<ApiResponse<PagedResult<Entry>>>(url, { params })` |
+| **9. 代码组织** | 按顺序组织：导入 → 类型定义 → API → 组件 | `imports → types → api → component` |
+| **10. 错误处理** | 使用 `getErrorMessage` 工具函数 | `message.error(getErrorMessage(response, 'pages.xxx.error'))` |
+
+#### 7.18.2 标准页面结构
+
+```typescript
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { useParams } from '@umijs/max';
+import { Space, Typography, Spin, Result, Input, Button, Tag, message } from 'antd';
+import { ProCard, ProTable, ModalForm, ProFormText, ProDescriptions } from '@ant-design/pro-components';
+import { request } from '@umijs/max';
+import { ApiResponse, PagedResult } from '@/types';
+import { getIntl } from '@umijs/max';
+
+// 1. 类型定义
+interface Entry {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+// 2. API 对象
+const api = {
+  list: (params: any) => request<ApiResponse<PagedResult<Entry>>>('/apiservice/api/xxx/list', { params }),
+  get: (id: string) => request<ApiResponse<Entry>>(`/apiservice/api/xxx/${id}`),
+  create: (data: Partial<Entry>) => request<ApiResponse<Entry>>('/apiservice/api/xxx', { method: 'POST', data }),
+  update: (id: string, data: Partial<Entry>) => request<ApiResponse<Entry>>(`/apiservice/api/xxx/${id}`, { method: 'PUT', data }),
+  delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/xxx/${id}`, { method: 'DELETE' }),
+  statistics: () => request<ApiResponse<Stats>>('/apiservice/api/xxx/statistics'),
+};
+
+// 3. 主组件
+const XxxPage: React.FC = () => {
+  const intl = getIntl();
+  const actionRef = useRef<ActionType>();
+
+  // 4. 状态管理
+  const [state, setState] = useState({
+    formVisible: false,
+    editingEntry: null as Entry | null,
+    detailVisible: false,
+    viewingId: '',
+    statistics: null as Stats | null,
+  });
+  const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
+
+  // 5. 初始化数据加载
+  useEffect(() => {
+    loadStatistics();
+  }, []);
+
+  const loadStatistics = async () => {
+    const res = await api.statistics();
+    if (res.success && res.data) {
+      set({ statistics: res.data });
+    }
+  };
+
+  // 6. 表单提交处理
+  const handleFinish = async (values: Record<string, any>) => {
+    const res = state.editingEntry
+      ? await api.update(state.editingEntry.id, values)
+      : await api.create(values);
+    if (res.success) {
+      set({ formVisible: false, editingEntry: null });
+      actionRef.current?.reload();
+      loadStatistics();
+    }
+    return res.success;
+  };
+
+  // 7. 列定义
+  const columns: ProColumns<Entry>[] = [
+    { title: intl.formatMessage({ id: 'pages.xxx.name' }), dataIndex: 'name', key: 'name', sorter: true },
+    { title: intl.formatMessage({ id: 'pages.xxx.createdAt' }), dataIndex: 'createdAt', key: 'createdAt', sorter: true, valueType: 'dateTime' },
+    {
+      title: intl.formatMessage({ id: 'pages.xxx.action' }),
+      key: 'action',
+      valueType: 'option',
+      fixed: 'right',
+      width: 180,
+      render: (_, r) => (
+        <Space size={4}>
+          <Button variant="link" color="cyan" size="small" onClick={() => set({ viewingId: r.id, detailVisible: true })}>
+            {intl.formatMessage({ id: 'pages.xxx.view' })}
+          </Button>
+          <Button type="link" size="small" onClick={() => set({ editingEntry: r, formVisible: true })}>
+            {intl.formatMessage({ id: 'pages.xxx.edit' })}
+          </Button>
+          <Popconfirm
+            title={intl.formatMessage({ id: 'pages.xxx.confirmDelete' })}
+            onConfirm={async () => {
+              await api.delete(r.id);
+              actionRef.current?.reload();
+              loadStatistics();
+            }}
+          >
+            <Button type="link" size="small" danger>
+              {intl.formatMessage({ id: 'pages.xxx.delete' })}
+            </Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
+  // 8. 渲染
+  return (
+    <ProCard>
+      {/* 统计信息 */}
+      {state.statistics && (
+        <Row gutter={16} style={{ marginBottom: 16 }}>
+          <Col span={6}>
+            <Statistic title={intl.formatMessage({ id: 'pages.xxx.total' })} value={state.statistics.total} />
+          </Col>
+        </Row>
+      )}
+
+      {/* 列表 */}
+      <ProTable<Entry>
+        columns={columns}
+        actionRef={actionRef}
+        request={async (params: any, sort: any, filter: any) => {
+          const res = await api.list({ ...params, sort, filter });
+          return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+        }}
+        rowKey="id"
+        search={false}
+      />
+
+      {/* 表单弹窗 */}
+      <ModalForm
+        key={state.editingEntry?.id || 'create'}
+        title={state.editingEntry ? intl.formatMessage({ id: 'pages.xxx.edit' }) : intl.formatMessage({ id: 'pages.xxx.create' })}
+        open={state.formVisible}
+        onOpenChange={(open) => { if (!open) set({ formVisible: false, editingEntry: null }); }}
+        initialValues={state.editingEntry || undefined}
+        onFinish={handleFinish}
+      >
+        <ProFormText name="name" label={intl.formatMessage({ id: 'pages.xxx.name' })} rules={[{ required: true }]} />
+      </ModalForm>
+
+      {/* 详情抽屉 */}
+      <Drawer
+        title={intl.formatMessage({ id: 'pages.xxx.detail' })}
+        placement="right"
+        open={state.detailVisible}
+        onClose={() => set({ detailVisible: false })}
+        size="large"
+      >
+        <DetailContent id={state.viewingId} />
+      </Drawer>
+    </ProCard>
+  );
+};
+
+export default XxxPage;
+```
+
+#### 7.18.3 移动端适配
+
+所有页面必须支持移动端响应式布局：
+
+```typescript
+// 使用 ProCard 的 responsive 属性
+<ProCard responsive>
+  <ProTable
+    columns={columns}
+    scroll={{ x: true }}  // 支持横向滚动
+    // ...
+  />
+</ProCard>
+
+// 或使用 Grid 布局
+<Row gutter={[16, 16]}>
+  <Col xs={24} sm={12} md={8} lg={6}>
+    <Statistic title="总数" value={total} />
+  </Col>
+</Row>
+```
+
+#### 7.18.4 翻译键命名规范
+
+| 类型 | 命名格式 | 示例 |
+|------|---------|------|
+| 页面标题 | `pages.{module}.title` | `pages.password-book.title` |
+| 表单字段 | `pages.{module}.form.{field}` | `pages.password-book.form.platform` |
+| 按钮文本 | `pages.{module}.button.{action}` | `pages.password-book.button.create` |
+| 列标题 | `pages.{module}.columns.{field}` | `pages.password-book.columns.platform` |
+| 错误消息 | `pages.{module}.error.{type}` | `pages.password-book.error.required` |
+| 统计信息 | `pages.{module}.statistics.{item}` | `pages.password-book.statistics.total` |
+
+#### 7.18.5 已重构页面清单
+
+以下页面已完成统一开发规范重构：
+
+| 页面 | 路径 | 完成项 |
+|------|------|--------|
+| 密码本 | `src/pages/password-book/index.tsx` | ✅ 国际化、移动端适配、统计信息 |
+| 任务管理 | `src/pages/task-management/index.tsx` | ✅ ModalForm、国际化 |
+| IoT 平台 | `src/pages/iot-platform/index.tsx` | ✅ 国际化、移动端适配 |
+| 用户管理 | `src/pages/user-management/index.tsx` | ✅ 统一状态管理、国际化 |
+| 工作流表单 | `src/pages/workflow/forms/index.tsx` | ✅ ModalForm、国际化 |
+| 项目管理 | `src/pages/project-management/index.tsx` | ✅ 国际化、统计信息 |
+| 云存储文件 | `src/pages/cloud-storage/files/index.tsx` | ✅ 国际化 |
+| 园区租户 | `src/pages/park-management/tenant/index.tsx` | ✅ 国际化 |
+| 组织架构 | `src/pages/organization/index.tsx` | ✅ 国际化 |
+| 网页抓取 | `src/pages/web-scraper/index.tsx` | ✅ 国际化 |
+| 分享页面 | `src/pages/share/index.tsx` | ✅ 国际化 |
+
+### 7.19 Lint 检查
 
 前端 `lint` 脚本实际运行 TypeScript 类型检查：
 
@@ -1575,7 +1802,7 @@ const blob = await response.blob();
 cd Platform.Admin && npm run lint  # 实际执行 tsc --noEmit
 ```
 
-### 7.19 错误处理与 errorCode 翻译优先规范
+### 7.20 错误处理与 errorCode 翻译优先规范
 
 **[强制]** 前端显示错误信息时，必须优先使用 `errorCode` 进行 i18n 翻译，`message` 作为 fallback：
 
@@ -1624,7 +1851,7 @@ export function getErrorMessage(
 | `message` | 错误消息文本 | fallback 显示 |
 | `debugData` | 原始错误负载 | 用于调试日志 |
 
-### 7.20 国密 SM2 密码加密规范（GM/T 0003 / GM/T 0009）
+### 7.21 国密 SM2 密码加密规范（GM/T 0003 / GM/T 0009）
 
 本项目使用国密 SM2 非对称加密算法保护前端到后端的敏感数据传输，遵循 GM/T 0003.1-2012 和 GM/T 0009-2012 标准。
 
@@ -1733,6 +1960,7 @@ var decryptedData = sm2Engine.ProcessBlock(cipherText, 0, cipherText.Length);
 | 前端错误消息工具 | `Platform.Admin/src/utils/getErrorMessage.ts` |
 | 错误拦截器 | `Platform.Admin/src/utils/errorInterceptor.ts` |
 | 错误配置 | `Platform.Admin/src/request-error-config.ts` |
+| 标准页面模板 | `Platform.Admin/src/templates/StandardPageTemplate.tsx` |
 | 页面开发标准 | `Platform.Admin/src/pages/password-book/index.tsx` |
 | SSE Hook | `Platform.Admin/src/hooks/useSseConnection.ts` |
 | Token 工具 | `Platform.Admin/src/utils/token.ts` |

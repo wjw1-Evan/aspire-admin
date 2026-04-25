@@ -77,6 +77,7 @@ const collectDescendantIds = (node?: OrgNode): Set<string> => {
 
 // ==================== AssignUserModal ====================
 const AssignUserModal: React.FC<{ open: boolean; orgId?: string; onCancel: () => void; onSubmit: (values: any) => Promise<void> }> = ({ open, orgId, onCancel, onSubmit }) => {
+  const intl = getIntl();
   const [form] = Form.useForm();
   const [users, setUsers] = useState<AvailableUser[]>([]);
   const [loading, setLoading] = useState(false);
@@ -97,11 +98,11 @@ const AssignUserModal: React.FC<{ open: boolean; orgId?: string; onCancel: () =>
   };
 
   return (
-    <Modal open={open} title="分配用户" destroyOnHidden onCancel={onCancel} onOk={async () => { const values = await form.validateFields(); await onSubmit(values); }}>
+    <Modal open={open} title={intl.formatMessage({ id: 'pages.organization.modal.assignUser' })} destroyOnHidden onCancel={onCancel} onOk={async () => { const values = await form.validateFields(); await onSubmit(values); }}>
       <Form form={form} layout="vertical">
         <Form.Item name="organizationUnitId" hidden rules={[{ required: true }]}><Input /></Form.Item>
-        <Form.Item name="userId" label="用户" rules={[{ required: true, message: '请选择用户' }]}>
-          <Select showSearch placeholder="搜索用户" loading={loading} options={users} onSearch={handleSearch} filterOption={false} allowClear />
+        <Form.Item name="userId" label={intl.formatMessage({ id: 'pages.organization.form.user' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.organization.form.userRequired' }) }]}>
+          <Select showSearch placeholder={intl.formatMessage({ id: 'pages.organization.form.searchUser' })} loading={loading} options={users} onSearch={handleSearch} filterOption={false} allowClear />
         </Form.Item>
       </Form>
     </Modal>
@@ -111,6 +112,7 @@ const AssignUserModal: React.FC<{ open: boolean; orgId?: string; onCancel: () =>
 // ==================== Main ====================
 const OrganizationPage: React.FC = () => {
   const message = useMessage();
+  const intl = getIntl();
   const { styles } = useCommonStyles();
   const [state, setState] = useState({
     tree: [] as OrgNode[], loading: false, searchValue: '', selectedId: undefined as string | undefined,
@@ -158,7 +160,7 @@ const OrganizationPage: React.FC = () => {
   const handleRemoveMember = async (userId: string) => {
     if (!state.selectedId) return;
     await api.removeUser({ userId, organizationUnitId: state.selectedId });
-    message.success('删除成功');
+    message.success(intl.formatMessage({ id: 'pages.message.deleteSuccess' }));
     await fetchMembers(state.selectedId);
   };
 
@@ -197,7 +199,7 @@ const OrganizationPage: React.FC = () => {
     const newParentId = dropToGap ? targetNode.parentId : targetId;
     const dragDescendants = collectDescendantIds(dragNode);
     if (newParentId === dragId || (newParentId && dragDescendants.has(newParentId))) {
-      message.error('无法移动到此位置'); return;
+      message.error(intl.formatMessage({ id: 'pages.organization.message.cannotMove' })); return;
     }
 
     const parentChildren = buildParentChildrenMap();
@@ -215,95 +217,95 @@ const OrganizationPage: React.FC = () => {
 
     try {
       await api.reorder(items);
-      message.success('更新成功');
+      message.success(intl.formatMessage({ id: 'pages.message.updateSuccess' }));
       await refreshTree();
       set({ selectedId: dragId });
-    } catch { message.error('更新失败'); }
+    } catch { message.error(intl.formatMessage({ id: 'pages.message.updateFailed' })); }
   };
 
   return (
     <PageContainer>
       <Space style={{ marginBottom: 12 }}>
-        <Button icon={<ReloadOutlined />} onClick={refreshTree}>刷新</Button>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => openCreateModal()}>创建根节点</Button>
+        <Button icon={<ReloadOutlined />} onClick={refreshTree}>{intl.formatMessage({ id: 'pages.common.refresh' })}</Button>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => openCreateModal()}>{intl.formatMessage({ id: 'pages.organization.action.createRoot' })}</Button>
       </Space>
       <Row gutter={[12, 12]}>
         <Col xs={24} md={8} lg={7}>
-          <Card title="组织架构" className={styles.card} styles={{ body: { padding: 12 } }} style={{ height: '100%' }}>
-            <div style={{ marginBottom: 12 }}><Search placeholder="搜索..." allowClear onChange={(e) => set({ searchValue: e.target.value })} style={{ width: '100%' }} /></div>
+          <Card title={intl.formatMessage({ id: 'pages.organization.tree.title' })} className={styles.card} styles={{ body: { padding: 12 } }} style={{ height: '100%' }}>
+            <div style={{ marginBottom: 12 }}><Search placeholder={intl.formatMessage({ id: 'pages.organization.search.placeholder' })} allowClear onChange={(e) => set({ searchValue: e.target.value })} style={{ width: '100%' }} /></div>
             <Spin spinning={state.loading}>
               {treeData.length > 0 ? (
                 <Tree blockNode showIcon defaultExpandAll draggable onDrop={handleDrop} selectedKeys={state.selectedId ? [state.selectedId] : []} onSelect={(keys) => { if (keys[0]) set({ selectedId: keys[0] as string }); }} treeData={treeData} />
-              ) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无数据" />}
+              ) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={intl.formatMessage({ id: 'pages.organization.tree.empty' })} />}
             </Spin>
           </Card>
         </Col>
         <Col xs={24} md={16} lg={17}>
-          <Card title="组织详情" className={styles.card} extra={selectedNode ? (
+          <Card title={intl.formatMessage({ id: 'pages.organization.detail.title' })} className={styles.card} extra={selectedNode ? (
             <Space wrap>
-              <Button icon={<PlusOutlined />} onClick={() => openCreateModal(selectedNode.id)}>创建子节点</Button>
-              <Button icon={<EditOutlined />} onClick={() => set({ editingNode: selectedNode, formOpen: true })}>编辑</Button>
-              <Popconfirm title="确定删除此组织？" onConfirm={async () => { await api.delete(selectedNode.id!); message.success('删除成功'); set({ selectedId: undefined }); await refreshTree(); }}>
-                <Button danger icon={<DeleteOutlined />}>删除</Button>
+              <Button icon={<PlusOutlined />} onClick={() => openCreateModal(selectedNode.id)}>{intl.formatMessage({ id: 'pages.organization.action.createChild' })}</Button>
+              <Button icon={<EditOutlined />} onClick={() => set({ editingNode: selectedNode, formOpen: true })}>{intl.formatMessage({ id: 'pages.table.edit' })}</Button>
+              <Popconfirm title={intl.formatMessage({ id: 'pages.organization.modal.deleteTitle' })} onConfirm={async () => { await api.delete(selectedNode.id!); message.success(intl.formatMessage({ id: 'pages.message.deleteSuccess' })); set({ selectedId: undefined }); await refreshTree(); }}>
+                <Button danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.table.delete' })}</Button>
               </Popconfirm>
             </Space>
           ) : null} styles={{ body: { padding: 16, minHeight: 360 } }}>
             {selectedNode ? (
               <>
                 <ProDescriptions column={2} bordered>
-                  <ProDescriptions.Item label="名称"><Space><ApartmentOutlined /><Text strong>{selectedNode.name}</Text></Space></ProDescriptions.Item>
-                  <ProDescriptions.Item label="编码">{selectedNode.code ? <Tag color="blue">{selectedNode.code}</Tag> : '-'}</ProDescriptions.Item>
-                  <ProDescriptions.Item label="上级">{selectedNode.parentId ? nodeMap[selectedNode.parentId]?.name || '-' : '-'}</ProDescriptions.Item>
-                  <ProDescriptions.Item label="排序"><Tag color="purple">{selectedNode.sortOrder ?? 1}</Tag></ProDescriptions.Item>
-                  <ProDescriptions.Item label="负责人">{selectedNode.managerUserId ? <Space><UserOutlined /><Text>{selectedNode.managerUserId}</Text></Space> : '-'}</ProDescriptions.Item>
-                  <ProDescriptions.Item label="更新时间">{selectedNode.updatedAt ? dayjs(selectedNode.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
-                  <ProDescriptions.Item span={2} label="描述">{selectedNode.description || '-'}</ProDescriptions.Item>
-                  <ProDescriptions.Item label="创建时间">{selectedNode.createdAt ? dayjs(selectedNode.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+                  <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.organization.field.name' })}><Space><ApartmentOutlined /><Text strong>{selectedNode.name}</Text></Space></ProDescriptions.Item>
+                  <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.organization.field.code' })}>{selectedNode.code ? <Tag color="blue">{selectedNode.code}</Tag> : '-'}</ProDescriptions.Item>
+                  <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.organization.field.parent' })}>{selectedNode.parentId ? nodeMap[selectedNode.parentId]?.name || '-' : '-'}</ProDescriptions.Item>
+                  <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.organization.field.sortOrder' })}><Tag color="purple">{selectedNode.sortOrder ?? 1}</Tag></ProDescriptions.Item>
+                  <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.organization.field.manager' })}>{selectedNode.managerUserId ? <Space><UserOutlined /><Text>{selectedNode.managerUserId}</Text></Space> : '-'}</ProDescriptions.Item>
+                  <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.organization.field.updatedAt' })}>{selectedNode.updatedAt ? dayjs(selectedNode.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+                  <ProDescriptions.Item span={2} label={intl.formatMessage({ id: 'pages.organization.field.description' })}>{selectedNode.description || '-'}</ProDescriptions.Item>
+                  <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.organization.field.createdAt' })}>{selectedNode.createdAt ? dayjs(selectedNode.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
                 </ProDescriptions>
-                <Card className={styles.card} style={{ marginTop: 16 }} title="成员列表" extra={<Button type="primary" onClick={() => set({ assignOpen: true })}>分配用户</Button>}>
+                <Card className={styles.card} style={{ marginTop: 16 }} title={intl.formatMessage({ id: 'pages.organization.members.title' })} extra={<Button type="primary" onClick={() => set({ assignOpen: true })}>{intl.formatMessage({ id: 'pages.organization.members.add' })}</Button>}>
                   {state.members.length ? (
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       {state.members.map((m, index) => (
                         <div key={`${m.userId}-${index}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #f0f0f0' }}>
                           <Space><UserOutlined /><Text strong>{m.username || m.userId}</Text>{m.email && <Tag color="geekblue">{m.email}</Tag>}</Space>
-                          <Button type="link" danger size="small" onClick={() => { Modal.confirm({ title: '确定删除？', content: `将移除用户「${m.username || m.userId}」`, okText: '确定', okType: 'danger', cancelText: '取消', onOk: () => handleRemoveMember(m.userId) }); }}>移除</Button>
+                          <Button type="link" danger size="small" onClick={() => { Modal.confirm({ title: intl.formatMessage({ id: 'pages.organization.modal.confirmRemove' }), content: intl.formatMessage({ id: 'pages.organization.modal.removeContent' }, { username: m.username || m.userId }), okText: intl.formatMessage({ id: 'pages.table.ok' }), okType: 'danger', cancelText: intl.formatMessage({ id: 'pages.table.cancel' }), onOk: () => handleRemoveMember(m.userId) }); }}>{intl.formatMessage({ id: 'pages.organization.members.remove' })}</Button>
                         </div>
                       ))}
                     </div>
-                  ) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无成员" />}
+                  ) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={intl.formatMessage({ id: 'pages.organization.members.empty' })} />}
                 </Card>
               </>
-            ) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="请选择组织节点" />}
+            ) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={intl.formatMessage({ id: 'pages.organization.detail.empty' })} />}
           </Card>
         </Col>
       </Row>
 
-      <ModalForm key={state.editingNode?.id || 'create'} title={state.editingNode ? '编辑组织' : '创建组织'} open={state.formOpen} onOpenChange={(open) => { if (!open) set({ formOpen: false, editingNode: null }); }}
+      <ModalForm key={state.editingNode?.id || 'create'} title={state.editingNode ? intl.formatMessage({ id: 'pages.organization.modal.updateTitle' }) : intl.formatMessage({ id: 'pages.organization.modal.createTitle' })} open={state.formOpen} onOpenChange={(open) => { if (!open) set({ formOpen: false, editingNode: null }); }}
         initialValues={state.editingNode ? { name: state.editingNode.name, code: state.editingNode.code, parentId: state.editingNode.parentId, description: state.editingNode.description, sortOrder: state.editingNode.sortOrder ?? 1, managerUserId: state.editingNode.managerUserId } : { parentId: state.createParentId, sortOrder: 1 }}
         onFinish={async (values) => {
           set({ submitLoading: true });
           try {
-            if (state.editingNode?.id) { await api.update(state.editingNode.id, values as UpdateOrgRequest); message.success('更新成功'); }
-            else { const res = await api.create(values as CreateOrgRequest); message.success('创建成功'); if (res.success && res.data?.id) set({ selectedId: res.data.id }); }
+            if (state.editingNode?.id) { await api.update(state.editingNode.id, values as UpdateOrgRequest); message.success(intl.formatMessage({ id: 'pages.message.updateSuccess' })); }
+            else { const res = await api.create(values as CreateOrgRequest); message.success(intl.formatMessage({ id: 'pages.message.createSuccess' })); if (res.success && res.data?.id) set({ selectedId: res.data.id }); }
             set({ formOpen: false, editingNode: null });
             await refreshTree();
             return true;
           } finally { set({ submitLoading: false }); }
         }} autoFocusFirstInput width={600}
       >
-        <ProFormText name="name" label="名称" placeholder="请输入组织名称" rules={[{ required: true }]} />
-        <ProFormText name="code" label="编码" placeholder="请输入组织编码" />
-        <Form.Item name="parentId" label="上级组织"><TreeSelect allowClear treeData={treeSelectData} placeholder="选择上级组织" treeDefaultExpandAll showSearch /></Form.Item>
-        <ProFormText name="managerUserId" label="负责人" placeholder="请输入负责人ID" />
-        <ProFormDigit name="sortOrder" label="排序" min={1} placeholder="请输入排序" fieldProps={{ style: { width: '100%' } }} />
-        <ProFormText name="description" label="描述" placeholder="请输入描述" />
+        <ProFormText name="name" label={intl.formatMessage({ id: 'pages.organization.field.name' })} placeholder={intl.formatMessage({ id: 'pages.organization.placeholder.name' })} rules={[{ required: true }]} />
+        <ProFormText name="code" label={intl.formatMessage({ id: 'pages.organization.field.code' })} placeholder={intl.formatMessage({ id: 'pages.organization.placeholder.code' })} />
+        <Form.Item name="parentId" label={intl.formatMessage({ id: 'pages.organization.field.parent' })}><TreeSelect allowClear treeData={treeSelectData} placeholder={intl.formatMessage({ id: 'pages.organization.placeholder.parent' })} treeDefaultExpandAll showSearch /></Form.Item>
+        <ProFormText name="managerUserId" label={intl.formatMessage({ id: 'pages.organization.field.manager' })} placeholder={intl.formatMessage({ id: 'pages.organization.placeholder.manager' })} />
+        <ProFormDigit name="sortOrder" label={intl.formatMessage({ id: 'pages.organization.field.sortOrder' })} min={1} placeholder={intl.formatMessage({ id: 'pages.organization.placeholder.sortOrder' })} fieldProps={{ style: { width: '100%' } }} />
+        <ProFormText name="description" label={intl.formatMessage({ id: 'pages.organization.field.description' })} placeholder={intl.formatMessage({ id: 'pages.organization.placeholder.description' })} />
       </ModalForm>
 
       <AssignUserModal open={state.assignOpen} orgId={state.selectedId} onCancel={() => set({ assignOpen: false })} onSubmit={async (values) => {
         await api.assignUser(values);
         set({ assignOpen: false });
         await fetchMembers(state.selectedId);
-        message.success('分配成功');
+        message.success(intl.formatMessage({ id: 'pages.organization.message.assignSuccess' }));
       }} />
     </PageContainer>
   );

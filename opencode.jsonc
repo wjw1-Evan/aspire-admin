@@ -47,11 +47,5 @@
       ],
       "enabled": true
     }
-  },
-  "plugin": [
-    "opencode-supermemory",
-    "opencode-dynamic-context-pruning",
-    "superpowers",
-    "openspec"
-  ]
+  }
 }

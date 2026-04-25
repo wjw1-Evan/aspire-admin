@@ -22,7 +22,8 @@
     "start:test": "cross-env REACT_APP_ENV=test UMI_ENV=dev max dev",
     "tsc": "tsc --noEmit",
     "outdated": "npm outdated",
-    "install-package": "npm install"
+    "install-package": "npm install",
+    "split-locales": "node scripts/split-locales.js"
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.1",

@@ -8,6 +8,7 @@ import dayjs from 'dayjs';
 import { ApiResponse, PagedResult } from '@/types';
 import TaskForm from './components/TaskForm';
 import ResultPreview from './components/ResultPreview';
+import { getIntl } from '@umijs/max';
 
 interface WebScrapingTask {
   id: string;
@@ -118,6 +119,7 @@ const explainCron = (cron: string): string => {
 };
 
 const WebScraper: React.FC = () => {
+  const intl = getIntl();
   const actionRef = useRef<ActionType | undefined>(undefined);
   const [formVisible, setFormVisible] = useState(false);
   const [editingTask, setEditingTask] = useState<WebScrapingTask | null>(null);
@@ -134,38 +136,32 @@ const WebScraper: React.FC = () => {
   const handleDelete = useCallback(async (id: string) => {
     await api.delete(id);
     actionRef.current?.reload();
-    message.success('删除成功');
+    message.success(intl.formatMessage({ id: 'pages.message.deleteSuccess' }));
   }, []);
 
   const handleToggle = useCallback(async (record: WebScrapingTask) => {
     await api.toggle(record.id);
     actionRef.current?.reload();
-    message.success(record.isEnabled ? '已禁用' : '已启用');
+    message.success(record.isEnabled ? intl.formatMessage({ id: 'pages.webScraper.message.disabled' }) : intl.formatMessage({ id: 'pages.webScraper.message.enabled' }));
   }, []);
 
   const handleExecute = useCallback(async (record: WebScrapingTask) => {
     try {
       const res = await api.execute(record.id);
-      if (res.success) {
-        message.success(res.data?.message || '抓取任务已启动');
-        actionRef.current?.reload();
-      } else {
-        message.error(res.message || '抓取失败');
-      }
-    } catch {
-      message.error('抓取失败');
+      message.success(res.data?.message || intl.formatMessage({ id: 'pages.webScraper.message.started' }));
+      actionRef.current?.reload();
+    } catch (err: any) {
+      message.error(err?.response?.data?.message || err?.message || intl.formatMessage({ id: 'pages.webScraper.message.executeFailed' }));
     }
   }, []);
 
   const handleStop = useCallback(async (record: WebScrapingTask) => {
     try {
-      const res = await api.stop(record.id);
-      if (res.success) {
-        message.success('任务已停止');
-        actionRef.current?.reload();
-      }
-    } catch {
-      message.error('停止失败');
+      await api.stop(record.id);
+      message.success(intl.formatMessage({ id: 'pages.webScraper.message.stopped' }));
+      actionRef.current?.reload();
+    } catch (err: any) {
+      message.error(err?.response?.data?.message || err?.message || intl.formatMessage({ id: 'pages.webScraper.message.stopFailed' }));
     }
   }, []);
 
@@ -173,12 +169,12 @@ const WebScraper: React.FC = () => {
     setFormVisible(false);
     setEditingTask(null);
     actionRef.current?.reload();
-    message.success(editingTask ? '更新成功' : '创建成功');
+    message.success(editingTask ? intl.formatMessage({ id: 'pages.message.updateSuccess' }) : intl.formatMessage({ id: 'pages.message.createSuccess' }));
   }, [editingTask]);
 
   const columns: ProColumns<WebScrapingTask>[] = [
     {
-      title: '任务名称',
+      title: intl.formatMessage({ id: 'pages.webScraper.table.taskName' }),
       dataIndex: 'name',
       key: 'name',
       sorter: true,
@@ -187,7 +183,7 @@ const WebScraper: React.FC = () => {
       ),
     },
     {
-      title: '目标URL',
+      title: intl.formatMessage({ id: 'pages.webScraper.table.targetUrl' }),
       dataIndex: 'targetUrl',
       key: 'targetUrl',
       ellipsis: true,
@@ -199,7 +195,7 @@ const WebScraper: React.FC = () => {
       ),
     },
     {
-      title: '状态',
+      title: intl.formatMessage({ id: 'pages.webScraper.table.status' }),
       dataIndex: 'lastStatus',
       key: 'lastStatus',
       sorter: true,
@@ -208,51 +204,51 @@ const WebScraper: React.FC = () => {
       ),
     },
     {
-      title: '已抓取',
+      title: intl.formatMessage({ id: 'pages.webScraper.table.crawled' }),
       dataIndex: 'totalPagesCrawled',
       key: 'totalPagesCrawled',
       sorter: true,
-      render: (dom) => `${dom} 页`,
+      render: (dom) => `${dom} ${intl.formatMessage({ id: 'pages.webScraper.unit.page' })}`,
     },
     {
-      title: '匹配',
+      title: intl.formatMessage({ id: 'pages.webScraper.table.matched' }),
       dataIndex: 'matchedCount',
       key: 'matchedCount',
       sorter: true,
       render: (dom, record) => {
         if (record.enableFilter && (dom as number) > 0) {
-          return <Tag color="green">{dom} 页</Tag>;
+          return <Tag color="green">{dom} {intl.formatMessage({ id: 'pages.webScraper.unit.page' })}</Tag>;
         }
         return '-';
       },
     },
     {
-      title: '抓取深度',
+      title: intl.formatMessage({ id: 'pages.webScraper.table.crawlDepth' }),
       dataIndex: 'crawlDepth',
       key: 'crawlDepth',
-      render: (dom) => `深度${dom}`,
+      render: (dom) => `${intl.formatMessage({ id: 'pages.webScraper.unit.depth' })}${dom}`,
     },
     {
-      title: '每层最大',
+      title: intl.formatMessage({ id: 'pages.webScraper.table.maxPagesPerLevel' }),
       dataIndex: 'maxPagesPerLevel',
       key: 'maxPagesPerLevel',
-      render: (dom) => `${dom} 页`,
+      render: (dom) => `${dom} ${intl.formatMessage({ id: 'pages.webScraper.unit.page' })}`,
     },
     {
-      title: '抓取模式',
+      title: intl.formatMessage({ id: 'pages.webScraper.table.mode' }),
       dataIndex: 'mode',
       key: 'mode',
       render: (dom) => {
         const modeMap: Record<string, string> = {
-          'singlepage': '单页',
-          'depthfirst': '深度优先',
-          'breadthfirst': '广度优先',
+          'singlepage': intl.formatMessage({ id: 'pages.webScraper.mode.singlePage' }),
+          'depthfirst': intl.formatMessage({ id: 'pages.webScraper.mode.depthFirst' }),
+          'breadthfirst': intl.formatMessage({ id: 'pages.webScraper.mode.breadthFirst' }),
         };
         return modeMap[dom?.toString().toLowerCase() as string] || dom || '-';
       },
     },
     {
-      title: '定时',
+      title: intl.formatMessage({ id: 'pages.webScraper.table.schedule' }),
       dataIndex: 'scheduleCron',
       key: 'scheduleCron',
       render: (dom) => dom ? (
@@ -263,21 +259,21 @@ const WebScraper: React.FC = () => {
       ) : '-',
     },
     {
-      title: '最后执行',
+      title: intl.formatMessage({ id: 'pages.webScraper.table.lastRun' }),
       dataIndex: 'lastRunAt',
       key: 'lastRunAt',
       sorter: true,
       render: (dom) => dom ? dayjs(String(dom)).format('YYYY-MM-DD HH:mm:ss') : '-',
     },
     {
-      title: '耗时',
+      title: intl.formatMessage({ id: 'pages.webScraper.table.duration' }),
       dataIndex: 'lastDuration',
       key: 'lastDuration',
       sorter: true,
       render: (dom) => dom ? `${Math.round((dom as number) / 1000)}s` : '-',
     },
     {
-      title: '启用',
+      title: intl.formatMessage({ id: 'pages.webScraper.table.enabled' }),
       dataIndex: 'isEnabled',
       key: 'isEnabled',
       render: (dom, record) => (
@@ -285,7 +281,7 @@ const WebScraper: React.FC = () => {
       ),
     },
     {
-      title: '操作',
+      title: intl.formatMessage({ id: 'pages.table.action' }),
       key: 'action',
       valueType: 'option',
       fixed: 'right',
@@ -303,7 +299,7 @@ const WebScraper: React.FC = () => {
                 loading={loading}
                 danger
               >
-                停止
+                {intl.formatMessage({ id: 'pages.webScraper.action.stop' })}
               </Button>
             ) : (
               <Button
@@ -313,7 +309,7 @@ const WebScraper: React.FC = () => {
                 onClick={() => handleExecute(record)}
                 loading={loading}
               >
-                执行
+                {intl.formatMessage({ id: 'pages.webScraper.action.execute' })}
               </Button>
             )}
             <Button
@@ -322,15 +318,15 @@ const WebScraper: React.FC = () => {
               icon={<EyeOutlined />}
               onClick={() => handleEdit(record)}
             >
-              编辑
+              {intl.formatMessage({ id: 'pages.table.edit' })}
             </Button>
             <Popconfirm
-              title="确认删除"
-              description="删除后无法恢复"
+              title={intl.formatMessage({ id: 'pages.webScraper.modal.confirmDelete' })}
+              description={intl.formatMessage({ id: 'pages.webScraper.modal.deleteDescription' })}
               onConfirm={() => handleDelete(record.id)}
             >
               <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-                删除
+                {intl.formatMessage({ id: 'pages.table.delete' })}
               </Button>
             </Popconfirm>
           </Space>
@@ -342,7 +338,7 @@ const WebScraper: React.FC = () => {
   return (
     <PageContainer>
       <ProTable<WebScrapingTask>
-        headerTitle="网页抓取任务"
+        headerTitle={intl.formatMessage({ id: 'pages.webScraper.title' })}
         actionRef={actionRef}
         rowKey="id"
         search={false}
@@ -357,7 +353,7 @@ const WebScraper: React.FC = () => {
         toolBarRender={() => [
           <Input.Search
             key="search"
-            placeholder="搜索任务名称或URL..."
+            placeholder={intl.formatMessage({ id: 'pages.webScraper.search.placeholder' })}
             allowClear
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -373,7 +369,7 @@ const WebScraper: React.FC = () => {
               setFormVisible(true);
             }}
           >
-            新建任务
+            {intl.formatMessage({ id: 'pages.webScraper.button.createTask' })}
           </Button>,
         ]}
         columns={columns}

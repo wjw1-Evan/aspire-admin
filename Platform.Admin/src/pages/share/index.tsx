@@ -4,6 +4,7 @@ import { Space, Typography, Spin, Result, Input, Button, Tag, message } from 'an
 import { ProCard } from '@ant-design/pro-components';
 import { request } from '@umijs/max';
 import { ApiResponse } from '@/types';
+import { getIntl } from '@umijs/max';
 
 const { Title, Text } = Typography;
 
@@ -49,6 +50,7 @@ const formatFileSize = (bytes?: number) => {
 };
 
 const SharePage: React.FC = () => {
+    const intl = getIntl();
     const params = useParams();
     const token = params?.token as string | undefined;
 
@@ -71,7 +73,7 @@ const SharePage: React.FC = () => {
                 const canDownload = d.canDownload !== undefined ? d.canDownload : accessType !== 'view';
                 const mapped: ShareAccessResponse = {
                     fileId: d.fileId || d.id,
-                    fileName: d.fileName || d.name || '未命名文件',
+                    fileName: d.fileName || d.name || intl.formatMessage({ id: 'pages.share.unnamedFile' }),
                     fileSize: d.fileSize || d.size || 0,
                     mimeType: d.mimeType,
                     accessType,
@@ -82,10 +84,10 @@ const SharePage: React.FC = () => {
                 };
                 set({ shareInfo: mapped, error: null });
             } else {
-                set({ shareInfo: null, error: (resp as any).message || (resp as any).msg || '无法访问分享' });
+                set({ shareInfo: null, error: (resp as any).message || (resp as any).msg || intl.formatMessage({ id: 'pages.share.error.cannotAccess' }) });
             }
         } catch (e: any) {
-            set({ shareInfo: null, error: e?.message || '访问分享失败' });
+            set({ shareInfo: null, error: e?.message || intl.formatMessage({ id: 'pages.share.error.accessFailed' }) });
         } finally {
             set({ loading: false });
         }
@@ -98,12 +100,12 @@ const SharePage: React.FC = () => {
     const accessTag = useMemo(() => {
         if (!state.shareInfo) return null;
         const map: Record<string, { color: string; text: string }> = {
-            view: { color: 'blue', text: '仅查看' },
-            download: { color: 'green', text: '可下载' },
-            edit: { color: 'orange', text: '可编辑' },
+            view: { color: 'blue', text: intl.formatMessage({ id: 'pages.share.accessType.view' }) },
+            download: { color: 'green', text: intl.formatMessage({ id: 'pages.share.accessType.download' }) },
+            edit: { color: 'orange', text: intl.formatMessage({ id: 'pages.share.accessType.edit' }) },
         };
         return <Tag color={map[state.shareInfo.accessType]?.color || 'default'}>{map[state.shareInfo.accessType]?.text || state.shareInfo.accessType}</Tag>;
-    }, [state.shareInfo]);
+    }, [state.shareInfo, intl]);
 
     const handleDownload = async () => {
         if (!state.shareInfo || !state.shareInfo.canDownload || !token) return;
@@ -140,7 +142,7 @@ const SharePage: React.FC = () => {
         } catch (e: any) {
             const status = (e as any)?.response?.status;
             const msg = (e as any)?.data?.message || (e as any)?.data?.msg || e?.message;
-            const friendly = status === 403 ? '无权下载：分享可能仅允许查看或已过期/受密码保护' : status === 404 ? '分享文件不存在或链接已失效' : msg || '下载失败';
+            const friendly = status === 403 ? intl.formatMessage({ id: 'pages.share.error.noPermission' }) : status === 404 ? intl.formatMessage({ id: 'pages.share.error.notFound' }) : msg || intl.formatMessage({ id: 'pages.share.error.downloadFailed' });
             message.error(friendly);
         }
     };
@@ -149,7 +151,7 @@ const SharePage: React.FC = () => {
         if (state.loading) {
             return (
                 <div style={{ textAlign: 'center', padding: 48 }}>
-                    <Spin tip="加载分享信息..." />
+                    <Spin tip={intl.formatMessage({ id: 'pages.share.loading' })} />
                 </div>
             );
         }
@@ -158,17 +160,17 @@ const SharePage: React.FC = () => {
             return (
                 <Result
                     status="warning"
-                    title="分享不可用或需要密码"
-                    subTitle={state.error || '请输入密码后重试，或联系分享者确认链接状态'}
+                    title={intl.formatMessage({ id: 'pages.share.result.title' })}
+                    subTitle={state.error || intl.formatMessage({ id: 'pages.share.result.subTitle' })}
                     extra={
                         <Space orientation="vertical" style={{ width: '100%' }}>
                             <Input.Password
-                                placeholder="请输入分享密码（如果需要）"
+                                placeholder={intl.formatMessage({ id: 'pages.share.input.passwordPlaceholder' })}
                                 value={state.password}
                                 onChange={(e) => set({ password: e.target.value })}
                             />
                             <Button type="primary" onClick={() => loadShare(state.password)}>
-                                重试访问
+                                {intl.formatMessage({ id: 'pages.share.button.retry' })}
                             </Button>
                         </Space>
                     }
@@ -183,12 +185,12 @@ const SharePage: React.FC = () => {
                         <Title level={3} style={{ marginBottom: 4 }}>{state.shareInfo.fileName}</Title>
                         <Space>
                             {accessTag}
-                            <Text type="secondary">大小：{formatFileSize(state.shareInfo.fileSize)}</Text>
+                            <Text type="secondary">{intl.formatMessage({ id: 'pages.share.fileSize' })}：{formatFileSize(state.shareInfo.fileSize)}</Text>
                         </Space>
                     </div>
 
                     {state.shareInfo.previewUrl && (
-                        <a href={state.shareInfo.previewUrl} target="_blank" rel="noreferrer">预览</a>
+                        <a href={state.shareInfo.previewUrl} target="_blank" rel="noreferrer">{intl.formatMessage({ id: 'pages.share.preview' })}</a>
                     )}
 
                     <Space>
@@ -197,26 +199,26 @@ const SharePage: React.FC = () => {
                             disabled={!state.shareInfo.canDownload}
                             onClick={handleDownload}
                         >
-                            {state.shareInfo.canDownload ? '下载文件' : '不可下载（仅查看权限）'}
+                            {state.shareInfo.canDownload ? intl.formatMessage({ id: 'pages.share.button.download' }) : intl.formatMessage({ id: 'pages.share.button.cannotDownload' })}
                         </Button>
                         {state.shareInfo.accessType && (
-                            <Text type="secondary">权限：{state.shareInfo.accessType}</Text>
+                            <Text type="secondary">{intl.formatMessage({ id: 'pages.share.permission' })}：{state.shareInfo.accessType}</Text>
                         )}
                     </Space>
 
                     <Space orientation="vertical" size={4}>
-                        <Text type="secondary">分享链接：{window.location.href}</Text>
-                        <Text type="secondary">可查看：{state.shareInfo.canView ? '是' : '否'}</Text>
+                        <Text type="secondary">{intl.formatMessage({ id: 'pages.share.shareLink' })}：{window.location.href}</Text>
+                        <Text type="secondary">{intl.formatMessage({ id: 'pages.share.canView' })}：{state.shareInfo.canView ? intl.formatMessage({ id: 'pages.share.yes' }) : intl.formatMessage({ id: 'pages.share.no' })}</Text>
                     </Space>
 
                     <Space orientation="vertical" style={{ width: '100%' }}>
-                        <Text type="secondary">如需密码，请在下方输入后重新访问：</Text>
+                        <Text type="secondary">{intl.formatMessage({ id: 'pages.share.passwordHint' })}：</Text>
                         <Input.Password
-                            placeholder="分享密码（如果需要）"
+                            placeholder={intl.formatMessage({ id: 'pages.share.input.passwordPlaceholder' })}
                             value={state.password}
                             onChange={(e) => set({ password: e.target.value })}
                         />
-                        <Button onClick={() => loadShare(state.password)}>重新验证</Button>
+                        <Button onClick={() => loadShare(state.password)}>{intl.formatMessage({ id: 'pages.share.button.reverify' })}</Button>
                     </Space>
                 </Space>
             </ProCard>

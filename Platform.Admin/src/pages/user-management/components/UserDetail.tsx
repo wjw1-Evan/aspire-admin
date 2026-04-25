@@ -19,14 +19,36 @@ import { request, useIntl } from '@umijs/max';
 import { ProDescriptions, ProCard } from '@ant-design/pro-components';
 import { getAllRoles } from '@/services/role/api';
 import type { Role } from '@/services/role/api';
-import type { AppUser, UserActivityLog } from '@/types';
+import type { UserActivityLog } from '@/types';
 import dayjs from 'dayjs';
 import { getActionTagColor, getActionText } from '@/utils/activityLog';
 
 const { Text } = Typography;
 
+interface UnifiedUser {
+  id: string;
+  username: string;
+  name?: string;
+  email?: string;
+  phoneNumber?: string;
+  isActive?: boolean;
+  createdAt: string;
+  updatedAt?: string;
+  lastLoginAt?: string;
+  roleIds?: string[];
+  organizations?: Array<{ id?: string; name?: string; fullPath?: string; isPrimary?: boolean }>;
+  remark?: string;
+  joinStatus?: 'pending' | 'approved' | 'rejected' | 'cancelled' | null;
+  joinReason?: string;
+  rejectReason?: string;
+  reviewedByName?: string;
+  reviewedAt?: string;
+  isCreator?: boolean;
+  age?: number;
+}
+
 interface UserDetailProps {
-  user: AppUser;
+  user: UnifiedUser;
   onClose: () => void;
   isMobile: boolean;
 }

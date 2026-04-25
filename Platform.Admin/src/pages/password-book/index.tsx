@@ -56,7 +56,6 @@ const PasswordBook: React.FC = () => {
     detailLoading: false,
     search: '' as string,
   });
-  const [formState, setFormState] = useState({ tags: [] as string[] });
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
   const loadStatistics = useCallback(() => {
@@ -86,7 +85,6 @@ const PasswordBook: React.FC = () => {
             const res = await api.get(r.id);
             if (res.success && res.data) {
               set({ editingEntry: res.data, formVisible: true });
-              setFormState(p => ({ ...p, tags: res.data?.tags || [] }));
             }
           }}>{intl.formatMessage({ id: 'pages.action.edit' })}</Button>
           <Popconfirm title={intl.formatMessage({ id: 'pages.passwordBook.message.confirmDelete', defaultMessage: '确定删除？' }, { name: r.platform })} onConfirm={async () => { await api.delete(r.id); actionRef.current?.reload(); loadStatistics(); }}>
@@ -104,7 +102,7 @@ const PasswordBook: React.FC = () => {
       password: values.password,
       url: values.url,
       category: Array.isArray(values.category) ? values.category[0] : values.category,
-      tags: formState.tags,
+      tags: values.tags || [],
       notes: values.notes,
     };
     const res = state.editingEntry ? await api.update(state.editingEntry.id, data) : await api.create(data);
@@ -178,7 +176,7 @@ const PasswordBook: React.FC = () => {
         title={state.editingEntry ? intl.formatMessage({ id: 'pages.passwordBook.form.edit' }) : intl.formatMessage({ id: 'pages.passwordBook.form.create' })}
         open={state.formVisible}
         onOpenChange={(open) => { if (!open) set({ formVisible: false, editingEntry: null }); }}
-        initialValues={state.editingEntry ? { platform: state.editingEntry.platform, account: state.editingEntry.account, password: state.editingEntry.password, url: state.editingEntry.url, category: state.editingEntry.category ? [state.editingEntry.category] : [], notes: state.editingEntry.notes } : undefined}
+        initialValues={state.editingEntry ? { platform: state.editingEntry.platform, account: state.editingEntry.account, password: state.editingEntry.password, url: state.editingEntry.url, category: state.editingEntry.category ? [state.editingEntry.category] : [], tags: state.editingEntry.tags || [], notes: state.editingEntry.notes } : undefined}
         onFinish={handleFinish}
         autoFocusFirstInput
         width={600}

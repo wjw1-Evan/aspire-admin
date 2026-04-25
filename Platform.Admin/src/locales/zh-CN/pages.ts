@@ -2380,7 +2380,6 @@ export default {
   'pages.passwordBook.form.urlPlaceholder': 'https://example.com',
   'pages.passwordBook.form.categoryPlaceholder': '选择或输入分类（仅保留第一个）',
   'pages.passwordBook.form.tagsPlaceholder': '输入标签后按回车',
-  'pages.passwordBook.form.notesPlaceholder': '备注信息',
   'pages.passwordBook.form.strengthLabel': '密码强度',
   'pages.passwordBook.form.strengthSuggestion': '建议',
   'pages.passwordBook.form.generatePassword': '生成密码',
@@ -2400,6 +2399,8 @@ export default {
   'pages.passwordBook.export.securityWarning': '安全提示',
   'pages.passwordBook.export.securityMessage': '导出的文件包含您的明文密码，请妥善保管，不要在不安全的环境中打开。',
   'pages.passwordBook.search.placeholder': '搜索平台、账号、分类、标签...',
+  'pages.passwordBook.form.notes': '备注',
+  'pages.passwordBook.form.notesPlaceholder': '请输入备注（选填）',
 
   // DataAnnotation 验证错误码翻译
   'VALIDATION_USERNAME_REQUIRED': '用户名不能为空',

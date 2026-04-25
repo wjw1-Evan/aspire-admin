@@ -1,13 +1,15 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { useIntl, request } from '@umijs/max';
-import { App, Button, Tag, Space, Modal, Badge, Spin, Input, Typography, Popconfirm, Tabs } from 'antd';
+import { App, Button, Tag, Space, Modal, Badge, Spin, Input, Typography, Popconfirm, Tabs, Grid } from 'antd';
 import { Drawer } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormSelect, ProFormSwitch, ProFormTextArea } from '@ant-design/pro-form';
 import { EditOutlined, DeleteOutlined, UserOutlined, CrownOutlined, SearchOutlined, CheckOutlined, CloseOutlined, UserAddOutlined } from '@ant-design/icons';
 import { ApiResponse, PagedResult } from '@/types';
 import type { Role } from '@/services/role/api';
+
+const { useBreakpoint } = Grid;
 
 const UserDetail = React.lazy(() => import('./components/UserDetail'));
 
@@ -72,6 +74,8 @@ const UserManagement: React.FC = () => {
   const { message, modal } = App.useApp();
   const actionRef = useRef<ActionType>(null);
   const pendingActionRef = useRef<ActionType>(null);
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
 
   const [state, setState] = useState({
     statistics: null as UserStats | null,
@@ -83,31 +87,23 @@ const UserManagement: React.FC = () => {
     detailVisible: false,
     viewingUser: null as AppUser | null,
     activeTab: 'joined' as 'joined' | 'pending',
-  });
-
-  const [joinState, setJoinState] = useState({
-    data: [] as JoinReq[],
-    loading: false,
+    joinData: [] as JoinReq[],
+    joinLoading: false,
     rejectModal: false,
     rejectId: '',
     rejectReason: '',
-    pagination: { current: 1, pageSize: 20, total: 0 },
-  });
-
-  const [roleState, setRoleState] = useState({
+    joinPagination: { current: 1, pageSize: 20, total: 0 },
     roles: [] as Role[],
   });
 
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
-  const setJ = useCallback((partial: Partial<typeof joinState>) => setJoinState(prev => ({ ...prev, ...partial })), []);
-  const setR = useCallback((partial: Partial<typeof roleState>) => setRoleState(prev => ({ ...prev, ...partial })), []);
 
   const handleTabChange = useCallback((key: string) => {
     if (key === 'pending') {
-      setJ({ data: [], pagination: { current: 1, pageSize: 20, total: 0 } });
+      set({ joinData: [], joinPagination: { current: 1, pageSize: 20, total: 0 } });
     }
     set({ activeTab: key as 'joined' | 'pending' });
-  }, [set, setJ]);
+  }, [set]);
 
   const loadStatistics = useCallback(() => {
     api.stats().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
@@ -118,26 +114,26 @@ const UserManagement: React.FC = () => {
       if (r.success && r.data) {
         const map: Record<string, string> = {};
         r.data.queryable?.forEach(role => { if (role.id) map[role.id] = role.name; });
-        set({ roleMap: map });
-        setR({ roles: r.data.queryable || [] });
+        set({ roleMap: map, roles: r.data.queryable || [] });
       }
     });
-  }, [set, setR]);
+  }, [set]);
 
   const loadJoinRequests = useCallback((current?: number, pageSize?: number) => {
     if (!state.currentCompany?.id) return;
-    setJ({ loading: true });
+    set({ joinLoading: true });
     api.joinReqs(state.currentCompany.id, { page: current || 1, pageSize: pageSize || 20 })
-      .then(r => { 
+      .then(r => {
         if (r.success && r.data) {
-          setJ({ 
-            data: r.data.queryable || [], 
-            pagination: { current: current || 1, pageSize: pageSize || 20, total: r.data.rowCount } 
-          }); 
+          set({
+            joinData: r.data.queryable || [],
+            joinPagination: { current: current || 1, pageSize: pageSize || 20, total: r.data.rowCount },
+            joinLoading: false,
+          });
         }
       })
-      .finally(() => setJ({ loading: false }));
-  }, [state.currentCompany?.id, setJ]);
+      .finally(() => set({ joinLoading: false }));
+  }, [state.currentCompany?.id, set]);
 
   const loadCurrentCompany = useCallback(() => {
     api.currentCompany().then(r => {
@@ -149,112 +145,112 @@ const UserManagement: React.FC = () => {
 
   useEffect(() => { loadStatistics(); }, [loadStatistics]);
   useEffect(() => { loadRoles(); }, [loadRoles]);
-  useEffect(() => { 
+  useEffect(() => {
     loadCurrentCompany();
   }, [loadCurrentCompany]);
 
   const handleToggle = useCallback(async (user: AppUser) => {
     const res = user.isActive ? await api.deactivate(user.id) : await api.activate(user.id);
     if (res.success) {
-      message.success(user.isActive ? '已禁用' : '已启用');
+      message.success(user.isActive ? intl.formatMessage({ id: 'pages.userManagement.message.deactivated' }) : intl.formatMessage({ id: 'pages.userManagement.message.activated' }));
       loadStatistics();
       actionRef.current?.reload();
     }
-  }, [message, loadStatistics]);
+  }, [message, loadStatistics, intl]);
 
   const promptDelete = useCallback((userId: string) => {
     let reason = '';
     modal.confirm({
-      title: '确认移除',
-      content: <Input.TextArea rows={3} placeholder="请输入原因（可选）" onChange={(e) => { reason = e.target.value; }} maxLength={200} />,
-      okText: '确认移除', cancelText: '取消', okType: 'danger',
+      title: intl.formatMessage({ id: 'pages.userManagement.message.confirmRemove' }),
+      content: <Input.TextArea rows={3} placeholder={intl.formatMessage({ id: 'pages.userManagement.form.reasonPlaceholder' })} onChange={(e) => { reason = e.target.value; }} maxLength={200} />,
+      okText: intl.formatMessage({ id: 'pages.userManagement.action.confirmRemove' }), cancelText: intl.formatMessage({ id: 'pages.action.cancel' }), okType: 'danger',
       onOk: async () => {
         const res = await api.del(userId, reason);
-        if (res.success) { message.success('已移除'); loadStatistics(); actionRef.current?.reload(); }
+        if (res.success) { message.success(intl.formatMessage({ id: 'pages.userManagement.message.removeSuccess' })); loadStatistics(); actionRef.current?.reload(); }
       },
     });
-  }, [modal, message, loadStatistics]);
+  }, [modal, message, loadStatistics, intl]);
 
   const handleApprove = useCallback(async (id: string) => {
     const res = await api.approveJoin(id);
     if (res.success) {
-      message.success('已批准');
+      message.success(intl.formatMessage({ id: 'pages.userManagement.message.approved' }));
       loadJoinRequests();
       pendingActionRef.current?.reload();
     }
-  }, [message, loadJoinRequests]);
+  }, [message, loadJoinRequests, intl]);
 
   const handleReject = useCallback((id: string) => {
-    setJ({ rejectModal: true, rejectId: id });
-  }, [setJ]);
+    set({ rejectModal: true, rejectId: id });
+  }, [set]);
 
   const confirmReject = useCallback(async () => {
-    if (!joinState.rejectReason.trim()) { message.error('请输入拒绝理由'); return; }
-    const res = await api.rejectJoin(joinState.rejectId, { rejectReason: joinState.rejectReason });
+    if (!state.rejectReason.trim()) { message.error(intl.formatMessage({ id: 'pages.userManagement.message.rejectReasonRequired' })); return; }
+    const res = await api.rejectJoin(state.rejectId, { rejectReason: state.rejectReason });
     if (res.success) {
-      message.success('已拒绝');
-      setJ({ rejectModal: false, rejectId: '', rejectReason: '' });
+      message.success(intl.formatMessage({ id: 'pages.userManagement.message.rejected' }));
+      set({ rejectModal: false, rejectId: '', rejectReason: '' });
       loadJoinRequests();
       pendingActionRef.current?.reload();
     }
-  }, [joinState.rejectId, joinState.rejectReason, message, loadJoinRequests, setJ]);
+  }, [state.rejectId, state.rejectReason, message, loadJoinRequests, set, intl]);
 
   const columns: ProColumns<AppUser>[] = useMemo(() => [
-    { title: '用户名', dataIndex: 'username', key: 'username', sorter: true, render: (dom, r) => (
+    { title: intl.formatMessage({ id: 'pages.userManagement.table.username' }), dataIndex: 'username', key: 'username', sorter: true, render: (dom, r) => (
       <Space>
         <UserOutlined />
         <a onClick={() => set({ detailVisible: true, viewingUser: r })}>{dom}</a>
-        {state.currentCompany?.createdBy === r.id && <Tag icon={<CrownOutlined />} color="gold">创建者</Tag>}
+        {state.currentCompany?.createdBy === r.id && <Tag icon={<CrownOutlined />} color="gold">{intl.formatMessage({ id: 'pages.userManagement.tag.creator' })}</Tag>}
       </Space>
     )},
-    { title: '姓名', dataIndex: 'name', key: 'name', ellipsis: true, sorter: true, render: (dom) => dom || '-' },
-    { title: '邮箱', dataIndex: 'email', key: 'email', ellipsis: true, responsive: ['md'], sorter: true },
-    { title: '手机号', dataIndex: 'phoneNumber', key: 'phoneNumber', ellipsis: true, responsive: ['lg'] },
-    { title: '角色', dataIndex: 'roleIds', responsive: ['md'], render: (_, r) => (
-      !r.roleIds?.length ? <Tag>未分配</Tag> : <Space wrap>{r.roleIds.map(id => <Tag key={id} color="blue">{state.roleMap[id] || id}</Tag>)}</Space>
+    { title: intl.formatMessage({ id: 'pages.userManagement.table.name' }), dataIndex: 'name', key: 'name', ellipsis: true, sorter: true, render: (dom) => dom || '-' },
+    { title: intl.formatMessage({ id: 'pages.userManagement.table.email' }), dataIndex: 'email', key: 'email', ellipsis: true, responsive: ['md'], sorter: true },
+    { title: intl.formatMessage({ id: 'pages.userManagement.table.phoneNumber' }), dataIndex: 'phoneNumber', key: 'phoneNumber', ellipsis: true, responsive: ['lg'] },
+    { title: intl.formatMessage({ id: 'pages.userManagement.table.roles' }), dataIndex: 'roleIds', responsive: ['md'], render: (_, r) => (
+      !r.roleIds?.length ? <Tag>{intl.formatMessage({ id: 'pages.userManagement.tag.unassigned' })}</Tag> : <Space wrap>{r.roleIds.map(id => <Tag key={id} color="blue">{state.roleMap[id] || id}</Tag>)}</Space>
     )},
-    { title: '状态', dataIndex: 'isActive', key: 'isActive', render: (_, r) => (
-      <Badge status={r.isActive ? 'success' : 'error'} text={r.isActive ? '已启用' : '已禁用'} />
+    { title: intl.formatMessage({ id: 'pages.userManagement.table.status' }), dataIndex: 'isActive', key: 'isActive', render: (_, r) => (
+      <Badge status={r.isActive ? 'success' : 'error'} text={r.isActive ? intl.formatMessage({ id: 'pages.userManagement.status.active' }) : intl.formatMessage({ id: 'pages.userManagement.status.inactive' })} />
     )},
-    { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', sorter: true, valueType: 'dateTime' },
-    { title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 180, render: (_, r) => (
+    { title: intl.formatMessage({ id: 'pages.userManagement.table.createdAt' }), dataIndex: 'createdAt', key: 'createdAt', sorter: true, valueType: 'dateTime' },
+    { title: intl.formatMessage({ id: 'pages.table.action' }), key: 'action', valueType: 'option', fixed: 'right', width: 180, render: (_, r) => (
       <Space size={4}>
-        <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ formVisible: true, editingUser: r })}>编辑</Button>
-        <Popconfirm title={`确定移除用户「${r.name}」？`} onConfirm={() => promptDelete(r.id)}>
-          <Button type="link" size="small" danger icon={<DeleteOutlined />}>移除</Button>
+        <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ formVisible: true, editingUser: r })}>{intl.formatMessage({ id: 'pages.action.edit' })}</Button>
+        <Popconfirm title={intl.formatMessage({ id: 'pages.userManagement.message.confirmRemoveUser', defaultMessage: '确定移除用户「{name}」？' }, { name: r.name })} onConfirm={() => promptDelete(r.id)}>
+          <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.userManagement.action.remove' })}</Button>
         </Popconfirm>
       </Space>
     )},
-  ], [state.roleMap, state.currentCompany, set, promptDelete]);
+  ], [state.roleMap, state.currentCompany, set, promptDelete, intl]);
 
-  const pendingReqs = useMemo(() => joinState.data.filter(r => r.status === 'pending'), [joinState.data]);
+  const pendingReqs = useMemo(() => state.joinData.filter(r => r.status === 'pending'), [state.joinData]);
 
   const pendingColumns: ProColumns<JoinReq>[] = useMemo(() => [
-    { title: '用户名', dataIndex: 'username', key: 'username', render: (dom, r) => (
+    { title: intl.formatMessage({ id: 'pages.userManagement.table.username' }), dataIndex: 'username', key: 'username', render: (dom, r) => (
       <Space><UserAddOutlined /><span>{dom}</span>{r.name && <Typography.Text type="secondary">({r.name})</Typography.Text>}</Space>
     )},
-    { title: '邮箱', dataIndex: 'userEmail', key: 'userEmail', ellipsis: true },
-    { title: '手机号', dataIndex: 'phoneNumber', key: 'phoneNumber', ellipsis: true },
-    { title: '申请理由', dataIndex: 'reason', key: 'reason', ellipsis: true },
-    { title: '申请时间', dataIndex: 'createdAt', key: 'createdAt', valueType: 'dateTime' },
-    { title: '操作', key: 'action', fixed: 'right', width: 180, render: (_, r) => (
+    { title: intl.formatMessage({ id: 'pages.userManagement.table.email' }), dataIndex: 'userEmail', key: 'userEmail', ellipsis: true },
+    { title: intl.formatMessage({ id: 'pages.userManagement.table.phoneNumber' }), dataIndex: 'phoneNumber', key: 'phoneNumber', ellipsis: true },
+    { title: intl.formatMessage({ id: 'pages.userManagement.table.reason' }), dataIndex: 'reason', key: 'reason', ellipsis: true },
+    { title: intl.formatMessage({ id: 'pages.userManagement.table.createdAt' }), dataIndex: 'createdAt', key: 'createdAt', valueType: 'dateTime' },
+    { title: intl.formatMessage({ id: 'pages.table.action' }), key: 'action', fixed: 'right', width: 180, render: (_, r) => (
       <Space size={4}>
-        <Button type="link" size="small" icon={<CheckOutlined />} onClick={() => handleApprove(r.id)}>批准</Button>
-        <Button type="link" size="small" danger icon={<CloseOutlined />} onClick={() => handleReject(r.id)}>拒绝</Button>
+        <Button type="link" size="small" icon={<CheckOutlined />} onClick={() => handleApprove(r.id)}>{intl.formatMessage({ id: 'pages.userManagement.action.approve' })}</Button>
+        <Button type="link" size="small" danger icon={<CloseOutlined />} onClick={() => handleReject(r.id)}>{intl.formatMessage({ id: 'pages.userManagement.action.reject' })}</Button>
       </Space>
     )},
-  ], [handleApprove, handleReject]);
+  ], [handleApprove, handleReject, intl]);
 
-  const roleOptions = useMemo(() => 
-    roleState.roles.filter((r): r is Role & { id: string } => Boolean(r.id)).map(r => ({ label: r.name, value: r.id })),
-    [roleState.roles]
+  const roleOptions = useMemo(() =>
+    state.roles.filter((r): r is Role & { id: string } => Boolean(r.id)).map(r => ({ label: r.name, value: r.id })),
+    [state.roles]
   );
 
   return (
     <PageContainer>
       <Tabs activeKey={state.activeTab} onChange={handleTabChange} items={[
-        { key: 'joined', label: <span><UserOutlined />已加入成员</span> },
-        { key: 'pending', label: <span><UserAddOutlined />申请加入{joinState.pagination.total > 0 && <Badge count={joinState.pagination.total} style={{ marginLeft: 8 }} />}</span> },
+        { key: 'joined', label: <span><UserOutlined />{intl.formatMessage({ id: 'pages.userManagement.tab.joined' })}</span> },
+        { key: 'pending', label: <span><UserAddOutlined />{intl.formatMessage({ id: 'pages.userManagement.tab.pending' })}{state.joinPagination.total > 0 && <Badge count={state.joinPagination.total} style={{ marginLeft: 8 }} />}</span> },
       ]} />
       {state.activeTab === 'joined' ? (
         <ProTable
@@ -271,29 +267,30 @@ const UserManagement: React.FC = () => {
           toolBarRender={() => [
             <Input.Search
               key="search"
-              placeholder="搜索..."
+              placeholder={intl.formatMessage({ id: 'pages.common.search' })}
               allowClear
               value={state.search}
               onChange={(e) => set({ search: e.target.value })}
               onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
               style={{ width: 260 }}
+              prefix={<SearchOutlined />}
             />,
           ]}
         />
       ) : (
-        <Spin spinning={joinState.loading}>
+        <Spin spinning={state.joinLoading}>
           <ProTable
             actionRef={pendingActionRef}
             request={async (params: any) => {
               const { current = 1, pageSize = 20 } = params;
               if (!state.currentCompany?.id) return { data: [], total: 0, success: true };
-              setJ({ loading: true });
+              set({ joinLoading: true });
               const r = await api.joinReqs(state.currentCompany.id, { page: current, pageSize });
               if (r.success && r.data) {
-                setJ({ data: r.data.queryable || [], pagination: { current, pageSize, total: r.data.rowCount }, loading: false });
+                set({ joinData: r.data.queryable || [], joinPagination: { current, pageSize, total: r.data.rowCount }, joinLoading: false });
                 return { data: r.data.queryable || [], total: r.data.rowCount, success: true };
               }
-              setJ({ loading: false });
+              set({ joinLoading: false });
               return { data: [], total: 0, success: false };
             }}
             columns={pendingColumns}
@@ -306,41 +303,41 @@ const UserManagement: React.FC = () => {
       )}
 
       <ModalForm
-        title="编辑成员"
+        title={intl.formatMessage({ id: 'pages.userManagement.form.edit' })}
         open={state.formVisible}
         onOpenChange={(open) => { if (!open) set({ formVisible: false, editingUser: null }); }}
         initialValues={state.editingUser ? { roleIds: state.editingUser.roleIds || [], isActive: state.editingUser.isActive, remark: state.editingUser.remark } : { isActive: true }}
         onFinish={async (values) => {
           if (!state.editingUser) return false;
           const res = await api.update(state.editingUser.id, { roleIds: values.roleIds || [], isActive: values.isActive, remark: values.remark });
-          if (res.success) { message.success('更新成功'); set({ formVisible: false, editingUser: null }); loadStatistics(); actionRef.current?.reload(); }
+          if (res.success) { message.success(intl.formatMessage({ id: 'pages.userManagement.message.updateSuccess' })); set({ formVisible: false, editingUser: null }); loadStatistics(); actionRef.current?.reload(); }
           return res.success;
         }}
         autoFocusFirstInput
         width={600}
       >
-        <ProFormSelect name="roleIds" label="角色" mode="multiple" placeholder="请选择角色" options={roleOptions} rules={[{ required: true, message: '请选择至少一个角色' }]} />
-        <ProFormSwitch name="isActive" label="启用" checkedChildren="启用" unCheckedChildren="禁用" />
-        <ProFormTextArea name="remark" label="备注" />
+        <ProFormSelect name="roleIds" label={intl.formatMessage({ id: 'pages.userManagement.form.roles' })} mode="multiple" placeholder={intl.formatMessage({ id: 'pages.userManagement.form.rolesPlaceholder' })} options={roleOptions} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.userManagement.form.rolesRequired' }) }]} />
+        <ProFormSwitch name="isActive" label={intl.formatMessage({ id: 'pages.userManagement.form.isActive' })} checkedChildren={intl.formatMessage({ id: 'pages.userManagement.form.active' })} unCheckedChildren={intl.formatMessage({ id: 'pages.userManagement.form.inactive' })} />
+        <ProFormTextArea name="remark" label={intl.formatMessage({ id: 'pages.userManagement.form.remark' })} />
       </ModalForm>
 
-      <Drawer title="成员详情" placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingUser: null })} size="large" destroyOnClose>
+      <Drawer title={intl.formatMessage({ id: 'pages.userManagement.detail.title' })} placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingUser: null })} size="large" destroyOnClose>
         <React.Suspense fallback={<div style={{ textAlign: 'center', padding: '20px' }}><Spin /></div>}>
           {state.viewingUser && <UserDetail user={state.viewingUser} onClose={() => set({ detailVisible: false, viewingUser: null })} />}
         </React.Suspense>
       </Drawer>
 
       <Modal
-        title="拒绝理由"
-        open={joinState.rejectModal}
-        onCancel={() => setJ({ rejectModal: false, rejectId: '', rejectReason: '' })}
+        title={intl.formatMessage({ id: 'pages.userManagement.form.rejectReason' })}
+        open={state.rejectModal}
+        onCancel={() => set({ rejectModal: false, rejectId: '', rejectReason: '' })}
         onOk={confirmReject}
       >
         <Input.TextArea
           rows={4}
-          placeholder="请输入拒绝理由"
-          value={joinState.rejectReason}
-          onChange={(e) => setJ({ rejectReason: e.target.value })}
+          placeholder={intl.formatMessage({ id: 'pages.userManagement.form.rejectReasonPlaceholder' })}
+          value={state.rejectReason}
+          onChange={(e) => set({ rejectReason: e.target.value })}
           maxLength={200}
         />
       </Modal>

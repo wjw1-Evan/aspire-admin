@@ -11,6 +11,7 @@ import type { TreeSelectProps } from 'antd/es/tree-select';
 import { useMessage } from '@/hooks/useMessage';
 import dayjs from 'dayjs';
 import { ApiResponse } from '@/types';
+import { getIntl } from '@umijs/max';
 
 const { Text } = Typography;
 const { Search } = Input;

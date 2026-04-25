@@ -263,12 +263,12 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       <ProTable<ProjectDto>
         headerTitle={
           <Space size={24}>
-            <Space><ProjectOutlined />项目管理</Space>
+            <Space><ProjectOutlined />{intl.formatMessage({ id: 'pages.projectManagement.title' })}</Space>
             <Space size={12}>
-              <Tag color="blue">总数 {statistics?.totalProjects || 0}</Tag>
-              <Tag color="green">进行中 {statistics?.inProgressProjects || 0}</Tag>
-              <Tag color="cyan">已完成 {statistics?.completedProjects || 0}</Tag>
-              <Tag color="red">延期 {statistics?.delayedProjects || 0}</Tag>
+              <Tag color="blue">{intl.formatMessage({ id: 'pages.projectManagement.statistics.totalProjects' })} {statistics?.totalProjects || 0}</Tag>
+              <Tag color="green">{intl.formatMessage({ id: 'pages.projectManagement.statistics.inProgressProjects' })} {statistics?.inProgressProjects || 0}</Tag>
+              <Tag color="cyan">{intl.formatMessage({ id: 'pages.projectManagement.statistics.completedProjects' })} {statistics?.completedProjects || 0}</Tag>
+              <Tag color="red">{intl.formatMessage({ id: 'pages.projectManagement.statistics.delayedProjects' })} {statistics?.delayedProjects || 0}</Tag>
             </Space>
           </Space>
         }
@@ -294,7 +294,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
         toolBarRender={() => [
           <Input.Search
             key="search"
-            placeholder="搜索..."
+            placeholder={intl.formatMessage({ id: 'pages.common.search' })}
             allowClear
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
@@ -303,7 +303,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
             prefix={<SearchOutlined />}
           />,
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { setEditingProject(null); setFormVisible(true); }}>
-            新建项目
+            {intl.formatMessage({ id: 'pages.projectManagement.createProject' })}
           </Button>,
         ]}
       />

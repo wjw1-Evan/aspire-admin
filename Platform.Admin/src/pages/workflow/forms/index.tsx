@@ -3,7 +3,7 @@ import { Button, Space, Tag, Popconfirm, Input, Empty, Drawer, Form, Input as An
 const { Group: RadioGroup } = Radio;
 import { PageContainer, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
 import { PlusOutlined, DeleteOutlined, EyeOutlined, SaveOutlined, DragOutlined, CloseOutlined, PartitionOutlined, UploadOutlined, EditOutlined } from '@ant-design/icons';
-import { request } from '@umijs/max';
+import { request, useIntl } from '@umijs/max';
 import { ApiResponse, PagedResult } from '@/types';
 import type { DragEndEvent, DragStartEvent, DragOverEvent } from '@dnd-kit/core';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, useDroppable, useDraggable, DragOverlay } from '@dnd-kit/core';
@@ -15,7 +15,7 @@ const { TextArea } = AntInput;
 
 const LIBRARY_PREFIX = 'lib_';
 
-function DraggableLibraryItem({ ft, onAdd }: { ft: typeof FIELD_TYPES[number]; onAdd: (type: string) => void }) {
+function DraggableLibraryItem({ ft, onAdd }: { ft: { type: string; label: string; icon: string }; onAdd: (type: string) => void }) {
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
         id: `${LIBRARY_PREFIX}${ft.type}`,
         data: { type: ft.type, fromLibrary: true },
@@ -90,17 +90,17 @@ const normalizeFieldType = (t: string | undefined): FormField['type'] => {
     return FIELD_TYPE_MAP[t.toLowerCase()] || (t as FormField['type']);
 };
 
-const FIELD_TYPES = [
-    { type: 'Text', label: '文本', icon: 'T' },
-    { type: 'TextArea', label: '多行文本', icon: 'T-' },
-    { type: 'Number', label: '数字', icon: '#' },
-    { type: 'Date', label: '日期', icon: 'D' },
-    { type: 'DateTime', label: '日期时间', icon: 'D+' },
-    { type: 'Select', label: '下拉选择', icon: 'v' },
-    { type: 'Radio', label: '单选', icon: 'O' },
-    { type: 'Checkbox', label: '多选', icon: '[]' },
-    { type: 'Switch', label: '开关', icon: 'S' },
-    { type: 'Attachment', label: '附件上传', icon: 'A' },
+const getFieldTypeConfig = (intl: any) => [
+    { type: 'Text', label: intl.formatMessage({ id: 'pages.forms.fieldType.text' }), icon: 'T' },
+    { type: 'TextArea', label: intl.formatMessage({ id: 'pages.forms.fieldType.textArea' }), icon: 'T-' },
+    { type: 'Number', label: intl.formatMessage({ id: 'pages.forms.fieldType.number' }), icon: '#' },
+    { type: 'Date', label: intl.formatMessage({ id: 'pages.forms.fieldType.date' }), icon: 'D' },
+    { type: 'DateTime', label: intl.formatMessage({ id: 'pages.forms.fieldType.dateTime' }), icon: 'D+' },
+    { type: 'Select', label: intl.formatMessage({ id: 'pages.forms.fieldType.select' }), icon: 'v' },
+    { type: 'Radio', label: intl.formatMessage({ id: 'pages.forms.fieldType.radio' }), icon: 'O' },
+    { type: 'Checkbox', label: intl.formatMessage({ id: 'pages.forms.fieldType.checkbox' }), icon: '[]' },
+    { type: 'Switch', label: intl.formatMessage({ id: 'pages.forms.fieldType.switch' }), icon: 'S' },
+    { type: 'Attachment', label: intl.formatMessage({ id: 'pages.forms.fieldType.attachment' }), icon: 'A' },
 ];
 
 const api = {
@@ -121,6 +121,7 @@ function SortableField({ field, selected, onSelect, onDelete, onChange }: {
     onDelete: () => void;
     onChange?: (field: FormField) => void;
 }) {
+    const intl = useIntl();
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: field.id });
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -139,8 +140,8 @@ function SortableField({ field, selected, onSelect, onDelete, onChange }: {
             case 'Select': return <Select placeholder={field.placeholder} value={field.defaultValue} onChange={val => handleChange(val)}>{field.options?.map(o => <Select.Option key={o.value} value={o.value}>{o.label}</Select.Option>)}</Select>;
             case 'Radio': return <RadioGroup value={field.defaultValue} onChange={e => handleChange(e.target.value)}>{field.options?.map(o => <Radio key={o.value} value={o.value}>{o.label}</Radio>)}</RadioGroup>;
             case 'Checkbox': return <Checkbox.Group options={field.options?.map(o => ({ label: o.label, value: o.value }))} value={field.defaultValue?.split(',').filter(Boolean)} onChange={val => handleChange(val?.join(','))} />;
-            case 'Switch': return <Switch checked={field.defaultValue === 'true'} onChange={val => handleChange(String(val))} checkedChildren="是" unCheckedChildren="否" />;
-            case 'Attachment': return <Upload><Button icon={<UploadOutlined />}>上传附件</Button></Upload>;
+            case 'Switch': return <Switch checked={field.defaultValue === 'true'} onChange={val => handleChange(String(val))} checkedChildren={intl.formatMessage({ id: 'pages.forms.status.yes' })} unCheckedChildren={intl.formatMessage({ id: 'pages.forms.status.no' })} />;
+            case 'Attachment': return <Upload><Button icon={<UploadOutlined />}>{intl.formatMessage({ id: 'pages.forms.fieldType.upload' })}</Button></Upload>;
             default: return <AntInput placeholder={field.placeholder} value={field.defaultValue} onChange={e => handleChange(e.target.value)} />;
         }
     };
@@ -158,47 +159,48 @@ function SortableField({ field, selected, onSelect, onDelete, onChange }: {
     );
 }
 
-function FieldPropertyPanel({ field, onChange, onClose }: {
+function FieldPropertyPanel({ field, onChange, onClose, intl }: {
     field: FormField;
     onChange: (field: FormField) => void;
     onClose: () => void;
+    intl: any;
 }) {
     return (
         <div className="field-property-panel">
             <div className="panel-header">
-                <span>字段属性</span>
+                <span>{intl.formatMessage({ id: 'pages.forms.designer.fieldProperties' })}</span>
                 <Button type="text" size="small" icon={<CloseOutlined />} onClick={onClose} />
             </div>
             <div className="panel-body">
                 <div className="property-group">
-                    <label>字段标签</label>
-                    <AntInput value={field.label} onChange={e => onChange({ ...field, label: e.target.value })} placeholder="请输入字段标签" />
+                    <label>{intl.formatMessage({ id: 'pages.forms.field.label' })}</label>
+                    <AntInput value={field.label} onChange={e => onChange({ ...field, label: e.target.value })} placeholder={intl.formatMessage({ id: 'pages.forms.field.labelPlaceholder' })} />
                 </div>
                 <div className="property-group">
-                    <label>数据键</label>
-                    <AntInput value={field.dataKey} onChange={e => onChange({ ...field, dataKey: e.target.value })} placeholder="请输入数据键" />
+                    <label>{intl.formatMessage({ id: 'pages.forms.field.dataKey' })}</label>
+                    <AntInput value={field.dataKey} onChange={e => onChange({ ...field, dataKey: e.target.value })} placeholder={intl.formatMessage({ id: 'pages.forms.field.dataKeyPlaceholder' })} />
                 </div>
                 <div className="property-group">
-                    <label>字段类型</label>
+                    <label>{intl.formatMessage({ id: 'pages.forms.field.type' })}</label>
                     <Select value={field.type} onChange={type => onChange({ ...field, type })} style={{ width: '100%' }}>
-                        {FIELD_TYPES.map(t => <Select.Option key={t.type} value={t.type}>{t.label}</Select.Option>)}
+                        {getFieldTypeConfig(intl).map(t => <Select.Option key={t.type} value={t.type}>{t.label}</Select.Option>)}
                     </Select>
                 </div>
                 <div className="property-group">
-                    <label>必填</label>
+                    <label>{intl.formatMessage({ id: 'pages.forms.field.required' })}</label>
                     <Switch checked={field.required} onChange={required => onChange({ ...field, required })} />
                 </div>
                 <div className="property-group">
-                    <label>占位符</label>
-                    <AntInput value={field.placeholder} onChange={e => onChange({ ...field, placeholder: e.target.value })} placeholder="请输入占位符" />
+                    <label>{intl.formatMessage({ id: 'pages.forms.field.placeholder' })}</label>
+                    <AntInput value={field.placeholder} onChange={e => onChange({ ...field, placeholder: e.target.value })} placeholder={intl.formatMessage({ id: 'pages.forms.field.placeholderPlaceholder' })} />
                 </div>
                 <div className="property-group">
-                    <label>默认值</label>
-                    <AntInput value={field.defaultValue} onChange={e => onChange({ ...field, defaultValue: e.target.value })} placeholder="请输入默认值" />
+                    <label>{intl.formatMessage({ id: 'pages.forms.field.defaultValue' })}</label>
+                    <AntInput value={field.defaultValue} onChange={e => onChange({ ...field, defaultValue: e.target.value })} placeholder={intl.formatMessage({ id: 'pages.forms.field.defaultValuePlaceholder' })} />
                 </div>
                 {['Select', 'Radio', 'Checkbox'].includes(field.type) && (
                     <div className="property-group">
-                        <label>选项 (每行一个: 值,标签)</label>
+                        <label>{intl.formatMessage({ id: 'pages.forms.field.options' })} ({intl.formatMessage({ id: 'pages.forms.field.optionsPlaceholder' })})</label>
                         <TextArea
                             value={field.options?.map(o => `${o.value},${o.label}`).join('\n')}
                             onChange={e => {
@@ -209,7 +211,7 @@ function FieldPropertyPanel({ field, onChange, onClose }: {
                                 onChange({ ...field, options });
                             }}
                             rows={4}
-                            placeholder="option1,选项1&#10;option2,选项2"
+                            placeholder={intl.formatMessage({ id: 'pages.forms.field.optionsExample' })}
                         />
                     </div>
                 )}
@@ -218,7 +220,8 @@ function FieldPropertyPanel({ field, onChange, onClose }: {
     );
 }
 
-const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefinition) => void }> = ({ form, onSave }) => {
+const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefinition) => void; intl: any }> = ({ form, onSave, intl }) => {
+    const FIELD_TYPES = getFieldTypeConfig(intl);
     const [fields, setFields] = useState<FormField[]>(form.fields || []);
     const [formData, setFormData] = useState({ name: form.name, version: form.version || 1, isActive: form.isActive ?? true });
     const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
@@ -369,15 +372,15 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
 
     const handleSave = () => {
         onSave({ ...form, ...formData, fields });
-        message.success('保存成功');
+        message.success(intl.formatMessage({ id: 'pages.forms.message.saveSuccess' }));
     };
 
     if (previewMode) {
         return (
             <div className="form-preview">
                 <div className="preview-header">
-                    <span>预览: {formData.name}</span>
-                    <Button icon={<EditOutlined />} onClick={() => setPreviewMode(false)}>编辑</Button>
+                    <span>{intl.formatMessage({ id: 'pages.forms.designer.preview' })}: {formData.name}</span>
+                    <Button icon={<EditOutlined />} onClick={() => setPreviewMode(false)}>{intl.formatMessage({ id: 'pages.forms.designer.edit' })}</Button>
                 </div>
                 <Form layout="vertical" style={{ maxWidth: 600, margin: '0 auto' }}>
                     {fields.map(field => (
@@ -390,8 +393,8 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
                             {field.type === 'Select' && <Select placeholder={field.placeholder} defaultValue={field.defaultValue}>{field.options?.map(o => <Select.Option key={o.value} value={o.value}>{o.label}</Select.Option>)}</Select>}
                             {field.type === 'Radio' && <RadioGroup defaultValue={field.defaultValue}>{field.options?.map(o => <Radio key={o.value} value={o.value}>{o.label}</Radio>)}</RadioGroup>}
                             {field.type === 'Checkbox' && <Checkbox.Group options={field.options?.map(o => ({ label: o.label, value: o.value }))} defaultValue={field.defaultValue?.split(',').filter(Boolean)} />}
-                            {field.type === 'Switch' && <Switch defaultChecked={field.defaultValue === 'true'} checkedChildren="是" unCheckedChildren="否" />}
-                            {field.type === 'Attachment' && <Upload><Button icon={<UploadOutlined />}>上传附件</Button></Upload>}
+                            {field.type === 'Switch' && <Switch defaultChecked={field.defaultValue === 'true'} checkedChildren={intl.formatMessage({ id: 'pages.forms.status.yes' })} unCheckedChildren={intl.formatMessage({ id: 'pages.forms.status.no' })} />}
+                            {field.type === 'Attachment' && <Upload><Button icon={<UploadOutlined />}>{intl.formatMessage({ id: 'pages.forms.fieldType.upload' })}</Button></Upload>}
                         </Form.Item>
                     ))}
                 </Form>
@@ -403,16 +406,16 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
         <div className="form-designer">
             <div className="designer-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ width: 60 }}>表单名称</span>
-                    <Input placeholder="请输入表单名称" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} style={{ width: 200 }} />
+                    <span style={{ width: 60 }}>{intl.formatMessage({ id: 'pages.forms.form.name' })}</span>
+                    <Input placeholder={intl.formatMessage({ id: 'pages.forms.form.namePlaceholder' })} value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} style={{ width: 200 }} />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ width: 40 }}>启用</span>
-                    <Switch checkedChildren="启用" unCheckedChildren="禁用" checked={formData.isActive} onChange={v => setFormData({ ...formData, isActive: v })} />
+                    <span style={{ width: 40 }}>{intl.formatMessage({ id: 'pages.forms.form.enabled' })}</span>
+                    <Switch checkedChildren={intl.formatMessage({ id: 'pages.forms.form.enabledOn' })} unCheckedChildren={intl.formatMessage({ id: 'pages.forms.form.enabledOff' })} checked={formData.isActive} onChange={v => setFormData({ ...formData, isActive: v })} />
                 </div>
                 <Space>
-                    <Button type="primary" icon={<SaveOutlined />} onClick={handleSave}>保存</Button>
-                    <Button icon={<EyeOutlined />} onClick={() => setPreviewMode(true)}>预览</Button>
+                    <Button type="primary" icon={<SaveOutlined />} onClick={handleSave}>{intl.formatMessage({ id: 'pages.forms.action.save' })}</Button>
+                    <Button icon={<EyeOutlined />} onClick={() => setPreviewMode(true)}>{intl.formatMessage({ id: 'pages.forms.action.preview' })}</Button>
                 </Space>
             </div>
             <div className="designer-body">
@@ -425,7 +428,7 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
                     onDragCancel={handleDragCancel}
                 >
                     <div className="field-library">
-                        <div className="library-header">字段组件</div>
+                        <div className="library-header">{intl.formatMessage({ id: 'pages.forms.designer.fieldLibrary' })}</div>
                         <div className="library-content">
                             {FIELD_TYPES.map(ft => (
                                 <DraggableLibraryItem key={ft.type} ft={ft} onAdd={addField} />
@@ -433,10 +436,10 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
                         </div>
                     </div>
                     <div className="form-canvas">
-                        <div className="canvas-header">表单画布</div>
+                        <div className="canvas-header">{intl.formatMessage({ id: 'pages.forms.designer.formCanvas' })}</div>
                         <DroppableCanvas>
                             {fields.length === 0 ? (
-                                <Empty description="从左侧拖拽或点击添加字段" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                                <Empty description={intl.formatMessage({ id: 'pages.forms.designer.dragDropHint' })} image={Empty.PRESENTED_IMAGE_SIMPLE} />
                             ) : (
                                 <SortableContext items={fields.map(f => f.id)} strategy={verticalListSortingStrategy}>
                                     {fields.map((field, index) => (
@@ -469,9 +472,9 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
                 </DndContext>
                 <div className="field-properties" style={{ width: 280, borderLeft: '1px solid #f0f0f0', background: '#fafafa', padding: 12 }}>
                     {selectedField ? (
-                        <FieldPropertyPanel field={selectedField} onChange={updateField} onClose={() => setSelectedFieldId(null)} />
+                        <FieldPropertyPanel field={selectedField} onChange={updateField} onClose={() => setSelectedFieldId(null)} intl={intl} />
                     ) : (
-                        <Empty description="选择一个字段进行编辑" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                        <Empty description={intl.formatMessage({ id: 'pages.forms.designer.selectFieldToEdit' })} image={Empty.PRESENTED_IMAGE_SIMPLE} />
                     )}
                 </div>
             </div>
@@ -480,6 +483,7 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
 };
 
 const FormDefinitionManagement: React.FC = () => {
+    const intl = useIntl();
     const actionRef = useRef<ActionType | undefined>(undefined);
     const [state, setState] = useState({
         statistics: null as FormStatistics | null,
@@ -519,20 +523,20 @@ const FormDefinitionManagement: React.FC = () => {
     }, [state.designerVisible]);
 
     const columns: ProColumns<FormDefinition>[] = [
-        { title: '名称', dataIndex: 'name', key: 'name', ellipsis: true, sorter: true },
-        { title: '版本', dataIndex: 'version', key: 'version', valueType: 'digit', width: 80, sorter: true },
-        { title: '字段数', dataIndex: 'fields', key: 'fields', valueType: 'digit', width: 80, render: (_, r) => r.fields?.length || 0 },
-        { title: '启用', dataIndex: 'isActive', key: 'isActive', render: (_, r) => <Tag color={r.isActive ? 'success' : 'default'}>{r.isActive ? '是' : '否'}</Tag> },
+        { title: intl.formatMessage({ id: 'pages.forms.table.name' }), dataIndex: 'name', key: 'name', ellipsis: true, sorter: true },
+        { title: intl.formatMessage({ id: 'pages.forms.table.version' }), dataIndex: 'version', key: 'version', valueType: 'digit', width: 80, sorter: true },
+        { title: intl.formatMessage({ id: 'pages.forms.table.fieldCount' }), dataIndex: 'fields', key: 'fields', valueType: 'digit', width: 80, render: (_, r) => r.fields?.length || 0 },
+        { title: intl.formatMessage({ id: 'pages.forms.table.enabled' }), dataIndex: 'isActive', key: 'isActive', render: (_, r) => <Tag color={r.isActive ? 'success' : 'default'}>{r.isActive ? intl.formatMessage({ id: 'pages.forms.status.yes' }) : intl.formatMessage({ id: 'pages.forms.status.no' })}</Tag> },
         {
-            title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 250, render: (_, r) => (
+            title: intl.formatMessage({ id: 'pages.forms.table.action' }), key: 'action', valueType: 'option', fixed: 'right', width: 250, render: (_, r) => (
                 <Space size={4}>
-                    <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => set({ viewingFormId: r.id!, versionsDrawerVisible: true })}>查看</Button>
+                    <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => set({ viewingFormId: r.id!, versionsDrawerVisible: true })}>{intl.formatMessage({ id: 'pages.forms.action.view' })}</Button>
                     <Button type="link" size="small" icon={<EditOutlined />} onClick={() => {
                         const fields = r.fields?.length ? r.fields : [];
                         set({ editingForm: { ...r, fields: fields || [] }, designerVisible: true });
-                    }}>编辑</Button>
-                    <Popconfirm title={`确定删除「${r.name}」？`} onConfirm={async () => { await api.delete(r.id!); actionRef.current?.reload(); api.statistics().then(res => { if (res.success && res.data) set({ statistics: res.data }); }); }}>
-                        <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
+                    }}>{intl.formatMessage({ id: 'pages.forms.action.edit' })}</Button>
+                    <Popconfirm title={intl.formatMessage({ id: 'pages.forms.message.confirmDelete' }, { name: r.name })} onConfirm={async () => { await api.delete(r.id!); actionRef.current?.reload(); api.statistics().then(res => { if (res.success && res.data) set({ statistics: res.data }); }); }}>
+                        <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.forms.action.delete' })}</Button>
                     </Popconfirm>
                 </Space>
             )
@@ -596,10 +600,10 @@ const FormDefinitionManagement: React.FC = () => {
                 actionRef={actionRef}
                 headerTitle={
                     <Space size={24}>
-                        <Space><PartitionOutlined />表单设计器</Space>
+                        <Space><PartitionOutlined />{intl.formatMessage({ id: 'pages.forms.title' })}</Space>
                         <Space size={12}>
-                            <Tag color="blue">总计 {state.statistics?.totalForms || 0}</Tag>
-                            <Tag color="green">启用 {state.statistics?.activeForms || 0}</Tag>
+                            <Tag color="blue">{intl.formatMessage({ id: 'pages.forms.statistics.total' })} {state.statistics?.totalForms || 0}</Tag>
+                            <Tag color="green">{intl.formatMessage({ id: 'pages.forms.statistics.active' })} {state.statistics?.activeForms || 0}</Tag>
                         </Space>
                     </Space>
                 }
@@ -614,27 +618,27 @@ const FormDefinitionManagement: React.FC = () => {
                 }}
                 columns={columns}
                 toolBarRender={() => [
-                    <Input.Search key="search" placeholder="搜索..." allowClear value={state.search}
+                    <Input.Search key="search" placeholder={intl.formatMessage({ id: 'pages.forms.search.placeholder' })} allowClear value={state.search}
                         onChange={(e) => set({ search: e.target.value })}
                         onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
                         style={{ width: 260, marginRight: 8 }} />,
-                    <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingForm: { name: '新表单', version: 1, isActive: true, fields: [] }, designerVisible: true })}>新建表单</Button>,
+                    <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingForm: { name: intl.formatMessage({ id: 'pages.forms.form.newForm' }), version: 1, isActive: true, fields: [] }, designerVisible: true })}>{intl.formatMessage({ id: 'pages.forms.action.create' })}</Button>,
                 ]}
             />
 
-            <Drawer title={state.editingForm?.id ? `编辑表单: ${state.editingForm.name}` : '新建表单'} size="100%" open={state.designerVisible}
+            <Drawer title={state.editingForm?.id ? `${intl.formatMessage({ id: 'pages.forms.form.editForm' })}: ${state.editingForm.name}` : intl.formatMessage({ id: 'pages.forms.form.createForm' })} size="100%" open={state.designerVisible}
                 onClose={() => set({ designerVisible: false, editingForm: null })}>
                 {state.designerVisible && (
-                    <FormDesigner key={state.editingForm?.id || 'new'} form={state.editingForm || { id: '', name: '新表单', version: 1, isActive: true, fields: [] }} onSave={handleDesignerSave} />
+                    <FormDesigner key={state.editingForm?.id || 'new'} form={state.editingForm || { id: '', name: intl.formatMessage({ id: 'pages.forms.form.newForm' }), version: 1, isActive: true, fields: [] }} onSave={handleDesignerSave} intl={intl} />
                 )}
             </Drawer>
 
 
-            <Drawer title={`版本历史: ${state.viewingFormId ? state.versions.find(v => v.formDefinitionId === state.viewingFormId)?.name : ''}`} size={800} open={state.versionsDrawerVisible}
+            <Drawer title={`${intl.formatMessage({ id: 'pages.forms.detail.versionHistory' })}: ${state.viewingFormId ? state.versions.find(v => v.formDefinitionId === state.viewingFormId)?.name : ''}`} size={800} open={state.versionsDrawerVisible}
                 onClose={() => set({ versionsDrawerVisible: false, viewingFormId: null, versions: [], previewVersionId: null, previewFields: [] })}>
                 <div style={{ display: 'flex', gap: 24 }}>
                     <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 500, marginBottom: 8 }}>历史版本</div>
+                        <div style={{ fontWeight: 500, marginBottom: 8 }}>{intl.formatMessage({ id: 'pages.forms.detail.versionHistory' })}</div>
                         <div>
                             {state.versions.map(item => (
                                 <div key={item.id} style={{
@@ -645,13 +649,13 @@ const FormDefinitionManagement: React.FC = () => {
                                 }}
                                     onClick={() => set({ previewVersionId: item.id!, previewFields: item.fields || [] })}>
                                     <div style={{ fontWeight: 500 }}>v{item.version}</div>
-                                    <div style={{ fontSize: 12, color: '#666' }}>{item.fields?.length || 0}个字段 | {item.isActive ? '启用' : '禁用'}</div>
+                                    <div style={{ fontSize: 12, color: '#666' }}>{item.fields?.length || 0}{intl.formatMessage({ id: 'pages.forms.detail.fieldCount' })} | {item.isActive ? intl.formatMessage({ id: 'pages.forms.status.enabled' }) : intl.formatMessage({ id: 'pages.forms.status.disabled' })}</div>
                                 </div>
                             ))}
                         </div>
                     </div>
                     <div style={{ flex: 2, borderLeft: '1px solid #f0f0f0', paddingLeft: 24 }}>
-                        <div style={{ fontWeight: 500, marginBottom: 8 }}>表单预览 {state.previewVersionId ? ` v${state.versions.find(v => v.id === state.previewVersionId)?.version}` : ''}</div>
+                        <div style={{ fontWeight: 500, marginBottom: 8 }}>{intl.formatMessage({ id: 'pages.forms.detail.preview' })} {state.previewVersionId ? ` v${state.versions.find(v => v.id === state.previewVersionId)?.version}` : ''}</div>
                         {state.previewFields.length > 0 ? (
                             <Form layout="vertical">
                                 {state.previewFields.map(field => (
@@ -664,13 +668,13 @@ const FormDefinitionManagement: React.FC = () => {
                                         {field.type === 'Select' && <Select placeholder={field.placeholder} defaultValue={field.defaultValue}>{field.options?.map(o => <Select.Option key={o.value} value={o.value}>{o.label}</Select.Option>)}</Select>}
                                         {field.type === 'Radio' && <RadioGroup defaultValue={field.defaultValue}>{field.options?.map(o => <Radio key={o.value} value={o.value}>{o.label}</Radio>)}</RadioGroup>}
                                         {field.type === 'Checkbox' && <Checkbox.Group options={field.options?.map(o => ({ label: o.label, value: o.value }))} defaultValue={field.defaultValue?.split(',').filter(Boolean)} />}
-                                        {field.type === 'Switch' && <Switch defaultChecked={field.defaultValue === 'true'} checkedChildren="是" unCheckedChildren="否" />}
-                                        {field.type === 'Attachment' && <Upload><Button icon={<UploadOutlined />}>上传</Button></Upload>}
+                                        {field.type === 'Switch' && <Switch defaultChecked={field.defaultValue === 'true'} checkedChildren={intl.formatMessage({ id: 'pages.forms.status.yes' })} unCheckedChildren={intl.formatMessage({ id: 'pages.forms.status.no' })} />}
+                                        {field.type === 'Attachment' && <Upload><Button icon={<UploadOutlined />}>{intl.formatMessage({ id: 'pages.forms.fieldType.upload' })}</Button></Upload>}
                                     </Form.Item>
                                 ))}
                             </Form>
                         ) : (
-                            <Empty description="点击左侧版本查看预览" />
+                            <Empty description={intl.formatMessage({ id: 'pages.forms.detail.clickToPreview' })} />
                         )}
                     </div>
                 </div>

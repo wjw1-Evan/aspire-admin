@@ -77,7 +77,7 @@ const CloudStorageFilesPage: React.FC = () => {
         data: [] as FileItem[], loading: false,
         statistics: null as StorageStatistics | null,
         currentPath: '', currentParentId: undefined as string | undefined,
-        pathHistory: [{ name: '我的文件', path: '' }] as PathHistoryItem[],
+        pathHistory: [{ name: intl.formatMessage({ id: 'pages.cloudStorage.path.myFiles' }), path: '' }] as PathHistoryItem[],
         selectedRowKeys: [] as string[], selectedRows: [] as FileItem[],
         isSearchMode: false, search: '',
         detailVisible: false, viewingFile: null as FileItem | null,
@@ -211,17 +211,17 @@ const CloudStorageFilesPage: React.FC = () => {
     }, [state.viewingFile]);
 
     const columns: ProColumns<FileItem>[] = [
-        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.field.name' }), dataIndex: 'name', key: 'name', sorter: true, render: (dom, record) => (<Space>{getFileIcon(record)}<a onClick={() => record.isFolder ? handleFolderClick(record) : handleView(record)} style={{ cursor: 'pointer' }}>{dom}</a></Space>) },
-        { title: '类型', dataIndex: 'isFolder', key: 'isFolder', width: 80, render: (dom, record) => record.isFolder ? <Tag color="orange">文件夹</Tag> : <Tag color="blue">文件</Tag> },
-        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.field.size' }), dataIndex: 'size', key: 'size', sorter: true, render: (_, r) => r.isFolder ? '-' : formatFileSize(r.size || 0) },
-        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.field.updatedAt' }), dataIndex: 'updatedAt', key: 'updatedAt', sorter: true, render: (dom) => dom && typeof dom === 'string' ? dayjs(dom).format('YYYY-MM-DD HH:mm:ss') : '-' },
-        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.field.creator' }), dataIndex: 'createdByName', key: 'createdByName' },
-        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.field.action' }), key: 'action', fixed: 'right', width: 220, render: (_, record) => (<Space size={4}>
-            <Button type="link" size="small" icon={<ShareAltOutlined />} onClick={() => set({ sharingFile: record, shareVisible: true })}>{intl.formatMessage({ id: 'pages.cloud-storage.files.action.share' })}</Button>
-            <Button type="link" size="small" icon={<DownloadOutlined />} onClick={() => handleDownload(record)}>{intl.formatMessage({ id: 'pages.cloud-storage.files.action.download' })}</Button>
-            <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ renamingFile: record, renameVisible: true })}>{intl.formatMessage({ id: 'pages.cloud-storage.files.action.rename' })}</Button>
-            <Popconfirm title={intl.formatMessage({ id: 'pages.cloud-storage.files.confirmDelete.title' })} onConfirm={() => handleDelete(record)} okButtonProps={{ danger: true }}>
-                <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.cloud-storage.files.action.delete' })}</Button>
+        { title: intl.formatMessage({ id: 'pages.cloudStorage.table.name' }), dataIndex: 'name', key: 'name', sorter: true, render: (dom, record) => (<Space>{getFileIcon(record)}<a onClick={() => record.isFolder ? handleFolderClick(record) : handleView(record)} style={{ cursor: 'pointer' }}>{dom}</a></Space>) },
+        { title: intl.formatMessage({ id: 'pages.cloudStorage.table.type' }), dataIndex: 'isFolder', key: 'isFolder', width: 80, render: (dom, record) => record.isFolder ? <Tag color="orange">{intl.formatMessage({ id: 'pages.cloudStorage.type.folder' })}</Tag> : <Tag color="blue">文件</Tag> },
+        { title: intl.formatMessage({ id: 'pages.cloudStorage.table.size' }), dataIndex: 'size', key: 'size', sorter: true, render: (_, r) => r.isFolder ? '-' : formatFileSize(r.size || 0) },
+        { title: intl.formatMessage({ id: 'pages.cloudStorage.table.updatedAt' }), dataIndex: 'updatedAt', key: 'updatedAt', sorter: true, render: (dom) => dom && typeof dom === 'string' ? dayjs(dom).format('YYYY-MM-DD HH:mm:ss') : '-' },
+        { title: intl.formatMessage({ id: 'pages.cloudStorage.table.creator' }), dataIndex: 'createdByName', key: 'createdByName' },
+        { title: intl.formatMessage({ id: 'pages.cloudStorage.table.action' }), key: 'action', fixed: 'right', width: 220, render: (_, record) => (<Space size={4}>
+            <Button type="link" size="small" icon={<ShareAltOutlined />} onClick={() => set({ sharingFile: record, shareVisible: true })}>{intl.formatMessage({ id: 'pages.cloudStorage.action.share' })}</Button>
+            <Button type="link" size="small" icon={<DownloadOutlined />} onClick={() => handleDownload(record)}>{intl.formatMessage({ id: 'pages.cloudStorage.action.download' })}</Button>
+            <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ renamingFile: record, renameVisible: true })}>{intl.formatMessage({ id: 'pages.cloudStorage.action.rename' })}</Button>
+            <Popconfirm title={intl.formatMessage({ id: 'pages.cloudStorage.message.confirmDelete' }, { name: record.name })} onConfirm={() => handleDelete(record)} okButtonProps={{ danger: true }}>
+                <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.cloudStorage.action.delete' })}</Button>
             </Popconfirm>
         </Space>) },
     ];
@@ -230,12 +230,12 @@ const CloudStorageFilesPage: React.FC = () => {
         <PageContainer>
           <ProTable actionRef={actionRef} headerTitle={
               <Space size={24}>
-                <Space><CloudOutlined />网盘管理</Space>
+                <Space><CloudOutlined />{intl.formatMessage({ id: 'pages.cloudStorage.title' })}</Space>
                 <Space size={12}>
-                  <Tag color="blue">文件 {state.statistics?.fileCount || 0}</Tag>
-                  <Tag color="green">文件夹 {state.statistics?.folderCount || 0}</Tag>
-                  <Tag color="purple">容量 {formatFileSize(state.statistics?.totalQuota || 0)}</Tag>
-                  <Tag color="orange">已用 {formatFileSize(state.statistics?.usedSpace || 0)}</Tag>
+                  <Tag color="blue">{intl.formatMessage({ id: 'pages.cloudStorage.statistics.fileCount' })} {state.statistics?.fileCount || 0}</Tag>
+                  <Tag color="green">{intl.formatMessage({ id: 'pages.cloudStorage.statistics.folderCount' })} {state.statistics?.folderCount || 0}</Tag>
+                  <Tag color="purple">{intl.formatMessage({ id: 'pages.cloudStorage.statistics.totalQuota' })} {formatFileSize(state.statistics?.totalQuota || 0)}</Tag>
+                  <Tag color="orange">{intl.formatMessage({ id: 'pages.cloudStorage.statistics.usedSpace' })} {formatFileSize(state.statistics?.usedSpace || 0)}</Tag>
                 </Space>
               </Space>
             } request={fetchData} columns={columns} rowKey="id" search={false}
@@ -243,7 +243,7 @@ const CloudStorageFilesPage: React.FC = () => {
                 toolBarRender={() => [
                   <Input.Search
                     key="search"
-                    placeholder="搜索..."
+                    placeholder={intl.formatMessage({ id: 'pages.cloudStorage.search.placeholder' })}
                     allowClear
                     value={state.search}
                     onChange={(e) => set({ search: e.target.value })}
@@ -251,41 +251,41 @@ const CloudStorageFilesPage: React.FC = () => {
                     style={{ width: 260, marginRight: 8 }}
                     prefix={<SearchOutlined />}
                   />,
-                  <Button key="create-folder" icon={<FolderAddOutlined />} onClick={() => set({ createFolderVisible: true })}>{intl.formatMessage({ id: 'pages.cloud-storage.files.action.newFolder' })}</Button>,
+                  <Button key="create-folder" icon={<FolderAddOutlined />} onClick={() => set({ createFolderVisible: true })}>{intl.formatMessage({ id: 'pages.cloudStorage.action.createFolder' })}</Button>,
                   <Dropdown key="upload" menu={{ items: [
-                    { key: 'file', label: intl.formatMessage({ id: 'pages.cloud-storage.files.action.uploadFile' }), icon: <FileOutlined />, onClick: () => set({ uploadType: 'file', uploadVisible: true }) },
-                    { key: 'folder', label: intl.formatMessage({ id: 'pages.cloud-storage.files.action.uploadFolder' }), icon: <FolderOutlined />, onClick: () => set({ uploadType: 'folder', uploadVisible: true }) },
+                    { key: 'file', label: intl.formatMessage({ id: 'pages.cloudStorage.action.uploadFile' }), icon: <FileOutlined />, onClick: () => set({ uploadType: 'file', uploadVisible: true }) },
+                    { key: 'folder', label: intl.formatMessage({ id: 'pages.cloudStorage.action.uploadFolder' }), icon: <FolderOutlined />, onClick: () => set({ uploadType: 'folder', uploadVisible: true }) },
                   ]}}>
-                    <Button type="primary" icon={<UploadOutlined />}>{intl.formatMessage({ id: 'pages.cloud-storage.files.action.upload' })} <MoreOutlined style={{ fontSize: 12 }} /></Button>
+                    <Button type="primary" icon={<UploadOutlined />}>{intl.formatMessage({ id: 'pages.cloudStorage.action.uploadFile' })} <MoreOutlined style={{ fontSize: 12 }} /></Button>
                   </Dropdown>,
                 ]}
                 rowSelection={{ selectedRowKeys: state.selectedRowKeys, onChange: (keys, rows) => set({ selectedRowKeys: keys as string[], selectedRows: rows }) }} />
 
             {/* 创建文件夹 */}
-            <ModalForm key="create-folder" title={intl.formatMessage({ id: 'pages.cloud-storage.files.action.newFolder' })} open={state.createFolderVisible} onOpenChange={(open) => { if (!open) set({ createFolderVisible: false }); }}
-                onFinish={async (values) => { try { await api.createFolder({ name: values.name, parentId: currentParentIdRef.current }); message.success(intl.formatMessage({ id: 'pages.cloud-storage.files.message.createFolderSuccess' })); set({ createFolderVisible: false }); actionRef.current?.reload(); return true; } catch { message.error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.createFolderFailed' })); return false; } }} autoFocusFirstInput width={400}>
-                <ProFormText name="name" label="文件夹名称" placeholder="请输入文件夹名称" rules={[{ required: true, message: '请输入文件夹名称' }]} />
+            <ModalForm key="create-folder" title={intl.formatMessage({ id: 'pages.cloudStorage.action.createFolder' })} open={state.createFolderVisible} onOpenChange={(open) => { if (!open) set({ createFolderVisible: false }); }}
+                onFinish={async (values) => { try { await api.createFolder({ name: values.name, parentId: currentParentIdRef.current }); message.success(intl.formatMessage({ id: 'pages.cloudStorage.message.createFolderSuccess' })); set({ createFolderVisible: false }); actionRef.current?.reload(); return true; } catch { message.error(intl.formatMessage({ id: 'pages.cloudStorage.message.createFolderFailed' })); return false; } }} autoFocusFirstInput width={400}>
+                <ProFormText name="name" label={intl.formatMessage({ id: 'pages.cloudStorage.form.folderName' })} placeholder={intl.formatMessage({ id: 'pages.cloudStorage.form.folderNamePlaceholder' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.cloudStorage.form.folderNamePlaceholder' }) }]} />
             </ModalForm>
 
             {/* 重命名 */}
-            <ModalForm key={state.renamingFile?.id || 'rename'} title={intl.formatMessage({ id: 'pages.cloud-storage.files.action.rename' })} open={state.renameVisible} onOpenChange={(open) => { if (!open) set({ renameVisible: false, renamingFile: null }); }}
+            <ModalForm key={state.renamingFile?.id || 'rename'} title={intl.formatMessage({ id: 'pages.cloudStorage.action.rename' })} open={state.renameVisible} onOpenChange={(open) => { if (!open) set({ renameVisible: false, renamingFile: null }); }}
                 initialValues={state.renamingFile ? { name: state.renamingFile.name } : undefined}
-                onFinish={async (values) => { if (!state.renamingFile) return false; try { await api.rename(state.renamingFile.id, { name: values.name }); message.success(intl.formatMessage({ id: 'pages.cloud-storage.files.message.renameSuccess' })); set({ renameVisible: false, renamingFile: null }); actionRef.current?.reload(); return true; } catch { message.error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.renameFailed' })); return false; } }} autoFocusFirstInput width={400}>
-                <ProFormText name="name" label="新名称" placeholder="请输入新名称" rules={[{ required: true, message: '请输入新名称' }]} />
+                onFinish={async (values) => { if (!state.renamingFile) return false; try { await api.rename(state.renamingFile.id, { name: values.name }); message.success(intl.formatMessage({ id: 'pages.cloudStorage.message.renameSuccess' })); set({ renameVisible: false, renamingFile: null }); actionRef.current?.reload(); return true; } catch { message.error(intl.formatMessage({ id: 'pages.cloudStorage.message.renameFailed' })); return false; } }} autoFocusFirstInput width={400}>
+                <ProFormText name="name" label={intl.formatMessage({ id: 'pages.cloudStorage.form.fileName' })} placeholder={intl.formatMessage({ id: 'pages.cloudStorage.form.fileNamePlaceholder' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.cloudStorage.form.fileNamePlaceholder' }) }]} />
             </ModalForm>
 
             {/* 分享 */}
             <ModalForm key={state.sharingFile?.id || 'share'} title={intl.formatMessage({ id: 'pages.cloud-storage.files.action.share' })} open={state.shareVisible} onOpenChange={(open) => { if (!open) set({ shareVisible: false, sharingFile: null }); }}
                 onFinish={handleShareSubmit} autoFocusFirstInput width={500}>
-                <ProFormSelect name="shareType" label="分享方式" rules={[{ required: true, message: '请选择分享方式' }]} options={[{ label: '公开链接', value: 'public' }, { label: '内部分享给指定用户', value: 'internal' }]} />
-                <ProFormDatePicker name="expiresAt" label="过期时间" />
-                <ProFormDigit name="maxDownloads" label="下载次数限制" min={1} />
-                {state.userOptions.length > 0 && <ProFormSelect name="allowedUserIds" label="选择用户" mode="multiple" options={state.userOptions.map(u => ({ label: u.name, value: u.id }))} />}
+                <ProFormSelect name="shareType" label={intl.formatMessage({ id: 'pages.cloudStorage.form.shareType' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.cloudStorage.form.shareTypePlaceholder' }) }]} options={[{ label: intl.formatMessage({ id: 'pages.cloudStorage.form.shareTypePublic' }), value: 'public' }, { label: intl.formatMessage({ id: 'pages.cloudStorage.form.shareTypeInternal' }), value: 'internal' }]} />
+                <ProFormDatePicker name="expiresAt" label={intl.formatMessage({ id: 'pages.cloudStorage.form.expiresAt' })} />
+                <ProFormDigit name="maxDownloads" label={intl.formatMessage({ id: 'pages.cloudStorage.form.maxDownloads' })} min={1} />
+                {state.userOptions.length > 0 && <ProFormSelect name="allowedUserIds" label={intl.formatMessage({ id: 'pages.cloudStorage.form.selectUsers' })} mode="multiple" options={state.userOptions.map(u => ({ label: u.name, value: u.id }))} />}
             </ModalForm>
 
             {/* 上传文件 */}
             <Modal
-                title={state.uploadType === 'folder' ? '上传文件夹' : '上传文件'}
+                title={state.uploadType === 'folder' ? intl.formatMessage({ id: 'pages.cloudStorage.action.uploadFolder' }) : intl.formatMessage({ id: 'pages.cloudStorage.action.uploadFile' })}
                 open={state.uploadVisible}
                 onCancel={() => set({ uploadVisible: false, uploadFileList: [] })}
                 footer={null}
@@ -308,11 +308,11 @@ const CloudStorageFilesPage: React.FC = () => {
                             const response = info.file.response as any;
                             if (response?.success === false) {
                                 const errorMsg = response?.errorCode
-                                    ? intl.formatMessage({ id: response.errorCode, defaultMessage: response.message || `${info.file.name} 上传失败` })
-                                    : (response.message || `${info.file.name} 上传失败`);
+                                    ? intl.formatMessage({ id: response.errorCode, defaultMessage: response.message || `${info.file.name} ${intl.formatMessage({ id: 'pages.cloudStorage.message.uploadFailed' })}` })
+                                    : (response.message || `${info.file.name} ${intl.formatMessage({ id: 'pages.cloudStorage.message.uploadFailed' })}`);
                                 message.error(errorMsg);
                             } else {
-                                message.success(`${info.file.name} 上传成功`);
+                                message.success(`${info.file.name} ${intl.formatMessage({ id: 'pages.cloudStorage.message.uploadSuccess' })}`);
                                 if (info.fileList.every(f => f.status !== 'uploading')) {
                                     set({ uploadVisible: false, uploadFileList: [] });
                                     actionRef.current?.reload();
@@ -321,15 +321,15 @@ const CloudStorageFilesPage: React.FC = () => {
                         } else if (info.file.status === 'error') {
                             const response = info.file.response as any;
                             const errorMsg = response?.errorCode
-                                ? intl.formatMessage({ id: response.errorCode, defaultMessage: response?.message || `${info.file.name} 上传失败` })
-                                : (response?.message || `${info.file.name} 上传失败`);
+                                ? intl.formatMessage({ id: response.errorCode, defaultMessage: response?.message || `${info.file.name} ${intl.formatMessage({ id: 'pages.cloudStorage.message.uploadFailed' })}` })
+                                : (response?.message || `${info.file.name} ${intl.formatMessage({ id: 'pages.cloudStorage.message.uploadFailed' })}`);
                             message.error(errorMsg);
                         }
                     }}
                 >
                     <p className="ant-upload-drag-icon"><InboxOutlined /></p>
-                    <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
-                    <p className="ant-upload-hint">支持单个或多个文件上传</p>
+                    <p className="ant-upload-text">{intl.formatMessage({ id: 'pages.cloudStorage.upload.dragText' })}</p>
+                    <p className="ant-upload-hint">{intl.formatMessage({ id: 'pages.cloudStorage.upload.hint' })}</p>
                 </Upload.Dragger>
             </Modal>
 
@@ -337,32 +337,32 @@ const CloudStorageFilesPage: React.FC = () => {
             {state.detailVisible && state.viewingFile && (
                 <Drawer title={state.viewingFile.name} placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingFile: null, previewUrl: '', officeContent: null, markdownContent: null })} size="large">
                     <ProDescriptions column={1} size="small" bordered>
-                        <ProDescriptions.Item label="名称">{state.viewingFile.name}</ProDescriptions.Item>
-                        <ProDescriptions.Item label="类型">{state.viewingFile.isFolder ? '文件夹' : state.viewingFile.mimeType}</ProDescriptions.Item>
-                        <ProDescriptions.Item label="大小">{state.viewingFile.isFolder ? '-' : formatFileSize(state.viewingFile.size || 0)}</ProDescriptions.Item>
-                        <ProDescriptions.Item label="创建者">{state.viewingFile.createdByName}</ProDescriptions.Item>
-                        <ProDescriptions.Item label="创建时间">{state.viewingFile.createdAt ? dayjs(state.viewingFile.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
-                        <ProDescriptions.Item label="更新时间">{state.viewingFile.updatedAt ? dayjs(state.viewingFile.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+                        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.cloudStorage.detail.name' })}>{state.viewingFile.name}</ProDescriptions.Item>
+                        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.cloudStorage.detail.type' })}>{state.viewingFile.isFolder ? intl.formatMessage({ id: 'pages.cloudStorage.type.folder' }) : state.viewingFile.mimeType}</ProDescriptions.Item>
+                        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.cloudStorage.detail.size' })}>{state.viewingFile.isFolder ? '-' : formatFileSize(state.viewingFile.size || 0)}</ProDescriptions.Item>
+                        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.cloudStorage.detail.creator' })}>{state.viewingFile.createdByName}</ProDescriptions.Item>
+                        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.cloudStorage.detail.createdAt' })}>{state.viewingFile.createdAt ? dayjs(state.viewingFile.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+                        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.cloudStorage.detail.updatedAt' })}>{state.viewingFile.updatedAt ? dayjs(state.viewingFile.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
                     </ProDescriptions>
                     {!state.viewingFile.isFolder && (
                         <>
                             <Space style={{ marginTop: 16 }}>
-                                <Button type="primary" icon={<DownloadOutlined />} onClick={() => handleDownload(state.viewingFile!)}>下载</Button>
-                                <Button icon={<ShareAltOutlined />} onClick={() => set({ shareVisible: true, sharingFile: state.viewingFile })}>分享</Button>
-                                <Button icon={<EyeOutlined />} onClick={handlePreview} disabled={!state.previewUrl && !state.previewLoading} loading={state.previewLoading}>预览</Button>
+                                <Button type="primary" icon={<DownloadOutlined />} onClick={() => handleDownload(state.viewingFile!)}>{intl.formatMessage({ id: 'pages.cloudStorage.action.download' })}</Button>
+                                <Button icon={<ShareAltOutlined />} onClick={() => set({ shareVisible: true, sharingFile: state.viewingFile })}>{intl.formatMessage({ id: 'pages.cloudStorage.action.share' })}</Button>
+                                <Button icon={<EyeOutlined />} onClick={handlePreview} disabled={!state.previewUrl && !state.previewLoading} loading={state.previewLoading}>{intl.formatMessage({ id: 'pages.cloudStorage.action.preview' })}</Button>
                             </Space>
                             {state.versionList.length > 0 && (
-                                <Card title="版本历史" style={{ marginTop: 16 }}>
+                                <Card title={intl.formatMessage({ id: 'pages.cloudStorage.detail.versionHistory' })} style={{ marginTop: 16 }}>
                                     <Space orientation="vertical" style={{ width: '100%' }} size={12}>
                                         {state.versionList.map((v) => (
                                             <div key={v.id} style={{ border: '1px solid #f0f0f0', borderRadius: 8, padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                                                 <div style={{ minWidth: 0, flex: 1 }}>
-                                                    <div style={{ fontWeight: 600 }}>版本 {v.versionNumber ?? v.version}</div>
+                                                    <div style={{ fontWeight: 600 }}>{intl.formatMessage({ id: 'pages.cloudStorage.detail.version' })} {v.versionNumber ?? v.version}</div>
                                                     <div style={{ color: '#666', fontSize: 12 }}>{formatFileSize(v.size)} · {v.createdAt ? dayjs(v.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'} · {v.createdByName || '-'}</div>
                                                 </div>
                                                 <Space size="small" wrap>
-                                                    <Button size="small" onClick={() => handleDownload({ ...state.viewingFile!, id: v.id } as FileItem)}>下载</Button>
-                                                    <Button size="small" type="primary" onClick={async () => { try { await api.restoreVersion(v.fileId, v.versionNumber ?? v.version); message.success('恢复成功'); actionRef.current?.reload(); } catch { message.error('恢复失败'); } }}>恢复</Button>
+                                                    <Button size="small" onClick={() => handleDownload({ ...state.viewingFile!, id: v.id } as FileItem)}>{intl.formatMessage({ id: 'pages.cloudStorage.action.download' })}</Button>
+                                                    <Button size="small" type="primary" onClick={async () => { try { await api.restoreVersion(v.fileId, v.versionNumber ?? v.version); message.success(intl.formatMessage({ id: 'pages.cloudStorage.message.restoreSuccess' })); actionRef.current?.reload(); } catch { message.error(intl.formatMessage({ id: 'pages.cloudStorage.message.restoreFailed' })); } }}>{intl.formatMessage({ id: 'pages.cloudStorage.action.restore' })}</Button>
                                                 </Space>
                                             </div>
                                         ))}

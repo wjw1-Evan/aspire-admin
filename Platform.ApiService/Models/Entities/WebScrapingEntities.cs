@@ -26,6 +26,7 @@ public class WebScrapingTask : MultiTenantEntity
 
     public ScrapingStatus LastStatus { get; set; } = ScrapingStatus.Idle;
     public DateTime? LastRunAt { get; set; }
+    public DateTime? LastHeartbeatAt { get; set; }
     public int? LastDuration { get; set; }
     public string? LastError { get; set; }
     public int TotalPagesCrawled { get; set; }

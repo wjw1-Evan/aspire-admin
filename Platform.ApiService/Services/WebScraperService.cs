@@ -17,18 +17,21 @@ public class WebScraperService : IWebScraperService
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IContentFilterService _contentFilterService;
     private readonly ILogger<WebScraperService> _logger;
+    private readonly IServiceProvider _serviceProvider;
     private static readonly ConcurrentDictionary<string, CancellationTokenSource> _runningTasks = new();
 
     public WebScraperService(
         DbContext context,
         IHttpClientFactory httpClientFactory,
         IContentFilterService contentFilterService,
-        ILogger<WebScraperService> logger)
+        ILogger<WebScraperService> logger,
+        IServiceProvider serviceProvider)
     {
         _context = context;
         _httpClientFactory = httpClientFactory;
         _contentFilterService = contentFilterService;
         _logger = logger;
+        _serviceProvider = serviceProvider;
     }
 
     public async Task<WebScrapingTask> CreateTaskAsync(CreateWebScrapingTaskRequest request, string userId)
@@ -192,6 +195,7 @@ public class WebScraperService : IWebScraperService
 
             var taskCompanyId = task.CompanyId;
             task.LastStatus = ScrapingStatus.Running;
+            task.LastHeartbeatAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
             var startTime = DateTime.UtcNow;
@@ -203,6 +207,9 @@ public class WebScraperService : IWebScraperService
                 Status = ScrapingStatus.Running,
                 CompanyId = taskCompanyId
             };
+
+            var heartbeatCts = new CancellationTokenSource();
+            var heartbeatTask = UpdateHeartbeatAsync(id, taskCompanyId, heartbeatCts.Token);
 
             try
             {
@@ -325,7 +332,6 @@ public class WebScraperService : IWebScraperService
                 task.LastDuration = log.Duration;
                 task.LastError = ex.Message;
 
-                // 失败后必须重新计算下次运行时间，否则 NextRunAt 停留在过去导致每分钟无限重试
                 if (!string.IsNullOrEmpty(task.ScheduleCron))
                 {
                     task.NextRunAt = CronExpressionParser.ParseNext(task.ScheduleCron, DateTime.UtcNow);
@@ -335,6 +341,10 @@ public class WebScraperService : IWebScraperService
                 await _context.SaveChangesAsync();
 
                 return new ScrapeResultDto { Success = false, Message = ex.Message };
+            }
+            finally
+            {
+                heartbeatCts.Cancel();
             }
         }
         finally
@@ -479,6 +489,42 @@ public class WebScraperService : IWebScraperService
         }
 
         await _context.SaveChangesAsync();
+    }
+
+    private async Task UpdateHeartbeatAsync(string taskId, string companyId, CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
+
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<DbContext>();
+                var tenantSetter = scope.ServiceProvider.GetRequiredService<ITenantContextSetter>();
+
+                tenantSetter.SetContext(companyId, null);
+
+                var task = await context.Set<WebScrapingTask>()
+                    .IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(t => t.Id == taskId, cancellationToken);
+
+                if (task != null && task.LastStatus == ScrapingStatus.Running)
+                {
+                    task.LastHeartbeatAt = DateTime.UtcNow;
+                    await context.SaveChangesAsync(cancellationToken);
+                    _logger.LogDebug("[心跳] 任务 {TaskId} 心跳更新", taskId);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[心跳] 更新任务 {TaskId} 心跳失败", taskId);
+            }
+        }
     }
 
     private static CrawlResultDto MapToCrawlResultDto(CrawlResult result)

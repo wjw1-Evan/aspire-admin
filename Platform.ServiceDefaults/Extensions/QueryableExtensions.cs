@@ -33,7 +33,7 @@ public static class QueryableExtensions
             }
         }
 
-        var sortBy = "createdAt";
+        var sortBy = "CreatedAt";
         var sortOrder = "desc";
 
         if (!string.IsNullOrWhiteSpace(request?.Sort))

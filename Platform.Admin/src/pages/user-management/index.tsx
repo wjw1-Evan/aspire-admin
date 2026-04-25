@@ -1,11 +1,12 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer, ProCard, ProDescriptions } from '@ant-design/pro-components';
 import { useIntl, request } from '@umijs/max';
 import { App, Button, Tag, Space, Modal, Badge, Spin, Input, Typography, Popconfirm, Tabs, Grid } from 'antd';
 import { Drawer } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormSelect, ProFormSwitch, ProFormTextArea } from '@ant-design/pro-form';
 import { EditOutlined, DeleteOutlined, UserOutlined, CrownOutlined, SearchOutlined, CheckOutlined, CloseOutlined, UserAddOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
 import { ApiResponse, PagedResult } from '@/types';
 import type { Role } from '@/services/role/api';
 
@@ -253,57 +254,73 @@ const UserManagement: React.FC = () => {
         { key: 'pending', label: <span><UserAddOutlined />{intl.formatMessage({ id: 'pages.userManagement.tab.pending' })}{state.joinPagination.total > 0 && <Badge count={state.joinPagination.total} style={{ marginLeft: 8 }} />}</span> },
       ]} />
       {state.activeTab === 'joined' ? (
-        <ProTable
-          actionRef={actionRef}
-          params={{ search: state.search }}
-          request={async (params: any, sort: any, filter: any) => {
-            const res = await api.list({ ...params, sort, filter });
-            return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
-          }}
-          columns={columns}
-          rowKey="id"
-          search={false}
-          scroll={{ x: 'max-content' }}
-          toolBarRender={() => [
-            <Input.Search
-              key="search"
-              placeholder={intl.formatMessage({ id: 'pages.common.search' })}
-              allowClear
-              value={state.search}
-              onChange={(e) => set({ search: e.target.value })}
-              onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
-              style={{ width: 260 }}
-              prefix={<SearchOutlined />}
-            />,
-          ]}
-        />
-      ) : (
-        <Spin spinning={state.joinLoading}>
+        <ProCard>
           <ProTable
-            actionRef={pendingActionRef}
-            request={async (params: any) => {
-              const { current = 1, pageSize = 20 } = params;
-              if (!state.currentCompany?.id) return { data: [], total: 0, success: true };
-              set({ joinLoading: true });
-              const r = await api.joinReqs(state.currentCompany.id, { page: current, pageSize });
-              if (r.success && r.data) {
-                set({ joinData: r.data.queryable || [], joinPagination: { current, pageSize, total: r.data.rowCount }, joinLoading: false });
-                return { data: r.data.queryable || [], total: r.data.rowCount, success: true };
-              }
-              set({ joinLoading: false });
-              return { data: [], total: 0, success: false };
+            actionRef={actionRef}
+            params={{ search: state.search }}
+            request={async (params: any, sort: any, filter: any) => {
+              const res = await api.list({ ...params, sort, filter });
+              return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
             }}
-            columns={pendingColumns}
+            columns={columns}
             rowKey="id"
             search={false}
             scroll={{ x: 'max-content' }}
-            params={{}}
+            headerTitle={
+              <Space size={24}>
+                <Space><UserOutlined />{intl.formatMessage({ id: 'pages.userManagement.title' })}</Space>
+                <Space size={12}>
+                  <Tag color="blue">{intl.formatMessage({ id: 'pages.userManagement.statistics.totalUsers' })} {state.statistics?.totalUsers || 0}</Tag>
+                  <Tag color="green">{intl.formatMessage({ id: 'pages.userManagement.statistics.activeUsers' })} {state.statistics?.activeUsers || 0}</Tag>
+                  <Tag color="orange">{intl.formatMessage({ id: 'pages.userManagement.statistics.adminUsers' })} {state.statistics?.adminUsers || 0}</Tag>
+                  <Tag color="purple">{intl.formatMessage({ id: 'pages.userManagement.statistics.newUsersThisMonth' })} {state.statistics?.newUsersThisMonth || 0}</Tag>
+                </Space>
+              </Space>
+            }
+            toolBarRender={() => [
+              <Input.Search
+                key="search"
+                placeholder={intl.formatMessage({ id: 'pages.common.search' })}
+                allowClear
+                value={state.search}
+                onChange={(e) => set({ search: e.target.value })}
+                onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+                style={{ width: 260 }}
+                prefix={<SearchOutlined />}
+              />,
+            ]}
           />
-        </Spin>
+        </ProCard>
+      ) : (
+        <ProCard>
+          <Spin spinning={state.joinLoading}>
+            <ProTable
+              actionRef={pendingActionRef}
+              request={async (params: any) => {
+                const { current = 1, pageSize = 20 } = params;
+                if (!state.currentCompany?.id) return { data: [], total: 0, success: true };
+                set({ joinLoading: true });
+                const r = await api.joinReqs(state.currentCompany.id, { page: current, pageSize });
+                if (r.success && r.data) {
+                  set({ joinData: r.data.queryable || [], joinPagination: { current, pageSize, total: r.data.rowCount }, joinLoading: false });
+                  return { data: r.data.queryable || [], total: r.data.rowCount, success: true };
+                }
+                set({ joinLoading: false });
+                return { data: [], total: 0, success: false };
+              }}
+              columns={pendingColumns}
+              rowKey="id"
+              search={false}
+              scroll={{ x: 'max-content' }}
+              params={{}}
+            />
+          </Spin>
+        </ProCard>
       )}
 
       <ModalForm
-        title={intl.formatMessage({ id: 'pages.userManagement.form.edit' })}
+        key={state.editingUser?.id || 'edit'}
+        title={state.editingUser ? intl.formatMessage({ id: 'pages.userManagement.form.edit' }) : intl.formatMessage({ id: 'pages.userManagement.form.create' })}
         open={state.formVisible}
         onOpenChange={(open) => { if (!open) set({ formVisible: false, editingUser: null }); }}
         initialValues={state.editingUser ? { roleIds: state.editingUser.roleIds || [], isActive: state.editingUser.isActive, remark: state.editingUser.remark } : { isActive: true }}
@@ -323,7 +340,7 @@ const UserManagement: React.FC = () => {
 
       <Drawer title={intl.formatMessage({ id: 'pages.userManagement.detail.title' })} placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingUser: null })} size="large" destroyOnClose>
         <React.Suspense fallback={<div style={{ textAlign: 'center', padding: '20px' }}><Spin /></div>}>
-          {state.viewingUser && <UserDetail user={state.viewingUser} onClose={() => set({ detailVisible: false, viewingUser: null })} />}
+          {state.viewingUser && <UserDetail user={state.viewingUser} onClose={() => set({ detailVisible: false, viewingUser: null })} isMobile={isMobile} />}
         </React.Suspense>
       </Drawer>
 

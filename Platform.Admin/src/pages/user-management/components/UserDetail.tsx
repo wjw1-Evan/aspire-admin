@@ -16,7 +16,7 @@ import {
   HistoryOutlined,
 } from '@ant-design/icons';
 import { request, useIntl } from '@umijs/max';
-import { ProDescriptions } from '@ant-design/pro-components';
+import { ProDescriptions, ProCard } from '@ant-design/pro-components';
 import { getAllRoles } from '@/services/role/api';
 import type { Role } from '@/services/role/api';
 import type { AppUser, UserActivityLog } from '@/types';
@@ -28,9 +28,10 @@ const { Text } = Typography;
 interface UserDetailProps {
   user: AppUser;
   onClose: () => void;
+  isMobile: boolean;
 }
 
-const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
+const UserDetail: React.FC<UserDetailProps> = ({ user, onClose, isMobile }) => {
   const intl = useIntl();
   const [activityLogs, setActivityLogs] = useState<UserActivityLog[]>([]);
   const [loading, setLoading] = useState(false);
@@ -91,10 +92,11 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
 
   return (
     <div>
-      <ProDescriptions column={1} size="small" title={intl.formatMessage({ id: 'pages.userDetail.basicInfo' })}>
-        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.username' })}>
-            {user.username}
-          </ProDescriptions.Item>
+      <ProCard title={intl.formatMessage({ id: 'pages.userDetail.basicInfo' })} style={{ marginBottom: 16 }}>
+        <ProDescriptions column={isMobile ? 1 : 2} size="small">
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.username' })} span={2}>
+              {user.username}
+            </ProDescriptions.Item>
 
           <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.account.center.name', defaultMessage: 'Name' })}>
             {user.name || '-'}
@@ -112,7 +114,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
             {user.age || '-'}
           </ProDescriptions.Item>
 
-          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.role' })}>
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.role' })} span={2}>
             {!user.roleIds || user.roleIds.length === 0 ? (
               <Tag color="default">{intl.formatMessage({ id: 'pages.table.unassigned' })}</Tag>
             ) : (
@@ -126,7 +128,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
             )}
           </ProDescriptions.Item>
 
-          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.organization' })}>
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.organization' })} span={2}>
             {!user.organizations || user.organizations.length === 0 ? (
               <Text type="secondary">
                 {intl.formatMessage({ id: 'pages.userManagement.organization.empty' })}
@@ -184,6 +186,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
             </ProDescriptions.Item>
           )}
         </ProDescriptions>
+      </ProCard>
 
       <Spin spinning={loading}>
         {activityLogs.length > 0 ? (

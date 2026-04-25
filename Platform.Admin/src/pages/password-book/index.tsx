@@ -76,7 +76,7 @@ const PasswordBook: React.FC = () => {
     { title: intl.formatMessage({ id: 'pages.passwordBook.table.account' }), dataIndex: 'account', key: 'account', sorter: true },
     { title: intl.formatMessage({ id: 'pages.passwordBook.table.url' }), dataIndex: 'url', key: 'url', sorter: true, render: (dom) => dom ? <a href={dom as string} target="_blank">{dom}</a> : '-' },
     { title: intl.formatMessage({ id: 'pages.passwordBook.table.category' }), dataIndex: 'category', key: 'category', sorter: true, render: (dom) => dom ? <Tag color="blue">{dom as string}</Tag> : '-' },
-    { title: intl.formatMessage({ id: 'pages.passwordBook.table.tags' }), dataIndex: 'tags', render: (dom) => dom && typeof dom === 'object' && 'length' in dom ? <Space size={[0, 4]} wrap>{(dom as string[]).map((t) => <Tag key={t}>{t}</Tag>)}</Space> : '-' },
+    { title: intl.formatMessage({ id: 'pages.passwordBook.table.tags' }), dataIndex: 'tags', render: (dom) => dom && typeof dom === 'object' && 'length' in dom && (dom as string[]).length > 0 ? <Space size={[0, 4]} wrap>{(dom as string[]).map((t) => <Tag key={t}>{t}</Tag>)}</Space> : '-' },
     { title: intl.formatMessage({ id: 'pages.passwordBook.table.lastUsedAt' }), dataIndex: 'lastUsedAt', key: 'lastUsedAt', sorter: true, valueType: 'dateTime' },
     {
       title: intl.formatMessage({ id: 'pages.table.action' }), key: 'action', valueType: 'option', fixed: 'right', width: 180, render: (_, r) => (

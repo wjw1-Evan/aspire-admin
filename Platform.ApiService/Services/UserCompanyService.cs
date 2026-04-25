@@ -4,6 +4,7 @@ using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Extensions;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
+using Platform.ApiService.Models.Entities;
 using Platform.ServiceDefaults.Services;
 using System.Linq.Expressions;
 using System.Linq.Dynamic.Core;
@@ -121,6 +122,7 @@ public class UserCompanyService : IUserCompanyService
     private readonly IMenuService _menuService;
     private readonly ITenantContext _tenantContext;
     private readonly IJwtService _jwtService;
+    private readonly INotificationService _notificationService;
     private readonly ILogger<UserCompanyService> _logger;
 
     /// <summary>
@@ -130,11 +132,13 @@ public class UserCompanyService : IUserCompanyService
     /// <param name="menuService">菜单服务</param>
     /// <param name="tenantContext">租户上下文</param>
     /// <param name="jwtService">JWT 服务</param>
+    /// <param name="notificationService">通知服务</param>
     /// <param name="logger">日志记录器</param>
     public UserCompanyService(DbContext context,
         IMenuService menuService,
         ITenantContext tenantContext,
         IJwtService jwtService,
+        INotificationService notificationService,
         ILogger<UserCompanyService> logger
     ) {
         _context = context;
@@ -142,6 +146,7 @@ public class UserCompanyService : IUserCompanyService
         _menuService = menuService;
         _tenantContext = tenantContext;
         _jwtService = jwtService;
+        _notificationService = notificationService;
         _logger = logger;
     }
 
@@ -178,7 +183,43 @@ public class UserCompanyService : IUserCompanyService
 
         await _context.Set<CompanyJoinRequest>().AddAsync(request);
         await _context.SaveChangesAsync();
+
+        await NotifyCompanyAdminsAsync(companyId, userId, company.Name, request.Id!);
+
         return true;
+    }
+
+    /// <summary>
+    /// 通知企业管理员有新申请
+    /// </summary>
+    private async Task NotifyCompanyAdminsAsync(string companyId, string applicantUserId, string companyName, string requestId)
+    {
+        try
+        {
+            var applicant = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == applicantUserId);
+            var applicantName = applicant?.Username ?? applicant?.Email ?? "未知用户";
+
+            var adminMemberships = await _context.Set<UserCompany>()
+                .Where(uc => uc.CompanyId == companyId && uc.IsAdmin == true && uc.Status == "active")
+                .ToListAsync();
+
+            foreach (var admin in adminMemberships)
+            {
+                await _notificationService.PublishAsync(
+                    admin.UserId,
+                    "新的加入企业申请",
+                    $"{applicantName} 申请加入企业 {companyName}",
+                    NotificationCategory.System,
+                    NotificationLevel.Info,
+                    actionUrl: $"/join-requests/pending?companyId={companyId}",
+                    metadata: new Dictionary<string, string> { { "RequestId", requestId } }
+                );
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "发送加入申请通知失败，企业: {CompanyId}", companyId);
+        }
     }
 
     /// <summary>
@@ -514,12 +555,45 @@ public class UserCompanyService : IUserCompanyService
                     ApprovedAt = DateTime.UtcNow
                 };
 
-                await _context.Set<UserCompany>().AddAsync(userCompany);
-        await _context.SaveChangesAsync();
+await _context.Set<UserCompany>().AddAsync(userCompany);
+                await _context.SaveChangesAsync();
             }
         }
 
+        await NotifyApplicantAsync(requestId, request.UserId, request.CompanyId, approved, rejectReason);
+
         return true;
+    }
+
+    /// <summary>
+    /// 通知申请人审核结果
+    /// </summary>
+    private async Task NotifyApplicantAsync(string requestId, string applicantUserId, string companyId, bool approved, string? rejectReason = null)
+    {
+        try
+        {
+            var company = await _context.Set<Company>().FirstOrDefaultAsync(x => x.Id == companyId);
+            var companyName = company?.Name ?? "未知企业";
+
+            var title = approved ? "加入企业申请已通过" : "加入企业申请被拒绝";
+            var content = approved
+                ? $"恭喜！您的加入企业 {companyName} 申请已通过。"
+                : $"很遗憾，您的加入企业 {companyName} 申请被拒绝。" + (string.IsNullOrEmpty(rejectReason) ? "" : $" 原因：{rejectReason}");
+
+            await _notificationService.PublishAsync(
+                applicantUserId,
+                title,
+                content,
+                NotificationCategory.System,
+                NotificationLevel.Info,
+                actionUrl: approved ? "/account/companies" : null,
+                metadata: new Dictionary<string, string> { { "RequestId", requestId }, { "Approved", approved.ToString() } }
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "发送审核结果通知失败，申请: {RequestId}", requestId);
+        }
     }
 
     /// <summary>

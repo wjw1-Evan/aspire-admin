@@ -410,7 +410,7 @@ public class CompanyController : BaseApiController
     /// v3.1: 同意加入申请（管理员）
     /// </summary>
     [HttpPost("join-requests/{requestId}/approve")]
-
+    [RequireMenu("organization")]
     public async Task<IActionResult> ApproveJoinRequest(string requestId, [FromBody] ReviewJoinRequestRequest request)
     {
         // 注意：ReviewJoinRequestAsync 内部会再次验证权限
@@ -422,7 +422,7 @@ public class CompanyController : BaseApiController
     /// v3.1: 拒绝加入申请（管理员）
     /// </summary>
     [HttpPost("join-requests/{requestId}/reject")]
-
+    [RequireMenu("organization")]
     public async Task<IActionResult> RejectJoinRequest(string requestId, [FromBody] ReviewJoinRequestRequest request)
     {
         // 注意：ReviewJoinRequestAsync 内部会再次验证权限

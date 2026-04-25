@@ -1,28 +1,34 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { useIntl, useModel } from '@umijs/max';
-import { request } from '@umijs/max';
 import { Button, Space, App, Modal, Input } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse } from '@/types';
+import { getJoinRequests, approveJoinRequest, rejectJoinRequest } from '@/services/company';
 
 const { TextArea } = Input;
 
 // ==================== Types ====================
 interface JoinRequestDetail {
-  id: string; username: string; userEmail?: string; reason?: string; status: string; createdAt: string; updatedAt?: string;
+  id: string;
+  username?: string;
+  userEmail?: string;
+  reason?: string;
+  status: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 // ==================== API ====================
 const api = {
   list: (companyId: string, params: any) =>
-    request<ApiResponse<JoinRequestDetail[]>>(`/apiservice/api/company/${companyId}/join-requests`, { params: { status: 'pending', ...params } }),
+    getJoinRequests(companyId, 'pending'),
   approve: (id: string) =>
-    request<ApiResponse<string>>(`/apiservice/api/company/join-requests/${id}/approve`, { method: 'POST', data: {} }),
+    approveJoinRequest(id),
   reject: (id: string, data: { rejectReason: string }) =>
-    request<ApiResponse<string>>(`/apiservice/api/company/join-requests/${id}/reject`, { method: 'POST', data }),
+    rejectJoinRequest(id, data),
 };
 
 // ==================== Main ====================
@@ -163,7 +169,7 @@ const PendingJoinRequests: React.FC = () => {
             if (keyword) {
               const kw = keyword.toLowerCase();
               filteredData = res.data.filter(item =>
-                item.username.toLowerCase().includes(kw) ||
+                (item.username && item.username.toLowerCase().includes(kw)) ||
                 (item.reason && item.reason.toLowerCase().includes(kw))
               );
             }

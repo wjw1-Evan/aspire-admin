@@ -157,11 +157,12 @@ export interface ApplyToJoinCompanyRequest {
 }
 
 export interface ReviewJoinRequestRequest {
-  message?: string;
+  defaultRoleIds?: string[];
+  rejectReason?: string;
 }
 
 export interface JoinRequestDetail {
-  id?: string;
+  id: string;
   userId?: string;
   username?: string;
   userEmail?: string;

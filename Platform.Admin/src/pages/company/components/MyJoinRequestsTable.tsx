@@ -1,22 +1,12 @@
 import React, { useCallback } from 'react';
 import { Tag, App, Popconfirm, theme, Button, Space } from 'antd';
-import { request, useIntl } from '@umijs/max';
+import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
-import { cancelJoinRequest } from '@/services/company';
+import { cancelJoinRequest, getMyJoinRequests } from '@/services/company';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { UndoOutlined, TeamOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns } from '@ant-design/pro-table';
-
-
-interface JoinRequestDetail {
-    id: string;
-    companyName: string;
-    status: string;
-    reason?: string;
-    createdAt: string;
-    reviewedByName?: string;
-    rejectReason?: string;
-}
+import type { JoinRequestDetail } from '@/types';
 
 const MyJoinRequestsTable: React.FC = () => {
     const intl = useIntl();
@@ -123,11 +113,8 @@ const MyJoinRequestsTable: React.FC = () => {
             rowKey="id"
             search={false}
             request={async (params: any) => {
-                const { current, pageSize, ...rest } = params;
-                const result = await request('/apiservice/api/company/my-join-requests', {
-                    params: { page: current, pageSize, ...rest },
-                });
-                if (result.data) {
+                const result = await getMyJoinRequests();
+                if (result.success && result.data) {
                     const data = result.data || [];
                     return { data, total: data.length || 0, success: true };
                 }

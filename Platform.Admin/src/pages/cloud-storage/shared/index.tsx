@@ -8,6 +8,7 @@ import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import { request } from '@umijs/max';
 import { ApiResponse, PagedResult } from '@/types';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 interface FileShare { id: string; fileId: string; fileName: string; shareToken: string; shareType: 'internal' | 'external'; accessType: 'view' | 'download' | 'edit'; password: string; expiresAt?: string; maxDownloads?: number; isEnabled: boolean; createdAt: string; createdBy?: string; createdByName?: string; }
 
@@ -32,10 +33,10 @@ const CloudStorageSharedPage: React.FC = () => {
 
     const handleEditSave = async (values: any) => {
         try {
-            await api.update(editingShare!.id, { ...values, expiresAt: values.expiresAt ? dayjs(values.expiresAt).toISOString() : undefined });
-            message.success('更新成功');
-            return true;
-        } catch { message.error('更新失败'); return false; }
+            const res = await api.update(editingShare!.id, { ...values, expiresAt: values.expiresAt ? dayjs(values.expiresAt).toISOString() : undefined });
+            if (res.success) { message.success('更新成功'); return true; }
+            else { message.error(getErrorMessage(res, 'pages.cloudStorage.share.updateFailed')); return false; }
+        } catch (err) { message.error(getErrorMessage(err as any, 'pages.cloudStorage.share.updateFailed')); return false; }
     };
 
     const mapShareType = (type: any): 'internal' | 'external' => {
@@ -83,8 +84,8 @@ const CloudStorageSharedPage: React.FC = () => {
                         message.success('分享链接已复制');
                     }}>复制链接</Button>
                     <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleOpenModal(r)}>编辑</Button>
-                    <Button type="link" size="small" icon={r.isEnabled ? <LockOutlined /> : <UnlockOutlined />} onClick={async () => { try { await api.update(r.id, { isEnabled: !r.isEnabled }); message.success(`${r.isEnabled ? '禁用' : '启用'}成功`); } catch { message.error('操作失败'); } }}>{r.isEnabled ? '禁用' : '启用'}</Button>
-                    <Popconfirm title={`确定删除分享「${r.fileName}」？`} onConfirm={async () => { try { await api.delete(r.id); message.success('删除成功'); } catch { message.error('删除失败'); } }}>
+                    <Button type="link" size="small" icon={r.isEnabled ? <LockOutlined /> : <UnlockOutlined />} onClick={async () => { try { const res = await api.update(r.id, { isEnabled: !r.isEnabled }); if (res.success) { message.success(`${r.isEnabled ? '禁用' : '启用'}成功`); } else { message.error(getErrorMessage(res, 'pages.cloudStorage.share.toggleFailed')); } } catch (err) { message.error(getErrorMessage(err as any, 'pages.cloudStorage.share.toggleFailed')); } }}>{r.isEnabled ? '禁用' : '启用'}</Button>
+                    <Popconfirm title={`确定删除分享「${r.fileName}」？`} onConfirm={async () => { try { const res = await api.delete(r.id); if (res.success) { message.success('删除成功'); } else { message.error(getErrorMessage(res, 'pages.cloudStorage.share.deleteFailed')); } } catch (err) { message.error(getErrorMessage(err as any, 'pages.cloudStorage.share.deleteFailed')); } }}>
                         <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
                     </Popconfirm>
                 </Space>

@@ -9,6 +9,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, SwapOutlined, TeamOutlined,
 import { ProDescriptions } from '@ant-design/pro-components';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult } from '@/types';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 const { Text } = Typography;
 
@@ -52,9 +53,9 @@ const InvestmentManagement: React.FC = () => {
     useEffect(() => { if (state.activeTab === 'leads') leadsActionRef.current?.reload(); else projectsActionRef.current?.reload(); }, [state.activeTab]);
 
     const handleRefresh = () => { api.getStatistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); if (state.activeTab === 'leads') leadsActionRef.current?.reload(); else projectsActionRef.current?.reload(); };
-    const handleDeleteLead = async (id: string) => { const res = await api.deleteLead(id); if (res.success) { message.success('删除成功'); leadsActionRef.current?.reload(); handleRefresh(); } else message.error('删除失败'); };
-    const handleDeleteProject = async (id: string) => { const res = await api.deleteProject(id); if (res.success) { message.success('删除成功'); projectsActionRef.current?.reload(); handleRefresh(); } else message.error('删除失败'); };
-    const handleConvertToProject = async (leadId: string) => { const res = await api.convertLeadToProject(leadId); if (res.success) { message.success('转换成功'); set({ activeTab: 'projects' }); leadsActionRef.current?.reload(); projectsActionRef.current?.reload(); handleRefresh(); } else message.error('转换失败'); };
+    const handleDeleteLead = async (id: string) => { const res = await api.deleteLead(id); if (res.success) { message.success('删除成功'); leadsActionRef.current?.reload(); handleRefresh(); } else { message.error(getErrorMessage(res, 'pages.park.investment.message.deleteFailed')); } };
+    const handleDeleteProject = async (id: string) => { const res = await api.deleteProject(id); if (res.success) { message.success('删除成功'); projectsActionRef.current?.reload(); handleRefresh(); } else { message.error(getErrorMessage(res, 'pages.park.investment.message.deleteFailed')); } };
+    const handleConvertToProject = async (leadId: string) => { const res = await api.convertLeadToProject(leadId); if (res.success) { message.success('转换成功'); set({ activeTab: 'projects' }); leadsActionRef.current?.reload(); projectsActionRef.current?.reload(); handleRefresh(); } else { message.error(getErrorMessage(res, 'pages.park.investment.message.convertFailed')); } };
 
     const leadColumns: ProColumns<InvestmentLead>[] = [
         { title: intl.formatMessage({ id: 'pages.park.investment.lead.company', defaultMessage: '意向企业' }), dataIndex: 'companyName', sorter: true, width: 180, render: (_, record) => (<Space onClick={() => set({ currentLead: record, leadDetailVisible: true })} style={{ cursor: 'pointer', color: '#1890ff' }}><TeamOutlined /><Text strong style={{ color: 'inherit' }}>{record.companyName}</Text></Space>) },

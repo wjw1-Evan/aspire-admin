@@ -8,6 +8,7 @@ import { ModalForm, ProFormSelect, ProFormSwitch, ProFormTextArea } from '@ant-d
 import { EditOutlined, DeleteOutlined, UserOutlined, CrownOutlined, SearchOutlined, CheckOutlined, CloseOutlined, UserAddOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult } from '@/types';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 import type { Role } from '@/services/role/api';
 
 const { useBreakpoint } = Grid;
@@ -192,6 +193,7 @@ const UserManagement: React.FC = () => {
       onOk: async () => {
         const res = await api.del(userId, reason);
         if (res.success) { message.success(intl.formatMessage({ id: 'pages.userManagement.message.removeSuccess' })); loadStatistics(); actionRef.current?.reload(); }
+        else { message.error(getErrorMessage(res, 'pages.userManagement.message.removeFailed')); }
       },
     });
   }, [modal, message, loadStatistics, intl]);
@@ -202,7 +204,7 @@ const UserManagement: React.FC = () => {
       message.success(intl.formatMessage({ id: 'pages.userManagement.message.approved' }));
       actionRef.current?.reload();
       loadStatistics();
-    }
+    } else { message.error(getErrorMessage(res, 'pages.userManagement.message.approveFailed')); }
   }, [message, intl]);
 
   const handleReject = useCallback((id: string) => {
@@ -217,7 +219,7 @@ const UserManagement: React.FC = () => {
       set({ rejectModal: false, rejectId: '', rejectReason: '' });
       actionRef.current?.reload();
       loadStatistics();
-    }
+    } else { message.error(getErrorMessage(res, 'pages.userManagement.message.rejectFailed')); }
   }, [state.rejectId, state.rejectReason, message, set, intl]);
 
   const columns: ProColumns<UnifiedUser>[] = useMemo(() => [
@@ -325,6 +327,7 @@ const UserManagement: React.FC = () => {
           if (!state.editingUser) return false;
           const res = await api.update(state.editingUser.id, { roleIds: values.roleIds || [], isActive: values.isActive, remark: values.remark });
           if (res.success) { message.success(intl.formatMessage({ id: 'pages.userManagement.message.updateSuccess' })); set({ formVisible: false, editingUser: null }); loadStatistics(); actionRef.current?.reload(); }
+          else { message.error(getErrorMessage(res, 'pages.userManagement.message.updateFailed')); return false; }
           return res.success;
         }}
         autoFocusFirstInput

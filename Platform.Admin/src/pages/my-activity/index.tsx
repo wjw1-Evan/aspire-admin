@@ -124,7 +124,7 @@ const LogDetailDrawer: React.FC<{ open: boolean; logId?: string; fetchFromApi?: 
   useEffect(() => {
     if (open && logId && fetchFromApi) {
       setLoading(true);
-      request<ApiResponse<UserActivityLog>>(`/apiservice/api/user-activity-log/${logId}`).then(r => {
+      request<ApiResponse<UserActivityLog>>(`/apiservice/api/users/me/activity-logs/${logId}`).then(r => {
         if (r.success && r.data) setLog(r.data);
       }).finally(() => setLoading(false));
     }

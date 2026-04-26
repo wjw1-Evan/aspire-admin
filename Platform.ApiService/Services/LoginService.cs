@@ -130,22 +130,47 @@ if (user == null)
 
     public async Task<RefreshTokenResult> RefreshTokenAsync(RefreshTokenRequest request, string? ipAddress = null, string? userAgent = null)
     {
+        _logger.LogInformation("[RefreshToken] 开始刷新 token，用户传入的 refreshToken 前10位: {TokenPrefix}", 
+            request.RefreshToken?.Length > 10 ? request.RefreshToken[..10] : request.RefreshToken);
+
         if (string.IsNullOrWhiteSpace(request.RefreshToken))
             throw new ArgumentException("刷新token不能为空");
 
         var principal = _jwtService.ValidateRefreshToken(request.RefreshToken);
         if (principal == null)
+        {
+            _logger.LogWarning("[RefreshToken] JWT 验证失败，用户传入的 refreshToken: {TokenPrefix}", 
+                request.RefreshToken?.Length > 10 ? request.RefreshToken[..10] : request.RefreshToken);
             throw new ArgumentException("无效的刷新token");
+        }
 
         var userId = _jwtService.GetUserIdFromRefreshToken(request.RefreshToken);
+        _logger.LogInformation("[RefreshToken] 从 refreshToken 解析出 userId: {UserId}", userId);
         if (string.IsNullOrEmpty(userId))
             throw new ArgumentException("无法从刷新token中获取用户信息");
 
         System.Linq.Expressions.Expression<Func<RefreshToken, bool>> baseFilter = rt => rt.Token == request.RefreshToken && rt.UserId == userId && rt.IsRevoked == false;
         var existingToken = await _context.Set<RefreshToken>().Where(baseFilter).FirstOrDefaultAsync();
+        _logger.LogInformation("[RefreshToken] 数据库查询结果: {Found}, Token: {TokenPrefix}, IsRevoked: {IsRevoked}", 
+            existingToken != null, 
+            existingToken?.Token?.Length > 10 ? existingToken?.Token?[..10] : existingToken?.Token,
+            existingToken?.IsRevoked);
+        
         if (existingToken == null)
         {
+            _logger.LogWarning("[RefreshToken] 数据库中未找到有效 token，检查是否有旧 token");
+
             var userTokens = await _context.Set<RefreshToken>().Where(rt => rt.UserId == userId && rt.IsRevoked == false).ToListAsync();
+            _logger.LogWarning("[RefreshToken] 用户 {UserId} 当前有效的 token 数量: {Count}", userId, userTokens.Count);
+            
+            foreach (var token in userTokens)
+            {
+                _logger.LogWarning("[RefreshToken] 旧 token: Token={TokenPrefix}, ExpiresAt={ExpiresAt}, IsRevoked={IsRevoked}", 
+                    token.Token?.Length > 10 ? token.Token?[..10] : token.Token,
+                    token.ExpiresAt,
+                    token.IsRevoked);
+            }
+
             if (userTokens.Any())
             {
                 foreach (var rt in userTokens)
@@ -171,7 +196,11 @@ if (user == null)
 
         var user = await _context.Set<AppUser>().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive == true);
         if (user == null)
+        {
+            _logger.LogWarning("[RefreshToken] 用户不存在或已被禁用，userId: {UserId}", userId);
             throw new ArgumentException("用户不存在或已被禁用");
+        }
+        _logger.LogInformation("[RefreshToken] 找到用户: {Username}, 当前企业: {CompanyId}", user.Username, user.CurrentCompanyId);
 
         if (!string.IsNullOrEmpty(request.CompanyId))
         {
@@ -210,6 +239,11 @@ if (user == null)
             RefreshToken = newRefreshToken,
             ExpiresAt = DateTime.UtcNow.AddMinutes(expirationMinutes)
         };
+
+        _logger.LogInformation("[RefreshToken] Token 刷新成功! 新 token 前10位: {TokenPrefix}, 新 refreshToken 前10位: {RefreshTokenPrefix}, 过期时间: {ExpiresAt}", 
+            newToken.Length > 10 ? newToken[..10] : newToken,
+            newRefreshToken.Length > 10 ? newRefreshToken[..10] : newRefreshToken,
+            refreshTokenResult.ExpiresAt);
 
         return refreshTokenResult;
     }

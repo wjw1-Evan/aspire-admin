@@ -42,6 +42,7 @@ public interface IChatBroadcaster
     /// 广播流式消息块（增量内容）
     /// </summary>
     /// <param name="participants">会话参与者列表</param>
+    /// <param name="sessionId">会话标识</param>
     /// <param name="messageId">消息标识</param>
     /// <param name="delta">增量文本内容</param>
     Task BroadcastMessageChunkAsync(List<string> participants, string sessionId, string messageId, string delta);

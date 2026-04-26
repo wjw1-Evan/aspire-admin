@@ -229,7 +229,7 @@ public class JwtService : IJwtService
     public string? GetUserIdFromToken(string token)
     {
         var principal = ValidateToken(token);
-        return principal?.FindFirst("userId")?.Value;
+        return JwtHelper.GetUserId(principal);
     }
 
     /// <summary>
@@ -240,7 +240,7 @@ public class JwtService : IJwtService
     public string? GetUserIdFromRefreshToken(string refreshToken)
     {
         var principal = ValidateRefreshToken(refreshToken);
-        return principal?.FindFirst("userId")?.Value;
+        return JwtHelper.GetUserId(principal);
     }
 
     /// <summary>
@@ -289,6 +289,24 @@ public class JwtService : IJwtService
     public string? GetCompanyIdFromToken(string token)
     {
         var principal = ValidateToken(token);
-        return principal?.FindFirst("companyId")?.Value;
+        return JwtHelper.GetCompanyId(principal);
     }
+}
+
+/// <summary>
+/// JWT Claims 解析辅助方法（静态）
+/// </summary>
+public static class JwtHelper
+{
+    /// <summary>
+    /// 从 ClaimsPrincipal 获取企业ID
+    /// </summary>
+    public static string? GetCompanyId(ClaimsPrincipal? principal)
+        => principal?.FindFirst("companyId")?.Value;
+
+    /// <summary>
+    /// 从 ClaimsPrincipal 获取用户ID
+    /// </summary>
+    public static string? GetUserId(ClaimsPrincipal? principal)
+        => principal?.FindFirst("userId")?.Value;
 }

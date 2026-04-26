@@ -15,8 +15,8 @@ public class TenantContextMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        var userId = GetUserIdFromToken(context.User);
-        var companyId = GetCompanyIdFromToken(context.User);
+        var userId = JwtHelper.GetUserId(context.User);
+        var companyId = JwtHelper.GetCompanyId(context.User);
 
         if (!string.IsNullOrEmpty(companyId))
         {
@@ -24,18 +24,6 @@ public class TenantContextMiddleware
         }
 
         await _next(context);
-    }
-
-    private static string? GetUserIdFromToken(ClaimsPrincipal? user)
-    {
-        if (user == null) return null;
-        return user.FindFirst("userId")?.Value;
-    }
-
-    private static string? GetCompanyIdFromToken(ClaimsPrincipal? user)
-    {
-        if (user == null) return null;
-        return user.FindFirst("companyId")?.Value;
     }
 }
 
@@ -45,4 +33,22 @@ public static class TenantContextMiddlewareExtensions
     {
         return builder.UseMiddleware<TenantContextMiddleware>();
     }
+}
+
+/// <summary>
+/// JWT Claims 解析辅助方法（静态）
+/// </summary>
+public static class JwtHelper
+{
+    /// <summary>
+    /// 从 ClaimsPrincipal 获取企业ID
+    /// </summary>
+    public static string? GetCompanyId(ClaimsPrincipal? principal)
+        => principal?.FindFirst("companyId")?.Value;
+
+    /// <summary>
+    /// 从 ClaimsPrincipal 获取用户ID
+    /// </summary>
+    public static string? GetUserId(ClaimsPrincipal? principal)
+        => principal?.FindFirst("userId")?.Value;
 }

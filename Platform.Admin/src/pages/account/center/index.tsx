@@ -137,7 +137,7 @@ const UserCenter: React.FC = () => {
       }
     } catch (error) {
       hide();
-      message.error('头像上传失败');
+      message.error(getErrorMessage(error as any, 'pages.account.avatar.uploadFailed'));
       console.error('Avatar upload failed:', error);
     }
     e.target.value = '';

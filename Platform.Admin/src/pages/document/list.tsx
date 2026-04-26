@@ -13,6 +13,7 @@ import {
   DocumentStatus,
   submitDocument,
 } from '@/services/document/api';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 import { getWorkflowList } from '@/services/workflow/api';
 
 const documentStatusMap = {
@@ -177,8 +178,8 @@ const DocumentManagement: React.FC = () => {
               return true;
             }
             return false;
-          } catch {
-            message.error('提交失败');
+          } catch (err) {
+            message.error(getErrorMessage(err as any, 'pages.document.submitFailed'));
             return false;
           }
         }}

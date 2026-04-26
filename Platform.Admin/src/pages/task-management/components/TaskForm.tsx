@@ -5,6 +5,8 @@ import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { createTask, updateTask, TaskPriority, getTaskTree, type TaskDto, type CreateTaskRequest, type UpdateTaskRequest } from '@/services/task/api';
 import { getUserList, type AppUser } from '@/services/user/api';
+import { message } from 'antd';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 interface TaskFormProps {
   open?: boolean; task?: TaskDto | null; projects?: { id: string; name: string }[];
@@ -69,11 +71,13 @@ const TaskForm: React.FC<TaskFormProps> = ({
 
       const extendedData = { ...data, ...(values.projectId || projectId ? { projectId: values.projectId || projectId } : {}), ...(values.parentTaskId || parentTaskId ? { parentTaskId: values.parentTaskId || parentTaskId } : {}), ...(values.sortOrder !== undefined ? { sortOrder: values.sortOrder } : {}), ...(values.duration !== undefined ? { duration: values.duration } : {}) } as CreateTaskRequest;
 
-      if (task?.id) { await updateTask({ taskId: task.id, ...extendedData }); }
-      else { await createTask(extendedData); }
-      onSuccess?.();
-      return true;
-    } catch (error) { console.error('提交表单错误:', error); return false; }
+      let res;
+      if (task?.id) { res = await updateTask({ taskId: task.id, ...extendedData }); }
+      else { res = await createTask(extendedData); }
+      
+      if (res.success) { onSuccess?.(); return true; }
+      else { message.error(getErrorMessage(res, 'pages.taskManagement.message.submitFailed')); return false; }
+    } catch (error) { console.error('提交表单错误:', error); message.error('操作失败'); return false; }
     finally { setLoading(false); }
   };
 

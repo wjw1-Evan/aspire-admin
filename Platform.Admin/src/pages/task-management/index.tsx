@@ -10,6 +10,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined, Reload
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult } from '@/types';
 import { getTaskStatusColor, getTaskPriorityColor } from '@/utils/task';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 import { getTaskById, getTaskExecutionLogs, TaskStatus as TaskStatusEnum, type TaskDto, type TaskExecutionLogDto } from '@/services/task/api';
 import { getProjectList } from '@/services/task/project';
 
@@ -182,11 +183,11 @@ const TaskManagement: React.FC = () => {
           <>
             <Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={() => set({ viewingTask: r, executionVisible: true })}>{intl.formatMessage({ id: 'pages.taskManagement.action.execute' })}</Button>
             <Button type="link" size="small" icon={<StopOutlined />} onClick={() => {
-              Modal.confirm({ title: intl.formatMessage({ id: 'pages.taskManagement.action.cancel' }), content: intl.formatMessage({ id: 'pages.taskManagement.message.confirmCancel' }), onOk: () => api.cancel(r.id || '').then(res => { if (res.success) { message.success(intl.formatMessage({ id: 'pages.taskManagement.message.cancelSuccess' })); actionRef.current?.reload(); loadStatistics(); } }) });
+              Modal.confirm({ title: intl.formatMessage({ id: 'pages.taskManagement.action.cancel' }), content: intl.formatMessage({ id: 'pages.taskManagement.message.confirmCancel' }), onOk: () => api.cancel(r.id || '').then(res => { if (res.success) { message.success(intl.formatMessage({ id: 'pages.taskManagement.message.cancelSuccess' })); actionRef.current?.reload(); loadStatistics(); } else { message.error(getErrorMessage(res, 'pages.taskManagement.message.cancelFailed')); } }) });
             }}>{intl.formatMessage({ id: 'pages.taskManagement.action.cancel' })}</Button>
           </>
         )}
-        <Popconfirm title={`确定删除任务「${r.taskName}」？`} onConfirm={() => api.delete(r.id || '').then(res => { if (res.success) { message.success(intl.formatMessage({ id: 'pages.taskManagement.message.deleteSuccess' })); actionRef.current?.reload(); loadStatistics(); } })}>
+        <Popconfirm title={`确定删除任务「${r.taskName}」？`} onConfirm={() => api.delete(r.id || '').then(res => { if (res.success) { message.success(intl.formatMessage({ id: 'pages.taskManagement.message.deleteSuccess' })); actionRef.current?.reload(); loadStatistics(); } else { message.error(getErrorMessage(res, 'pages.taskManagement.message.deleteFailed')); } })}>
           <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.taskManagement.action.delete' })}</Button>
         </Popconfirm>
       </Space>

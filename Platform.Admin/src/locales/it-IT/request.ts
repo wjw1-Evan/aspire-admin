@@ -67,6 +67,7 @@ export default {
   // Utente/Azienda esteso
   'USER_INACTIVE': 'Account utente disabilitato',
   'CANNOT_DELETE_SELF': 'Impossibile eliminare il proprio account',
+  'CANNOT_DELETE_CURRENT_USER': 'Impossibile eliminare l\'utente attualmente connesso',
   'CANNOT_MODIFY_OWN_ROLE': 'Impossibile modificare il proprio ruolo',
   'MAX_USERS_REACHED': 'Numero massimo utenti raggiunto',
   'COMPANY_CODE_EXISTS': 'Codice azienda già esistente',

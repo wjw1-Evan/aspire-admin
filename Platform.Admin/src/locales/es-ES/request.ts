@@ -67,6 +67,7 @@ export default {
   // Usuario/Empresa extendido
   'USER_INACTIVE': 'Cuenta de usuario deshabilitada',
   'CANNOT_DELETE_SELF': 'No puedes eliminar tu propia cuenta',
+  'CANNOT_DELETE_CURRENT_USER': 'No puedes eliminar el usuario actualmente conectado',
   'CANNOT_MODIFY_OWN_ROLE': 'No puedes modificar tu propio rol',
   'MAX_USERS_REACHED': 'Número máximo de usuarios alcanzado',
   'COMPANY_CODE_EXISTS': 'El código de empresa ya existe',

@@ -67,6 +67,7 @@ export default {
     // ── 用户/企业扩展 (User/Company Extended) ──
     'USER_INACTIVE': '用户已被禁用',
     'CANNOT_DELETE_SELF': '不能删除自己的账户',
+    'CANNOT_DELETE_CURRENT_USER': '不能删除当前登录用户',
     'CANNOT_MODIFY_OWN_ROLE': '不能修改自己的角色',
     'MAX_USERS_REACHED': '已达到最大用户数限制',
     'COMPANY_CODE_EXISTS': '企业代码已存在',

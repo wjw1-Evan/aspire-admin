@@ -67,6 +67,7 @@ export default {
   // Kullanıcı/Şirket Genişletilmiş
   'USER_INACTIVE': 'Kullanıcı hesabı devre dışı bırakılmış',
   'CANNOT_DELETE_SELF': 'Kendi hesabınızı silemezsiniz',
+  'CANNOT_DELETE_CURRENT_USER': 'Mevcut oturum açmış kullanıcıyı silemezsiniz',
   'CANNOT_MODIFY_OWN_ROLE': 'Kendi rolünüzü değiştiremezsiniz',
   'MAX_USERS_REACHED': 'Maksimum kullanıcı sayısına ulaşıldı',
   'COMPANY_CODE_EXISTS': 'Şirket kodu zaten mevcut',

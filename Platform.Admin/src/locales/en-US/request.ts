@@ -67,6 +67,7 @@ export default {
     // ── 用户/企业扩展 (User/Company Extended) ──
     'USER_INACTIVE': 'User account has been disabled',
     'CANNOT_DELETE_SELF': 'Cannot delete your own account',
+    'CANNOT_DELETE_CURRENT_USER': 'Cannot delete the current logged-in user',
     'CANNOT_MODIFY_OWN_ROLE': 'Cannot modify your own role',
     'MAX_USERS_REACHED': 'Maximum number of users reached',
     'COMPANY_CODE_EXISTS': 'Company code already exists',

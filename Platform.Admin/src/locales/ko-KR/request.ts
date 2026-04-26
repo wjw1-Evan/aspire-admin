@@ -67,6 +67,7 @@ export default {
   // 사용자/회사 확장 (User/Company Extended)
   'USER_INACTIVE': '사용자 계정이 비활성화됨',
   'CANNOT_DELETE_SELF': '자신의 계정은 삭제할 수 없음',
+  'CANNOT_DELETE_CURRENT_USER': '현재 로그인한 사용자는 삭제할 수 없음',
   'CANNOT_MODIFY_OWN_ROLE': '자신의 역할은 수정할 수 없음',
   'MAX_USERS_REACHED': '최대 사용자 수에 도달함',
   'COMPANY_CODE_EXISTS': '회사 코드가 이미 존재함',

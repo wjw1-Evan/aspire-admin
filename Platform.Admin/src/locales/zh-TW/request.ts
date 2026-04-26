@@ -67,6 +67,7 @@ export default {
     // ── 使用者/企業擴充 (User/Company Extended) ──
     'USER_INACTIVE': '使用者已被停用',
     'CANNOT_DELETE_SELF': '不能刪除自己的帳戶',
+    'CANNOT_DELETE_CURRENT_USER': '不能刪除當前登入用戶',
     'CANNOT_MODIFY_OWN_ROLE': '不能修改自己的角色',
     'MAX_USERS_REACHED': '已达到最大使用者數限制',
     'COMPANY_CODE_EXISTS': '企業代碼已存在',

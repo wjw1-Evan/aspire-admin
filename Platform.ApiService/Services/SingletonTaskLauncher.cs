@@ -70,11 +70,11 @@ public class SingletonTaskLauncher(
         Logger.LogInformation("SendMatchNotificationsAsync 开始查询匹配结果, TaskId={TaskId}", task.Id);
         
         var matchedResults = await context.Set<WebScrapingResult>()
-            .Where(r => r.TaskId == task.Id && r.IsMatched == true)
+            .Where(r => r.TaskId == task.Id && r.IsMatched == true && r.NotificationSentAt == null)
             .OrderByDescending(r => r.RelevanceScore)
             .ToListAsync();
 
-        Logger.LogInformation("任务 {TaskId} 匹配结果数量: {Count}", task.Id, matchedResults.Count);
+        Logger.LogInformation("任务 {TaskId} 未发送通知的匹配结果数量: {Count}", task.Id, matchedResults.Count);
 
         if (!matchedResults.Any()) return;
 
@@ -99,8 +99,11 @@ public class SingletonTaskLauncher(
                 actionUrl: page.Url,
                 metadata: new Dictionary<string, string> { { "TaskId", task.Id ?? "" }, { "ResultId", page.Id ?? "" } }
             );
+
+            page.NotificationSentAt = DateTime.UtcNow;
         }
 
+        await context.SaveChangesAsync();
         Logger.LogInformation("任务 {TaskId} 发现 {Count} 条匹配记录，已通过新版通知系统发送", task.Id, matchedResults.Count);
     }
 }

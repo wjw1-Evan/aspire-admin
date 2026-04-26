@@ -122,4 +122,5 @@ public class WebScrapingResult : MultiTenantEntity
     public bool? IsMatched { get; set; }
     public string? MatchReason { get; set; }
     public double? RelevanceScore { get; set; }
+    public DateTime? NotificationSentAt { get; set; }
 }

@@ -49,6 +49,9 @@ public static class ErrorCode
     /// <summary>无权访问指定菜单</summary>
     public const string MenuAccessDenied = "MENU_ACCESS_DENIED";
 
+    /// <summary>不能删除当前登录用户</summary>
+    public const string CannotDeleteCurrentUser = "CANNOT_DELETE_CURRENT_USER";
+
     /// <summary>菜单访问服务未配置</summary>
     public const string MenuServiceNotConfigured = "MENU_SERVICE_NOT_CONFIGURED";
 
@@ -319,6 +322,7 @@ public static class ErrorCode
         [ViewPermissionDenied] = "无权查看其他用户信息",
         [CurrentCompanyNotFound] = "未找到当前企业信息",
         [MenuAccessDenied] = "无权访问指定菜单",
+        [CannotDeleteCurrentUser] = "不能删除当前登录用户",
         [MenuServiceNotConfigured] = "菜单访问服务未配置",
         [Forbidden] = "禁止访问",
         // 验证

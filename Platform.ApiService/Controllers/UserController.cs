@@ -65,7 +65,7 @@ public class UserController : BaseApiController
     public async Task<IActionResult> DeleteUser(string id, [FromQuery] string? reason = null)
     {
         if (RequiredUserId == id)
-            throw new ArgumentException("不能删除当前登录用户");
+            throw new ArgumentException(ErrorCode.CannotDeleteCurrentUser);
         var deleted = await _userService.DeleteUserAsync(id, reason);
         if (!deleted) throw new KeyNotFoundException("用户不存在");
         return NoContent();

@@ -85,20 +85,23 @@ class TokenRefreshManager {
         };
       }
 
-      const refreshResult = refreshResponse.data;
+      const refreshResult = refreshResponse.data as any;
       if (process.env.NODE_ENV === 'development') {
         console.log('[TokenRefresh] refreshResult:', JSON.stringify(refreshResult));
       }
+      
+      // 兼容 RefreshToken 和 refreshToken 两种字段名（后端返回 RefreshToken）
+      const newRefreshToken = refreshResult.RefreshToken || refreshResult.refreshToken;
       const hasValidTokens =
         refreshResult.status === 'ok' &&
         refreshResult.token &&
-        refreshResult.refreshToken;
+        newRefreshToken;
 
       if (process.env.NODE_ENV === 'development') {
         console.log('[TokenRefresh] hasValidTokens:', hasValidTokens);
         console.log('[TokenRefresh] status:', refreshResult.status);
         console.log('[TokenRefresh] has token:', !!refreshResult.token);
-        console.log('[TokenRefresh] has refreshToken:', !!refreshResult.refreshToken);
+        console.log('[TokenRefresh] has RefreshToken:', !!newRefreshToken);
       }
 
       if (hasValidTokens) {
@@ -112,7 +115,7 @@ class TokenRefreshManager {
 
         tokenUtils.setTokens(
           refreshResult.token as string,
-          refreshResult.refreshToken as string,
+          newRefreshToken as string,
           expiresAt,
         );
 
@@ -125,7 +128,7 @@ class TokenRefreshManager {
         return {
           success: true,
           token: refreshResult.token!,
-          refreshToken: refreshResult.refreshToken!,
+          refreshToken: newRefreshToken!,
           expiresAt,
         };
       }

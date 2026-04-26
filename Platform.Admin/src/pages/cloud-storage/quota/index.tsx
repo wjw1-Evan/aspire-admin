@@ -13,6 +13,7 @@ import dayjs from 'dayjs';
 import { getCurrentCompany } from '@/services/company';
 import { request } from '@umijs/max';
 import { ApiResponse, PagedResult } from '@/types';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 
 
@@ -98,15 +99,10 @@ const CloudStorageQuotaPage: React.FC = () => {
         if (!state.editingQuota) return false;
         try {
             const totalQuota = values.totalQuota !== undefined ? gbToBytes(values.totalQuota) : undefined;
-            await api.updateUserQuota(state.editingQuota.userId, { totalQuota, warningThreshold: values.warningThreshold, isEnabled: values.isEnabled });
-            message.success('更新配额成功');
-            set({ editQuotaVisible: false, editingQuota: null });
-            refreshAll();
-            return true;
-        } catch {
-            message.error('更新配额失败');
-            return false;
-        }
+            const res = await api.updateUserQuota(state.editingQuota.userId, { totalQuota, warningThreshold: values.warningThreshold, isEnabled: values.isEnabled });
+            if (res.success) { message.success('更新配额成功'); set({ editQuotaVisible: false, editingQuota: null }); refreshAll(); return true; }
+            else { message.error(getErrorMessage(res, 'pages.cloudStorage.quota.updateFailed')); return false; }
+        } catch (err) { message.error(getErrorMessage(err as any, 'pages.cloudStorage.quota.updateFailed')); return false; }
     }, [state.editingQuota, message, refreshAll]);
 
     const loadUserOptions = useCallback(async (keyword?: string) => {
@@ -127,18 +123,16 @@ const CloudStorageQuotaPage: React.FC = () => {
             set({ addQuotaVisible: false });
             refreshAll();
             return true;
-        } catch {
-            message.error('新增配额失败');
-            return false;
-        } finally {
+        } catch (err) { message.error(getErrorMessage(err as any, 'pages.cloudStorage.quota.createFailed')); return false; }
+        finally {
             set({ submitLoading: false });
         }
     }, [message, refreshAll, intl]);
 
     const handleDelete = useCallback(async (quota: StorageQuota) => {
         set({ deletingId: quota.userId });
-        try { await api.deleteUserQuota(quota.userId); message.success(intl.formatMessage({ id: 'pages.cloud-storage.quota.message.deleteSuccess' })); refreshAll(); }
-        catch { message.error('删除配额失败'); }
+        try { const res = await api.deleteUserQuota(quota.userId); if (res.success) { message.success(intl.formatMessage({ id: 'pages.cloud-storage.quota.message.deleteSuccess' })); refreshAll(); } else { message.error(getErrorMessage(res, 'pages.cloudStorage.quota.deleteFailed')); } }
+        catch (err) { message.error(getErrorMessage(err as any, 'pages.cloudStorage.quota.deleteFailed')); }
         finally { set({ deletingId: null }); }
     }, [message, refreshAll, intl]);
 

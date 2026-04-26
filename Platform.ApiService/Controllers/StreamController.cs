@@ -59,9 +59,11 @@ public class StreamController : BaseApiController
     {
         // 验证 token
         string? userId = null;
+        string? companyId = null;
         if (!string.IsNullOrWhiteSpace(token))
         {
             userId = _jwtService.GetUserIdFromToken(token);
+            companyId = _jwtService.GetCompanyIdFromToken(token);
         }
         else
         {
@@ -71,6 +73,7 @@ public class StreamController : BaseApiController
             {
                 var bearerToken = authHeader.Substring("Bearer ".Length).Trim();
                 userId = _jwtService.GetUserIdFromToken(bearerToken);
+                companyId = _jwtService.GetCompanyIdFromToken(bearerToken);
             }
         }
 
@@ -95,10 +98,10 @@ public class StreamController : BaseApiController
 
         var connectionId = Guid.NewGuid().ToString();
 
-        try
-        {
-            // 注册用户连接（简化版：直接关联用户ID）
-            await _connectionManager.RegisterUserConnectionAsync(userId, connectionId, Response, cancellationToken);
+try
+            {
+                // 注册用户连接（带企业ID，用于多企业隔离）
+                await _connectionManager.RegisterUserConnectionAsync(userId, connectionId, Response, cancellationToken, companyId);
 
             // 发送连接确认
             var connectedData = new { connectionId, userId };

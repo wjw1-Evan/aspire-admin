@@ -212,7 +212,8 @@ public class UserCompanyService : IUserCompanyService
                     NotificationCategory.System,
                     NotificationLevel.Info,
                     actionUrl: $"/join-requests/pending?companyId={companyId}",
-                    metadata: new Dictionary<string, string> { { "RequestId", requestId } }
+                    metadata: new Dictionary<string, string> { { "RequestId", requestId } },
+                    companyId: companyId
                 );
             }
         }
@@ -587,7 +588,8 @@ await _context.Set<UserCompany>().AddAsync(userCompany);
                 NotificationCategory.System,
                 NotificationLevel.Info,
                 actionUrl: approved ? "/account/companies" : null,
-                metadata: new Dictionary<string, string> { { "RequestId", requestId }, { "Approved", approved.ToString() } }
+                metadata: new Dictionary<string, string> { { "RequestId", requestId }, { "Approved", approved.ToString() } },
+                companyId: companyId
             );
         }
         catch (Exception ex)

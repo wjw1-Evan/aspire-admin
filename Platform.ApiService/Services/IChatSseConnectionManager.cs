@@ -41,14 +41,16 @@ public interface IChatSseConnectionManager
     /// <param name="connectionId">连接ID</param>
     /// <param name="response">HTTP 响应流</param>
     /// <param name="cancellationToken">取消令牌</param>
-    Task RegisterUserConnectionAsync(string userId, string connectionId, HttpResponse response, CancellationToken cancellationToken);
+    /// <param name="companyId">企业ID（可选，用于多企业隔离）</param>
+    Task RegisterUserConnectionAsync(string userId, string connectionId, HttpResponse response, CancellationToken cancellationToken, string? companyId = null);
 
     /// <summary>
-    /// 向用户的所有连接发送消息
+    /// 向用户的所有连接发送消息（仅发送到指定企业的连接）
     /// </summary>
     /// <param name="userId">用户ID</param>
     /// <param name="message">消息内容（已格式化的 SSE 消息）</param>
-    Task SendToUserAsync(string userId, string message);
+    /// <param name="companyId">企业ID（可选，为空时发送到用户所有连接）</param>
+    Task SendToUserAsync(string userId, string message, string? companyId = null);
 
     /// <summary>
     /// 检查用户是否有活跃连接

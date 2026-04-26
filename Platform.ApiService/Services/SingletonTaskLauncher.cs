@@ -97,7 +97,8 @@ public class SingletonTaskLauncher(
                 NotificationCategory.System,
                 NotificationLevel.Info,
                 actionUrl: page.Url,
-                metadata: new Dictionary<string, string> { { "TaskId", task.Id ?? "" }, { "ResultId", page.Id ?? "" } }
+                metadata: new Dictionary<string, string> { { "TaskId", task.Id ?? "" }, { "ResultId", page.Id ?? "" } },
+                companyId: task.CompanyId
             );
 
             page.NotificationSentAt = DateTime.UtcNow;

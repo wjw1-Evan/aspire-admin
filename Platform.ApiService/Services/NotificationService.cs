@@ -17,7 +17,8 @@ public interface INotificationService
         NotificationCategory category = NotificationCategory.System,
         NotificationLevel level = NotificationLevel.Info,
         string? actionUrl = null,
-        Dictionary<string, string>? metadata = null);
+        Dictionary<string, string>? metadata = null,
+        string? companyId = null);
 
     /// <summary>
     /// 获取用户的最新通知（包含已读和未读）
@@ -57,7 +58,7 @@ public interface INotificationService
     /// <summary>
     /// 推送统计更新到 SSE 客户端
     /// </summary>
-    Task PushStatsUpdateAsync(string userId);
+    Task PushStatsUpdateAsync(string userId, string? companyId = null);
 }
 
 public class NotificationService : INotificationService
@@ -80,7 +81,8 @@ public class NotificationService : INotificationService
         NotificationCategory category = NotificationCategory.System,
         NotificationLevel level = NotificationLevel.Info,
         string? actionUrl = null,
-        Dictionary<string, string>? metadata = null)
+        Dictionary<string, string>? metadata = null,
+        string? companyId = null)
     {
         var notification = new AppNotification
         {
@@ -97,17 +99,19 @@ public class NotificationService : INotificationService
         await _context.Set<AppNotification>().AddAsync(notification);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("正在准备向用户推送实时通知. [RecipientId: {UserId}, Title: {Title}]", recipientId, title);
+        _logger.LogInformation("正在准备向用户推送实时通知. [RecipientId: {UserId}, CompanyId: {CompanyId}, Title: {Title}]", 
+            recipientId, companyId, title);
 
-        // SSE 实时推送一个 "notification" 事件给前端
+        // SSE 实时推送一个 "notification" 事件给前端（按企业ID过滤）
         var json = JsonSerializer.Serialize(new { Type = "notification", Notification = notification });
         var sseMessage = $"event: notification\ndata: {json}\n\n";
-        _logger.LogInformation("准备发送通知 SSE 消息: {RecipientId}, messageLength={Length}", recipientId, sseMessage.Length);
-        await _streamManager.SendToUserAsync(recipientId, sseMessage);
-        _logger.LogInformation("通知 SSE 消息已发送: {RecipientId}", recipientId);
+        _logger.LogInformation("准备发送通知 SSE 消息: {RecipientId}, CompanyId={CompanyId}, messageLength={Length}", 
+            recipientId, companyId, sseMessage.Length);
+        await _streamManager.SendToUserAsync(recipientId, sseMessage, companyId);
+        _logger.LogInformation("通知 SSE 消息已发送: {RecipientId}, CompanyId={CompanyId}", recipientId, companyId);
 
-        // 新通知发布后同步推送统计更新
-        await PushStatsUpdateAsync(recipientId);
+        // 新通知发布后同步推送统计更新（按企业ID过滤）
+        await PushStatsUpdateAsync(recipientId, companyId);
     }
 
     public async Task<List<AppNotification>> GetLatestAsync(string userId, int count = 20)
@@ -218,7 +222,7 @@ public class NotificationService : INotificationService
         return count;
     }
 
-    public async Task PushStatsUpdateAsync(string userId)
+    public async Task PushStatsUpdateAsync(string userId, string? companyId = null)
     {
         var hasConnection = _streamManager.HasUserConnection(userId);
         if (!hasConnection)
@@ -230,12 +234,13 @@ public class NotificationService : INotificationService
         var statsData = new { Type = "stats", Statistics = stats };
         var json = JsonSerializer.Serialize(statsData, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
         var sseMessage = $"event: stats\ndata: {json}\n\n";
-        _logger.LogInformation("PushStatsUpdateAsync: 正在推送统计更新, userId={UserId}, stats={Stats}", userId, stats);
+        _logger.LogInformation("PushStatsUpdateAsync: 正在推送统计更新, userId={UserId}, companyId={CompanyId}, stats={Stats}", 
+            userId, companyId, stats);
         
         try
         {
-            await _streamManager.SendToUserAsync(userId, sseMessage);
-            _logger.LogInformation("PushStatsUpdateAsync: 统计更新已发送, userId={UserId}", userId);
+            await _streamManager.SendToUserAsync(userId, sseMessage, companyId);
+            _logger.LogInformation("PushStatsUpdateAsync: 统计更新已发送, userId={UserId}, companyId={CompanyId}", userId, companyId);
         }
         catch (Exception ex)
         {

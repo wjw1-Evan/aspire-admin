@@ -52,6 +52,13 @@ public interface IJwtService
     /// <param name="refreshToken">刷新 Token</param>
     /// <returns>用户ID，如果无效则返回 null</returns>
     string? GetUserIdFromRefreshToken(string refreshToken);
+    
+    /// <summary>
+    /// 从访问 Token 中获取企业ID
+    /// </summary>
+    /// <param name="token">JWT Token</param>
+    /// <returns>企业ID，如果无效则返回 null</returns>
+    string? GetCompanyIdFromToken(string token);
 }
 
 /// <summary>
@@ -272,5 +279,16 @@ public class JwtService : IJwtService
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero
         };
+    }
+
+    /// <summary>
+    /// 从访问 Token 中获取企业ID
+    /// </summary>
+    /// <param name="token">JWT Token</param>
+    /// <returns>企业ID，如果无效则返回 null</returns>
+    public string? GetCompanyIdFromToken(string token)
+    {
+        var principal = ValidateToken(token);
+        return principal?.FindFirst("companyId")?.Value;
     }
 }

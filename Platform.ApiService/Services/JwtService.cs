@@ -1,5 +1,6 @@
 using Microsoft.IdentityModel.Tokens;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Services;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -291,22 +292,4 @@ public class JwtService : IJwtService
         var principal = ValidateToken(token);
         return JwtHelper.GetCompanyId(principal);
     }
-}
-
-/// <summary>
-/// JWT Claims 解析辅助方法（静态）
-/// </summary>
-public static class JwtHelper
-{
-    /// <summary>
-    /// 从 ClaimsPrincipal 获取企业ID
-    /// </summary>
-    public static string? GetCompanyId(ClaimsPrincipal? principal)
-        => principal?.FindFirst("companyId")?.Value;
-
-    /// <summary>
-    /// 从 ClaimsPrincipal 获取用户ID
-    /// </summary>
-    public static string? GetUserId(ClaimsPrincipal? principal)
-        => principal?.FindFirst("userId")?.Value;
 }

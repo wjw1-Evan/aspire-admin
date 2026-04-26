@@ -10,6 +10,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, DesktopOutlined, CheckCircl
 import dayjs from 'dayjs';
 import { iotService, IoTDevice, IoTGateway, DeviceStatistics, GenerateApiKeyResult } from '@/services/iotService';
 import { useModal } from '@/hooks/useModal';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 import DeviceTwinPanel from './DeviceTwinPanel';
 import CommandCenterPanel from './CommandCenterPanel';
 
@@ -105,7 +106,8 @@ const DeviceManagement = React.forwardRef<DeviceManagementRef, any>((props, ref)
     try {
       const res = await iotService.generateApiKey(device.deviceId);
       if (res.success && res.data) set({ apiKeyResult: res.data, apiKeyModalVisible: true });
-    } catch { message.error('生成 ApiKey 失败'); }
+      else { message.error(getErrorMessage(res, 'pages.iotPlatform.device.generateApiKeyFailed')); }
+    } catch (err) { message.error(getErrorMessage(err as any, 'pages.iotPlatform.device.generateApiKeyFailed')); }
     finally { set({ generatingKey: false }); }
   }, []);
 
@@ -131,8 +133,8 @@ const DeviceManagement = React.forwardRef<DeviceManagementRef, any>((props, ref)
             set({ selectedRowKeys: [] });
             actionRef.current?.reload();
             fetchStatistics();
-          }
-        } catch { message.error('批量删除失败'); }
+          } else { message.error(getErrorMessage(res, 'pages.iotPlatform.device.batchDeleteFailed')); }
+        } catch (err) { message.error(getErrorMessage(err as any, 'pages.iotPlatform.device.batchDeleteFailed')); }
         finally { set({ batchDeleting: false }); }
       },
     });

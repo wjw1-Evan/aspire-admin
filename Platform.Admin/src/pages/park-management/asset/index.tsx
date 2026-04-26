@@ -10,6 +10,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, HomeOutlined, 
 import { ProDescriptions } from '@ant-design/pro-components';
 import { ApiResponse, PagedResult } from '@/types';
 import dayjs from 'dayjs';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 const { Text, Title } = Typography;
 
@@ -141,7 +142,7 @@ const AssetManagement: React.FC = () => {
             <Space size={4}>
                 <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => handleViewBuilding(record.id)}>{intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}</Button>
                 <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { setBuilding({ editingBuilding: record, modalVisible: true }); setForm({ attachments: (record.attachments || []).map((url, index) => { const fileName = url.split('/').pop() || 'file'; return { uid: `-${index}`, name: decodeURIComponent(fileName), status: 'done', url }; }) }); }}>{intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}</Button>
-                <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={async () => { const res = await api.deleteBuilding(record.id); if (res.success) { message.success('删除成功'); buildingActionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); } else { message.error('删除失败'); } }}>
+                <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={async () => { const res = await api.deleteBuilding(record.id); if (res.success) { message.success('删除成功'); buildingActionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); } else { message.error(getErrorMessage(res, 'pages.park.asset.deleteFailed')); } }}>
                     <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}</Button>
                 </Popconfirm>
             </Space>
@@ -160,7 +161,7 @@ const AssetManagement: React.FC = () => {
             <Space size={4}>
                 <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => handleViewUnit(record.id)}>{intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}</Button>
                 <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { setUnit({ editingUnit: record, modalVisible: true }); setForm({ attachments: (record.attachments || []).map((url, index) => { const fileName = url.split('/').pop() || 'file'; return { uid: `-${index}`, name: decodeURIComponent(fileName), status: 'done', url }; }) }); }}>{intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}</Button>
-                <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={async () => { const res = await api.deleteUnit(record.id); if (res.success) { message.success('删除成功'); unitActionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); } else { message.error('删除失败'); } }}>
+                <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={async () => { const res = await api.deleteUnit(record.id); if (res.success) { message.success('删除成功'); unitActionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); } else { message.error(getErrorMessage(res, 'pages.park.asset.deleteFailed')); } }}>
                     <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}</Button>
                 </Popconfirm>
             </Space>

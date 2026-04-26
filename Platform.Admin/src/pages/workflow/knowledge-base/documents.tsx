@@ -8,6 +8,7 @@ import { ProTable, ProColumns } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormTextArea, ProFormDigit } from '@ant-design/pro-components';
 import * as kbService from '@/services/workflow/knowledge-base';
 import type { KnowledgeDocument } from '@/services/workflow/knowledge-base';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 import dayjs from 'dayjs';
 
@@ -48,8 +49,8 @@ const KnowledgeBaseDocuments: React.FC = () => {
           if (res.success) {
             message.success('删除成功');
           }
-        } catch {
-          message.error('删除失败');
+        } catch (err) {
+          message.error(getErrorMessage(err as any, 'pages.workflow.knowledgeBase.document.deleteFailed'));
         }
       },
     });
@@ -161,8 +162,8 @@ const KnowledgeBaseDocuments: React.FC = () => {
             }
             message.success(editingDoc ? '更新成功' : '创建成功');
             setIsModalVisible(false);
-          } catch {
-            message.error('操作失败');
+          } catch (err) {
+            message.error(getErrorMessage(err as any, 'pages.workflow.knowledgeBase.document.submitFailed'));
           }
           return true;
         }}

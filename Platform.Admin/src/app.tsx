@@ -557,6 +557,8 @@ async function handle401Error(error: any): Promise<any> {
   const is401Error = error.response?.status === 401;
   if (process.env.NODE_ENV === 'development') {
     console.log('[Auth] 401 error detected, URL:', error.config?.url);
+    console.log('[Auth] Current stored token (first 20):', tokenUtils.getToken()?.substring(0, 20) + '...');
+    console.log('[Auth] Current stored refreshToken (first 20):', tokenUtils.getRefreshToken()?.substring(0, 20) + '...');
   }
   if (!is401Error) {
     return null;
@@ -587,9 +589,13 @@ async function handle401Error(error: any): Promise<any> {
     console.log('[Auth] Attempting to refresh token...');
   }
   const refreshResult = await TokenRefreshManager.refresh(refreshToken);
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[Auth] Refresh result:', refreshResult);
+  }
   if (refreshResult?.success && refreshResult.token) {
     if (process.env.NODE_ENV === 'development') {
       console.log('[Auth] Token refreshed successfully');
+      console.log('[Auth] New token (first 20):', refreshResult.token.substring(0, 20) + '...');
     }
     // 显式保存新的 tokens（TokenRefreshManager.doRefresh 内部也会调用，这里确保一致性）
     tokenUtils.setTokens(
@@ -597,6 +603,9 @@ async function handle401Error(error: any): Promise<any> {
       refreshResult.refreshToken || tokenUtils.getRefreshToken()!,
       refreshResult.expiresAt
     );
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Auth] Tokens saved to storage');
+    }
     return TokenRefreshManager.retryRequest(error.config, refreshResult.token);
   }
   if (process.env.NODE_ENV === 'development') {
@@ -614,6 +623,9 @@ export const request: RequestConfig = {
   requestInterceptors: [
     (config: any) => {
       const token = tokenUtils.getToken();
+      if (process.env.NODE_ENV === 'development' && config.url?.includes('current-user')) {
+        console.log('[RequestInterceptor] Adding token:', token?.substring(0, 20) + '...');
+      }
       if (token) {
         config.headers = {
           ...config.headers,

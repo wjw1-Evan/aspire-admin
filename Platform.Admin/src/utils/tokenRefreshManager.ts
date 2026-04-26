@@ -62,12 +62,23 @@ class TokenRefreshManager {
 
       const refreshResponse = await refreshTokenAPI({ refreshToken });
       if (process.env.NODE_ENV === 'development') {
-        console.log('[TokenRefresh] API response:', JSON.stringify(refreshResponse));
+        console.log('[TokenRefresh] API response success:', refreshResponse.success);
+        console.log('[TokenRefresh] API response data:', JSON.stringify(refreshResponse.data));
       }
 
-      if (!refreshResponse.success || !refreshResponse.data) {
+      if (!refreshResponse.success) {
         if (process.env.NODE_ENV === 'development') {
-          console.log('[TokenRefresh] Failed - no success or no data');
+          console.log('[TokenRefresh] Failed - API success is false');
+          console.log('[TokenRefresh] Error message:', refreshResponse.message);
+        }
+        return {
+          success: false,
+        };
+      }
+
+      if (!refreshResponse.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[TokenRefresh] Failed - no data in response');
         }
         return {
           success: false,
@@ -83,17 +94,33 @@ class TokenRefreshManager {
         refreshResult.token &&
         refreshResult.refreshToken;
 
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[TokenRefresh] hasValidTokens:', hasValidTokens);
+        console.log('[TokenRefresh] status:', refreshResult.status);
+        console.log('[TokenRefresh] has token:', !!refreshResult.token);
+        console.log('[TokenRefresh] has refreshToken:', !!refreshResult.refreshToken);
+      }
+
       if (hasValidTokens) {
         const expiresAt = refreshResult.expiresAt
           ? new Date(refreshResult.expiresAt).getTime()
           : undefined;
 
-        // 保存新的 token (已经在 hasValidTokens 中验证过非空)
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[TokenRefresh] Saving new tokens, expiresAt:', expiresAt);
+        }
+
         tokenUtils.setTokens(
           refreshResult.token as string,
           refreshResult.refreshToken as string,
           expiresAt,
         );
+
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[TokenRefresh] Tokens saved successfully');
+          console.log('[TokenRefresh] New token (first 20 chars):', refreshResult.token?.substring(0, 20) + '...');
+          console.log('[TokenRefresh] Stored token (first 20 chars):', tokenUtils.getToken()?.substring(0, 20) + '...');
+        }
 
         return {
           success: true,

@@ -248,22 +248,22 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
               image={Empty.PRESENTED_IMAGE_SIMPLE}
             />
           </div>
-        ) : (
-          <div style={{ width: '100%' }}>
-<RGL
-            className="dashboard-designer-grid"
-            width={containerWidth || window.innerWidth}
-            layouts={layouts}
-            breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-            cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
-            rowHeight={40}
-            onLayoutChange={(currentLayout: LayoutItem[]) => handleLayoutChange(currentLayout)}
-            isDraggable
-            isResizable
-            compactType="vertical"
-            margin={[12, 12]}
-            containerPadding={[0, 0]}
-          >
+) : (
+          <div ref={containerRef} style={{ width: '100%' }}>
+            <RGL
+              className="dashboard-designer-grid"
+              width={containerWidth > 0 ? containerWidth : window.innerWidth}
+              layouts={layouts}
+              breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+              cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
+              rowHeight={40}
+              onLayoutChange={(currentLayout: LayoutItem[]) => handleLayoutChange(currentLayout)}
+              isDraggable
+              isResizable
+              compactType="vertical"
+              margin={[12, 12]}
+              containerPadding={[0, 0]}
+            >
               {cards.map((card) => (
                 <div
                   key={card.id}
@@ -307,9 +307,9 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
                     </Space>
                   </div>
                 </div>
-              ))}
-            </RGL>
-          </div>
+))}
+          </RGL>
+        </div>
         )}
       </div>
 

@@ -88,8 +88,6 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
         y: c.positionY || 0,
         w: c.width || 4,
         h: c.height || 4,
-        minW: 2,
-        minH: 2,
       }));
       setLayouts({ lg });
     }

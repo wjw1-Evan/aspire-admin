@@ -139,18 +139,18 @@ const DashboardPreview: React.FC<DashboardPreviewProps> = ({ dashboardId, standa
       )}
 
       {/* 看板内容 */}
-      <div ref={gridContainerRef} style={{ padding: 12 }}>
-        {cards.length === 0 ? (
-          <div style={{ textAlign: 'center', paddingTop: 100 }}>
-            <Empty
-              description={<Text style={{ color: 'rgba(255,255,255,0.5)' }}>看板暂无卡片</Text>}
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-            />
-          </div>
-        ) : (
+      {cards.length === 0 ? (
+        <div style={{ textAlign: 'center', paddingTop: 100 }}>
+          <Empty
+            description={<Text style={{ color: 'rgba(255,255,255,0.5)' }}>看板暂无卡片</Text>}
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+          />
+        </div>
+      ) : (
+        <div ref={gridContainerRef} style={{ width: '100%' }}>
           <ResponsiveGridLayout
             className="dashboard-preview-grid"
-            width={gridWidth}
+            width={gridWidth > 0 ? gridWidth : window.innerWidth}
             layouts={layouts}
             breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
             cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
@@ -167,8 +167,8 @@ const DashboardPreview: React.FC<DashboardPreviewProps> = ({ dashboardId, standa
               </div>
             ))}
           </ResponsiveGridLayout>
-        )}
-      </div>
+        </div>
+      )}
 
       <style>{`
         .dashboard-preview-grid .react-grid-item {

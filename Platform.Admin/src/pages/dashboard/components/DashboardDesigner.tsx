@@ -236,7 +236,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
       </div>
 
       {/* 设计画布 */}
-      <div ref={containerRef} style={{
+      <div style={{
         flex: 1, width: '100%', overflow: 'auto', padding: 16,
         background: 'linear-gradient(135deg, #0a1628 0%, #0d2137 50%, #0a1628 100%)',
         minHeight: 500,

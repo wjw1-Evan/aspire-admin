@@ -248,14 +248,13 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
               image={Empty.PRESENTED_IMAGE_SIMPLE}
             />
           </div>
-) : (
+        ) : (
           <div ref={containerRef} style={{ width: '100%' }}>
             <RGL
               className="dashboard-designer-grid"
               width={containerWidth > 0 ? containerWidth : window.innerWidth}
               layout={layouts.lg || []}
               cols={24}
-              rowHeight={40}
               onLayoutChange={(currentLayout: LayoutItem[]) => handleLayoutChange(currentLayout)}
               isDraggable
               isResizable
@@ -306,9 +305,9 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
                     </Space>
                   </div>
                 </div>
-))}
-          </RGL>
-        </div>
+              ))}
+            </RGL>
+          </div>
         )}
       </div>
 

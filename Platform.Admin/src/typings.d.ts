@@ -28,7 +28,7 @@ declare module 'react-grid-layout' {
     width: number;
     layouts?: Record<string, LayoutItem[]>;
     breakpoints?: Record<string, number>;
-    cols?: Record<string, number>;
+    cols?: number | Record<string, number>;
     rowHeight?: number;
     maxRows?: number;
     margin?: [number, number];

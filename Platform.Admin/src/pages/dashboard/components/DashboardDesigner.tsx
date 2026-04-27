@@ -22,24 +22,24 @@ const { Text } = Typography;
 
 /** 默认卡片尺寸（按类型） */
 const DEFAULT_CARD_SIZE: Record<string, { w: number; h: number }> = {
-  header: { w: 12, h: 2 },
-  clock: { w: 4, h: 2 },
-  statusBar: { w: 12, h: 2 },
-  statistic: { w: 3, h: 3 },
-  gauge: { w: 3, h: 4 },
-  ring: { w: 4, h: 5 },
-  pieChart: { w: 4, h: 5 },
-  lineChart: { w: 6, h: 5 },
-  barChart: { w: 6, h: 5 },
-  areaChart: { w: 6, h: 5 },
-  radarChart: { w: 4, h: 5 },
-  statusGrid: { w: 6, h: 6 },
-  functionModule: { w: 4, h: 5 },
-  alertList: { w: 6, h: 5 },
-  progressBar: { w: 4, h: 2 },
-  table: { w: 6, h: 5 },
-  text: { w: 4, h: 3 },
-  image: { w: 4, h: 4 },
+  header: { w: 24, h: 2 },
+  clock: { w: 8, h: 2 },
+  statusBar: { w: 24, h: 2 },
+  statistic: { w: 6, h: 3 },
+  gauge: { w: 6, h: 4 },
+  ring: { w: 8, h: 5 },
+  pieChart: { w: 8, h: 5 },
+  lineChart: { w: 12, h: 5 },
+  barChart: { w: 12, h: 5 },
+  areaChart: { w: 12, h: 5 },
+  radarChart: { w: 8, h: 5 },
+  statusGrid: { w: 12, h: 6 },
+  functionModule: { w: 8, h: 5 },
+  alertList: { w: 12, h: 5 },
+  progressBar: { w: 8, h: 2 },
+  table: { w: 12, h: 5 },
+  text: { w: 8, h: 3 },
+  image: { w: 8, h: 4 },
 };
 
 /** API */
@@ -69,7 +69,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
   const [editingCard, setEditingCard] = useState<DashboardCardDto | null>(null);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
-  const { containerRef, width: containerWidth, mounted } = useContainerWidth({ initialWidth: 1200 });
+  const { containerRef, width: containerWidth, mounted } = useContainerWidth({ initialWidth: window.innerWidth });
 
   // 布局状态
   const [layouts, setLayouts] = useState<Record<string, LayoutItem[]>>({});
@@ -253,9 +253,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
             <RGL
               className="dashboard-designer-grid"
               width={containerWidth > 0 ? containerWidth : window.innerWidth}
-              layouts={layouts}
-              breakpoints={{ lg: 9999, md: 996, sm: 768, xs: 480, xxs: 0 }}
-              cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
+              cols={24}
               rowHeight={40}
               onLayoutChange={(currentLayout: LayoutItem[]) => handleLayoutChange(currentLayout)}
               isDraggable

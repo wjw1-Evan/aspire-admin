@@ -159,7 +159,6 @@ const DashboardPreview: React.FC<DashboardPreviewProps> = ({ dashboardId, layout
             width={gridWidth > 0 ? gridWidth : window.innerWidth}
             layout={layouts.lg || []}
             cols={24}
-            rowHeight={30}
             isDraggable={false}
             isResizable={false}
             compactType="vertical"

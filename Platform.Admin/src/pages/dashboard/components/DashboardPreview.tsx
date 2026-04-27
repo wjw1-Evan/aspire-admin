@@ -3,7 +3,7 @@
  * 全屏展示看板，支持深色主题、自动刷新
  */
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { ResponsiveGridLayout, useContainerWidth } from 'react-grid-layout';
+import { GridLayout as ResponsiveGridLayout, useContainerWidth } from 'react-grid-layout';
 import { Button, Spin, Empty, Typography, Tooltip } from 'antd';
 import { FullscreenExitOutlined, FullscreenOutlined, EditOutlined } from '@ant-design/icons';
 import { request } from '@umijs/max';
@@ -150,6 +150,7 @@ const DashboardPreview: React.FC<DashboardPreviewProps> = ({ dashboardId, standa
           <ResponsiveGridLayout
             className="dashboard-preview-grid"
             width={gridWidth > 0 ? gridWidth : window.innerWidth}
+            layout={layouts.lg || []}
             cols={24}
             rowHeight={40}
             isDraggable={false}

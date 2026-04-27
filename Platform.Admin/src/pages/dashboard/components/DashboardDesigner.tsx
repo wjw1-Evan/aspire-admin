@@ -3,7 +3,7 @@
  * 基于 react-grid-layout 的可视化拖拽看板设计器
  */
 import React, { useState, useCallback, useEffect } from 'react';
-import { ResponsiveGridLayout as RGL, useContainerWidth } from 'react-grid-layout';
+import { GridLayout as RGL, useContainerWidth } from 'react-grid-layout';
 import { Button, Space, message, Tooltip, Popconfirm, Spin, Empty, Typography } from 'antd';
 import {
   PlusOutlined, SaveOutlined, DeleteOutlined,
@@ -253,6 +253,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
             <RGL
               className="dashboard-designer-grid"
               width={containerWidth > 0 ? containerWidth : window.innerWidth}
+              layout={layouts.lg || []}
               cols={24}
               rowHeight={40}
               onLayoutChange={(currentLayout: LayoutItem[]) => handleLayoutChange(currentLayout)}

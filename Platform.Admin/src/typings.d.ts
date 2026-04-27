@@ -42,7 +42,24 @@ declare module 'react-grid-layout' {
     children?: React.ReactNode;
   }
 
+  export interface GridLayoutProps {
+    className?: string;
+    width: number;
+    layout?: LayoutItem[];
+    cols?: number;
+    rowHeight?: number;
+    maxRows?: number;
+    margin?: [number, number];
+    containerPadding?: [number, number] | null;
+    isDraggable?: boolean;
+    isResizable?: boolean;
+    compactType?: 'vertical' | 'horizontal' | null;
+    onLayoutChange?: (layout: LayoutItem[]) => void;
+    children?: React.ReactNode;
+  }
+
   export const ResponsiveGridLayout: React.FC<ResponsiveGridLayoutProps>;
+  export const GridLayout: React.FC<GridLayoutProps>;
 
   export function useContainerWidth(options?: {
     measureBeforeMount?: boolean;

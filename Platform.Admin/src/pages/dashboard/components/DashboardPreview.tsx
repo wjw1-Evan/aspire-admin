@@ -31,7 +31,7 @@ const DashboardPreview: React.FC<DashboardPreviewProps> = ({ dashboardId, standa
   const [loading, setLoading] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { containerRef: gridContainerRef, width: gridWidth } = useContainerWidth({ initialWidth: 1200 });
+  const { containerRef: gridContainerRef, width: gridWidth } = useContainerWidth({ initialWidth: window.innerWidth });
 
   /** 加载看板数据 */
   const loadDashboard = useCallback(async () => {

@@ -302,6 +302,27 @@ export default [
       },
     ],
   },
+  {
+    path: '/dashboard',
+    routes: [
+      {
+        path: '/dashboard',
+        component: './dashboard',
+      },
+      {
+        path: '/dashboard/:id',
+        component: './dashboard/[id]',
+      },
+      {
+        path: '/dashboard/view/:id',
+        component: './dashboard/view/[id]',
+      },
+      {
+        path: '/dashboard/share/:token',
+        component: './dashboard/share/[token]',
+      },
+    ],
+  },
   // 公共分享访问页面（无需布局、无需登录）
   {
     path: '/share/:token',

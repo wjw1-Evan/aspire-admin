@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { request, useIntl, history } from '@umijs/max';
-import { Tag, Space, Button, Popconfirm, Grid, message, Card, Row, Col, Empty, Result, Spin } from 'antd';
+import { Tag, Space, Button, Popconfirm, Grid, message, Card, Row, Col, Empty, Result, Spin, Input } from 'antd';
 import { Drawer } from 'antd';
 import { PageContainer, ProCard, ModalForm, ProDescriptions, ProTable, ProColumns, ActionType, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-components';
 import { PlusOutlined, CopyOutlined, ShareAltOutlined, DeleteOutlined, EditOutlined, EyeOutlined, DashboardOutlined, SearchOutlined } from '@ant-design/icons';
@@ -277,6 +277,16 @@ const DashboardListPage: React.FC = () => {
           search={false}
           scroll={{ x: 'max-content' }}
           toolBarRender={() => [
+            <Input.Search
+              key="search"
+              placeholder={intl.formatMessage({ id: 'pages.common.search' })}
+              allowClear
+              value={state.search}
+              onChange={(e) => set({ search: e.target.value })}
+              onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+              style={{ width: 260, marginRight: 8 }}
+              prefix={<SearchOutlined />}
+            />,
             <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingDashboard: null, formVisible: true })}>
               {intl.formatMessage({ id: 'pages.dashboard.create' })}
             </Button>,

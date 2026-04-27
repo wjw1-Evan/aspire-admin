@@ -1,26 +1,23 @@
 /**
  * 看板设计器
- * 基于 react-grid-layout 的可视化拖拽看板设计器
+ * 基于 Ant Design Splitter 的可视化拖拽看板设计器
  */
 import React, { useState, useCallback, useEffect } from 'react';
-import { ResponsiveGridLayout as RGL, useContainerWidth } from 'react-grid-layout';
+import { Splitter } from 'antd';
 import { Button, Space, message, Tooltip, Popconfirm, Spin, Empty, Typography, Select } from 'antd';
 import {
   PlusOutlined, SaveOutlined, DeleteOutlined,
-  EditOutlined, FullscreenOutlined, CopyOutlined,
+  EditOutlined, FullscreenOutlined, CopyOutlined, HolderOutlined,
 } from '@ant-design/icons';
 import { request } from '@umijs/max';
 import CardRenderer from './CardRenderer';
 import CardConfigForm from './CardConfigForm';
-import type { DashboardCardDto, DashboardDto, LayoutItem } from './types';
+import type { DashboardCardDto, DashboardDto } from './types';
 import type { ApiResponse } from '@/types';
-
-import 'react-grid-layout/css/styles.css';
-import 'react-resizable/css/styles.css';
 
 const { Text } = Typography;
 
-/** 默认卡片尺寸（按类型） */
+/** 默认卡片尺寸 */
 const DEFAULT_CARD_SIZE: Record<string, { w: number; h: number }> = {
   header: { w: 12, h: 2 },
   clock: { w: 4, h: 2 },
@@ -28,18 +25,18 @@ const DEFAULT_CARD_SIZE: Record<string, { w: number; h: number }> = {
   statistic: { w: 3, h: 3 },
   gauge: { w: 3, h: 4 },
   ring: { w: 4, h: 5 },
+  lineChart: { w: 6, h: 4 },
+  barChart: { w: 6, h: 4 },
+  areaChart: { w: 6, h: 4 },
   pieChart: { w: 4, h: 5 },
-  lineChart: { w: 6, h: 5 },
-  barChart: { w: 6, h: 5 },
-  areaChart: { w: 6, h: 5 },
-  radarChart: { w: 4, h: 5 },
-  statusGrid: { w: 6, h: 6 },
-  functionModule: { w: 4, h: 5 },
+  radarChart: { w: 5, h: 5 },
+  statusGrid: { w: 6, h: 4 },
+  functionModule: { w: 6, h: 4 },
   alertList: { w: 6, h: 5 },
   progressBar: { w: 4, h: 2 },
-  table: { w: 6, h: 5 },
   text: { w: 4, h: 3 },
   image: { w: 4, h: 4 },
+  table: { w: 8, h: 5 },
 };
 
 /** API */
@@ -60,6 +57,19 @@ interface DashboardDesignerProps {
   onClose?: () => void;
 }
 
+/** 列数据结构 */
+interface Column {
+  id: string;
+  cardIds: string[];
+}
+
+/** 卡片在列中的位置 */
+interface CardPosition {
+  cardId: string;
+  columnId: string;
+  order: number;
+}
+
 const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPreview, onClose }) => {
   const [dashboard, setDashboard] = useState<DashboardDto | null>(null);
   const [cards, setCards] = useState<DashboardCardDto[]>([]);
@@ -69,22 +79,8 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
   const [editingCard, setEditingCard] = useState<DashboardCardDto | null>(null);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
-  const { containerRef, width: containerWidth, mounted } = useContainerWidth({ initialWidth: 1200 });
-
-  // 布局状态
-  const [layouts, setLayouts] = useState<Record<string, LayoutItem[]>>({});
-
-  /** 根据布局模板计算列数 */
-  const gridCols = React.useMemo(() => {
-    const layoutType = dashboard?.layoutType || 'cols-3';
-    const colsMap: Record<string, number> = {
-      'cols-3': 3,
-      'cols-4': 4,
-      'cols-6': 6,
-      'free': 12,
-    };
-    return colsMap[layoutType] || 12;
-  }, [dashboard?.layoutType]);
+  const [columns, setColumns] = useState<Column[]>([{ id: 'col-1', cardIds: [] }]);
+  const [columnSizes, setColumnSizes] = useState<string>('100%');
 
   /** 加载看板数据 */
   const loadDashboard = useCallback(async () => {
@@ -93,17 +89,6 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
     if (res.success && res.data) {
       setDashboard(res.data);
       setCards(res.data.cards || []);
-      // 从卡片数据生成布局
-      const lg = (res.data.cards || []).map((c: DashboardCardDto): LayoutItem => ({
-        i: c.id,
-        x: c.positionX || 0,
-        y: c.positionY || 0,
-        w: c.width || 4,
-        h: c.height || 4,
-        minW: 2,
-        minH: 2,
-      }));
-      setLayouts({ lg });
     }
     setLoading(false);
   }, [dashboardId]);
@@ -112,23 +97,24 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
     if (dashboardId) loadDashboard();
   }, [dashboardId, loadDashboard]);
 
-  /** 布局变更 */
-  const handleLayoutChange = useCallback((currentLayout: LayoutItem[]) => {
-    setLayouts({ lg: currentLayout });
-    setHasChanges(true);
-  }, []);
-
   /** 保存布局 */
   const handleSave = useCallback(async () => {
     setSaving(true);
-    const lg = layouts.lg || [];
-    const positions = lg.map((item: LayoutItem) => ({
-      cardId: item.i,
-      positionX: item.x,
-      positionY: item.y,
-      width: item.w,
-      height: item.h,
-    }));
+    const positions: { cardId: string; positionX: number; positionY: number; width: number; height: number }[] = [];
+    columns.forEach((col, colIndex) => {
+      col.cardIds.forEach((cardId, cardIndex) => {
+        const card = cards.find(c => c.id === cardId);
+        if (card) {
+          positions.push({
+            cardId,
+            positionX: colIndex,
+            positionY: cardIndex,
+            width: card.width || 4,
+            height: card.height || 4,
+          });
+        }
+      });
+    });
     const res = await api.reorderCards(dashboardId, positions);
     if (res.success) {
       message.success('布局已保存');
@@ -137,12 +123,11 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
       message.error('保存失败');
     }
     setSaving(false);
-  }, [dashboardId, layouts]);
+  }, [dashboardId, columns, cards]);
 
   /** 添加/编辑卡片 */
   const handleCardFinish = useCallback(async (values: { title: string; cardType: string; styleConfig: string; dataSource: string }) => {
     if (editingCard) {
-      // 更新
       const res = await api.updateCard(editingCard.id, {
         title: values.title,
         cardType: values.cardType,
@@ -159,7 +144,6 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
       message.error('更新失败');
       return false;
     } else {
-      // 添加
       const defaultSize = DEFAULT_CARD_SIZE[values.cardType] || { w: 4, h: 4 };
       const res = await api.addCard(dashboardId, {
         title: values.title,
@@ -213,6 +197,34 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
     }
   }, [dashboardId, loadDashboard]);
 
+  /** 添加新列 */
+  const handleAddColumn = useCallback(() => {
+    setColumns(prev => [...prev, { id: `col-${Date.now()}`, cardIds: [] }]);
+    setHasChanges(true);
+  }, []);
+
+  /** 删除列 */
+  const handleDeleteColumn = useCallback((columnId: string) => {
+    if (columns.length <= 1) {
+      message.warning('至少保留一列');
+      return;
+    }
+    setColumns(prev => prev.filter(col => col.id !== columnId));
+    setHasChanges(true);
+  }, [columns]);
+
+  /** 将卡片移动到指定列 */
+  const handleMoveCardToColumn = useCallback((cardId: string, targetColumnId: string) => {
+    setColumns(prev => prev.map(col => {
+      if (col.id === targetColumnId) {
+        if (col.cardIds.includes(cardId)) return col;
+        return { ...col, cardIds: [...col.cardIds, cardId] };
+      }
+      return { ...col, cardIds: col.cardIds.filter(id => id !== cardId) };
+    }));
+    setHasChanges(true);
+  }, []);
+
   if (loading) {
     return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}><Spin size="large" /></div>;
   }
@@ -220,6 +232,15 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
   if (!dashboard) {
     return <Empty description="看板不存在" />;
   }
+
+  /** 根据布局类型生成 Splitter 尺寸 */
+  const getSplitterSizes = () => {
+    const count = columns.length;
+    if (count === 1) return '100%';
+    const base = Math.floor(100 / count);
+    const remainder = 100 - base * count;
+    return columns.map((_, i) => i === 0 ? `${base + remainder}%` : `${base}%`).join(' ');
+  };
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -233,26 +254,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
           {hasChanges && <Text type="warning" style={{ fontSize: 12 }}>（有未保存的布局变更）</Text>}
         </Space>
         <Space>
-          <Select
-            value={dashboard.layoutType || 'cols-3'}
-            onChange={async (value) => {
-              // 更新看板布局类型
-              const res = await request<ApiResponse<void>>(`/apiservice/api/dashboard/${dashboardId}`, {
-                method: 'PUT',
-                data: { layoutType: value },
-              });
-              if (res.success) {
-                setDashboard({ ...dashboard, layoutType: value });
-              }
-            }}
-            options={[
-              { label: '一行3列', value: 'cols-3' },
-              { label: '一行4列', value: 'cols-4' },
-              { label: '一行6列', value: 'cols-6' },
-              { label: '自由布局', value: 'free' },
-            ]}
-            style={{ width: 120 }}
-          />
+          <Button icon={<PlusOutlined />} onClick={handleAddColumn}>添加列</Button>
           <Button icon={<PlusOutlined />} type="primary" onClick={() => { setEditingCard(null); setCardFormOpen(true); }}>
             添加卡片
           </Button>
@@ -267,13 +269,11 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
         </Space>
       </div>
 
-      {/* 设计画布 */}
-      <div ref={containerRef} style={{
-        flex: 1, width: '100%', overflow: 'auto', padding: 16,
-        background: 'linear-gradient(135deg, #0a1628 0%, #0d2137 50%, #0a1628 100%)',
-        minHeight: 500,
+      {/* 画布 - Splitter 多列布局 */}
+      <div style={{
+        flex: 1, overflow: 'hidden', background: 'linear-gradient(135deg, #0a1628 0%, #0d2137 50%, #0a1628 100%)',
       }}>
-        {cards.length === 0 ? (
+        {cards.length === 0 && columns.every(c => c.cardIds.length === 0) ? (
           <div style={{ textAlign: 'center', paddingTop: 100 }}>
             <Empty
               description={<Text style={{ color: 'rgba(255,255,255,0.5)' }}>暂无卡片，点击"添加卡片"开始设计</Text>}
@@ -281,67 +281,100 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
             />
           </div>
         ) : (
-          <div style={{ width: '100%' }}>
-            <RGL
-              className="dashboard-designer-grid"
-              width={containerWidth || window.innerWidth}
-              layouts={layouts}
-              breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-              cols={{ lg: gridCols, md: gridCols, sm: Math.max(gridCols, 2), xs: Math.max(gridCols, 2), xxs: 1 }}
-              rowHeight={40}
-              onLayoutChange={(currentLayout: LayoutItem[]) => handleLayoutChange(currentLayout)}
-              isDraggable
-              isResizable
-              compactType={dashboard?.layoutType === 'free' ? null : 'vertical'}
-              margin={[12, 12]}
-              containerPadding={[0, 0]}
-            >
-              {cards.map((card) => (
-                <div
-                  key={card.id}
-                  style={{
-                    cursor: 'move',
-                    position: 'relative',
-                    borderRadius: 8,
-                    outline: selectedCardId === card.id ? '2px solid #1890ff' : 'none',
-                    outlineOffset: 2,
-                  }}
-                  onClick={() => setSelectedCardId(card.id)}
-                >
-                  {/* 卡片渲染 */}
-                  <CardRenderer card={card} designMode />
-
-                  {/* 悬浮操作栏 */}
-                  <div
-                    className="card-toolbar"
-                    style={{
-                      position: 'absolute', top: 4, right: 4, display: 'none',
-                      background: 'rgba(0,0,0,0.7)', borderRadius: 6, padding: '2px 4px',
-                      zIndex: 10,
-                    }}
-                  >
-                    <Space size={2}>
-                      <Tooltip title="编辑">
-                        <Button type="text" size="small" icon={<EditOutlined style={{ color: '#fff', fontSize: 13 }} />}
-                          onClick={(e) => { e.stopPropagation(); setEditingCard(card); setCardFormOpen(true); }} />
-                      </Tooltip>
-                      <Tooltip title="复制">
-                        <Button type="text" size="small" icon={<CopyOutlined style={{ color: '#fff', fontSize: 13 }} />}
-                          onClick={(e) => { e.stopPropagation(); handleCopyCard(card); }} />
-                      </Tooltip>
-                      <Popconfirm title="确定删除此卡片？" onConfirm={() => handleDeleteCard(card.id)}
-                        onPopupClick={(e) => e.stopPropagation()}>
-                        <Tooltip title="删除">
-                          <Button type="text" size="small" icon={<DeleteOutlined style={{ color: '#ff4d4f', fontSize: 13 }} />}
-                            onClick={(e) => e.stopPropagation()} />
-                        </Tooltip>
-                      </Popconfirm>
+          <Splitter>
+            {columns.map((col, index) => (
+              <Splitter.Panel key={col.id} min={20}>
+                <div style={{
+                  height: '100%', padding: 16, overflowY: 'auto',
+                }}>
+                  <div style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    marginBottom: 12, color: '#e0e6f1',
+                  }}>
+                    <Text style={{ fontSize: 14, fontWeight: 500 }}>列 {index + 1}</Text>
+                    <Space size={4}>
+                      {columns.length > 1 && (
+                        <Button type="text" size="small" danger icon={<DeleteOutlined />}
+                          onClick={() => handleDeleteColumn(col.id)} />
+                      )}
                     </Space>
                   </div>
+
+                  {/* 列中的卡片 */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {col.cardIds.map(cardId => {
+                      const card = cards.find(c => c.id === cardId);
+                      if (!card) return null;
+                      return (
+                        <div
+                          key={card.id}
+                          style={{
+                            cursor: 'move', position: 'relative', borderRadius: 8,
+                            outline: selectedCardId === card.id ? '2px solid #1890ff' : 'none',
+                            outlineOffset: 2,
+                          }}
+                          onClick={() => setSelectedCardId(card.id)}
+                        >
+                          <CardRenderer card={card} designMode />
+
+                          {/* 悬浮操作栏 */}
+                          <div
+                            className="card-toolbar"
+                            style={{
+                              position: 'absolute', top: 4, right: 4, display: 'none',
+                              background: 'rgba(0,0,0,0.7)', borderRadius: 6, padding: '2px 4px',
+                              zIndex: 10,
+                            }}
+                          >
+                            <Space size={2}>
+                              <Tooltip title="编辑">
+                                <Button type="text" size="small" icon={<EditOutlined style={{ color: '#fff', fontSize: 13 }} />}
+                                  onClick={(e) => { e.stopPropagation(); setEditingCard(card); setCardFormOpen(true); }} />
+                              </Tooltip>
+                              <Tooltip title="复制">
+                                <Button type="text" size="small" icon={<CopyOutlined style={{ color: '#fff', fontSize: 13 }} />}
+                                  onClick={(e) => { e.stopPropagation(); handleCopyCard(card); }} />
+                              </Tooltip>
+                              <Popconfirm title="确定删除此卡片？" onConfirm={() => handleDeleteCard(card.id)}
+                                onPopupClick={(e) => e.stopPropagation()}>
+                                <Tooltip title="删除">
+                                  <Button type="text" size="small" icon={<DeleteOutlined style={{ color: '#ff4d4f', fontSize: 13 }} />}
+                                    onClick={(e) => e.stopPropagation()} />
+                                </Tooltip>
+                              </Popconfirm>
+                            </Space>
+                          </div>
+
+                          {/* 移动到其他列的下拉 */}
+                          <div
+                            style={{
+                              position: 'absolute', bottom: 4, left: '50%', transform: 'translateX(-50%)',
+                              display: 'none', background: 'rgba(0,0,0,0.7)', borderRadius: 4, padding: '2px 8px',
+                              zIndex: 10,
+                            }}
+                            className="column-selector"
+                          >
+                            <Select
+                              size="small"
+                              placeholder="移动到"
+                              style={{ width: 100 }}
+                              options={columns
+                                .filter(c => c.id !== col.id)
+                                .map((c, i) => ({ label: `列 ${columns.findIndex(x => x.id === c.id) + 1}`, value: c.id }))}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(value) => {
+                                handleMoveCardToColumn(card.id, value);
+                              }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              ))}
-            </RGL>
-          </div>
+              </Splitter.Panel>
+            ))}
+          </Splitter>
         )}
       </div>
 
@@ -353,18 +386,21 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
         onFinish={handleCardFinish}
       />
 
-      {/* CSS: 悬浮操作栏在hover时显示 */}
+      {/* CSS: 悬浮操作栏和列选择器在hover时显示 */}
       <style>{`
-        .dashboard-designer-grid .react-grid-item:hover .card-toolbar {
+        .dashboard-designer-grid .react-grid-item:hover .card-toolbar,
+        .card-toolbar:hover,
+        .column-selector:hover {
           display: flex !important;
         }
-        .dashboard-designer-grid .react-grid-item > .react-resizable-handle::after {
-          border-color: rgba(255,255,255,0.3) !important;
+        .column-selector {
+          display: none !important;
         }
-        .react-grid-placeholder {
-          background: rgba(0, 212, 255, 0.15) !important;
-          border: 2px dashed rgba(0, 212, 255, 0.4) !important;
-          border-radius: 8px !important;
+        .card-toolbar {
+          display: none !important;
+        }
+        div:hover > .column-selector {
+          display: flex !important;
         }
       `}</style>
     </div>

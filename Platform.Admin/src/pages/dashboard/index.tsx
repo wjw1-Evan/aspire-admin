@@ -70,8 +70,15 @@ const DashboardListPage: React.FC = () => {
     set({ viewingId: id, detailVisible: true });
   };
 
-  const handleEdit = (id: string) => {
-    history.push(`/dashboard/${id}`);
+  const handleEdit = async (id: string) => {
+    try {
+      const res = await api.get(id);
+      if (res.success && res.data) {
+        set({ editingDashboard: res.data, formVisible: true });
+      }
+    } catch (error) {
+      message.error(getErrorMessage(error as any, 'pages.dashboard.loadFailed'));
+    }
   };
 
   const handleCopy = async (id: string) => {

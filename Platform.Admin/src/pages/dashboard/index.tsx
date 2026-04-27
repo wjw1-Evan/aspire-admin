@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { request, useIntl, history } from '@umijs/max';
-import { Tag, Space, Button, Popconfirm, Grid, message } from 'antd';
+import { Tag, Space, Button, Popconfirm, Grid, message, Card, Row, Col, Empty, Result, Spin } from 'antd';
 import { Drawer } from 'antd';
 import { PageContainer, ProCard, ModalForm, ProDescriptions, ProTable, ProColumns, ActionType, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-components';
 import { PlusOutlined, CopyOutlined, ShareAltOutlined, DeleteOutlined, EditOutlined, EyeOutlined, DashboardOutlined, SearchOutlined } from '@ant-design/icons';
@@ -18,8 +18,19 @@ interface Dashboard {
   theme: string;
   isPublic: boolean;
   userId: string;
+  cards: DashboardCard[];
   createdAt?: string;
   updatedAt?: string;
+}
+
+interface DashboardCard {
+  id: string;
+  cardType: string;
+  title: string;
+  positionX: number;
+  positionY: number;
+  width: number;
+  height: number;
 }
 
 interface DashboardStatistics {
@@ -52,6 +63,8 @@ const DashboardListPage: React.FC = () => {
     editingDashboard: null as Dashboard | null,
     formVisible: false,
     detailVisible: false,
+    designVisible: false,
+    designingId: '',
     viewingId: '',
     detailLoading: false,
     search: '' as string,
@@ -71,7 +84,12 @@ const DashboardListPage: React.FC = () => {
   };
 
   const handleDesign = (id: string) => {
-    history.push(`/dashboard/${id}`);
+    set({ designingId: id, designVisible: true });
+  };
+
+  const closeDesign = () => {
+    set({ designingId: '', designVisible: false });
+    loadStatistics();
   };
 
   const handleEdit = async (id: string) => {
@@ -325,6 +343,10 @@ const DashboardListPage: React.FC = () => {
         <Drawer title={intl.formatMessage({ id: 'pages.dashboard.detail' })} placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingId: '' })} size="large">
           <DetailContent id={state.viewingId} isMobile={isMobile} />
         </Drawer>
+
+        <Drawer title={intl.formatMessage({ id: 'pages.dashboard.design' })} size="100%" open={state.designVisible} onClose={closeDesign}>
+          {state.designingId && <DashboardDesigner id={state.designingId} onClose={closeDesign} />}
+        </Drawer>
       </ProCard>
     </PageContainer>
   );
@@ -370,6 +392,88 @@ const DetailContent: React.FC<{ id: string; isMobile: boolean }> = ({ id, isMobi
         {dayjs(dashboard.updatedAt).format('YYYY-MM-DD HH:mm')}
       </ProDescriptions.Item>}
     </ProDescriptions>
+  );
+};
+
+const DashboardDesigner: React.FC<{ id: string; onClose: () => void }> = ({ id }) => {
+  const intl = useIntl();
+  const [dashboard, setDashboard] = useState<Dashboard | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [cardFormVisible, setCardFormVisible] = useState(false);
+  const [editingCard, setEditingCard] = useState<DashboardCard | null>(null);
+
+  const api = {
+    get: (id: string) => request<ApiResponse<Dashboard>>(`/apiservice/api/dashboard/${id}`),
+    addCard: (dashboardId: string, data: Partial<DashboardCard>) => request<ApiResponse<DashboardCard>>(`/apiservice/api/dashboard/${dashboardId}/cards`, { method: 'POST', data }),
+    deleteCard: (cardId: string) => request<ApiResponse<void>>(`/apiservice/api/dashboard/cards/${cardId}`, { method: 'DELETE' }),
+  };
+
+  useEffect(() => { loadDashboard(); }, [id]);
+
+  const loadDashboard = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get(id);
+      if (res.success && res.data) setDashboard(res.data);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  };
+
+  const handleAddCard = async (values: Record<string, any>) => {
+    if (!dashboard) return false;
+    try {
+      const res = await api.addCard(dashboard.id, values);
+      if (res.success) {
+        message.success(intl.formatMessage({ id: 'pages.dashboard.addCardSuccess' }));
+        setCardFormVisible(false);
+        loadDashboard();
+      }
+      return res.success;
+    } catch { return false; }
+  };
+
+  const handleDeleteCard = async (cardId: string) => {
+    try {
+      const res = await api.deleteCard(cardId);
+      if (res.success) message.success(intl.formatMessage({ id: 'pages.dashboard.deleteCardSuccess' }));
+      loadDashboard();
+    } catch {}
+  };
+
+  if (loading) return <div style={{ textAlign: 'center', padding: 100 }}><Spin /></div>;
+  if (!dashboard) return <Result status="404" title={intl.formatMessage({ id: 'pages.dashboard.notFound' })} />;
+
+  return (
+    <div>
+      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
+        <Space>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setCardFormVisible(true)}>{intl.formatMessage({ id: 'pages.dashboard.addCard' })}</Button>
+        </Space>
+      </div>
+      <Row gutter={16}>
+        {dashboard.cards.length === 0 ? (
+          <Col span={24}><Empty description={intl.formatMessage({ id: 'pages.dashboard.noCards' })} /></Col>
+        ) : (
+          dashboard.cards.map(card => (
+            <Col key={card.id} span={card.width} style={{ marginBottom: 16 }}>
+              <Card title={card.title} extra={
+                <Button type="link" size="small" danger onClick={() => handleDeleteCard(card.id)}>{intl.formatMessage({ id: 'pages.dashboard.delete' })}</Button>
+              } style={{ height: card.height }}>
+                <Empty description={intl.formatMessage({ id: 'pages.dashboard.cardPlaceholder' })} />
+              </Card>
+            </Col>
+          ))
+        )}
+      </Row>
+      <ModalForm title={intl.formatMessage({ id: 'pages.dashboard.addCard' })} open={cardFormVisible} onOpenChange={setCardFormVisible} onFinish={handleAddCard} width={600}>
+        <ProFormText name="title" label={intl.formatMessage({ id: 'pages.dashboard.cardTitle' })} rules={[{ required: true }]} />
+        <ProFormSelect name="cardType" label={intl.formatMessage({ id: 'pages.dashboard.cardType' })} options={[
+          { label: intl.formatMessage({ id: 'pages.dashboard.cardTypeStatistic' }), value: 'statistic' },
+          { label: intl.formatMessage({ id: 'pages.dashboard.cardTypeChart' }), value: 'chart' },
+          { label: intl.formatMessage({ id: 'pages.dashboard.cardTypeTable' }), value: 'table' },
+        ]} rules={[{ required: true }]} />
+      </ModalForm>
+    </div>
   );
 };
 

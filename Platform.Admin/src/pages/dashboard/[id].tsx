@@ -45,7 +45,7 @@ const api = {
   deleteCard: (cardId: string) => request<ApiResponse<void>>(`/apiservice/api/dashboard/cards/${cardId}`, { method: 'DELETE' }),
 };
 
-const DashboardEditPage: React.FC = () => {
+const DashboardEditPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
   const intl = getIntl();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -209,7 +209,7 @@ const DashboardEditPage: React.FC = () => {
     <PageContainer>
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Space>
-          <Button icon={<ArrowLeftOutlined />} onClick={() => history.push('/dashboard')}>
+          <Button icon={<ArrowLeftOutlined />} onClick={onClose ? onClose : () => history.push('/dashboard')}>
             {intl.formatMessage({ id: 'pages.dashboard.back' })}
           </Button>
           <Title level={4} style={{ margin: 0 }}>

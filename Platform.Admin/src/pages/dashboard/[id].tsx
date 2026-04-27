@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate } from '@umijs/max';
-import { Space, Typography, Button, message, Spin, Result, Card, Row, Col, Empty } from 'antd';
-import { PlusOutlined, SaveOutlined, ArrowLeftOutlined, SettingOutlined } from '@ant-design/icons';
-import { ProCard, ModalForm, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-components';
+import { useParams, useNavigate, history } from '@umijs/max';
+import { Space, Typography, Button, message, Spin, Result, Card, Row, Col, Empty, Grid } from 'antd';
+import { PlusOutlined, SaveOutlined, ArrowLeftOutlined, SettingOutlined, DashboardOutlined } from '@ant-design/icons';
+import { PageContainer, ModalForm, ProFormText, ProFormSelect, ProFormTextArea, ProCard } from '@ant-design/pro-components';
 import { request } from '@umijs/max';
 import { getIntl } from '@umijs/max';
 import type { ApiResponse } from '@/types';
 
+const { useBreakpoint } = Grid;
 const { Title } = Typography;
 
 interface DashboardCard {
@@ -36,14 +37,25 @@ interface Dashboard {
   updatedAt?: string;
 }
 
-const DashboardDetailPage: React.FC = () => {
+const api = {
+  get: (id: string) => request<ApiResponse<Dashboard>>(`/apiservice/api/dashboard/${id}`),
+  update: (id: string, data: Partial<Dashboard>) => request<ApiResponse<Dashboard>>(`/apiservice/api/dashboard/${id}`, { method: 'PUT', data }),
+  addCard: (dashboardId: string, data: Partial<DashboardCard>) => request<ApiResponse<DashboardCard>>(`/apiservice/api/dashboard/${dashboardId}/cards`, { method: 'POST', data }),
+  updateCard: (cardId: string, data: Partial<DashboardCard>) => request<ApiResponse<DashboardCard>>(`/apiservice/api/dashboard/cards/${cardId}`, { method: 'PUT', data }),
+  deleteCard: (cardId: string) => request<ApiResponse<void>>(`/apiservice/api/dashboard/cards/${cardId}`, { method: 'DELETE' }),
+};
+
+const DashboardEditPage: React.FC = () => {
   const intl = getIntl();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
 
   const [state, setState] = useState({
     loading: true,
     dashboard: null as Dashboard | null,
+    dashboardFormVisible: false,
     cardFormVisible: false,
     editingCard: null as DashboardCard | null,
   });
@@ -56,9 +68,10 @@ const DashboardDetailPage: React.FC = () => {
   }, [id]);
 
   const loadDashboard = async () => {
+    if (!id) return;
     try {
       set({ loading: true });
-      const res = await request<ApiResponse<Dashboard>>(`/apiservice/api/dashboard/${id}`);
+      const res = await api.get(id);
       if (res.success && res.data) {
         set({ dashboard: res.data, loading: false });
       } else {
@@ -70,16 +83,27 @@ const DashboardDetailPage: React.FC = () => {
     }
   };
 
-  const api = {
-    update: (data: Partial<Dashboard>) => request<ApiResponse<Dashboard>>(`/apiservice/api/dashboard/${id}`, { method: 'PUT', data }),
-    addCard: (data: Partial<DashboardCard>) => request<ApiResponse<DashboardCard>>(`/apiservice/api/dashboard/${id}/cards`, { method: 'POST', data }),
-    updateCard: (cardId: string, data: Partial<DashboardCard>) => request<ApiResponse<DashboardCard>>(`/apiservice/api/dashboard/cards/${cardId}`, { method: 'PUT', data }),
-    deleteCard: (cardId: string) => request<ApiResponse<void>>(`/apiservice/api/dashboard/cards/${cardId}`, { method: 'DELETE' }),
+  const handleUpdateDashboard = async (values: Record<string, any>) => {
+    if (!state.dashboard) return false;
+    const data = {
+      name: values.name,
+      description: values.description,
+      layoutType: values.layoutType,
+      theme: values.theme,
+      isPublic: values.isPublic === 'true',
+    };
+    const res = await api.update(state.dashboard.id, data);
+    if (res.success) {
+      set({ dashboardFormVisible: false });
+      loadDashboard();
+    }
+    return res.success;
   };
 
   const handleAddCard = async (values: Record<string, any>) => {
+    if (!state.dashboard) return false;
     try {
-      const res = await api.addCard(values);
+      const res = await api.addCard(state.dashboard.id, values);
       if (res.success) {
         message.success(intl.formatMessage({ id: 'pages.dashboard.addCardSuccess' }));
         set({ cardFormVisible: false, editingCard: null });
@@ -156,36 +180,36 @@ const DashboardDetailPage: React.FC = () => {
 
   if (state.loading) {
     return (
-      <ProCard>
+      <PageContainer>
         <div style={{ textAlign: 'center', padding: '100px 0' }}>
           <Spin size="large" />
         </div>
-      </ProCard>
+      </PageContainer>
     );
   }
 
   if (!state.dashboard) {
     return (
-      <ProCard>
+      <PageContainer>
         <Result
           status="404"
           title={intl.formatMessage({ id: 'pages.dashboard.notFound' })}
           subTitle={intl.formatMessage({ id: 'pages.dashboard.notFoundDesc' })}
           extra={
-            <Button type="primary" onClick={() => navigate('/dashboard')}>
+            <Button type="primary" onClick={() => history.push('/dashboard')}>
               {intl.formatMessage({ id: 'pages.dashboard.backToList' })}
             </Button>
           }
         />
-      </ProCard>
+      </PageContainer>
     );
   }
 
   return (
-    <ProCard>
+    <PageContainer>
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Space>
-          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/dashboard')}>
+          <Button icon={<ArrowLeftOutlined />} onClick={() => history.push('/dashboard')}>
             {intl.formatMessage({ id: 'pages.dashboard.back' })}
           </Button>
           <Title level={4} style={{ margin: 0 }}>
@@ -193,6 +217,12 @@ const DashboardDetailPage: React.FC = () => {
           </Title>
         </Space>
         <Space>
+          <Button
+            icon={<SaveOutlined />}
+            onClick={() => set({ dashboardFormVisible: true })}
+          >
+            {intl.formatMessage({ id: 'pages.dashboard.edit' })}
+          </Button>
           <Button
             type="primary"
             icon={<PlusOutlined />}
@@ -202,6 +232,12 @@ const DashboardDetailPage: React.FC = () => {
           </Button>
         </Space>
       </div>
+
+      {state.dashboard.description && (
+        <div style={{ marginBottom: 16, color: '#666' }}>
+          {state.dashboard.description}
+        </div>
+      )}
 
       {state.dashboard.cards.length === 0 ? (
         <Empty
@@ -227,6 +263,60 @@ const DashboardDetailPage: React.FC = () => {
       )}
 
       <ModalForm
+        key={state.dashboard?.id || 'edit'}
+        title={intl.formatMessage({ id: 'pages.dashboard.edit' })}
+        open={state.dashboardFormVisible}
+        onOpenChange={(open) => { if (!open) set({ dashboardFormVisible: false }); }}
+        initialValues={state.dashboard ? {
+          name: state.dashboard.name,
+          description: state.dashboard.description,
+          layoutType: state.dashboard.layoutType,
+          theme: state.dashboard.theme,
+          isPublic: state.dashboard.isPublic ? 'true' : 'false',
+        } : undefined}
+        onFinish={handleUpdateDashboard}
+        autoFocusFirstInput
+        width={600}
+      >
+        <ProFormText
+          name="name"
+          label={intl.formatMessage({ id: 'pages.dashboard.name' })}
+          rules={[{ required: true, message: intl.formatMessage({ id: 'pages.dashboard.nameRequired' }) }]}
+        />
+        <ProFormTextArea
+          name="description"
+          label={intl.formatMessage({ id: 'pages.dashboard.description' })}
+          fieldProps={{ rows: 3 }}
+        />
+        <ProFormSelect
+          name="layoutType"
+          label={intl.formatMessage({ id: 'pages.dashboard.layoutType' })}
+          options={[
+            { label: intl.formatMessage({ id: 'pages.dashboard.layoutGrid' }), value: 'grid' },
+            { label: intl.formatMessage({ id: 'pages.dashboard.layoutWaterfall' }), value: 'waterfall' },
+            { label: intl.formatMessage({ id: 'pages.dashboard.layoutFree' }), value: 'free' },
+          ]}
+        />
+        <ProFormSelect
+          name="theme"
+          label={intl.formatMessage({ id: 'pages.dashboard.theme' })}
+          options={[
+            { label: intl.formatMessage({ id: 'pages.dashboard.themeLight' }), value: 'light' },
+            { label: intl.formatMessage({ id: 'pages.dashboard.themeDark' }), value: 'dark' },
+            { label: intl.formatMessage({ id: 'pages.dashboard.themeCustom' }), value: 'custom' },
+          ]}
+        />
+        <ProFormSelect
+          name="isPublic"
+          label={intl.formatMessage({ id: 'pages.dashboard.visibility' })}
+          options={[
+            { label: intl.formatMessage({ id: 'pages.dashboard.private' }), value: 'false' },
+            { label: intl.formatMessage({ id: 'pages.dashboard.public' }), value: 'true' },
+          ]}
+        />
+      </ModalForm>
+
+      <ModalForm
         key={state.editingCard?.id || 'create'}
         title={state.editingCard ? intl.formatMessage({ id: 'pages.dashboard.editCard' }) : intl.formatMessage({ id: 'pages.dashboard.addCard' })}
         open={state.cardFormVisible}
@@ -243,6 +333,7 @@ const DashboardDetailPage: React.FC = () => {
           refreshInterval: 300,
         }}
         onFinish={state.editingCard ? handleUpdateCard : handleAddCard}
+        autoFocusFirstInput
         width={600}
       >
         <ProFormSelect
@@ -311,8 +402,8 @@ const DashboardDetailPage: React.FC = () => {
           placeholder={intl.formatMessage({ id: 'pages.dashboard.styleConfigPlaceholder' })}
         />
       </ModalForm>
-    </ProCard>
+    </PageContainer>
   );
 };
 
-export default DashboardDetailPage;
+export default DashboardEditPage;

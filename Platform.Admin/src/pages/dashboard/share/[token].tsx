@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams } from '@umijs/max';
-import { Space, Typography, Button, message, Spin, Result, Card, Row, Col, Empty } from 'antd';
-import { ReloadOutlined } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components';
+import { Space, Typography, Button, message, Spin, Result, Card, Row, Col, Empty, Grid } from 'antd';
+import { ReloadOutlined, DashboardOutlined } from '@ant-design/icons';
+import { PageContainer, ProCard } from '@ant-design/pro-components';
 import { request } from '@umijs/max';
 import { getIntl } from '@umijs/max';
 import type { ApiResponse } from '@/types';
 
+const { useBreakpoint } = Grid;
 const { Title } = Typography;
 
 interface DashboardCard {
@@ -42,9 +43,17 @@ interface CardDataResponse {
   refreshedAt: string;
 }
 
+const api = {
+  getByToken: (token: string) => request<ApiResponse<Dashboard>>(`/apiservice/api/dashboard/share/${token}`),
+  getCardData: (cardId: string) => request<ApiResponse<CardDataResponse>>(`/apiservice/api/dashboard/cards/${cardId}/data`),
+  refreshCardData: (cardId: string) => request<ApiResponse<CardDataResponse>>(`/apiservice/api/dashboard/cards/${cardId}/refresh`, { method: 'POST' }),
+};
+
 const DashboardSharePage: React.FC = () => {
   const intl = getIntl();
   const { token } = useParams<{ token: string }>();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
 
   const [state, setState] = useState({
     loading: true,
@@ -60,9 +69,10 @@ const DashboardSharePage: React.FC = () => {
   }, [token]);
 
   const loadDashboard = async () => {
+    if (!token) return;
     try {
       set({ loading: true });
-      const res = await request<ApiResponse<Dashboard>>(`/apiservice/api/dashboard/share/${token}`);
+      const res = await api.getByToken(token);
       if (res.success && res.data) {
         set({ dashboard: res.data, loading: false });
         loadAllCardsData(res.data.cards);
@@ -83,7 +93,7 @@ const DashboardSharePage: React.FC = () => {
 
   const loadCardData = async (cardId: string) => {
     try {
-      const res = await request<ApiResponse<CardDataResponse>>(`/apiservice/api/dashboard/cards/${cardId}/data`);
+      const res = await api.getCardData(cardId);
       if (res.success && res.data) {
         setState(prev => ({
           ...prev,
@@ -97,7 +107,7 @@ const DashboardSharePage: React.FC = () => {
 
   const handleRefresh = async (cardId: string) => {
     try {
-      const res = await request<ApiResponse<CardDataResponse>>(`/apiservice/api/dashboard/cards/${cardId}/refresh`, { method: 'POST' });
+      const res = await api.refreshCardData(cardId);
       if (res.success && res.data) {
         setState(prev => ({
           ...prev,
@@ -139,7 +149,7 @@ const DashboardSharePage: React.FC = () => {
         <div style={{ height: card.height * 100 - 60, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {cardData ? (
             <div style={{ width: '100%', textAlign: 'center' }}>
-              <pre style={{ textAlign: 'left', maxHeight: '100%', overflow: 'auto' }}>
+              <pre style={{ textAlign: 'left', maxHeight: '100%', overflow: 'auto', fontSize: '12px', fontFamily: 'monospace' }}>
                 {JSON.stringify(cardData.data, null, 2)}
               </pre>
             </div>
@@ -153,28 +163,28 @@ const DashboardSharePage: React.FC = () => {
 
   if (state.loading) {
     return (
-      <ProCard>
+      <PageContainer>
         <div style={{ textAlign: 'center', padding: '100px 0' }}>
           <Spin size="large" />
         </div>
-      </ProCard>
+      </PageContainer>
     );
   }
 
   if (!state.dashboard) {
     return (
-      <ProCard>
+      <PageContainer>
         <Result
           status="404"
           title={intl.formatMessage({ id: 'pages.dashboard.shareNotFound' })}
           subTitle={intl.formatMessage({ id: 'pages.dashboard.shareNotFoundDesc' })}
         />
-      </ProCard>
+      </PageContainer>
     );
   }
 
   return (
-    <ProCard>
+    <PageContainer>
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Space>
           <Title level={4} style={{ margin: 0 }}>
@@ -212,7 +222,7 @@ const DashboardSharePage: React.FC = () => {
           ))}
         </Row>
       )}
-    </ProCard>
+    </PageContainer>
   );
 };
 

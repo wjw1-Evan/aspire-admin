@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate } from '@umijs/max';
-import { Space, Typography, Button, message, Spin, Result, Card, Row, Col, Empty } from 'antd';
-import { ArrowLeftOutlined, ReloadOutlined } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components';
+import { useParams, useNavigate, history } from '@umijs/max';
+import { Space, Typography, Button, message, Spin, Result, Card, Row, Col, Empty, Grid } from 'antd';
+import { ArrowLeftOutlined, ReloadOutlined, DashboardOutlined } from '@ant-design/icons';
+import { PageContainer, ProCard } from '@ant-design/pro-components';
 import { request } from '@umijs/max';
 import { getIntl } from '@umijs/max';
 import type { ApiResponse } from '@/types';
 
+const { useBreakpoint } = Grid;
 const { Title } = Typography;
 
 interface DashboardCard {
@@ -42,10 +43,18 @@ interface CardDataResponse {
   refreshedAt: string;
 }
 
+const api = {
+  get: (id: string) => request<ApiResponse<Dashboard>>(`/apiservice/api/dashboard/${id}`),
+  getCardData: (cardId: string) => request<ApiResponse<CardDataResponse>>(`/apiservice/api/dashboard/cards/${cardId}/data`),
+  refreshCardData: (cardId: string) => request<ApiResponse<CardDataResponse>>(`/apiservice/api/dashboard/cards/${cardId}/refresh`, { method: 'POST' }),
+};
+
 const DashboardViewPage: React.FC = () => {
   const intl = getIntl();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
 
   const [state, setState] = useState({
     loading: true,
@@ -61,9 +70,10 @@ const DashboardViewPage: React.FC = () => {
   }, [id]);
 
   const loadDashboard = async () => {
+    if (!id) return;
     try {
       set({ loading: true });
-      const res = await request<ApiResponse<Dashboard>>(`/apiservice/api/dashboard/${id}`);
+      const res = await api.get(id);
       if (res.success && res.data) {
         set({ dashboard: res.data, loading: false });
         loadAllCardsData(res.data.cards);
@@ -84,7 +94,7 @@ const DashboardViewPage: React.FC = () => {
 
   const loadCardData = async (cardId: string) => {
     try {
-      const res = await request<ApiResponse<CardDataResponse>>(`/apiservice/api/dashboard/cards/${cardId}/data`);
+      const res = await api.getCardData(cardId);
       if (res.success && res.data) {
         setState(prev => ({
           ...prev,
@@ -98,7 +108,7 @@ const DashboardViewPage: React.FC = () => {
 
   const handleRefresh = async (cardId: string) => {
     try {
-      const res = await request<ApiResponse<CardDataResponse>>(`/apiservice/api/dashboard/cards/${cardId}/refresh`, { method: 'POST' });
+      const res = await api.refreshCardData(cardId);
       if (res.success && res.data) {
         setState(prev => ({
           ...prev,
@@ -140,7 +150,7 @@ const DashboardViewPage: React.FC = () => {
         <div style={{ height: card.height * 100 - 60, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {cardData ? (
             <div style={{ width: '100%', textAlign: 'center' }}>
-              <pre style={{ textAlign: 'left', maxHeight: '100%', overflow: 'auto' }}>
+              <pre style={{ textAlign: 'left', maxHeight: '100%', overflow: 'auto', fontSize: '12px', fontFamily: 'monospace' }}>
                 {JSON.stringify(cardData.data, null, 2)}
               </pre>
             </div>
@@ -154,36 +164,36 @@ const DashboardViewPage: React.FC = () => {
 
   if (state.loading) {
     return (
-      <ProCard>
+      <PageContainer>
         <div style={{ textAlign: 'center', padding: '100px 0' }}>
           <Spin size="large" />
         </div>
-      </ProCard>
+      </PageContainer>
     );
   }
 
   if (!state.dashboard) {
     return (
-      <ProCard>
+      <PageContainer>
         <Result
           status="404"
           title={intl.formatMessage({ id: 'pages.dashboard.notFound' })}
           subTitle={intl.formatMessage({ id: 'pages.dashboard.notFoundDesc' })}
           extra={
-            <Button type="primary" onClick={() => navigate('/dashboard')}>
+            <Button type="primary" onClick={() => history.push('/dashboard')}>
               {intl.formatMessage({ id: 'pages.dashboard.backToList' })}
             </Button>
           }
         />
-      </ProCard>
+      </PageContainer>
     );
   }
 
   return (
-    <ProCard>
+    <PageContainer>
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Space>
-          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/dashboard')}>
+          <Button icon={<ArrowLeftOutlined />} onClick={() => history.push('/dashboard')}>
             {intl.formatMessage({ id: 'pages.dashboard.back' })}
           </Button>
           <Title level={4} style={{ margin: 0 }}>
@@ -218,7 +228,7 @@ const DashboardViewPage: React.FC = () => {
           ))}
         </Row>
       )}
-    </ProCard>
+    </PageContainer>
   );
 };
 

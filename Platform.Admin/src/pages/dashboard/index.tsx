@@ -1,11 +1,12 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { request, useIntl, history } from '@umijs/max';
-import { Tag, Space, Button, Popconfirm, Grid } from 'antd';
+import { Tag, Space, Button, Popconfirm, Grid, message } from 'antd';
 import { Drawer } from 'antd';
-import { PageContainer, ModalForm, ProDescriptions, ProTable, ProColumns, ActionType, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-components';
-import { PlusOutlined, CopyOutlined, ShareAltOutlined, DeleteOutlined, EditOutlined, EyeOutlined, DashboardOutlined } from '@ant-design/icons';
+import { PageContainer, ProCard, ModalForm, ProDescriptions, ProTable, ProColumns, ActionType, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-components';
+import { PlusOutlined, CopyOutlined, ShareAltOutlined, DeleteOutlined, EditOutlined, EyeOutlined, DashboardOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult } from '@/types';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 const { useBreakpoint } = Grid;
 
@@ -53,6 +54,7 @@ const DashboardListPage: React.FC = () => {
     detailVisible: false,
     viewingId: '',
     detailLoading: false,
+    search: '' as string,
   });
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
@@ -65,22 +67,30 @@ const DashboardListPage: React.FC = () => {
   useEffect(() => { loadStatistics(); }, [loadStatistics]);
 
   const handleView = (id: string) => {
-    history.push(`/dashboard/view/${id}`);
+    set({ viewingId: id, detailVisible: true });
   };
 
-  const handleEdit = (id: string) => {
-    history.push(`/dashboard/${id}`);
+  const handleEdit = async (id: string) => {
+    try {
+      const res = await api.get(id);
+      if (res.success && res.data) {
+        set({ editingDashboard: res.data, formVisible: true });
+      }
+    } catch (error) {
+      message.error(getErrorMessage(error as any, 'pages.dashboard.loadFailed'));
+    }
   };
 
   const handleCopy = async (id: string) => {
     try {
       const res = await api.copy(id);
       if (res.success) {
+        message.success(intl.formatMessage({ id: 'pages.dashboard.copySuccess' }));
         actionRef.current?.reload();
         loadStatistics();
       }
     } catch (error) {
-      console.error('复制失败:', error);
+      message.error(getErrorMessage(error as any, 'pages.dashboard.copyFailed'));
     }
   };
 
@@ -88,10 +98,11 @@ const DashboardListPage: React.FC = () => {
     try {
       const res = await api.share(id);
       if (res.success && res.data) {
-        navigator.clipboard.writeText(window.location.origin + res.data.shareUrl);
+        await navigator.clipboard.writeText(window.location.origin + res.data.shareUrl);
+        message.success(intl.formatMessage({ id: 'pages.dashboard.shareSuccess' }));
       }
     } catch (error) {
-      console.error('分享失败:', error);
+      message.error(getErrorMessage(error as any, 'pages.dashboard.shareFailed'));
     }
   };
 
@@ -99,11 +110,12 @@ const DashboardListPage: React.FC = () => {
     try {
       const res = await api.delete(id);
       if (res.success) {
+        message.success(intl.formatMessage({ id: 'pages.dashboard.deleteSuccess' }));
         actionRef.current?.reload();
         loadStatistics();
       }
     } catch (error) {
-      console.error('删除失败:', error);
+      message.error(getErrorMessage(error as any, 'pages.dashboard.deleteFailed'));
     }
   };
 
@@ -163,7 +175,7 @@ const DashboardListPage: React.FC = () => {
       key: 'action',
       valueType: 'option',
       fixed: 'right',
-      width: 280,
+      width: 180,
       render: (_, r) => (
         <Space size={4}>
           <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => handleView(r.id)}>
@@ -192,110 +204,165 @@ const DashboardListPage: React.FC = () => {
   ];
 
   const handleFinish = async (values: Record<string, any>) => {
-    const data = {
-      name: values.name,
-      description: values.description,
-      layoutType: values.layoutType,
-      theme: values.theme,
-      isPublic: values.isPublic === 'true',
-    };
-    const res = state.editingDashboard ? await api.update(state.editingDashboard.id, data) : await api.create(data);
-    if (res.success) {
-      set({ formVisible: false, editingDashboard: null });
-      actionRef.current?.reload();
-      loadStatistics();
+    try {
+      const data = {
+        name: values.name,
+        description: values.description,
+        layoutType: values.layoutType,
+        theme: values.theme,
+        isPublic: values.isPublic === 'true',
+      };
+      const res = state.editingDashboard ? await api.update(state.editingDashboard.id, data) : await api.create(data);
+      if (res.success) {
+        message.success(state.editingDashboard ? intl.formatMessage({ id: 'pages.dashboard.updateSuccess' }) : intl.formatMessage({ id: 'pages.dashboard.createSuccess' }));
+        set({ formVisible: false, editingDashboard: null });
+        actionRef.current?.reload();
+        loadStatistics();
+      }
+      return res.success;
+    } catch (error) {
+      message.error(getErrorMessage(error as any, 'pages.dashboard.operationFailed'));
+      return false;
     }
-    return res.success;
   };
 
   return (
     <PageContainer>
-      <ProTable
-        actionRef={actionRef}
-        headerTitle={
-          <Space size={24}>
-            <Space><DashboardOutlined />{intl.formatMessage({ id: 'pages.dashboard.title' })}</Space>
-            <Space size={12}>
-              <Tag color="blue">{intl.formatMessage({ id: 'pages.dashboard.totalDashboards' })} {state.statistics?.totalDashboards || 0}</Tag>
-              <Tag color="green">{intl.formatMessage({ id: 'pages.dashboard.publicDashboards' })} {state.statistics?.publicDashboards || 0}</Tag>
-              <Tag color="orange">{intl.formatMessage({ id: 'pages.dashboard.privateDashboards' })} {state.statistics?.privateDashboards || 0}</Tag>
-              <Tag color="purple">{intl.formatMessage({ id: 'pages.dashboard.totalCards' })} {state.statistics?.totalCards || 0}</Tag>
-              <Tag color="cyan">{intl.formatMessage({ id: 'pages.dashboard.recentCreated' })} {state.statistics?.recentCreatedCount || 0}</Tag>
+      <ProCard>
+        <ProTable
+          actionRef={actionRef}
+          headerTitle={
+            <Space size={24}>
+              <Space><DashboardOutlined />{intl.formatMessage({ id: 'pages.dashboard.title' })}</Space>
+              <Space size={12}>
+                <Tag color="blue">{intl.formatMessage({ id: 'pages.dashboard.totalDashboards' })} {state.statistics?.totalDashboards || 0}</Tag>
+                <Tag color="green">{intl.formatMessage({ id: 'pages.dashboard.publicDashboards' })} {state.statistics?.publicDashboards || 0}</Tag>
+                <Tag color="orange">{intl.formatMessage({ id: 'pages.dashboard.privateDashboards' })} {state.statistics?.privateDashboards || 0}</Tag>
+                <Tag color="purple">{intl.formatMessage({ id: 'pages.dashboard.totalCards' })} {state.statistics?.totalCards || 0}</Tag>
+                <Tag color="cyan">{intl.formatMessage({ id: 'pages.dashboard.recentCreated' })} {state.statistics?.recentCreatedCount || 0}</Tag>
+              </Space>
             </Space>
-          </Space>
-        }
-        request={async (params: any, sort: any, filter: any) => {
-          const res = await api.list({ ...params, sort, filter });
-          return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
-        }}
-        columns={columns}
-        rowKey="id"
-        search={false}
-        scroll={{ x: 'max-content' }}
-        toolBarRender={() => [
-          <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingDashboard: null, formVisible: true })}>
-            {intl.formatMessage({ id: 'pages.dashboard.create' })}
-          </Button>,
-        ]}
-      />
+          }
+          request={async (params: any, sort: any, filter: any) => {
+            const res = await api.list({ ...params, search: state.search, sort, filter });
+            return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+          }}
+          columns={columns}
+          rowKey="id"
+          search={false}
+          scroll={{ x: 'max-content' }}
+          toolBarRender={() => [
+            <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingDashboard: null, formVisible: true })}>
+              {intl.formatMessage({ id: 'pages.dashboard.create' })}
+            </Button>,
+          ]}
+        />
 
-      <ModalForm
-        key={state.editingDashboard?.id || 'create'}
-        title={state.editingDashboard ? intl.formatMessage({ id: 'pages.dashboard.edit' }) : intl.formatMessage({ id: 'pages.dashboard.create' })}
-        open={state.formVisible}
-        onOpenChange={(open) => { if (!open) set({ formVisible: false, editingDashboard: null }); }}
-        initialValues={state.editingDashboard ? {
-          name: state.editingDashboard.name,
-          description: state.editingDashboard.description,
-          layoutType: state.editingDashboard.layoutType,
-          theme: state.editingDashboard.theme,
-          isPublic: state.editingDashboard.isPublic ? 'true' : 'false',
-        } : undefined}
-        onFinish={handleFinish}
-        autoFocusFirstInput
-        width={600}
-      >
-        <ProFormText
-          name="name"
-          label={intl.formatMessage({ id: 'pages.dashboard.name' })}
-          rules={[{ required: true, message: intl.formatMessage({ id: 'pages.dashboard.nameRequired' }) }]}
-        />
-        <ProFormTextArea
-          name="description"
-          label={intl.formatMessage({ id: 'pages.dashboard.description' })}
-          fieldProps={{ rows: 3 }}
-        />
-        <ProFormSelect
-          name="layoutType"
-          label={intl.formatMessage({ id: 'pages.dashboard.layoutType' })}
-          options={[
-            { label: intl.formatMessage({ id: 'pages.dashboard.layoutGrid' }), value: 'grid' },
-            { label: intl.formatMessage({ id: 'pages.dashboard.layoutWaterfall' }), value: 'waterfall' },
-            { label: intl.formatMessage({ id: 'pages.dashboard.layoutFree' }), value: 'free' },
-          ]}
-          initialValue="grid"
-        />
-        <ProFormSelect
-          name="theme"
-          label={intl.formatMessage({ id: 'pages.dashboard.theme' })}
-          options={[
-            { label: intl.formatMessage({ id: 'pages.dashboard.themeLight' }), value: 'light' },
-            { label: intl.formatMessage({ id: 'pages.dashboard.themeDark' }), value: 'dark' },
-            { label: intl.formatMessage({ id: 'pages.dashboard.themeCustom' }), value: 'custom' },
-          ]}
-          initialValue="light"
-        />
-        <ProFormSelect
-          name="isPublic"
-          label={intl.formatMessage({ id: 'pages.dashboard.visibility' })}
-          options={[
-            { label: intl.formatMessage({ id: 'pages.dashboard.private' }), value: 'false' },
-            { label: intl.formatMessage({ id: 'pages.dashboard.public' }), value: 'true' },
-          ]}
-          initialValue="false"
-        />
-      </ModalForm>
+        <ModalForm
+          key={state.editingDashboard?.id || 'create'}
+          title={state.editingDashboard ? intl.formatMessage({ id: 'pages.dashboard.edit' }) : intl.formatMessage({ id: 'pages.dashboard.create' })}
+          open={state.formVisible}
+          onOpenChange={(open) => { if (!open) set({ formVisible: false, editingDashboard: null }); }}
+          initialValues={state.editingDashboard ? {
+            name: state.editingDashboard.name,
+            description: state.editingDashboard.description,
+            layoutType: state.editingDashboard.layoutType,
+            theme: state.editingDashboard.theme,
+            isPublic: state.editingDashboard.isPublic ? 'true' : 'false',
+          } : undefined}
+          onFinish={handleFinish}
+          autoFocusFirstInput
+          width={600}
+        >
+          <ProFormText
+            name="name"
+            label={intl.formatMessage({ id: 'pages.dashboard.name' })}
+            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.dashboard.nameRequired' }) }]}
+          />
+          <ProFormTextArea
+            name="description"
+            label={intl.formatMessage({ id: 'pages.dashboard.description' })}
+            fieldProps={{ rows: 3 }}
+          />
+          <ProFormSelect
+            name="layoutType"
+            label={intl.formatMessage({ id: 'pages.dashboard.layoutType' })}
+            options={[
+              { label: intl.formatMessage({ id: 'pages.dashboard.layoutGrid' }), value: 'grid' },
+              { label: intl.formatMessage({ id: 'pages.dashboard.layoutWaterfall' }), value: 'waterfall' },
+              { label: intl.formatMessage({ id: 'pages.dashboard.layoutFree' }), value: 'free' },
+            ]}
+            initialValue="grid"
+          />
+          <ProFormSelect
+            name="theme"
+            label={intl.formatMessage({ id: 'pages.dashboard.theme' })}
+            options={[
+              { label: intl.formatMessage({ id: 'pages.dashboard.themeLight' }), value: 'light' },
+              { label: intl.formatMessage({ id: 'pages.dashboard.themeDark' }), value: 'dark' },
+              { label: intl.formatMessage({ id: 'pages.dashboard.themeCustom' }), value: 'custom' },
+            ]}
+            initialValue="light"
+          />
+          <ProFormSelect
+            name="isPublic"
+            label={intl.formatMessage({ id: 'pages.dashboard.visibility' })}
+            options={[
+              { label: intl.formatMessage({ id: 'pages.dashboard.private' }), value: 'false' },
+              { label: intl.formatMessage({ id: 'pages.dashboard.public' }), value: 'true' },
+            ]}
+            initialValue="false"
+          />
+        </ModalForm>
+
+        <Drawer title={intl.formatMessage({ id: 'pages.dashboard.detail' })} placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingId: '' })} size="large">
+          <DetailContent id={state.viewingId} isMobile={isMobile} />
+        </Drawer>
+      </ProCard>
     </PageContainer>
+  );
+};
+
+const DetailContent: React.FC<{ id: string; isMobile: boolean }> = ({ id, isMobile }) => {
+  const intl = useIntl();
+  const [dashboard, setDashboard] = useState<Dashboard | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (id) {
+      setLoading(true);
+      api.get(id).then(r => {
+        if (r.success && r.data) setDashboard(r.data);
+        setLoading(false);
+      }).catch(() => setLoading(false));
+    }
+  }, [id]);
+
+  if (loading) return null;
+  if (!dashboard) return null;
+
+  return (
+    <ProDescriptions column={isMobile ? 1 : 2} bordered size="small">
+      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.name' })} span={2}><strong>{dashboard.name}</strong></ProDescriptions.Item>
+      {dashboard.description && <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.description' })} span={2}><div style={{ whiteSpace: 'pre-wrap' }}>{dashboard.description}</div></ProDescriptions.Item>}
+      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.layoutType' })}>
+        {intl.formatMessage({ id: `pages.dashboard.layout${dashboard.layoutType.charAt(0).toUpperCase() + dashboard.layoutType.slice(1)}` })}
+      </ProDescriptions.Item>
+      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.theme' })}>
+        {intl.formatMessage({ id: `pages.dashboard.theme${dashboard.theme.charAt(0).toUpperCase() + dashboard.theme.slice(1)}` })}
+      </ProDescriptions.Item>
+      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.visibility' })}>
+        <Tag color={dashboard.isPublic ? 'blue' : 'orange'}>
+          {intl.formatMessage({ id: dashboard.isPublic ? 'pages.dashboard.public' : 'pages.dashboard.private' })}
+        </Tag>
+      </ProDescriptions.Item>
+      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.createdAt' })}>
+        {dayjs(dashboard.createdAt).format('YYYY-MM-DD HH:mm')}
+      </ProDescriptions.Item>
+      {dashboard.updatedAt && <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.updatedAt' })}>
+        {dayjs(dashboard.updatedAt).format('YYYY-MM-DD HH:mm')}
+      </ProDescriptions.Item>}
+    </ProDescriptions>
   );
 };
 

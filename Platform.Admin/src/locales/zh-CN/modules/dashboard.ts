@@ -7,6 +7,9 @@ export default {
   // 看板列表
   'pages.dashboard.title': '数据看板',
   'pages.dashboard.name': '看板名称',
+  'pages.dashboard.detail': '看板详情',
+  'pages.dashboard.operationFailed': '操作失败',
+  'pages.dashboard.loadFailed': '加载失败',
   'pages.dashboard.description': '描述',
   'pages.dashboard.layoutType': '布局类型',
   'pages.dashboard.layoutGrid': '网格布局',
@@ -20,6 +23,7 @@ export default {
   'pages.dashboard.public': '公开',
   'pages.dashboard.private': '私有',
   'pages.dashboard.createdAt': '创建时间',
+  'pages.dashboard.updatedAt': '更新时间',
   'pages.dashboard.action': '操作',
   'pages.dashboard.view': '查看',
   'pages.dashboard.edit': '编辑',

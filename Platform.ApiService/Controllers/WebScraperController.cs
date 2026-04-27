@@ -28,6 +28,11 @@ public class WebScraperController : BaseApiController
         _taskLauncher = taskLauncher ?? throw new ArgumentNullException(nameof(taskLauncher));
     }
 
+    /// <summary>
+    /// 创建网页抓取任务
+    /// </summary>
+    /// <param name="request">创建任务请求</param>
+    /// <returns>创建的任务信息</returns>
     [HttpPost("tasks")]
     public async Task<IActionResult> CreateTask([FromBody] CreateWebScrapingTaskRequest request)
     {
@@ -40,6 +45,13 @@ public class WebScraperController : BaseApiController
         return Success(task);
     }
 
+    /// <summary>
+    /// 分页查询网页抓取任务列表
+    /// </summary>
+    /// <param name="request">分页请求参数</param>
+    /// <param name="keyword">关键词搜索</param>
+    /// <param name="status">任务状态筛选</param>
+    /// <returns>任务分页列表</returns>
     [HttpGet("tasks")]
     [RequireMenu("web-scraper")]
     public async Task<IActionResult> GetTasks(
@@ -51,6 +63,11 @@ public class WebScraperController : BaseApiController
         return Success(result);
     }
 
+    /// <summary>
+    /// 获取网页抓取任务详情
+    /// </summary>
+    /// <param name="id">任务ID</param>
+    /// <returns>任务详细信息</returns>
     [HttpGet("tasks/{id}")]
     public async Task<IActionResult> GetTask(string id)
     {
@@ -61,6 +78,12 @@ public class WebScraperController : BaseApiController
         return Success(task);
     }
 
+    /// <summary>
+    /// 更新网页抓取任务
+    /// </summary>
+    /// <param name="id">任务ID</param>
+    /// <param name="request">更新任务请求</param>
+    /// <returns>更新后的任务信息</returns>
     [HttpPut("tasks/{id}")]
     public async Task<IActionResult> UpdateTask(string id, [FromBody] UpdateWebScrapingTaskRequest request)
     {
@@ -71,6 +94,11 @@ public class WebScraperController : BaseApiController
         return Success(task);
     }
 
+    /// <summary>
+    /// 删除网页抓取任务
+    /// </summary>
+    /// <param name="id">任务ID</param>
+    /// <returns>删除结果</returns>
     [HttpDelete("tasks/{id}")]
     public async Task<IActionResult> DeleteTask(string id)
     {
@@ -81,6 +109,11 @@ public class WebScraperController : BaseApiController
         return Success(new { message = "删除成功" });
     }
 
+    /// <summary>
+    /// 启用/禁用网页抓取任务
+    /// </summary>
+    /// <param name="id">任务ID</param>
+    /// <returns>更新后的任务信息</returns>
     [HttpPost("tasks/{id}/toggle")]
     public async Task<IActionResult> ToggleTask(string id)
     {
@@ -91,6 +124,11 @@ public class WebScraperController : BaseApiController
         return Success(task);
     }
 
+    /// <summary>
+    /// 执行网页抓取任务
+    /// </summary>
+    /// <param name="id">任务ID</param>
+    /// <returns>执行结果提示</returns>
     [HttpPost("execute/{id}")]
     public IActionResult ExecuteTask(string id)
     {
@@ -99,6 +137,11 @@ public class WebScraperController : BaseApiController
         return Success(new { message = "抓取任务已启动，请稍候查看结果" });
     }
 
+    /// <summary>
+    /// 停止正在运行的网页抓取任务
+    /// </summary>
+    /// <param name="id">任务ID</param>
+    /// <returns>停止结果提示</returns>
     [HttpPost("tasks/{id}/stop")]
     public async Task<IActionResult> StopTask(string id)
     {
@@ -109,6 +152,11 @@ public class WebScraperController : BaseApiController
         return Success(new { message = "任务已停止" });
     }
 
+    /// <summary>
+    /// 快速抓取网页内容（无需创建任务）
+    /// </summary>
+    /// <param name="request">快速抓取请求</param>
+    /// <returns>抓取结果</returns>
     [HttpPost("execute-quick")]
     public async Task<IActionResult> ExecuteQuickScrape([FromBody] QuickScrapeRequest request)
     {
@@ -119,6 +167,15 @@ public class WebScraperController : BaseApiController
         return Success(result);
     }
 
+    /// <summary>
+    /// 预览网页抓取结果
+    /// </summary>
+    /// <param name="url">目标URL</param>
+    /// <param name="titleSelector">标题选择器</param>
+    /// <param name="contentSelector">内容选择器</param>
+    /// <param name="crawlDepth">爬取深度</param>
+    /// <param name="maxPagesPerLevel">每层最大页面数</param>
+    /// <returns>预览抓取结果</returns>
     [HttpGet("preview")]
     public async Task<IActionResult> PreviewScrape(
         [FromQuery] string url,
@@ -143,6 +200,12 @@ public class WebScraperController : BaseApiController
         return Success(result);
     }
 
+    /// <summary>
+    /// 分页查询网页抓取日志列表
+    /// </summary>
+    /// <param name="request">分页请求参数</param>
+    /// <param name="taskId">任务ID筛选</param>
+    /// <returns>日志分页列表</returns>
     [HttpGet("logs")]
     [RequireMenu("web-scraper")]
     public async Task<IActionResult> GetLogs(
@@ -153,6 +216,11 @@ public class WebScraperController : BaseApiController
         return Success(result);
     }
 
+    /// <summary>
+    /// 获取网页抓取日志详情
+    /// </summary>
+    /// <param name="id">日志ID</param>
+    /// <returns>日志详细信息</returns>
     [HttpGet("logs/{id}")]
     public async Task<IActionResult> GetLog(string id)
     {
@@ -163,6 +231,13 @@ public class WebScraperController : BaseApiController
         return Success(log);
     }
 
+    /// <summary>
+    /// 分页查询网页抓取结果列表
+    /// </summary>
+    /// <param name="request">分页请求参数</param>
+    /// <param name="taskId">任务ID筛选</param>
+    /// <param name="logId">日志ID筛选</param>
+    /// <returns>结果分页列表</returns>
     [HttpGet("results")]
     [RequireMenu("web-scraper")]
     public async Task<IActionResult> GetResults(
@@ -174,6 +249,11 @@ public class WebScraperController : BaseApiController
         return Success(result);
     }
 
+    /// <summary>
+    /// 获取网页抓取结果详情
+    /// </summary>
+    /// <param name="id">结果ID</param>
+    /// <returns>结果详细信息</returns>
     [HttpGet("results/{id}")]
     public async Task<IActionResult> GetResult(string id)
     {

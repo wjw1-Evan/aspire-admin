@@ -3,6 +3,7 @@ using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Extensions;
 using System.Text.Json;
+using System.Linq.Dynamic.Core;
 
 namespace Platform.ApiService.Services;
 

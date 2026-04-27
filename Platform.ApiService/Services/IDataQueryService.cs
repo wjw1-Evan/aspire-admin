@@ -1,3 +1,5 @@
+using Platform.ApiService.Models;
+
 namespace Platform.ApiService.Services;
 
 /// <summary>

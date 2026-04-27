@@ -1,3 +1,4 @@
+using System.Linq.Dynamic.Core;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
 

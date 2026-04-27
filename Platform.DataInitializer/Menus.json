@@ -448,6 +448,14 @@
         "HideInMenu": true
     },
     {
+        "Name": "data-dashboard",
+        "Title": "数据看板",
+        "Path": "/dashboard",
+        "Component": "./dashboard",
+        "Icon": "dashboard",
+        "SortOrder": 9
+    },
+    {
         "Name": "notice",
         "Title": "通知公告",
         "Path": "/notice",

@@ -1,14 +1,13 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { history } from '@umijs/max';
-import { Space, Typography, Button, message, Tag, Popconfirm, Row, Col, Statistic, Card } from 'antd';
-import { PlusOutlined, CopyOutlined, ShareAltOutlined, DeleteOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons';
-import { ProCard, ProTable, ModalForm, ProFormText, ProFormTextArea, ProFormSelect } from '@ant-design/pro-components';
-import { request } from '@umijs/max';
-import { getIntl } from '@umijs/max';
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import type { ApiResponse, PagedResult } from '@/types';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { request, useIntl, history } from '@umijs/max';
+import { Tag, Space, Button, Popconfirm, Grid } from 'antd';
+import { Drawer } from 'antd';
+import { PageContainer, ModalForm, ProDescriptions, ProTable, ProColumns, ActionType, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-components';
+import { PlusOutlined, CopyOutlined, ShareAltOutlined, DeleteOutlined, EditOutlined, EyeOutlined, DashboardOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
+import { ApiResponse, PagedResult } from '@/types';
 
-const { Title } = Typography;
+const { useBreakpoint } = Grid;
 
 interface Dashboard {
   id: string;
@@ -30,65 +29,58 @@ interface DashboardStatistics {
   recentCreatedCount: number;
 }
 
+const api = {
+  list: (params: any) => request<ApiResponse<PagedResult<Dashboard>>>('/apiservice/api/dashboard/list', { params }),
+  get: (id: string) => request<ApiResponse<Dashboard>>(`/apiservice/api/dashboard/${id}`),
+  delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/dashboard/${id}`, { method: 'DELETE' }),
+  create: (data: Partial<Dashboard>) => request<ApiResponse<Dashboard>>('/apiservice/api/dashboard', { method: 'POST', data }),
+  update: (id: string, data: Partial<Dashboard>) => request<ApiResponse<Dashboard>>(`/apiservice/api/dashboard/${id}`, { method: 'PUT', data }),
+  copy: (id: string) => request<ApiResponse<Dashboard>>(`/apiservice/api/dashboard/${id}/copy`, { method: 'POST' }),
+  share: (id: string) => request<ApiResponse<{ token: string; shareUrl: string }>>(`/apiservice/api/dashboard/${id}/share`, { method: 'POST' }),
+  statistics: () => request<ApiResponse<DashboardStatistics>>('/apiservice/api/dashboard/statistics'),
+};
+
 const DashboardListPage: React.FC = () => {
-  const intl = getIntl();
-  const actionRef = useRef<ActionType>(null!);
+  const intl = useIntl();
+  const actionRef = useRef<ActionType | undefined>(undefined);
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
 
   const [state, setState] = useState({
-    formVisible: false,
-    editingDashboard: null as Dashboard | null,
     statistics: null as DashboardStatistics | null,
+    editingDashboard: null as Dashboard | null,
+    formVisible: false,
+    detailVisible: false,
+    viewingId: '',
+    detailLoading: false,
   });
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
-  useEffect(() => {
-    loadStatistics();
-  }, []);
+  const loadStatistics = useCallback(() => {
+    api.statistics().then(r => {
+      if (r.success && r.data) set({ statistics: r.data });
+    });
+  }, [set]);
 
-  const loadStatistics = async () => {
-    try {
-      const res = await request<ApiResponse<DashboardStatistics>>('/apiservice/api/dashboard/statistics');
-      if (res.success && res.data) {
-        set({ statistics: res.data });
-      }
-    } catch (error) {
-      console.error('加载统计信息失败:', error);
-    }
+  useEffect(() => { loadStatistics(); }, [loadStatistics]);
+
+  const handleView = (id: string) => {
+    history.push(`/dashboard/view/${id}`);
   };
 
-  const api = {
-    list: (params: any) => request<ApiResponse<PagedResult<Dashboard>>>('/apiservice/api/dashboard/list', { params }),
-    get: (id: string) => request<ApiResponse<Dashboard>>(`/apiservice/api/dashboard/${id}`),
-    create: (data: Partial<Dashboard>) => request<ApiResponse<Dashboard>>('/apiservice/api/dashboard', { method: 'POST', data }),
-    update: (id: string, data: Partial<Dashboard>) => request<ApiResponse<Dashboard>>(`/apiservice/api/dashboard/${id}`, { method: 'PUT', data }),
-    delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/dashboard/${id}`, { method: 'DELETE' }),
-    copy: (id: string) => request<ApiResponse<Dashboard>>(`/apiservice/api/dashboard/${id}/copy`, { method: 'POST' }),
-    share: (id: string) => request<ApiResponse<{ token: string; shareUrl: string }>>(`/apiservice/api/dashboard/${id}/share`, { method: 'POST' }),
-  };
-
-  const handleFinish = async (values: Record<string, any>) => {
-    const res = state.editingDashboard
-      ? await api.update(state.editingDashboard.id, values)
-      : await api.create(values);
-    if (res.success) {
-      set({ formVisible: false, editingDashboard: null });
-      actionRef.current?.reload();
-      loadStatistics();
-      message.success(state.editingDashboard ? intl.formatMessage({ id: 'pages.dashboard.updateSuccess' }) : intl.formatMessage({ id: 'pages.dashboard.createSuccess' }));
-    }
-    return res.success;
+  const handleEdit = (id: string) => {
+    history.push(`/dashboard/${id}`);
   };
 
   const handleCopy = async (id: string) => {
     try {
       const res = await api.copy(id);
       if (res.success) {
-        message.success(intl.formatMessage({ id: 'pages.dashboard.copySuccess' }));
         actionRef.current?.reload();
         loadStatistics();
       }
     } catch (error) {
-      message.error(intl.formatMessage({ id: 'pages.dashboard.copyFailed' }));
+      console.error('复制失败:', error);
     }
   };
 
@@ -97,10 +89,9 @@ const DashboardListPage: React.FC = () => {
       const res = await api.share(id);
       if (res.success && res.data) {
         navigator.clipboard.writeText(window.location.origin + res.data.shareUrl);
-        message.success(intl.formatMessage({ id: 'pages.dashboard.shareSuccess' }));
       }
     } catch (error) {
-      message.error(intl.formatMessage({ id: 'pages.dashboard.shareFailed' }));
+      console.error('分享失败:', error);
     }
   };
 
@@ -108,12 +99,11 @@ const DashboardListPage: React.FC = () => {
     try {
       const res = await api.delete(id);
       if (res.success) {
-        message.success(intl.formatMessage({ id: 'pages.dashboard.deleteSuccess' }));
         actionRef.current?.reload();
         loadStatistics();
       }
     } catch (error) {
-      message.error(intl.formatMessage({ id: 'pages.dashboard.deleteFailed' }));
+      console.error('删除失败:', error);
     }
   };
 
@@ -166,6 +156,7 @@ const DashboardListPage: React.FC = () => {
       sorter: true,
       valueType: 'dateTime',
       search: false,
+      render: (dom) => dom ? dayjs(dom as string).format('YYYY-MM-DD HH:mm') : '-',
     },
     {
       title: intl.formatMessage({ id: 'pages.dashboard.action' }),
@@ -173,44 +164,23 @@ const DashboardListPage: React.FC = () => {
       valueType: 'option',
       fixed: 'right',
       width: 280,
-      render: (_, record) => (
+      render: (_, r) => (
         <Space size={4}>
-          <Button
-            variant="link"
-            color="cyan"
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => history.push(`/dashboard/view/${record.id}`)}
-          >
+          <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => handleView(r.id)}>
             {intl.formatMessage({ id: 'pages.dashboard.view' })}
           </Button>
-          <Button
-            type="link"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => set({ editingDashboard: record, formVisible: true })}
-          >
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(r.id)}>
             {intl.formatMessage({ id: 'pages.dashboard.edit' })}
           </Button>
-          <Button
-            type="link"
-            size="small"
-            icon={<CopyOutlined />}
-            onClick={() => handleCopy(record.id)}
-          >
+          <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => handleCopy(r.id)}>
             {intl.formatMessage({ id: 'pages.dashboard.copy' })}
           </Button>
-          <Button
-            type="link"
-            size="small"
-            icon={<ShareAltOutlined />}
-            onClick={() => handleShare(record.id)}
-          >
+          <Button type="link" size="small" icon={<ShareAltOutlined />} onClick={() => handleShare(r.id)}>
             {intl.formatMessage({ id: 'pages.dashboard.share' })}
           </Button>
           <Popconfirm
             title={intl.formatMessage({ id: 'pages.dashboard.confirmDelete' })}
-            onConfirm={() => handleDelete(record.id)}
+            onConfirm={() => handleDelete(r.id)}
           >
             <Button type="link" size="small" danger icon={<DeleteOutlined />}>
               {intl.formatMessage({ id: 'pages.dashboard.delete' })}
@@ -221,65 +191,49 @@ const DashboardListPage: React.FC = () => {
     },
   ];
 
+  const handleFinish = async (values: Record<string, any>) => {
+    const data = {
+      name: values.name,
+      description: values.description,
+      layoutType: values.layoutType,
+      theme: values.theme,
+      isPublic: values.isPublic === 'true',
+    };
+    const res = state.editingDashboard ? await api.update(state.editingDashboard.id, data) : await api.create(data);
+    if (res.success) {
+      set({ formVisible: false, editingDashboard: null });
+      actionRef.current?.reload();
+      loadStatistics();
+    }
+    return res.success;
+  };
+
   return (
-    <ProCard>
-      <Title level={4} style={{ marginBottom: 16 }}>
-        {intl.formatMessage({ id: 'pages.dashboard.title' })}
-      </Title>
-
-      {state.statistics && (
-        <Row gutter={16} style={{ marginBottom: 16 }}>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
-              <Statistic
-                title={intl.formatMessage({ id: 'pages.dashboard.totalDashboards' })}
-                value={state.statistics.totalDashboards}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
-              <Statistic
-                title={intl.formatMessage({ id: 'pages.dashboard.publicDashboards' })}
-                value={state.statistics.publicDashboards}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
-              <Statistic
-                title={intl.formatMessage({ id: 'pages.dashboard.totalCards' })}
-                value={state.statistics.totalCards}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
-              <Statistic
-                title={intl.formatMessage({ id: 'pages.dashboard.recentCreated' })}
-                value={state.statistics.recentCreatedCount}
-              />
-            </Card>
-          </Col>
-        </Row>
-      )}
-
-      <ProTable<Dashboard>
-        columns={columns}
+    <PageContainer>
+      <ProTable
         actionRef={actionRef}
+        headerTitle={
+          <Space size={24}>
+            <Space><DashboardOutlined />{intl.formatMessage({ id: 'pages.dashboard.title' })}</Space>
+            <Space size={12}>
+              <Tag color="blue">{intl.formatMessage({ id: 'pages.dashboard.totalDashboards' })} {state.statistics?.totalDashboards || 0}</Tag>
+              <Tag color="green">{intl.formatMessage({ id: 'pages.dashboard.publicDashboards' })} {state.statistics?.publicDashboards || 0}</Tag>
+              <Tag color="orange">{intl.formatMessage({ id: 'pages.dashboard.privateDashboards' })} {state.statistics?.privateDashboards || 0}</Tag>
+              <Tag color="purple">{intl.formatMessage({ id: 'pages.dashboard.totalCards' })} {state.statistics?.totalCards || 0}</Tag>
+              <Tag color="cyan">{intl.formatMessage({ id: 'pages.dashboard.recentCreated' })} {state.statistics?.recentCreatedCount || 0}</Tag>
+            </Space>
+          </Space>
+        }
         request={async (params: any, sort: any, filter: any) => {
           const res = await api.list({ ...params, sort, filter });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
         }}
+        columns={columns}
         rowKey="id"
         search={false}
+        scroll={{ x: 'max-content' }}
         toolBarRender={() => [
-          <Button
-            key="create"
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => set({ formVisible: true, editingDashboard: null })}
-          >
+          <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingDashboard: null, formVisible: true })}>
             {intl.formatMessage({ id: 'pages.dashboard.create' })}
           </Button>,
         ]}
@@ -290,8 +244,15 @@ const DashboardListPage: React.FC = () => {
         title={state.editingDashboard ? intl.formatMessage({ id: 'pages.dashboard.edit' }) : intl.formatMessage({ id: 'pages.dashboard.create' })}
         open={state.formVisible}
         onOpenChange={(open) => { if (!open) set({ formVisible: false, editingDashboard: null }); }}
-        initialValues={state.editingDashboard || undefined}
+        initialValues={state.editingDashboard ? {
+          name: state.editingDashboard.name,
+          description: state.editingDashboard.description,
+          layoutType: state.editingDashboard.layoutType,
+          theme: state.editingDashboard.theme,
+          isPublic: state.editingDashboard.isPublic ? 'true' : 'false',
+        } : undefined}
         onFinish={handleFinish}
+        autoFocusFirstInput
         width={600}
       >
         <ProFormText
@@ -332,10 +293,9 @@ const DashboardListPage: React.FC = () => {
             { label: intl.formatMessage({ id: 'pages.dashboard.public' }), value: 'true' },
           ]}
           initialValue="false"
-          transform={(value) => ({ isPublic: value === 'true' })}
         />
       </ModalForm>
-    </ProCard>
+    </PageContainer>
   );
 };
 

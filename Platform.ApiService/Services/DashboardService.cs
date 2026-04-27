@@ -497,9 +497,14 @@ public class DashboardService : IDashboardService
 
         var privateDashboards = totalDashboards - publicDashboards;
 
+        // MongoDB EF Core Provider 不支持 Join，使用子查询方式
+        var dashboardIds = await _context.Set<Dashboard>()
+            .Where(d => d.CompanyId == companyId)
+            .Select(d => d.Id)
+            .ToListAsync();
+
         var totalCards = await _context.Set<DashboardCard>()
-            .Join(_context.Set<Dashboard>(), c => c.DashboardId, d => d.Id, (c, d) => new { Card = c, Dashboard = d })
-            .Where(x => x.Dashboard.CompanyId == companyId)
+            .Where(c => dashboardIds.Contains(c.DashboardId))
             .CountAsync();
 
         var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);

@@ -60,6 +60,7 @@ const DashboardListPage: React.FC = () => {
     previewVisible: false,
     designingId: '',
     previewingId: '',
+    previewingLayouts: null as Record<string, any> | null,
     viewingId: '',
     search: '' as string,
   });
@@ -85,7 +86,7 @@ const DashboardListPage: React.FC = () => {
     actionRef.current?.reload();
   };
 
-  const closePreview = () => set({ previewingId: '', previewVisible: false });
+  const closePreview = () => set({ previewingId: '', previewingLayouts: null, previewVisible: false });
 
   const handleEdit = async (id: string) => {
     try {
@@ -326,9 +327,9 @@ const DashboardListPage: React.FC = () => {
           {state.designingId && (
             <DashboardDesigner
               dashboardId={state.designingId}
-              onPreview={() => {
-                // 从设计模式切换到预览模式
-                set({ previewingId: state.designingId, previewVisible: true });
+              onPreview={(layouts) => {
+                // 从设计模式切换到预览模式，传递当前布局
+                set({ previewingId: state.designingId, previewingLayouts: layouts, previewVisible: true });
               }}
               onClose={closeDesign}
             />
@@ -348,6 +349,7 @@ const DashboardListPage: React.FC = () => {
           {state.previewingId && (
             <DashboardPreview
               dashboardId={state.previewingId}
+              layouts={state.previewingLayouts || undefined}
               onEdit={() => {
                 // 从预览切换到设计
                 closePreview();

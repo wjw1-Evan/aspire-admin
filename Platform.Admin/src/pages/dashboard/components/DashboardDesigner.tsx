@@ -56,7 +56,7 @@ const api = {
 
 interface DashboardDesignerProps {
   dashboardId: string;
-  onPreview?: () => void;
+  onPreview?: (layouts: Record<string, LayoutItem[]>) => void;
   onClose?: () => void;
 }
 
@@ -226,7 +226,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
             保存布局
           </Button>
           {onPreview && (
-            <Button icon={<FullscreenOutlined />} onClick={onPreview}>
+            <Button icon={<FullscreenOutlined />} onClick={() => onPreview(layouts)}>
               预览
             </Button>
           )}

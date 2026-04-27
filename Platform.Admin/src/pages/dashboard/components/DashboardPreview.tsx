@@ -17,6 +17,8 @@ const { Text } = Typography;
 
 interface DashboardPreviewProps {
   dashboardId: string;
+  /** 预览时传递的布局数据（设计模式未保存的变更） */
+  layouts?: Record<string, LayoutItem[]>;
   /** 是否在独立全屏模式（隐藏顶部操作栏） */
   standalone?: boolean;
   /** 切换到设计模式 */
@@ -25,7 +27,7 @@ interface DashboardPreviewProps {
   onClose?: () => void;
 }
 
-const DashboardPreview: React.FC<DashboardPreviewProps> = ({ dashboardId, standalone = false, onEdit, onClose }) => {
+const DashboardPreview: React.FC<DashboardPreviewProps> = ({ dashboardId, layouts: previewLayouts, standalone = false, onEdit, onClose }) => {
   const [dashboard, setDashboard] = useState<DashboardDto | null>(null);
   const [cards, setCards] = useState<DashboardCardDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,6 +80,11 @@ const DashboardPreview: React.FC<DashboardPreviewProps> = ({ dashboardId, standa
 
   /** 从卡片数据生成布局 */
   const layouts = React.useMemo(() => {
+    // 如果有传递的预览布局（设计模式未保存的变更），使用它
+    if (previewLayouts && previewLayouts.lg) {
+      return previewLayouts;
+    }
+    // 否则从卡片数据生成布局
     const lg = cards.map((c): LayoutItem => ({
       i: c.id,
       x: c.positionX || 0,
@@ -87,7 +94,7 @@ const DashboardPreview: React.FC<DashboardPreviewProps> = ({ dashboardId, standa
       static: true, // 预览模式不可拖拽
     }));
     return { lg };
-  }, [cards]);
+  }, [previewLayouts, cards]);
 
   if (loading) {
     return (

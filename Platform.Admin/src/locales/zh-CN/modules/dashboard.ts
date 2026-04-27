@@ -31,6 +31,7 @@ export default {
   'pages.dashboard.copy': '复制',
   'pages.dashboard.share': '分享',
   'pages.dashboard.delete': '删除',
+  'pages.dashboard.preview': '预览',
   'pages.dashboard.create': '创建看板',
   'pages.dashboard.createSuccess': '创建成功',
   'pages.dashboard.updateSuccess': '更新成功',

@@ -1,12 +1,15 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { request, useIntl, history } from '@umijs/max';
-import { Tag, Space, Button, Popconfirm, Grid, message, Card, Row, Col, Empty, Result, Spin, Input } from 'antd';
+import { request, useIntl } from '@umijs/max';
+import { Tag, Space, Button, Popconfirm, Grid, message, Input } from 'antd';
 import { Drawer } from 'antd';
-import { PageContainer, ProCard, ModalForm, ProDescriptions, ProTable, ProColumns, ActionType, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-components';
-import { PlusOutlined, CopyOutlined, ShareAltOutlined, DeleteOutlined, EditOutlined, EyeOutlined, DashboardOutlined, SearchOutlined } from '@ant-design/icons';
+import { PageContainer, ProCard, ModalForm, ProDescriptions, ProTable, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-components';
+import type { ProColumns, ActionType } from '@ant-design/pro-components';
+import { PlusOutlined, CopyOutlined, ShareAltOutlined, DeleteOutlined, EditOutlined, EyeOutlined, DashboardOutlined, SearchOutlined, FullscreenOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { ApiResponse, PagedResult } from '@/types';
+import type { ApiResponse, PagedResult } from '@/types';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import DashboardDesigner from './components/DashboardDesigner';
+import DashboardPreview from './components/DashboardPreview';
 
 const { useBreakpoint } = Grid;
 
@@ -18,19 +21,9 @@ interface Dashboard {
   theme: string;
   isPublic: boolean;
   userId: string;
-  cards: DashboardCard[];
+  cards: { id: string; cardType: string; title: string; positionX: number; positionY: number; width: number; height: number }[];
   createdAt?: string;
   updatedAt?: string;
-}
-
-interface DashboardCard {
-  id: string;
-  cardType: string;
-  title: string;
-  positionX: number;
-  positionY: number;
-  width: number;
-  height: number;
 }
 
 interface DashboardStatistics {
@@ -42,7 +35,7 @@ interface DashboardStatistics {
 }
 
 const api = {
-  list: (params: any) => request<ApiResponse<PagedResult<Dashboard>>>('/apiservice/api/dashboard/list', { params }),
+  list: (params: Record<string, unknown>) => request<ApiResponse<PagedResult<Dashboard>>>('/apiservice/api/dashboard/list', { params }),
   get: (id: string) => request<ApiResponse<Dashboard>>(`/apiservice/api/dashboard/${id}`),
   delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/dashboard/${id}`, { method: 'DELETE' }),
   create: (data: Partial<Dashboard>) => request<ApiResponse<Dashboard>>('/apiservice/api/dashboard', { method: 'POST', data }),
@@ -64,9 +57,10 @@ const DashboardListPage: React.FC = () => {
     formVisible: false,
     detailVisible: false,
     designVisible: false,
+    previewVisible: false,
     designingId: '',
+    previewingId: '',
     viewingId: '',
-    detailLoading: false,
     search: '' as string,
   });
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
@@ -79,27 +73,26 @@ const DashboardListPage: React.FC = () => {
 
   useEffect(() => { loadStatistics(); }, [loadStatistics]);
 
-  const handleView = (id: string) => {
-    set({ viewingId: id, detailVisible: true });
-  };
+  const handleView = (id: string) => set({ viewingId: id, detailVisible: true });
 
-  const handleDesign = (id: string) => {
-    set({ designingId: id, designVisible: true });
-  };
+  const handleDesign = (id: string) => set({ designingId: id, designVisible: true });
+
+  const handlePreview = (id: string) => set({ previewingId: id, previewVisible: true });
 
   const closeDesign = () => {
     set({ designingId: '', designVisible: false });
     loadStatistics();
+    actionRef.current?.reload();
   };
+
+  const closePreview = () => set({ previewingId: '', previewVisible: false });
 
   const handleEdit = async (id: string) => {
     try {
       const res = await api.get(id);
-      if (res.success && res.data) {
-        set({ editingDashboard: res.data, formVisible: true });
-      }
+      if (res.success && res.data) set({ editingDashboard: res.data, formVisible: true });
     } catch (error) {
-      message.error(getErrorMessage(error as any, 'pages.dashboard.loadFailed'));
+      message.error(getErrorMessage(error as { errorCode?: string; message?: string }, 'pages.dashboard.loadFailed'));
     }
   };
 
@@ -112,7 +105,7 @@ const DashboardListPage: React.FC = () => {
         loadStatistics();
       }
     } catch (error) {
-      message.error(getErrorMessage(error as any, 'pages.dashboard.copyFailed'));
+      message.error(getErrorMessage(error as { errorCode?: string; message?: string }, 'pages.dashboard.copyFailed'));
     }
   };
 
@@ -124,7 +117,7 @@ const DashboardListPage: React.FC = () => {
         message.success(intl.formatMessage({ id: 'pages.dashboard.shareSuccess' }));
       }
     } catch (error) {
-      message.error(getErrorMessage(error as any, 'pages.dashboard.shareFailed'));
+      message.error(getErrorMessage(error as { errorCode?: string; message?: string }, 'pages.dashboard.shareFailed'));
     }
   };
 
@@ -137,16 +130,14 @@ const DashboardListPage: React.FC = () => {
         loadStatistics();
       }
     } catch (error) {
-      message.error(getErrorMessage(error as any, 'pages.dashboard.deleteFailed'));
+      message.error(getErrorMessage(error as { errorCode?: string; message?: string }, 'pages.dashboard.deleteFailed'));
     }
   };
 
   const columns: ProColumns<Dashboard>[] = [
     {
       title: intl.formatMessage({ id: 'pages.dashboard.name' }),
-      dataIndex: 'name',
-      key: 'name',
-      sorter: true,
+      dataIndex: 'name', key: 'name', sorter: true,
       render: (text, record) => (
         <Space>
           <span>{text}</span>
@@ -156,16 +147,11 @@ const DashboardListPage: React.FC = () => {
     },
     {
       title: intl.formatMessage({ id: 'pages.dashboard.description' }),
-      dataIndex: 'description',
-      key: 'description',
-      ellipsis: true,
-      search: false,
+      dataIndex: 'description', key: 'description', ellipsis: true, search: false,
     },
     {
       title: intl.formatMessage({ id: 'pages.dashboard.layoutType' }),
-      dataIndex: 'layoutType',
-      key: 'layoutType',
-      valueType: 'select',
+      dataIndex: 'layoutType', key: 'layoutType', valueType: 'select',
       valueEnum: {
         grid: { text: intl.formatMessage({ id: 'pages.dashboard.layoutGrid' }), status: 'Default' },
         waterfall: { text: intl.formatMessage({ id: 'pages.dashboard.layoutWaterfall' }), status: 'Processing' },
@@ -174,9 +160,7 @@ const DashboardListPage: React.FC = () => {
     },
     {
       title: intl.formatMessage({ id: 'pages.dashboard.theme' }),
-      dataIndex: 'theme',
-      key: 'theme',
-      valueType: 'select',
+      dataIndex: 'theme', key: 'theme', valueType: 'select',
       valueEnum: {
         light: { text: intl.formatMessage({ id: 'pages.dashboard.themeLight' }), status: 'Default' },
         dark: { text: intl.formatMessage({ id: 'pages.dashboard.themeDark' }), status: 'Processing' },
@@ -185,21 +169,14 @@ const DashboardListPage: React.FC = () => {
     },
     {
       title: intl.formatMessage({ id: 'pages.dashboard.createdAt' }),
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      sorter: true,
-      valueType: 'dateTime',
-      search: false,
+      dataIndex: 'createdAt', key: 'createdAt', sorter: true, valueType: 'dateTime', search: false,
       render: (dom) => dom ? dayjs(dom as string).format('YYYY-MM-DD HH:mm') : '-',
     },
     {
       title: intl.formatMessage({ id: 'pages.dashboard.action' }),
-      key: 'action',
-      valueType: 'option',
-      fixed: 'right',
-      width: 180,
+      key: 'action', valueType: 'option', fixed: 'right', width: isMobile ? 120 : 280,
       render: (_, r) => (
-        <Space size={4}>
+        <Space size={4} wrap>
           <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => handleView(r.id)}>
             {intl.formatMessage({ id: 'pages.dashboard.view' })}
           </Button>
@@ -209,16 +186,16 @@ const DashboardListPage: React.FC = () => {
           <Button type="link" size="small" icon={<DashboardOutlined />} onClick={() => handleDesign(r.id)}>
             {intl.formatMessage({ id: 'pages.dashboard.design' })}
           </Button>
+          <Button type="link" size="small" icon={<FullscreenOutlined />} onClick={() => handlePreview(r.id)}>
+            {intl.formatMessage({ id: 'pages.dashboard.preview' })}
+          </Button>
           <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => handleCopy(r.id)}>
             {intl.formatMessage({ id: 'pages.dashboard.copy' })}
           </Button>
           <Button type="link" size="small" icon={<ShareAltOutlined />} onClick={() => handleShare(r.id)}>
             {intl.formatMessage({ id: 'pages.dashboard.share' })}
           </Button>
-          <Popconfirm
-            title={intl.formatMessage({ id: 'pages.dashboard.confirmDelete' })}
-            onConfirm={() => handleDelete(r.id)}
-          >
+          <Popconfirm title={intl.formatMessage({ id: 'pages.dashboard.confirmDelete' })} onConfirm={() => handleDelete(r.id)}>
             <Button type="link" size="small" danger icon={<DeleteOutlined />}>
               {intl.formatMessage({ id: 'pages.dashboard.delete' })}
             </Button>
@@ -228,7 +205,7 @@ const DashboardListPage: React.FC = () => {
     },
   ];
 
-  const handleFinish = async (values: Record<string, any>) => {
+  const handleFinish = async (values: Record<string, string>) => {
     try {
       const data = {
         name: values.name,
@@ -246,7 +223,7 @@ const DashboardListPage: React.FC = () => {
       }
       return res.success;
     } catch (error) {
-      message.error(getErrorMessage(error as any, 'pages.dashboard.operationFailed'));
+      message.error(getErrorMessage(error as { errorCode?: string; message?: string }, 'pages.dashboard.operationFailed'));
       return false;
     }
   };
@@ -268,7 +245,7 @@ const DashboardListPage: React.FC = () => {
               </Space>
             </Space>
           }
-          request={async (params: any, sort: any, filter: any) => {
+          request={async (params: Record<string, unknown>, sort: Record<string, unknown>, filter: Record<string, unknown>) => {
             const res = await api.list({ ...params, search: state.search, sort, filter });
             return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
           }}
@@ -293,6 +270,7 @@ const DashboardListPage: React.FC = () => {
           ]}
         />
 
+        {/* 创建/编辑看板弹窗 */}
         <ModalForm
           key={state.editingDashboard?.id || 'create'}
           title={state.editingDashboard ? intl.formatMessage({ id: 'pages.dashboard.edit' }) : intl.formatMessage({ id: 'pages.dashboard.create' })}
@@ -309,59 +287,82 @@ const DashboardListPage: React.FC = () => {
           autoFocusFirstInput
           width={600}
         >
-          <ProFormText
-            name="name"
-            label={intl.formatMessage({ id: 'pages.dashboard.name' })}
-            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.dashboard.nameRequired' }) }]}
-          />
-          <ProFormTextArea
-            name="description"
-            label={intl.formatMessage({ id: 'pages.dashboard.description' })}
-            fieldProps={{ rows: 3 }}
-          />
-          <ProFormSelect
-            name="layoutType"
-            label={intl.formatMessage({ id: 'pages.dashboard.layoutType' })}
+          <ProFormText name="name" label={intl.formatMessage({ id: 'pages.dashboard.name' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.dashboard.nameRequired' }) }]} />
+          <ProFormTextArea name="description" label={intl.formatMessage({ id: 'pages.dashboard.description' })} fieldProps={{ rows: 3 }} />
+          <ProFormSelect name="layoutType" label={intl.formatMessage({ id: 'pages.dashboard.layoutType' })}
             options={[
               { label: intl.formatMessage({ id: 'pages.dashboard.layoutGrid' }), value: 'grid' },
               { label: intl.formatMessage({ id: 'pages.dashboard.layoutWaterfall' }), value: 'waterfall' },
               { label: intl.formatMessage({ id: 'pages.dashboard.layoutFree' }), value: 'free' },
-            ]}
-            initialValue="grid"
-          />
-          <ProFormSelect
-            name="theme"
-            label={intl.formatMessage({ id: 'pages.dashboard.theme' })}
+            ]} initialValue="grid" />
+          <ProFormSelect name="theme" label={intl.formatMessage({ id: 'pages.dashboard.theme' })}
             options={[
               { label: intl.formatMessage({ id: 'pages.dashboard.themeLight' }), value: 'light' },
               { label: intl.formatMessage({ id: 'pages.dashboard.themeDark' }), value: 'dark' },
               { label: intl.formatMessage({ id: 'pages.dashboard.themeCustom' }), value: 'custom' },
-            ]}
-            initialValue="light"
-          />
-          <ProFormSelect
-            name="isPublic"
-            label={intl.formatMessage({ id: 'pages.dashboard.visibility' })}
+            ]} initialValue="dark" />
+          <ProFormSelect name="isPublic" label={intl.formatMessage({ id: 'pages.dashboard.visibility' })}
             options={[
               { label: intl.formatMessage({ id: 'pages.dashboard.private' }), value: 'false' },
               { label: intl.formatMessage({ id: 'pages.dashboard.public' }), value: 'true' },
-            ]}
-            initialValue="false"
-          />
+            ]} initialValue="false" />
         </ModalForm>
 
+        {/* 详情抽屉 */}
         <Drawer title={intl.formatMessage({ id: 'pages.dashboard.detail' })} placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingId: '' })} size="large">
           <DetailContent id={state.viewingId} isMobile={isMobile} />
         </Drawer>
 
-        <Drawer title={intl.formatMessage({ id: 'pages.dashboard.design' })} size="100%" open={state.designVisible} onClose={closeDesign}>
-          {state.designingId && <DashboardDesigner id={state.designingId} onClose={closeDesign} />}
+        {/* 设计器全屏抽屉 */}
+        <Drawer
+          title={null}
+          closable
+          placement="right"
+          size="100%"
+          open={state.designVisible}
+          onClose={closeDesign}
+          styles={{ body: { padding: 0 } }}
+        >
+          {state.designingId && (
+            <DashboardDesigner
+              dashboardId={state.designingId}
+              onPreview={() => {
+                // 从设计模式切换到预览模式
+                set({ previewingId: state.designingId, previewVisible: true });
+              }}
+              onClose={closeDesign}
+            />
+          )}
+        </Drawer>
+
+        {/* 大屏预览全屏抽屉 */}
+        <Drawer
+          title={null}
+          closable
+          placement="right"
+          size="100%"
+          open={state.previewVisible}
+          onClose={closePreview}
+          styles={{ body: { padding: 0 } }}
+        >
+          {state.previewingId && (
+            <DashboardPreview
+              dashboardId={state.previewingId}
+              onEdit={() => {
+                // 从预览切换到设计
+                closePreview();
+                handleDesign(state.previewingId);
+              }}
+              onClose={closePreview}
+            />
+          )}
         </Drawer>
       </ProCard>
     </PageContainer>
   );
 };
 
+/** 看板详情 */
 const DetailContent: React.FC<{ id: string; isMobile: boolean }> = ({ id, isMobile }) => {
   const intl = useIntl();
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
@@ -377,8 +378,7 @@ const DetailContent: React.FC<{ id: string; isMobile: boolean }> = ({ id, isMobi
     }
   }, [id]);
 
-  if (loading) return null;
-  if (!dashboard) return null;
+  if (loading || !dashboard) return null;
 
   return (
     <ProDescriptions column={isMobile ? 1 : 2} bordered size="small">
@@ -401,89 +401,10 @@ const DetailContent: React.FC<{ id: string; isMobile: boolean }> = ({ id, isMobi
       {dashboard.updatedAt && <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.updatedAt' })}>
         {dayjs(dashboard.updatedAt).format('YYYY-MM-DD HH:mm')}
       </ProDescriptions.Item>}
+      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.totalCards' })} span={2}>
+        {dashboard.cards?.length || 0} {intl.formatMessage({ id: 'pages.dashboard.totalCards' })}
+      </ProDescriptions.Item>
     </ProDescriptions>
-  );
-};
-
-const DashboardDesigner: React.FC<{ id: string; onClose: () => void }> = ({ id }) => {
-  const intl = useIntl();
-  const [dashboard, setDashboard] = useState<Dashboard | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [cardFormVisible, setCardFormVisible] = useState(false);
-  const [editingCard, setEditingCard] = useState<DashboardCard | null>(null);
-
-  const api = {
-    get: (id: string) => request<ApiResponse<Dashboard>>(`/apiservice/api/dashboard/${id}`),
-    addCard: (dashboardId: string, data: Partial<DashboardCard>) => request<ApiResponse<DashboardCard>>(`/apiservice/api/dashboard/${dashboardId}/cards`, { method: 'POST', data }),
-    deleteCard: (cardId: string) => request<ApiResponse<void>>(`/apiservice/api/dashboard/cards/${cardId}`, { method: 'DELETE' }),
-  };
-
-  useEffect(() => { loadDashboard(); }, [id]);
-
-  const loadDashboard = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get(id);
-      if (res.success && res.data) setDashboard(res.data);
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
-  };
-
-  const handleAddCard = async (values: Record<string, any>) => {
-    if (!dashboard) return false;
-    try {
-      const res = await api.addCard(dashboard.id, values);
-      if (res.success) {
-        message.success(intl.formatMessage({ id: 'pages.dashboard.addCardSuccess' }));
-        setCardFormVisible(false);
-        loadDashboard();
-      }
-      return res.success;
-    } catch { return false; }
-  };
-
-  const handleDeleteCard = async (cardId: string) => {
-    try {
-      const res = await api.deleteCard(cardId);
-      if (res.success) message.success(intl.formatMessage({ id: 'pages.dashboard.deleteCardSuccess' }));
-      loadDashboard();
-    } catch {}
-  };
-
-  if (loading) return <div style={{ textAlign: 'center', padding: 100 }}><Spin /></div>;
-  if (!dashboard) return <Result status="404" title={intl.formatMessage({ id: 'pages.dashboard.notFound' })} />;
-
-  return (
-    <div>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
-        <Space>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setCardFormVisible(true)}>{intl.formatMessage({ id: 'pages.dashboard.addCard' })}</Button>
-        </Space>
-      </div>
-      <Row gutter={16}>
-        {dashboard.cards.length === 0 ? (
-          <Col span={24}><Empty description={intl.formatMessage({ id: 'pages.dashboard.noCards' })} /></Col>
-        ) : (
-          dashboard.cards.map(card => (
-            <Col key={card.id} span={card.width} style={{ marginBottom: 16 }}>
-              <Card title={card.title} extra={
-                <Button type="link" size="small" danger onClick={() => handleDeleteCard(card.id)}>{intl.formatMessage({ id: 'pages.dashboard.delete' })}</Button>
-              } style={{ height: card.height }}>
-                <Empty description={intl.formatMessage({ id: 'pages.dashboard.cardPlaceholder' })} />
-              </Card>
-            </Col>
-          ))
-        )}
-      </Row>
-      <ModalForm title={intl.formatMessage({ id: 'pages.dashboard.addCard' })} open={cardFormVisible} onOpenChange={setCardFormVisible} onFinish={handleAddCard} width={600}>
-        <ProFormText name="title" label={intl.formatMessage({ id: 'pages.dashboard.cardTitle' })} rules={[{ required: true }]} />
-        <ProFormSelect name="cardType" label={intl.formatMessage({ id: 'pages.dashboard.cardType' })} options={[
-          { label: intl.formatMessage({ id: 'pages.dashboard.cardTypeStatistic' }), value: 'statistic' },
-          { label: intl.formatMessage({ id: 'pages.dashboard.cardTypeChart' }), value: 'chart' },
-          { label: intl.formatMessage({ id: 'pages.dashboard.cardTypeTable' }), value: 'table' },
-        ]} rules={[{ required: true }]} />
-      </ModalForm>
-    </div>
   );
 };
 

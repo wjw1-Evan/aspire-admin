@@ -233,6 +233,26 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
           {hasChanges && <Text type="warning" style={{ fontSize: 12 }}>（有未保存的布局变更）</Text>}
         </Space>
         <Space>
+          <Select
+            value={dashboard.layoutType || 'cols-3'}
+            onChange={async (value) => {
+              // 更新看板布局类型
+              const res = await request<ApiResponse<void>>(`/apiservice/api/dashboard/${dashboardId}`, {
+                method: 'PUT',
+                data: { layoutType: value },
+              });
+              if (res.success) {
+                setDashboard({ ...dashboard, layoutType: value });
+              }
+            }}
+            options={[
+              { label: '一行3列', value: 'cols-3' },
+              { label: '一行4列', value: 'cols-4' },
+              { label: '一行6列', value: 'cols-6' },
+              { label: '自由布局', value: 'free' },
+            ]}
+            style={{ width: 120 }}
+          />
           <Button icon={<PlusOutlined />} type="primary" onClick={() => { setEditingCard(null); setCardFormOpen(true); }}>
             添加卡片
           </Button>

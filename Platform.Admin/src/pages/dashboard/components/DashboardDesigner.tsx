@@ -210,7 +210,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
   }
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* 工具栏 */}
       <div style={{
         padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',

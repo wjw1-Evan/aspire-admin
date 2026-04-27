@@ -103,7 +103,6 @@ const DashboardPreview: React.FC<DashboardPreviewProps> = ({ dashboardId, standa
 
   return (
     <div
-      ref={containerRef}
       style={{
         height: '100%',
         width: '100%',

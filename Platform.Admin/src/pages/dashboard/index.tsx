@@ -291,9 +291,10 @@ const DashboardListPage: React.FC = () => {
           <ProFormTextArea name="description" label={intl.formatMessage({ id: 'pages.dashboard.description' })} fieldProps={{ rows: 3 }} />
           <ProFormSelect name="layoutType" label={intl.formatMessage({ id: 'pages.dashboard.layoutType' })}
             options={[
-              { label: intl.formatMessage({ id: 'pages.dashboard.layoutGrid' }), value: 'cols-3' },
+              { label: intl.formatMessage({ id: 'pages.dashboard.layoutGrid' }), value: 'grid' },
+              { label: intl.formatMessage({ id: 'pages.dashboard.layoutWaterfall' }), value: 'waterfall' },
               { label: intl.formatMessage({ id: 'pages.dashboard.layoutFree' }), value: 'free' },
-            ]} initialValue="cols-3" />
+            ]} initialValue="grid" />
           <ProFormSelect name="theme" label={intl.formatMessage({ id: 'pages.dashboard.theme' })}
             options={[
               { label: intl.formatMessage({ id: 'pages.dashboard.themeLight' }), value: 'light' },

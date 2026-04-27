@@ -70,6 +70,10 @@ const DashboardListPage: React.FC = () => {
     set({ viewingId: id, detailVisible: true });
   };
 
+  const handleDesign = (id: string) => {
+    history.push(`/dashboard/${id}`);
+  };
+
   const handleEdit = async (id: string) => {
     try {
       const res = await api.get(id);
@@ -183,6 +187,9 @@ const DashboardListPage: React.FC = () => {
           </Button>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(r.id)}>
             {intl.formatMessage({ id: 'pages.dashboard.edit' })}
+          </Button>
+          <Button type="link" size="small" icon={<DashboardOutlined />} onClick={() => handleDesign(r.id)}>
+            {intl.formatMessage({ id: 'pages.dashboard.design' })}
           </Button>
           <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => handleCopy(r.id)}>
             {intl.formatMessage({ id: 'pages.dashboard.copy' })}

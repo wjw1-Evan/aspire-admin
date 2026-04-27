@@ -27,6 +27,7 @@ export default {
   'pages.dashboard.action': '操作',
   'pages.dashboard.view': '查看',
   'pages.dashboard.edit': '编辑',
+  'pages.dashboard.design': '设计',
   'pages.dashboard.copy': '复制',
   'pages.dashboard.share': '分享',
   'pages.dashboard.delete': '删除',

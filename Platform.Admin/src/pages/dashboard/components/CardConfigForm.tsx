@@ -657,6 +657,20 @@ const HeaderPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => 
         <Input value={style.headerTitle || ''} onChange={(e) => update('headerTitle', e.target.value)} size="small" placeholder="医院智慧管理平台" />
       </div>
       <div>
+        <Text type="secondary" style={{ fontSize: 12 }}>居中方式</Text>
+        <Select
+          value={style.textAlign || 'center'}
+          onChange={(v) => update('textAlign', v)}
+          size="small"
+          style={{ width: '100%' }}
+          options={[
+            { label: '左对齐', value: 'left' },
+            { label: '居中', value: 'center' },
+            { label: '右对齐', value: 'right' },
+          ]}
+        />
+      </div>
+      <div>
         <Text type="secondary" style={{ fontSize: 12 }}>字号</Text>
         <InputNumber value={style.fontSize || 22} onChange={(v) => update('fontSize', v)} size="small" min={14} max={48} style={{ width: '100%' }} />
       </div>

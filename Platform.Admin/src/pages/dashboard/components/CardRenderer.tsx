@@ -515,11 +515,12 @@ const TableCard: React.FC<{ style: StyleConfig }> = ({ style }) => {
 const HeaderCard: React.FC<{ style: StyleConfig }> = ({ style }) => {
   const {
     headerTitle = '数据看板', headerIcon = '',
-    textColor = '#fff', fontSize = 22,
+    textColor = '#fff', fontSize = 22, textAlign = 'center',
   } = style;
+  const justifyContent = textAlign === 'left' ? 'flex-start' : textAlign === 'right' ? 'flex-end' : 'center';
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      display: 'flex', alignItems: 'center', justifyContent,
       height: '100%', padding: '0 16px',
     }}>
       <Space size={12}>

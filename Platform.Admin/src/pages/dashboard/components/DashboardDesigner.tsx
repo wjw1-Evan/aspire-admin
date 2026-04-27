@@ -69,10 +69,22 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
   const [editingCard, setEditingCard] = useState<DashboardCardDto | null>(null);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
-  const { containerRef, width: containerWidth } = useContainerWidth({ initialWidth: 1200 });
+  const { containerRef, width: containerWidth, mounted } = useContainerWidth({ initialWidth: 1200 });
 
   // 布局状态
   const [layouts, setLayouts] = useState<Record<string, LayoutItem[]>>({});
+
+  /** 根据布局模板计算列数 */
+  const gridCols = React.useMemo(() => {
+    const layoutType = dashboard?.layoutType || 'cols-3';
+    const colsMap: Record<string, number> = {
+      'cols-3': 3,
+      'cols-4': 4,
+      'cols-6': 6,
+      'free': 12,
+    };
+    return colsMap[layoutType] || 12;
+  }, [dashboard?.layoutType]);
 
   /** 加载看板数据 */
   const loadDashboard = useCallback(async () => {
@@ -249,66 +261,67 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
             />
           </div>
         ) : (
-          <RGL
-            className="dashboard-designer-grid"
-            style={{ width: '100%' }}
-            width={containerWidth}
-            layouts={layouts}
-            breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-            cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
-            rowHeight={40}
-            onLayoutChange={(currentLayout: LayoutItem[]) => handleLayoutChange(currentLayout)}
-            isDraggable
-            isResizable
-            compactType="vertical"
-            margin={[12, 12]}
-            containerPadding={[0, 0]}
-          >
-            {cards.map((card) => (
-              <div
-                key={card.id}
-                style={{
-                  cursor: 'move',
-                  position: 'relative',
-                  borderRadius: 8,
-                  outline: selectedCardId === card.id ? '2px solid #1890ff' : 'none',
-                  outlineOffset: 2,
-                }}
-                onClick={() => setSelectedCardId(card.id)}
-              >
-                {/* 卡片渲染 */}
-                <CardRenderer card={card} designMode />
-
-                {/* 悬浮操作栏 */}
+          <div style={{ width: '100%' }}>
+            <RGL
+              className="dashboard-designer-grid"
+              width={containerWidth || window.innerWidth}
+              layouts={layouts}
+              breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+              cols={{ lg: gridCols, md: gridCols, sm: Math.max(gridCols, 2), xs: Math.max(gridCols, 2), xxs: 1 }}
+              rowHeight={40}
+              onLayoutChange={(currentLayout: LayoutItem[]) => handleLayoutChange(currentLayout)}
+              isDraggable
+              isResizable
+              compactType={dashboard?.layoutType === 'free' ? null : 'vertical'}
+              margin={[12, 12]}
+              containerPadding={[0, 0]}
+            >
+              {cards.map((card) => (
                 <div
-                  className="card-toolbar"
+                  key={card.id}
                   style={{
-                    position: 'absolute', top: 4, right: 4, display: 'none',
-                    background: 'rgba(0,0,0,0.7)', borderRadius: 6, padding: '2px 4px',
-                    zIndex: 10,
+                    cursor: 'move',
+                    position: 'relative',
+                    borderRadius: 8,
+                    outline: selectedCardId === card.id ? '2px solid #1890ff' : 'none',
+                    outlineOffset: 2,
                   }}
+                  onClick={() => setSelectedCardId(card.id)}
                 >
-                  <Space size={2}>
-                    <Tooltip title="编辑">
-                      <Button type="text" size="small" icon={<EditOutlined style={{ color: '#fff', fontSize: 13 }} />}
-                        onClick={(e) => { e.stopPropagation(); setEditingCard(card); setCardFormOpen(true); }} />
-                    </Tooltip>
-                    <Tooltip title="复制">
-                      <Button type="text" size="small" icon={<CopyOutlined style={{ color: '#fff', fontSize: 13 }} />}
-                        onClick={(e) => { e.stopPropagation(); handleCopyCard(card); }} />
-                    </Tooltip>
-                    <Popconfirm title="确定删除此卡片？" onConfirm={() => handleDeleteCard(card.id)}
-                      onPopupClick={(e) => e.stopPropagation()}>
-                      <Tooltip title="删除">
-                        <Button type="text" size="small" icon={<DeleteOutlined style={{ color: '#ff4d4f', fontSize: 13 }} />}
-                          onClick={(e) => e.stopPropagation()} />
+                  {/* 卡片渲染 */}
+                  <CardRenderer card={card} designMode />
+
+                  {/* 悬浮操作栏 */}
+                  <div
+                    className="card-toolbar"
+                    style={{
+                      position: 'absolute', top: 4, right: 4, display: 'none',
+                      background: 'rgba(0,0,0,0.7)', borderRadius: 6, padding: '2px 4px',
+                      zIndex: 10,
+                    }}
+                  >
+                    <Space size={2}>
+                      <Tooltip title="编辑">
+                        <Button type="text" size="small" icon={<EditOutlined style={{ color: '#fff', fontSize: 13 }} />}
+                          onClick={(e) => { e.stopPropagation(); setEditingCard(card); setCardFormOpen(true); }} />
                       </Tooltip>
-                    </Popconfirm>
-                  </Space>
+                      <Tooltip title="复制">
+                        <Button type="text" size="small" icon={<CopyOutlined style={{ color: '#fff', fontSize: 13 }} />}
+                          onClick={(e) => { e.stopPropagation(); handleCopyCard(card); }} />
+                      </Tooltip>
+                      <Popconfirm title="确定删除此卡片？" onConfirm={() => handleDeleteCard(card.id)}
+                        onPopupClick={(e) => e.stopPropagation()}>
+                        <Tooltip title="删除">
+                          <Button type="text" size="small" icon={<DeleteOutlined style={{ color: '#ff4d4f', fontSize: 13 }} />}
+                            onClick={(e) => e.stopPropagation()} />
+                        </Tooltip>
+                      </Popconfirm>
+                    </Space>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </RGL>
+              ))}
+            </RGL>
+          </div>
         )}
       </div>
 

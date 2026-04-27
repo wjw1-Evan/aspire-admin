@@ -21,7 +21,7 @@ interface CardConfigFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editingCard: DashboardCardDto | null;
-  onFinish: (values: { title: string; cardType: string; styleConfig: string }) => Promise<boolean>;
+  onFinish: (values: { title: string; cardType: string; styleConfig: string; dataSource: string }) => Promise<boolean>;
 }
 
 /** 卡片类型选项 */
@@ -53,6 +53,164 @@ const CARD_TYPE_OPTIONS = [
 const parseStyle = (config: string): StyleConfig => {
   if (!config) return {};
   try { return JSON.parse(config); } catch { return {}; }
+};
+
+/** 解析 dataSource */
+const parseDataSource = (config: string): DataSourceConfig => {
+  if (!config) return { static: true };
+  try { return JSON.parse(config); } catch { return { static: true }; }
+};
+
+/** 数据源配置 */
+interface DataSourceConfig {
+module?: string;
+      apiPath?: string;
+      dataField?: string;
+      aggregation?: string;
+      groupBy?: string;
+      timeRange?: string;
+      filters?: Record<string, unknown>;
+      static?: boolean;
+      staticData?: unknown;
+      refreshInterval?: number;
+    }
+
+/** 数据源配置面板 */
+const DataSourcePanel: React.FC<{
+  dataSource: DataSourceConfig;
+  onChange: (ds: DataSourceConfig) => void;
+}> = ({ dataSource, onChange }) => {
+  const update = (key: string, value: unknown) => onChange({ ...dataSource, [key]: value });
+
+  /** 可用的数据模块选项 */
+  const MODULE_OPTIONS = [
+    { label: '静态数据（手动输入）', value: 'static' },
+    { label: '任务统计', value: 'task' },
+    { label: '用户统计', value: 'user' },
+    { label: '文件存储', value: 'storage' },
+    { label: '园区管理', value: 'park' },
+    { label: '工作流', value: 'workflow' },
+    { label: 'IoT设备', value: 'iot' },
+    { label: '走访任务', value: 'visit' },
+    { label: '公文管理', value: 'document' },
+  ];
+
+  /** 聚合方式选项 */
+  const AGGREGATION_OPTIONS = [
+    { label: '总计', value: 'count' },
+    { label: '平均值', value: 'avg' },
+    { label: '最大值', value: 'max' },
+    { label: '最小值', value: 'min' },
+    { label: '求和', value: 'sum' },
+    { label: '最新值', value: 'latest' },
+  ];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div>
+        <Text type="secondary" style={{ fontSize: 12 }}>数据来源</Text>
+        <Select
+          value={dataSource.module || 'static'}
+          onChange={(v) => {
+            if (v === 'static') {
+              onChange({ static: true, staticData: dataSource.staticData || 0 });
+            } else {
+              onChange({ module: v, static: false });
+            }
+          }}
+          options={MODULE_OPTIONS}
+          style={{ width: '100%' }}
+        />
+      </div>
+
+      {dataSource.module && dataSource.module !== 'static' && (
+        <>
+          <div>
+            <Text type="secondary" style={{ fontSize: 12 }}>API 路径</Text>
+            <Input
+              value={dataSource.apiPath || ''}
+              onChange={(e) => update('apiPath', e.target.value)}
+              placeholder={`/apiservice/api/${dataSource.module}/statistics`}
+            />
+          </div>
+
+          <div>
+            <Text type="secondary" style={{ fontSize: 12 }}>数据字段（用于显示的字段名）</Text>
+            <Input
+              value={dataSource.dataField || ''}
+              onChange={(e) => update('dataField', e.target.value)}
+              placeholder="如: totalCount, totalUsers, value"
+            />
+          </div>
+
+          <div>
+            <Text type="secondary" style={{ fontSize: 12 }}>聚合方式</Text>
+            <Select
+              value={dataSource.aggregation || 'count'}
+              onChange={(v) => update('aggregation', v)}
+              options={AGGREGATION_OPTIONS}
+              style={{ width: '100%' }}
+            />
+          </div>
+
+          <div>
+            <Text type="secondary" style={{ fontSize: 12 }}>时间范围</Text>
+            <Select
+              value={dataSource.timeRange || 'today'}
+              onChange={(v) => update('timeRange', v)}
+              options={[
+                { label: '今天', value: 'today' },
+                { label: '本周', value: 'week' },
+                { label: '本月', value: 'month' },
+                { label: '本年', value: 'year' },
+                { label: '全部', value: 'all' },
+              ]}
+              style={{ width: '100%' }}
+            />
+          </div>
+
+          <div>
+            <Text type="secondary" style={{ fontSize: 12 }}>过滤条件（JSON）</Text>
+            <Input.TextArea
+              value={dataSource.filters ? JSON.stringify(dataSource.filters) : ''}
+              onChange={(e) => {
+                try {
+                  update('filters', JSON.parse(e.target.value || '{}'));
+                } catch { /* ignore */ }
+              }}
+              placeholder='{"status": "active"}'
+              rows={2}
+              style={{ fontSize: 12 }}
+            />
+          </div>
+        </>
+      )}
+
+      {dataSource.module === 'static' && (
+        <div>
+          <Text type="secondary" style={{ fontSize: 12 }}>静态数值</Text>
+          <InputNumber
+            value={typeof dataSource.staticData === 'number' ? dataSource.staticData : 0}
+            onChange={(v) => update('staticData', v || 0)}
+            style={{ width: '100%' }}
+          />
+        </div>
+      )}
+
+      <Divider style={{ margin: '8px 0', fontSize: 12 }} />
+      <div>
+        <Text type="secondary" style={{ fontSize: 12 }}>刷新间隔（秒）</Text>
+        <InputNumber
+          value={dataSource.refreshInterval || 300}
+          onChange={(v) => update('refreshInterval', v || 300)}
+          min={30}
+          max={3600}
+          step={30}
+          style={{ width: '100%' }}
+        />
+      </div>
+    </div>
+  );
 };
 
 /** 通用样式面板 */
@@ -656,17 +814,21 @@ const TablePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => v
 
 const CardConfigForm: React.FC<CardConfigFormProps> = ({ open, onOpenChange, editingCard, onFinish }) => {
   const initialStyle = useMemo(() => parseStyle(editingCard?.styleConfig || ''), [editingCard]);
+  const initialDataSource = useMemo(() => parseDataSource(editingCard?.dataSource || ''), [editingCard]);
   const [cardType, setCardType] = useState<string>(editingCard?.cardType || 'statistic');
   const [styleConfig, setStyleConfig] = useState<StyleConfig>(initialStyle);
+  const [dataSource, setDataSource] = useState<DataSourceConfig>(initialDataSource);
 
   // 当 editingCard 变化时重新初始化
   React.useEffect(() => {
     if (editingCard) {
       setCardType(editingCard.cardType);
       setStyleConfig(parseStyle(editingCard.styleConfig));
+      setDataSource(parseDataSource(editingCard.dataSource || ''));
     } else {
       setCardType('statistic');
       setStyleConfig({});
+      setDataSource({ static: true, staticData: 0 });
     }
   }, [editingCard]);
 
@@ -724,6 +886,7 @@ const CardConfigForm: React.FC<CardConfigFormProps> = ({ open, onOpenChange, edi
           title: values.title,
           cardType: cardType,
           styleConfig: JSON.stringify(styleConfig),
+          dataSource: JSON.stringify(dataSource),
         });
       }}
       modalProps={{ destroyOnClose: true }}
@@ -758,12 +921,21 @@ const CardConfigForm: React.FC<CardConfigFormProps> = ({ open, onOpenChange, edi
               </div>
             ),
           },
-          {
+{
             key: 'style',
             label: '通用样式',
             children: (
               <div style={{ maxHeight: 400, overflow: 'auto', padding: '8px 0' }}>
                 <CommonStylePanel style={styleConfig} onChange={setStyleConfig} />
+              </div>
+            ),
+          },
+          {
+            key: 'datasource',
+            label: '数据源',
+            children: (
+              <div style={{ maxHeight: 400, overflow: 'auto', padding: '8px 0' }}>
+                <DataSourcePanel dataSource={dataSource} onChange={setDataSource} />
               </div>
             ),
           },

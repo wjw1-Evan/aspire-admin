@@ -1,10 +1,10 @@
 /**
  * 卡片渲染器
- * 根据 cardType 和 styleConfig 渲染不同类型的可视化组件
+ * 根据 cardType 和 styleConfig 渲染不同类型的可视化组件，支持动态数据获取
  */
-import React, { useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
-import { Typography, Tag, Space, Badge, Progress } from 'antd';
+import { Typography, Tag, Space, Badge, Progress, Spin } from 'antd';
 import {
   ArrowUpOutlined, ArrowDownOutlined,
   CheckCircleFilled, WarningFilled, CloseCircleFilled, MinusCircleFilled,
@@ -12,7 +12,9 @@ import {
   MonitorOutlined, BulbOutlined, BankOutlined, SoundOutlined,
   IdcardOutlined, CoffeeOutlined, SettingOutlined,
 } from '@ant-design/icons';
+import { request } from '@umijs/max';
 import type { DashboardCardDto, StyleConfig } from './types';
+import type { ApiResponse } from '@/types';
 
 const { Text, Title } = Typography;
 
@@ -25,10 +27,86 @@ interface CardRendererProps {
   height?: number;
 }
 
+/** 数据源配置 */
+interface DataSourceConfig {
+  module?: string;
+  apiPath?: string;
+  dataField?: string;
+  aggregation?: string;
+  groupBy?: string;
+  timeRange?: string;
+  filters?: Record<string, unknown>;
+  static?: boolean;
+  staticData?: unknown;
+  refreshInterval?: number;
+}
+
 /** 解析 styleConfig JSON */
 const parseStyleConfig = (config: string): StyleConfig => {
   if (!config) return {};
   try { return JSON.parse(config); } catch { return {}; }
+};
+
+/** 解析 dataSource JSON */
+const parseDataSource = (config: string): DataSourceConfig => {
+  if (!config) return { static: true };
+  try { return JSON.parse(config); } catch { return { static: true }; }
+};
+
+/** 数据获取 API 映射 */
+const MODULE_API_MAP: Record<string, { path: string; method: string }> = {
+  task: { path: '/apiservice/api/task/statistics', method: 'GET' },
+  user: { path: '/apiservice/api/users/me/statistics', method: 'GET' },
+  storage: { path: '/apiservice/api/cloud-storage/statistics', method: 'GET' },
+  park: { path: '/apiservice/api/park-management/statistics', method: 'GET' },
+  workflow: { path: '/apiservice/api/workflow/statistics', method: 'GET' },
+  iot: { path: '/apiservice/api/iot/statistics', method: 'GET' },
+  visit: { path: '/apiservice/api/park-management/visit/statistics', method: 'GET' },
+  document: { path: '/apiservice/api/documents/statistics', method: 'GET' },
+};
+
+/** 获取数据 */
+const fetchCardData = async (dataSource: DataSourceConfig): Promise<unknown> => {
+  if (dataSource.static) {
+    return dataSource.staticData ?? 0;
+  }
+
+  const moduleInfo = MODULE_API_MAP[dataSource.module || ''];
+  if (!moduleInfo) {
+    return 0;
+  }
+
+  try {
+    const apiPath = dataSource.apiPath || moduleInfo.path;
+    const params: Record<string, unknown> = {};
+
+    if (dataSource.timeRange) {
+      params.timeRange = dataSource.timeRange;
+    }
+    if (dataSource.filters) {
+      Object.assign(params, dataSource.filters);
+    }
+
+    const res = await request<ApiResponse<Record<string, unknown>>>(apiPath, {
+      method: moduleInfo.method,
+      params: Object.keys(params).length > 0 ? params : undefined,
+    });
+
+    if (res.success && res.data) {
+      // 提取指定字段
+      if (dataSource.dataField) {
+        const fieldValue = dataSource.dataField.split('.').reduce((obj, key) => {
+          return obj && typeof obj === 'object' ? (obj as Record<string, unknown>)[key] : undefined;
+        }, res.data as unknown);
+        return fieldValue ?? 0;
+      }
+      return res.data;
+    }
+    return 0;
+  } catch (error) {
+    console.error('[CardRenderer] 数据获取失败:', error);
+    return 0;
+  }
 };
 
 /** 状态颜色映射 */
@@ -82,13 +160,16 @@ const getBaseChartOption = () => ({
 // ─── 各类型渲染器 ──────────────────────────────────────
 
 /** 统计指标卡 */
-const StatisticCard: React.FC<{ style: StyleConfig }> = ({ style }) => {
+const StatisticCard: React.FC<{ style: StyleConfig; value?: unknown }> = ({ style, value }) => {
   const {
     prefix = '', suffix = '', valueColor = '#00d4ff', valueSize = 36,
     icon, iconColor = '#00d4ff', trend, trendValue, trendColor,
     description = '', textColor = DARK_THEME.subText,
   } = style;
-  const value = style.centerValue || '0';
+  const displayValue = value !== undefined ? value : style.centerValue;
+  const formattedValue = typeof displayValue === 'number'
+    ? displayValue.toLocaleString()
+    : (displayValue != null ? String(displayValue) : '0');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%', padding: '8px 4px' }}>
@@ -100,7 +181,7 @@ const StatisticCard: React.FC<{ style: StyleConfig }> = ({ style }) => {
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, flexWrap: 'wrap' }}>
         {prefix && <Text style={{ color: valueColor, fontSize: valueSize * 0.6 }}>{prefix}</Text>}
         <span style={{ color: valueColor, fontSize: valueSize, fontWeight: 700, lineHeight: 1.1, fontFamily: "'DIN Alternate', 'Roboto Mono', monospace" }}>
-          {value}
+          {formattedValue}
         </span>
         {suffix && <Text style={{ color: textColor, fontSize: 13 }}>{suffix}</Text>}
         {trend && trend !== 'none' && (
@@ -541,11 +622,43 @@ const RadarChart: React.FC<{ style: StyleConfig; width?: number; height?: number
 
 const CardRenderer: React.FC<CardRendererProps> = ({ card, width, height }) => {
   const styleConfig = useMemo(() => parseStyleConfig(card.styleConfig), [card.styleConfig]);
+  const dataSourceConfig = useMemo(() => parseDataSource(card.dataSource), [card.dataSource]);
+  const [dynamicValue, setDynamicValue] = useState<unknown>(undefined);
+  const [loading, setLoading] = useState(false);
+
+  /** 获取数据 */
+  const loadData = useCallback(async () => {
+    if (dataSourceConfig.static) {
+      setDynamicValue(dataSourceConfig.staticData);
+      return;
+    }
+    setLoading(true);
+    try {
+      const value = await fetchCardData(dataSourceConfig);
+      setDynamicValue(value);
+    } finally {
+      setLoading(false);
+    }
+  }, [dataSourceConfig]);
+
+  /** 初始化加载 + 定时刷新 */
+  useEffect(() => {
+    loadData();
+    const refreshInterval = dataSourceConfig.refreshInterval || card.refreshInterval || 300;
+    if (refreshInterval > 0 && !dataSourceConfig.static) {
+      const timer = setInterval(loadData, refreshInterval * 1000);
+      return () => clearInterval(timer);
+    }
+    return undefined;
+  }, [loadData, dataSourceConfig, card.refreshInterval]);
 
   const renderContent = () => {
+    if (loading && dynamicValue === undefined) {
+      return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}><Spin size="small" /></div>;
+    }
     switch (card.cardType) {
       case 'statistic':
-        return <StatisticCard style={styleConfig} />;
+        return <StatisticCard style={styleConfig} value={dynamicValue} />;
       case 'gauge':
         return <GaugeChart style={styleConfig} width={width} height={height} />;
       case 'ring':

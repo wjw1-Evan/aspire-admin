@@ -128,13 +128,14 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
   }, [dashboardId, layouts]);
 
   /** 添加/编辑卡片 */
-  const handleCardFinish = useCallback(async (values: { title: string; cardType: string; styleConfig: string }) => {
+  const handleCardFinish = useCallback(async (values: { title: string; cardType: string; styleConfig: string; dataSource: string }) => {
     if (editingCard) {
       // 更新
       const res = await api.updateCard(dashboardId, editingCard.id, {
         title: values.title,
         cardType: values.cardType,
         styleConfig: values.styleConfig,
+        dataSource: values.dataSource,
       });
       if (res.success) {
         message.success('卡片已更新');
@@ -152,8 +153,9 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
         title: values.title,
         cardType: values.cardType,
         styleConfig: values.styleConfig,
+        dataSource: values.dataSource,
         positionX: 0,
-        positionY: Infinity, // 放到最底部
+        positionY: 0,
         width: defaultSize.w,
         height: defaultSize.h,
       });
@@ -187,8 +189,9 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
       title: `${card.title} (副本)`,
       cardType: card.cardType,
       styleConfig: card.styleConfig,
+      dataSource: card.dataSource,
       positionX: 0,
-      positionY: Infinity,
+      positionY: 0,
       width: card.width || defaultSize.w,
       height: card.height || defaultSize.h,
     });

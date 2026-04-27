@@ -67,7 +67,6 @@ public class DashboardService : IDashboardService
             throw new ArgumentException("用户ID不能为空", nameof(userId));
 
         var dashboard = await _context.Set<Dashboard>()
-            .Include(d => d.Cards)
             .FirstOrDefaultAsync(x => x.Id == id);
 
         if (dashboard == null)
@@ -75,6 +74,10 @@ public class DashboardService : IDashboardService
 
         if (dashboard.UserId != userId && !dashboard.IsPublic)
             throw new UnauthorizedAccessException("无权访问此看板");
+
+        dashboard.Cards = await _context.Set<DashboardCard>()
+            .Where(c => c.DashboardId == id)
+            .ToListAsync();
 
         return ConvertToDto(dashboard);
     }
@@ -104,7 +107,6 @@ public class DashboardService : IDashboardService
             throw new ArgumentException("用户ID不能为空", nameof(userId));
 
         var dashboard = await _context.Set<Dashboard>()
-            .Include(d => d.Cards)
             .FirstOrDefaultAsync(x => x.Id == id);
 
         if (dashboard == null)
@@ -163,7 +165,6 @@ public class DashboardService : IDashboardService
             throw new ArgumentException("用户ID不能为空", nameof(userId));
 
         var originalDashboard = await _context.Set<Dashboard>()
-            .Include(d => d.Cards)
             .FirstOrDefaultAsync(x => x.Id == id);
 
         if (originalDashboard == null)
@@ -171,6 +172,10 @@ public class DashboardService : IDashboardService
 
         if (originalDashboard.UserId != userId && !originalDashboard.IsPublic)
             throw new UnauthorizedAccessException("无权复制此看板");
+
+        var originalCards = await _context.Set<DashboardCard>()
+            .Where(c => c.DashboardId == id)
+            .ToListAsync();
 
         var newDashboard = new Dashboard
         {
@@ -181,7 +186,7 @@ public class DashboardService : IDashboardService
             IsPublic = false,
             UserId = userId,
             CompanyId = originalDashboard.CompanyId,
-            Cards = originalDashboard.Cards.Select(c => new DashboardCard
+            Cards = originalCards.Select(c => new DashboardCard
             {
                 DashboardId = string.Empty,
                 CardType = c.CardType,
@@ -239,11 +244,14 @@ public class DashboardService : IDashboardService
             throw new ArgumentException("分享令牌不能为空", nameof(token));
 
         var dashboard = await _context.Set<Dashboard>()
-            .Include(d => d.Cards)
             .FirstOrDefaultAsync(x => x.ShareToken == token && x.IsPublic);
 
         if (dashboard == null)
             return null;
+
+        dashboard.Cards = await _context.Set<DashboardCard>()
+            .Where(c => c.DashboardId == dashboard.Id)
+            .ToListAsync();
 
         return ConvertToDto(dashboard);
     }

@@ -1237,6 +1237,288 @@ export default {
 };
 ```
 
+#### 菜单数据初始化
+本项目采用**数据库动态菜单**机制，菜单数据存储在 MongoDB 中，通过 `Platform.DataInitializer` 服务在系统启动时同步。
+
+**菜单配置文件**：`Platform.DataInitializer/Menus.json`
+
+**菜单数据结构**：
+```json
+{
+  "Name": "data-dashboard",
+  "Title": "数据看板",
+  "Path": "/dashboard",
+  "Component": "./dashboard",
+  "Icon": "dashboard",
+  "SortOrder": 9,
+  "ParentId": null
+}
+```
+
+**菜单字段说明**：
+| 字段 | 说明 | 示例 |
+|------|------|------|
+| `Name` | 菜单唯一标识（用于权限控制） | `data-dashboard` |
+| `Title` | 菜单显示标题 | `数据看板` |
+| `Path` | 菜单路径 | `/dashboard` |
+| `Component` | 前端组件路径 | `./dashboard` |
+| `Icon` | 菜单图标 | `dashboard` |
+| `SortOrder` | 排序顺序 | `9` |
+| `ParentId` | 父菜单ID（Name字段） | `null`（顶级菜单） |
+| `HideInMenu` | 是否在菜单中隐藏 | `true`/`false` |
+
+#### 新增模块开发流程
+
+**步骤 1：添加菜单配置**
+在 `Platform.DataInitializer/Menus.json` 中添加菜单项：
+```json
+{
+  "Name": "data-dashboard",
+  "Title": "数据看板",
+  "Path": "/dashboard",
+  "Component": "./dashboard",
+  "Icon": "dashboard",
+  "SortOrder": 9
+}
+```
+
+**步骤 2：添加路由配置**
+在 `Platform.Admin/config/routes.ts` 中添加路由：
+```typescript
+{
+  path: '/dashboard',
+  routes: [
+    {
+      path: '/dashboard',
+      component: './dashboard',
+    },
+    {
+      path: '/dashboard/:id',
+      component: './dashboard/[id]',
+    },
+  ],
+}
+```
+
+**步骤 3：添加菜单翻译**
+在 `Platform.Admin/src/locales/zh-CN/menu.ts` 中添加翻译：
+```typescript
+export default {
+  'menu.data-dashboard': '数据看板',
+  'menu.data-dashboard.desc': '自定义数据可视化看板',
+};
+```
+
+**步骤 4：添加页面翻译**
+在 `Platform.Admin/src/locales/zh-CN/modules/` 下创建模块翻译文件：
+```typescript
+// src/locales/zh-CN/modules/dashboard.ts
+export default {
+  'pages.dashboard.title': '数据看板',
+  'pages.dashboard.name': '看板名称',
+  // ...
+};
+```
+
+在 `Platform.Admin/src/locales/zh-CN/pages.ts` 中导入模块：
+```typescript
+import dashboard from './modules/dashboard';
+
+export default {
+  ...common,
+  ...dashboard,
+  // ...
+};
+```
+
+**步骤 5：创建前端页面**
+在 `Platform.Admin/src/pages/` 下创建页面组件：
+```
+src/pages/dashboard/
+├── index.tsx              # 列表页
+├── [id].tsx               # 详情页（编辑模式）
+├── view/[id].tsx          # 查看页（只读模式）
+└── share/[token].tsx      # 分享页
+```
+
+**步骤 6：重启数据初始化服务**
+修改 `Menus.json` 后，需要重启 `Platform.DataInitializer` 服务以同步菜单到数据库。
+
+#### 路由配置规范
+
+**[强制]** 所有业务页面路由必须配置在 `config/routes.ts` 中，并设置 `hideInMenu: true`。
+
+**路由配置模板**：
+```typescript
+// 单一路由
+{
+  path: '/dashboard',
+  component: './dashboard',
+  hideInMenu: true,
+}
+
+// 嵌套路由
+{
+  path: '/dashboard',
+  routes: [
+    {
+      path: '/dashboard',
+      component: './dashboard',
+    },
+    {
+      path: '/dashboard/:id',
+      component: './dashboard/[id]',
+    },
+  ],
+}
+```
+
+**动态路由参数**：
+- `:id` - 资源ID（如 `/dashboard/:id`）
+- `:token` - 分享令牌（如 `/dashboard/share/:token`）
+
+#### 菜单权限控制
+
+**后端权限注解**：
+```csharp
+[RequireMenu("data-dashboard")]
+public async Task<IActionResult> GetDashboards()
+{
+  // ...
+}
+```
+
+**前端权限检查**：
+- 菜单显示由后端返回的菜单数据控制
+- 页面访问由后端 API 权限控制
+- 前端不进行权限检查，只负责展示
+
+#### 数据看板模块开发示例
+
+**菜单配置**（`Menus.json`）：
+```json
+{
+  "Name": "data-dashboard",
+  "Title": "数据看板",
+  "Path": "/dashboard",
+  "Component": "./dashboard",
+  "Icon": "dashboard",
+  "SortOrder": 9
+}
+```
+
+**路由配置**（`config/routes.ts`）：
+```typescript
+{
+  path: '/dashboard',
+  routes: [
+    {
+      path: '/dashboard',
+      component: './dashboard',
+    },
+    {
+      path: '/dashboard/:id',
+      component: './dashboard/[id]',
+    },
+    {
+      path: '/dashboard/view/:id',
+      component: './dashboard/view/[id]',
+    },
+    {
+      path: '/dashboard/share/:token',
+      component: './dashboard/share/[token]',
+    },
+  ],
+}
+```
+
+**菜单翻译**（`menu.ts`）：
+```typescript
+'menu.data-dashboard': '数据看板',
+'menu.data-dashboard.desc': '自定义数据可视化看板',
+```
+
+**页面翻译**（`modules/dashboard.ts`）：
+```typescript
+export default {
+  'pages.dashboard.title': '数据看板',
+  'pages.dashboard.name': '看板名称',
+  'pages.dashboard.description': '描述',
+  'pages.dashboard.layoutType': '布局类型',
+  'pages.dashboard.theme': '主题',
+  'pages.dashboard.visibility': '可见性',
+  'pages.dashboard.public': '公开',
+  'pages.dashboard.private': '私有',
+  'pages.dashboard.createdAt': '创建时间',
+  'pages.dashboard.action': '操作',
+  'pages.dashboard.view': '查看',
+  'pages.dashboard.edit': '编辑',
+  'pages.dashboard.copy': '复制',
+  'pages.dashboard.share': '分享',
+  'pages.dashboard.delete': '删除',
+  'pages.dashboard.create': '创建看板',
+  'pages.dashboard.createSuccess': '创建成功',
+  'pages.dashboard.updateSuccess': '更新成功',
+  'pages.dashboard.copySuccess': '复制成功',
+  'pages.dashboard.copyFailed': '复制失败',
+  'pages.dashboard.shareSuccess': '分享成功，链接已复制到剪贴板',
+  'pages.dashboard.shareFailed': '分享失败',
+  'pages.dashboard.deleteSuccess': '删除成功',
+  'pages.dashboard.deleteFailed': '删除失败',
+  'pages.dashboard.confirmDelete': '确定删除此看板吗？',
+  'pages.dashboard.nameRequired': '看板名称不能为空',
+  'pages.dashboard.back': '返回',
+  'pages.dashboard.backToList': '返回列表',
+  'pages.dashboard.notFound': '看板不存在',
+  'pages.dashboard.notFoundDesc': '您访问的看板不存在或已被删除',
+  'pages.dashboard.shareNotFound': '分享链接无效',
+  'pages.dashboard.shareNotFoundDesc': '分享链接已失效或不存在',
+  'pages.dashboard.sharedView': '（分享视图）',
+  'pages.dashboard.totalDashboards': '总看板数',
+  'pages.dashboard.publicDashboards': '公开看板',
+  'pages.dashboard.privateDashboards': '私有看板',
+  'pages.dashboard.totalCards': '总卡片数',
+  'pages.dashboard.recentCreated': '最近创建',
+  'pages.dashboard.addCard': '添加卡片',
+  'pages.dashboard.addFirstCard': '添加第一个卡片',
+  'pages.dashboard.addCardSuccess': '添加卡片成功',
+  'pages.dashboard.addCardFailed': '添加卡片失败',
+  'pages.dashboard.updateCardSuccess': '更新卡片成功',
+  'pages.dashboard.updateCardFailed': '更新卡片失败',
+  'pages.dashboard.deleteCardSuccess': '删除卡片成功',
+  'pages.dashboard.deleteCardFailed': '删除卡片失败',
+  'pages.dashboard.editCard': '编辑卡片',
+  'pages.dashboard.settings': '设置',
+  'pages.dashboard.cardType': '卡片类型',
+  'pages.dashboard.cardTypeStatistic': '统计卡片',
+  'pages.dashboard.cardTypeChart': '图表卡片',
+  'pages.dashboard.cardTypeTable': '表格卡片',
+  'pages.dashboard.cardTypeProgress': '进度卡片',
+  'pages.dashboard.cardTypeText': '文本卡片',
+  'pages.dashboard.cardTypeImage': '图片卡片',
+  'pages.dashboard.cardTitle': '卡片标题',
+  'pages.dashboard.cardWidth': '卡片宽度',
+  'pages.dashboard.cardHeight': '卡片高度',
+  'pages.dashboard.refreshInterval': '刷新间隔',
+  'pages.dashboard.refresh1min': '1分钟',
+  'pages.dashboard.refresh5min': '5分钟',
+  'pages.dashboard.refresh15min': '15分钟',
+  'pages.dashboard.refresh30min': '30分钟',
+  'pages.dashboard.refresh1hour': '1小时',
+  'pages.dashboard.dataSource': '数据源配置',
+  'pages.dashboard.dataSourcePlaceholder': '请输入数据源配置（JSON格式）',
+  'pages.dashboard.styleConfig': '样式配置',
+  'pages.dashboard.styleConfigPlaceholder': '请输入样式配置（JSON格式）',
+  'pages.dashboard.cardPlaceholder': '卡片数据加载中...',
+  'pages.dashboard.refresh': '刷新',
+  'pages.dashboard.refreshAll': '全部刷新',
+  'pages.dashboard.refreshSuccess': '刷新成功',
+  'pages.dashboard.refreshFailed': '刷新失败',
+  'pages.dashboard.noCards': '暂无卡片',
+  'pages.dashboard.noCardsDesc': '点击下方按钮添加第一个卡片',
+};
+```
+
 ### 7.2 API 端点规范
 
 #### 后端路由约定

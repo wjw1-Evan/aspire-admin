@@ -46,12 +46,12 @@ const DEFAULT_CARD_SIZE: Record<string, { w: number; h: number }> = {
 const api = {
   getDashboard: (id: string) => request<ApiResponse<DashboardDto>>(`/apiservice/api/dashboard/${id}`),
   addCard: (id: string, data: Record<string, unknown>) => request<ApiResponse<DashboardCardDto>>(`/apiservice/api/dashboard/${id}/cards`, { method: 'POST', data }),
-  updateCard: (dashboardId: string, cardId: string, data: Record<string, unknown>) =>
-    request<ApiResponse<DashboardCardDto>>(`/apiservice/api/dashboard/${dashboardId}/cards/${cardId}`, { method: 'PUT', data }),
-  deleteCard: (dashboardId: string, cardId: string) =>
-    request<ApiResponse<void>>(`/apiservice/api/dashboard/${dashboardId}/cards/${cardId}`, { method: 'DELETE' }),
+  updateCard: (cardId: string, data: Record<string, unknown>) =>
+    request<ApiResponse<DashboardCardDto>>(`/apiservice/api/dashboard/cards/${cardId}`, { method: 'PUT', data }),
+  deleteCard: (cardId: string) =>
+    request<ApiResponse<void>>(`/apiservice/api/dashboard/cards/${cardId}`, { method: 'DELETE' }),
   reorderCards: (dashboardId: string, positions: Array<{ cardId: string; positionX: number; positionY: number; width: number; height: number }>) =>
-    request<ApiResponse<void>>(`/apiservice/api/dashboard/${dashboardId}/cards/reorder`, { method: 'POST', data: { positions } }),
+    request<ApiResponse<void>>(`/apiservice/api/dashboard/${dashboardId}/cards/reorder`, { method: 'POST', data: { cards: positions.map(p => ({ id: p.cardId, positionX: p.positionX, positionY: p.positionY, width: p.width, height: p.height })) } }),
 };
 
 interface DashboardDesignerProps {
@@ -131,7 +131,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
   const handleCardFinish = useCallback(async (values: { title: string; cardType: string; styleConfig: string; dataSource: string }) => {
     if (editingCard) {
       // 更新
-      const res = await api.updateCard(dashboardId, editingCard.id, {
+      const res = await api.updateCard(editingCard.id, {
         title: values.title,
         cardType: values.cardType,
         styleConfig: values.styleConfig,
@@ -172,7 +172,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
 
   /** 删除卡片 */
   const handleDeleteCard = useCallback(async (cardId: string) => {
-    const res = await api.deleteCard(dashboardId, cardId);
+    const res = await api.deleteCard(cardId);
     if (res.success) {
       message.success('卡片已删除');
       setSelectedCardId(null);
@@ -180,7 +180,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
     } else {
       message.error('删除失败');
     }
-  }, [dashboardId, loadDashboard]);
+  }, [loadDashboard]);
 
   /** 复制卡片 */
   const handleCopyCard = useCallback(async (card: DashboardCardDto) => {
@@ -251,7 +251,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
         ) : (
           <RGL
             className="dashboard-designer-grid"
-            width={containerWidth}
+            width={containerWidth || 1200}
             layouts={layouts}
             breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
             cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}

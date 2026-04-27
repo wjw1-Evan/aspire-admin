@@ -157,4 +157,7 @@ export default {
   'menu.park-management-visit-statistics': '走访统计报表',
   'menu.park-management-visit-statistics.desc': '企管员走访数据统计与 AI 分析',
   'menu.pending-join-requests': '加入申请',
+  // 数据看板
+  'menu.data-dashboard': '数据看板',
+  'menu.data-dashboard.desc': '自定义数据可视化看板',
 };

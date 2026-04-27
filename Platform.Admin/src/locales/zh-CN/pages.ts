@@ -23,12 +23,13 @@ import role from './modules/role';
 import company from './modules/company';
 import help from './modules/help';
 import xiaoke from './modules/xiaoke';
+import dashboard from './modules/dashboard';
 import other from './modules/other';
 import missing from './modules/missing';
 
 // 导出所有模块
 export { common };
-export { auth, user, task, project, workflow, document, iot, park, organization, role, company, help, xiaoke, other, missing };
+export { auth, user, task, project, workflow, document, iot, park, organization, role, company, help, xiaoke, dashboard, other, missing };
 
 // 默认导出：合并所有模块
 export default {
@@ -46,6 +47,7 @@ export default {
   ...company,
   ...help,
   ...xiaoke,
+  ...dashboard,
   ...other,
   ...missing,
 };

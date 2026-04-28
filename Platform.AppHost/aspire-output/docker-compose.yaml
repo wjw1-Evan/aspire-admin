@@ -78,7 +78,7 @@ services:
       MONGODB_URI: "mongodb://admin:${MONGO_PRODUCTION_PASSWORD}@mongo-Production:27017/mongodb?authSource=admin&authMechanism=SCRAM-SHA-256"
       MONGODB_DATABASENAME: "mongodb"
       Jwt__SecretKey: "w9G2xN7pR6qV3zL1s8F0bH5dT4jK2uM3"
-      InternalService__ApiKey: "ABx935I3tRyw3MZhVClVpAVzQAtyLObGZlT8gGG/98E="
+      InternalService__ApiKey: "KvjycKoKz78mAxb2w1agqWRb6I7QLUvZ2zXcqZIPXd0="
       ConnectionStrings__chat: "Endpoint=https://free.v36.cm/v1;Key=${OPENAI_OPENAI_APIKEY};Model=gpt-4o-mini"
       CHAT_ENDPOINT: "https://free.v36.cm/v1"
       CHAT_URI: "https://free.v36.cm/v1"

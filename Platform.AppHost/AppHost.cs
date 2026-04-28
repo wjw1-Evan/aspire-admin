@@ -72,13 +72,15 @@ var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDisco
 };
 
 var adminbuilder = builder.AddJavaScriptApp("admin", "../Platform.Admin")
-    .WithHttpEndpoint(env: "PORT");
+    .WithHttpEndpoint(env: "PORT")
+    .WithBuildCommand("npm run build");
 
 // 添加移动端应用 (Expo) - 仅开发环境
 if (builder.Environment.IsDevelopment())
 {
     builder.AddJavaScriptApp("app", "../Platform.App")
-        .WithHttpEndpoint(env: "PORT");
+        .WithHttpEndpoint(env: "PORT")
+        .WithBuildCommand("npx expo export:embed --platform web --output-dir dist");
 }
 
 // 微信小程序 (WeChat Mini Program) - 无需 Docker 化部署

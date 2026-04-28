@@ -75,14 +75,16 @@ var adminbuilder = builder.AddJavaScriptApp("admin", "../Platform.Admin")
     .WithHttpEndpoint(env: "PORT");
 
 // 添加移动端应用 (Expo)
-builder.AddJavaScriptApp("app", "../Platform.App");
+builder.AddJavaScriptApp("app", "../Platform.App")
+.WithHttpEndpoint(env: "PORT");
 
 // 添加微信小程序 (WeChat Mini Program)
-builder.AddJavaScriptApp("miniapp", "../Platform.MiniApp");
+builder.AddJavaScriptApp("miniapp", "../Platform.MiniApp")
+.WithHttpEndpoint(env: "PORT");
 
-var yarp = builder.AddYarp("apigateway")
+var yarp = builder.AddYarp("apigateway-" + environment)
     .WithHostPort(15000)
-    // .PublishWithStaticFiles(adminbuilder)
+    .PublishWithStaticFiles(adminbuilder)
     .WithConfiguration(config =>
     {
         config.AddRoute(adminbuilder);

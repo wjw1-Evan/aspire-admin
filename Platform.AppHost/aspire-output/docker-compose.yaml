@@ -23,6 +23,24 @@ services:
         read_only: false
     networks:
       - "aspire"
+  redis:
+    image: "docker.io/library/redis:8.6"
+    command:
+      - "-c"
+      - "redis-server --requirepass $$REDIS_PASSWORD --save 60 1"
+    entrypoint:
+      - "/bin/sh"
+    environment:
+      REDIS_PASSWORD: "${REDIS_PASSWORD}"
+    expose:
+      - "6379"
+    volumes:
+      - type: "volume"
+        target: "/data"
+        source: "platform.apphost-04e9402f01-redis-data"
+        read_only: false
+    networks:
+      - "aspire"
   datainitializer:
     image: "${DATAINITIALIZER_IMAGE}"
     environment:
@@ -60,12 +78,17 @@ services:
       MONGODB_URI: "mongodb://admin:${MONGO_PRODUCTION_PASSWORD}@mongo-Production:27017/mongodb?authSource=admin&authMechanism=SCRAM-SHA-256"
       MONGODB_DATABASENAME: "mongodb"
       Jwt__SecretKey: "w9G2xN7pR6qV3zL1s8F0bH5dT4jK2uM3"
-      InternalService__ApiKey: "L0IusRBdG1+Boln5ZK2tPWUREj5p9wLPBrZOcioMn2M="
+      InternalService__ApiKey: "ABx935I3tRyw3MZhVClVpAVzQAtyLObGZlT8gGG/98E="
       ConnectionStrings__chat: "Endpoint=https://free.v36.cm/v1;Key=${OPENAI_OPENAI_APIKEY};Model=gpt-4o-mini"
       CHAT_ENDPOINT: "https://free.v36.cm/v1"
       CHAT_URI: "https://free.v36.cm/v1"
       CHAT_KEY: "${OPENAI_OPENAI_APIKEY}"
       CHAT_MODELNAME: "gpt-4o-mini"
+      ConnectionStrings__redis: "redis:6379,password=${REDIS_PASSWORD}"
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: "${REDIS_PASSWORD}"
+      REDIS_URI: "redis://:${REDIS_PASSWORD}@redis:6379"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://compose-dashboard:18889"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_SERVICE_NAME: "apiservice"
@@ -78,64 +101,44 @@ services:
         condition: "service_completed_successfully"
     networks:
       - "aspire"
-  apigateway:
-    image: "mcr.microsoft.com/dotnet/nightly/yarp:2.3-preview"
+  admin:
+    image: "${ADMIN_IMAGE}"
+    environment:
+      NODE_ENV: "production"
+      PORT: "8000"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://compose-dashboard:18889"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+      OTEL_SERVICE_NAME: "admin"
+    expose:
+      - "8000"
+    networks:
+      - "aspire"
+  apigateway-production:
+    image: "${APIGATEWAY_PRODUCTION_IMAGE}"
     command:
       - "/app/yarp.dll"
     entrypoint:
       - "dotnet"
     environment:
       ASPNETCORE_ENVIRONMENT: "Production"
-      APISERVICE_HTTP: "http://apiservice:${APISERVICE_PORT}"
-      REVERSEPROXY__ROUTES__route0__MATCH__PATH: "/apiservice/{**catch-all}"
-      REVERSEPROXY__ROUTES__route0__CLUSTERID: "cluster_apiservice"
-      REVERSEPROXY__ROUTES__route0__MAXREQUESTBODYSIZE: "-1"
-      REVERSEPROXY__ROUTES__route0__TRANSFORMS__0__PathPattern: "/{**catch-all}"
+      YARP_ENABLE_STATIC_FILES: "true"
+      REVERSEPROXY__ROUTES__route0__MATCH__PATH: "/{**catchall}"
+      REVERSEPROXY__ROUTES__route0__CLUSTERID: "cluster_admin"
+      REVERSEPROXY__ROUTES__route1__MATCH__PATH: "/apiservice/{**catch-all}"
+      REVERSEPROXY__ROUTES__route1__CLUSTERID: "cluster_apiservice"
+      REVERSEPROXY__ROUTES__route1__MAXREQUESTBODYSIZE: "-1"
+      REVERSEPROXY__ROUTES__route1__TRANSFORMS__0__PathPattern: "/{**catch-all}"
+      REVERSEPROXY__CLUSTERS__cluster_admin__DESTINATIONS__destination1__ADDRESS: "http://admin"
       REVERSEPROXY__CLUSTERS__cluster_apiservice__DESTINATIONS__destination1__ADDRESS: "http://apiservice"
+      ADMIN_HTTP: "http://admin:8000"
+      services__admin__http__0: "http://admin:8000"
+      APISERVICE_HTTP: "http://apiservice:${APISERVICE_PORT}"
       services__apiservice__http__0: "http://apiservice:${APISERVICE_PORT}"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://compose-dashboard:18889"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
-      OTEL_SERVICE_NAME: "apigateway"
-    ports:
-      - "15000:15000"
+      OTEL_SERVICE_NAME: "apigateway-Production"
     expose:
       - "5000"
-    networks:
-      - "aspire"
-  admin:
-    image: "${ADMIN_IMAGE}"
-    environment:
-      NODE_ENV: "development"
-      APIGATEWAY_HTTP: "http://apigateway:5000"
-      services__apigateway__http__0: "http://apigateway:5000"
-      BROWSER: "none"
-      NPM_CONFIG_PRODUCTION: "false"
-      PORT: "8082"
-      OTEL_EXPORTER_OTLP_ENDPOINT: "http://compose-dashboard:18889"
-      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
-      OTEL_SERVICE_NAME: "admin"
-    ports:
-      - "15001:8082"
-    expose:
-      - "8082"
-    networks:
-      - "aspire"
-  app:
-    image: "${APP_IMAGE}"
-    environment:
-      NODE_ENV: "development"
-      APIGATEWAY_HTTP: "http://apigateway:5000"
-      services__apigateway__http__0: "http://apigateway:5000"
-      BROWSER: "none"
-      NPM_CONFIG_PRODUCTION: "false"
-      PORT: "8081"
-      OTEL_EXPORTER_OTLP_ENDPOINT: "http://compose-dashboard:18889"
-      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
-      OTEL_SERVICE_NAME: "app"
-    ports:
-      - "15002:8081"
-    expose:
-      - "8081"
     networks:
       - "aspire"
 networks:
@@ -143,4 +146,6 @@ networks:
     driver: "bridge"
 volumes:
   platform.apphost-04e9402f01-mongo-Production-data:
+    driver: "local"
+  platform.apphost-04e9402f01-redis-data:
     driver: "local"

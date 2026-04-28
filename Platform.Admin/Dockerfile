@@ -18,7 +18,7 @@ WORKDIR /app
 # 从 deps 阶段复制 node_modules
 COPY --from=deps /app/node_modules ./node_modules
 
-# 复制源代码
+# 复制源代码（排除 .dockerignore 中的文件）
 COPY . .
 
 # 构建应用（UmiJS 会生成 dist 目录）

@@ -15,8 +15,8 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Export static web build
-RUN npm run web 
+# Export static web build using expo export
+RUN npx expo export --platform web --output-dir /app/dist
 
 # Production image, copy all the files and run
 FROM nginx:alpine AS runner

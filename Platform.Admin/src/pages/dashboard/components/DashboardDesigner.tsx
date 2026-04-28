@@ -87,7 +87,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
         x: c.positionX || 0,
         y: c.positionY || 0,
         w: c.width || 4,
-        h: c.height || 4,
+        h: c.height || 1,
       }));
       setLayouts({ lg });
     }
@@ -155,7 +155,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
         positionX: 0,
         positionY: 0,
         width: defaultSize.w,
-        height: defaultSize.h,
+         height: defaultSize.h,
       });
       if (res.success) {
         message.success('卡片已添加');

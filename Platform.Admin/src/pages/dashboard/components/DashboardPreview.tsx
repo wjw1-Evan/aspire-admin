@@ -90,7 +90,7 @@ const DashboardPreview: React.FC<DashboardPreviewProps> = ({ dashboardId, layout
       x: c.positionX || 0,
       y: c.positionY || 0,
       w: c.width || 4,
-      h: c.height || 4,
+      h: c.height || 1,
       static: true, // 预览模式不可拖拽
     }));
     return { lg };

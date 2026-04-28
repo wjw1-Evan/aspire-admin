@@ -60,7 +60,7 @@ public class DashboardCard : BaseEntity
     public int Width { get; set; } = 4;
 
     /// <summary>高度（网格单位）</summary>
-    public int Height { get; set; } = 3;
+    public int Height { get; set; } = 1;
 
     /// <summary>数据源配置（JSON）</summary>
     public string DataSource { get; set; } = string.Empty;

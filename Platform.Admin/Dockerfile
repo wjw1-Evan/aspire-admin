@@ -26,10 +26,13 @@ RUN npm run build
 
 # 阶段 3: 生产镜像（使用 nginx）
 FROM nginx:alpine AS runner
-WORKDIR /usr/share/nginx/html
+WORKDIR /app
 
-# 复制构建产物
-COPY --from=builder /app/dist ./
+# 复制构建产物到 /app/dist（供 YARP 静态文件使用）
+COPY --from=builder /app/dist ./dist
+
+# 同时复制到 nginx 目录（供 nginx 使用）
+COPY --from=builder /app/dist /usr/share/nginx/html/dist
 
 # 复制 nginx 配置
 COPY nginx.conf /etc/nginx/conf.d/default.conf

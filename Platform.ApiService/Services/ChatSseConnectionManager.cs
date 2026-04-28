@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using StackExchange.Redis;
 
 namespace Platform.ApiService.Services;
 
@@ -23,13 +24,93 @@ namespace Platform.ApiService.Services;
         private readonly ConcurrentDictionary<string, object> _userWriteLocks = new();
 
     private readonly ILogger<SingletonChatSseConnectionManager> _logger;
+    private readonly IConnectionMultiplexer _redis;
+    private readonly JsonSerializerOptions _jsonOptions;
+    private bool _redisSubscribed = false;
 
     /// <summary>
     /// 初始化 SSE 连接管理器
     /// </summary>
-    public SingletonChatSseConnectionManager(ILogger<SingletonChatSseConnectionManager> logger)
+    public SingletonChatSseConnectionManager(
+        ILogger<SingletonChatSseConnectionManager> logger,
+        IConnectionMultiplexer redis)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _redis = redis ?? throw new ArgumentNullException(nameof(redis));
+        
+        _jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+        
+        // 订阅 Redis 广播频道
+        SubscribeToRedis();
+    }
+
+    /// <summary>
+    /// 订阅 Redis 广播频道，接收其他副本发来的消息
+    /// </summary>
+    private void SubscribeToRedis()
+    {
+        if (_redisSubscribed) return;
+        
+        try
+        {
+            var sub = _redis.GetSubscriber();
+            sub.Subscribe(RedisChannel.Literal("sse:broadcast"), (channel, value) =>
+            {
+                try
+                {
+                    // RedisValue 需要显式转换为 string 避免反序列化歧义
+                    var valueString = value.ToString();
+                    if (string.IsNullOrEmpty(valueString)) return;
+                    
+                    var broadcastData = JsonSerializer.Deserialize<RedisBroadcastData>(valueString, _jsonOptions);
+                    if (broadcastData?.Participants == null) return;
+                    
+                    _logger.LogDebug("从 Redis 收到广播: 事件类型未知, 参与者数 {Count}", 
+                        broadcastData.Participants.Count);
+                    
+                    // 向本地连接的用户推送消息
+                    foreach (var userId in broadcastData.Participants)
+                    {
+                        try
+                        {
+                            // SendToUserAsync 签名: (string userId, string message, string? companyId = null)
+                            if (!string.IsNullOrEmpty(broadcastData.Message))
+                            {
+                                SendToUserAsync(userId, broadcastData.Message).ConfigureAwait(false).GetAwaiter().GetResult();
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Redis 广播推送失败: 用户 {UserId}", userId);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "处理 Redis 广播消息失败");
+                }
+            });
+            
+            _redisSubscribed = true;
+            _logger.LogInformation("已订阅 Redis 频道: sse:broadcast");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "订阅 Redis 频道失败");
+        }
+    }
+
+    /// <summary>
+    /// Redis 广播数据模型
+    /// </summary>
+    private sealed class RedisBroadcastData
+    {
+        public List<string>? Participants { get; set; }
+        public string? Message { get; set; }
+        public string? EventType { get; set; }
     }
 
     /// <summary>

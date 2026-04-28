@@ -32,7 +32,7 @@ public static class ServiceExtensions
         // 2. PlatformDbContext (提供给 Entity Framework Core)
         builder.AddMongoDBClient(connectionName);
         builder.AddMongoDbContext<PlatformDbContext>(connectionName);
-
+        builder.AddRedisClient(connectionName: "redis");
 
 
         // ── EF Core 基类注册 ──────────────────────────────
@@ -42,7 +42,7 @@ public static class ServiceExtensions
         // ── 基础设施服务 ─────────────────────────────────
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddScoped<ITenantContext, TenantContext>();
-        builder.Services.AddScoped<ITenantContextSetter>(sp => sp.GetRequiredService<ITenantContext>() as TenantContext 
+        builder.Services.AddScoped<ITenantContextSetter>(sp => sp.GetRequiredService<ITenantContext>() as TenantContext
             ?? throw new InvalidOperationException("ITenantContext must be TenantContext"));
 
         // ── 国密安全支持 ─────────────────────────────────

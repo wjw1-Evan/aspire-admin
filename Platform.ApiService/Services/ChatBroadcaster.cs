@@ -1,30 +1,32 @@
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
+using StackExchange.Redis;
 using System.Text.Json;
 
 namespace Platform.ApiService.Services;
 
 /// <summary>
-/// 聊天消息广播器实现（纯 SSE 分发层）
-/// 不依赖 DbContext，由调用方传入参与者列表
+/// 聊天消息广播器实现（基于 Redis Pub/Sub 的分布式分发）
+/// 通过 Redis 频道广播消息，所有副本订阅后推送给本地连接的用户
 /// </summary>
 public class ChatBroadcaster : IChatBroadcaster
 {
     private readonly IChatSseConnectionManager _sseConnectionManager;
     private readonly ILogger<ChatBroadcaster> _logger;
     private readonly JsonSerializerOptions _jsonOptions;
+    private readonly IConnectionMultiplexer _redis;
 
     /// <summary>
     /// 初始化聊天广播器
     /// </summary>
-    /// <param name="sseConnectionManager">SSE 连接管理器</param>
-    /// <param name="logger">日志记录器</param>
     public ChatBroadcaster(
         IChatSseConnectionManager sseConnectionManager,
-        ILogger<ChatBroadcaster> logger
-    ) {
+        ILogger<ChatBroadcaster> logger,
+        IConnectionMultiplexer redis)
+    {
         _sseConnectionManager = sseConnectionManager ?? throw new ArgumentNullException(nameof(sseConnectionManager));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _redis = redis ?? throw new ArgumentNullException(nameof(redis));
 
         _jsonOptions = new JsonSerializerOptions
         {
@@ -90,7 +92,7 @@ public class ChatBroadcaster : IChatBroadcaster
     }
 
     /// <summary>
-    /// 向参与者列表广播 SSE 消息（纯分发，不访问数据库）
+    /// 向参与者列表广播 SSE 消息（通过 Redis Pub/Sub 分发到所有副本）
     /// </summary>
     private async Task BroadcastToParticipantsAsync(List<string> participants, string eventType, object payload)
     {
@@ -112,20 +114,20 @@ public class ChatBroadcaster : IChatBroadcaster
 
             if (activeParticipants.Count == 0) return;
 
-            var tasks = activeParticipants.Select(async userId =>
+            // 发布到 Redis 频道，所有副本都会收到
+            var pub = _redis.GetSubscriber();
+            var broadcastData = new
             {
-                try
-                {
-                    await _sseConnectionManager.SendToUserAsync(userId, message);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "SSE 发送消息失败: 用户 {UserId} 事件 {EventType}",
-                        userId, eventType);
-                }
-            });
-
-            await Task.WhenAll(tasks);
+                Participants = activeParticipants,
+                Message = message,
+                EventType = eventType
+            };
+            
+            var serializedData = JsonSerializer.Serialize(broadcastData, _jsonOptions);
+            await pub.PublishAsync(RedisChannel.Literal("sse:broadcast"), serializedData);
+            
+            _logger.LogDebug("消息已发布到 Redis: 事件 {EventType}, 参与者数 {Count}", 
+                eventType, activeParticipants.Count);
         }
         catch (Exception ex)
         {

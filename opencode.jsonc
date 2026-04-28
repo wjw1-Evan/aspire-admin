@@ -33,7 +33,7 @@
         "-y",
         "@upstash/context7-mcp",
         "--api-key",
-        "YOUR_API_KEY"
+        "ctx7sk-c3c6c58c-0b16-4697-b0b5-d0a3f6f64d0d"
       ],
       "enabled": true
     },

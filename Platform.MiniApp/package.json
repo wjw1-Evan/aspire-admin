@@ -3,6 +3,7 @@
     "version": "1.0.0",
     "description": "Aspire Admin WeChat Mini Program",
     "scripts": {
+        "dev": "npm run start",
         "start": "npx -y http-server . -p $PORT"
     },
     "dependencies": {

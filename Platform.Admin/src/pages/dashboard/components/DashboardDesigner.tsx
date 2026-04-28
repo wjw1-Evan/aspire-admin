@@ -248,11 +248,13 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
           </div>
         ) : (
           <div ref={containerRef} style={{ width: '100%' }}>
-            <RGL
+<RGL
               className="dashboard-designer-grid"
               width={containerWidth > 0 ? containerWidth : window.innerWidth}
               layout={layouts.lg || []}
               cols={24}
+              rowHeight={30}
+              minRows={1}
               onLayoutChange={(currentLayout: LayoutItem[]) => handleLayoutChange(currentLayout)}
               isDraggable
               isResizable

@@ -49,6 +49,7 @@ declare module 'react-grid-layout' {
     cols?: number;
     rowHeight?: number;
     maxRows?: number;
+    minRows?: number;
     margin?: [number, number];
     containerPadding?: [number, number] | null;
     isDraggable?: boolean;

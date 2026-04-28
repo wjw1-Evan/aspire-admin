@@ -154,11 +154,13 @@ const DashboardPreview: React.FC<DashboardPreviewProps> = ({ dashboardId, layout
         </div>
       ) : (
         <div ref={gridContainerRef} style={{ width: '100%' }}>
-          <ResponsiveGridLayout
+<ResponsiveGridLayout
             className="dashboard-preview-grid"
             width={gridWidth > 0 ? gridWidth : window.innerWidth}
             layout={layouts.lg || []}
             cols={24}
+            rowHeight={30}
+            minRows={1}
             isDraggable={false}
             isResizable={false}
             compactType="vertical"

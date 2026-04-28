@@ -78,7 +78,7 @@ services:
       MONGODB_URI: "mongodb://admin:${MONGO_PRODUCTION_PASSWORD}@mongo-Production:27017/mongodb?authSource=admin&authMechanism=SCRAM-SHA-256"
       MONGODB_DATABASENAME: "mongodb"
       Jwt__SecretKey: "w9G2xN7pR6qV3zL1s8F0bH5dT4jK2uM3"
-      InternalService__ApiKey: "u2Il5nMwU/1MP1Ny9dwnwpTTAFhH/9eHKWD/PnKJueE="
+      InternalService__ApiKey: "ZfkqmzWc0wO4LAQ7ZeFFMtNizyRltxr01sDzpVL9QoY="
       ConnectionStrings__chat: "Endpoint=https://free.v36.cm/v1;Key=${OPENAI_OPENAI_APIKEY};Model=gpt-4o-mini"
       CHAT_ENDPOINT: "https://free.v36.cm/v1"
       CHAT_URI: "https://free.v36.cm/v1"
@@ -139,6 +139,7 @@ services:
       OTEL_SERVICE_NAME: "apigateway-Production"
     expose:
       - "5000"
+      - "8001"
     networks:
       - "aspire"
 networks:

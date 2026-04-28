@@ -88,6 +88,7 @@ if (builder.Environment.IsDevelopment())
 
 var yarp = builder.AddYarp("apigateway-" + environment)
     .WithHostPort(15000)
+    .WithExternalHttpEndpoints()
     .PublishWithStaticFiles(adminbuilder)
     .WithConfiguration(config =>
     {

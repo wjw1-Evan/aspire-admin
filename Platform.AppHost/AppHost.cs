@@ -6,11 +6,8 @@ using Aspire.Hosting.Yarp.Transforms;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-// Compose 发布环境与 Dashboard；各 Project 通过 PublishAsDockerComposeService 参与发布
-_ = builder.AddDockerComposeEnvironment("compose").WithDashboard(dashboard =>
-{
-    dashboard.WithHostPort(18888);
-});
+// Add the following line to configure the Docker Compose environment
+builder.AddDockerComposeEnvironment("env");
 
 // 🔒 从 Aspire 配置中读取 JWT 设置
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"]
@@ -57,7 +54,6 @@ var apiService = builder.AddProject<Projects.Platform_ApiService>("apiservice")
     .WaitFor(mongodb)
     .WaitForCompletion(datainitializer)
     .WithHttpEndpoint()
-    .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
     .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
     .WithEnvironment("InternalService__ApiKey", internalServiceApiKey)
@@ -88,6 +84,7 @@ if (builder.Environment.IsDevelopment())
 
 var yarp = builder.AddYarp("apigateway")
     .WithHostPort(15000)
+    .WithExternalHttpEndpoints()
     .PublishWithStaticFiles(adminbuilder)
     .WithConfiguration(config =>
     {

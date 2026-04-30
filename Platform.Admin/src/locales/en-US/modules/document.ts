@@ -47,6 +47,7 @@ export default {
   'pages.document.approval.tab.myInitiated': 'My Initiated',
   'pages.document.approval.tab.pending': 'Pending',
   'pages.document.create': 'Create Document',
+  'pages.document.createDocument': 'Create Document',
   'pages.document.create.form.attachments': 'Attachments',
   'pages.document.create.form.category': 'Category',
   'pages.document.create.form.categoryPlaceholder': 'Please enter category',

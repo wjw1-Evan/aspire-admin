@@ -1,6 +1,6 @@
 /**
  * organization 翻译模块
- * 包含 31 个翻译键
+ * 包含 45 个翻译键
  */
 
 export default {
@@ -35,4 +35,16 @@ export default {
   'pages.organization.title': '组织架构',
   'pages.organization.tree.empty': '暂无组织节点',
   'pages.organization.tree.title': '组织结构',
+  'pages.organization.modal.assignUser': '分配用户',
+  'pages.organization.form.user': '用户',
+  'pages.organization.form.userRequired': '请选择用户',
+  'pages.organization.form.searchUser': '搜索用户',
+  'pages.organization.message.cannotMove': '无法移动到自身或下级节点',
+  'pages.organization.modal.confirmRemove': '确认移除成员',
+  'pages.organization.modal.removeContent': '确定要移除成员 {username} 吗？',
+  'pages.organization.members.remove': '移除',
+  'pages.organization.members.empty': '暂无成员',
+  'pages.organization.message.assignSuccess': '分配成功',
+  'pages.organization.placeholder.sortOrder': '请输入排序',
+  'pages.organization.placeholder.description': '请输入描述',
 };

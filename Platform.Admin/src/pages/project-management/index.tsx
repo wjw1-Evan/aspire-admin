@@ -30,7 +30,7 @@ const ProjectManagement: React.FC = () => {
               projectViewRef.current?.handleCreate();
             }}
           >
-            {intl.formatMessage({ id: 'pages.projectManagement.createProject' })}
+            {intl.formatMessage({ id: 'pages.project.createProject' })}
           </Button>
         </Space>
       }

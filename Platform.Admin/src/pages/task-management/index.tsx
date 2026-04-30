@@ -126,10 +126,10 @@ const TaskDetail: React.FC<{ id: string; onClose: () => void; open: boolean; isM
                   icon: <Tag color={getExecutionResultColor(log.status)}>{log.statusName}</Tag>,
                   content: (
                     <div>
-                      <p><strong>{log.executedByName}</strong> 在 {dayjs(log.startTime).format('YYYY-MM-DD HH:mm:ss')} 执行</p>
-                      {log.message && <p>消息: {log.message}</p>}
-                      {log.message && <p style={{ color: 'red' }}>错误: {log.message}</p>}
-                      <p>进度: {log.progressPercentage}%</p>
+                      <p><strong>{log.executedByName}</strong> {intl.formatMessage({ id: 'pages.taskManagement.detail.executedAt' }, { time: dayjs(log.startTime).format('YYYY-MM-DD HH:mm:ss') })}</p>
+                      {log.message && <p>{intl.formatMessage({ id: 'pages.taskManagement.detail.message' }, { message: log.message })}</p>}
+                      {log.message && <p style={{ color: 'red' }}>{intl.formatMessage({ id: 'pages.taskManagement.detail.error' }, { message: log.message })}</p>}
+                      <p>{intl.formatMessage({ id: 'pages.taskManagement.detail.progress' }, { progress: log.progressPercentage })}</p>
                     </div>
                   ),
                 }))} />
@@ -187,7 +187,7 @@ const TaskManagement: React.FC = () => {
             }}>{intl.formatMessage({ id: 'pages.taskManagement.action.cancel' })}</Button>
           </>
         )}
-        <Popconfirm title={`确定删除任务「${r.taskName}」？`} onConfirm={() => api.delete(r.id || '').then(res => { if (res.success) { message.success(intl.formatMessage({ id: 'pages.taskManagement.message.deleteSuccess' })); actionRef.current?.reload(); loadStatistics(); } else { message.error(getErrorMessage(res, 'pages.taskManagement.message.deleteFailed')); } })}>
+        <Popconfirm title={intl.formatMessage({ id: 'pages.taskManagement.message.confirmDeleteWithName' }, { name: r.taskName })} onConfirm={() => api.delete(r.id || '').then(res => { if (res.success) { message.success(intl.formatMessage({ id: 'pages.taskManagement.message.deleteSuccess' })); actionRef.current?.reload(); loadStatistics(); } else { message.error(getErrorMessage(res, 'pages.taskManagement.message.deleteFailed')); } })}>
           <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.taskManagement.action.delete' })}</Button>
         </Popconfirm>
       </Space>
@@ -203,12 +203,12 @@ const TaskManagement: React.FC = () => {
       }} columns={columns} rowKey="id" search={false}
         headerTitle={
           <Space size={24}>
-            <Space><ProjectOutlined />任务管理</Space>
+            <Space><ProjectOutlined />{intl.formatMessage({ id: 'pages.taskManagement.title' })}</Space>
             <Space size={12}>
-              <Tag color="blue">总数 {state.statistics?.totalTasks || 0}</Tag>
-              <Tag color="orange">进行中 {state.statistics?.inProgressTasks || 0}</Tag>
-              <Tag color="green">已完成 {state.statistics?.completedTasks || 0}</Tag>
-              <Tag color="purple">完成率 {state.statistics?.completionRate ? `${state.statistics.completionRate.toFixed(1)}%` : '0%'}</Tag>
+              <Tag color="blue">{intl.formatMessage({ id: 'pages.taskManagement.statistics.totalTasks' })} {state.statistics?.totalTasks || 0}</Tag>
+              <Tag color="orange">{intl.formatMessage({ id: 'pages.taskManagement.statistics.inProgressTasks' })} {state.statistics?.inProgressTasks || 0}</Tag>
+              <Tag color="green">{intl.formatMessage({ id: 'pages.taskManagement.statistics.completedTasks' })} {state.statistics?.completedTasks || 0}</Tag>
+              <Tag color="purple">{intl.formatMessage({ id: 'pages.taskManagement.statistics.completionRate' })} {state.statistics?.completionRate ? `${state.statistics.completionRate.toFixed(1)}%` : '0%'}</Tag>
             </Space>
           </Space>
         }
@@ -216,7 +216,7 @@ const TaskManagement: React.FC = () => {
         toolBarRender={() => [
           <Input.Search
             key="search"
-            placeholder="搜索..."
+            placeholder={intl.formatMessage({ id: 'pages.taskManagement.search.placeholderShort' })}
             allowClear
             value={state.search}
             onChange={(e) => set({ search: e.target.value })}
@@ -224,7 +224,7 @@ const TaskManagement: React.FC = () => {
             style={{ width: 260, marginRight: 8 }}
             prefix={<SearchOutlined />}
           />,
-          <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingTask: null, formVisible: true })}>新建任务</Button>,
+          <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingTask: null, formVisible: true })}>{intl.formatMessage({ id: 'pages.taskManagement.createTask' })}</Button>,
         ]}
       />
 

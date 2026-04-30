@@ -83,6 +83,7 @@ export default {
   'pages.document.detail.workflowGraph': 'Workflow Graph',
   'pages.document.detail.workflowInfo': 'Workflow Information',
   'pages.document.detail.workflowStatus': 'Workflow Status',
+  'pages.document.detail': 'Document Details',
   'pages.document.form.search': 'Search Form',
   'pages.document.message.deleteFailed': 'Delete failed',
   'pages.document.message.deleteSuccess': 'Deleted successfully',

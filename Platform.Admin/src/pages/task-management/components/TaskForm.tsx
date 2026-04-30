@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useIntl } from '@umijs/max';
 import { Tag, Spin, Row, Col } from 'antd';
 import { ModalForm, ProFormText, ProFormTextArea, ProFormSelect, ProFormDatePicker, ProFormDigit } from '@ant-design/pro-form';
 import type { Dayjs } from 'dayjs';
@@ -24,6 +25,7 @@ interface TaskFormValues {
 const TaskForm: React.FC<TaskFormProps> = ({
   open = false, task, projects = [], onClose, onSuccess, onCancel, projectId, parentTaskId,
 }) => {
+  const intl = useIntl();
   const [loading, setLoading] = React.useState(false);
   const [users, setUsers] = React.useState<AppUser[]>([]);
   const [usersLoading, setUsersLoading] = React.useState(false);
@@ -60,7 +62,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
 
       const data: CreateTaskRequest | UpdateTaskRequest = {
         taskName: values.taskName, description: values.description,
-        taskType: Array.isArray(values.taskType) ? values.taskType[0] : (values.taskType || '其他'),
+        taskType: Array.isArray(values.taskType) ? values.taskType[0] : (values.taskType || intl.formatMessage({ id: 'pages.taskManagement.taskTypeOther', defaultMessage: '其他' })),
         priority: values.priority, 
         plannedStartTime: values.plannedStartTime ? (dayjs.isDayjs(values.plannedStartTime) ? values.plannedStartTime.format('YYYY-MM-DDTHH:mm:ss') : values.plannedStartTime) : undefined,
         plannedEndTime: values.plannedEndTime ? (dayjs.isDayjs(values.plannedEndTime) ? values.plannedEndTime.format('YYYY-MM-DDTHH:mm:ss') : values.plannedEndTime) : undefined, 
@@ -77,7 +79,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
       
       if (res.success) { onSuccess?.(); return true; }
       else { message.error(getErrorMessage(res, 'pages.taskManagement.message.submitFailed')); return false; }
-    } catch (error) { console.error('提交表单错误:', error); message.error('操作失败'); return false; }
+    } catch (error) { console.error('提交表单错误:', error); message.error(intl.formatMessage({ id: 'pages.taskManagement.message.operationFailed', defaultMessage: '操作失败' })); return false; }
     finally { setLoading(false); }
   };
 
@@ -108,7 +110,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
 
   return (
     <ModalForm
-      title={task?.id ? '编辑任务' : '创建任务'}
+      title={task?.id ? intl.formatMessage({ id: 'pages.taskManagement.editTask', defaultMessage: '编辑任务' }) : intl.formatMessage({ id: 'pages.taskManagement.createTask', defaultMessage: '创建任务' })}
       open={open}
       onOpenChange={(isOpen) => { if (!isOpen) { onClose?.() || onCancel?.(); } }}
       onFinish={handleSubmit}
@@ -119,80 +121,80 @@ const TaskForm: React.FC<TaskFormProps> = ({
     >
       <Row gutter={16}>
         <Col xs={24} sm={24} md={12}>
-          <ProFormText name="taskName" label="任务名称" placeholder="请输入任务名称" rules={[{ required: true, message: '请输入任务名称' }]} />
+          <ProFormText name="taskName" label={intl.formatMessage({ id: 'pages.taskManagement.taskName', defaultMessage: '任务名称' })} placeholder={intl.formatMessage({ id: 'pages.taskManagement.taskNamePlaceholder', defaultMessage: '请输入任务名称' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.taskManagement.taskNameRequired', defaultMessage: '请输入任务名称' }) }]} />
         </Col>
         <Col xs={24} sm={24} md={12}>
           <ProFormSelect
             name="taskType"
-            label="任务类型"
+            label={intl.formatMessage({ id: 'pages.taskManagement.taskType', defaultMessage: '任务类型' })}
             mode="tags"
             fieldProps={{ maxCount: 1 }}
-            placeholder="请输入或选择任务类型"
+            placeholder={intl.formatMessage({ id: 'pages.taskManagement.taskTypePlaceholder', defaultMessage: '请输入或选择任务类型' })}
             options={[
-              { label: '开发', value: '开发' }, { label: '设计', value: '设计' }, { label: '测试', value: '测试' }, { label: '文档', value: '文档' }, { label: '其他', value: '其他' },
+              { label: intl.formatMessage({ id: 'pages.taskManagement.taskType.development', defaultMessage: '开发' }), value: '开发' }, { label: intl.formatMessage({ id: 'pages.taskManagement.taskType.design', defaultMessage: '设计' }), value: '设计' }, { label: intl.formatMessage({ id: 'pages.taskManagement.taskType.testing', defaultMessage: '测试' }), value: '测试' }, { label: intl.formatMessage({ id: 'pages.taskManagement.taskType.documentation', defaultMessage: '文档' }), value: '文档' }, { label: intl.formatMessage({ id: 'pages.taskManagement.taskTypeOther', defaultMessage: '其他' }), value: '其他' },
             ]}
-            rules={[{ required: true, message: '请输入或选择任务类型' }]}
+            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.taskManagement.taskTypeRequired', defaultMessage: '请输入或选择任务类型' }) }]}
           />
         </Col>
       </Row>
-      <ProFormTextArea name="description" label="任务描述" placeholder="请输入任务描述" fieldProps={{ autoSize: { minRows: 3, maxRows: 6 } }} />
+      <ProFormTextArea name="description" label={intl.formatMessage({ id: 'pages.taskManagement.taskDescription', defaultMessage: '任务描述' })} placeholder={intl.formatMessage({ id: 'pages.taskManagement.taskDescriptionPlaceholder', defaultMessage: '请输入任务描述' })} fieldProps={{ autoSize: { minRows: 3, maxRows: 6 } }} />
       <Row gutter={16}>
         <Col xs={24} sm={24} md={8}>
           <ProFormSelect
             name="priority"
-            label="优先级"
+            label={intl.formatMessage({ id: 'pages.taskManagement.priority', defaultMessage: '优先级' })}
             options={[
-              { label: '低', value: TaskPriority.Low }, { label: '中', value: TaskPriority.Medium }, { label: '高', value: TaskPriority.High }, { label: '紧急', value: TaskPriority.Urgent },
+              { label: intl.formatMessage({ id: 'pages.taskManagement.priority.low', defaultMessage: '低' }), value: TaskPriority.Low }, { label: intl.formatMessage({ id: 'pages.taskManagement.priority.medium', defaultMessage: '中' }), value: TaskPriority.Medium }, { label: intl.formatMessage({ id: 'pages.taskManagement.priority.high', defaultMessage: '高' }), value: TaskPriority.High }, { label: intl.formatMessage({ id: 'pages.taskManagement.priority.urgent', defaultMessage: '紧急' }), value: TaskPriority.Urgent },
             ]}
           />
         </Col>
         <Col xs={24} sm={24} md={8}>
           <ProFormSelect
             name="assignedUserIds"
-            label="分配给（可多选）"
+            label={intl.formatMessage({ id: 'pages.taskManagement.assignTo', defaultMessage: '分配给（可多选）' })}
             mode="multiple"
             showSearch
-            placeholder="请选择分配用户（可多选）"
+            placeholder={intl.formatMessage({ id: 'pages.taskManagement.assignToPlaceholder', defaultMessage: '请选择分配用户（可多选）' })}
             options={userOptions}
             fieldProps={{ filterOption: (input, option) => (option?.label as string)?.toLowerCase().includes(input.toLowerCase()) }}
             allowClear
           />
         </Col>
         <Col xs={24} sm={24} md={8}>
-          <ProFormDigit name="estimatedDuration" label="预计耗时（分钟）" placeholder="请输入预计耗时" min={0} fieldProps={{ style: { width: '100%' } }} />
+          <ProFormDigit name="estimatedDuration" label={intl.formatMessage({ id: 'pages.taskManagement.estimatedDuration', defaultMessage: '预计耗时（分钟）' })} placeholder={intl.formatMessage({ id: 'pages.taskManagement.estimatedDurationPlaceholder', defaultMessage: '请输入预计耗时' })} min={0} fieldProps={{ style: { width: '100%' } }} />
         </Col>
       </Row>
       <Row gutter={16}>
         <Col xs={24} sm={24} md={12}>
-          <ProFormDatePicker name="plannedStartTime" label="计划开始时间" showTime format="YYYY-MM-DD HH:mm" placeholder="请选择计划开始时间" fieldProps={{ style: { width: '100%' } }} />
+          <ProFormDatePicker name="plannedStartTime" label={intl.formatMessage({ id: 'pages.taskManagement.plannedStartTime', defaultMessage: '计划开始时间' })} showTime format="YYYY-MM-DD HH:mm" placeholder={intl.formatMessage({ id: 'pages.taskManagement.plannedStartTimePlaceholder', defaultMessage: '请选择计划开始时间' })} fieldProps={{ style: { width: '100%' } }} />
         </Col>
         <Col xs={24} sm={24} md={12}>
-          <ProFormDatePicker name="plannedEndTime" label="计划完成时间" showTime format="YYYY-MM-DD HH:mm" placeholder="请选择计划完成时间" fieldProps={{ style: { width: '100%' } }} />
+          <ProFormDatePicker name="plannedEndTime" label={intl.formatMessage({ id: 'pages.taskManagement.plannedEndTime', defaultMessage: '计划完成时间' })} showTime format="YYYY-MM-DD HH:mm" placeholder={intl.formatMessage({ id: 'pages.taskManagement.plannedEndTimePlaceholder', defaultMessage: '请选择计划完成时间' })} fieldProps={{ style: { width: '100%' } }} />
         </Col>
       </Row>
       <ProFormSelect
         name="participantIds"
-        label="参与者"
+        label={intl.formatMessage({ id: 'pages.taskManagement.participants', defaultMessage: '参与者' })}
         mode="multiple"
-        placeholder="请选择参与者"
+        placeholder={intl.formatMessage({ id: 'pages.taskManagement.participantsPlaceholder', defaultMessage: '请选择参与者' })}
         showSearch
         options={userOptions}
         fieldProps={{ filterOption: (input, option) => (option?.label as string)?.toLowerCase().includes(input.toLowerCase()) }}
       />
       <ProFormSelect
         name="tags"
-        label="标签"
+        label={intl.formatMessage({ id: 'pages.taskManagement.tags', defaultMessage: '标签' })}
         mode="tags"
-        placeholder="请输入或选择标签"
+        placeholder={intl.formatMessage({ id: 'pages.taskManagement.tagsPlaceholder', defaultMessage: '请输入或选择标签' })}
         options={[
           { label: 'UI', value: 'UI' }, { label: 'API', value: 'API' }, { label: 'Bug', value: 'Bug' }, { label: 'Feature', value: 'Feature' }, { label: 'Performance', value: 'Performance' },
         ]}
       />
-      <ProFormTextArea name="remarks" label="备注" placeholder="请输入备注信息" />
+      <ProFormTextArea name="remarks" label={intl.formatMessage({ id: 'pages.taskManagement.remarks', defaultMessage: '备注' })} placeholder={intl.formatMessage({ id: 'pages.taskManagement.remarksPlaceholder', defaultMessage: '请输入备注信息' })} />
       <ProFormSelect
         name="projectId"
-        label="所属项目"
-        placeholder="请选择项目（可选）"
+        label={intl.formatMessage({ id: 'pages.taskManagement.project', defaultMessage: '所属项目' })}
+        placeholder={intl.formatMessage({ id: 'pages.taskManagement.projectPlaceholder', defaultMessage: '请选择项目（可选）' })}
         allowClear
         options={projects.map(p => ({ label: p.name, value: p.id }))}
         fieldProps={{
@@ -202,8 +204,8 @@ const TaskForm: React.FC<TaskFormProps> = ({
       />
       <ProFormSelect
         name="parentTaskId"
-        label="父任务"
-        placeholder="请选择父任务（可选）"
+        label={intl.formatMessage({ id: 'pages.taskManagement.parentTask', defaultMessage: '父任务' })}
+        placeholder={intl.formatMessage({ id: 'pages.taskManagement.parentTaskPlaceholder', defaultMessage: '请选择父任务（可选）' })}
         allowClear
         options={tasks.filter(t => t.id !== task?.id).map(t => ({ label: t.taskName, value: t.id }))}
         initialValue={parentTaskId}

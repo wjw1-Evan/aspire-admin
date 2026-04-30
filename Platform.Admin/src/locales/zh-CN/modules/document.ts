@@ -117,4 +117,17 @@ export default {
   'pages.document.table.title': '标题',
   'pages.document.table.type': '类型',
   'pages.document.title': '公文管理',
+
+  // document/list.tsx message calls
+  'pages.document.message.selectWorkflowFirst': '请先选择流程',
+  'pages.document.message.selectWorkflow': '请选择流程',
+  'pages.document.message.submitted': '已提交审批',
+
+  // document/list.tsx UI labels
+  'pages.document.createDocument': '新建公文',
+  'pages.document.submitApproval': '提交审批',
+  'pages.document.detail': '公文详情',
+  'pages.document.selectWorkflow': '选择流程',
+  'pages.document.selectWorkflowPlaceholder': '请选择流程定义',
+  'pages.document.selectWorkflowRequired': '请选择流程定义',
 };

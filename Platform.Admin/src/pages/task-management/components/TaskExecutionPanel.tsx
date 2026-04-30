@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
+import { useIntl } from '@umijs/max';
 import { App, Spin, Alert, Space, Button, Divider, Tag } from 'antd';
 import { ModalForm, ProFormText, ProFormSelect, ProFormSlider, ProDescriptions, ProCard } from '@ant-design/pro-components';
-import { useIntl } from '@umijs/max';
 import { executeTask, completeTask, TaskStatus, TaskExecutionResult, type TaskDto, type ExecuteTaskRequest, type CompleteTaskRequest } from '@/services/task/api';
 
 interface TaskExecutionPanelProps { open: boolean; task?: TaskDto | null; onClose: () => void; onSuccess: () => void; }
@@ -21,21 +21,21 @@ const TaskExecutionPanel: React.FC<TaskExecutionPanelProps> = ({ open, task, onC
     try {
       if (mode === 'progress') {
         await executeTask({ taskId: task.id, status: TaskStatus.InProgress, completionPercentage: values.completionPercentage, message: values.message });
-        message.success(intl.formatMessage({ id: 'pages.taskManagement.execution.progressUpdated' }));
+        message.success(intl.formatMessage({ id: 'pages.taskManagement.execution.message.progressUpdated', defaultMessage: '任务进度已更新' }));
       } else {
         await completeTask({ taskId: task.id, executionResult: values.executionResult, remarks: values.remarks, errorMessage: values.errorMessage });
-        message.success(intl.formatMessage({ id: 'pages.taskManagement.execution.taskCompleted' }));
+        message.success(intl.formatMessage({ id: 'pages.taskManagement.execution.message.taskCompleted', defaultMessage: '任务已完成' }));
       }
       setCompletionPercentage(0);
       onSuccess();
       return true;
-    } catch { message.error(mode === 'progress' ? intl.formatMessage({ id: 'pages.taskManagement.execution.updateProgressFailed' }) : intl.formatMessage({ id: 'pages.taskManagement.execution.completeTaskFailed' })); return false; }
+    } catch { message.error(mode === 'progress' ? intl.formatMessage({ id: 'pages.taskManagement.execution.message.progressUpdateFailed', defaultMessage: '更新任务进度失败' }) : intl.formatMessage({ id: 'pages.taskManagement.execution.message.completeTaskFailed', defaultMessage: '完成任务失败' })); return false; }
     finally { setLoading(false); }
   };
 
   return (
     <ModalForm
-      title={intl.formatMessage({ id: 'pages.taskManagement.execution.title' })}
+      title={intl.formatMessage({ id: 'pages.taskManagement.execution.title', defaultMessage: '执行任务' })}
       open={open}
       onOpenChange={(visible) => { if (!visible) onClose(); }}
       onFinish={handleFinish}
@@ -48,50 +48,50 @@ const TaskExecutionPanel: React.FC<TaskExecutionPanelProps> = ({ open, task, onC
           <>
             <ProCard style={{ marginBottom: 16 }}>
               <ProDescriptions size="small" column={1}>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.name' })}>{task.taskName}</ProDescriptions.Item>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.execution.currentStatus' })}><Tag>{task.statusName}</Tag></ProDescriptions.Item>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.execution.currentProgress' })}>{task.completionPercentage}%</ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.taskName', defaultMessage: '任务名称' })}>{task.taskName}</ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.status', defaultMessage: '当前状态' })}><Tag>{task.statusName}</Tag></ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.currentProgress', defaultMessage: '当前进度' })}>{task.completionPercentage}%</ProDescriptions.Item>
               </ProDescriptions>
             </ProCard>
             <Divider />
             <ProFormSelect
-              label={intl.formatMessage({ id: 'pages.taskManagement.execution.mode' })}
+              label={intl.formatMessage({ id: 'pages.taskManagement.execution.mode', defaultMessage: '执行模式' })}
               name="mode"
               initialValue={mode}
               onChange={(value) => setMode(value as ExecutionMode)}
               options={[
-                { label: intl.formatMessage({ id: 'pages.taskManagement.execution.modeProgress' }), value: 'progress' }, { label: intl.formatMessage({ id: 'pages.taskManagement.execution.modeComplete' }), value: 'complete' },
+                { label: intl.formatMessage({ id: 'pages.taskManagement.execution.mode.progress', defaultMessage: '更新进度' }), value: 'progress' }, { label: intl.formatMessage({ id: 'pages.taskManagement.execution.mode.complete', defaultMessage: '完成任务' }), value: 'complete' },
               ]}
             />
             {mode === 'progress' ? (
               <>
-                <Alert title={intl.formatMessage({ id: 'pages.taskManagement.execution.modeProgress' })} description={intl.formatMessage({ id: 'pages.taskManagement.execution.updateProgressDesc' })} type="info" style={{ marginBottom: 16 }} />
+                <Alert title={intl.formatMessage({ id: 'pages.taskManagement.execution.updateProgress', defaultMessage: '更新进度' })} description={intl.formatMessage({ id: 'pages.taskManagement.execution.updateProgressDesc', defaultMessage: "更新任务的执行进度，任务状态将变为'执行中'" })} type="info" style={{ marginBottom: 16 }} />
                 <ProFormSlider
-                  label={intl.formatMessage({ id: 'pages.taskManagement.execution.completionPercentage' })}
+                  label={intl.formatMessage({ id: 'pages.taskManagement.execution.completionPercentageLabel', defaultMessage: '完成百分比' })}
                   name="completionPercentage"
                   min={0}
                   max={100}
                   step={5}
                   marks={{ 0: '0%', 25: '25%', 50: '50%', 75: '75%', 100: '100%' }}
                   fieldProps={{ onChange: setCompletionPercentage }}
-                  rules={[{ required: true, message: intl.formatMessage({ id: 'pages.taskManagement.execution.completionPercentageRequired' }) }]}
+                  rules={[{ required: true, message: intl.formatMessage({ id: 'pages.taskManagement.execution.completionPercentageRequired', defaultMessage: '请设置完成百分比' }) }]}
                 />
-                <ProFormText name="message" label={intl.formatMessage({ id: 'pages.taskManagement.execution.message' })} placeholder={intl.formatMessage({ id: 'pages.taskManagement.execution.messagePlaceholder' })} />
+                <ProFormText name="message" label={intl.formatMessage({ id: 'pages.taskManagement.execution.messageLabel', defaultMessage: '执行消息' })} placeholder={intl.formatMessage({ id: 'pages.taskManagement.execution.messagePlaceholder', defaultMessage: '请输入执行过程中的消息或备注' })} />
               </>
             ) : (
               <>
-                <Alert title={intl.formatMessage({ id: 'pages.taskManagement.execution.modeComplete' })} description={intl.formatMessage({ id: 'pages.taskManagement.execution.completeTaskDesc' })} type="warning" style={{ marginBottom: 16 }} />
+                <Alert title={intl.formatMessage({ id: 'pages.taskManagement.execution.completeTitle', defaultMessage: '完成任务' })} description={intl.formatMessage({ id: 'pages.taskManagement.execution.completeDesc', defaultMessage: '标记任务为已完成，需要指定执行结果' })} type="warning" style={{ marginBottom: 16 }} />
                 <ProFormSelect
-                  label={intl.formatMessage({ id: 'pages.taskManagement.execution.result' })}
+                  label={intl.formatMessage({ id: 'pages.taskManagement.execution.resultLabel', defaultMessage: '执行结果' })}
                   name="executionResult"
-                  rules={[{ required: true, message: intl.formatMessage({ id: 'pages.taskManagement.execution.resultRequired' }) }]}
+                  rules={[{ required: true, message: intl.formatMessage({ id: 'pages.taskManagement.execution.resultRequired', defaultMessage: '请选择执行结果' }) }]}
                   options={[
-                    { label: intl.formatMessage({ id: 'pages.taskManagement.execution.resultSuccess' }), value: TaskExecutionResult.Success }, { label: intl.formatMessage({ id: 'pages.taskManagement.execution.resultFailed' }), value: TaskExecutionResult.Failed },
-                    { label: intl.formatMessage({ id: 'pages.taskManagement.execution.resultTimeout' }), value: TaskExecutionResult.Timeout }, { label: intl.formatMessage({ id: 'pages.taskManagement.execution.resultInterrupted' }), value: TaskExecutionResult.Interrupted },
+                    { label: intl.formatMessage({ id: 'pages.taskManagement.execution.success', defaultMessage: '成功' }), value: TaskExecutionResult.Success }, { label: intl.formatMessage({ id: 'pages.taskManagement.execution.failed', defaultMessage: '失败' }), value: TaskExecutionResult.Failed },
+                    { label: intl.formatMessage({ id: 'pages.taskManagement.execution.timeout', defaultMessage: '超时' }), value: TaskExecutionResult.Timeout }, { label: intl.formatMessage({ id: 'pages.taskManagement.execution.interrupted', defaultMessage: '被中断' }), value: TaskExecutionResult.Interrupted },
                   ]}
                 />
-                <ProFormText name="errorMessage" label={intl.formatMessage({ id: 'pages.taskManagement.execution.errorMessage' })} placeholder={intl.formatMessage({ id: 'pages.taskManagement.execution.errorMessagePlaceholder' })} />
-                <ProFormText name="remarks" label={intl.formatMessage({ id: 'pages.taskManagement.execution.remarks' })} placeholder={intl.formatMessage({ id: 'pages.taskManagement.execution.remarksPlaceholder' })} />
+                <ProFormText name="errorMessage" label={intl.formatMessage({ id: 'pages.taskManagement.execution.errorMessage', defaultMessage: '错误信息' })} placeholder={intl.formatMessage({ id: 'pages.taskManagement.execution.errorPlaceholder', defaultMessage: '请输入失败原因或错误信息' })} />
+                <ProFormText name="remarks" label={intl.formatMessage({ id: 'pages.taskManagement.execution.remarksLabel', defaultMessage: '完成备注' })} placeholder={intl.formatMessage({ id: 'pages.taskManagement.execution.remarksPlaceholder', defaultMessage: '请输入任务完成的备注信息' })} />
               </>
             )}
           </>

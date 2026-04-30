@@ -115,6 +115,11 @@ export const errorConfig: RequestConfig = {
         (messageText?.includes('未找到当前用户信息') ||
           messageText?.toLowerCase?.().includes('current user') ||
           messageText?.toLowerCase?.().includes('unauthorized'));
+      // 403 + "未找到用户" 表示 token 无效/过期（后端可能返回 403 而非 401）
+      const is403AuthError =
+        error.response?.status === 403 &&
+        (messageText?.includes('未找到用户') ||
+          messageText?.toLowerCase?.().includes('unauthorized'));
 
       // 检查是否是认证相关的错误消息（避免已处理的认证错误重复处理）
       const isAuthErrorMessage =
@@ -132,7 +137,7 @@ export const errorConfig: RequestConfig = {
 
       console.log('[errorHandler] Proceeding to errorInterceptor.handleError');
 
-      if (isAuthError || isAuthErrorMessage || isMissingCurrentUser) {
+      if (isAuthError || isAuthErrorMessage || isMissingCurrentUser || is403AuthError) {
         // 检查是否已经尝试过 token 刷新（由 responseInterceptors 处理）
         // 如果是，说明刷新失败了，跳转到登录页
         if (error?._tokenRefreshAttempted) {
@@ -151,7 +156,7 @@ export const errorConfig: RequestConfig = {
         // 如果是获取当前用户的请求，不显示错误提示（因为可能是未登录状态）
         const isCurrentUserRequest = error.config?.url?.includes('/apiservice/api/auth/current-user') ||
           error.config?.url?.includes('/apiservice/api/currentUser');
-        if (isCurrentUserRequest || isAuthError || isMissingCurrentUser) {
+        if (isCurrentUserRequest || isAuthError || isMissingCurrentUser || is403AuthError) {
           // 使用 AuthenticationService 统一跳转
           AuthenticationService.redirectToLogin(
             isAuthError

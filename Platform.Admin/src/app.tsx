@@ -555,12 +555,26 @@ function handleCurrentUserResponse(response: any): any {
 
 async function handle401Error(error: any): Promise<any> {
   const is401Error = error.response?.status === 401;
+
+  // 403 + "未找到用户信息" 表示 token 无效/过期，也应触发刷新
+  const messageText =
+    error?.response?.data?.message ||
+    error?.response?.data?.errorCode ||
+    error?.message;
+  const is403AuthError =
+    error.response?.status === 403 &&
+    (messageText?.includes('未找到用户') ||
+      messageText?.toLowerCase?.().includes('current user') ||
+      messageText?.toLowerCase?.().includes('unauthorized') ||
+      messageText?.toLowerCase?.().includes('token'));
+
   if (process.env.NODE_ENV === 'development') {
     console.log('[Auth] 401 error detected, URL:', error.config?.url);
+    console.log('[Auth] 403 auth error detected:', is403AuthError, 'message:', messageText);
     console.log('[Auth] Current stored token (first 20):', tokenUtils.getToken()?.substring(0, 20) + '...');
     console.log('[Auth] Current stored refreshToken (first 20):', tokenUtils.getRefreshToken()?.substring(0, 20) + '...');
   }
-  if (!is401Error) {
+  if (!is401Error && !is403AuthError) {
     return null;
   }
 

@@ -20,6 +20,7 @@ export default {
   'pages.captcha.verifySuccess': '验证码正确',
   'pages.changePassword.confirmPassword.placeholder': '请确认新密码',
   'pages.changePassword.confirmPassword.required': '请确认新密码！',
+  'pages.changePassword.confirmPassword.mismatch': '两次输入的密码不一致',
   'pages.changePassword.currentPassword.placeholder': '请输入当前密码',
   'pages.changePassword.currentPassword.required': '请输入当前密码!',
   'pages.changePassword.failure': '密码修改失败，请重试！',

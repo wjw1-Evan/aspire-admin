@@ -113,7 +113,7 @@ const ChangePassword: React.FC = () => {
             layout="vertical"
           >
             {code && (
-              <ChangePasswordMessage content={errorMsg || '密码修改失败'} />
+              <ChangePasswordMessage content={errorMsg || intl.formatMessage({ id: 'pages.changePassword.failure', defaultMessage: '密码修改失败，请重试！' })} />
             )}
 
             <Form.Item
@@ -191,7 +191,7 @@ const ChangePassword: React.FC = () => {
                     if (!value || getFieldValue('newPassword') === value) {
                       return Promise.resolve();
                     }
-                    return Promise.reject(new Error('两次输入的密码不一致！'));
+                    return Promise.reject(new Error(intl.formatMessage({ id: 'pages.changePassword.confirmPassword.mismatch', defaultMessage: '两次输入的密码不一致' })));
                   },
                 }),
               ]}

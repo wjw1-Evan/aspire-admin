@@ -20,6 +20,7 @@ export default {
   'pages.captcha.verifySuccess': 'Captcha is correct',
   'pages.changePassword.confirmPassword.placeholder': 'Confirm new password',
   'pages.changePassword.currentPassword.placeholder': 'Current password',
+  'pages.changePassword.confirmPassword.mismatch': 'The two passwords do not match',
   'pages.changePassword.failure': 'Password change failed, please try again!',
   'pages.changePassword.newPassword.placeholder': 'New password',
   'pages.changePassword.newPassword.required': 'Please enter new password!',

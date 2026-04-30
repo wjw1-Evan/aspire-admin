@@ -114,7 +114,7 @@ const ForgotPasswordContainer: React.FC = () => {
       }
     } catch (error: any) {
       error.skipGlobalHandler = true;
-      message.error('获取验证码失败');
+      message.error(intl.formatMessage({ id: 'pages.forgotPassword.sendCodeError', defaultMessage: '获取验证码失败' }));
     }
   };
 
@@ -152,7 +152,7 @@ const ForgotPasswordContainer: React.FC = () => {
           }))
         );
       } else {
-        const errorMsg = error?.response?.data?.message || error?.message || '重置密码失败';
+        const errorMsg = error?.response?.data?.message || error?.message || intl.formatMessage({ id: 'pages.forgotPassword.resetError', defaultMessage: '重置密码失败' });
         message.error(errorMsg);
       }
     } finally {

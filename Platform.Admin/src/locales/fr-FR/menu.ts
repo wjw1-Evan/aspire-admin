@@ -168,4 +168,7 @@ export default {
   // Data Dashboard
   'menu.data-dashboard': 'Data Dashboard',
   'menu.data-dashboard.desc': 'Custom data visualization dashboard',
+  'menu.web-scraper-results.desc': 'View and manage web scrape results',
+  'menu.web-scraper-tasks.desc': 'View and manage web scraping tasks',
+  'menu.web-scraper-logs.desc': 'View web scraping execution logs',
 };

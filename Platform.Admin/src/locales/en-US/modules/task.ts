@@ -122,6 +122,7 @@ export default {
   'pages.taskManagement.table.projectName': 'Project',
   'pages.taskManagement.table.remarks': 'Remarks',
 'pages.taskManagement.table.status': 'Status',
+  'pages.taskManagement.table.type': 'Type',
   'pages.taskManagement.tags': 'Tags',
   'pages.taskManagement.tagsPlaceholder': 'Enter tags and press Enter',
   'pages.taskManagement.table.tags': 'Tags',

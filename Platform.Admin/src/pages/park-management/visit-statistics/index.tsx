@@ -67,9 +67,9 @@ const VisitStatisticsPage: React.FC = () => {
     const trendData = state.statistics ? Object.entries(state.statistics.monthlyTrends).map(([month, count]) => ({ month, count })) : [];
 
     const typeColumns: ProColumns<{ type: string; count: number }>[] = [
-        { title: '类型', dataIndex: 'type', render: (text) => <Tag color="blue">{text}</Tag> },
-        { title: '数量', dataIndex: 'count', sorter: (a, b) => a.count - b.count },
-        { title: '占比', render: (_, record) => { const sum = typeData.reduce((acc, curr) => acc + curr.count, 0); const percent = sum > 0 ? (record.count / sum) * 100 : 0; return <Progress percent={Math.round(percent)} size="small" />; } }
+        { title: intl.formatMessage({ id: 'pages.park.visitStatistics.type' }), dataIndex: 'type', render: (text) => <Tag color="blue">{text}</Tag> },
+        { title: intl.formatMessage({ id: 'pages.park.visitStatistics.count' }), dataIndex: 'count', sorter: (a, b) => a.count - b.count },
+        { title: intl.formatMessage({ id: 'pages.park.visitStatistics.percentage' }), render: (_, record) => { const sum = typeData.reduce((acc, curr) => acc + curr.count, 0); const percent = sum > 0 ? (record.count / sum) * 100 : 0; return <Progress percent={Math.round(percent)} size="small" />; } }
     ];
 
     const managerColumns: ProColumns<{ name: string; count: number }>[] = [
@@ -79,8 +79,8 @@ const VisitStatisticsPage: React.FC = () => {
     ];
 
     const trendColumns: ProColumns<{ month: string; count: number }>[] = [
-        { title: '月份', dataIndex: 'month' },
-        { title: '走访次数', dataIndex: 'count' },
+        { title: intl.formatMessage({ id: 'pages.park.visitStatistics.month' }), dataIndex: 'month' },
+        { title: intl.formatMessage({ id: 'pages.park.visitStatistics.visitCount' }), dataIndex: 'count' },
         { title: '', render: (_, record) => { const max = Math.max(...trendData.map(d => d.count), 1); const percent = (record.count / max) * 100; return <Progress percent={Math.round(percent)} size="small" showInfo={false} strokeColor="#52c41a" />; } }
     ];
 
@@ -122,17 +122,17 @@ const VisitStatisticsPage: React.FC = () => {
                             <Col xs={24} sm={12} lg={6}>
                                 {renderStatCard(
                                     <ClockCircleOutlined />,
-                                    '待处理任务',
+                                    intl.formatMessage({ id: 'pages.park.visitStatistics.pendingTasks' }),
                                     state.statistics.pendingTasks,
                                     '#faad14',
-                                    '当前待执行的走访任务'
+                                    intl.formatMessage({ id: 'pages.park.visitStatistics.pendingTasksDesc' })
                                 )}
                             </Col>
                             <Col xs={24} sm={12} lg={6}>
                                 <ProCard style={{ height: 140, padding: '12px 16px' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                                         <div>
-                                            <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>本月完成任务</div>
+                                            <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>{intl.formatMessage({ id: 'pages.park.visitStatistics.completedThisMonth' })}</div>
                                             <div style={{ fontSize: 24, fontWeight: 500, color: '#52c41a' }}>{state.statistics.completedTasksThisMonth}</div>
                                         </div>
                                         <div style={{ background: 'linear-gradient(135deg, #f6ffed, #f9f6f2)', padding: 8, borderRadius: 6 }}>
@@ -141,7 +141,7 @@ const VisitStatisticsPage: React.FC = () => {
                                     </div>
                                     <div style={{ marginBottom: 4 }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                                            <Text type="secondary" style={{ fontSize: 11 }}>任务完成率</Text>
+                                            <Text type="secondary" style={{ fontSize: 11 }}>{intl.formatMessage({ id: 'pages.park.visitStatistics.completionRate' })}</Text>
                                             <Text strong style={{ fontSize: 11 }}>{state.statistics.completionRate}%</Text>
                                         </div>
                                         <Progress percent={state.statistics.completionRate} showInfo={false} strokeColor="#52c41a" size="small" />
@@ -160,10 +160,10 @@ const VisitStatisticsPage: React.FC = () => {
                             <Col xs={24} sm={12} lg={6}>
                                 {renderStatCard(
                                     <StarOutlined style={{ color: '#faad14' }} />,
-                                    '满意度评分',
+                                    intl.formatMessage({ id: 'pages.park.visitStatistics.satisfactionScore' }),
                                     state.statistics.averageScore,
                                     '#faad14',
-                                    `评价总数: ${state.statistics.totalAssessments}`,
+                                    `${intl.formatMessage({ id: 'pages.park.visitStatistics.totalAssessments' })}: ${state.statistics.totalAssessments}`,
                                     ' / 5'
                                 )}
                             </Col>
@@ -183,17 +183,17 @@ const VisitStatisticsPage: React.FC = () => {
 
                         <Row gutter={[24, 24]}>
                             <Col xs={24} lg={12}>
-                                <ProCard title={<Space><BarChartOutlined style={{ color: '#1890ff' }} />任务类型分布</Space>} style={{ marginBottom: 24, borderRadius: 8 }}>
+                                <ProCard title={<Space><BarChartOutlined style={{ color: '#1890ff' }} />{intl.formatMessage({ id: 'pages.park.visitStatistics.taskTypeDistribution' })}</Space>} style={{ marginBottom: 24, borderRadius: 8 }}>
                                     <ProTable dataSource={typeData} pagination={false} size="small" rowKey="type" columns={typeColumns} search={false} />
                                 </ProCard>
                             </Col>
                             <Col xs={24} lg={12}>
-                                <ProCard title={<Space><UserOutlined style={{ color: '#722ed1' }} />企管员走访排行</Space>} style={{ marginBottom: 24, borderRadius: 8 }}>
+                                <ProCard title={<Space><UserOutlined style={{ color: '#722ed1' }} />{intl.formatMessage({ id: 'pages.park.visitStatistics.managerRanking' })}</Space>} style={{ marginBottom: 24, borderRadius: 8 }}>
                                     <ProTable dataSource={managerData} pagination={false} size="small" rowKey="name" columns={managerColumns} search={false} />
                                 </ProCard>
                             </Col>
                             <Col xs={24}>
-                                <ProCard title={<Space><SyncOutlined style={{ color: '#52c41a' }} />走访趋势分析</Space>} style={{ marginBottom: 24, borderRadius: 8 }}>
+                                <ProCard title={<Space><SyncOutlined style={{ color: '#52c41a' }} />{intl.formatMessage({ id: 'pages.park.visitStatistics.trendAnalysis' })}</Space>} style={{ marginBottom: 24, borderRadius: 8 }}>
                                     <ProTable dataSource={trendData} pagination={false} size="small" rowKey="month" columns={trendColumns} search={false} />
                                 </ProCard>
                             </Col>

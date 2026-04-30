@@ -127,4 +127,9 @@ export default {
   'pages.document.columns.createdAt': 'Created At',
   'pages.document.columns.updatedAt': 'Updated At',
   'pages.document.columns.content': 'Content',
+  'pages.document.statistics.total': 'Total',
+  'pages.document.statistics.draft': 'Draft',
+  'pages.document.statistics.pending': 'Pending',
+  'pages.document.statistics.approved': 'Approved',
+  'pages.document.statistics.rejected': 'Rejected',
 };

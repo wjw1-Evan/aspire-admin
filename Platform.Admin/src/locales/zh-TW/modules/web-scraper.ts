@@ -1,0 +1,57 @@
+/**
+ * web-scraper 翻譯模組
+ * 網頁抓取相關翻譯
+ */
+
+export default {
+  'pages.web-scraper.matchNotification': '匹配通知',
+  'pages.web-scraper.enableFilter': '啟用篩選',
+  'pages.web-scraper.filterPrompt': '篩選提示詞',
+  'pages.web-scraper.enableTask': '啟用任務',
+
+  // web-scraper/TaskForm.tsx message calls
+  'pages.web-scraper.message.updateFailed': '更新失敗',
+  'pages.web-scraper.message.createFailed': '建立失敗',
+
+  // web-scraper/TaskForm.tsx UI
+  'pages.web-scraper.editTask': '編輯任務',
+  'pages.web-scraper.createTask': '新增任務',
+  'pages.web-scraper.taskName': '任務名稱',
+  'pages.web-scraper.taskNameRequired': '請輸入任務名稱',
+  'pages.web-scraper.taskNamePlaceholder': '請輸入任務名稱',
+  'pages.web-scraper.targetUrl': '目標URL',
+  'pages.web-scraper.targetUrlRequired': '請輸入目標URL',
+  'pages.web-scraper.targetUrlInvalid': '請輸入有效的URL',
+  'pages.web-scraper.targetUrlPlaceholder': 'https://example.com',
+  'pages.web-scraper.description': '任務描述',
+  'pages.web-scraper.descriptionPlaceholder': '請輸入任務描述（選填）',
+  'pages.web-scraper.titleSelector': '標題選擇器',
+  'pages.web-scraper.titleSelectorPlaceholder': 'CSS選擇器，如 h1.title',
+  'pages.web-scraper.titleSelectorTooltip': '用於提取頁面標題的CSS選擇器，留空則使用<title>標籤',
+  'pages.web-scraper.contentSelector': '內容選擇器',
+  'pages.web-scraper.contentSelectorPlaceholder': 'CSS選擇器，如 article.content',
+  'pages.web-scraper.contentSelectorTooltip': '用於提取頁面主要內容的CSS選擇器，留空則使用<body>標籤',
+  'pages.web-scraper.crawlDepth': '抓取深度',
+  'pages.web-scraper.maxPagesPerLevel': '每層最大頁面數',
+  'pages.web-scraper.crawlMode': '抓取模式',
+  'pages.web-scraper.urlFilter': 'URL過濾正則',
+  'pages.web-scraper.urlFilterPlaceholder': '如 ^https://example\\.com/.*',
+  'pages.web-scraper.followExternalLinks': '跟隨外部連結',
+  'pages.web-scraper.deduplicate': 'URL去重',
+  'pages.web-scraper.scheduleCron': '定時表達式',
+  'pages.web-scraper.scheduleCronPlaceholder': '0 */10 * * * *',
+  'pages.web-scraper.scheduleCronTooltip': '<p>常用範例：</p><ul><li>每10分鐘：<code>*/10 * * * *</code></li><li>每小時：<code>0 * * * *</code></li><li>每天凌晨：<code>0 0 * * *</code></li><li>每週一：<code>0 0 * * 1</code></li></ul>',
+  'pages.web-scraper.mode.single': '僅當前頁',
+  'pages.web-scraper.mode.depth': '深度優先',
+  'pages.web-scraper.mode.breadth': '廣度優先',
+  'pages.web-scraper.submit': '建立',
+  'pages.web-scraper.update': '更新',
+  'pages.web-scraper.cancel': '取消',
+  'pages.web-scraper.filterPromptPlaceholder': '如：篩選包含"價格"或"報價"的頁面',
+  // 結果頁
+  'pages.web-scraper.results.title.resultDetail': '抓取結果詳情',
+  // 組件 ResultPreview
+  'pages.web-scraper.components.ResultPreview.title.pageDetail': '頁面詳情',
+  // 日誌頁
+  'pages.web-scraper.scrape-logs.title.logDetail': '日誌詳情',
+};

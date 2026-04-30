@@ -213,8 +213,8 @@ export default {
   'pages.help.architecture.security.item4': 'Comprehensive Operation Audit Logging',
   'pages.help.architecture.security.title': 'Security Assurance',
   'pages.help.architecture.title': 'System Architecture',
-  'pages.help.tech.backend.title': '后端技术',
-  'pages.help.tech.devtools.title': '开发工具',
-  'pages.help.tech.frontend.title': '前端技术',
-  'pages.help.tech.mobile.title': '移动开发',
+  'pages.help.tech.backend.title': 'Backend Tech',
+  'pages.help.tech.devtools.title': 'Dev Tools',
+  'pages.help.tech.frontend.title': 'Frontend Tech',
+  'pages.help.tech.mobile.title': 'Mobile Dev',
 };

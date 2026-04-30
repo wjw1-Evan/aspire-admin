@@ -3,6 +3,7 @@
  * 根据卡片类型提供不同的配置表单项
  */
 import React, { useMemo, useState } from 'react';
+import { useIntl } from '@umijs/max';
 import {
   ModalForm, ProFormText, ProFormSelect, ProFormDigit,
   ProFormTextArea, ProFormSwitch, ProFormGroup,
@@ -24,30 +25,7 @@ interface CardConfigFormProps {
   onFinish: (values: { title: string; cardType: string; styleConfig: string; dataSource: string }) => Promise<boolean>;
 }
 
-/** 卡片类型选项 */
-const CARD_TYPE_OPTIONS = [
-  { label: '── 基础 ──', value: '_group_basic', disabled: true },
-  { label: '统计指标', value: 'statistic' },
-  { label: '文本', value: 'text' },
-  { label: '图片', value: 'image' },
-  { label: '看板标题', value: 'header' },
-  { label: '时钟', value: 'clock' },
-  { label: '状态栏', value: 'statusBar' },
-  { label: '── 图表 ──', value: '_group_chart', disabled: true },
-  { label: '仪表盘', value: 'gauge' },
-  { label: '环形图', value: 'ring' },
-  { label: '折线图', value: 'lineChart' },
-  { label: '柱状图', value: 'barChart' },
-  { label: '面积图', value: 'areaChart' },
-  { label: '饼图', value: 'pieChart' },
-  { label: '雷达图', value: 'radarChart' },
-  { label: '── 复合 ──', value: '_group_complex', disabled: true },
-  { label: '状态网格', value: 'statusGrid' },
-  { label: '功能模块', value: 'functionModule' },
-  { label: '告警列表', value: 'alertList' },
-  { label: '进度条', value: 'progressBar' },
-  { label: '表格', value: 'table' },
-];
+/** 卡片类型选项 - 在组件内通过 useMemo 生成 */
 
 /** 解析 styleConfig */
 const parseStyle = (config: string): StyleConfig => {
@@ -80,30 +58,40 @@ const DataSourcePanel: React.FC<{
   dataSource: DataSourceConfig;
   onChange: (ds: DataSourceConfig) => void;
 }> = ({ dataSource, onChange }) => {
+  const intl = useIntl();
   const update = (key: string, value: unknown) => onChange({ ...dataSource, [key]: value });
 
   /** 可用的数据模块选项 */
-  const MODULE_OPTIONS = [
-    { label: '静态数据（手动输入）', value: 'static' },
-    { label: '任务统计', value: 'task' },
-    { label: '用户统计', value: 'user' },
-    { label: '文件存储', value: 'storage' },
-    { label: '园区管理', value: 'park' },
-    { label: '工作流', value: 'workflow' },
-    { label: 'IoT设备', value: 'iot' },
-    { label: '走访任务', value: 'visit' },
-    { label: '公文管理', value: 'document' },
-  ];
+  const MODULE_OPTIONS = useMemo(() => [
+    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.static', defaultMessage: '静态数据（手动输入）' }), value: 'static' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.task', defaultMessage: '任务统计' }), value: 'task' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.user', defaultMessage: '用户统计' }), value: 'user' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.storage', defaultMessage: '文件存储' }), value: 'storage' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.park', defaultMessage: '园区管理' }), value: 'park' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.workflow', defaultMessage: '工作流' }), value: 'workflow' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.iot', defaultMessage: 'IoT设备' }), value: 'iot' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.visit', defaultMessage: '走访任务' }), value: 'visit' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.document', defaultMessage: '公文管理' }), value: 'document' },
+  ], [intl]);
 
   /** 聚合方式选项 */
-  const AGGREGATION_OPTIONS = [
-    { label: '总计', value: 'count' },
-    { label: '平均值', value: 'avg' },
-    { label: '最大值', value: 'max' },
-    { label: '最小值', value: 'min' },
-    { label: '求和', value: 'sum' },
-    { label: '最新值', value: 'latest' },
-  ];
+  const AGGREGATION_OPTIONS = useMemo(() => [
+    { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.count', defaultMessage: '总计' }), value: 'count' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.avg', defaultMessage: '平均值' }), value: 'avg' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.max', defaultMessage: '最大值' }), value: 'max' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.min', defaultMessage: '最小值' }), value: 'min' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.sum', defaultMessage: '求和' }), value: 'sum' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.latest', defaultMessage: '最新值' }), value: 'latest' },
+  ], [intl]);
+
+  /** 时间范围选项 */
+  const TIME_RANGE_OPTIONS = useMemo(() => [
+    { label: intl.formatMessage({ id: 'pages.dashboard.timeRange.today', defaultMessage: '今天' }), value: 'today' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.timeRange.week', defaultMessage: '本周' }), value: 'week' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.timeRange.month', defaultMessage: '本月' }), value: 'month' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.timeRange.year', defaultMessage: '本年' }), value: 'year' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.timeRange.all', defaultMessage: '全部' }), value: 'all' },
+  ], [intl]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -158,13 +146,7 @@ const DataSourcePanel: React.FC<{
             <Select
               value={dataSource.timeRange || 'today'}
               onChange={(v) => update('timeRange', v)}
-              options={[
-                { label: '今天', value: 'today' },
-                { label: '本周', value: 'week' },
-                { label: '本月', value: 'month' },
-                { label: '本年', value: 'year' },
-                { label: '全部', value: 'all' },
-              ]}
+              options={TIME_RANGE_OPTIONS}
               style={{ width: '100%' }}
             />
           </div>
@@ -215,7 +197,14 @@ const DataSourcePanel: React.FC<{
 
 /** 通用样式面板 */
 const CommonStylePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => void }> = ({ style, onChange }) => {
+  const intl = useIntl();
   const update = (key: string, value: unknown) => onChange({ ...style, [key]: value });
+
+  /** 布尔值选项 */
+  const BOOLEAN_OPTIONS = useMemo(() => [
+    { label: intl.formatMessage({ id: 'pages.dashboard.boolean.yes', defaultMessage: '是' }), value: 'true' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.boolean.no', defaultMessage: '否' }), value: 'false' },
+  ], [intl]);
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
       <div>
@@ -241,7 +230,7 @@ const CommonStylePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig
       <div>
         <Text type="secondary" style={{ fontSize: 12 }}>显示标题</Text>
         <Select value={style.showTitle !== false ? 'true' : 'false'} onChange={(v) => update('showTitle', v === 'true')} size="small" style={{ width: '100%' }}
-          options={[{ label: '是', value: 'true' }, { label: '否', value: 'false' }]} />
+          options={BOOLEAN_OPTIONS} />
       </div>
     </div>
   );
@@ -249,7 +238,27 @@ const CommonStylePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig
 
 /** 统计卡片配置 */
 const StatisticStylePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => void }> = ({ style, onChange }) => {
+  const intl = useIntl();
   const update = (key: string, value: unknown) => onChange({ ...style, [key]: value });
+
+  /** 图标选项 */
+  const ICON_OPTIONS = useMemo(() => [
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.thunder', defaultMessage: '闪电' }), value: 'thunder' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.monitor', defaultMessage: '监控' }), value: 'monitor' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.bulb', defaultMessage: '灯泡' }), value: 'bulb' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.bank', defaultMessage: '银行' }), value: 'bank' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.setting', defaultMessage: '设置' }), value: 'setting' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.sound', defaultMessage: '声音' }), value: 'sound' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.car', defaultMessage: '车辆' }), value: 'car' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.video', defaultMessage: '视频' }), value: 'video' },
+  ], [intl]);
+
+  /** 趋势选项 */
+  const TREND_OPTIONS = useMemo(() => [
+    { label: intl.formatMessage({ id: 'pages.dashboard.trend.none', defaultMessage: '无' }), value: 'none' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.trend.up', defaultMessage: '上升' }), value: 'up' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.trend.down', defaultMessage: '下降' }), value: 'down' },
+  ], [intl]);
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
       <div>
@@ -274,18 +283,13 @@ const StatisticStylePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleCon
       </div>
       <div>
         <Text type="secondary" style={{ fontSize: 12 }}>图标</Text>
-        <Select value={style.icon || undefined} onChange={(v) => update('icon', v)} size="small" style={{ width: '100%' }} allowClear placeholder="选择图标"
-          options={[
-            { label: '闪电', value: 'thunder' }, { label: '监控', value: 'monitor' },
-            { label: '灯泡', value: 'bulb' }, { label: '银行', value: 'bank' },
-            { label: '设置', value: 'setting' }, { label: '声音', value: 'sound' },
-            { label: '车辆', value: 'car' }, { label: '视频', value: 'video' },
-          ]} />
+        <Select value={style.icon || undefined} onChange={(v) => update('icon', v)} size="small" style={{ width: '100%' }} allowClear placeholder={intl.formatMessage({ id: 'pages.dashboard.iconPlaceholder', defaultMessage: '选择图标' })}
+          options={ICON_OPTIONS} />
       </div>
       <div>
         <Text type="secondary" style={{ fontSize: 12 }}>趋势</Text>
         <Select value={style.trend || 'none'} onChange={(v) => update('trend', v)} size="small" style={{ width: '100%' }}
-          options={[{ label: '无', value: 'none' }, { label: '上升', value: 'up' }, { label: '下降', value: 'down' }]} />
+          options={TREND_OPTIONS} />
       </div>
       <div>
         <Text type="secondary" style={{ fontSize: 12 }}>趋势值</Text>
@@ -301,7 +305,15 @@ const StatisticStylePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleCon
 
 /** 仪表盘配置 */
 const GaugeStylePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => void }> = ({ style, onChange }) => {
+  const intl = useIntl();
   const update = (key: string, value: unknown) => onChange({ ...style, [key]: value });
+
+  /** 仪表盘样式选项 */
+  const GAUGE_STYLE_OPTIONS = useMemo(() => [
+    { label: intl.formatMessage({ id: 'pages.dashboard.gaugeStyle.default', defaultMessage: '默认' }), value: 'default' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.gaugeStyle.simple', defaultMessage: '简约' }), value: 'simple' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.gaugeStyle.temperature', defaultMessage: '温度' }), value: 'temperature' },
+  ], [intl]);
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
       <div>
@@ -327,7 +339,7 @@ const GaugeStylePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig)
       <div>
         <Text type="secondary" style={{ fontSize: 12 }}>样式</Text>
         <Select value={style.gaugeStyle || 'default'} onChange={(v) => update('gaugeStyle', v)} size="small" style={{ width: '100%' }}
-          options={[{ label: '默认', value: 'default' }, { label: '简约', value: 'simple' }, { label: '温度', value: 'temperature' }]} />
+          options={GAUGE_STYLE_OPTIONS} />
       </div>
     </div>
   );
@@ -335,6 +347,7 @@ const GaugeStylePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig)
 
 /** 折线图/面积图/柱状图 数据系列配置 */
 const SeriesDataPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => void }> = ({ style, onChange }) => {
+  const intl = useIntl();
   const xAxisData = style.xAxisData || [];
   const seriesData = style.seriesData || [];
 
@@ -361,6 +374,12 @@ const SeriesDataPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig)
     onChange({ ...style, seriesData: next });
   };
 
+  /** 布尔值选项 */
+  const BOOLEAN_OPTIONS = useMemo(() => [
+    { label: intl.formatMessage({ id: 'pages.dashboard.boolean.yes', defaultMessage: '是' }), value: 'true' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.boolean.no', defaultMessage: '否' }), value: 'false' },
+  ], [intl]);
+
   return (
     <div>
       <div style={{ marginBottom: 12 }}>
@@ -376,12 +395,12 @@ const SeriesDataPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig)
         <div>
           <Text type="secondary" style={{ fontSize: 12 }}>显示图例</Text>
           <Select value={style.showLegend !== false ? 'true' : 'false'} onChange={(v) => onChange({ ...style, showLegend: v === 'true' })} size="small" style={{ width: '100%' }}
-            options={[{ label: '是', value: 'true' }, { label: '否', value: 'false' }]} />
+            options={BOOLEAN_OPTIONS} />
         </div>
         <div>
           <Text type="secondary" style={{ fontSize: 12 }}>平滑曲线</Text>
           <Select value={style.smooth !== false ? 'true' : 'false'} onChange={(v) => onChange({ ...style, smooth: v === 'true' })} size="small" style={{ width: '100%' }}
-            options={[{ label: '是', value: 'true' }, { label: '否', value: 'false' }]} />
+            options={BOOLEAN_OPTIONS} />
         </div>
       </div>
       <Divider orientation={'left' as DividerOrientation} style={{ margin: '8px 0', fontSize: 12 }}>数据系列</Divider>
@@ -472,6 +491,7 @@ const PieDataPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) =>
 
 /** 状态网格配置 */
 const StatusGridPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => void }> = ({ style, onChange }) => {
+  const intl = useIntl();
   const items = style.items || [];
 
   const addItem = () => {
@@ -499,6 +519,14 @@ const StatusGridPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig)
     }
   };
 
+  /** 状态选项 */
+  const STATUS_OPTIONS = useMemo(() => [
+    { label: intl.formatMessage({ id: 'pages.dashboard.status.normal', defaultMessage: '正常' }), value: 'normal' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.status.busy', defaultMessage: '繁忙' }), value: 'busy' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.status.urgent', defaultMessage: '紧急' }), value: 'urgent' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.status.offline', defaultMessage: '离线' }), value: 'offline' },
+  ], [intl]);
+
   return (
     <div>
       <div style={{ marginBottom: 12 }}>
@@ -520,10 +548,7 @@ const StatusGridPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig)
             <div>
               <Text type="secondary" style={{ fontSize: 11 }}>状态</Text>
               <Select value={item.status} onChange={(v) => updateItem(idx, 'status', v)} size="small" style={{ width: '100%' }}
-                options={[
-                  { label: '正常', value: 'normal' }, { label: '繁忙', value: 'busy' },
-                  { label: '紧急', value: 'urgent' }, { label: '离线', value: 'offline' },
-                ]} />
+                options={STATUS_OPTIONS} />
             </div>
           </div>
           <div style={{ marginTop: 4 }}>
@@ -544,7 +569,28 @@ const StatusGridPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig)
 
 /** 功能模块配置 */
 const FunctionModulePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => void }> = ({ style, onChange }) => {
+  const intl = useIntl();
   const modules = style.modules || [];
+
+  /** 图标选项 */
+  const ICON_OPTIONS = useMemo(() => [
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.thunder', defaultMessage: '闪电' }), value: 'thunder' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.monitor', defaultMessage: '监控' }), value: 'monitor' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.bulb', defaultMessage: '灯泡' }), value: 'bulb' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.bank', defaultMessage: '银行' }), value: 'bank' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.setting', defaultMessage: '设置' }), value: 'setting' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.sound', defaultMessage: '声音' }), value: 'sound' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.car', defaultMessage: '车辆' }), value: 'car' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.video', defaultMessage: '视频' }), value: 'video' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.idcard', defaultMessage: 'ID卡' }), value: 'idcard' },
+  ], [intl]);
+
+  /** 状态选项 */
+  const STATUS_OPTIONS = useMemo(() => [
+    { label: intl.formatMessage({ id: 'pages.dashboard.status.online', defaultMessage: '在线' }), value: 'online' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.status.warning', defaultMessage: '警告' }), value: 'warning' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.status.offline', defaultMessage: '离线' }), value: 'offline' },
+  ], [intl]);
 
   const addModule = () => {
     onChange({ ...style, modules: [...modules, { name: `模块${modules.length + 1}`, icon: 'setting', status: 'online' as const, statusText: '', description: '' }] });
@@ -583,16 +629,12 @@ const FunctionModulePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleCon
             <div>
               <Text type="secondary" style={{ fontSize: 11 }}>状态</Text>
               <Select value={mod.status} onChange={(v) => updateModule(idx, 'status', v)} size="small" style={{ width: '100%' }}
-                options={[{ label: '在线', value: 'online' }, { label: '警告', value: 'warning' }, { label: '离线', value: 'offline' }]} />
+                options={STATUS_OPTIONS} />
             </div>
             <div>
               <Text type="secondary" style={{ fontSize: 11 }}>图标</Text>
               <Select value={mod.icon || undefined} onChange={(v) => updateModule(idx, 'icon', v)} size="small" style={{ width: '100%' }} allowClear
-                options={[
-                  { label: '闪电', value: 'thunder' }, { label: '监控', value: 'monitor' }, { label: '灯泡', value: 'bulb' },
-                  { label: '银行', value: 'bank' }, { label: '设置', value: 'setting' }, { label: '视频', value: 'video' },
-                  { label: '车辆', value: 'car' }, { label: '声音', value: 'sound' }, { label: 'ID卡', value: 'idcard' },
-                ]} />
+                options={ICON_OPTIONS} />
             </div>
             <div>
               <Text type="secondary" style={{ fontSize: 11 }}>描述</Text>
@@ -608,7 +650,16 @@ const FunctionModulePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleCon
 
 /** 告警列表配置 */
 const AlertListPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => void }> = ({ style, onChange }) => {
+  const intl = useIntl();
   const alerts = style.alerts || [];
+
+  /** 告警级别选项 */
+  const ALERT_LEVEL_OPTIONS = useMemo(() => [
+    { label: intl.formatMessage({ id: 'pages.dashboard.alertLevel.info', defaultMessage: '信息' }), value: 'info' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.alertLevel.warning', defaultMessage: '警告' }), value: 'warning' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.alertLevel.error', defaultMessage: '错误' }), value: 'error' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.alertLevel.critical', defaultMessage: '严重' }), value: 'critical' },
+  ], [intl]);
 
   const addAlert = () => {
     const now = new Date();
@@ -634,10 +685,7 @@ const AlertListPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) 
         <div key={idx} style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'center' }}>
           <Input value={alert.time} onChange={(e) => updateAlert(idx, 'time', e.target.value)} size="small" style={{ width: 65 }} placeholder="HH:MM" />
           <Select value={alert.level} onChange={(v) => updateAlert(idx, 'level', v)} size="small" style={{ width: 80 }}
-            options={[
-              { label: '信息', value: 'info' }, { label: '警告', value: 'warning' },
-              { label: '错误', value: 'error' }, { label: '严重', value: 'critical' },
-            ]} />
+            options={ALERT_LEVEL_OPTIONS} />
           <Input value={alert.message} onChange={(e) => updateAlert(idx, 'message', e.target.value)} size="small" style={{ flex: 1 }} />
           <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => removeAlert(idx)} />
         </div>
@@ -649,7 +697,15 @@ const AlertListPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) 
 
 /** Header 配置 */
 const HeaderPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => void }> = ({ style, onChange }) => {
+  const intl = useIntl();
   const update = (key: string, value: unknown) => onChange({ ...style, [key]: value });
+
+  /** 对齐方式选项 */
+  const ALIGNMENT_OPTIONS = useMemo(() => [
+    { label: intl.formatMessage({ id: 'pages.dashboard.alignment.left', defaultMessage: '左对齐' }), value: 'left' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.alignment.center', defaultMessage: '居中' }), value: 'center' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.alignment.right', defaultMessage: '右对齐' }), value: 'right' },
+  ], [intl]);
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
       <div style={{ gridColumn: '1 / -1' }}>
@@ -663,11 +719,7 @@ const HeaderPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => 
           onChange={(v) => update('textAlign', v)}
           size="small"
           style={{ width: '100%' }}
-          options={[
-            { label: '左对齐', value: 'left' },
-            { label: '居中', value: 'center' },
-            { label: '右对齐', value: 'right' },
-          ]}
+          options={ALIGNMENT_OPTIONS}
         />
       </div>
       <div>
@@ -705,7 +757,15 @@ const ProgressPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) =
 
 /** 文本配置 */
 const TextPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => void }> = ({ style, onChange }) => {
+  const intl = useIntl();
   const update = (key: string, value: unknown) => onChange({ ...style, [key]: value });
+
+  /** 对齐方式选项 */
+  const ALIGNMENT_OPTIONS = useMemo(() => [
+    { label: intl.formatMessage({ id: 'pages.dashboard.alignment.left', defaultMessage: '左对齐' }), value: 'left' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.alignment.center', defaultMessage: '居中' }), value: 'center' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.alignment.right', defaultMessage: '右对齐' }), value: 'right' },
+  ], [intl]);
   return (
     <div>
       <div style={{ marginBottom: 8 }}>
@@ -720,7 +780,7 @@ const TextPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => vo
         <div>
           <Text type="secondary" style={{ fontSize: 12 }}>对齐</Text>
           <Select value={style.textAlign || 'left'} onChange={(v) => update('textAlign', v)} size="small" style={{ width: '100%' }}
-            options={[{ label: '左对齐', value: 'left' }, { label: '居中', value: 'center' }, { label: '右对齐', value: 'right' }]} />
+            options={ALIGNMENT_OPTIONS} />
         </div>
       </div>
     </div>
@@ -729,7 +789,16 @@ const TextPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => vo
 
 /** 图片配置 */
 const ImagePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => void }> = ({ style, onChange }) => {
+  const intl = useIntl();
   const update = (key: string, value: unknown) => onChange({ ...style, [key]: value });
+  
+  /** 图片填充模式选项 */
+  const IMAGE_FIT_OPTIONS = useMemo(() => [
+    { label: intl.formatMessage({ id: 'pages.dashboard.imageFit.cover', defaultMessage: '覆盖' }), value: 'cover' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.imageFit.contain', defaultMessage: '包含' }), value: 'contain' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.imageFit.fill', defaultMessage: '拉伸' }), value: 'fill' },
+  ], [intl]);
+  
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
       <div style={{ gridColumn: '1 / -1' }}>
@@ -739,7 +808,7 @@ const ImagePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => v
       <div>
         <Text type="secondary" style={{ fontSize: 12 }}>填充模式</Text>
         <Select value={style.imageFit || 'cover'} onChange={(v) => update('imageFit', v)} size="small" style={{ width: '100%' }}
-          options={[{ label: '覆盖', value: 'cover' }, { label: '包含', value: 'contain' }, { label: '拉伸', value: 'fill' }]} />
+          options={IMAGE_FIT_OPTIONS} />
       </div>
     </div>
   );
@@ -827,11 +896,37 @@ const TablePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => v
 // ─── 主表单组件 ────────────────────────────────────
 
 const CardConfigForm: React.FC<CardConfigFormProps> = ({ open, onOpenChange, editingCard, onFinish }) => {
+  const intl = useIntl();
   const initialStyle = useMemo(() => parseStyle(editingCard?.styleConfig || ''), [editingCard]);
   const initialDataSource = useMemo(() => parseDataSource(editingCard?.dataSource || ''), [editingCard]);
   const [cardType, setCardType] = useState<string>(editingCard?.cardType || 'statistic');
   const [styleConfig, setStyleConfig] = useState<StyleConfig>(initialStyle);
   const [dataSource, setDataSource] = useState<DataSourceConfig>(initialDataSource);
+
+  /** 卡片类型选项 */
+  const CARD_TYPE_OPTIONS = useMemo(() => [
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardTypeGroup.basic', defaultMessage: '── 基础 ──' }), value: '_group_basic', disabled: true },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.statistic', defaultMessage: '统计指标' }), value: 'statistic' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.text', defaultMessage: '文本' }), value: 'text' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.image', defaultMessage: '图片' }), value: 'image' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.header', defaultMessage: '看板标题' }), value: 'header' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.clock', defaultMessage: '时钟' }), value: 'clock' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.statusBar', defaultMessage: '状态栏' }), value: 'statusBar' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardTypeGroup.chart', defaultMessage: '── 图表 ──' }), value: '_group_chart', disabled: true },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.gauge', defaultMessage: '仪表盘' }), value: 'gauge' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.ring', defaultMessage: '环形图' }), value: 'ring' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.lineChart', defaultMessage: '折线图' }), value: 'lineChart' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.barChart', defaultMessage: '柱状图' }), value: 'barChart' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.areaChart', defaultMessage: '面积图' }), value: 'areaChart' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.pieChart', defaultMessage: '饼图' }), value: 'pieChart' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.radarChart', defaultMessage: '雷达图' }), value: 'radarChart' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardTypeGroup.complex', defaultMessage: '── 复合 ──' }), value: '_group_complex', disabled: true },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.statusGrid', defaultMessage: '状态网格' }), value: 'statusGrid' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.functionModule', defaultMessage: '功能模块' }), value: 'functionModule' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.alertList', defaultMessage: '告警列表' }), value: 'alertList' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.progressBar', defaultMessage: '进度条' }), value: 'progressBar' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.table', defaultMessage: '表格' }), value: 'table' },
+  ], [intl]);
 
   // 当 editingCard 变化时重新初始化
   React.useEffect(() => {

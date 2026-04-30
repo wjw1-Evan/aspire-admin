@@ -101,6 +101,106 @@ export default {
   'pages.dashboard.noCards': '暂无卡片',
   'pages.dashboard.noCardsDesc': '点击下方按钮添加第一个卡片',
 
+  // 卡片类型分组
+  'pages.dashboard.cardTypeGroup.basic': '── 基础 ──',
+  'pages.dashboard.cardTypeGroup.chart': '── 图表 ──',
+  'pages.dashboard.cardTypeGroup.complex': '── 复合 ──',
+
+  // 卡片类型
+  'pages.dashboard.cardType.statistic': '统计指标',
+  'pages.dashboard.cardType.text': '文本',
+  'pages.dashboard.cardType.image': '图片',
+  'pages.dashboard.cardType.header': '看板标题',
+  'pages.dashboard.cardType.clock': '时钟',
+  'pages.dashboard.cardType.statusBar': '状态栏',
+  'pages.dashboard.cardType.gauge': '仪表盘',
+  'pages.dashboard.cardType.ring': '环形图',
+  'pages.dashboard.cardType.lineChart': '折线图',
+  'pages.dashboard.cardType.barChart': '柱状图',
+  'pages.dashboard.cardType.areaChart': '面积图',
+  'pages.dashboard.cardType.pieChart': '饼图',
+  'pages.dashboard.cardType.radarChart': '雷达图',
+  'pages.dashboard.cardType.statusGrid': '状态网格',
+  'pages.dashboard.cardType.functionModule': '功能模块',
+  'pages.dashboard.cardType.alertList': '告警列表',
+  'pages.dashboard.cardType.progressBar': '进度条',
+  'pages.dashboard.cardType.table': '表格',
+
+  // 数据模块
+  'pages.dashboard.dataModule.static': '静态数据（手动输入）',
+  'pages.dashboard.dataModule.task': '任务统计',
+  'pages.dashboard.dataModule.user': '用户统计',
+  'pages.dashboard.dataModule.storage': '文件存储',
+  'pages.dashboard.dataModule.park': '园区管理',
+  'pages.dashboard.dataModule.workflow': '工作流',
+  'pages.dashboard.dataModule.iot': 'IoT设备',
+  'pages.dashboard.dataModule.visit': '走访任务',
+  'pages.dashboard.dataModule.document': '公文管理',
+
+  // 聚合方式
+  'pages.dashboard.aggregation.count': '总计',
+  'pages.dashboard.aggregation.avg': '平均值',
+  'pages.dashboard.aggregation.max': '最大值',
+  'pages.dashboard.aggregation.min': '最小值',
+  'pages.dashboard.aggregation.sum': '求和',
+  'pages.dashboard.aggregation.latest': '最新值',
+
+  // 时间范围
+  'pages.dashboard.timeRange.today': '今天',
+  'pages.dashboard.timeRange.week': '本周',
+  'pages.dashboard.timeRange.month': '本月',
+  'pages.dashboard.timeRange.year': '本年',
+  'pages.dashboard.timeRange.all': '全部',
+
+  // 布尔值
+  'pages.dashboard.boolean.yes': '是',
+  'pages.dashboard.boolean.no': '否',
+
+  // 图标
+  'pages.dashboard.icon.thunder': '闪电',
+  'pages.dashboard.icon.monitor': '监控',
+  'pages.dashboard.icon.bulb': '灯泡',
+  'pages.dashboard.icon.bank': '银行',
+  'pages.dashboard.icon.setting': '设置',
+  'pages.dashboard.icon.sound': '声音',
+  'pages.dashboard.icon.car': '车辆',
+  'pages.dashboard.icon.video': '视频',
+  'pages.dashboard.icon.idcard': 'ID卡',
+
+  // 趋势
+  'pages.dashboard.trend.none': '无',
+  'pages.dashboard.trend.up': '上升',
+  'pages.dashboard.trend.down': '下降',
+
+  // 仪表盘样式
+  'pages.dashboard.gaugeStyle.default': '默认',
+  'pages.dashboard.gaugeStyle.simple': '简约',
+  'pages.dashboard.gaugeStyle.temperature': '温度',
+
+  // 状态
+  'pages.dashboard.status.normal': '正常',
+  'pages.dashboard.status.busy': '繁忙',
+  'pages.dashboard.status.urgent': '紧急',
+  'pages.dashboard.status.offline': '离线',
+  'pages.dashboard.status.online': '在线',
+  'pages.dashboard.status.warning': '警告',
+
+  // 告警级别
+  'pages.dashboard.alertLevel.info': '信息',
+  'pages.dashboard.alertLevel.warning': '警告',
+  'pages.dashboard.alertLevel.error': '错误',
+  'pages.dashboard.alertLevel.critical': '严重',
+
+  // 对齐方式
+  'pages.dashboard.alignment.left': '左对齐',
+  'pages.dashboard.alignment.center': '居中',
+  'pages.dashboard.alignment.right': '右对齐',
+
+  // 图片填充模式
+  'pages.dashboard.imageFit.cover': '覆盖',
+  'pages.dashboard.imageFit.contain': '包含',
+  'pages.dashboard.imageFit.fill': '拉伸',
+
   // 设计器
   'pages.dashboard.designer.layoutSaved': '布局已保存',
   'pages.dashboard.designer.saveFailed': '保存失败',

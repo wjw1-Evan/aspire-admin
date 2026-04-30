@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { PageContainer, ProCard } from '@ant-design/pro-components';
 import { useIntl, request } from '@umijs/max';
 import { Tag, Space, Row, Col, Button, Input, Popconfirm, Typography, Upload, DatePicker, Tabs, App } from 'antd';
@@ -129,25 +129,93 @@ const AssetManagement: React.FC = () => {
         }
     };
 
+    const renderBuildingType = (buildingType?: string) => {
+        const typeMap: Record<string, { color: string; text: string }> = {
+            Office: { color: 'blue', text: intl.formatMessage({ id: 'pages.park.asset.buildingType.office', defaultMessage: '办公楼' }) },
+            Commercial: { color: 'green', text: intl.formatMessage({ id: 'pages.park.asset.buildingType.commercial', defaultMessage: '商业楼' }) },
+            Mixed: { color: 'orange', text: intl.formatMessage({ id: 'pages.park.asset.buildingType.mixed', defaultMessage: '综合楼' }) },
+        };
+        const config = typeMap[buildingType || ''] || { color: 'default', text: buildingType || '综合' };
+        return <Tag color={config.color}>{config.text}</Tag>;
+    };
+
+    const renderBuildingStatus = (status: string) => {
+        const statusMap: Record<string, { color: string; text: string }> = {
+            Active: { color: 'green', text: intl.formatMessage({ id: 'pages.park.asset.status.active', defaultMessage: '正常' }) },
+            Maintenance: { color: 'orange', text: intl.formatMessage({ id: 'pages.park.asset.status.maintenance', defaultMessage: '维护中' }) },
+            Inactive: { color: 'default', text: intl.formatMessage({ id: 'pages.park.asset.status.inactive', defaultMessage: '停用' }) },
+        };
+        const config = statusMap[status] || { color: 'default', text: status };
+        return <Tag color={config.color}>{config.text}</Tag>;
+    };
+
+    const handleDeleteBuilding = async (id: string) => {
+        const res = await api.deleteBuilding(id);
+        if (res.success) {
+            message.success(intl.formatMessage({ id: 'pages.park.asset.deleteSuccess', defaultMessage: '删除成功' }));
+            buildingActionRef.current?.reload();
+            api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
+        } else {
+            message.error(getErrorMessage(res, 'pages.park.asset.deleteFailed'));
+        }
+    };
+
+    const handleDeleteUnit = async (id: string) => {
+        const res = await api.deleteUnit(id);
+        if (res.success) {
+            message.success(intl.formatMessage({ id: 'pages.park.asset.deleteSuccess', defaultMessage: '删除成功' }));
+            unitActionRef.current?.reload();
+            api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
+        } else {
+            message.error(getErrorMessage(res, 'pages.park.asset.deleteFailed'));
+        }
+    };
+
+    const mapAttachments = (urls: string[] = []) => urls.map((url, index) => {
+        const fileName = url.split('/').pop() || 'file';
+        return { uid: `-${index}`, name: decodeURIComponent(fileName), status: 'done' as const, url };
+    });
+
     const buildingColumns: ProColumns<Building>[] = [
         { title: intl.formatMessage({ id: 'pages.park.asset.building.name', defaultMessage: '楼宇名称' }), dataIndex: 'name', sorter: true, width: 160, render: (_, record) => (<Space><BankOutlined style={{ color: '#1890ff' }} /><a onClick={() => handleViewBuilding(record.id)}>{record.name}</a></Space>) },
         { title: intl.formatMessage({ id: 'pages.park.asset.building.address', defaultMessage: '地址' }), dataIndex: 'address', sorter: true, width: 200, ellipsis: true, render: (_, record) => record.address || '-' },
-        { title: intl.formatMessage({ id: 'pages.park.asset.building.type', defaultMessage: '类型' }), dataIndex: 'buildingType', sorter: true, width: 100, render: (_, record) => (<Tag color={record.buildingType === 'Office' ? 'blue' : record.buildingType === 'Commercial' ? 'green' : 'orange'}>{record.buildingType === 'Office' ? '办公楼' : record.buildingType === 'Commercial' ? '商业楼' : record.buildingType || '综合'}</Tag>) },
+        { title: intl.formatMessage({ id: 'pages.park.asset.building.type', defaultMessage: '类型' }), dataIndex: 'buildingType', sorter: true, width: 100, render: (_, record) => renderBuildingType(record.buildingType) },
         { title: intl.formatMessage({ id: 'pages.park.asset.building.floors', defaultMessage: '楼层' }), dataIndex: 'totalFloors', sorter: true, width: 80, align: 'center', render: (_, record) => `${record.totalFloors}层` },
         { title: intl.formatMessage({ id: 'pages.park.asset.building.area', defaultMessage: '总面积' }), dataIndex: 'totalArea', sorter: true, width: 120, align: 'right', render: (_, record) => `${record.totalArea?.toLocaleString()} m²` },
         { title: intl.formatMessage({ id: 'pages.park.asset.building.occupancy', defaultMessage: '出租率' }), dataIndex: 'occupancyRate', sorter: true, width: 120, render: (_, record) => (<Tag color={(record.occupancyRate || 0) >= 80 ? 'success' : (record.occupancyRate || 0) >= 50 ? 'processing' : 'exception'}>{record.occupancyRate || 0}%</Tag>) },
         { title: intl.formatMessage({ id: 'pages.park.asset.building.units', defaultMessage: '房源数量' }), dataIndex: 'totalUnits', sorter: true, width: 140, align: 'center', render: (totalUnits, record) => (<Space vertical align="center"><Button type="link" size="small" style={{ fontWeight: 'bold', fontSize: 16, padding: 0 }} onClick={() => { set({ activeTab: 'units' }); unitActionRef.current?.reload(); }}>{totalUnits}</Button><Text type="secondary" style={{ fontSize: 12 }}>可用: {record.availableUnits}</Text></Space>) },
-        { title: intl.formatMessage({ id: 'pages.park.asset.building.status', defaultMessage: '状态' }), dataIndex: 'status', sorter: true, width: 100, render: (_, record) => (<Tag color={record.status === 'Active' ? 'green' : record.status === 'Maintenance' ? 'orange' : 'default'}>{record.status === 'Active' ? '正常' : record.status === 'Maintenance' ? '维护中' : record.status}</Tag>) },
+        { title: intl.formatMessage({ id: 'pages.park.asset.building.status', defaultMessage: '状态' }), dataIndex: 'status', sorter: true, width: 100, render: (_, record) => renderBuildingStatus(record.status) },
         { title: intl.formatMessage({ id: 'common.action', defaultMessage: '操作' }), valueType: 'option', fixed: 'right', width: 180, render: (_, record) => (
             <Space size={4}>
                 <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => handleViewBuilding(record.id)}>{intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}</Button>
-                <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { setBuilding({ editingBuilding: record, modalVisible: true }); setForm({ attachments: (record.attachments || []).map((url, index) => { const fileName = url.split('/').pop() || 'file'; return { uid: `-${index}`, name: decodeURIComponent(fileName), status: 'done', url }; }) }); }}>{intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}</Button>
-                <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={async () => { const res = await api.deleteBuilding(record.id); if (res.success) { message.success('删除成功'); buildingActionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); } else { message.error(getErrorMessage(res, 'pages.park.asset.deleteFailed')); } }}>
+                <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { setBuilding({ editingBuilding: record, modalVisible: true }); setForm({ attachments: mapAttachments(record.attachments) }); }}>{intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}</Button>
+                <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={() => handleDeleteBuilding(record.id)}>
                     <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}</Button>
                 </Popconfirm>
             </Space>
         ) },
     ];
+
+    const renderUnitType = (unitType?: string) => {
+        const typeMap: Record<string, { color: string; text: string }> = {
+            Office: { color: 'blue', text: intl.formatMessage({ id: 'pages.park.asset.unitType.office', defaultMessage: '办公' }) },
+            Commercial: { color: 'green', text: intl.formatMessage({ id: 'pages.park.asset.unitType.commercial', defaultMessage: '商铺' }) },
+            Warehouse: { color: 'purple', text: intl.formatMessage({ id: 'pages.park.asset.unitType.warehouse', defaultMessage: '仓储' }) },
+        };
+        const config = typeMap[unitType || ''] || { color: 'default', text: unitType || intl.formatMessage({ id: 'pages.park.asset.unitType.other', defaultMessage: '其他' }) };
+        return <Tag color={config.color}>{config.text}</Tag>;
+    };
+
+    const renderUnitStatus = (status: string) => {
+        const statusMap: Record<string, { color: string; text: string }> = {
+            Available: { color: 'green', text: intl.formatMessage({ id: 'pages.park.asset.unit.status.available', defaultMessage: '空置' }) },
+            Rented: { color: 'blue', text: intl.formatMessage({ id: 'pages.park.asset.unit.status.rented', defaultMessage: '已出租' }) },
+            Reserved: { color: 'orange', text: intl.formatMessage({ id: 'pages.park.asset.unit.status.reserved', defaultMessage: '预留' }) },
+            Maintenance: { color: 'red', text: intl.formatMessage({ id: 'pages.park.asset.unit.status.maintenance', defaultMessage: '维护' }) },
+        };
+        const config = statusMap[status] || { color: 'default', text: status };
+        return <Tag color={config.color}>{config.text}</Tag>;
+    };
 
     const unitColumns: ProColumns<PropertyUnit>[] = [
         { title: intl.formatMessage({ id: 'pages.park.asset.unit.number', defaultMessage: '房源编号' }), dataIndex: 'unitNumber', sorter: true, width: 120, render: (_, record) => (<Space><HomeOutlined style={{ color: '#52c41a' }} /><a onClick={() => handleViewUnit(record.id)}>{record.unitNumber}</a></Space>) },
@@ -155,13 +223,13 @@ const AssetManagement: React.FC = () => {
         { title: intl.formatMessage({ id: 'pages.park.asset.unit.floor', defaultMessage: '楼层' }), dataIndex: 'floor', sorter: true, width: 80, align: 'center', render: (_, record) => `${record.floor}F` },
         { title: intl.formatMessage({ id: 'pages.park.asset.unit.area', defaultMessage: '面积' }), dataIndex: 'area', sorter: true, width: 100, align: 'right', render: (_, record) => `${record.area} m²` },
         { title: intl.formatMessage({ id: 'pages.park.asset.unit.rent', defaultMessage: '月租金' }), dataIndex: 'monthlyRent', sorter: true, width: 120, align: 'right', render: (_, record) => `¥${record.monthlyRent?.toLocaleString()}` },
-        { title: intl.formatMessage({ id: 'pages.park.asset.unit.type', defaultMessage: '类型' }), dataIndex: 'unitType', sorter: true, width: 100, render: (_, record) => (<Tag color={record.unitType === 'Office' ? 'blue' : record.unitType === 'Commercial' ? 'green' : 'purple'}>{record.unitType === 'Office' ? '办公' : record.unitType === 'Commercial' ? '商铺' : record.unitType || '其他'}</Tag>) },
-        { title: intl.formatMessage({ id: 'pages.park.asset.unit.status', defaultMessage: '状态' }), dataIndex: 'status', sorter: true, width: 100, render: (_, record) => { const statusMap: Record<string, { color: string; text: string }> = { Available: { color: 'green', text: '空置' }, Rented: { color: 'blue', text: '已出租' }, Reserved: { color: 'orange', text: '预留' }, Maintenance: { color: 'red', text: '维护' } }; const config = statusMap[record.status] || { color: 'default', text: record.status }; return <Tag color={config.color}>{config.text}</Tag>; } },
+        { title: intl.formatMessage({ id: 'pages.park.asset.unit.type', defaultMessage: '类型' }), dataIndex: 'unitType', sorter: true, width: 100, render: (_, record) => renderUnitType(record.unitType) },
+        { title: intl.formatMessage({ id: 'pages.park.asset.unit.status', defaultMessage: '状态' }), dataIndex: 'status', sorter: true, width: 100, render: (_, record) => renderUnitStatus(record.status) },
         { title: intl.formatMessage({ id: 'common.action', defaultMessage: '操作' }), valueType: 'option', fixed: 'right', width: 180, render: (_, record) => (
             <Space size={4}>
                 <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => handleViewUnit(record.id)}>{intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}</Button>
-                <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { setUnit({ editingUnit: record, modalVisible: true }); setForm({ attachments: (record.attachments || []).map((url, index) => { const fileName = url.split('/').pop() || 'file'; return { uid: `-${index}`, name: decodeURIComponent(fileName), status: 'done', url }; }) }); }}>{intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}</Button>
-                <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={async () => { const res = await api.deleteUnit(record.id); if (res.success) { message.success('删除成功'); unitActionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); } else { message.error(getErrorMessage(res, 'pages.park.asset.deleteFailed')); } }}>
+                <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { setUnit({ editingUnit: record, modalVisible: true }); setForm({ attachments: mapAttachments(record.attachments) }); }}>{intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}</Button>
+                <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={() => handleDeleteUnit(record.id)}>
                     <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}</Button>
                 </Popconfirm>
             </Space>
@@ -192,7 +260,7 @@ const AssetManagement: React.FC = () => {
                     return res.success;
                 }} autoFocusFirstInput width={640}>
                 <ProFormText name="name" label="楼宇名称" placeholder="请输入楼宇名称" rules={[{ required: true, message: '请输入楼宇名称' }]} />
-                <ProFormSelect name="buildingType" label="楼宇类型" placeholder="请选择类型" options={[{ label: '办公楼', value: 'Office' }, { label: '商业楼', value: 'Commercial' }, { label: '综合楼', value: 'Mixed' }]} />
+                <ProFormSelect name="buildingType" label="楼宇类型" placeholder="请选择类型" options={[{ label: intl.formatMessage({ id: 'pages.park.asset.buildingType.office', defaultMessage: '办公楼' }), value: 'Office' }, { label: intl.formatMessage({ id: 'pages.park.asset.buildingType.commercial', defaultMessage: '商业楼' }), value: 'Commercial' }, { label: intl.formatMessage({ id: 'pages.park.asset.buildingType.mixed', defaultMessage: '综合楼' }), value: 'Mixed' }]} />
                 <ProFormText name="address" label="地址" placeholder="请输入楼宇地址" />
                 <Row gutter={16}>
                     <Col span={12}><ProFormText name="totalFloors" label="总楼层" placeholder="楼层数" rules={[{ required: true, message: '请输入楼层数' }]} fieldProps={{ type: 'number' }} /></Col>
@@ -201,7 +269,7 @@ const AssetManagement: React.FC = () => {
                 <Row gutter={16}>
                     <Col span={8}><ProFormText name="yearBuilt" label="建成年份" placeholder="建成年份" fieldProps={{ type: 'number' }} /></Col>
                     <Col span={8}><ProFormDatePicker name="deliveryDate" label="交付日期" placeholder="选择日期" /></Col>
-                    <Col span={8}><ProFormSelect name="status" label="状态" placeholder="请选择状态" options={[{ label: '正常', value: 'Active' }, { label: '维护中', value: 'Maintenance' }, { label: '停用', value: 'Inactive' }]} /></Col>
+                    <Col span={8}><ProFormSelect name="status" label="状态" placeholder="请选择状态" options={[{ label: intl.formatMessage({ id: 'pages.park.asset.status.active', defaultMessage: '正常' }), value: 'Active' }, { label: intl.formatMessage({ id: 'pages.park.asset.status.maintenance', defaultMessage: '维护中' }), value: 'Maintenance' }, { label: intl.formatMessage({ id: 'pages.park.asset.status.inactive', defaultMessage: '停用' }), value: 'Inactive' }]} /></Col>
                 </Row>
                 <ProFormText name="description" label="描述" placeholder="请输入描述信息" />
                 <div style={{ marginBottom: 24 }}>
@@ -225,7 +293,7 @@ const AssetManagement: React.FC = () => {
                 <Row gutter={16}>
                     <Col span={8}><ProFormText name="floor" label="楼层" placeholder="楼层" rules={[{ required: true, message: '请输入楼层' }]} fieldProps={{ type: 'number' }} /></Col>
                     <Col span={8}><ProFormText name="area" label="面积 (m²)" placeholder="面积" rules={[{ required: true, message: '请输入面积' }]} fieldProps={{ type: 'number' }} /></Col>
-                    <Col span={8}><ProFormSelect name="unitType" label="类型" placeholder="请选择类型" options={[{ label: '办公', value: 'Office' }, { label: '商铺', value: 'Commercial' }, { label: '仓储', value: 'Warehouse' }]} /></Col>
+                    <Col span={8}><ProFormSelect name="unitType" label="类型" placeholder="请选择类型" options={[{ label: intl.formatMessage({ id: 'pages.park.asset.unitType.office', defaultMessage: '办公' }), value: 'Office' }, { label: intl.formatMessage({ id: 'pages.park.asset.unitType.commercial', defaultMessage: '商铺' }), value: 'Commercial' }, { label: intl.formatMessage({ id: 'pages.park.asset.unitType.warehouse', defaultMessage: '仓储' }), value: 'Warehouse' }]} /></Col>
                 </Row>
                 <Row gutter={16}>
                     <Col span={12}><ProFormText name="monthlyRent" label="月租金 (元)" placeholder="月租金" rules={[{ required: true, message: '请输入月租金' }]} fieldProps={{ type: 'number' }} /></Col>
@@ -242,7 +310,7 @@ const AssetManagement: React.FC = () => {
                 {buildingState.currentBuilding && (<div>
                     <ProDescriptions bordered column={2} size="small" style={{ marginBottom: 24 }}>
                         <ProDescriptions.Item label="楼宇名称">{buildingState.currentBuilding.name}</ProDescriptions.Item>
-                        <ProDescriptions.Item label="楼宇类型"><Tag color="blue">{buildingState.currentBuilding.buildingType || '综合'}</Tag></ProDescriptions.Item>
+                        <ProDescriptions.Item label="楼宇类型"><Tag color="blue">{intl.formatMessage({ id: `pages.park.asset.buildingType.${buildingState.currentBuilding.buildingType?.toLowerCase()}`, defaultMessage: buildingState.currentBuilding.buildingType || '综合' })}</Tag></ProDescriptions.Item>
                         <ProDescriptions.Item label="地址" span={2}>{buildingState.currentBuilding.address || '-'}</ProDescriptions.Item>
                         <ProDescriptions.Item label="总楼层">{buildingState.currentBuilding.totalFloors}层</ProDescriptions.Item>
                         <ProDescriptions.Item label="建成年份">{buildingState.currentBuilding.yearBuilt || '-'}</ProDescriptions.Item>
@@ -252,7 +320,7 @@ const AssetManagement: React.FC = () => {
                         <ProDescriptions.Item label="出租率"><Tag color={(buildingState.currentBuilding.occupancyRate || 0) >= 80 ? 'green' : (buildingState.currentBuilding.occupancyRate || 0) >= 50 ? 'orange' : 'red'}>{buildingState.currentBuilding.occupancyRate || 0}%</Tag></ProDescriptions.Item>
                         <ProDescriptions.Item label="房源总数">{buildingState.currentBuilding.totalUnits}</ProDescriptions.Item>
                         <ProDescriptions.Item label="可用房源">{buildingState.currentBuilding.availableUnits}</ProDescriptions.Item>
-                        <ProDescriptions.Item label="状态"><Tag color={buildingState.currentBuilding.status === 'Active' ? 'green' : 'orange'}>{buildingState.currentBuilding.status === 'Active' ? '正常' : '维护中'}</Tag></ProDescriptions.Item>
+                        <ProDescriptions.Item label="状态"><Tag color={buildingState.currentBuilding.status === 'Active' ? 'green' : 'orange'}>{intl.formatMessage({ id: `pages.park.asset.status.${buildingState.currentBuilding.status === 'Active' ? 'active' : 'maintenance'}`, defaultMessage: buildingState.currentBuilding.status === 'Active' ? '正常' : '维护中' })}</Tag></ProDescriptions.Item>
                     </ProDescriptions>
                     {buildingState.currentBuilding.description && (<div><Title level={5}>描述</Title><Text>{buildingState.currentBuilding.description}</Text></div>)}
                 </div>)}
@@ -267,10 +335,10 @@ const AssetManagement: React.FC = () => {
                             <ProDescriptions.Item label="所属楼宇">{unitState.currentUnit.buildingName}</ProDescriptions.Item>
                             <ProDescriptions.Item label="所在楼层">{unitState.currentUnit.floor}F</ProDescriptions.Item>
                             <ProDescriptions.Item label="房源面积">{unitState.currentUnit.area} m²</ProDescriptions.Item>
-                            <ProDescriptions.Item label="房源类型"><Tag color={unitState.currentUnit.unitType === 'Office' ? 'blue' : unitState.currentUnit.unitType === 'Commercial' ? 'green' : 'purple'}>{unitState.currentUnit.unitType === 'Office' ? '办公' : unitState.currentUnit.unitType === 'Commercial' ? '商铺' : unitState.currentUnit.unitType || '其他'}</Tag></ProDescriptions.Item>
+                            <ProDescriptions.Item label="房源类型"><Tag color={unitState.currentUnit.unitType === 'Office' ? 'blue' : unitState.currentUnit.unitType === 'Commercial' ? 'green' : 'purple'}>{intl.formatMessage({ id: `pages.park.asset.unitType.${unitState.currentUnit.unitType?.toLowerCase()}`, defaultMessage: unitState.currentUnit.unitType === 'Office' ? '办公' : unitState.currentUnit.unitType === 'Commercial' ? '商铺' : unitState.currentUnit.unitType || '其他' })}</Tag></ProDescriptions.Item>
                             <ProDescriptions.Item label="月租金">¥{unitState.currentUnit.monthlyRent?.toLocaleString()}</ProDescriptions.Item>
                             <ProDescriptions.Item label="日租金">{unitState.currentUnit.dailyRent ? `¥${unitState.currentUnit.dailyRent?.toLocaleString()}/m²` : '-'}</ProDescriptions.Item>
-                            <ProDescriptions.Item label="状态"><Tag color={unitState.currentUnit.status === 'Available' ? 'green' : 'blue'}>{unitState.currentUnit.status === 'Available' ? '空置' : '已出租'}</Tag></ProDescriptions.Item>
+                            <ProDescriptions.Item label="状态"><Tag color={unitState.currentUnit.status === 'Available' ? 'green' : 'blue'}>{intl.formatMessage({ id: `pages.park.asset.unit.status.${unitState.currentUnit.status?.toLowerCase()}`, defaultMessage: unitState.currentUnit.status === 'Available' ? '空置' : '已出租' })}</Tag></ProDescriptions.Item>
                             <ProDescriptions.Item label="当前租客">{unitState.currentUnit.currentTenantName || '-'}</ProDescriptions.Item>
                             <ProDescriptions.Item label="租期到期" span={2}>{unitState.currentUnit.leaseEndDate ? dayjs(unitState.currentUnit.leaseEndDate).format('YYYY-MM-DD') : '-'}</ProDescriptions.Item>
                         </ProDescriptions>

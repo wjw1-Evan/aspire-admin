@@ -97,6 +97,7 @@ export default {
   'pages.document.selectWorkflow': 'Select Workflow',
   'pages.document.selectWorkflowPlaceholder': 'Please select a workflow',
   'pages.document.selectWorkflowRequired': 'Please select a workflow',
+  'pages.document.submitApproval': 'Submit for Approval',
   'pages.document.modal.submitTitle': 'Submit Document',
   'pages.document.search.keyword': 'Keyword',
   'pages.document.search.keywordPlaceholder': 'Search title or code',

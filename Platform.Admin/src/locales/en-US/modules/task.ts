@@ -24,6 +24,7 @@ export default {
   'pages.taskManagement.detail.participants': 'Participants',
   'pages.taskManagement.detail.timeInfo': 'Time Information',
   'pages.taskManagement.detail.title': 'Task Details',
+  'pages.taskManagement.title': 'Task Management',
   'pages.taskManagement.editTask': 'Edit Task',
   'pages.taskManagement.executeTask': 'Execute Task',
   'pages.taskManagement.execution.completionPercentage': 'Completion Percentage',

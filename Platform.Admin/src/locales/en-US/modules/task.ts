@@ -89,6 +89,7 @@ export default {
   'pages.taskManagement.refresh': 'Refresh',
   'pages.taskManagement.search.label': 'Search',
   'pages.taskManagement.search.placeholder': 'Task name or description',
+  'pages.taskManagement.search.placeholderShort': 'Search...',
   'pages.taskManagement.statistics': 'Task Statistics',
   'pages.taskManagement.statistics.averageTime': 'Average Time',
   'pages.taskManagement.statistics.completedTasks': 'Completed',

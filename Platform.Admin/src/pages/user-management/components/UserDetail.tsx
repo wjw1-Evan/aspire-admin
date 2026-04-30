@@ -128,7 +128,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose, isMobile }) => {
             {user.email || '-'}
           </ProDescriptions.Item>
 
-          <ProDescriptions.Item label="手机号">
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.phoneNumber' })}>
             {user.phoneNumber || '-'}
           </ProDescriptions.Item>
 

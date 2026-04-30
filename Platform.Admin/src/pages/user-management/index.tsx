@@ -262,7 +262,7 @@ const UserManagement: React.FC = () => {
         ) : (
           <>
             <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ formVisible: true, editingUser: r })}>{intl.formatMessage({ id: 'pages.action.edit' })}</Button>
-            <Popconfirm title={intl.formatMessage({ id: 'pages.userManagement.message.confirmRemoveUser', defaultMessage: '确定移除用户「{name}」？' }, { name: r.name })} onConfirm={() => promptDelete(r.id)}>
+            <Popconfirm title={intl.formatMessage({ id: 'pages.userManagement.message.confirmRemoveUserWithName' }, { name: r.name })} onConfirm={() => promptDelete(r.id)}>
               <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.userManagement.action.remove' })}</Button>
             </Popconfirm>
           </>

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
 
@@ -13,11 +14,11 @@ public class CaptchaImageResult
 
 public class VerifyCaptchaImageRequest
 {
-    [Required(ErrorMessage = "验证码ID不能为空")]
+    [Required(ErrorMessage = ErrorCode.ValidationCaptchaIdRequired)]
     public string CaptchaId { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "验证码答案不能为空")]
-    [StringLength(10, MinimumLength = 1, ErrorMessage = "验证码答案长度必须在1-10个字符之间")]
+    [Required(ErrorMessage = ErrorCode.ValidationCaptchaRequired)]
+    [StringLength(10, MinimumLength = 1, ErrorMessage = ErrorCode.ValidationCaptchaAnswerLengthRange)]
     public string Answer { get; set; } = string.Empty;
 
     public string Type { get; set; } = "login";

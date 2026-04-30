@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
 
@@ -37,7 +37,7 @@ public class CreateVisitTaskRequest
     public string Phone { get; set; } = string.Empty;
     public string VisitType { get; set; } = "日常走访";
     public string VisitMethod { get; set; } = "实地走访";
-    [Required(ErrorMessage = "走访时间不能为空")]
+    [Required(ErrorMessage = ErrorCode.ValidationVisitDateRequired)]
     public DateTime VisitDate { get; set; }
     public string? Details { get; set; }
     public string? TenantId { get; set; }

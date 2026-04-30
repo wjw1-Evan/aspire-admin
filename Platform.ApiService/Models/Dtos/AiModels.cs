@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
 
@@ -54,7 +55,7 @@ public class AiConversationMessage
     /// 消息角色（user/assistant/system）。
     /// </summary>
     [Required]
-    [RegularExpression("^(user|assistant|system)$", ErrorMessage = "Role 必须是 user、assistant 或 system")]
+    [RegularExpression("^(user|assistant|system)$", ErrorMessage = ErrorCode.ValidationAiRoleInvalid)]
     public string Role { get; set; } = "user";
 
     /// <summary>

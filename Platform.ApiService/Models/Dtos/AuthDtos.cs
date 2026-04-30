@@ -88,16 +88,16 @@ public class LoginResult
 
 public class RegisterRequest
 {
-    [Required(ErrorMessage = "用户名不能为空")]
-    [StringLength(20, MinimumLength = 3, ErrorMessage = "用户名长度必须在3-20个字符之间")]
+    [Required(ErrorMessage = ErrorCode.ValidationUsernameRequired)]
+    [StringLength(20, MinimumLength = 3, ErrorMessage = ErrorCode.ValidationUsernameLengthRange)]
     public string Username { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "密码不能为空")]
-    [StringLength(2000, MinimumLength = 6, ErrorMessage = "密码长度不符合要求")]
+    [Required(ErrorMessage = ErrorCode.ValidationPasswordRequired)]
+    [StringLength(2000, MinimumLength = 6, ErrorMessage = ErrorCode.ValidationPasswordInvalidLength)]
     public string Password { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "邮箱不能为空")]
-    [EmailAddress(ErrorMessage = "邮箱格式不正确")]
+    [Required(ErrorMessage = ErrorCode.ValidationEmailRequired)]
+    [EmailAddress(ErrorMessage = ErrorCode.ValidationEmailInvalid)]
     public string Email { get; set; } = string.Empty;
 
     public string? PhoneNumber { get; set; }
@@ -105,22 +105,22 @@ public class RegisterRequest
 
 public class ChangePasswordRequest
 {
-    [Required(ErrorMessage = "当前密码不能为空")]
-    [StringLength(2000, ErrorMessage = "当前密码长度超限")]
+    [Required(ErrorMessage = ErrorCode.ValidationCurrentPasswordRequired)]
+    [StringLength(2000, ErrorMessage = ErrorCode.ValidationCurrentPasswordTooLong)]
     public string CurrentPassword { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "新密码不能为空")]
-    [StringLength(2000, MinimumLength = 6, ErrorMessage = "新密码长度不符合要求")]
+    [Required(ErrorMessage = ErrorCode.ValidationNewPasswordRequired)]
+    [StringLength(2000, MinimumLength = 6, ErrorMessage = ErrorCode.ValidationPasswordInvalidLength)]
     public string NewPassword { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "确认密码不能为空")]
-    [Compare("NewPassword", ErrorMessage = "新密码和确认密码不一致")]
+    [Required(ErrorMessage = ErrorCode.ValidationConfirmPasswordRequired)]
+    [Compare("NewPassword", ErrorMessage = ErrorCode.ValidationPasswordsNotMatch)]
     public string ConfirmPassword { get; set; } = string.Empty;
 }
 
 public class RefreshTokenRequest
 {
-    [Required(ErrorMessage = "刷新token不能为空")]
+    [Required(ErrorMessage = ErrorCode.ValidationRefreshTokenRequired)]
     public string RefreshToken { get; set; } = string.Empty;
     
     /// <summary>
@@ -144,27 +144,27 @@ public class RefreshTokenResult
 
 public class SendResetCodeRequest
 {
-    [Required(ErrorMessage = "邮箱不能为空")]
-    [EmailAddress(ErrorMessage = "邮箱格式不正确")]
+    [Required(ErrorMessage = ErrorCode.ValidationEmailRequired)]
+    [EmailAddress(ErrorMessage = ErrorCode.ValidationEmailInvalid)]
     public string Email { get; set; } = string.Empty;
 }
 
 public class ResetPasswordRequest
 {
-    [Required(ErrorMessage = "邮箱不能为空")]
-    [EmailAddress(ErrorMessage = "邮箱格式不正确")]
+    [Required(ErrorMessage = ErrorCode.ValidationEmailRequired)]
+    [EmailAddress(ErrorMessage = ErrorCode.ValidationEmailInvalid)]
     public string Email { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "验证码不能为空")]
-    [StringLength(6, MinimumLength = 6, ErrorMessage = "验证码必须为6位")]
+    [Required(ErrorMessage = ErrorCode.ValidationCaptchaRequired)]
+    [StringLength(6, MinimumLength = 6, ErrorMessage = ErrorCode.ValidationCaptchaInvalid)]
     public string Code { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "新密码不能为空")]
-    [StringLength(2000, MinimumLength = 6, ErrorMessage = "新密码长度不符合要求")]
+    [Required(ErrorMessage = ErrorCode.ValidationNewPasswordRequired)]
+    [StringLength(2000, MinimumLength = 6, ErrorMessage = ErrorCode.ValidationPasswordInvalidLength)]
     public string NewPassword { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "确认密码不能为空")]
-    [Compare("NewPassword", ErrorMessage = "新密码和确认密码不一致")]
+    [Required(ErrorMessage = ErrorCode.ValidationConfirmPasswordRequired)]
+    [Compare("NewPassword", ErrorMessage = ErrorCode.ValidationPasswordsNotMatch)]
     public string ConfirmPassword { get; set; } = string.Empty;
 }
 
@@ -185,7 +185,7 @@ public class SetAdminRequest
 
 public class ResendVerificationRequest
 {
-    [Required(ErrorMessage = "邮箱不能为空")]
-    [EmailAddress(ErrorMessage = "邮箱格式不正确")]
+    [Required(ErrorMessage = ErrorCode.ValidationEmailRequired)]
+    [EmailAddress(ErrorMessage = ErrorCode.ValidationEmailInvalid)]
     public string Email { get; set; } = string.Empty;
 }

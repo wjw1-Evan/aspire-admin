@@ -1,14 +1,15 @@
 using System.ComponentModel.DataAnnotations;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
 
 public class CreateRoleRequest
 {
-    [Required(ErrorMessage = "角色名称不能为空")]
-    [StringLength(50, MinimumLength = 2, ErrorMessage = "角色名称长度必须在2-50个字符之间")]
+    [Required(ErrorMessage = ErrorCode.ValidationRoleNameRequired)]
+    [StringLength(50, MinimumLength = 2, ErrorMessage = ErrorCode.ValidationRoleNameLengthRange)]
     public string Name { get; set; } = string.Empty;
 
-    [StringLength(200, ErrorMessage = "描述长度不能超过200个字符")]
+    [StringLength(200, ErrorMessage = ErrorCode.ValidationRoleDescriptionTooLong)]
     public string? Description { get; set; }
 
     public List<string> MenuIds { get; set; } = new();
@@ -18,10 +19,10 @@ public class CreateRoleRequest
 
 public class UpdateRoleRequest
 {
-    [StringLength(50, MinimumLength = 2, ErrorMessage = "角色名称长度必须在2-50个字符之间")]
+    [StringLength(50, MinimumLength = 2, ErrorMessage = ErrorCode.ValidationRoleNameLengthRange)]
     public string? Name { get; set; }
 
-    [StringLength(200, ErrorMessage = "描述长度不能超过200个字符")]
+    [StringLength(200, ErrorMessage = ErrorCode.ValidationRoleDescriptionTooLong)]
     public string? Description { get; set; }
 
     public List<string>? MenuIds { get; set; }

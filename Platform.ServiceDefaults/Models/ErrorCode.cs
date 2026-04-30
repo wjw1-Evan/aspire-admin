@@ -282,6 +282,72 @@ public static class ErrorCode
     /// <summary>刷新令牌必填</summary>
     public const string ValidationRefreshTokenRequired = "VALIDATION_REFRESH_TOKEN_REQUIRED";
 
+    /// <summary>密码和确认密码不一致</summary>
+    public const string ValidationPasswordsNotMatch = "VALIDATION_PASSWORDS_NOT_MATCH";
+
+    /// <summary>角色名称必填</summary>
+    public const string ValidationRoleNameRequired = "VALIDATION_ROLE_NAME_REQUIRED";
+
+    /// <summary>角色名称长度不足</summary>
+    public const string ValidationRoleNameTooShort = "VALIDATION_ROLE_NAME_TOO_SHORT";
+
+    /// <summary>角色名称长度超限</summary>
+    public const string ValidationRoleNameTooLong = "VALIDATION_ROLE_NAME_TOO_LONG";
+
+    /// <summary>角色描述长度超限</summary>
+    public const string ValidationRoleDescriptionTooLong = "VALIDATION_ROLE_DESCRIPTION_TOO_LONG";
+
+    /// <summary>验证码ID必填</summary>
+    public const string ValidationCaptchaIdRequired = "VALIDATION_CAPTCHA_ID_REQUIRED";
+
+    /// <summary>验证码答案长度不足</summary>
+    public const string ValidationCaptchaAnswerTooShort = "VALIDATION_CAPTCHA_ANSWER_TOO_SHORT";
+
+    /// <summary>验证码答案长度超限</summary>
+    public const string ValidationCaptchaAnswerTooLong = "VALIDATION_CAPTCHA_ANSWER_TOO_LONG";
+
+    /// <summary>验证码答案长度范围无效</summary>
+    public const string ValidationCaptchaAnswerLengthRange = "VALIDATION_CAPTCHA_ANSWER_LENGTH_RANGE";
+
+    /// <summary>年龄超出有效范围</summary>
+    public const string ValidationAgeRange = "VALIDATION_AGE_RANGE";
+
+    /// <summary>姓名长度超限</summary>
+    public const string ValidationNameTooLong = "VALIDATION_NAME_TOO_LONG";
+
+    /// <summary>角色定义必填</summary>
+    public const string ValidationRoleDefinitionRequired = "VALIDATION_ROLE_DEFINITION_REQUIRED";
+
+    /// <summary>角色定义长度不足</summary>
+    public const string ValidationRoleDefinitionTooShort = "VALIDATION_ROLE_DEFINITION_TOO_SHORT";
+
+    /// <summary>角色定义长度超限</summary>
+    public const string ValidationRoleDefinitionTooLong = "VALIDATION_ROLE_DEFINITION_TOO_LONG";
+
+    /// <summary>AI角色无效</summary>
+    public const string ValidationAiRoleInvalid = "VALIDATION_AI_ROLE_INVALID";
+
+    /// <summary>走访日期必填</summary>
+    public const string ValidationVisitDateRequired = "VALIDATION_VISIT_DATE_REQUIRED";
+
+    /// <summary>头像数据过大</summary>
+    public const string ValidationAvatarTooLarge = "VALIDATION_AVATAR_TOO_LARGE";
+
+    /// <summary>用户名长度范围无效</summary>
+    public const string ValidationUsernameLengthRange = "VALIDATION_USERNAME_LENGTH_RANGE";
+
+    /// <summary>密码长度不符合要求</summary>
+    public const string ValidationPasswordInvalidLength = "VALIDATION_PASSWORD_INVALID_LENGTH";
+
+    /// <summary>当前密码长度超限</summary>
+    public const string ValidationCurrentPasswordTooLong = "VALIDATION_CURRENT_PASSWORD_TOO_LONG";
+
+    /// <summary>角色名称长度范围无效</summary>
+    public const string ValidationRoleNameLengthRange = "VALIDATION_ROLE_NAME_LENGTH_RANGE";
+
+    /// <summary>角色定义长度范围无效</summary>
+    public const string ValidationRoleDefinitionLengthRange = "VALIDATION_ROLE_DEFINITION_LENGTH_RANGE";
+
     // ──────────────────────────────────────────────
     // 通用操作 (General Operation)
     // ──────────────────────────────────────────────
@@ -295,6 +361,52 @@ public static class ErrorCode
 
     /// <summary>服务器内部错误</summary>
     public const string ServerError = "SERVER_ERROR";
+
+    // ──────────────────────────────────────────────
+    // 公文相关 (Document)
+    // ──────────────────────────────────────────────
+
+    /// <summary>公文不存在</summary>
+    public const string DocumentNotFound = "DOCUMENT_NOT_FOUND";
+
+    /// <summary>流程实例不存在</summary>
+    public const string WorkflowInstanceNotFound = "WORKFLOW_INSTANCE_NOT_FOUND";
+
+    /// <summary>流程定义不存在</summary>
+    public const string WorkflowDefinitionNotFound = "WORKFLOW_DEFINITION_NOT_FOUND";
+
+    /// <summary>表单定义不存在</summary>
+    public const string FormDefinitionNotFound = "FORM_DEFINITION_NOT_FOUND";
+
+    /// <summary>公文标题不能为空</summary>
+    public const string DocumentTitleRequired = "DOCUMENT_TITLE_REQUIRED";
+
+    /// <summary>流程定义ID不能为空</summary>
+    public const string WorkflowDefinitionIdRequired = "WORKFLOW_DEFINITION_ID_REQUIRED";
+
+    /// <summary>文档ID不能为空</summary>
+    public const string DocumentIdRequired = "DOCUMENT_ID_REQUIRED";
+
+    /// <summary>请求参数不能为空</summary>
+    public const string RequestParamRequired = "REQUEST_PARAM_REQUIRED";
+
+    /// <summary>拒绝原因不能为空</summary>
+    public const string RejectReasonRequired = "REJECT_REASON_REQUIRED";
+
+    /// <summary>退回目标节点不能为空</summary>
+    public const string ReturnTargetNodeRequired = "RETURN_TARGET_NODE_REQUIRED";
+
+    /// <summary>退回原因不能为空</summary>
+    public const string ReturnReasonRequired = "RETURN_REASON_REQUIRED";
+
+    /// <summary>转办目标用户不能为空</summary>
+    public const string DelegateTargetUserRequired = "DELEGATE_TARGET_USER_REQUIRED";
+
+    /// <summary>流程节点未配置表单定义ID</summary>
+    public const string WorkflowNodeNotConfigured = "WORKFLOW_NODE_NOT_CONFIGURED";
+
+    /// <summary>流程实例当前无待处理节点</summary>
+    public const string NoPendingNode = "NO_PENDING_NODE";
 
     // ──────────────────────────────────────────────
     // 错误码 → 人类可读消息字典
@@ -393,6 +505,28 @@ public static class ErrorCode
         [ValidationNewPasswordRequired] = "新密码不能为空",
         [ValidationConfirmPasswordRequired] = "确认密码不能为空",
         [ValidationRefreshTokenRequired] = "刷新令牌不能为空",
+        [ValidationPasswordsNotMatch] = "新密码和确认密码不一致",
+        [ValidationRoleNameRequired] = "角色名称不能为空",
+        [ValidationRoleNameTooShort] = "角色名称长度不能少于2个字符",
+        [ValidationRoleNameTooLong] = "角色名称长度不能超过50个字符",
+        [ValidationRoleDescriptionTooLong] = "描述长度不能超过200个字符",
+        [ValidationCaptchaIdRequired] = "验证码ID不能为空",
+        [ValidationCaptchaAnswerTooShort] = "验证码答案长度不能少于1个字符",
+        [ValidationCaptchaAnswerTooLong] = "验证码答案长度不能超过10个字符",
+        [ValidationCaptchaAnswerLengthRange] = "验证码答案长度不符合要求",
+        [ValidationAgeRange] = "年龄必须在0-150之间",
+        [ValidationNameTooLong] = "姓名长度不能超过50个字符",
+        [ValidationRoleDefinitionRequired] = "角色定义不能为空",
+        [ValidationRoleDefinitionTooShort] = "角色定义长度不能少于1个字符",
+        [ValidationRoleDefinitionTooLong] = "角色定义长度不能超过2000个字符",
+        [ValidationAiRoleInvalid] = "Role 必须是 user、assistant 或 system",
+        [ValidationVisitDateRequired] = "走访时间不能为空",
+        [ValidationAvatarTooLarge] = "头像数据过大，请选择更小的图片",
+        [ValidationUsernameLengthRange] = "用户名长度不符合要求",
+        [ValidationPasswordInvalidLength] = "密码长度不符合要求",
+        [ValidationCurrentPasswordTooLong] = "当前密码长度超限",
+        [ValidationRoleNameLengthRange] = "角色名称长度不符合要求",
+        [ValidationRoleDefinitionLengthRange] = "角色定义长度不符合要求",
         // 通用操作
         [OperationFailed] = "操作失败",
         // 文件
@@ -415,50 +549,4 @@ public static class ErrorCode
         [WorkflowNodeNotConfigured] = "流程节点未配置表单定义ID",
         [NoPendingNode] = "流程实例当前无待处理节点",
     };
-
-    // ──────────────────────────────────────────────
-    // 公文相关 (Document)
-    // ──────────────────────────────────────────────
-
-    /// <summary>公文不存在</summary>
-    public const string DocumentNotFound = "DOCUMENT_NOT_FOUND";
-
-    /// <summary>流程实例不存在</summary>
-    public const string WorkflowInstanceNotFound = "WORKFLOW_INSTANCE_NOT_FOUND";
-
-    /// <summary>流程定义不存在</summary>
-    public const string WorkflowDefinitionNotFound = "WORKFLOW_DEFINITION_NOT_FOUND";
-
-    /// <summary>表单定义不存在</summary>
-    public const string FormDefinitionNotFound = "FORM_DEFINITION_NOT_FOUND";
-
-    /// <summary>公文标题不能为空</summary>
-    public const string DocumentTitleRequired = "DOCUMENT_TITLE_REQUIRED";
-
-    /// <summary>流程定义ID不能为空</summary>
-    public const string WorkflowDefinitionIdRequired = "WORKFLOW_DEFINITION_ID_REQUIRED";
-
-    /// <summary>文档ID不能为空</summary>
-    public const string DocumentIdRequired = "DOCUMENT_ID_REQUIRED";
-
-    /// <summary>请求参数不能为空</summary>
-    public const string RequestParamRequired = "REQUEST_PARAM_REQUIRED";
-
-    /// <summary>拒绝原因不能为空</summary>
-    public const string RejectReasonRequired = "REJECT_REASON_REQUIRED";
-
-    /// <summary>退回目标节点不能为空</summary>
-    public const string ReturnTargetNodeRequired = "RETURN_TARGET_NODE_REQUIRED";
-
-    /// <summary>退回原因不能为空</summary>
-    public const string ReturnReasonRequired = "RETURN_REASON_REQUIRED";
-
-    /// <summary>转办目标用户不能为空</summary>
-    public const string DelegateTargetUserRequired = "DELEGATE_TARGET_USER_REQUIRED";
-
-    /// <summary>流程节点未配置表单定义ID</summary>
-    public const string WorkflowNodeNotConfigured = "WORKFLOW_NODE_NOT_CONFIGURED";
-
-    /// <summary>流程实例当前无待处理节点</summary>
-    public const string NoPendingNode = "NO_PENDING_NODE";
 }

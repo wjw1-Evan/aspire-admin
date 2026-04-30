@@ -16,15 +16,15 @@ public class CreateUserRequest
     /// <summary>
     /// 用户名
     /// </summary>
-    [Required(ErrorMessage = "用户名不能为空")]
-    [StringLength(50, ErrorMessage = "用户名长度不能超过50个字符")]
+    [Required(ErrorMessage = ErrorCode.ValidationUsernameRequired)]
+    [StringLength(50, ErrorMessage = ErrorCode.ValidationNameTooLong)]
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
     /// 邮箱地址
     /// </summary>
-    [Required(ErrorMessage = "邮箱不能为空")]
-    [EmailAddress(ErrorMessage = "邮箱格式不正确")]
+    [Required(ErrorMessage = ErrorCode.ValidationEmailRequired)]
+    [EmailAddress(ErrorMessage = ErrorCode.ValidationEmailInvalid)]
     public string Email { get; set; } = string.Empty;
 
     /// <summary>
@@ -39,7 +39,7 @@ public class CreateUserRequest
     /// <summary>
     /// 年龄
     /// </summary>
-    [Range(0, 150, ErrorMessage = "年龄必须在0-150之间")]
+    [Range(0, 150, ErrorMessage = ErrorCode.ValidationAgeRange)]
     public int Age { get; set; }
 }
 
@@ -51,14 +51,14 @@ public class CreateUserManagementRequest
     /// <summary>
     /// 用户名（3-50个字符）
     /// </summary>
-    [Required(ErrorMessage = "用户名不能为空")]
-    [StringLength(50, MinimumLength = 3, ErrorMessage = "用户名长度必须在3-50个字符之间")]
+    [Required(ErrorMessage = ErrorCode.ValidationUsernameRequired)]
+    [StringLength(50, MinimumLength = 3, ErrorMessage = ErrorCode.ValidationUsernameLengthRange)]
     public string Username { get; set; } = string.Empty;
 
     /// <summary>
     /// 邮箱地址（可选）
     /// </summary>
-    [EmailAddress(ErrorMessage = "邮箱格式不正确")]
+    [EmailAddress(ErrorMessage = ErrorCode.ValidationEmailInvalid)]
     public string? Email { get; set; }
 
     /// <summary>
@@ -99,6 +99,7 @@ public class UpdateUserRequest
     /// <summary>
     /// 邮箱地址
     /// </summary>
+    [EmailAddress(ErrorMessage = ErrorCode.ValidationEmailInvalid)]
     public string? Email { get; set; }
 
     /// <summary>
@@ -113,6 +114,7 @@ public class UpdateUserRequest
     /// <summary>
     /// 年龄
     /// </summary>
+    [Range(0, 150, ErrorMessage = ErrorCode.ValidationAgeRange)]
     public int? Age { get; set; }
 }
 
@@ -129,6 +131,7 @@ public class UpdateUserManagementRequest
     /// <summary>
     /// 邮箱地址
     /// </summary>
+    [EmailAddress(ErrorMessage = ErrorCode.ValidationEmailInvalid)]
     public string? Email { get; set; }
 
     /// <summary>
@@ -515,25 +518,25 @@ public class UpdateProfileRequest
     /// <summary>
     /// 邮箱地址
     /// </summary>
-    [EmailAddress(ErrorMessage = "邮箱格式不正确")]
+    [EmailAddress(ErrorMessage = ErrorCode.ValidationEmailInvalid)]
     public string? Email { get; set; }
 
     /// <summary>
     /// 姓名
     /// </summary>
-    [StringLength(50, ErrorMessage = "姓名长度不能超过50个字符")]
+    [StringLength(50, ErrorMessage = ErrorCode.ValidationNameTooLong)]
     public string? Name { get; set; }
 
     /// <summary>
     /// 年龄
     /// </summary>
-    [Range(0, 150, ErrorMessage = "年龄必须在0-150之间")]
+    [Range(0, 150, ErrorMessage = ErrorCode.ValidationAgeRange)]
     public int? Age { get; set; }
 
     /// <summary>
     /// 头像（Base64 数据或图片链接）。
     /// </summary>
-    [StringLength(2_500_000, ErrorMessage = "头像数据过大，请选择更小的图片")]
+    [StringLength(2_500_000, ErrorMessage = ErrorCode.ValidationAvatarTooLarge)]
     public string? Avatar { get; set; }
 
     /// <summary>
@@ -554,8 +557,8 @@ public class UpdateAiRoleDefinitionRequest
     /// <summary>
     /// AI 角色定义（最多 2000 个字符）
     /// </summary>
-    [Required(ErrorMessage = "角色定义不能为空")]
-    [StringLength(2000, MinimumLength = 1, ErrorMessage = "角色定义长度必须在 1-2000 个字符之间")]
+    [Required(ErrorMessage = ErrorCode.ValidationRoleDefinitionRequired)]
+    [StringLength(2000, MinimumLength = 1, ErrorMessage = ErrorCode.ValidationRoleDefinitionLengthRange)]
     public string RoleDefinition { get; set; } = string.Empty;
 }
 

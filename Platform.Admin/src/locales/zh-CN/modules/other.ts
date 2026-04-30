@@ -764,6 +764,7 @@ export default {
   'pages.userLog.stats.total': '当前页记录',
   'pages.userLog.subTitle': '系统用户活动记录和审计日志',
   'pages.userLog.title': '用户操作日志',
+  'pages.userLog.searchPlaceholder': '搜索...',
   'pages.myActivity.title': '我的活动',
   'pages.myActivity.totalRecords': '总记录',
   'pages.myActivity.successCount': '成功',

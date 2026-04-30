@@ -17,14 +17,14 @@ const MyJoinRequestsTable: React.FC = () => {
         try {
             const response = await cancelJoinRequest(id);
             if (response.success) {
-                message.success('申请已撤销');
+                message.success(intl.formatMessage({ id: 'pages.company.requestCancelled' }));
             } else {
                 message.error(getErrorMessage(response, 'pages.company.cancelFailed'));
             }
         } catch (error) {
             console.error('撤销失败:', error);
         }
-    }, [message]);
+    }, [message, intl]);
 
     const columns: ProColumns<JoinRequestDetail>[] = [
         {

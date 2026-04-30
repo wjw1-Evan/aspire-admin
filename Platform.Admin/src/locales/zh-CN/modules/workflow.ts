@@ -131,6 +131,8 @@ export default {
   'pages.workflow.designer.message.disconnectedNodes': '存在未连通的节点，请检查流程完整性',
   'pages.workflow.designer.message.noEndNode': '流程必须包含至少一个结束节点',
   'pages.workflow.designer.message.noStartNode': '流程必须包含至少一个开始节点',
+  'pages.workflow.designer.message.nodeDeleted': '节点已删除',
+  'pages.workflow.designer.message.layoutApplied': '已自动重新排版',
   'pages.workflow.designer.nodeConfig': '节点配置',
   'pages.workflow.designer.nodeLabel': '节点名称',
   'pages.workflow.designer.nodeType': '节点类型',

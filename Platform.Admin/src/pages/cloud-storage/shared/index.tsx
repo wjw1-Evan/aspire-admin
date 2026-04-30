@@ -34,7 +34,7 @@ const CloudStorageSharedPage: React.FC = () => {
     const handleEditSave = async (values: any) => {
         try {
             const res = await api.update(editingShare!.id, { ...values, expiresAt: values.expiresAt ? dayjs(values.expiresAt).toISOString() : undefined });
-            if (res.success) { message.success('更新成功'); return true; }
+            if (res.success) { message.success(intl.formatMessage({ id: 'pages.cloud-storage.share.message.updateSuccess' })); return true; }
             else { message.error(getErrorMessage(res, 'pages.cloudStorage.share.updateFailed')); return false; }
         } catch (err) { message.error(getErrorMessage(err as any, 'pages.cloudStorage.share.updateFailed')); return false; }
     };
@@ -114,7 +114,7 @@ const CloudStorageSharedPage: React.FC = () => {
                     <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => {
                         const url = `${window.location.origin}/share/${r.shareToken}`;
                         navigator.clipboard.writeText(url);
-                        message.success('分享链接已复制');
+                        message.success(intl.formatMessage({ id: 'pages.cloud-storage.share.message.linkCopied' }));
                     }}>复制链接</Button>
                     <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleOpenModal(r)}>编辑</Button>
                     <Button type="link" size="small" icon={r.isEnabled ? <LockOutlined /> : <UnlockOutlined />} onClick={() => handleToggleShareEnabled(r)}>{r.isEnabled ? intl.formatMessage({ id: 'pages.cloudStorage.share.action.disable', defaultMessage: '禁用' }) : intl.formatMessage({ id: 'pages.cloudStorage.share.action.enable', defaultMessage: '启用' })}</Button>

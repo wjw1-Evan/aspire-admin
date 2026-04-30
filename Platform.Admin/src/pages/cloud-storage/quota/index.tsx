@@ -100,7 +100,7 @@ const CloudStorageQuotaPage: React.FC = () => {
         try {
             const totalQuota = values.totalQuota !== undefined ? gbToBytes(values.totalQuota) : undefined;
             const res = await api.updateUserQuota(state.editingQuota.userId, { totalQuota, warningThreshold: values.warningThreshold, isEnabled: values.isEnabled });
-            if (res.success) { message.success('更新配额成功'); set({ editQuotaVisible: false, editingQuota: null }); refreshAll(); return true; }
+            if (res.success) { message.success(intl.formatMessage({ id: 'pages.cloud-storage.quota.message.updateSuccess' })); set({ editQuotaVisible: false, editingQuota: null }); refreshAll(); return true; }
             else { message.error(getErrorMessage(res, 'pages.cloudStorage.quota.updateFailed')); return false; }
         } catch (err) { message.error(getErrorMessage(err as any, 'pages.cloudStorage.quota.updateFailed')); return false; }
     }, [state.editingQuota, message, refreshAll]);
@@ -119,7 +119,7 @@ const CloudStorageQuotaPage: React.FC = () => {
         set({ submitLoading: true });
         try {
             await api.setUserQuota({ userId: values.userId, totalQuota: gbToBytes(values.totalQuota) ?? 0, warningThreshold: values.warningThreshold, isEnabled: values.isEnabled });
-            message.success('新增配额成功');
+            message.success(intl.formatMessage({ id: 'pages.cloud-storage.quota.message.createSuccess' }));
             set({ addQuotaVisible: false });
             refreshAll();
             return true;

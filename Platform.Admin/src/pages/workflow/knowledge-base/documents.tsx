@@ -47,7 +47,7 @@ const KnowledgeBaseDocuments: React.FC = () => {
         try {
           const res = await kbService.deleteKnowledgeDocument(knowledgeBaseId, record.id);
           if (res.success) {
-            message.success('删除成功');
+            message.success(intl.formatMessage({ id: 'pages.workflow.knowledgeBase.deleteSuccess' }));
           }
         } catch (err) {
           message.error(getErrorMessage(err as any, 'pages.workflow.knowledgeBase.document.deleteFailed'));
@@ -157,10 +157,11 @@ const KnowledgeBaseDocuments: React.FC = () => {
             const docData = values as { title: string; content: string; summary?: string; sortOrder?: number };
             if (editingDoc) {
               await kbService.updateKnowledgeDocument(knowledgeBaseId!, editingDoc.id, docData);
+              message.success(intl.formatMessage({ id: 'pages.workflow.knowledgeBase.updateSuccess' }));
             } else {
               await kbService.createKnowledgeDocument(knowledgeBaseId!, docData);
+              message.success(intl.formatMessage({ id: 'pages.workflow.knowledgeBase.createSuccess' }));
             }
-            message.success(editingDoc ? '更新成功' : '创建成功');
             setIsModalVisible(false);
           } catch (err) {
             message.error(getErrorMessage(err as any, 'pages.workflow.knowledgeBase.document.submitFailed'));

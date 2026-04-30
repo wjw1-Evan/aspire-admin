@@ -432,7 +432,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
         setEdges(eds => eds.filter(e => e.source !== targetId && e.target !== targetId));
         setSelectedNode(null);
         setConfigDrawerVisible(false);
-        message.success('节点已删除');
+        message.success(intl.formatMessage({ id: 'pages.workflow.designer.message.nodeDeleted' }));
       },
     });
   }, [selectedNode, setNodes, setEdges, confirm, message]);
@@ -456,7 +456,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
           <Button icon={<BranchesOutlined />} onClick={() => {
             const { nodes: lNodes, edges: lEdges } = getLayoutedElements(nodes, edges);
             setNodes([...lNodes]); setEdges([...lEdges]);
-            message.success('已自动重新排版');
+            message.success(intl.formatMessage({ id: 'pages.workflow.designer.message.layoutApplied' }));
           }}>自动排版</Button>
           <Button icon={<CheckCircleOutlined />} onClick={() => {
             if (validateWorkflow()) message.success(intl.formatMessage({ id: 'pages.message.success' }));

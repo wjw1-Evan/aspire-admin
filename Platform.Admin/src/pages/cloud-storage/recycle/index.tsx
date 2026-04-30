@@ -62,16 +62,16 @@ const CloudStorageRecyclePage: React.FC = () => {
                             onOk: async () => {
                                 try {
                                     await api.restore(r.id, { itemId: r.id });
-                                    message.success('恢复成功');
+                                    message.success(intl.formatMessage({ id: 'pages.cloud-storage.recycle.message.restoreSuccess' }));
                                     actionRef.current?.reload();
-                                } catch { message.error('恢复失败'); }
+                                } catch { message.error(intl.formatMessage({ id: 'pages.cloud-storage.recycle.message.restoreFailed' })); }
                             }
                         });
                     }}>恢复</Button>
                     <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => {
                         Modal.confirm({
                             title: '确认永久删除', content: `确定要永久删除文件 "..." 吗？此操作不可恢复。`, okText: '删除', okType: 'danger', onOk: async () => {
-                                try { await api.permanentDelete(r.id); message.success('删除成功'); actionRef.current?.reload(); } catch { message.error('删除失败'); }
+                                try { await api.permanentDelete(r.id); message.success(intl.formatMessage({ id: 'pages.cloud-storage.recycle.message.deleteSuccess' })); actionRef.current?.reload(); } catch { message.error(intl.formatMessage({ id: 'pages.cloud-storage.recycle.message.deleteFailed' })); }
                             }
                         });
                     }}>删除</Button>
@@ -126,9 +126,9 @@ const CloudStorageRecyclePage: React.FC = () => {
                             onOk: async () => {
                                 try {
                                     const res = await api.empty();
-                                    if (res.success && res.data) message.success(`清空成功，删除了 ${res.data.deletedCount} 个文件`);
+                                    if (res.success && res.data) message.success(intl.formatMessage({ id: 'pages.cloud-storage.recycle.message.emptySuccess', defaultMessage: '清空成功，删除了 {count} 个文件' }, { count: res.data.deletedCount }));
                                     actionRef.current?.reload();
-                                } catch { message.error('清空失败'); }
+                                } catch { message.error(intl.formatMessage({ id: 'pages.cloud-storage.recycle.message.emptyFailed' })); }
                             }
                         });
                     }}>清空回收站</Button>,

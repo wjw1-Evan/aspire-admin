@@ -91,4 +91,5 @@ export default {
   'pages.joinRequests.pending.title': '加入申请',
   'pages.joinRequests.search.companyPlaceholder': '搜索企业名称',
   'pages.joinRequests.search.placeholder': '搜索用户名或邮箱',
+  'pages.company.requestCancelled': '申请已撤销',
 };

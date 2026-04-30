@@ -26,10 +26,11 @@ import xiaoke from './modules/xiaoke';
 import dashboard from './modules/dashboard';
 import other from './modules/other';
 import missing from './modules/missing';
+import cloudStorage from './modules/cloud-storage';
 
 // 导出所有模块
 export { common };
-export { auth, user, task, project, workflow, document, iot, park, organization, role, company, help, xiaoke, dashboard, other, missing };
+export { auth, user, task, project, workflow, document, iot, park, organization, role, company, help, xiaoke, dashboard, other, missing, cloudStorage };
 
 // 默认导出：合并所有模块
 export default {
@@ -50,4 +51,5 @@ export default {
   ...dashboard,
   ...other,
   ...missing,
+  ...cloudStorage,
 };

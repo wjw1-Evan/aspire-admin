@@ -1,17 +1,17 @@
 export default {
-  // 回收站消息
-  'pages.cloud-storage.recycle.message.restoreSuccess': 'Restore successful',
-  'pages.cloud-storage.recycle.message.restoreFailed': 'Restore failed',
-  'pages.cloud-storage.recycle.message.deleteSuccess': 'Delete successful',
-  'pages.cloud-storage.recycle.message.deleteFailed': 'Delete failed',
-  'pages.cloud-storage.recycle.message.emptySuccess': 'Empty successful, deleted {count} files',
-  'pages.cloud-storage.recycle.message.emptyFailed': 'Empty failed',
+  // ข้อความถังขยะ
+  'pages.cloud-storage.recycle.message.restoreSuccess': 'กู้คืนสำเร็จ',
+  'pages.cloud-storage.recycle.message.restoreFailed': 'กู้คืนล้มเหลว',
+  'pages.cloud-storage.recycle.message.deleteSuccess': 'ลบสำเร็จ',
+  'pages.cloud-storage.recycle.message.deleteFailed': 'ลบล้มเหลว',
+  'pages.cloud-storage.recycle.message.emptySuccess': 'ล้างสำเร็จ ลบแล้ว {count} ไฟล์',
+  'pages.cloud-storage.recycle.message.emptyFailed': 'ล้างล้มเหลว',
   
-  // 分享管理消息
-  'pages.cloud-storage.share.message.updateSuccess': 'Update successful',
-  'pages.cloud-storage.share.message.linkCopied': 'Share link copied',
+  // ข้อความจัดการการแชร์
+  'pages.cloud-storage.share.message.updateSuccess': 'อัปเดตสำเร็จ',
+  'pages.cloud-storage.share.message.linkCopied': 'คัดลอกลิงก์แชร์แล้ว',
   
-  // 配额管理消息
-  'pages.cloud-storage.quota.message.updateSuccess': 'Quota updated successfully',
-  'pages.cloud-storage.quota.message.createSuccess': 'Quota created successfully',
+  // ข้อความจัดการโควตา
+  'pages.cloud-storage.quota.message.updateSuccess': 'อัปเดตโควตาสำเร็จ',
+  'pages.cloud-storage.quota.message.createSuccess': 'สร้างโควตาสำเร็จ',
 };

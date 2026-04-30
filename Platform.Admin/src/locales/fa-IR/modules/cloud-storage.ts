@@ -1,17 +1,17 @@
 export default {
-  // 回收站消息
-  'pages.cloud-storage.recycle.message.restoreSuccess': 'Restore successful',
-  'pages.cloud-storage.recycle.message.restoreFailed': 'Restore failed',
-  'pages.cloud-storage.recycle.message.deleteSuccess': 'Delete successful',
-  'pages.cloud-storage.recycle.message.deleteFailed': 'Delete failed',
-  'pages.cloud-storage.recycle.message.emptySuccess': 'Empty successful, deleted {count} files',
-  'pages.cloud-storage.recycle.message.emptyFailed': 'Empty failed',
+  // پیام‌های سطل بازیافت
+  'pages.cloud-storage.recycle.message.restoreSuccess': 'بازیابی موفقیت‌آمیز بود',
+  'pages.cloud-storage.recycle.message.restoreFailed': 'بازیابی ناموفق بود',
+  'pages.cloud-storage.recycle.message.deleteSuccess': 'حذف موفقیت‌آمیز بود',
+  'pages.cloud-storage.recycle.message.deleteFailed': 'حذف ناموفق بود',
+  'pages.cloud-storage.recycle.message.emptySuccess': 'خالی کردن موفقیت‌آمیز بود، {count} فایل حذف شد',
+  'pages.cloud-storage.recycle.message.emptyFailed': 'خالی کردن ناموفق بود',
   
-  // 分享管理消息
-  'pages.cloud-storage.share.message.updateSuccess': 'Update successful',
-  'pages.cloud-storage.share.message.linkCopied': 'Share link copied',
+  // پیام‌های مدیریت اشتراک‌گذاری
+  'pages.cloud-storage.share.message.updateSuccess': 'به‌روزرسانی موفقیت‌آمیز بود',
+  'pages.cloud-storage.share.message.linkCopied': 'پیوند اشتراک‌گذاری کپی شد',
   
-  // 配额管理消息
-  'pages.cloud-storage.quota.message.updateSuccess': 'Quota updated successfully',
-  'pages.cloud-storage.quota.message.createSuccess': 'Quota created successfully',
+  // پیام‌های مدیریت سهمیه
+  'pages.cloud-storage.quota.message.updateSuccess': 'سهمیه با موفقیت به‌روزرسانی شد',
+  'pages.cloud-storage.quota.message.createSuccess': 'سهمیه با موفقیت ایجاد شد',
 };

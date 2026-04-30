@@ -1,17 +1,17 @@
 export default {
-  // 回收站消息
-  'pages.cloud-storage.recycle.message.restoreSuccess': 'Restore successful',
-  'pages.cloud-storage.recycle.message.restoreFailed': 'Restore failed',
-  'pages.cloud-storage.recycle.message.deleteSuccess': 'Delete successful',
-  'pages.cloud-storage.recycle.message.deleteFailed': 'Delete failed',
-  'pages.cloud-storage.recycle.message.emptySuccess': 'Empty successful, deleted {count} files',
-  'pages.cloud-storage.recycle.message.emptyFailed': 'Empty failed',
+  // Recycle bin messages
+  'pages.cloud-storage.recycle.message.restoreSuccess': 'Restauração bem-sucedida',
+  'pages.cloud-storage.recycle.message.restoreFailed': 'Falha ao restaurar',
+  'pages.cloud-storage.recycle.message.deleteSuccess': 'Exclusão bem-sucedida',
+  'pages.cloud-storage.recycle.message.deleteFailed': 'Falha ao excluir',
+  'pages.cloud-storage.recycle.message.emptySuccess': 'Esvaziamento bem-sucedido, excluídos {count} arquivos',
+  'pages.cloud-storage.recycle.message.emptyFailed': 'Falha ao esvaziar',
   
-  // 分享管理消息
-  'pages.cloud-storage.share.message.updateSuccess': 'Update successful',
-  'pages.cloud-storage.share.message.linkCopied': 'Share link copied',
+  // Share management messages
+  'pages.cloud-storage.share.message.updateSuccess': 'Atualização bem-sucedida',
+  'pages.cloud-storage.share.message.linkCopied': 'Link de compartilhamento copiado',
   
-  // 配额管理消息
-  'pages.cloud-storage.quota.message.updateSuccess': 'Quota updated successfully',
-  'pages.cloud-storage.quota.message.createSuccess': 'Quota created successfully',
+  // Quota management messages
+  'pages.cloud-storage.quota.message.updateSuccess': 'Cota atualizada com sucesso',
+  'pages.cloud-storage.quota.message.createSuccess': 'Cota criada com sucesso',
 };

@@ -1,17 +1,17 @@
 export default {
-  // 回收站消息
-  'pages.cloud-storage.recycle.message.restoreSuccess': 'Restore successful',
-  'pages.cloud-storage.recycle.message.restoreFailed': 'Restore failed',
-  'pages.cloud-storage.recycle.message.deleteSuccess': 'Delete successful',
-  'pages.cloud-storage.recycle.message.deleteFailed': 'Delete failed',
-  'pages.cloud-storage.recycle.message.emptySuccess': 'Empty successful, deleted {count} files',
-  'pages.cloud-storage.recycle.message.emptyFailed': 'Empty failed',
+  // Recycle bin messages
+  'pages.cloud-storage.recycle.message.restoreSuccess': 'Khôi phục thành công',
+  'pages.cloud-storage.recycle.message.restoreFailed': 'Khôi phục thất bại',
+  'pages.cloud-storage.recycle.message.deleteSuccess': 'Xóa thành công',
+  'pages.cloud-storage.recycle.message.deleteFailed': 'Xóa thất bại',
+  'pages.cloud-storage.recycle.message.emptySuccess': 'Làm trống thành công, đã xóa {count} tệp',
+  'pages.cloud-storage.recycle.message.emptyFailed': 'Làm trống thất bại',
   
-  // 分享管理消息
-  'pages.cloud-storage.share.message.updateSuccess': 'Update successful',
-  'pages.cloud-storage.share.message.linkCopied': 'Share link copied',
+  // Share management messages
+  'pages.cloud-storage.share.message.updateSuccess': 'Cập nhật thành công',
+  'pages.cloud-storage.share.message.linkCopied': 'Đường dẫn chia sẻ đã được sao chép',
   
-  // 配额管理消息
-  'pages.cloud-storage.quota.message.updateSuccess': 'Quota updated successfully',
-  'pages.cloud-storage.quota.message.createSuccess': 'Quota created successfully',
+  // Quota management messages
+  'pages.cloud-storage.quota.message.updateSuccess': 'Hạn ngạch đã được cập nhật thành công',
+  'pages.cloud-storage.quota.message.createSuccess': 'Hạn ngạch đã được tạo thành công',
 };

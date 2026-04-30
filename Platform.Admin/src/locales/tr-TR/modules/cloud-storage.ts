@@ -1,17 +1,17 @@
 export default {
-  // 回收站消息
-  'pages.cloud-storage.recycle.message.restoreSuccess': 'Restore successful',
-  'pages.cloud-storage.recycle.message.restoreFailed': 'Restore failed',
-  'pages.cloud-storage.recycle.message.deleteSuccess': 'Delete successful',
-  'pages.cloud-storage.recycle.message.deleteFailed': 'Delete failed',
-  'pages.cloud-storage.recycle.message.emptySuccess': 'Empty successful, deleted {count} files',
-  'pages.cloud-storage.recycle.message.emptyFailed': 'Empty failed',
+  // Recycle bin messages
+  'pages.cloud-storage.recycle.message.restoreSuccess': 'Geri yükleme başarılı',
+  'pages.cloud-storage.recycle.message.restoreFailed': 'Geri yükleme başarısız',
+  'pages.cloud-storage.recycle.message.deleteSuccess': 'Silme başarılı',
+  'pages.cloud-storage.recycle.message.deleteFailed': 'Silme başarısız',
+  'pages.cloud-storage.recycle.message.emptySuccess': 'Boşaltma başarılı, {count} dosya silindi',
+  'pages.cloud-storage.recycle.message.emptyFailed': 'Boşaltma başarısız',
   
-  // 分享管理消息
-  'pages.cloud-storage.share.message.updateSuccess': 'Update successful',
-  'pages.cloud-storage.share.message.linkCopied': 'Share link copied',
+  // Share management messages
+  'pages.cloud-storage.share.message.updateSuccess': 'Güncelleme başarılı',
+  'pages.cloud-storage.share.message.linkCopied': 'Paylaşım bağlantısı kopyalandı',
   
-  // 配额管理消息
-  'pages.cloud-storage.quota.message.updateSuccess': 'Quota updated successfully',
-  'pages.cloud-storage.quota.message.createSuccess': 'Quota created successfully',
+  // Quota management messages
+  'pages.cloud-storage.quota.message.updateSuccess': 'Kota başarıyla güncellendi',
+  'pages.cloud-storage.quota.message.createSuccess': 'Kota başarıyla oluşturuldu',
 };

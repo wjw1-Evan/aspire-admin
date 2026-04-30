@@ -1,17 +1,17 @@
 export default {
-  // 回收站消息
-  'pages.cloud-storage.recycle.message.restoreSuccess': 'Restore successful',
-  'pages.cloud-storage.recycle.message.restoreFailed': 'Restore failed',
-  'pages.cloud-storage.recycle.message.deleteSuccess': 'Delete successful',
-  'pages.cloud-storage.recycle.message.deleteFailed': 'Delete failed',
-  'pages.cloud-storage.recycle.message.emptySuccess': 'Empty successful, deleted {count} files',
-  'pages.cloud-storage.recycle.message.emptyFailed': 'Empty failed',
+  // رسائل سلة المحذوفات
+  'pages.cloud-storage.recycle.message.restoreSuccess': 'تمت الاستعادة بنجاح',
+  'pages.cloud-storage.recycle.message.restoreFailed': 'فشلت الاستعادة',
+  'pages.cloud-storage.recycle.message.deleteSuccess': 'تم الحذف بنجاح',
+  'pages.cloud-storage.recycle.message.deleteFailed': 'فشل الحذف',
+  'pages.cloud-storage.recycle.message.emptySuccess': 'تم الإفراغ بنجاح، تم حذف {count} ملف',
+  'pages.cloud-storage.recycle.message.emptyFailed': 'فشل الإفراغ',
   
-  // 分享管理消息
-  'pages.cloud-storage.share.message.updateSuccess': 'Update successful',
-  'pages.cloud-storage.share.message.linkCopied': 'Share link copied',
+  // رسائل إدارة المشاركة
+  'pages.cloud-storage.share.message.updateSuccess': 'تم التحديث بنجاح',
+  'pages.cloud-storage.share.message.linkCopied': 'تم نسخ رابط المشاركة',
   
-  // 配额管理消息
-  'pages.cloud-storage.quota.message.updateSuccess': 'Quota updated successfully',
-  'pages.cloud-storage.quota.message.createSuccess': 'Quota created successfully',
+  // رسائل إدارة الحصة
+  'pages.cloud-storage.quota.message.updateSuccess': 'تم تحديث الحصة بنجاح',
+  'pages.cloud-storage.quota.message.createSuccess': 'تم إنشاء الحصة بنجاح',
 };

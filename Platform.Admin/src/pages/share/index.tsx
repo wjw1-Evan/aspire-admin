@@ -112,12 +112,12 @@ const SharePage: React.FC = () => {
         try {
             const response = await api.download(token, state.password, state.shareInfo.fileName);
             const blob = response?.data;
-            if (!blob) throw new Error('未获取到文件数据');
+            if (!blob) throw new Error(intl.formatMessage({ id: 'pages.share.error.noFileData' }));
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
             const contentDisposition = response.headers['content-disposition'];
-            let filename = state.shareInfo.fileName || 'download';
+            let filename = state.shareInfo.fileName || intl.formatMessage({ id: 'pages.share.button.download' });
             if (contentDisposition) {
                 const fnameStar = contentDisposition.match(/filename\*\s*=\s*([^;]+)/i);
                 if (fnameStar && fnameStar[1]) {

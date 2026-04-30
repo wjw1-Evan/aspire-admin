@@ -112,13 +112,13 @@ const UserCenter: React.FC = () => {
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { message.error('图片大小不能超过 5MB'); e.target.value = ''; return; }
-    if (!file.type.startsWith('image/')) { message.error('只能上传图片文件'); e.target.value = ''; return; }
+    if (file.size > 5 * 1024 * 1024) { message.error(intl.formatMessage({ id: 'pages.account.center.avatar.sizeTooLarge' })); e.target.value = ''; return; }
+    if (!file.type.startsWith('image/')) { message.error(intl.formatMessage({ id: 'pages.account.center.avatar.invalidType' })); e.target.value = ''; return; }
 
     const localPreviewUrl = URL.createObjectURL(file);
     setAvatarPreview(localPreviewUrl);
 
-    const hide = message.loading('正在上传...', 0);
+    const hide = message.loading(intl.formatMessage({ id: 'pages.account.center.avatar.uploading' }), 0);
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -130,7 +130,7 @@ const UserCenter: React.FC = () => {
       hide();
       const avatarUrl = response?.data?.url;
       if (avatarUrl) {
-        message.success('头像上传成功');
+        message.success(intl.formatMessage({ id: 'pages.account.center.avatar.uploadSuccess' }));
         form.setFieldsValue({ avatar: avatarUrl });
         setLastUploadedAvatar(avatarUrl);
         setAvatarPreview(avatarUrl);
@@ -183,9 +183,9 @@ const UserCenter: React.FC = () => {
                   <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} />
                   <CameraOutlined style={{ color: '#fff', fontSize: 14 }} />
                 </label>
-                {(typeof avatarPreview === 'string' ? avatarPreview : userProfile?.avatar) && (
-                  <Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={handleAvatarDelete} style={{ position: 'absolute', top: -8, right: -8, minWidth: 24, height: 24, padding: 0, zIndex: 10 }} title="删除头像" />
-                )}
+                 {(typeof avatarPreview === 'string' ? avatarPreview : userProfile?.avatar) && (
+                   <Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={handleAvatarDelete} style={{ position: 'absolute', top: -8, right: -8, minWidth: 24, height: 24, padding: 0, zIndex: 10 }} title={intl.formatMessage({ id: 'pages.account.center.avatar.delete' })} />
+                 )}
               </div>
             ) : (
               <Avatar size={80} src={getUserAvatar(userProfile?.avatar)} icon={<UserOutlined />} />
@@ -200,21 +200,21 @@ const UserCenter: React.FC = () => {
 
           <Divider />
 
-          {editing ? (
+           {editing ? (
             <Form form={form} onFinish={handleUpdateProfile} layout="vertical">
-              <Form.Item name="username" label={<span><FormattedMessage id="pages.account.center.username" defaultMessage="用户名" /><Tooltip title="用户名不可修改"><span style={{ marginLeft: 4, cursor: 'help' }}>ℹ️</span></Tooltip></span>}>
+              <Form.Item name="username" label={<span><FormattedMessage id="pages.account.center.username" defaultMessage="用户名" /><Tooltip title={intl.formatMessage({ id: 'pages.account.center.username.notEditable' })}><span style={{ marginLeft: 4, cursor: 'help' }}>ℹ️</span></Tooltip></span>}>
                 <Input disabled style={{ color: 'rgba(0, 0, 0, 0.45)' }} />
               </Form.Item>
-              <Form.Item name="name" label={<FormattedMessage id="pages.account.center.name" defaultMessage="姓名" />}><Input placeholder="请输入姓名" /></Form.Item>
-              <Form.Item name="email" label={<FormattedMessage id="pages.account.center.email" defaultMessage="邮箱" />} rules={[{ type: 'email', message: '请输入有效的邮箱地址' }]}><Input /></Form.Item>
-              <Form.Item name="phoneNumber" label="手机号" rules={[{ pattern: /^1[3-9]\d{9}$/, message: '请输入有效的中国手机号（11位数字，以1开头）' }]}><Input placeholder="请输入手机号" maxLength={11} /></Form.Item>
-              <Form.Item name="age" label={<FormattedMessage id="pages.account.center.age" defaultMessage="年龄" />} rules={[{ type: 'number', min: 1, max: 150, message: '年龄必须在 1-150 之间' }]}>
-                <InputNumber min={1} max={150} placeholder="请输入年龄" style={{ width: '100%' }} />
+              <Form.Item name="name" label={<FormattedMessage id="pages.account.center.name" defaultMessage="姓名" />}><Input placeholder={intl.formatMessage({ id: 'pages.account.center.name.placeholder' })} /></Form.Item>
+              <Form.Item name="email" label={<FormattedMessage id="pages.account.center.email" defaultMessage="邮箱" />} rules={[{ type: 'email', message: intl.formatMessage({ id: 'pages.account.center.email.invalid' }) }]}><Input /></Form.Item>
+              <Form.Item name="phoneNumber" label={intl.formatMessage({ id: 'pages.account.center.phoneNumber' })} rules={[{ pattern: /^1[3-9]\d{9}$/, message: intl.formatMessage({ id: 'pages.account.center.phoneNumber.invalid' }) }]}><Input placeholder={intl.formatMessage({ id: 'pages.account.center.phoneNumber.placeholder' })} maxLength={11} /></Form.Item>
+              <Form.Item name="age" label={<FormattedMessage id="pages.account.center.age" defaultMessage="年龄" />} rules={[{ type: 'number', min: 1, max: 150, message: intl.formatMessage({ id: 'pages.account.center.age.invalid' }) }]}>
+                <InputNumber min={1} max={150} placeholder={intl.formatMessage({ id: 'pages.account.center.age.placeholder' })} style={{ width: '100%' }} />
               </Form.Item>
               <Form.Item name="avatar" hidden><Input /></Form.Item>
               <Form.Item>
                 <div style={{ textAlign: 'right' }}>
-                  <Space><Button onClick={handleCancelEdit}>取消</Button><Button type="primary" htmlType="submit">保存</Button></Space>
+                  <Space><Button onClick={handleCancelEdit}><FormattedMessage id="pages.account.center.cancel" /></Button><Button type="primary" htmlType="submit"><FormattedMessage id="pages.account.center.save" /></Button></Space>
                 </div>
               </Form.Item>
             </Form>
@@ -223,7 +223,7 @@ const UserCenter: React.FC = () => {
               <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.username" defaultMessage="用户名" />}><Text strong>{userProfile.username}</Text></ProDescriptions.Item>
               <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.name" defaultMessage="姓名" />}>{userProfile.name || <FormattedMessage id="pages.account.center.notSet" defaultMessage="未设置" />}</ProDescriptions.Item>
               <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.email" defaultMessage="邮箱" />}><MailOutlined style={{ marginRight: '4px' }} />{userProfile.email || <FormattedMessage id="pages.account.center.notSet" defaultMessage="未设置" />}</ProDescriptions.Item>
-              <ProDescriptions.Item label={<Space><MobileOutlined />手机号</Space>}>{userProfile.phoneNumber || <FormattedMessage id="pages.account.center.notSet" defaultMessage="未设置" />}</ProDescriptions.Item>
+              <ProDescriptions.Item label={<Space><MobileOutlined /><FormattedMessage id="pages.account.center.phoneNumber" /></Space>}>{userProfile.phoneNumber || <FormattedMessage id="pages.account.center.notSet" defaultMessage="未设置" />}</ProDescriptions.Item>
               <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.age" defaultMessage="年龄" />}>{userProfile.age || <FormattedMessage id="pages.account.center.notSet" defaultMessage="未设置" />}</ProDescriptions.Item>
               <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.role" defaultMessage="角色" />}><Tag color={getRoleTagColor(userProfile.role)}>{userProfile.role === 'admin' ? <FormattedMessage id="pages.account.center.admin" defaultMessage="管理员" /> : <FormattedMessage id="pages.account.center.user" defaultMessage="普通用户" />}</Tag></ProDescriptions.Item>
               <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.status" defaultMessage="状态" />}><Tag color={userProfile.isActive ? 'green' : 'red'}>{userProfile.isActive ? <FormattedMessage id="pages.account.center.active" defaultMessage="正常" /> : <FormattedMessage id="pages.account.center.inactive" defaultMessage="禁用" />}</Tag></ProDescriptions.Item>

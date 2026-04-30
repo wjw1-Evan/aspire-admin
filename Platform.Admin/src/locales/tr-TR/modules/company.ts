@@ -1,10 +1,12 @@
 /**
- * company 翻译模块 (tr-TR)
- * 包含 80 个翻译键
+ * company 翻译模块 (en-US)
+ * 包含 87 个翻译键
  */
 
 export default {
   'pages.company.admin': 'Admin',
+  'pages.company.applyFailed': 'Failed to submit application',
+  'pages.company.cancelFailed': 'Failed to cancel',
   'pages.company.createFailed': 'Failed to create company',
   'pages.company.createNew': 'Create New Company',
   'pages.company.createSuccess': 'Company created successfully',
@@ -26,6 +28,7 @@ export default {
   'pages.company.roleSeparator': ', ',
   'pages.company.search.subTitle': 'Search and apply to join other companies',
   'pages.company.search.title': 'Search Companies',
+  'pages.company.searchFailed': 'Failed to search companies',
   'pages.company.switchFailed': 'Failed to switch company',
   'pages.company.switchSuccess': 'Switched to company: {name}',
   'pages.companySettings.companyNotFound': 'Company information not found',
@@ -36,6 +39,7 @@ export default {
   'pages.companySettings.details.contactPhone': 'Contact Phone',
   'pages.companySettings.details.createdAt': 'Created At',
   'pages.companySettings.details.description': 'Description',
+  'pages.companySettings.details.displayName': 'System Name',
   'pages.companySettings.details.industry': 'Industry',
   'pages.companySettings.details.name': 'Company Name',
   'pages.companySettings.details.updatedAt': 'Updated At',
@@ -50,6 +54,9 @@ export default {
   'pages.companySettings.edit.contactPhonePlaceholder': 'Please enter contact phone',
   'pages.companySettings.edit.descriptionLabel': 'Company Description',
   'pages.companySettings.edit.descriptionPlaceholder': 'Please enter company description',
+  'pages.companySettings.edit.displayNameLabel': 'System Name',
+  'pages.companySettings.edit.displayNamePlaceholder': 'Enter the name to display in the top-left corner',
+  'pages.companySettings.edit.displayNameTooltip': 'If set, this will replace the default "{title}" branding',
   'pages.companySettings.edit.industryLabel': 'Industry',
   'pages.companySettings.edit.industryMaxLength': 'Industry name cannot exceed 50 characters',
   'pages.companySettings.edit.industryPlaceholder': 'Please enter industry',
@@ -81,7 +88,7 @@ export default {
   'pages.joinRequests.my.subTitle': 'View my submitted company join applications',
   'pages.joinRequests.my.title': 'My Applications',
   'pages.joinRequests.pending.subTitle': 'Review company join applications',
-  'pages.joinRequests.pending.title': 'Pending Requests',
+  'pages.joinRequests.pending.title': 'Join Requests',
   'pages.joinRequests.search.companyPlaceholder': 'Search company name',
   'pages.joinRequests.search.placeholder': 'Search username or email',
 };

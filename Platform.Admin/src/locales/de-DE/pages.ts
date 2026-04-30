@@ -1,5 +1,5 @@
 /**
- * 模块翻译统一导出入口 (de-DE)
+ * 模块翻译统一导出入口 (en-US)
  * 
  * 目录结构:
  * - modules/    - 功能模块翻译
@@ -23,10 +23,13 @@ import company from './modules/company';
 import help from './modules/help';
 import xiaoke from './modules/xiaoke';
 import other from './modules/other';
+import dashboard from './modules/dashboard';
+import park from './modules/park';
+import missing from './modules/missing';
 
 // 导出所有模块
 export { common };
-export { auth, user, task, project, workflow, document, iot, organization, role, company, help, xiaoke, other };
+export { auth, user, task, project, workflow, document, iot, organization, role, company, help, xiaoke, dashboard, other, park, missing };
 
 // 默认导出：合并所有模块
 export default {
@@ -43,5 +46,8 @@ export default {
   ...company,
   ...help,
   ...xiaoke,
+  ...dashboard,
   ...other,
+  ...park,
+  ...missing,
 };

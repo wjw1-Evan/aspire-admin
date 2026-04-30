@@ -1,5 +1,5 @@
 /**
- * project 翻译模块 (tr-TR)
+ * project 翻译模块 (en-US)
  * 包含 84 个翻译键
  */
 
@@ -88,4 +88,7 @@ export default {
   'pages.projectManagement.views.gantt': 'Gantt Chart',
   'pages.projectManagement.views.list': 'List View',
   'pages.projectManagement.views.project': 'Project View',
+  'pages.projectManagement.table.members': 'Project Members',
+  'pages.projectManagement.taskTree.noTasks': 'No tasks yet',
+  'pages.projectManagement.taskTree.view': 'List',
 };

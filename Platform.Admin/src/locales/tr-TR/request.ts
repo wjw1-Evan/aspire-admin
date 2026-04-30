@@ -1,100 +1,100 @@
 export default {
-  'request.error.validation': 'Doğrulama Hatası',
-  'request.error.login-failed': 'Giriş başarısız, kullanıcı adı ve şifrenizi kontrol edin',
-  'request.error.token-expired': 'Oturum süresi doldu, lütfen tekrar giriş yapın',
-  'request.error.unknown': 'Bilinmiyor Hata',
-  'request.error.network': 'Ağ hatası, bağlantınızı kontrol edin',
-  'request.error.server': 'Sunucu hatası, lütfen daha sonra tekrar deneyin',
-  'request.error.forbidden': 'Yasaklı kaynak',
-  'request.error.not-found': 'Kaynak bulunamadı',
+    'request.error.validation': 'Validation Error',
+    'request.error.login-failed': 'Login failed, please check your username and password',
+    'request.error.token-expired': 'Session expired, please login again',
+    'request.error.unknown': 'Unknown Error',
+    'request.error.network': 'Network error, please check your connection',
+    'request.error.server': 'Server error, please try again later',
+    'request.error.forbidden': 'Forbidden resource',
+    'request.error.not-found': 'Resource not found',
 
-  // Kimlik Doğrulama
-  'UNAUTHENTICATED': 'Yetkisiz erişim, lütfen tekrar giriş yapın',
-  'INVALID_CREDENTIALS': 'Kullanıcı adı veya şifre geçersiz',
-  'CAPTCHA_REQUIRED': 'Lütfen güvenlik kodunu girin',
-  'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN': 'Başarısız girişten sonra güvenlik kodu gerekli',
-  'CAPTCHA_INVALID': 'Geçersiz güvenlik kodu',
-  'INVALID_TOKEN': 'Kimlik doğrulama belirteci geçersiz veya süresi dolmuş',
-  'TOKEN_EXPIRED': 'Oturum süresi doldu, lütfen tekrar giriş yapın',
-  'USER_INFO_INVALID': 'Geçersiz kullanıcı bilgileri',
+    // ── 认证相关 (Authentication) ──
+    'UNAUTHENTICATED': 'Unauthorized access, please log in again',
+    'INVALID_CREDENTIALS': 'Invalid username or password, please check and try again',
+    'CAPTCHA_REQUIRED': 'Please enter the captcha',
+    'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN': 'Captcha required after failed login, please get captcha first',
+    'CAPTCHA_INVALID': 'Invalid captcha, please try again',
+    'INVALID_TOKEN': 'Invalid or expired authentication token',
+    'TOKEN_EXPIRED': 'Session expired, please log in again',
+    'USER_INFO_INVALID': 'Invalid user information',
 
-  // Yetkilendirme
-  'UNAUTHORIZED_ACCESS': 'Yetkisiz erişim',
-  'VIEW_PERMISSION_DENIED': 'Diğer kullanıcı bilgilerini görüntüleme izniniz yok',
-  'CURRENT_COMPANY_NOT_FOUND': 'Mevcut şirket bilgileri bulunamadı',
-  'MENU_ACCESS_DENIED': 'Bu menüye erişim izniniz yok',
-  'MENU_SERVICE_NOT_CONFIGURED': 'Menü erişim servisi yapılandırılmamış',
-  'FORBIDDEN': 'Erişim yasak',
+    // ── 授权相关 (Authorization) ──
+    'UNAUTHORIZED_ACCESS': 'Unauthorized access',
+    'VIEW_PERMISSION_DENIED': 'No permission to view other user information',
+    'CURRENT_COMPANY_NOT_FOUND': 'Current company information not found',
+    'MENU_ACCESS_DENIED': 'No permission to access this menu',
+    'MENU_SERVICE_NOT_CONFIGURED': 'Menu access service not configured',
+    'FORBIDDEN': 'Access forbidden',
 
-  // Doğrulama
-  'VALIDATION_ERROR': 'İstek doğrulaması başarısız',
-  'INVALID_OLD_PASSWORD': 'Eski şifre yanlış',
+    // ── 验证相关 (Validation) ──
+    'VALIDATION_ERROR': 'Request validation failed',
+    'INVALID_OLD_PASSWORD': 'Incorrect original password',
 
-  // Kaynak
-  'RESOURCE_NOT_FOUND': 'Kaynak bulunamadı',
-  'USER_NOT_FOUND': 'Kullanıcı bulunamadı',
-  'COMPANY_NOT_FOUND': 'Şirket bulunamadı',
+    // ── 资源相关 (Resource) ──
+    'RESOURCE_NOT_FOUND': 'Resource not found',
+    'USER_NOT_FOUND': 'User not found',
+    'COMPANY_NOT_FOUND': 'Company not found',
 
-  // İşletme Operasyonu
-  'INVALID_OPERATION': 'Geçersiz operasyon',
-  'OPERATION_NOT_SUPPORTED': 'Desteklenmeyen operasyon',
-  'USER_NAME_EXISTS': 'Kullanıcı adı zaten mevcut',
-  'EMAIL_EXISTS': 'E-posta zaten mevcut',
-  'PHONE_NUMBER_EXISTS': 'Telefon numarası zaten mevcut',
-  'USER_NOT_AUTHENTICATED': 'Kullanıcı kimlik doğrulama bilgileri bulunamadı',
+    // ── 业务操作相关 (Business Operation) ──
+    'INVALID_OPERATION': 'Invalid operation',
+    'OPERATION_NOT_SUPPORTED': 'Operation not supported',
+    'USER_NAME_EXISTS': 'Username already exists',
+    'EMAIL_EXISTS': 'Email already exists',
+    'PHONE_NUMBER_EXISTS': 'Phone number already exists',
+    'USER_NOT_AUTHENTICATED': 'User authentication information not found',
 
-  // Şirket
-  'COMPANY_NOT_MEMBER': 'Bu şirketin üyesi değilsiniz',
-  'COMPANY_CREATOR_CANNOT_LEAVE': 'Bu şirketin kurucususunuz, ayrılamazsınız',
-  'COMPANY_SOLE_ADMIN_CANNOT_LEAVE': 'Bu şirketin tek yöneticisisiniz',
-  'COMPANY_INACTIVE': 'Şirket aktif değil, yöneticiyle iletişime geçin',
-  'COMPANY_EXPIRED': 'Şirket süresi dolmuş, yenilemek için yöneticiyle iletişime geçin',
+    // ── 企业相关 (Company) ──
+    'COMPANY_NOT_MEMBER': 'You are not a member of this company',
+    'COMPANY_CREATOR_CANNOT_LEAVE': 'You are the creator of this company and cannot leave',
+    'COMPANY_SOLE_ADMIN_CANNOT_LEAVE': 'You are the sole administrator of this company, please transfer admin rights or delete the company first',
+    'COMPANY_INACTIVE': 'Company is not active, please contact administrator',
+    'COMPANY_EXPIRED': 'Company has expired, please contact administrator to renew',
 
-  // Rol/İzin
-  'ROLE_NOT_FOUND': 'Rol bulunamadı',
-  'ROLE_NAME_EXISTS': 'Rol adı zaten mevcut',
-  'SYSTEM_ROLE_CANNOT_DELETE': 'Sistem yöneticisi rolü silinemez',
-  'CANNOT_REMOVE_LAST_ADMIN': 'Son yönetici rolü kaldırılamaz',
-  'PERMISSION_NOT_FOUND': 'İzin bulunamadı',
-  'PERMISSION_CODE_EXISTS': 'İzin kodu zaten mevcut',
+    // ── 角色/权限相关 (Role/Permission) ──
+    'ROLE_NOT_FOUND': 'Role not found',
+    'ROLE_NAME_EXISTS': 'Role name already exists',
+    'SYSTEM_ROLE_CANNOT_DELETE': 'Cannot delete system administrator role',
+    'CANNOT_REMOVE_LAST_ADMIN': 'Cannot remove the last administrator role',
+    'PERMISSION_NOT_FOUND': 'Permission not found',
+    'PERMISSION_CODE_EXISTS': 'Permission code already exists',
 
-  // Menü/Bildirim
-  'MENU_NOT_FOUND': 'Menü bulunamadı',
-  'MENU_NAME_EXISTS': 'Menü adı zaten mevcut',
-  'CANNOT_DELETE_MENU_WITH_CHILDREN': 'Alt menülerle menü silinemez',
-  'NOTICE_NOT_FOUND': 'Bildirim bulunamadı',
+    // ── 菜单/通知相关 (Menu/Notice) ──
+    'MENU_NOT_FOUND': 'Menu not found',
+    'MENU_NAME_EXISTS': 'Menu name already exists',
+    'CANNOT_DELETE_MENU_WITH_CHILDREN': 'Cannot delete menu with submenus, please delete submenus first',
+    'NOTICE_NOT_FOUND': 'Notification not found',
 
-  // Kullanıcı/Şirket Genişletilmiş
-  'USER_INACTIVE': 'Kullanıcı hesabı devre dışı bırakılmış',
-  'CANNOT_DELETE_SELF': 'Kendi hesabınızı silemezsiniz',
-  'CANNOT_DELETE_CURRENT_USER': 'Mevcut oturum açmış kullanıcıyı silemezsiniz',
-  'CANNOT_MODIFY_OWN_ROLE': 'Kendi rolünüzü değiştiremezsiniz',
-  'MAX_USERS_REACHED': 'Maksimum kullanıcı sayısına ulaşıldı',
-  'COMPANY_CODE_EXISTS': 'Şirket kodu zaten mevcut',
-  'INVALID_COMPANY_CODE': 'Geçersiz şirket kodu formatı',
-  'COMPANY_REQUIRED': 'Şirket bilgileri bulunamadı',
+    // ── 用户/企业扩展 (User/Company Extended) ──
+    'USER_INACTIVE': 'User account has been disabled',
+    'CANNOT_DELETE_SELF': 'Cannot delete your own account',
+    'CANNOT_DELETE_CURRENT_USER': 'Cannot delete the current logged-in user',
+    'CANNOT_MODIFY_OWN_ROLE': 'Cannot modify your own role',
+    'MAX_USERS_REACHED': 'Maximum number of users reached',
+    'COMPANY_CODE_EXISTS': 'Company code already exists',
+    'INVALID_COMPANY_CODE': 'Invalid company code format',
+    'COMPANY_REQUIRED': 'Company information not found',
 
-  // Organizasyon
-  'ORGANIZATION_NOT_FOUND': 'Organizasyon düğümü bulunamadı',
-  'ORGANIZATION_NAME_EXISTS': 'Organizasyon düğüm adı zaten mevcut',
-  'ORGANIZATION_CODE_EXISTS': 'Organizasyon düğüm kodu zaten mevcut',
-  'PARENT_CANNOT_BE_SELF': 'Üst düğüm mevcut düğüm olamaz',
-  'PARENT_CANNOT_BE_DESCENDANT': 'Üst düğüm mevcut düğümün alt düğümü olamaz',
-  'CANNOT_DELETE_WITH_CHILDREN': 'Önce alt düğümleri silin',
+    // ── 组织架构相关 (Organization) ──
+    'ORGANIZATION_NOT_FOUND': 'Organization node not found',
+    'ORGANIZATION_NAME_EXISTS': 'Organization node name already exists',
+    'ORGANIZATION_CODE_EXISTS': 'Organization node code already exists',
+    'PARENT_CANNOT_BE_SELF': 'Parent cannot be the current node',
+    'PARENT_CANNOT_BE_DESCENDANT': 'Parent cannot be a child node of the current node',
+    'CANNOT_DELETE_WITH_CHILDREN': 'Please delete child nodes first before deleting the current node',
 
-  // Format Doğrulama
-  'INVALID_EMAIL_FORMAT': 'Geçersiz e-posta formatı',
-  'INVALID_PHONE_FORMAT': 'Geçersiz telefon numarası formatı',
-  'INVALID_USERNAME_FORMAT': 'Geçersiz kullanıcı adı formatı',
-  'PASSWORD_TOO_SHORT': 'Şifre en az 6 karakter olmalı',
-  'PASSWORD_TOO_LONG': 'Şifre 50 karakteri geçemez',
+    // ── 格式验证相关 (Format Validation) ──
+    'INVALID_EMAIL_FORMAT': 'Invalid email format',
+    'INVALID_PHONE_FORMAT': 'Invalid phone number format',
+    'INVALID_USERNAME_FORMAT': 'Invalid username format',
+    'PASSWORD_TOO_SHORT': 'Password must be at least 6 characters',
+    'PASSWORD_TOO_LONG': 'Password cannot exceed 50 characters',
 
-  // Genel Operasyon
-  'OPERATION_FAILED': 'Operasyon başarısız',
+    // ── 通用操作 (General Operation) ──
+    'OPERATION_FAILED': 'Operation failed',
 
-  // Dosya
-  'AVATAR_TOO_LARGE': 'Avatar resmi çok büyük',
+    // ── 文件相关 (File) ──
+    'AVATAR_TOO_LARGE': 'Avatar image is too large, please select an image smaller than 2MB',
 
-  // Sunucu
-  'SERVER_ERROR': 'Sunucu iç hatası',
+    // ── 服务器错误 (Server) ──
+    'SERVER_ERROR': 'Internal server error',
 };

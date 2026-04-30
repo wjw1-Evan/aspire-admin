@@ -1,5 +1,5 @@
 /**
- * role 翻译模块 (vi-VN)
+ * role 翻译模块 (en-US)
  * 包含 24 个翻译键
  */
 
@@ -22,10 +22,11 @@ export default {
   'pages.roleForm.updateFailed': 'Failed to update',
   'pages.roleForm.updateSuccess': 'Updated successfully',
   'pages.roleManagement.search.placeholder': 'Enter role name',
-  'pages.roleManagement.statistics.activeRoles': 'Vai trò đang hoạt động',
-  'pages.roleManagement.statistics.totalMenus': 'Tổng số menu liên quan',
-  'pages.roleManagement.statistics.totalRoles': 'Tổng số vai trò',
-  'pages.roleManagement.statistics.totalUsers': 'Tổng số người dùng liên quan',
+  'pages.roleManagement.statistics.activeRoles': 'Active Roles',
+  'pages.roleManagement.statistics.totalMenus': 'Total Related Menus',
+  'pages.roleManagement.statistics.totalRoles': 'Total Roles',
+  'pages.roleManagement.statistics.totalUsers': 'Total Related Users',
   'pages.roleManagement.subTitle': 'System role configuration and permission management',
   'pages.roleManagement.title': 'Role Management',
+  'pages.roleForm.menuCount': 'Selected {count} menus',
 };

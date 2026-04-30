@@ -1,5 +1,5 @@
 /**
- * organization 翻译模块 (ru-RU)
+ * organization 翻译模块 (en-US)
  * 包含 31 个翻译键
  */
 

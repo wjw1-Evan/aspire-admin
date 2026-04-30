@@ -1,5 +1,5 @@
 /**
- * iot 翻译模块 (ru-RU)
+ * iot 翻译模块 (en-US)
  * 包含 13 个翻译键
  */
 
@@ -17,4 +17,19 @@ export default {
   'pages.iotPlatform.status.totalGateways': 'Total Gateways',
   'pages.iotPlatform.status.withAlarm': 'Alarms Configured',
   'pages.iotPlatform.title': 'IoT Platform Overview',
+  'pages.iotPlatform.card.lastUpdatedAt': 'Last Updated',
+  'pages.iotPlatform.card.onlineDevices': 'Online Devices',
+  'pages.iotPlatform.card.onlineGateways': 'Online Gateways',
+  'pages.iotPlatform.card.totalAlarms': 'Total Alarms',
+  'pages.iotPlatform.card.totalDataPoints': 'Total Data Points',
+  'pages.iotPlatform.card.totalDevices': 'Total Devices',
+  'pages.iotPlatform.card.totalGateways': 'Total Gateways',
+  'pages.iotPlatform.card.unhandledAlarms': 'Unhandled Alarms',
+  'pages.iotPlatform.statistics.onlineDevices': 'Online Devices',
+  'pages.iotPlatform.statistics.onlineGateways': 'Online Gateways',
+  'pages.iotPlatform.statistics.totalAlarms': 'Alarms',
+  'pages.iotPlatform.statistics.totalDataPoints': 'Data Points',
+  'pages.iotPlatform.statistics.totalDevices': 'Devices',
+  'pages.iotPlatform.statistics.totalGateways': 'Gateways',
+  'pages.iotPlatform.statistics.unhandledAlarms': 'Unhandled',
 };

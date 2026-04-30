@@ -1,6 +1,6 @@
 /**
- * document 翻译模块 (ru-RU)
- * 包含 102 个翻译键
+ * document 翻译模块 (en-US)
+ * 包含 111 个翻译键
  */
 
 export default {
@@ -13,6 +13,7 @@ export default {
   'pages.document.approval.action.delegate': 'Delegate',
   'pages.document.approval.action.reject': 'Reject',
   'pages.document.approval.action.return': 'Return',
+  'pages.document.approval.loadFailed': 'Failed to load approval information',
   'pages.document.approval.message.approveFailed': 'Approve failed',
   'pages.document.approval.message.approveSuccess': 'Approved successfully',
   'pages.document.approval.message.delegateFailed': 'Delegate failed',
@@ -30,6 +31,7 @@ export default {
   'pages.document.approval.modal.delegateUser': 'Delegate To',
   'pages.document.approval.modal.delegateUserPlaceholder': 'Please select delegate user',
   'pages.document.approval.modal.delegateUserRequired': 'Please select delegate user',
+  'pages.document.approval.modal.nodeForm': 'Approval Form',
   'pages.document.approval.modal.rejectReason': 'Rejection Reason',
   'pages.document.approval.modal.rejectReasonPlaceholder': 'Please enter rejection reason',
   'pages.document.approval.modal.rejectReasonRequired': 'Please enter rejection reason',
@@ -63,14 +65,21 @@ export default {
   'pages.document.create.next': 'Next',
   'pages.document.create.nextStep.tip': 'Please select a workflow. In the next step, you will fill out the workflow custom form in the modal and create/start the process.',
   'pages.document.create.title': 'Create Document',
+  'pages.document.createByWorkflow.submit': 'Create and Start',
+  'pages.document.createByWorkflow.title': 'Create and Start by Workflow Form',
   'pages.document.detail.approvalHistory': 'Approval History',
   'pages.document.detail.basicInfo': 'Basic Information',
   'pages.document.detail.category': 'Category',
   'pages.document.detail.content': 'Content',
   'pages.document.detail.createdAt': 'Created At',
   'pages.document.detail.createdBy': 'Created By',
+  'pages.document.detail.formData': 'Form Data',
+  'pages.document.detail.formData.empty': 'No form data',
+  'pages.document.detail.nodeFormData': 'Node Form Data',
+  'pages.document.detail.nodeFormData.empty': 'No node form data',
   'pages.document.detail.title': 'Title',
   'pages.document.detail.type': 'Type',
+  'pages.document.detail.workflowGraph': 'Workflow Graph',
   'pages.document.detail.workflowInfo': 'Workflow Information',
   'pages.document.detail.workflowStatus': 'Workflow Status',
   'pages.document.form.search': 'Search Form',
@@ -95,8 +104,8 @@ export default {
   'pages.document.stat.rejected': 'Rejected',
   'pages.document.stat.total': 'Total Documents',
   'pages.document.status.approved': 'Approved',
+  'pages.document.status.approving': 'Approving',
   'pages.document.status.draft': 'Draft',
-  'pages.document.status.pending': 'Pending',
   'pages.document.status.rejected': 'Rejected',
   'pages.document.table.action': 'Actions',
   'pages.document.table.category': 'Category',
@@ -106,4 +115,6 @@ export default {
   'pages.document.table.title': 'Title',
   'pages.document.table.type': 'Type',
   'pages.document.title': 'Document Management',
+  'pages.document.approval.detail': 'Document Details',
+  'pages.document.search.placeholder': 'Search by title or number',
 };

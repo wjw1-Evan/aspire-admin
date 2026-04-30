@@ -1,100 +1,100 @@
 export default {
-  'request.error.validation': 'Erreur de validation',
-  'request.error.login-failed': 'Échec de connexion, vérifiez votre nom utilisateur et mot de passe',
-  'request.error.token-expired': 'Session expirée, veuillez vous reconnecter',
-  'request.error.unknown': 'Erreur inconnue',
-  'request.error.network': 'Erreur réseau, vérifiez votre connexion',
-  'request.error.server': 'Erreur serveur, réessayez plus tard',
-  'request.error.forbidden': 'Ressource interdite',
-  'request.error.not-found': 'Ressource non trouvée',
+    'request.error.validation': 'Validation Error',
+    'request.error.login-failed': 'Login failed, please check your username and password',
+    'request.error.token-expired': 'Session expired, please login again',
+    'request.error.unknown': 'Unknown Error',
+    'request.error.network': 'Network error, please check your connection',
+    'request.error.server': 'Server error, please try again later',
+    'request.error.forbidden': 'Forbidden resource',
+    'request.error.not-found': 'Resource not found',
 
-  // Authentification
-  'UNAUTHENTICATED': 'Accès non autorisé, reconnectez-vous',
-  'INVALID_CREDENTIALS': 'Nom utilisateur ou mot de passe invalide',
-  'CAPTCHA_REQUIRED': 'Veuillez entrer le captcha',
-  'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN': 'Captcha requis après échec de connexion',
-  'CAPTCHA_INVALID': 'Captcha invalide',
-  'INVALID_TOKEN': 'Jeton d\'authentification invalide ou expiré',
-  'TOKEN_EXPIRED': 'Session expirée, reconnectez-vous',
-  'USER_INFO_INVALID': 'Informations utilisateur invalides',
+    // ── 认证相关 (Authentication) ──
+    'UNAUTHENTICATED': 'Unauthorized access, please log in again',
+    'INVALID_CREDENTIALS': 'Invalid username or password, please check and try again',
+    'CAPTCHA_REQUIRED': 'Please enter the captcha',
+    'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN': 'Captcha required after failed login, please get captcha first',
+    'CAPTCHA_INVALID': 'Invalid captcha, please try again',
+    'INVALID_TOKEN': 'Invalid or expired authentication token',
+    'TOKEN_EXPIRED': 'Session expired, please log in again',
+    'USER_INFO_INVALID': 'Invalid user information',
 
-  // Autorisation
-  'UNAUTHORIZED_ACCESS': 'Accès non autorisé',
-  'VIEW_PERMISSION_DENIED': 'Pas le droit de voir les informations des autres utilisateurs',
-  'CURRENT_COMPANY_NOT_FOUND': 'Informations entreprise actuelle non trouvées',
-  'MENU_ACCESS_DENIED': 'Pas le droit d\'accéder à ce menu',
-  'MENU_SERVICE_NOT_CONFIGURED': 'Service d\'accès au menu non configuré',
-  'FORBIDDEN': 'Accès interdit',
+    // ── 授权相关 (Authorization) ──
+    'UNAUTHORIZED_ACCESS': 'Unauthorized access',
+    'VIEW_PERMISSION_DENIED': 'No permission to view other user information',
+    'CURRENT_COMPANY_NOT_FOUND': 'Current company information not found',
+    'MENU_ACCESS_DENIED': 'No permission to access this menu',
+    'MENU_SERVICE_NOT_CONFIGURED': 'Menu access service not configured',
+    'FORBIDDEN': 'Access forbidden',
 
-  // Validation
-  'VALIDATION_ERROR': 'Échec de la validation de la requête',
-  'INVALID_OLD_PASSWORD': 'Ancien mot de passe incorrect',
+    // ── 验证相关 (Validation) ──
+    'VALIDATION_ERROR': 'Request validation failed',
+    'INVALID_OLD_PASSWORD': 'Incorrect original password',
 
-  // Ressource
-  'RESOURCE_NOT_FOUND': 'Ressource non trouvée',
-  'USER_NOT_FOUND': 'Utilisateur non trouvé',
-  'COMPANY_NOT_FOUND': 'Entreprise non trouvée',
+    // ── 资源相关 (Resource) ──
+    'RESOURCE_NOT_FOUND': 'Resource not found',
+    'USER_NOT_FOUND': 'User not found',
+    'COMPANY_NOT_FOUND': 'Company not found',
 
-  // Opération métier
-  'INVALID_OPERATION': 'Opération invalide',
-  'OPERATION_NOT_SUPPORTED': 'Opération non prise en charge',
-  'USER_NAME_EXISTS': 'Nom utilisateur déjà existant',
-  'EMAIL_EXISTS': 'Email déjà existant',
-  'PHONE_NUMBER_EXISTS': 'Numéro de téléphone déjà existant',
-  'USER_NOT_AUTHENTICATED': 'Informations d\'authentification utilisateur non trouvées',
+    // ── 业务操作相关 (Business Operation) ──
+    'INVALID_OPERATION': 'Invalid operation',
+    'OPERATION_NOT_SUPPORTED': 'Operation not supported',
+    'USER_NAME_EXISTS': 'Username already exists',
+    'EMAIL_EXISTS': 'Email already exists',
+    'PHONE_NUMBER_EXISTS': 'Phone number already exists',
+    'USER_NOT_AUTHENTICATED': 'User authentication information not found',
 
-  // Entreprise
-  'COMPANY_NOT_MEMBER': 'Vous n\'êtes pas membre de cette entreprise',
-  'COMPANY_CREATOR_CANNOT_LEAVE': 'Vous êtes le créateur de cette entreprise et ne pouvez pas partir',
-  'COMPANY_SOLE_ADMIN_CANNOT_LEAVE': 'Vous êtes le seul administrateur de cette entreprise',
-  'COMPANY_INACTIVE': 'Entreprise inactive, contactez l\'administrateur',
-  'COMPANY_EXPIRED': 'Entreprise expirée, contactez l\'administrateur pour renouveler',
+    // ── 企业相关 (Company) ──
+    'COMPANY_NOT_MEMBER': 'You are not a member of this company',
+    'COMPANY_CREATOR_CANNOT_LEAVE': 'You are the creator of this company and cannot leave',
+    'COMPANY_SOLE_ADMIN_CANNOT_LEAVE': 'You are the sole administrator of this company, please transfer admin rights or delete the company first',
+    'COMPANY_INACTIVE': 'Company is not active, please contact administrator',
+    'COMPANY_EXPIRED': 'Company has expired, please contact administrator to renew',
 
-  // Rôle/Permission
-  'ROLE_NOT_FOUND': 'Rôle non trouvé',
-  'ROLE_NAME_EXISTS': 'Nom de rôle déjà existant',
-  'SYSTEM_ROLE_CANNOT_DELETE': 'Impossible de supprimer le rôle administrateur système',
-  'CANNOT_REMOVE_LAST_ADMIN': 'Impossible de supprimer le dernier rôle administrateur',
-  'PERMISSION_NOT_FOUND': 'Permission non trouvée',
-  'PERMISSION_CODE_EXISTS': 'Code de permission déjà existant',
+    // ── 角色/权限相关 (Role/Permission) ──
+    'ROLE_NOT_FOUND': 'Role not found',
+    'ROLE_NAME_EXISTS': 'Role name already exists',
+    'SYSTEM_ROLE_CANNOT_DELETE': 'Cannot delete system administrator role',
+    'CANNOT_REMOVE_LAST_ADMIN': 'Cannot remove the last administrator role',
+    'PERMISSION_NOT_FOUND': 'Permission not found',
+    'PERMISSION_CODE_EXISTS': 'Permission code already exists',
 
-  // Menu/Notification
-  'MENU_NOT_FOUND': 'Menu non trouvé',
-  'MENU_NAME_EXISTS': 'Nom de menu déjà existant',
-  'CANNOT_DELETE_MENU_WITH_CHILDREN': 'Impossible de supprimer le menu avec des sous-menus',
-  'NOTICE_NOT_FOUND': 'Notification non trouvée',
+    // ── 菜单/通知相关 (Menu/Notice) ──
+    'MENU_NOT_FOUND': 'Menu not found',
+    'MENU_NAME_EXISTS': 'Menu name already exists',
+    'CANNOT_DELETE_MENU_WITH_CHILDREN': 'Cannot delete menu with submenus, please delete submenus first',
+    'NOTICE_NOT_FOUND': 'Notification not found',
 
-  // Utilisateur/Entreprise étendu
-  'USER_INACTIVE': 'Compte utilisateur désactivé',
-  'CANNOT_DELETE_SELF': 'Impossible de supprimer votre propre compte',
-  'CANNOT_DELETE_CURRENT_USER': 'Impossible de supprimer l\'utilisateur actuellement connecté',
-  'CANNOT_MODIFY_OWN_ROLE': 'Impossible de modifier votre propre rôle',
-  'MAX_USERS_REACHED': 'Nombre maximum d\'utilisateurs atteint',
-  'COMPANY_CODE_EXISTS': 'Code entreprise déjà existant',
-  'INVALID_COMPANY_CODE': 'Format de code entreprise invalide',
-  'COMPANY_REQUIRED': 'Informations entreprise non trouvées',
+    // ── 用户/企业扩展 (User/Company Extended) ──
+    'USER_INACTIVE': 'User account has been disabled',
+    'CANNOT_DELETE_SELF': 'Cannot delete your own account',
+    'CANNOT_DELETE_CURRENT_USER': 'Cannot delete the current logged-in user',
+    'CANNOT_MODIFY_OWN_ROLE': 'Cannot modify your own role',
+    'MAX_USERS_REACHED': 'Maximum number of users reached',
+    'COMPANY_CODE_EXISTS': 'Company code already exists',
+    'INVALID_COMPANY_CODE': 'Invalid company code format',
+    'COMPANY_REQUIRED': 'Company information not found',
 
-  // Organisation
-  'ORGANIZATION_NOT_FOUND': 'Nœud d\'organisation non trouvé',
-  'ORGANIZATION_NAME_EXISTS': 'Nom de nœud d\'organisation déjà existant',
-  'ORGANIZATION_CODE_EXISTS': 'Code de nœud d\'organisation déjà existant',
-  'PARENT_CANNOT_BE_SELF': 'Le parent ne peut pas être le nœud actuel',
-  'PARENT_CANNOT_BE_DESCENDANT': 'Le parent ne peut pas être un nœud enfant',
-  'CANNOT_DELETE_WITH_CHILDREN': 'Veuillez supprimer les nœuds enfants d\'abord',
+    // ── 组织架构相关 (Organization) ──
+    'ORGANIZATION_NOT_FOUND': 'Organization node not found',
+    'ORGANIZATION_NAME_EXISTS': 'Organization node name already exists',
+    'ORGANIZATION_CODE_EXISTS': 'Organization node code already exists',
+    'PARENT_CANNOT_BE_SELF': 'Parent cannot be the current node',
+    'PARENT_CANNOT_BE_DESCENDANT': 'Parent cannot be a child node of the current node',
+    'CANNOT_DELETE_WITH_CHILDREN': 'Please delete child nodes first before deleting the current node',
 
-  // Validation de format
-  'INVALID_EMAIL_FORMAT': 'Format d\'email invalide',
-  'INVALID_PHONE_FORMAT': 'Format de numéro de téléphone invalide',
-  'INVALID_USERNAME_FORMAT': 'Format de nom utilisateur invalide',
-  'PASSWORD_TOO_SHORT': 'Le mot de passe doit contenir au moins 6 caractères',
-  'PASSWORD_TOO_LONG': 'Le mot de passe ne peut pas dépasser 50 caractères',
+    // ── 格式验证相关 (Format Validation) ──
+    'INVALID_EMAIL_FORMAT': 'Invalid email format',
+    'INVALID_PHONE_FORMAT': 'Invalid phone number format',
+    'INVALID_USERNAME_FORMAT': 'Invalid username format',
+    'PASSWORD_TOO_SHORT': 'Password must be at least 6 characters',
+    'PASSWORD_TOO_LONG': 'Password cannot exceed 50 characters',
 
-  // Opération générale
-  'OPERATION_FAILED': 'Échec de l\'opération',
+    // ── 通用操作 (General Operation) ──
+    'OPERATION_FAILED': 'Operation failed',
 
-  // Fichier
-  'AVATAR_TOO_LARGE': 'Image d\'avatar trop volumineuse',
+    // ── 文件相关 (File) ──
+    'AVATAR_TOO_LARGE': 'Avatar image is too large, please select an image smaller than 2MB',
 
-  // Serveur
-  'SERVER_ERROR': 'Erreur interne du serveur',
+    // ── 服务器错误 (Server) ──
+    'SERVER_ERROR': 'Internal server error',
 };

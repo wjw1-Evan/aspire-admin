@@ -1,26 +1,32 @@
 /**
- * role 翻译模块 (zh-TW)
- * 包含 19 个翻译键
+ * role 翻译模块 (en-US)
+ * 包含 24 个翻译键
  */
 
 export default {
-  'pages.roleForm.createFailed': '創建失敗',
-  'pages.roleForm.createSuccess': '創建成功',
-  'pages.roleForm.createTitle': '新增角色',
-  'pages.roleForm.descriptionLabel': '角色描述',
-  'pages.roleForm.descriptionPlaceholder': '請輸入角色描述',
-  'pages.roleForm.deselectAll': '取消全選',
-  'pages.roleForm.editTitle': '編輯角色',
-  'pages.roleForm.isActiveLabel': '是否啟用',
-  'pages.roleForm.menuPermission': '菜單權限',
-  'pages.roleForm.menuRequired': '請至少選擇一個菜單權限',
-  'pages.roleForm.nameLabel': '角色名稱',
-  'pages.roleForm.namePlaceholder': '請輸入角色名稱',
-  'pages.roleForm.nameRequired': '請輸入角色名稱',
-  'pages.roleForm.operationFailed': '操作失敗',
-  'pages.roleForm.selectAll': '全選',
-  'pages.roleForm.updateFailed': '更新失敗',
-  'pages.roleForm.updateSuccess': '更新成功',
-  'pages.roleManagement.subTitle': '系統角色配置和權限管理',
-  'pages.roleManagement.title': '角色管理',
+  'pages.roleForm.createFailed': 'Failed to create',
+  'pages.roleForm.createSuccess': 'Created successfully',
+  'pages.roleForm.createTitle': 'Create Role',
+  'pages.roleForm.descriptionLabel': 'Role Description',
+  'pages.roleForm.descriptionPlaceholder': 'Please enter role description',
+  'pages.roleForm.deselectAll': 'Deselect All',
+  'pages.roleForm.editTitle': 'Edit Role',
+  'pages.roleForm.isActiveLabel': 'Is Active',
+  'pages.roleForm.menuPermission': 'Menu Permissions',
+  'pages.roleForm.menuRequired': 'Please select at least one menu permission',
+  'pages.roleForm.nameLabel': 'Role Name',
+  'pages.roleForm.namePlaceholder': 'Please enter role name',
+  'pages.roleForm.nameRequired': 'Please enter role name',
+  'pages.roleForm.operationFailed': 'Operation failed',
+  'pages.roleForm.selectAll': 'Select All',
+  'pages.roleForm.updateFailed': 'Failed to update',
+  'pages.roleForm.updateSuccess': 'Updated successfully',
+  'pages.roleManagement.search.placeholder': 'Enter role name',
+  'pages.roleManagement.statistics.activeRoles': 'Active Roles',
+  'pages.roleManagement.statistics.totalMenus': 'Total Related Menus',
+  'pages.roleManagement.statistics.totalRoles': 'Total Roles',
+  'pages.roleManagement.statistics.totalUsers': 'Total Related Users',
+  'pages.roleManagement.subTitle': 'System role configuration and permission management',
+  'pages.roleManagement.title': 'Role Management',
+  'pages.roleForm.menuCount': 'Selected {count} menus',
 };

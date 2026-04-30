@@ -1,6 +1,6 @@
 /**
- * task 翻译模块 (th-TH)
- * 包含 107 个翻译键
+ * task 翻译模块 (en-US)
+ * 包含 124 个翻译键
  */
 
 export default {
@@ -12,6 +12,7 @@ export default {
   'pages.taskManagement.action.pause': 'Pause',
   'pages.taskManagement.action.resume': 'Resume',
   'pages.taskManagement.createTask': 'Create Task',
+  'pages.taskManagement.detail.assignment': 'Assignment Information',
   'pages.taskManagement.detail.attachments': 'Attachments',
   'pages.taskManagement.detail.basicInfo': 'Basic Information',
   'pages.taskManagement.detail.executionInfo': 'Execution Information',
@@ -19,7 +20,10 @@ export default {
   'pages.taskManagement.detail.noAttachments': 'No attachments',
   'pages.taskManagement.detail.noLogs': 'No execution logs',
   'pages.taskManagement.detail.noParticipants': 'No participants',
+  'pages.taskManagement.detail.notFound': 'Task not found',
   'pages.taskManagement.detail.participants': 'Participants',
+  'pages.taskManagement.detail.timeInfo': 'Time Information',
+  'pages.taskManagement.detail.title': 'Task Details',
   'pages.taskManagement.editTask': 'Edit Task',
   'pages.taskManagement.executeTask': 'Execute Task',
   'pages.taskManagement.execution.completionPercentage': 'Completion Percentage',
@@ -70,7 +74,7 @@ export default {
   'pages.taskManagement.message.completeFailed': 'Failed to complete task',
   'pages.taskManagement.message.completeSuccess': 'Task completed successfully',
   'pages.taskManagement.message.confirmCancel': 'Are you sure you want to cancel this task?',
-  'pages.taskManagement.message.confirmDelete': 'Are you sure you want to delete this task?',
+  'pages.taskManagement.message.confirmDelete': 'Are you sure you want to delete this task and all its subtasks?',
   'pages.taskManagement.message.deleteFailed': 'Failed to delete task',
   'pages.taskManagement.message.deleteSuccess': 'Task deleted successfully',
   'pages.taskManagement.message.executeFailed': 'Failed to execute task',
@@ -100,14 +104,27 @@ export default {
   'pages.taskManagement.status.paused': 'Paused',
   'pages.taskManagement.status.pending': 'Pending',
   'pages.taskManagement.table.action': 'Action',
+  'pages.taskManagement.table.actualDuration': 'Actual Duration',
+  'pages.taskManagement.table.actualEnd': 'Actual End',
+  'pages.taskManagement.table.actualStart': 'Actual Start',
+  'pages.taskManagement.table.assignedAt': 'Assigned At',
   'pages.taskManagement.table.assignedTo': 'Assigned To',
   'pages.taskManagement.table.createdAt': 'Created At',
   'pages.taskManagement.table.createdBy': 'Created By',
+  'pages.taskManagement.table.description': 'Description',
+  'pages.taskManagement.table.estimatedDuration': 'Est. Duration',
+  'pages.taskManagement.table.name': 'Task Name',
+  'pages.taskManagement.table.plannedEnd': 'Planned End',
   'pages.taskManagement.table.plannedEndTime': 'Planned End Time',
+  'pages.taskManagement.table.plannedStart': 'Planned Start',
   'pages.taskManagement.table.priority': 'Priority',
   'pages.taskManagement.table.progress': 'Progress',
+  'pages.taskManagement.table.projectName': 'Project',
+  'pages.taskManagement.table.remarks': 'Remarks',
   'pages.taskManagement.table.status': 'Status',
+  'pages.taskManagement.table.tags': 'Tags',
   'pages.taskManagement.table.taskName': 'Task Name',
+  'pages.taskManagement.table.type': 'Task Type',
   'pages.taskManagement.table.updatedAt': 'Updated At',
   'pages.taskManagement.title': 'Task Management',
   'pages.taskManagement.viewDetails': 'View Details',

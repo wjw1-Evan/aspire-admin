@@ -1,100 +1,100 @@
 export default {
-  'request.error.validation': 'Ошибка валидации',
-  'request.error.login-failed': 'Ошибка входа, проверьте имя пользователя и пароль',
-  'request.error.token-expired': 'Сессия истекла, войдите снова',
-  'request.error.unknown': 'Неизвестная ошибка',
-  'request.error.network': 'Ошибка сети, проверьте подключение',
-  'request.error.server': 'Ошибка сервера, попробуйте позже',
-  'request.error.forbidden': 'Ресурс запрещен',
-  'request.error.not-found': 'Ресурс не найден',
+    'request.error.validation': 'Validation Error',
+    'request.error.login-failed': 'Login failed, please check your username and password',
+    'request.error.token-expired': 'Session expired, please login again',
+    'request.error.unknown': 'Unknown Error',
+    'request.error.network': 'Network error, please check your connection',
+    'request.error.server': 'Server error, please try again later',
+    'request.error.forbidden': 'Forbidden resource',
+    'request.error.not-found': 'Resource not found',
 
-  // Аутентификация
-  'UNAUTHENTICATED': 'Не авторизовано, войдите снова',
-  'INVALID_CREDENTIALS': 'Неверное имя пользователя или пароль',
-  'CAPTCHA_REQUIRED': 'Введите капчу',
-  'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN': 'Требуется капча после неудачного входа',
-  'CAPTCHA_INVALID': 'Неверная капча',
-  'INVALID_TOKEN': 'Токен аутентификации недействителен или истек',
-  'TOKEN_EXPIRED': 'Сессия истекла, войдите снова',
-  'USER_INFO_INVALID': 'Неверная информация пользователя',
+    // ── 认证相关 (Authentication) ──
+    'UNAUTHENTICATED': 'Unauthorized access, please log in again',
+    'INVALID_CREDENTIALS': 'Invalid username or password, please check and try again',
+    'CAPTCHA_REQUIRED': 'Please enter the captcha',
+    'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN': 'Captcha required after failed login, please get captcha first',
+    'CAPTCHA_INVALID': 'Invalid captcha, please try again',
+    'INVALID_TOKEN': 'Invalid or expired authentication token',
+    'TOKEN_EXPIRED': 'Session expired, please log in again',
+    'USER_INFO_INVALID': 'Invalid user information',
 
-  // Авторизация
-  'UNAUTHORIZED_ACCESS': 'Доступ запрещен',
-  'VIEW_PERMISSION_DENIED': 'Нет права просматривать информацию других пользователей',
-  'CURRENT_COMPANY_NOT_FOUND': 'Информация о текущей компании не найдена',
-  'MENU_ACCESS_DENIED': 'Нет права доступа к этому меню',
-  'MENU_SERVICE_NOT_CONFIGURED': 'Сервис доступа к меню не настроен',
-  'FORBIDDEN': 'Доступ запрещен',
+    // ── 授权相关 (Authorization) ──
+    'UNAUTHORIZED_ACCESS': 'Unauthorized access',
+    'VIEW_PERMISSION_DENIED': 'No permission to view other user information',
+    'CURRENT_COMPANY_NOT_FOUND': 'Current company information not found',
+    'MENU_ACCESS_DENIED': 'No permission to access this menu',
+    'MENU_SERVICE_NOT_CONFIGURED': 'Menu access service not configured',
+    'FORBIDDEN': 'Access forbidden',
 
-  // Валидация
-  'VALIDATION_ERROR': 'Ошибка валидации запроса',
-  'INVALID_OLD_PASSWORD': 'Неверный текущий пароль',
+    // ── 验证相关 (Validation) ──
+    'VALIDATION_ERROR': 'Request validation failed',
+    'INVALID_OLD_PASSWORD': 'Incorrect original password',
 
-  // Ресурс
-  'RESOURCE_NOT_FOUND': 'Ресурс не найден',
-  'USER_NOT_FOUND': 'Пользователь не найден',
-  'COMPANY_NOT_FOUND': 'Компания не найдена',
+    // ── 资源相关 (Resource) ──
+    'RESOURCE_NOT_FOUND': 'Resource not found',
+    'USER_NOT_FOUND': 'User not found',
+    'COMPANY_NOT_FOUND': 'Company not found',
 
-  // Бизнес-операция
-  'INVALID_OPERATION': 'Неверная операция',
-  'OPERATION_NOT_SUPPORTED': 'Операция не поддерживается',
-  'USER_NAME_EXISTS': 'Имя пользователя уже существует',
-  'EMAIL_EXISTS': 'Email уже существует',
-  'PHONE_NUMBER_EXISTS': 'Номер телефона уже существует',
-  'USER_NOT_AUTHENTICATED': 'Информация аутентификации пользователя не найдена',
+    // ── 业务操作相关 (Business Operation) ──
+    'INVALID_OPERATION': 'Invalid operation',
+    'OPERATION_NOT_SUPPORTED': 'Operation not supported',
+    'USER_NAME_EXISTS': 'Username already exists',
+    'EMAIL_EXISTS': 'Email already exists',
+    'PHONE_NUMBER_EXISTS': 'Phone number already exists',
+    'USER_NOT_AUTHENTICATED': 'User authentication information not found',
 
-  // Компания
-  'COMPANY_NOT_MEMBER': 'Вы не являетесь членом этой компании',
-  'COMPANY_CREATOR_CANNOT_LEAVE': 'Вы создатель этой компании и не можете покинуть её',
-  'COMPANY_SOLE_ADMIN_CANNOT_LEAVE': 'Вы единственный администратор этой компании',
-  'COMPANY_INACTIVE': 'Компания не активна, свяжитесь с администратором',
-  'COMPANY_EXPIRED': 'Компания истекла, свяжитесь с администратором для продления',
+    // ── 企业相关 (Company) ──
+    'COMPANY_NOT_MEMBER': 'You are not a member of this company',
+    'COMPANY_CREATOR_CANNOT_LEAVE': 'You are the creator of this company and cannot leave',
+    'COMPANY_SOLE_ADMIN_CANNOT_LEAVE': 'You are the sole administrator of this company, please transfer admin rights or delete the company first',
+    'COMPANY_INACTIVE': 'Company is not active, please contact administrator',
+    'COMPANY_EXPIRED': 'Company has expired, please contact administrator to renew',
 
-  // Роль/Разрешение
-  'ROLE_NOT_FOUND': 'Роль не найдена',
-  'ROLE_NAME_EXISTS': 'Имя роли уже существует',
-  'SYSTEM_ROLE_CANNOT_DELETE': 'Нельзя удалить роль системного администратора',
-  'CANNOT_REMOVE_LAST_ADMIN': 'Нельзя ��далить последнюю роль администратора',
-  'PERMISSION_NOT_FOUND': 'Разрешение не найдено',
-  'PERMISSION_CODE_EXISTS': 'Код разрешения уже существует',
+    // ── 角色/权限相关 (Role/Permission) ──
+    'ROLE_NOT_FOUND': 'Role not found',
+    'ROLE_NAME_EXISTS': 'Role name already exists',
+    'SYSTEM_ROLE_CANNOT_DELETE': 'Cannot delete system administrator role',
+    'CANNOT_REMOVE_LAST_ADMIN': 'Cannot remove the last administrator role',
+    'PERMISSION_NOT_FOUND': 'Permission not found',
+    'PERMISSION_CODE_EXISTS': 'Permission code already exists',
 
-  // Меню/Уведомление
-  'MENU_NOT_FOUND': 'Меню не найдено',
-  'MENU_NAME_EXISTS': 'Имя меню уже существует',
-  'CANNOT_DELETE_MENU_WITH_CHILDREN': 'Нельзя удалить меню с подменю',
-  'NOTICE_NOT_FOUND': 'Уведомление не найдено',
+    // ── 菜单/通知相关 (Menu/Notice) ──
+    'MENU_NOT_FOUND': 'Menu not found',
+    'MENU_NAME_EXISTS': 'Menu name already exists',
+    'CANNOT_DELETE_MENU_WITH_CHILDREN': 'Cannot delete menu with submenus, please delete submenus first',
+    'NOTICE_NOT_FOUND': 'Notification not found',
 
-  // Пользователь/Компания расширенные
-  'USER_INACTIVE': 'Учетная запись пользователя отключена',
-  'CANNOT_DELETE_SELF': 'Нельзя удалить свою учетную запись',
-  'CANNOT_DELETE_CURRENT_USER': 'Нельзя удалить текущего авторизованного пользователя',
-  'CANNOT_MODIFY_OWN_ROLE': 'Нельзя изменить свою роль',
-  'MAX_USERS_REACHED': 'Достигнуто максимальное количество пользователей',
-  'COMPANY_CODE_EXISTS': 'Код компании уже существует',
-  'INVALID_COMPANY_CODE': 'Неверный формат кода компании',
-  'COMPANY_REQUIRED': 'Информация о компании не найдена',
+    // ── 用户/企业扩展 (User/Company Extended) ──
+    'USER_INACTIVE': 'User account has been disabled',
+    'CANNOT_DELETE_SELF': 'Cannot delete your own account',
+    'CANNOT_DELETE_CURRENT_USER': 'Cannot delete the current logged-in user',
+    'CANNOT_MODIFY_OWN_ROLE': 'Cannot modify your own role',
+    'MAX_USERS_REACHED': 'Maximum number of users reached',
+    'COMPANY_CODE_EXISTS': 'Company code already exists',
+    'INVALID_COMPANY_CODE': 'Invalid company code format',
+    'COMPANY_REQUIRED': 'Company information not found',
 
-  // Организация
-  'ORGANIZATION_NOT_FOUND': 'Узел организации не найден',
-  'ORGANIZATION_NAME_EXISTS': 'Имя узла организации уже существует',
-  'ORGANIZATION_CODE_EXISTS': 'Код узла организации уже существует',
-  'PARENT_CANNOT_BE_SELF': 'Родитель не может быть текущим узлом',
-  'PARENT_CANNOT_BE_DESCENDANT': 'Родитель не может быть дочерним узлом',
-  'CANNOT_DELETE_WITH_CHILDREN': 'Сначала удалите дочерние узлы',
+    // ── 组织架构相关 (Organization) ──
+    'ORGANIZATION_NOT_FOUND': 'Organization node not found',
+    'ORGANIZATION_NAME_EXISTS': 'Organization node name already exists',
+    'ORGANIZATION_CODE_EXISTS': 'Organization node code already exists',
+    'PARENT_CANNOT_BE_SELF': 'Parent cannot be the current node',
+    'PARENT_CANNOT_BE_DESCENDANT': 'Parent cannot be a child node of the current node',
+    'CANNOT_DELETE_WITH_CHILDREN': 'Please delete child nodes first before deleting the current node',
 
-  // Валидация формата
-  'INVALID_EMAIL_FORMAT': 'Неверный формат email',
-  'INVALID_PHONE_FORMAT': 'Неверный формат номера телефона',
-  'INVALID_USERNAME_FORMAT': 'Неверный формат имени пользователя',
-  'PASSWORD_TOO_SHORT': 'Пароль должен содержать минимум 6 символов',
-  'PASSWORD_TOO_LONG': 'Пароль не может превышать 50 символов',
+    // ── 格式验证相关 (Format Validation) ──
+    'INVALID_EMAIL_FORMAT': 'Invalid email format',
+    'INVALID_PHONE_FORMAT': 'Invalid phone number format',
+    'INVALID_USERNAME_FORMAT': 'Invalid username format',
+    'PASSWORD_TOO_SHORT': 'Password must be at least 6 characters',
+    'PASSWORD_TOO_LONG': 'Password cannot exceed 50 characters',
 
-  // Общая операция
-  'OPERATION_FAILED': 'Операция не удалась',
+    // ── 通用操作 (General Operation) ──
+    'OPERATION_FAILED': 'Operation failed',
 
-  // Файл
-  'AVATAR_TOO_LARGE': 'Изображение аватара слишком большое',
+    // ── 文件相关 (File) ──
+    'AVATAR_TOO_LARGE': 'Avatar image is too large, please select an image smaller than 2MB',
 
-  // Сервер
-  'SERVER_ERROR': 'Внутренняя ошибка сервера',
+    // ── 服务器错误 (Server) ──
+    'SERVER_ERROR': 'Internal server error',
 };

@@ -1,5 +1,5 @@
 /**
- * role 翻译模块 (tr-TR)
+ * role 翻译模块 (en-US)
  * 包含 24 个翻译键
  */
 
@@ -28,4 +28,5 @@ export default {
   'pages.roleManagement.statistics.totalUsers': 'Total Related Users',
   'pages.roleManagement.subTitle': 'System role configuration and permission management',
   'pages.roleManagement.title': 'Role Management',
+  'pages.roleForm.menuCount': 'Selected {count} menus',
 };

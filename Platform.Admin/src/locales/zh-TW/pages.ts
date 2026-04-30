@@ -1,11 +1,11 @@
 /**
- * 模块翻译统一导出入口 (zh-TW)
+ * 模块翻译统一导出入口 (en-US)
  * 
  * 目录结构:
  * - modules/    - 功能模块翻译
  * - common/     - 通用翻译
  * 
- * 包含模块: auth, user, task, project, workflow, document, organization, role, company, help, xiaoke, other
+ * 包含模块: auth, user, task, project, workflow, document, iot, organization, role, company, help, xiaoke, other
  */
 
 import common from './common/common';
@@ -16,16 +16,20 @@ import task from './modules/task';
 import project from './modules/project';
 import workflow from './modules/workflow';
 import document from './modules/document';
+import iot from './modules/iot';
 import organization from './modules/organization';
 import role from './modules/role';
 import company from './modules/company';
 import help from './modules/help';
 import xiaoke from './modules/xiaoke';
 import other from './modules/other';
+import dashboard from './modules/dashboard';
+import park from './modules/park';
+import missing from './modules/missing';
 
 // 导出所有模块
 export { common };
-export { auth, user, task, project, workflow, document, organization, role, company, help, xiaoke, other };
+export { auth, user, task, project, workflow, document, iot, organization, role, company, help, xiaoke, dashboard, other, park, missing };
 
 // 默认导出：合并所有模块
 export default {
@@ -36,10 +40,14 @@ export default {
   ...project,
   ...workflow,
   ...document,
+  ...iot,
   ...organization,
   ...role,
   ...company,
   ...help,
   ...xiaoke,
+  ...dashboard,
   ...other,
+  ...park,
+  ...missing,
 };

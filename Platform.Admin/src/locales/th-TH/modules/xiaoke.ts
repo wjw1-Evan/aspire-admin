@@ -1,5 +1,5 @@
 /**
- * xiaoke 翻译模块 (th-TH)
+ * xiaoke 翻译模块 (en-US)
  * 包含 83 个翻译键
  */
 

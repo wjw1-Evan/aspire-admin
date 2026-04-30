@@ -119,7 +119,7 @@ builder.Services.AddOpenApi(options =>
         {
             Title = "Platform API",
             Version = "v1",
-            Description = "Aspire Admin Platform API - 企业级管理平台后端服务",
+            Description = "Aspire Admin Platform API - Enterprise-level management platform backend service",
             Contact = new() { Name = "Platform Team", Email = "support@platform.com" }
         };
 
@@ -173,7 +173,7 @@ if (string.IsNullOrWhiteSpace(jwtSecretKey))
     if (builder.Environment.IsDevelopment())
     {
         jwtSecretKey = "dev-secret-key-for-aspire-admin-platform-32-chars-long!!"; // 使用固定位数的开发密钥
-        Console.WriteLine("[DEV] Jwt:SecretKey 未配置，已使用开发环境固定密钥。");
+        Console.WriteLine("[DEV] Jwt:SecretKey is not configured. Using development fixed key.");
     }
     else
     {
@@ -242,7 +242,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
                 var errorResponse = new ApiResponse(
                     success: false,
-                    message: "未提供有效的认证令牌或令牌已过期。请重新登录。",
+                    message: "Invalid or expired authentication token. Please log in again.",
                     errorCode: ErrorCode.Unauthenticated,
                     traceId: context.HttpContext.TraceIdentifier
                 );
@@ -255,7 +255,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
                 var errorResponse = new ApiResponse(
                     success: false,
-                    message: "您只是此资源的访问者，无权进行操作 (403 Forbidden)",
+                    message: "You only have viewer access to this resource and cannot perform this action (403 Forbidden)",
                     errorCode: ErrorCode.Forbidden,
                     traceId: context.HttpContext.TraceIdentifier
                 );

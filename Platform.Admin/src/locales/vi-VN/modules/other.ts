@@ -652,6 +652,7 @@ export default {
   'pages.unifiedNotificationCenter.deleteSuccess': 'Todo deleted',
   'pages.unifiedNotificationCenter.dueDate': 'Due Date',
   'pages.unifiedNotificationCenter.fetchFailed': 'Fetch failed',
+  'pages.unifiedNotificationCenter.markAllAsRead': 'Mark All as Read',
   'pages.unifiedNotificationCenter.markAsRead': 'Mark as Read',
   'pages.unifiedNotificationCenter.markAsReadFailed': 'Mark as read failed',
   'pages.unifiedNotificationCenter.markAsReadSuccess': 'Marked as read',

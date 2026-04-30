@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { useNavigate } from '@umijs/max';
+import { useNavigate, getIntl } from '@umijs/max';
 import { Badge, Tabs, Button, List, Space, Empty, Spin, Tag, Typography } from 'antd';
 import { BellOutlined, CheckCircleOutlined, InfoCircleOutlined, WarningOutlined, CloseCircleOutlined, DeleteOutlined, LoadingOutlined } from '@ant-design/icons';
 import HeaderDropdown from '@/components/HeaderDropdown';
@@ -26,6 +26,7 @@ const LevelIcon: React.FC<{ level: NotificationLevel }> = ({ level }) => {
 const PAGE_SIZE = 20;
 
 const NoticeIcon: React.FC = () => {
+  const intl = getIntl();
   const navigate = useNavigate();
   const [popoverOpen, setPopoverOpen] = useState(false);
   const sseResult = useSseConnection({ enableNotifications: true });
@@ -126,29 +127,29 @@ const NoticeIcon: React.FC = () => {
   const notificationList = (
     <div className={styles.notificationPanel}>
       <div className={styles.notificationHeader}>
-        <Text strong>通知中心</Text>
+        <Text strong>{intl.formatMessage({ id: 'pages.unifiedNotificationCenter.title' })}</Text>
         <Space>
-          <Button 
-            type={showUnreadOnly ? 'primary' : 'default'} 
-            size="small" 
-            onClick={() => { setShowUnreadOnly(!showUnreadOnly); isInitialLoad.current = true; }}
-          >
-            未读
-          </Button>
-          <Button 
-            type="link" 
-            size="small" 
-            onClick={() => handleMarkAllAsRead()}
-            icon={<CheckCircleOutlined />}
-          >
-            全部已读
-          </Button>
+        <Button
+             type={showUnreadOnly ? 'primary' : 'default'}
+             size="small"
+             onClick={() => { setShowUnreadOnly(!showUnreadOnly); isInitialLoad.current = true; }}
+           >
+             {intl.formatMessage({ id: 'pages.unifiedNotificationCenter.unread' })}
+           </Button>
+           <Button
+             type="link"
+             size="small"
+             onClick={() => handleMarkAllAsRead()}
+             icon={<CheckCircleOutlined />}
+           >
+             {intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAllAsRead' })}
+           </Button>
         </Space>
       </div>
       <div className={styles.notificationStats}>
-        <span style={{ color: '#1677ff' }}>未读：{unread}</span>
-        <span style={{ color: '#52c41a' }}>已读：{read}</span>
-        <span>合计：{total}</span>
+        <span style={{ color: '#1677ff' }}>{intl.formatMessage({ id: 'pages.unifiedNotificationCenter.unreadCount' }, { count: unread })}</span>
+        <span style={{ color: '#52c41a' }}>{intl.formatMessage({ id: 'pages.unifiedNotificationCenter.readCount' }, { count: read })}</span>
+        <span>{intl.formatMessage({ id: 'pages.unifiedNotificationCenter.totalCount' }, { count: total })}</span>
       </div>
       
       <div className={styles.notificationList} ref={listRef} onScroll={handleScroll}>
@@ -187,9 +188,9 @@ const NoticeIcon: React.FC = () => {
 <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Tag color={item.status === 'Unread' || item.status === 'unread' ? 'blue' : 'default'}>{item.category}</Tag>
                       {item.status === 'Read' || item.status === 'read' ? (
-                        <Button size="small" type="link" style={{ padding: 0, fontSize: 12 }} onClick={(e) => handleMarkAsUnread(e, item.id)}>标记为未读</Button>
+                        <Button size="small" type="link" style={{ padding: 0, fontSize: 12 }} onClick={(e) => handleMarkAsUnread(e, item.id)}>{intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAsUnread' })}</Button>
                       ) : (
-                        <Button size="small" type="link" style={{ padding: 0, fontSize: 12 }} onClick={(e) => handleMarkAsRead(e, item.id)}>标为已读</Button>
+                        <Button size="small" type="link" style={{ padding: 0, fontSize: 12 }} onClick={(e) => handleMarkAsRead(e, item.id)}>{intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAsRead' })}</Button>
                       )}
                     </div>
                   </div>
@@ -198,12 +199,12 @@ const NoticeIcon: React.FC = () => {
             />
             <div className="notificationLoadMore">
               {loadingMore && <Spin indicator={<LoadingOutlined spin />} />}
-              {!hasMore && notifications.length > 0 && <div style={{ color: 'rgba(0,0,0,0.25)', fontSize: 12 }}>没有更多了</div>}
+              {!hasMore && notifications.length > 0 && <div style={{ color: 'rgba(0,0,0,0.25)', fontSize: 12 }}>{intl.formatMessage({ id: 'pages.unifiedNotificationCenter.noMore' })}</div>}
             </div>
           </>
         ) : (
           <div className={styles.emptyState}>
-            <Empty description="暂无新通知" />
+            <Empty description={intl.formatMessage({ id: 'pages.unifiedNotificationCenter.noNewNotifications' })} />
           </div>
         )}
       </div>

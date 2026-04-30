@@ -123,12 +123,12 @@ const WorkflowDesignerModal: React.FC<WorkflowDesignerModalProps> = ({ workflow,
             value={formData.category}
             onChange={(v) => setFormData({ ...formData, category: v })}
             style={{ width: 120 }}
-            options={[
-              { value: 'default', label: '默认' },
-              { value: 'approval', label: '审批' },
-              { value: 'notification', label: '通知' },
-              { value: 'task', label: '任务' },
-            ]}
+             options={[
+               { value: 'default', label: intl.formatMessage({ id: 'pages.workflow.node.type.default' }) },
+               { value: 'approval', label: intl.formatMessage({ id: 'pages.workflow.node.type.approval' }) },
+               { value: 'notification', label: intl.formatMessage({ id: 'pages.workflow.node.type.notification' }) },
+               { value: 'task', label: intl.formatMessage({ id: 'pages.workflow.node.type.task' }) },
+             ]}
             disabled={readOnly}
           />
         )}

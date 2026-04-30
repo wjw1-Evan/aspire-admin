@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Modal, Form, InputNumber, Switch, message, Row, Col } from 'antd';
 import { ModalForm, ProFormText, ProFormTextArea, ProFormSelect, ProFormDigit } from '@ant-design/pro-components';
-import { request } from '@umijs/max';
+import { request, getIntl } from '@umijs/max';
 import { ApiResponse } from '@/types';
 
 interface TaskFormValues {
@@ -45,6 +45,7 @@ const api = {
 };
 
 const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onCancel, onSuccess }) => {
+  const intl = getIntl();
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -203,18 +204,18 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onCancel, onSuccess 
         }
       />
 
-      <Row gutter={16}>
-        <Col span={6}>
-          <Form.Item label="启用筛选" name="enableFilter" valuePropName="checked">
-            <Switch />
-          </Form.Item>
-        </Col>
-        <Col span={6}>
-          <Form.Item label="匹配通知" name="notifyOnMatch" valuePropName="checked">
-            <Switch defaultChecked />
-          </Form.Item>
-        </Col>
-      </Row>
+       <Row gutter={16}>
+         <Col span={6}>
+           <Form.Item label={intl.formatMessage({ id: 'pages.web-scraper.enableFilter' })} name="enableFilter" valuePropName="checked">
+             <Switch />
+           </Form.Item>
+         </Col>
+         <Col span={6}>
+           <Form.Item label={intl.formatMessage({ id: 'pages.web-scraper.matchNotification' })} name="notifyOnMatch" valuePropName="checked">
+             <Switch defaultChecked />
+           </Form.Item>
+         </Col>
+       </Row>
 
       <ProFormTextArea
         name="filterPrompt"

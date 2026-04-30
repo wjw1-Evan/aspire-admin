@@ -189,7 +189,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
           items={[
             {
               key: 'basic',
-              label: '基础信息',
+              label: intl.formatMessage({ id: 'pages.workflow.designer.basicInfo' }),
               children: (
                 <>
                   <Form.Item name="nodeType" label={intl.formatMessage({ id: 'pages.workflow.designer.nodeType' })}>
@@ -210,7 +210,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
             },
             {
               key: 'business',
-              label: '业务规则',
+              label: intl.formatMessage({ id: 'pages.workflow.designer.businessRules' }),
               children: (
                 <>
                   {selectedNode?.data.nodeType === 'approval' && (
@@ -228,7 +228,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                         />
                       </Form.Item>
 
-                      <Divider titlePlacement="left" plain>审批人设置</Divider>
+                      <Divider plain>{intl.formatMessage({ id: 'pages.workflow.designer.approverSettings' })}</Divider>
                       <Form.List name="approvers">
                         {(fields, { add, remove }) => (
                           <>
@@ -237,59 +237,59 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                   <Form.Item {...restField} name={[name, 'type']} rules={[{ required: true }]} style={{ marginBottom: 8 }}>
                                     <Select
-                                      placeholder="审批方式"
-                                      options={[
-                                        { label: '指定用户', value: 0 },
-                                        { label: '指定角色', value: 1 },
-                                        { label: '指定部门', value: 2 },
-                                        { label: '表单字段', value: 3 },
-                                        { label: '主管', value: 4 }
-                                      ]}
+                                      placeholder={intl.formatMessage({ id: 'pages.workflow.designer.approvalMethod' })}
+                                       options={[
+                                         { label: intl.formatMessage({ id: 'pages.workflow.designer.specifiedUser' }), value: 0 },
+                                         { label: intl.formatMessage({ id: 'pages.workflow.designer.specifiedRole' }), value: 1 },
+                                         { label: intl.formatMessage({ id: 'pages.workflow.designer.specifiedDepartment' }), value: 2 },
+                                         { label: intl.formatMessage({ id: 'pages.workflow.designer.formField' }), value: 3 },
+                                         { label: intl.formatMessage({ id: 'pages.workflow.designer.supervisor' }), value: 4 }
+                                       ]}
                                     />
                                   </Form.Item>
                                   <Form.Item noStyle shouldUpdate={(prev, curr) => prev.approvers?.[name]?.type !== curr.approvers?.[name]?.type}>
-                                    {({ getFieldValue }) => {
-                                      const type = getFieldValue(['approvers', name, 'type']);
-                                      if (type === 0) return <Form.Item {...restField} name={[name, 'userIds']} rules={[{ required: true }]}><Select mode="multiple" placeholder="选择用户" options={users.map(u => ({ label: u.name || u.username, value: u.id }))} /></Form.Item>;
-                                      if (type === 1) return <Form.Item {...restField} name={[name, 'roleIds']} rules={[{ required: true }]}><Select mode="multiple" placeholder="选择角色" options={roles.map(r => ({ label: r.name, value: r.id }))} /></Form.Item>;
-                                      if (type === 2) return (
-                                        <Form.Item {...restField} name={[name, 'departmentId']} rules={[{ required: true }]}>
-                                          <Select
-                                            placeholder="选择部门"
+                                      {({ getFieldValue }) => {
+                                       const type = getFieldValue(['approvers', name, 'type']);
+                                       if (type === 0) return <Form.Item {...restField} name={[name, 'userIds']} rules={[{ required: true }]}><Select mode="multiple" placeholder={intl.formatMessage({ id: 'pages.workflow.designer.selectUser' })} options={users.map(u => ({ label: u.name || u.username, value: u.id }))} /></Form.Item>;
+                                       if (type === 1) return <Form.Item {...restField} name={[name, 'roleIds']} rules={[{ required: true }]}><Select mode="multiple" placeholder={intl.formatMessage({ id: 'pages.workflow.designer.selectRole' })} options={roles.map(r => ({ label: r.name, value: r.id }))} /></Form.Item>;
+if (type === 2) return (
+                                         <Form.Item {...restField} name={[name, 'departmentId']} rules={[{ required: true }]}>
+                                           <Select
+                                             placeholder={intl.formatMessage({ id: 'pages.workflow.designer.selectDepartment' })}
                                             showSearch
                                             {...({ treeDefaultExpandAll: true, treeData: organizationTreeToTreeData(organizationTree), treeNodeFilterProp: "title" } as any)}
                                           />
                                         </Form.Item>
                                       );
-                                      if (type === 3) return (
-                                        <Form.Item {...restField} name={[name, 'formFieldKey']} rules={[{ required: true }]}>
-                                          <Select
-                                            placeholder="选择表单字段"
+if (type === 3) return (
+                                         <Form.Item {...restField} name={[name, 'formFieldKey']} rules={[{ required: true }]}>
+                                           <Select
+                                             placeholder={intl.formatMessage({ id: 'pages.workflow.designer.selectFormField' })}
                                             showSearch
                                             options={availableVariables.map(v => ({ label: v.label, value: v.value }))}
                                           />
                                         </Form.Item>
                                       );
-                                      if (type === 4) return (
-                                        <Form.Item {...restField} name={[name, 'supervisorLevel']} rules={[{ required: true }]}>
-                                          <Select
-                                            placeholder="选择主管级别"
-                                            options={[
-                                              { label: '直接主管 (1级)', value: 1 },
-                                              { label: '部门经理 (2级)', value: 2 },
-                                              { label: '总监 (3级)', value: 3 },
-                                              { label: '副总 (4级)', value: 4 }
-                                            ]}
-                                          />
-                                        </Form.Item>
-                                      );
+if (type === 4) return (
+                                         <Form.Item {...restField} name={[name, 'supervisorLevel']} rules={[{ required: true }]}>
+                                           <Select
+                                             placeholder={intl.formatMessage({ id: 'pages.workflow.designer.selectSupervisorLevel' })}
+                                             options={[
+                                               { label: intl.formatMessage({ id: 'pages.workflow.designer.supervisorLevel1' }), value: 1 },
+                                               { label: intl.formatMessage({ id: 'pages.workflow.designer.supervisorLevel2' }), value: 2 },
+                                               { label: intl.formatMessage({ id: 'pages.workflow.designer.supervisorLevel3' }), value: 3 },
+                                               { label: intl.formatMessage({ id: 'pages.workflow.designer.supervisorLevel4' }), value: 4 }
+                                             ]}
+                                           />
+                                         </Form.Item>
+                                       );
                                       return null;
                                     }}
                                   </Form.Item>
                                 </div>
                               </ProCard>
                             ))}
-                            <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>添加审批人</Button>
+                            <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>{intl.formatMessage({ id: 'pages.workflow.designer.addApprover' })}</Button>
                           </>
                         )}
                       </Form.List>

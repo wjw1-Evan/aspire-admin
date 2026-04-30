@@ -67,7 +67,7 @@ const StatisticsOverview: React.FC<StatisticsOverviewProps> = ({ statistics, loa
                 </Col>
                 <Col xs={24} sm={12} md={12} lg={12} xl={8}>
                     <StatCard
-                        title={intl.formatMessage({ id: 'pages.welcome.stats.totalRoles', defaultMessage: '角色总数' })}
+                        title={intl.formatMessage({ id: 'pages.welcome.stats.totalRoles' })}
                         value={statistics?.totalRoles || 0}
                         icon={<BlockOutlined />}
                         color={token.geekblue}

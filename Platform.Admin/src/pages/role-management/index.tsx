@@ -88,12 +88,12 @@ const RoleManagement: React.FC = () => {
       }} columns={columns} rowKey="id" search={false}
         headerTitle={
           <Space size={24}>
-            <Space><SafetyOutlined />角色管理</Space>
+            <Space><SafetyOutlined />{intl.formatMessage({ id: 'menu.system.role-management' })}</Space>
             <Space size={12}>
-              <Tag color="blue">角色总数 {state.statistics?.totalRoles || 0}</Tag>
-              <Tag color="green">启用 {state.statistics?.activeRoles || 0}</Tag>
-              <Tag color="orange">用户数 {state.statistics?.totalUsers || 0}</Tag>
-              <Tag color="purple">菜单数 {state.statistics?.totalMenus || 0}</Tag>
+              <Tag color="blue">{intl.formatMessage({ id: 'pages.table.role' })}{intl.formatMessage({ id: 'pages.table.stats' })}: {state.statistics?.totalRoles || 0}</Tag>
+              <Tag color="green">{intl.formatMessage({ id: 'pages.status.approved' })}: {state.statistics?.activeRoles || 0}</Tag>
+              <Tag color="orange">{intl.formatMessage({ id: 'pages.table.user' })}: {state.statistics?.totalUsers || 0}</Tag>
+              <Tag color="purple">{intl.formatMessage({ id: 'pages.table.menu' })}: {state.statistics?.totalMenus || 0}</Tag>
             </Space>
           </Space>
         }

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useIntl } from '@umijs/max';
 import { Modal, Table, Tabs, Tag, Button, Card, Space, Typography, Descriptions } from 'antd';
 import { DownloadOutlined, LinkOutlined, PictureOutlined } from '@ant-design/icons';
 
@@ -39,6 +40,7 @@ interface ResultPreviewProps {
 const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose }) => {
   const [activeTab, setActiveTab] = useState('summary');
   const [selectedPage, setSelectedPage] = useState<PageResult | null>(null);
+  const intl = useIntl();
 
   if (!data) return null;
 
@@ -221,7 +223,7 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
       </Tabs>
 
       <Modal
-        title="页面详情"
+        title={intl.formatMessage({ id: 'pages.web-scraper.components.ResultPreview.title.pageDetail', defaultMessage: '页面详情' })}
         open={!!selectedPage}
         onCancel={() => setSelectedPage(null)}
         width={800}

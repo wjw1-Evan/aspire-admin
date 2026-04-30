@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback } from 'react';
-import { request } from '@umijs/max';
+import { request, useIntl } from '@umijs/max';
 import { Tag, Space, Button, Modal, message, Input, Descriptions, Card, Row, Col, Tabs } from 'antd';
 import { PageContainer, ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
@@ -42,6 +42,7 @@ const WebScraperResults: React.FC = () => {
   const [taskId, setTaskId] = useState<string | undefined>();
   const [tasks, setTasks] = useState<TaskOption[]>([]);
   const [activeTab, setActiveTab] = useState('content');
+  const intl = useIntl();
 
   const api = {
     list: (params: any) =>
@@ -206,7 +207,7 @@ const WebScraperResults: React.FC = () => {
       />
 
       <Modal
-        title="抓取结果详情"
+        title={intl.formatMessage({ id: 'pages.web-scraper.results.title.resultDetail', defaultMessage: '抓取结果详情' })}
         open={detailVisible}
         onCancel={() => {
           setDetailVisible(false);

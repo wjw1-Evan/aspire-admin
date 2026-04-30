@@ -297,7 +297,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
                         <Button type="text" size="small" icon={<CopyOutlined style={{ color: '#fff', fontSize: 13 }} />}
                           onClick={(e) => { e.stopPropagation(); handleCopyCard(card); }} />
                       </Tooltip>
-                      <Popconfirm title="确定删除此卡片？" onConfirm={() => handleDeleteCard(card.id)}
+                      <Popconfirm title={intl.formatMessage({ id: 'pages.dashboard.DashboardDesigner.confirm.deleteCard', defaultMessage: '确定删除此卡片？' })} onConfirm={() => handleDeleteCard(card.id)}
                         onPopupClick={(e) => e.stopPropagation()}>
                         <Tooltip title="删除">
                           <Button type="text" size="small" icon={<DeleteOutlined style={{ color: '#ff4d4f', fontSize: 13 }} />}

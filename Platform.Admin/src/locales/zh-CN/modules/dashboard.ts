@@ -209,4 +209,6 @@ export default {
   'pages.dashboard.designer.saveLayout': '保存布局',
   'pages.dashboard.designer.preview': '预览',
   'pages.dashboard.designer.noCardAddFirst': '暂无卡片，点击"添加卡片"开始设计',
+  // 设计器确认弹窗
+  'pages.dashboard.DashboardDesigner.confirm.deleteCard': '确定删除此卡片？',
 };

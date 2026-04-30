@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback } from 'react';
-import { request } from '@umijs/max';
+import { request, useIntl } from '@umijs/max';
 import { Tag, Space, Button, Input, Timeline, Card, Row, Col, Descriptions, Modal, Progress, Statistic } from 'antd';
 import { PageContainer, ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
@@ -50,6 +50,7 @@ const WebScraperLogs: React.FC = () => {
   const [tasks, setTasks] = useState<TaskOption[]>([]);
   const [detailVisible, setDetailVisible] = useState(false);
   const [currentLog, setCurrentLog] = useState<WebScrapingLog | null>(null);
+  const intl = useIntl();
 
   const api = {
     list: (params: any) =>
@@ -193,7 +194,7 @@ const WebScraperLogs: React.FC = () => {
       />
 
       <Modal
-        title="日志详情"
+        title={intl.formatMessage({ id: 'pages.web-scraper.scrape-logs.title.logDetail', defaultMessage: '日志详情' })}
         open={detailVisible}
         onCancel={() => {
           setDetailVisible(false);

@@ -48,4 +48,10 @@ export default {
   'pages.web-scraper.update': '更新',
   'pages.web-scraper.cancel': '取消',
   'pages.web-scraper.filterPromptPlaceholder': '如：筛选包含"价格"或"报价"的页面',
+  // 结果页
+  'pages.web-scraper.results.title.resultDetail': '抓取结果详情',
+  // 组件 ResultPreview
+  'pages.web-scraper.components.ResultPreview.title.pageDetail': '页面详情',
+  // 日志页
+  'pages.web-scraper.scrape-logs.title.logDetail': '日志详情',
 };

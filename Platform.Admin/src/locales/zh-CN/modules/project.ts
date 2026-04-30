@@ -38,6 +38,7 @@ export default {
   'pages.projectManagement.gantt.allProjects': '所有项目',
   'pages.projectManagement.gantt.criticalPath': '关键路径',
   'pages.projectManagement.gantt.noTasks': '当前暂无任务',
+  'pages.projectManagement.gantt.noTimeInfo': '任务缺少时间信息',
   'pages.projectManagement.gantt.selectProject': '选择项目',
   'pages.projectManagement.gantt.table.progress': '进度',
   'pages.projectManagement.gantt.table.taskName': '任务名称',

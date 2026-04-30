@@ -128,7 +128,7 @@ export default {
   'pages.share.yes': 'Yes',
   'pages.share.no': 'No',
   'pages.share.passwordHint': 'This share is password protected, please enter password',
-  'pages.share.button.verify': 'Verify',
+  'pages.share.button.reverify': 'Reverify',
   'pages.taskManagement.table.tags': 'Tags',
   'pages.taskManagement.table.remarks': 'Remarks',
   'pages.webScraper.title': 'Web Scraper',

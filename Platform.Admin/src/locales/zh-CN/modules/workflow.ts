@@ -238,6 +238,7 @@ export default {
   'pages.workflow.monitor.title': '流程监控',
   'pages.workflow.node.ai': 'AI',
   'pages.workflow.node.aiJudge': 'AI 判断',
+  'pages.workflow.designer.validate': '验证工作流',
   'pages.workflow.node.approval': '审批',
   'pages.workflow.node.condition': '条件',
   'pages.workflow.node.end': '结束',

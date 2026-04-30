@@ -136,4 +136,5 @@ export default {
   'pages.userManagement.tab.pending': 'Pending',
   'pages.userManagement.message.updateSuccess': 'Update successful',
   'pages.userManagement.detail.title': 'User Details',
+  'pages.myActivity.statistics.avgDuration': 'Avg Duration',
 };

@@ -17,6 +17,7 @@
 **核心项目结构**：
 
 - `Platform.AppHost/AppHost.cs`：微服务、MongoDB、YARP 网关及 OpenAI 等资源的统筹编排入口（按需扩展 Redis 等）
+- **网关集成**：前端 Admin 已集成到 YARP 网关中，所有 API 请求通过网关路由。
 - `Platform.ApiService`：统一的后端核心业务网关与逻辑层。
 - `Platform.ServiceDefaults`：共享的扩展、实体基类及 `PlatformDbContext` 基础设施层。
 - `Platform.Admin` / `Platform.App` / `Platform.MiniApp`：多端前端应用。
@@ -36,7 +37,7 @@
 
 | 应用 | 框架 | 版本 | 用途 |
 |------|------|------|------|
-| `Platform.Admin` | React 19 + UmiJS 4 + Ant Design 6 | 19.2.5 / 4.6.42 / 6.3.5 | 管理后台 |
+| `Platform.Admin` | React 19 + UmiJS 4 + Ant Design 6 | 19.2.5 / 4.6.42 / 6.3.5 | 管理后台（已集成到 YARP 网关） |
 | `Platform.App` | Expo + React Native | 54.0.31 / 0.83.1 | 移动端 App |
 | `Platform.MiniApp` | 微信原生 | - | 微信小程序 |
 

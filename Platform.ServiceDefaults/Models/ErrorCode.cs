@@ -399,57 +399,6 @@ public static class ErrorCode
         [AvatarTooLarge] = "头像数据过大，请选择小于 2MB 的图片",
         // 服务器
         [ServerError] = "服务器内部错误",
-        // ──────────────────────────────────────────────
-        // 公文相关 (Document)
-        // ──────────────────────────────────────────────
-
-        /// <summary>公文不存在</summary>
-        public const string DocumentNotFound = "DOCUMENT_NOT_FOUND";
-
-        /// <summary>流程实例不存在</summary>
-        public const string WorkflowInstanceNotFound = "WORKFLOW_INSTANCE_NOT_FOUND";
-
-        /// <summary>流程定义不存在</summary>
-        public const string WorkflowDefinitionNotFound = "WORKFLOW_DEFINITION_NOT_FOUND";
-
-        /// <summary>表单定义不存在</summary>
-        public const string FormDefinitionNotFound = "FORM_DEFINITION_NOT_FOUND";
-
-        /// <summary>公文标题不能为空</summary>
-        public const string DocumentTitleRequired = "DOCUMENT_TITLE_REQUIRED";
-
-        /// <summary>流程定义ID不能为空</summary>
-        public const string WorkflowDefinitionIdRequired = "WORKFLOW_DEFINITION_ID_REQUIRED";
-
-        /// <summary>文档ID不能为空</summary>
-        public const string DocumentIdRequired = "DOCUMENT_ID_REQUIRED";
-
-        /// <summary>请求参数不能为空</summary>
-        public const string RequestParamRequired = "REQUEST_PARAM_REQUIRED";
-
-        /// <summary>拒绝原因不能为空</summary>
-        public const string RejectReasonRequired = "REJECT_REASON_REQUIRED";
-
-        /// <summary>退回目标节点不能为空</summary>
-        public const string ReturnTargetNodeRequired = "RETURN_TARGET_NODE_REQUIRED";
-
-        /// <summary>退回原因不能为空</summary>
-        public const string ReturnReasonRequired = "RETURN_REASON_REQUIRED";
-
-        /// <summary>转办目标用户不能为空</summary>
-        public const string DelegateTargetUserRequired = "DELEGATE_TARGET_USER_REQUIRED";
-
-        /// <summary>流程节点未配置表单定义ID</summary>
-        public const string WorkflowNodeNotConfigured = "WORKFLOW_NODE_NOT_CONFIGURED";
-
-        /// <summary>流程实例当前无待处理节点</summary>
-        public const string NoPendingNode = "NO_PENDING_NODE";
-    };
-
-    public static readonly Dictionary<string, string> ErrorMessages = new()
-    {
-        // ... existing code ...
-        [ServerError] = "服务器内部错误",
         // 公文
         [DocumentNotFound] = "公文不存在",
         [WorkflowInstanceNotFound] = "流程实例不存在",
@@ -466,4 +415,50 @@ public static class ErrorCode
         [WorkflowNodeNotConfigured] = "流程节点未配置表单定义ID",
         [NoPendingNode] = "流程实例当前无待处理节点",
     };
+
+    // ──────────────────────────────────────────────
+    // 公文相关 (Document)
+    // ──────────────────────────────────────────────
+
+    /// <summary>公文不存在</summary>
+    public const string DocumentNotFound = "DOCUMENT_NOT_FOUND";
+
+    /// <summary>流程实例不存在</summary>
+    public const string WorkflowInstanceNotFound = "WORKFLOW_INSTANCE_NOT_FOUND";
+
+    /// <summary>流程定义不存在</summary>
+    public const string WorkflowDefinitionNotFound = "WORKFLOW_DEFINITION_NOT_FOUND";
+
+    /// <summary>表单定义不存在</summary>
+    public const string FormDefinitionNotFound = "FORM_DEFINITION_NOT_FOUND";
+
+    /// <summary>公文标题不能为空</summary>
+    public const string DocumentTitleRequired = "DOCUMENT_TITLE_REQUIRED";
+
+    /// <summary>流程定义ID不能为空</summary>
+    public const string WorkflowDefinitionIdRequired = "WORKFLOW_DEFINITION_ID_REQUIRED";
+
+    /// <summary>文档ID不能为空</summary>
+    public const string DocumentIdRequired = "DOCUMENT_ID_REQUIRED";
+
+    /// <summary>请求参数不能为空</summary>
+    public const string RequestParamRequired = "REQUEST_PARAM_REQUIRED";
+
+    /// <summary>拒绝原因不能为空</summary>
+    public const string RejectReasonRequired = "REJECT_REASON_REQUIRED";
+
+    /// <summary>退回目标节点不能为空</summary>
+    public const string ReturnTargetNodeRequired = "RETURN_TARGET_NODE_REQUIRED";
+
+    /// <summary>退回原因不能为空</summary>
+    public const string ReturnReasonRequired = "RETURN_REASON_REQUIRED";
+
+    /// <summary>转办目标用户不能为空</summary>
+    public const string DelegateTargetUserRequired = "DELEGATE_TARGET_USER_REQUIRED";
+
+    /// <summary>流程节点未配置表单定义ID</summary>
+    public const string WorkflowNodeNotConfigured = "WORKFLOW_NODE_NOT_CONFIGURED";
+
+    /// <summary>流程实例当前无待处理节点</summary>
+    public const string NoPendingNode = "NO_PENDING_NODE";
 }

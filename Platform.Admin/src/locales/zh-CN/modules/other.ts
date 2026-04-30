@@ -814,5 +814,7 @@ export default {
   'pages.welcome.iotEvents.type.disconnected': '已断开',
   'pages.welcome.iotEvents.type.error': '错误',
   'pages.welcome.iotEvents.unhandledAlert': '有 {count} 个未处理的事件',
+  'pages.welcome.quickActions.expand': '展开',
+  'pages.welcome.quickActions.collapse': '折叠',
   'status.unknown': '未知',
 };

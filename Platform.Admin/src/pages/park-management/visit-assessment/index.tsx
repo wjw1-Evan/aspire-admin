@@ -65,12 +65,12 @@ const VisitAssessmentList: React.FC = () => {
             <ProTable actionRef={actionRef} request={async (params: any, sort: any, filter: any) => { const res = await api.list({ ...params, search: state.search, sort, filter }); loadStatistics(); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={columns} rowKey="id" search={false}
                 headerTitle={
                     <Space size={24}>
-                        <Space><TeamOutlined />走访评价</Space>
+                        <Space><TeamOutlined />{intl.formatMessage({ id: 'pages.park.visitAssessment.title' })}</Space>
                         <Space size={12}>
-                            <Tag color="blue">总数 {state.statistics?.totalTasks || 0}</Tag>
-                            <Tag color="orange">待评价 {state.statistics?.pendingAssessments || 0}</Tag>
-                            <Tag color="green">已评价 {state.statistics?.completedAssessments || 0}</Tag>
-                            <Tag color="purple">平均分 {state.statistics?.averageScore?.toFixed(1) || '0.0'}</Tag>
+                            <Tag color="blue">{intl.formatMessage({ id: 'pages.park.visitAssessment.statistics.total' })} {state.statistics?.totalTasks || 0}</Tag>
+                            <Tag color="orange">{intl.formatMessage({ id: 'pages.park.visitAssessment.statistics.pending' })} {state.statistics?.pendingAssessments || 0}</Tag>
+                            <Tag color="green">{intl.formatMessage({ id: 'pages.park.visitAssessment.statistics.completed' })} {state.statistics?.completedAssessments || 0}</Tag>
+                            <Tag color="purple">{intl.formatMessage({ id: 'pages.park.visitAssessment.statistics.average' })} {state.statistics?.averageScore?.toFixed(1) || '0.0'}</Tag>
                         </Space>
                     </Space>
                 }
@@ -123,10 +123,10 @@ const VisitAssessmentList: React.FC = () => {
                 width={600}
             >
                 <ProFormText name="taskId" hidden />
-                <ProFormText name="visitorName" label={intl.formatMessage({ id: 'pages.park.visit.visitor', defaultMessage: '受访人/企业' })} placeholder="请输入受访人/企业名称" rules={[{ required: true, message: '请输入受访人/企业名称' }]} />
-                <ProFormText name="phone" label={intl.formatMessage({ id: 'pages.park.visit.phone', defaultMessage: '联系电话' })} placeholder="请输入联系电话" />
-                <ProFormText name="location" label={intl.formatMessage({ id: 'pages.park.visit.location', defaultMessage: '走访地点' })} placeholder="请输入走访地点" />
-                <ProFormTextArea name="comments" label={intl.formatMessage({ id: 'pages.park.visit.comments', defaultMessage: '评价意见' })} placeholder="请输入评价意见（选填）" />
+                <ProFormText name="visitorName" label={intl.formatMessage({ id: 'pages.park.visit.visitor', defaultMessage: '受访人/企业' })} placeholder={intl.formatMessage({ id: 'pages.park.visitAssessment.visitorNamePlaceholder' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.park.visitAssessment.visitorNameRequired' }) }]} />
+                <ProFormText name="phone" label={intl.formatMessage({ id: 'pages.park.visit.phone', defaultMessage: '联系电话' })} placeholder={intl.formatMessage({ id: 'pages.park.visitAssessment.phonePlaceholder' })} />
+                <ProFormText name="location" label={intl.formatMessage({ id: 'pages.park.visit.location', defaultMessage: '走访地点' })} placeholder={intl.formatMessage({ id: 'pages.park.visitAssessment.locationPlaceholder' })} />
+                <ProFormTextArea name="comments" label={intl.formatMessage({ id: 'pages.park.visit.comments', defaultMessage: '评价意见' })} placeholder={intl.formatMessage({ id: 'pages.park.visitAssessment.commentsPlaceholder' })} />
             </ModalForm>
         </PageContainer>
     );

@@ -735,5 +735,7 @@ export default {
   'pages.welcome.iotEvents.type.disconnected': 'Disconnected',
   'pages.welcome.iotEvents.type.error': 'Error',
   'pages.welcome.iotEvents.unhandledAlert': '{count} unhandled events',
+  'pages.welcome.quickActions.expand': 'Expand',
+  'pages.welcome.quickActions.collapse': 'Collapse',
   'status.unknown': 'Unknown',
 };

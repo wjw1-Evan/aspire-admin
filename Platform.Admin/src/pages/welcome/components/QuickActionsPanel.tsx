@@ -74,7 +74,7 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ currentUser }) =>
                         icon={collapsed ? <DownOutlined /> : <UpOutlined />}
                         onClick={() => setCollapsed(!collapsed)}
                     >
-                        {collapsed ? '展开' : '折叠'}
+                        {collapsed ? intl.formatMessage({ id: 'pages.welcome.quickActions.expand' }) : intl.formatMessage({ id: 'pages.welcome.quickActions.collapse' })}
                     </Button>
                 ) : null
             }

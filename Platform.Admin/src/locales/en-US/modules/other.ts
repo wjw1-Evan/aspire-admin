@@ -685,7 +685,6 @@ export default {
   'pages.userLog.stats.total': 'Records (page)',
   'pages.userLog.subTitle': 'System user activity records and audit logs',
   'pages.userLog.title': 'User Activity Log',
-  'pages.userLog.searchPlaceholder': 'Search...',
   'pages.myActivity.title': 'My Activity',
   'pages.myActivity.totalRecords': 'Total Records',
   'pages.myActivity.successCount': 'Success',

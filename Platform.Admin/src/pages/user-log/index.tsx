@@ -111,13 +111,13 @@ const UserLog: React.FC = () => {
         actionRef={actionRef}
         headerTitle={
           <Space size={24}>
-            <Space><FileTextOutlined />{intl.formatMessage({ id: 'pages.userLog.title' })}</Space>
+            <Space><FileTextOutlined />操作日志</Space>
             <Space size={12}>
-              <Tag color="blue">{intl.formatMessage({ id: 'pages.userLog.stats.total' })} {state.statistics?.total || 0}</Tag>
-              <Tag color="green">{intl.formatMessage({ id: 'pages.userLog.stats.success' })} {state.statistics?.success || 0}</Tag>
-              <Tag color="red">{intl.formatMessage({ id: 'pages.userLog.stats.error' })} {state.statistics?.error || 0}</Tag>
-              <Tag color="orange">{intl.formatMessage({ id: 'pages.userLog.stats.actions' })} {state.statistics?.actions || 0}</Tag>
-              <Tag color="purple">{intl.formatMessage({ id: 'pages.userLog.stats.avgDuration' })} {state.statistics?.avgDuration || 0}ms</Tag>
+              <Tag color="blue">总记录 {state.statistics?.total || 0}</Tag>
+              <Tag color="green">成功 {state.statistics?.success || 0}</Tag>
+              <Tag color="red">错误 {state.statistics?.error || 0}</Tag>
+              <Tag color="orange">操作类型 {state.statistics?.actions || 0}</Tag>
+              <Tag color="purple">平均耗时 {state.statistics?.avgDuration || 0}ms</Tag>
             </Space>
           </Space>
         }
@@ -141,7 +141,7 @@ const UserLog: React.FC = () => {
         toolBarRender={() => [
           <Input.Search
             key="search"
-            placeholder={intl.formatMessage({ id: 'pages.userLog.searchPlaceholder' })}
+            placeholder="搜索..."
             allowClear
             value={state.search}
             onChange={(e) => set({ search: e.target.value })}

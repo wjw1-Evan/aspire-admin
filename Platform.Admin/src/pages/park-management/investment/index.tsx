@@ -1,7 +1,7 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { PageContainer, ProCard } from '@ant-design/pro-components';
 import { useIntl, request } from '@umijs/max';
-import { Form, Input, Select, Button, App, Space, Row, Col, Tag, Typography, InputNumber, Tabs, Popconfirm, DatePicker, Flex, Progress } from 'antd';
+import { Form, Input, Button, App, Space, Row, Col, Tag, Typography, Tabs, Popconfirm, Flex, Progress } from 'antd';
 import { Drawer } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormDatePicker, ProFormDigit, ProFormTextArea } from '@ant-design/pro-form';
@@ -30,35 +30,6 @@ const api = {
     deleteProject: (id: string) => request<ApiResponse<boolean>>(`/apiservice/api/park/investment/projects/${id}`, { method: 'DELETE' }),
 };
 
-const priorityOptions = [
-    { label: intl.formatMessage({ id: 'pages.park.investment.priority.high', defaultMessage: '高' }), value: 'High', color: 'red' },
-    { label: intl.formatMessage({ id: 'pages.park.investment.priority.medium', defaultMessage: '中' }), value: 'Medium', color: 'orange' },
-    { label: intl.formatMessage({ id: 'pages.park.investment.priority.low', defaultMessage: '低' }), value: 'Low', color: 'green' }
-];
-const leadStatusOptions = [
-    { label: intl.formatMessage({ id: 'pages.park.investment.leadStatus.new', defaultMessage: '新建' }), value: 'New', color: 'blue' },
-    { label: intl.formatMessage({ id: 'pages.park.investment.leadStatus.following', defaultMessage: '跟进中' }), value: 'Following', color: 'processing' },
-    { label: intl.formatMessage({ id: 'pages.park.investment.leadStatus.quoted', defaultMessage: '已报价' }), value: 'Quoted', color: 'orange' },
-    { label: intl.formatMessage({ id: 'pages.park.investment.leadStatus.qualified', defaultMessage: '已成交' }), value: 'Qualified', color: 'green' },
-    { label: intl.formatMessage({ id: 'pages.park.investment.leadStatus.lost', defaultMessage: '已流失' }), value: 'Lost', color: 'default' }
-];
-const projectStageOptions = [
-    { label: intl.formatMessage({ id: 'pages.park.investment.projectStage.initial', defaultMessage: '初步接洽' }), value: 'Initial', color: 'blue' },
-    { label: intl.formatMessage({ id: 'pages.park.investment.projectStage.analysis', defaultMessage: '需求分析' }), value: 'Analysis', color: 'cyan' },
-    { label: intl.formatMessage({ id: 'pages.park.investment.projectStage.proposal', defaultMessage: '方案制定' }), value: 'Proposal', color: 'orange' },
-    { label: intl.formatMessage({ id: 'pages.park.investment.projectStage.negotiation', defaultMessage: '商务谈判' }), value: 'Negotiation', color: 'gold' },
-    { label: intl.formatMessage({ id: 'pages.park.investment.projectStage.contract', defaultMessage: '合同签订' }), value: 'Contract', color: 'lime' },
-    { label: intl.formatMessage({ id: 'pages.park.investment.projectStage.completed', defaultMessage: '已完成' }), value: 'Completed', color: 'green' },
-    { label: intl.formatMessage({ id: 'pages.park.investment.projectStage.cancelled', defaultMessage: '已终止' }), value: 'Cancelled', color: 'default' }
-];
-const sourceMap: Record<string, string> = {
-    Direct: intl.formatMessage({ id: 'pages.park.investment.source.direct', defaultMessage: '直接咨询' }),
-    Referral: intl.formatMessage({ id: 'pages.park.investment.source.referral', defaultMessage: '客户推荐' }),
-    Exhibition: intl.formatMessage({ id: 'pages.park.investment.source.exhibition', defaultMessage: '展会' }),
-    Website: intl.formatMessage({ id: 'pages.park.investment.source.website', defaultMessage: '官网' }),
-    Other: intl.formatMessage({ id: 'pages.park.investment.source.other', defaultMessage: '其他' })
-};
-
 const InvestmentManagement: React.FC = () => {
     const intl = useIntl();
     const { message } = App.useApp();
@@ -75,6 +46,46 @@ const InvestmentManagement: React.FC = () => {
 
     useEffect(() => { api.getStatistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }, []);
     useEffect(() => { if (state.activeTab === 'leads') leadsActionRef.current?.reload(); else projectsActionRef.current?.reload(); }, [state.activeTab]);
+
+    const priorityOptions = useMemo(() => [
+        { label: intl.formatMessage({ id: 'pages.park.investment.priority.high', defaultMessage: '高' }), value: 'High', color: 'red' },
+        { label: intl.formatMessage({ id: 'pages.park.investment.priority.medium', defaultMessage: '中' }), value: 'Medium', color: 'orange' },
+        { label: intl.formatMessage({ id: 'pages.park.investment.priority.low', defaultMessage: '低' }), value: 'Low', color: 'green' },
+    ], [intl]);
+
+    const leadStatusOptions = useMemo(() => [
+        { label: intl.formatMessage({ id: 'pages.park.investment.status.new', defaultMessage: '新建' }), value: 'New', color: 'blue' },
+        { label: intl.formatMessage({ id: 'pages.park.investment.status.following', defaultMessage: '跟进中' }), value: 'Following', color: 'processing' },
+        { label: intl.formatMessage({ id: 'pages.park.investment.status.quoted', defaultMessage: '已报价' }), value: 'Quoted', color: 'orange' },
+        { label: intl.formatMessage({ id: 'pages.park.investment.status.qualified', defaultMessage: '已成交' }), value: 'Qualified', color: 'green' },
+        { label: intl.formatMessage({ id: 'pages.park.investment.status.lost', defaultMessage: '已流失' }), value: 'Lost', color: 'default' },
+    ], [intl]);
+
+    const projectStageOptions = useMemo(() => [
+        { label: intl.formatMessage({ id: 'pages.park.investment.stage.initial', defaultMessage: '初步接洽' }), value: 'Initial', color: 'blue' },
+        { label: intl.formatMessage({ id: 'pages.park.investment.stage.analysis', defaultMessage: '需求分析' }), value: 'Analysis', color: 'cyan' },
+        { label: intl.formatMessage({ id: 'pages.park.investment.stage.proposal', defaultMessage: '方案制定' }), value: 'Proposal', color: 'orange' },
+        { label: intl.formatMessage({ id: 'pages.park.investment.stage.negotiation', defaultMessage: '商务谈判' }), value: 'Negotiation', color: 'gold' },
+        { label: intl.formatMessage({ id: 'pages.park.investment.stage.contract', defaultMessage: '合同签订' }), value: 'Contract', color: 'lime' },
+        { label: intl.formatMessage({ id: 'pages.park.investment.stage.completed', defaultMessage: '已完成' }), value: 'Completed', color: 'green' },
+        { label: intl.formatMessage({ id: 'pages.park.investment.stage.cancelled', defaultMessage: '已终止' }), value: 'Cancelled', color: 'default' },
+    ], [intl]);
+
+    const sourceMap: Record<string, string> = useMemo(() => ({
+        Direct: intl.formatMessage({ id: 'pages.park.investment.source.direct', defaultMessage: '直接咨询' }),
+        Referral: intl.formatMessage({ id: 'pages.park.investment.source.referral', defaultMessage: '客户推荐' }),
+        Exhibition: intl.formatMessage({ id: 'pages.park.investment.source.exhibition', defaultMessage: '展会' }),
+        Website: intl.formatMessage({ id: 'pages.park.investment.source.website', defaultMessage: '官网' }),
+        Other: intl.formatMessage({ id: 'pages.park.investment.source.other', defaultMessage: '其他' }),
+    }), [intl]);
+
+    const sourceOptions = useMemo(() => [
+        { label: intl.formatMessage({ id: 'pages.park.investment.source.direct', defaultMessage: '直接咨询' }), value: 'Direct' },
+        { label: intl.formatMessage({ id: 'pages.park.investment.source.referral', defaultMessage: '客户推荐' }), value: 'Referral' },
+        { label: intl.formatMessage({ id: 'pages.park.investment.source.exhibition', defaultMessage: '展会' }), value: 'Exhibition' },
+        { label: intl.formatMessage({ id: 'pages.park.investment.source.website', defaultMessage: '官网' }), value: 'Website' },
+        { label: intl.formatMessage({ id: 'pages.park.investment.source.other', defaultMessage: '其他' }), value: 'Other' },
+    ], [intl]);
 
     const handleRefresh = () => { api.getStatistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); if (state.activeTab === 'leads') leadsActionRef.current?.reload(); else projectsActionRef.current?.reload(); };
     const handleDeleteLead = async (id: string) => { const res = await api.deleteLead(id); if (res.success) { message.success(intl.formatMessage({ id: 'pages.park.investment.message.deleteSuccess', defaultMessage: '删除成功' })); leadsActionRef.current?.reload(); handleRefresh(); } else { message.error(getErrorMessage(res, 'pages.park.investment.message.deleteFailed')); } };
@@ -120,12 +131,31 @@ const InvestmentManagement: React.FC = () => {
         ) },
     ];
 
+    const leadsStatTags = useMemo(() => (
+        <Space size={12}>
+            <Tag color="blue">{intl.formatMessage({ id: 'pages.park.investment.statistics.leads', defaultMessage: '线索' })} {state.statistics?.totalLeads || 0}</Tag>
+            <Tag color="cyan">{intl.formatMessage({ id: 'pages.park.investment.statistics.newLeadsThisMonth', defaultMessage: '本月新增' })} {state.statistics?.newLeadsThisMonth || 0}</Tag>
+            <Tag color="green">{intl.formatMessage({ id: 'pages.park.investment.statistics.projects', defaultMessage: '项目' })} {state.statistics?.totalProjects || 0}</Tag>
+            <Tag color="orange">{intl.formatMessage({ id: 'pages.park.investment.statistics.inNegotiation', defaultMessage: '谈判中' })} {state.statistics?.projectsInNegotiation || 0}</Tag>
+            <Tag color="purple">{intl.formatMessage({ id: 'pages.park.investment.statistics.conversionRate', defaultMessage: '转化率' })} {state.statistics?.conversionRate || 0}%</Tag>
+        </Space>
+    ), [intl, state.statistics]);
+
+    const projectsStatTags = useMemo(() => (
+        <Space size={12}>
+            <Tag color="blue">{intl.formatMessage({ id: 'pages.park.investment.statistics.leads', defaultMessage: '线索' })} {state.statistics?.totalLeads || 0}</Tag>
+            <Tag color="green">{intl.formatMessage({ id: 'pages.park.investment.statistics.projects', defaultMessage: '项目' })} {state.statistics?.totalProjects || 0}</Tag>
+            <Tag color="orange">{intl.formatMessage({ id: 'pages.park.investment.statistics.inNegotiation', defaultMessage: '谈判中' })} {state.statistics?.projectsInNegotiation || 0}</Tag>
+            <Tag color="purple">{intl.formatMessage({ id: 'pages.park.investment.statistics.conversionRate', defaultMessage: '转化率' })} {state.statistics?.conversionRate || 0}%</Tag>
+        </Space>
+    ), [intl, state.statistics]);
+
     return (
         <PageContainer>
             <ProCard>
                 <Tabs activeKey={state.activeTab} onChange={(key) => set({ activeTab: key })} items={[
-                    { key: 'leads', label: <Space><TeamOutlined />{intl.formatMessage({ id: 'pages.park.investment.leads', defaultMessage: '招商线索' })}</Space>, children: <ProTable<InvestmentLead> actionRef={leadsActionRef} headerTitle={<Space size={24}><Space><TeamOutlined />{intl.formatMessage({ id: 'pages.park.investment.management', defaultMessage: '招商管理' })}</Space><Space size={12}><Tag color="blue">{intl.formatMessage({ id: 'pages.park.investment.statistics.leads', defaultMessage: '线索' })} {state.statistics?.totalLeads || 0}</Tag><Tag color="cyan">{intl.formatMessage({ id: 'pages.park.investment.statistics.newLeads', defaultMessage: '本月新增' })} {state.statistics?.newLeadsThisMonth || 0}</Tag><Tag color="green">{intl.formatMessage({ id: 'pages.park.investment.statistics.projects', defaultMessage: '项目' })} {state.statistics?.totalProjects || 0}</Tag><Tag color="orange">{intl.formatMessage({ id: 'pages.park.investment.statistics.negotiation', defaultMessage: '谈判中' })} {state.statistics?.projectsInNegotiation || 0}</Tag><Tag color="purple">{intl.formatMessage({ id: 'pages.park.investment.statistics.conversionRate', defaultMessage: '转化率' })} {state.statistics?.conversionRate || 0}%</Tag></Space></Space>} request={async (params: any) => { const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined; const res = await api.getLeads({ page: current, pageSize, search: state.search, ...sortParams }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={leadColumns} rowKey="id" search={false} onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })} toolBarRender={() => [<Input.Search key="search" placeholder={intl.formatMessage({ id: 'pages.park.investment.searchPlaceholder', defaultMessage: '搜索...' })} allowClear value={state.search} onChange={(e) => set({ search: e.target.value })} onSearch={(v) => { set({ search: v }); leadsActionRef.current?.reload(); }} style={{ width: 260, marginRight: 8 }} prefix={<SearchOutlined />} />, <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingLead: null, leadModalVisible: true })}>{intl.formatMessage({ id: 'pages.park.investment.addLead', defaultMessage: '新增线索' })}</Button>]} scroll={{ x: 1400 }} /> },
-                    { key: 'projects', label: <Space><ProjectOutlined />{intl.formatMessage({ id: 'pages.park.investment.projects', defaultMessage: '招商项目' })}</Space>, children: <ProTable<InvestmentProject> actionRef={projectsActionRef} headerTitle={<Space size={24}><Space><ProjectOutlined />{intl.formatMessage({ id: 'pages.park.investment.projects', defaultMessage: '招商项目' })}</Space><Space size={12}><Tag color="blue">{intl.formatMessage({ id: 'pages.park.investment.statistics.leads', defaultMessage: '线索' })} {state.statistics?.totalLeads || 0}</Tag><Tag color="green">{intl.formatMessage({ id: 'pages.park.investment.statistics.projects', defaultMessage: '项目' })} {state.statistics?.totalProjects || 0}</Tag><Tag color="orange">{intl.formatMessage({ id: 'pages.park.investment.statistics.negotiation', defaultMessage: '谈判中' })} {state.statistics?.projectsInNegotiation || 0}</Tag><Tag color="purple">{intl.formatMessage({ id: 'pages.park.investment.statistics.conversionRate', defaultMessage: '转化率' })} {state.statistics?.conversionRate || 0}%</Tag></Space></Space>} request={async (params: any) => { const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined; const res = await api.getProjects({ page: current, pageSize, search: state.search, ...sortParams }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={projectColumns} rowKey="id" search={false} onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })} toolBarRender={() => [<Input.Search key="search" placeholder={intl.formatMessage({ id: 'pages.park.investment.searchPlaceholder', defaultMessage: '搜索...' })} allowClear value={state.search} onChange={(e) => set({ search: e.target.value })} onSearch={(v) => { set({ search: v }); projectsActionRef.current?.reload(); }} style={{ width: 260, marginRight: 8 }} prefix={<SearchOutlined />} />, <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingProject: null, projectModalVisible: true })}>{intl.formatMessage({ id: 'pages.park.investment.addProject', defaultMessage: '新增项目' })}</Button>]} scroll={{ x: 1300 }} /> },
+                    { key: 'leads', label: <Space><TeamOutlined />{intl.formatMessage({ id: 'pages.park.investment.leads', defaultMessage: '招商线索' })}</Space>, children: <ProTable<InvestmentLead> actionRef={leadsActionRef} headerTitle={<Space size={24}><Space><TeamOutlined />{intl.formatMessage({ id: 'pages.park.investment.leads', defaultMessage: '招商线索' })}</Space>{leadsStatTags}</Space>} request={async (params: any) => { const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined; const res = await api.getLeads({ page: current, pageSize, search: state.search, ...sortParams }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={leadColumns} rowKey="id" search={false} onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })} toolBarRender={() => [<Input.Search key="search" placeholder={intl.formatMessage({ id: 'pages.park.investment.searchPlaceholder', defaultMessage: '搜索...' })} allowClear value={state.search} onChange={(e) => set({ search: e.target.value })} onSearch={(v) => { set({ search: v }); leadsActionRef.current?.reload(); }} style={{ width: 260, marginRight: 8 }} prefix={<SearchOutlined />} />, <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingLead: null, leadModalVisible: true })}>{intl.formatMessage({ id: 'pages.park.investment.button.addLead', defaultMessage: '新增线索' })}</Button>]} scroll={{ x: 1400 }} /> },
+                    { key: 'projects', label: <Space><ProjectOutlined />{intl.formatMessage({ id: 'pages.park.investment.projects', defaultMessage: '招商项目' })}</Space>, children: <ProTable<InvestmentProject> actionRef={projectsActionRef} headerTitle={<Space size={24}><Space><ProjectOutlined />{intl.formatMessage({ id: 'pages.park.investment.projects', defaultMessage: '招商项目' })}</Space>{projectsStatTags}</Space>} request={async (params: any) => { const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined; const res = await api.getProjects({ page: current, pageSize, search: state.search, ...sortParams }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={projectColumns} rowKey="id" search={false} onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })} toolBarRender={() => [<Input.Search key="search" placeholder={intl.formatMessage({ id: 'pages.park.investment.searchPlaceholder', defaultMessage: '搜索...' })} allowClear value={state.search} onChange={(e) => set({ search: e.target.value })} onSearch={(v) => { set({ search: v }); projectsActionRef.current?.reload(); }} style={{ width: 260, marginRight: 8 }} prefix={<SearchOutlined />} />, <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingProject: null, projectModalVisible: true })}>{intl.formatMessage({ id: 'pages.park.investment.button.addProject', defaultMessage: '新增项目' })}</Button>]} scroll={{ x: 1300 }} /> },
                 ]} />
             </ProCard>
 
@@ -136,12 +166,12 @@ const InvestmentManagement: React.FC = () => {
                     const nextFollowUpVal = values.nextFollowUpDate?.toISOString ? values.nextFollowUpDate.toISOString() : values.nextFollowUpDate;
                     const data: Partial<InvestmentLead> = { ...values, source: Array.isArray(values.source) ? values.source[0] : values.source, nextFollowUpDate: nextFollowUpVal };
                     const res = state.editingLead ? await api.updateLead(state.editingLead.id, data) : await api.createLead(data);
-                    if (res.success) { message.success(state.editingLead ? intl.formatMessage({ id: 'pages.park.investment.message.updateSuccess', defaultMessage: '更新成功' }) : intl.formatMessage({ id: 'pages.park.investment.message.createSuccess', defaultMessage: '创建成功' })); set({ leadModalVisible: false, editingLead: null }); leadsActionRef.current?.reload(); handleRefresh(); }
+                    if (res.success) { message.success(intl.formatMessage({ id: state.editingLead ? 'pages.park.investment.message.updateSuccess' : 'pages.park.investment.message.createSuccess', defaultMessage: state.editingLead ? '更新成功' : '创建成功' })); set({ leadModalVisible: false, editingLead: null }); leadsActionRef.current?.reload(); handleRefresh(); }
                     return res.success;
                 }} autoFocusFirstInput width={640}>
-                <Row gutter={16}><Col span={12}><ProFormText name="companyName" label={intl.formatMessage({ id: 'pages.park.investment.form.companyName', defaultMessage: '企业名称' })} placeholder={intl.formatMessage({ id: 'pages.park.investment.form.companyNamePlaceholder', defaultMessage: '请输入企业名称' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.park.investment.form.companyNameRequired', defaultMessage: '请输入企业名称' }) }]} /></Col><Col span={12}><ProFormText name="industry" label={intl.formatMessage({ id: 'pages.park.investment.form.industry', defaultMessage: '行业' })} placeholder={intl.formatMessage({ id: 'pages.park.investment.form.industryPlaceholder', defaultMessage: '请输入行业' })} /></Col></Row>
+                <Row gutter={16}><Col span={12}><ProFormText name="companyName" label={intl.formatMessage({ id: 'pages.park.investment.form.companyName', defaultMessage: '企业名称' })} placeholder={intl.formatMessage({ id: 'pages.park.investment.form.companyNamePlaceholder', defaultMessage: '请输入企业名称' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.park.investment.form.companyNamePlaceholder', defaultMessage: '请输入企业名称' }) }]} /></Col><Col span={12}><ProFormText name="industry" label={intl.formatMessage({ id: 'pages.park.investment.form.industry', defaultMessage: '行业' })} placeholder={intl.formatMessage({ id: 'pages.park.investment.form.industryPlaceholder', defaultMessage: '请输入行业' })} /></Col></Row>
                 <Row gutter={16}><Col span={8}><ProFormText name="contactPerson" label={intl.formatMessage({ id: 'pages.park.investment.form.contactPerson', defaultMessage: '联系人' })} placeholder={intl.formatMessage({ id: 'pages.park.investment.form.contactPersonPlaceholder', defaultMessage: '联系人姓名' })} /></Col><Col span={8}><ProFormText name="phone" label={intl.formatMessage({ id: 'pages.park.investment.form.phone', defaultMessage: '电话' })} placeholder={intl.formatMessage({ id: 'pages.park.investment.form.phonePlaceholder', defaultMessage: '联系电话' })} /></Col><Col span={8}><ProFormText name="email" label={intl.formatMessage({ id: 'pages.park.investment.form.email', defaultMessage: '邮箱' })} placeholder={intl.formatMessage({ id: 'pages.park.investment.form.emailPlaceholder', defaultMessage: '邮箱地址' })} /></Col></Row>
-                <Row gutter={16}><Col span={8}><ProFormSelect name="source" label={intl.formatMessage({ id: 'pages.park.investment.form.source', defaultMessage: '来源' })} placeholder={intl.formatMessage({ id: 'pages.park.investment.form.sourcePlaceholder', defaultMessage: '请选择' })} options={[{ label: intl.formatMessage({ id: 'pages.park.investment.source.direct', defaultMessage: '直接咨询' }), value: 'Direct' }, { label: intl.formatMessage({ id: 'pages.park.investment.source.referral', defaultMessage: '客户推荐' }), value: 'Referral' }, { label: intl.formatMessage({ id: 'pages.park.investment.source.exhibition', defaultMessage: '展会' }), value: 'Exhibition' }, { label: intl.formatMessage({ id: 'pages.park.investment.source.website', defaultMessage: '官网' }), value: 'Website' }, { label: intl.formatMessage({ id: 'pages.park.investment.source.other', defaultMessage: '其他' }), value: 'Other' }]} /></Col><Col span={8}><ProFormSelect name="priority" label={intl.formatMessage({ id: 'pages.park.investment.form.priority', defaultMessage: '优先级' })} placeholder={intl.formatMessage({ id: 'pages.park.investment.form.priorityPlaceholder', defaultMessage: '请选择' })} options={priorityOptions.map(o => ({ label: o.label, value: o.value }))} /></Col><Col span={8}><ProFormDigit name="intendedArea" label={intl.formatMessage({ id: 'pages.park.investment.form.intendedArea', defaultMessage: '意向面积 (m²)' })} min={0} placeholder={intl.formatMessage({ id: 'pages.park.investment.form.intendedAreaPlaceholder', defaultMessage: '意向面积' })} /></Col></Row>
+                <Row gutter={16}><Col span={8}><ProFormSelect name="source" label={intl.formatMessage({ id: 'pages.park.investment.form.source', defaultMessage: '来源' })} placeholder={intl.formatMessage({ id: 'common.search.placeholder', defaultMessage: '请选择' })} options={sourceOptions} /></Col><Col span={8}><ProFormSelect name="priority" label={intl.formatMessage({ id: 'pages.park.investment.form.priority', defaultMessage: '优先级' })} placeholder={intl.formatMessage({ id: 'common.search.placeholder', defaultMessage: '请选择' })} options={priorityOptions.map(o => ({ label: o.label, value: o.value }))} /></Col><Col span={8}><ProFormDigit name="intendedArea" label={intl.formatMessage({ id: 'pages.park.investment.form.intendedArea', defaultMessage: '意向面积 (m²)' })} min={0} placeholder={intl.formatMessage({ id: 'pages.park.investment.form.intendedAreaPlaceholder', defaultMessage: '意向面积' })} /></Col></Row>
                 <Row gutter={16}><Col span={12}><ProFormDigit name="budget" label={intl.formatMessage({ id: 'pages.park.investment.form.budget', defaultMessage: '预算 (元/月)' })} min={0} placeholder={intl.formatMessage({ id: 'pages.park.investment.form.budgetPlaceholder', defaultMessage: '预算' })} /></Col><Col span={12}><ProFormDatePicker name="nextFollowUpDate" label={intl.formatMessage({ id: 'pages.park.investment.form.nextFollowUpDate', defaultMessage: '下次跟进日期' })} /></Col></Row>
                 <ProFormTextArea name="requirements" label={intl.formatMessage({ id: 'pages.park.investment.form.requirements', defaultMessage: '需求描述' })} placeholder={intl.formatMessage({ id: 'pages.park.investment.form.requirementsPlaceholder', defaultMessage: '请输入需求描述' })} />
             </ModalForm>
@@ -153,44 +183,44 @@ const InvestmentManagement: React.FC = () => {
                     const expectedSignVal = values.expectedSignDate?.toISOString ? values.expectedSignDate.toISOString() : values.expectedSignDate;
                     const data: Partial<InvestmentProject> = { ...values, stage: Array.isArray(values.stage) ? values.stage[0] : values.stage, expectedSignDate: expectedSignVal };
                     const res = state.editingProject ? await api.updateProject(state.editingProject.id, data) : await api.createProject(data);
-                    if (res.success) { message.success(state.editingProject ? intl.formatMessage({ id: 'pages.park.investment.message.updateSuccess', defaultMessage: '更新成功' }) : intl.formatMessage({ id: 'pages.park.investment.message.createSuccess', defaultMessage: '创建成功' })); set({ projectModalVisible: false, editingProject: null }); projectsActionRef.current?.reload(); handleRefresh(); }
+                    if (res.success) { message.success(intl.formatMessage({ id: state.editingProject ? 'pages.park.investment.message.updateSuccess' : 'pages.park.investment.message.createSuccess', defaultMessage: state.editingProject ? '更新成功' : '创建成功' })); set({ projectModalVisible: false, editingProject: null }); projectsActionRef.current?.reload(); handleRefresh(); }
                     return res.success;
                 }} autoFocusFirstInput width={640}>
-                <Row gutter={16}><Col span={12}><ProFormText name="projectName" label="项目名称" placeholder="请输入项目名称" rules={[{ required: true, message: '请输入项目名称' }]} /></Col><Col span={12}><ProFormText name="companyName" label="企业名称" placeholder="请输入企业名称" rules={[{ required: true, message: '请输入企业名称' }]} /></Col></Row>
-                <Row gutter={16}><Col span={12}><ProFormText name="contactPerson" label="联系人" placeholder="联系人姓名" /></Col><Col span={12}><ProFormText name="phone" label="电话" placeholder="联系电话" /></Col></Row>
-                <Row gutter={16}><Col span={8}><ProFormDigit name="intendedArea" label="意向面积 (m²)" min={0} placeholder="意向面积" /></Col><Col span={8}><ProFormDigit name="proposedRent" label="报价租金 (元/月)" min={0} placeholder="报价租金" /></Col><Col span={8}><ProFormDigit name="probability" label="成功率 (%)" min={0} max={100} placeholder="成功率" /></Col></Row>
-                <Row gutter={16}><Col span={12}><ProFormSelect name="stage" label="项目阶段" placeholder="请选择" options={projectStageOptions.map(o => ({ label: o.label, value: o.value }))} /></Col><Col span={12}><ProFormDatePicker name="expectedSignDate" label="预计签约日期" /></Col></Row>
-                <ProFormTextArea name="notes" label="备注" placeholder="请输入备注" />
+                <Row gutter={16}><Col span={12}><ProFormText name="projectName" label={intl.formatMessage({ id: 'pages.park.investment.form.projectName', defaultMessage: '项目名称' })} placeholder={intl.formatMessage({ id: 'pages.park.investment.form.projectNamePlaceholder', defaultMessage: '请输入项目名称' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.park.investment.form.projectNamePlaceholder', defaultMessage: '请输入项目名称' }) }]} /></Col><Col span={12}><ProFormText name="companyName" label={intl.formatMessage({ id: 'pages.park.investment.form.companyName', defaultMessage: '企业名称' })} placeholder={intl.formatMessage({ id: 'pages.park.investment.form.companyNamePlaceholder', defaultMessage: '请输入企业名称' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.park.investment.form.companyNamePlaceholder', defaultMessage: '请输入企业名称' }) }]} /></Col></Row>
+                <Row gutter={16}><Col span={12}><ProFormText name="contactPerson" label={intl.formatMessage({ id: 'pages.park.investment.form.contactPerson', defaultMessage: '联系人' })} placeholder={intl.formatMessage({ id: 'pages.park.investment.form.contactPersonPlaceholder', defaultMessage: '联系人姓名' })} /></Col><Col span={12}><ProFormText name="phone" label={intl.formatMessage({ id: 'pages.park.investment.form.phone', defaultMessage: '电话' })} placeholder={intl.formatMessage({ id: 'pages.park.investment.form.phonePlaceholder', defaultMessage: '联系电话' })} /></Col></Row>
+                <Row gutter={16}><Col span={8}><ProFormDigit name="intendedArea" label={intl.formatMessage({ id: 'pages.park.investment.form.intendedArea', defaultMessage: '意向面积 (m²)' })} min={0} placeholder={intl.formatMessage({ id: 'pages.park.investment.form.intendedAreaPlaceholder', defaultMessage: '意向面积' })} /></Col><Col span={8}><ProFormDigit name="proposedRent" label={intl.formatMessage({ id: 'pages.park.investment.form.proposedRent', defaultMessage: '报价租金 (元/月)' })} min={0} placeholder={intl.formatMessage({ id: 'pages.park.investment.form.proposedRentPlaceholder', defaultMessage: '报价租金' })} /></Col><Col span={8}><ProFormDigit name="probability" label={intl.formatMessage({ id: 'pages.park.investment.form.probability', defaultMessage: '成功率 (%)' })} min={0} max={100} placeholder={intl.formatMessage({ id: 'pages.park.investment.form.probabilityPlaceholder', defaultMessage: '成功率' })} /></Col></Row>
+                <Row gutter={16}><Col span={12}><ProFormSelect name="stage" label={intl.formatMessage({ id: 'pages.park.investment.form.stage', defaultMessage: '项目阶段' })} placeholder={intl.formatMessage({ id: 'common.search.placeholder', defaultMessage: '请选择' })} options={projectStageOptions.map(o => ({ label: o.label, value: o.value }))} /></Col><Col span={12}><ProFormDatePicker name="expectedSignDate" label={intl.formatMessage({ id: 'pages.park.investment.form.expectedSignDate', defaultMessage: '预计签约日期' })} /></Col></Row>
+                <ProFormTextArea name="notes" label={intl.formatMessage({ id: 'pages.park.investment.form.notes', defaultMessage: '备注' })} placeholder={intl.formatMessage({ id: 'pages.park.investment.form.notesPlaceholder', defaultMessage: '请输入备注' })} />
             </ModalForm>
 
-            <Drawer title="线索详情" placement="right" size="large" open={state.leadDetailVisible} onClose={() => set({ leadDetailVisible: false, currentLead: null })}>
+            <Drawer title={intl.formatMessage({ id: 'pages.park.investment.detail.lead', defaultMessage: '线索详情' })} placement="right" size="large" open={state.leadDetailVisible} onClose={() => set({ leadDetailVisible: false, currentLead: null })}>
                 {state.currentLead && (<ProDescriptions column={1} bordered size="small">
-                    <ProDescriptions.Item label="企业名称">{state.currentLead.companyName}</ProDescriptions.Item>
-                    <ProDescriptions.Item label="行业">{state.currentLead.industry || '-'}</ProDescriptions.Item>
-                    <ProDescriptions.Item label="联系人">{state.currentLead.contactPerson || '-'}</ProDescriptions.Item>
-                    <ProDescriptions.Item label="电话">{state.currentLead.phone || '-'}</ProDescriptions.Item>
-                    <ProDescriptions.Item label="邮箱">{state.currentLead.email || '-'}</ProDescriptions.Item>
-                    <ProDescriptions.Item label="来源">{sourceMap[state.currentLead.source] || state.currentLead.source}</ProDescriptions.Item>
-                    <ProDescriptions.Item label="意向面积">{state.currentLead.intendedArea ? `${state.currentLead.intendedArea} m²` : '-'}</ProDescriptions.Item>
-                    <ProDescriptions.Item label="优先级">{(() => { const opt = priorityOptions.find(o => o.value === state.currentLead?.priority); return <Tag color={opt?.color}>{opt?.label || state.currentLead?.priority}</Tag>; })()}</ProDescriptions.Item>
-                    <ProDescriptions.Item label="当前状态">{(() => { const opt = leadStatusOptions.find(o => o.value === state.currentLead?.status); return <Tag color={opt?.color}>{opt?.label || state.currentLead?.status}</Tag>; })()}</ProDescriptions.Item>
-                    <ProDescriptions.Item label="下次跟进日期">{state.currentLead.nextFollowUpDate ? dayjs(state.currentLead.nextFollowUpDate).format('YYYY-MM-DD') : '-'}</ProDescriptions.Item>
-                    <ProDescriptions.Item label="创建时间">{dayjs(state.currentLead.createdAt).format('YYYY-MM-DD HH:mm')}</ProDescriptions.Item>
+                    <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.investment.form.companyName', defaultMessage: '企业名称' })}>{state.currentLead.companyName}</ProDescriptions.Item>
+                    <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.investment.form.industry', defaultMessage: '行业' })}>{state.currentLead.industry || '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.investment.form.contactPerson', defaultMessage: '联系人' })}>{state.currentLead.contactPerson || '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.investment.form.phone', defaultMessage: '电话' })}>{state.currentLead.phone || '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.investment.form.email', defaultMessage: '邮箱' })}>{state.currentLead.email || '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.investment.form.source', defaultMessage: '来源' })}>{sourceMap[state.currentLead.source] || state.currentLead.source}</ProDescriptions.Item>
+                    <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.investment.lead.intendedArea', defaultMessage: '意向面积' })}>{state.currentLead.intendedArea ? `${state.currentLead.intendedArea} m²` : '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.investment.form.priority', defaultMessage: '优先级' })}>{(() => { const opt = priorityOptions.find(o => o.value === state.currentLead?.priority); return <Tag color={opt?.color}>{opt?.label || state.currentLead?.priority}</Tag>; })()}</ProDescriptions.Item>
+                    <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.investment.detail.currentStatus', defaultMessage: '当前状态' })}>{(() => { const opt = leadStatusOptions.find(o => o.value === state.currentLead?.status); return <Tag color={opt?.color}>{opt?.label || state.currentLead?.status}</Tag>; })()}</ProDescriptions.Item>
+                    <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.investment.detail.nextFollowUpDate', defaultMessage: '下次跟进日期' })}>{state.currentLead.nextFollowUpDate ? dayjs(state.currentLead.nextFollowUpDate).format('YYYY-MM-DD') : '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label={intl.formatMessage({ id: 'common.createdAt', defaultMessage: '创建时间' })}>{dayjs(state.currentLead.createdAt).format('YYYY-MM-DD HH:mm')}</ProDescriptions.Item>
                 </ProDescriptions>)}
             </Drawer>
 
-            <Drawer title="项目详情" placement="right" size="large" open={state.projectDetailVisible} onClose={() => set({ projectDetailVisible: false, currentProject: null })}>
+            <Drawer title={intl.formatMessage({ id: 'pages.park.investment.detail.project', defaultMessage: '项目详情' })} placement="right" size="large" open={state.projectDetailVisible} onClose={() => set({ projectDetailVisible: false, currentProject: null })}>
                 {state.currentProject && (<ProDescriptions column={1} bordered size="small">
-                    <ProDescriptions.Item label="项目名称">{state.currentProject.projectName}</ProDescriptions.Item>
-                    <ProDescriptions.Item label="企业名称">{state.currentProject.companyName}</ProDescriptions.Item>
-                    <ProDescriptions.Item label="联系人">{state.currentProject.contactPerson || '-'}</ProDescriptions.Item>
-                    <ProDescriptions.Item label="电话">{state.currentProject.phone || '-'}</ProDescriptions.Item>
-                    <ProDescriptions.Item label="意向面积">{state.currentProject.intendedArea ? `${state.currentProject.intendedArea} m²` : '-'}</ProDescriptions.Item>
-                    <ProDescriptions.Item label="报价租金">{state.currentProject.proposedRent ? `¥${state.currentProject.proposedRent?.toLocaleString()}/月` : '-'}</ProDescriptions.Item>
-                    <ProDescriptions.Item label="当前阶段">{(() => { const opt = projectStageOptions.find(o => o.value === state.currentProject?.stage); return <Tag color={opt?.color}>{opt?.label || state.currentProject?.stage}</Tag>; })()}</ProDescriptions.Item>
-                    <ProDescriptions.Item label="成功率"><Progress percent={state.currentProject.probability as number} size="small" /></ProDescriptions.Item>
-                    <ProDescriptions.Item label="预计签约日期">{state.currentProject.expectedSignDate ? dayjs(state.currentProject.expectedSignDate).format('YYYY-MM-DD') : '-'}</ProDescriptions.Item>
-                    <ProDescriptions.Item label="创建时间">{dayjs(state.currentProject.createdAt).format('YYYY-MM-DD HH:mm')}</ProDescriptions.Item>
+                    <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.investment.form.projectName', defaultMessage: '项目名称' })}>{state.currentProject.projectName}</ProDescriptions.Item>
+                    <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.investment.form.companyName', defaultMessage: '企业名称' })}>{state.currentProject.companyName}</ProDescriptions.Item>
+                    <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.investment.form.contactPerson', defaultMessage: '联系人' })}>{state.currentProject.contactPerson || '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.investment.form.phone', defaultMessage: '电话' })}>{state.currentProject.phone || '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.investment.lead.intendedArea', defaultMessage: '意向面积' })}>{state.currentProject.intendedArea ? `${state.currentProject.intendedArea} m²` : '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.investment.project.rent', defaultMessage: '报价租金' })}>{state.currentProject.proposedRent ? `¥${state.currentProject.proposedRent?.toLocaleString()}/月` : '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.investment.detail.currentStage', defaultMessage: '当前阶段' })}>{(() => { const opt = projectStageOptions.find(o => o.value === state.currentProject?.stage); return <Tag color={opt?.color}>{opt?.label || state.currentProject?.stage}</Tag>; })()}</ProDescriptions.Item>
+                    <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.investment.project.probability', defaultMessage: '成功率' })}><Progress percent={state.currentProject.probability as number} size="small" /></ProDescriptions.Item>
+                    <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.investment.detail.expectedSignDate', defaultMessage: '预计签约日期' })}>{state.currentProject.expectedSignDate ? dayjs(state.currentProject.expectedSignDate).format('YYYY-MM-DD') : '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label={intl.formatMessage({ id: 'common.createdAt', defaultMessage: '创建时间' })}>{dayjs(state.currentProject.createdAt).format('YYYY-MM-DD HH:mm')}</ProDescriptions.Item>
                 </ProDescriptions>)}
             </Drawer>
         </PageContainer>

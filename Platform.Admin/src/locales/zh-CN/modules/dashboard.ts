@@ -100,4 +100,13 @@ export default {
   // 空状态
   'pages.dashboard.noCards': '暂无卡片',
   'pages.dashboard.noCardsDesc': '点击下方按钮添加第一个卡片',
+
+  // 设计器
+  'pages.dashboard.designer.layoutSaved': '布局已保存',
+  'pages.dashboard.designer.saveFailed': '保存失败',
+  'pages.dashboard.designer.cardCopied': '卡片已复制',
+  'pages.dashboard.designer.addCard': '添加卡片',
+  'pages.dashboard.designer.saveLayout': '保存布局',
+  'pages.dashboard.designer.preview': '预览',
+  'pages.dashboard.designer.noCardAddFirst': '暂无卡片，点击"添加卡片"开始设计',
 };

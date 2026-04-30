@@ -5,6 +5,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { GridLayout as RGL, useContainerWidth } from 'react-grid-layout';
 import { Button, Space, message, Tooltip, Popconfirm, Spin, Empty, Typography } from 'antd';
+import { useIntl } from '@umijs/max';
 import {
   PlusOutlined, SaveOutlined, DeleteOutlined,
   EditOutlined, FullscreenOutlined, CopyOutlined,
@@ -61,6 +62,7 @@ interface DashboardDesignerProps {
 }
 
 const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPreview, onClose }) => {
+  const intl = useIntl();
   const [dashboard, setDashboard] = useState<DashboardDto | null>(null);
   const [cards, setCards] = useState<DashboardCardDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -117,10 +119,10 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
     }));
     const res = await api.reorderCards(dashboardId, positions);
     if (res.success) {
-      message.success('布局已保存');
+      message.success(intl.formatMessage({ id: 'pages.dashboard.designer.layoutSaved', defaultMessage: '布局已保存' }));
       setHasChanges(false);
     } else {
-      message.error('保存失败');
+      message.error(intl.formatMessage({ id: 'pages.dashboard.deleteFailed', defaultMessage: '删除失败' }));
     }
     setSaving(false);
   }, [dashboardId, layouts]);
@@ -136,13 +138,13 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
         dataSource: values.dataSource,
       });
       if (res.success) {
-        message.success('卡片已更新');
+        message.success(intl.formatMessage({ id: 'pages.dashboard.updateCardSuccess', defaultMessage: '卡片已更新' }));
         setCardFormOpen(false);
         setEditingCard(null);
         await loadDashboard();
         return true;
       }
-      message.error('更新失败');
+      message.error(intl.formatMessage({ id: 'pages.dashboard.updateCardFailed', defaultMessage: '更新失败' }));
       return false;
     } else {
       // 添加
@@ -158,12 +160,12 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
          height: defaultSize.h,
       });
       if (res.success) {
-        message.success('卡片已添加');
+        message.success(intl.formatMessage({ id: 'pages.dashboard.addCardSuccess', defaultMessage: '卡片已添加' }));
         setCardFormOpen(false);
         await loadDashboard();
         return true;
       }
-      message.error('添加失败');
+      message.error(intl.formatMessage({ id: 'pages.dashboard.addCardFailed', defaultMessage: '添加失败' }));
       return false;
     }
   }, [dashboardId, editingCard, loadDashboard]);
@@ -172,11 +174,11 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
   const handleDeleteCard = useCallback(async (cardId: string) => {
     const res = await api.deleteCard(cardId);
     if (res.success) {
-      message.success('卡片已删除');
+      message.success(intl.formatMessage({ id: 'pages.dashboard.deleteCardSuccess', defaultMessage: '卡片已删除' }));
       setSelectedCardId(null);
       await loadDashboard();
     } else {
-      message.error('删除失败');
+      message.error(intl.formatMessage({ id: 'pages.dashboard.deleteCardFailed', defaultMessage: '删除失败' }));
     }
   }, [loadDashboard]);
 
@@ -194,7 +196,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
       height: card.height || defaultSize.h,
     });
     if (res.success) {
-      message.success('卡片已复制');
+      message.success(intl.formatMessage({ id: 'pages.dashboard.copySuccess', defaultMessage: '卡片已复制' }));
       await loadDashboard();
     }
   }, [dashboardId, loadDashboard]);

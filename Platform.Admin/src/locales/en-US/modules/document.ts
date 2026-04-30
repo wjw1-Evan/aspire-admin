@@ -118,4 +118,13 @@ export default {
   'pages.document.title': 'Document Management',
   'pages.document.approval.detail': 'Document Details',
   'pages.document.search.placeholder': 'Search by title or number',
+  'pages.document.searchPlaceholder': 'Search...',
+  'pages.document.columns.status': 'Status',
+  'pages.document.columns.title': 'Title',
+  'pages.document.columns.type': 'Type',
+  'pages.document.columns.category': 'Category',
+  'pages.document.columns.createdBy': 'Created By',
+  'pages.document.columns.createdAt': 'Created At',
+  'pages.document.columns.updatedAt': 'Updated At',
+  'pages.document.columns.content': 'Content',
 };

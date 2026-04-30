@@ -80,13 +80,13 @@ const MyActivity: React.FC = () => {
         actionRef={actionRef}
         headerTitle={
           <Space size={24}>
-            <Space><HistoryOutlined />我的活动</Space>
+            <Space><HistoryOutlined />{intl.formatMessage({ id: 'pages.myActivity.title' })}</Space>
             <Space size={12}>
-              <Tag color="blue">总记录 {state.statistics?.total || 0}</Tag>
-              <Tag color="green">成功 {state.statistics?.successCount || 0}</Tag>
-              <Tag color="red">错误 {state.statistics?.errorCount || 0}</Tag>
-              <Tag color="orange">操作类型 {state.statistics?.actionTypes?.length || 0}</Tag>
-              <Tag color="purple">平均耗时 {Math.round(state.statistics?.avgDuration || 0)}ms</Tag>
+              <Tag color="blue">{intl.formatMessage({ id: 'pages.myActivity.totalRecords' })} {state.statistics?.total || 0}</Tag>
+              <Tag color="green">{intl.formatMessage({ id: 'pages.myActivity.successCount' })} {state.statistics?.successCount || 0}</Tag>
+              <Tag color="red">{intl.formatMessage({ id: 'pages.myActivity.errorCount' })} {state.statistics?.errorCount || 0}</Tag>
+              <Tag color="orange">{intl.formatMessage({ id: 'pages.myActivity.actionTypes' })} {state.statistics?.actionTypes?.length || 0}</Tag>
+              <Tag color="purple">{intl.formatMessage({ id: 'pages.myActivity.avgDuration' })} {Math.round(state.statistics?.avgDuration || 0)}ms</Tag>
             </Space>
           </Space>
         }
@@ -99,7 +99,7 @@ const MyActivity: React.FC = () => {
         toolBarRender={() => [
           <Input.Search
             key="search"
-            placeholder="搜索..."
+            placeholder={intl.formatMessage({ id: 'pages.myActivity.searchPlaceholder' })}
             allowClear
             value={state.search}
             onChange={(e) => set({ search: e.target.value })}
@@ -118,6 +118,7 @@ const MyActivity: React.FC = () => {
 
 // ==================== LogDetailDrawer ====================
 const LogDetailDrawer: React.FC<{ open: boolean; logId?: string; fetchFromApi?: boolean; onClose: () => void }> = ({ open, logId, fetchFromApi, onClose }) => {
+  const intl = useIntl();
   const [log, setLog] = useState<UserActivityLog | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -133,18 +134,18 @@ const LogDetailDrawer: React.FC<{ open: boolean; logId?: string; fetchFromApi?: 
   if (!open) return null;
 
   return (
-    <Drawer title="日志详情" placement="right" open={open} onClose={onClose} size="large">
-      {loading ? <div>加载中...</div> : log ? (
+    <Drawer title={intl.formatMessage({ id: 'pages.myActivity.logDetailTitle' })} placement="right" open={open} onClose={onClose} size="large">
+      {loading ? <div>{intl.formatMessage({ id: 'pages.myActivity.loading' })}</div> : log ? (
         <ProDescriptions column={1} size="small" bordered>
-          <ProDescriptions.Item label="操作">{getActionText(log.action)}</ProDescriptions.Item>
-          <ProDescriptions.Item label="HTTP 方法">{log.httpMethod ? <Tag color={getMethodColor(log.httpMethod)}>{log.httpMethod}</Tag> : '-'}</ProDescriptions.Item>
-          <ProDescriptions.Item label="状态码">{getStatusBadge(log.statusCode)}</ProDescriptions.Item>
-          <ProDescriptions.Item label="请求URL">{log.fullUrl || '-'}</ProDescriptions.Item>
-          <ProDescriptions.Item label="耗时">{log.duration !== undefined ? `${log.duration}ms` : '-'}</ProDescriptions.Item>
-          <ProDescriptions.Item label="IP地址">{log.ipAddress || '-'}</ProDescriptions.Item>
-          <ProDescriptions.Item label="操作时间">{log.createdAt ? dayjs(log.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.myActivity.action' })}>{getActionText(log.action)}</ProDescriptions.Item>
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.myActivity.httpMethod' })}>{log.httpMethod ? <Tag color={getMethodColor(log.httpMethod)}>{log.httpMethod}</Tag> : '-'}</ProDescriptions.Item>
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.myActivity.statusCode' })}>{getStatusBadge(log.statusCode)}</ProDescriptions.Item>
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.myActivity.requestUrl' })}>{log.fullUrl || '-'}</ProDescriptions.Item>
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.myActivity.duration' })}>{log.duration !== undefined ? `${log.duration}ms` : '-'}</ProDescriptions.Item>
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.myActivity.ipAddress' })}>{log.ipAddress || '-'}</ProDescriptions.Item>
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.myActivity.actionTime' })}>{log.createdAt ? dayjs(log.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
         </ProDescriptions>
-      ) : <div>未找到日志</div>}
+      ) : <div>{intl.formatMessage({ id: 'pages.myActivity.logNotFound' })}</div>}
     </Drawer>
   );
 };

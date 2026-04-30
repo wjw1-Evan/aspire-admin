@@ -115,4 +115,6 @@ export default {
   'pages.document.table.title': 'Title',
   'pages.document.table.type': 'Type',
   'pages.document.title': 'Document Management',
+  'pages.document.approval.detail': 'Document Details',
+  'pages.document.search.placeholder': 'Search by title or number',
 };

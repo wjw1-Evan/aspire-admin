@@ -28,4 +28,5 @@ export default {
   'pages.roleManagement.statistics.totalUsers': 'Total Related Users',
   'pages.roleManagement.subTitle': 'System role configuration and permission management',
   'pages.roleManagement.title': 'Role Management',
+  'pages.roleForm.menuCount': 'Selected {count} menus',
 };

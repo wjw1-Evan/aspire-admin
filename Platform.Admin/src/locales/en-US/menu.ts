@@ -165,4 +165,7 @@ export default {
   'menu.park-management-visit-knowledge-base.desc': 'Manage visit questions and surveys',
   'menu.park-management-visit-statistics': 'Visit Statistics',
   'menu.park-management-visit-statistics.desc': 'Visit data statistics and AI analysis',
+  // Data Dashboard
+  'menu.data-dashboard': 'Data Dashboard',
+  'menu.data-dashboard.desc': 'Custom data visualization dashboard',
 };

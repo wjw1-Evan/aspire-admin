@@ -1,57 +1,57 @@
 /**
- * web-scraper translation module
- * Web scraping related translations
+ * Módulo de traducción web-scraper (es-ES)
+ * Traducciones relacionadas con web scraping
  */
 
 export default {
-  'pages.web-scraper.matchNotification': 'Match notification',
-  'pages.web-scraper.enableFilter': 'Enable filter',
-  'pages.web-scraper.filterPrompt': 'Filter prompt',
-  'pages.web-scraper.enableTask': 'Enable task',
+  'pages.web-scraper.matchNotification': 'Notificación de coincidencia',
+  'pages.web-scraper.enableFilter': 'Activar filtro',
+  'pages.web-scraper.filterPrompt': 'Prompt de filtro',
+  'pages.web-scraper.enableTask': 'Activar tarea',
 
   // web-scraper/TaskForm.tsx message calls
-  'pages.web-scraper.message.updateFailed': 'Update failed',
-  'pages.web-scraper.message.createFailed': 'Create failed',
+  'pages.web-scraper.message.updateFailed': 'Error al actualizar',
+  'pages.web-scraper.message.createFailed': 'Error al crear',
 
   // web-scraper/TaskForm.tsx UI
-  'pages.web-scraper.editTask': 'Edit task',
-  'pages.web-scraper.createTask': 'Create task',
-  'pages.web-scraper.taskName': 'Task name',
-  'pages.web-scraper.taskNameRequired': 'Please enter task name',
-  'pages.web-scraper.taskNamePlaceholder': 'Please enter task name',
-  'pages.web-scraper.targetUrl': 'Target URL',
-  'pages.web-scraper.targetUrlRequired': 'Please enter target URL',
-  'pages.web-scraper.targetUrlInvalid': 'Please enter a valid URL',
+  'pages.web-scraper.editTask': 'Editar tarea',
+  'pages.web-scraper.createTask': 'Crear tarea',
+  'pages.web-scraper.taskName': 'Nombre de la tarea',
+  'pages.web-scraper.taskNameRequired': 'Por favor ingrese el nombre de la tarea',
+  'pages.web-scraper.taskNamePlaceholder': 'Ingrese el nombre de la tarea',
+  'pages.web-scraper.targetUrl': 'URL objetivo',
+  'pages.web-scraper.targetUrlRequired': 'Por favor ingrese la URL objetivo',
+  'pages.web-scraper.targetUrlInvalid': 'Por favor ingrese una URL válida',
   'pages.web-scraper.targetUrlPlaceholder': 'https://example.com',
-  'pages.web-scraper.description': 'Description',
-  'pages.web-scraper.descriptionPlaceholder': 'Enter task description (optional)',
-  'pages.web-scraper.titleSelector': 'Title selector',
-  'pages.web-scraper.titleSelectorPlaceholder': 'CSS selector, e.g. h1.title',
-  'pages.web-scraper.titleSelectorTooltip': 'CSS selector for extracting page title, leave empty to use <title> tag',
-  'pages.web-scraper.contentSelector': 'Content selector',
-  'pages.web-scraper.contentSelectorPlaceholder': 'CSS selector, e.g. article.content',
-  'pages.web-scraper.contentSelectorTooltip': 'CSS selector for extracting page content, leave empty to use <body> tag',
-  'pages.web-scraper.crawlDepth': 'Crawl depth',
-  'pages.web-scraper.maxPagesPerLevel': 'Max pages per level',
-  'pages.web-scraper.crawlMode': 'Crawl mode',
-  'pages.web-scraper.urlFilter': 'URL filter regex',
-  'pages.web-scraper.urlFilterPlaceholder': 'e.g. ^https://example\\.com/.*',
-  'pages.web-scraper.followExternalLinks': 'Follow external links',
-  'pages.web-scraper.deduplicate': 'Deduplicate URLs',
-  'pages.web-scraper.scheduleCron': 'Schedule expression',
+  'pages.web-scraper.description': 'Descripción',
+  'pages.web-scraper.descriptionPlaceholder': 'Ingrese la descripción de la tarea (opcional)',
+  'pages.web-scraper.titleSelector': 'Selector de título',
+  'pages.web-scraper.titleSelectorPlaceholder': 'Selector CSS, ej: h1.title',
+  'pages.web-scraper.titleSelectorTooltip': 'Selector CSS para extraer el título de la página, dejar vacío para usar la etiqueta <title>',
+  'pages.web-scraper.contentSelector': 'Selector de contenido',
+  'pages.web-scraper.contentSelectorPlaceholder': 'Selector CSS, ej: article.content',
+  'pages.web-scraper.contentSelectorTooltip': 'Selector CSS para extraer el contenido principal, dejar vacío para usar la etiqueta <body>',
+  'pages.web-scraper.crawlDepth': 'Profundidad de rastreo',
+  'pages.web-scraper.maxPagesPerLevel': 'Máximo de páginas por nivel',
+  'pages.web-scraper.crawlMode': 'Modo de rastreo',
+  'pages.web-scraper.urlFilter': 'Filtro URL regex',
+  'pages.web-scraper.urlFilterPlaceholder': 'ej: ^https://example\\.com/.*',
+  'pages.web-scraper.followExternalLinks': 'Seguir enlaces externos',
+  'pages.web-scraper.deduplicate': 'Deduplicar URLs',
+  'pages.web-scraper.scheduleCron': 'Expresión de programación',
   'pages.web-scraper.scheduleCronPlaceholder': '0 */10 * * * *',
-  'pages.web-scraper.scheduleCronTooltip': '<p>Common examples:</p><ul><li>Every 10 minutes: <code>*/10 * * * *</code></li><li>Hourly: <code>0 * * * *</code></li><li>Daily at midnight: <code>0 0 * * *</code></li><li>Every Monday: <code>0 0 * * 1</code></li></ul>',
-  'pages.web-scraper.mode.single': 'Current page only',
-  'pages.web-scraper.mode.depth': 'Depth-first',
-  'pages.web-scraper.mode.breadth': 'Breadth-first',
-  'pages.web-scraper.submit': 'Create',
-  'pages.web-scraper.update': 'Update',
-  'pages.web-scraper.cancel': 'Cancel',
-  'pages.web-scraper.filterPromptPlaceholder': 'e.g. Filter pages containing "price" or "quote"',
-  // Results page
-  'pages.web-scraper.results.title.resultDetail': 'Scrape result details',
-  // Component ResultPreview
-  'pages.web-scraper.components.ResultPreview.title.pageDetail': 'Page details',
-  // Logs page
-  'pages.web-scraper.scrape-logs.title.logDetail': 'Log details',
+  'pages.web-scraper.scheduleCronTooltip': '<p>Ejemplos comunes:</p><ul><li>Cada 10 minutos: <code>*/10 * * * *</code></li><li>Cada hora: <code>0 * * * *</code></li><li>Cada día a medianoche: <code>0 0 * * *</code></li><li>Cada lunes: <code>0 0 * * 1</code></li></ul>',
+  'pages.web-scraper.mode.single': 'Solo página actual',
+  'pages.web-scraper.mode.depth': 'Profundidad primero',
+  'pages.web-scraper.mode.breadth': 'Anchura primero',
+  'pages.web-scraper.submit': 'Crear',
+  'pages.web-scraper.update': 'Actualizar',
+  'pages.web-scraper.cancel': 'Cancelar',
+  'pages.web-scraper.filterPromptPlaceholder': 'ej: Filtrar páginas que contengan "precio" o "presupuesto"',
+  // Página de resultados
+  'pages.web-scraper.results.title.resultDetail': 'Detalles del resultado de scraping',
+  // Componente ResultPreview
+  'pages.web-scraper.components.ResultPreview.title.pageDetail': 'Detalles de la página',
+  // Página de logs
+  'pages.web-scraper.scrape-logs.title.logDetail': 'Detalles del registro',
 };

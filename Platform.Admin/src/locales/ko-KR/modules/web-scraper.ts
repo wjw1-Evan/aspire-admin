@@ -1,57 +1,57 @@
 /**
- * web-scraper translation module
- * Web scraping related translations
+ * web-scraper 번역 모듈
+ * 웹 스크래핑 관련 번역
  */
 
 export default {
-  'pages.web-scraper.matchNotification': 'Match notification',
-  'pages.web-scraper.enableFilter': 'Enable filter',
-  'pages.web-scraper.filterPrompt': 'Filter prompt',
-  'pages.web-scraper.enableTask': 'Enable task',
+  'pages.web-scraper.matchNotification': '매치 알림',
+  'pages.web-scraper.enableFilter': '필터 활성화',
+  'pages.web-scraper.filterPrompt': '필터 프롬프트',
+  'pages.web-scraper.enableTask': '작업 활성화',
 
   // web-scraper/TaskForm.tsx message calls
-  'pages.web-scraper.message.updateFailed': 'Update failed',
-  'pages.web-scraper.message.createFailed': 'Create failed',
+  'pages.web-scraper.message.updateFailed': '업데이트 실패',
+  'pages.web-scraper.message.createFailed': '생성 실패',
 
   // web-scraper/TaskForm.tsx UI
-  'pages.web-scraper.editTask': 'Edit task',
-  'pages.web-scraper.createTask': 'Create task',
-  'pages.web-scraper.taskName': 'Task name',
-  'pages.web-scraper.taskNameRequired': 'Please enter task name',
-  'pages.web-scraper.taskNamePlaceholder': 'Please enter task name',
-  'pages.web-scraper.targetUrl': 'Target URL',
-  'pages.web-scraper.targetUrlRequired': 'Please enter target URL',
-  'pages.web-scraper.targetUrlInvalid': 'Please enter a valid URL',
+  'pages.web-scraper.editTask': '작업 편집',
+  'pages.web-scraper.createTask': '작업 생성',
+  'pages.web-scraper.taskName': '작업 이름',
+  'pages.web-scraper.taskNameRequired': '작업 이름을 입력하세요',
+  'pages.web-scraper.taskNamePlaceholder': '작업 이름을 입력하세요',
+  'pages.web-scraper.targetUrl': '대상 URL',
+  'pages.web-scraper.targetUrlRequired': '대상 URL을 입력하세요',
+  'pages.web-scraper.targetUrlInvalid': '유효한 URL을 입력하세요',
   'pages.web-scraper.targetUrlPlaceholder': 'https://example.com',
-  'pages.web-scraper.description': 'Description',
-  'pages.web-scraper.descriptionPlaceholder': 'Enter task description (optional)',
-  'pages.web-scraper.titleSelector': 'Title selector',
-  'pages.web-scraper.titleSelectorPlaceholder': 'CSS selector, e.g. h1.title',
-  'pages.web-scraper.titleSelectorTooltip': 'CSS selector for extracting page title, leave empty to use <title> tag',
-  'pages.web-scraper.contentSelector': 'Content selector',
-  'pages.web-scraper.contentSelectorPlaceholder': 'CSS selector, e.g. article.content',
-  'pages.web-scraper.contentSelectorTooltip': 'CSS selector for extracting page content, leave empty to use <body> tag',
-  'pages.web-scraper.crawlDepth': 'Crawl depth',
-  'pages.web-scraper.maxPagesPerLevel': 'Max pages per level',
-  'pages.web-scraper.crawlMode': 'Crawl mode',
-  'pages.web-scraper.urlFilter': 'URL filter regex',
-  'pages.web-scraper.urlFilterPlaceholder': 'e.g. ^https://example\\.com/.*',
-  'pages.web-scraper.followExternalLinks': 'Follow external links',
-  'pages.web-scraper.deduplicate': 'Deduplicate URLs',
-  'pages.web-scraper.scheduleCron': 'Schedule expression',
+  'pages.web-scraper.description': '설명',
+  'pages.web-scraper.descriptionPlaceholder': '작업 설명을 입력하세요 (선택 사항)',
+  'pages.web-scraper.titleSelector': '제목 선택자',
+  'pages.web-scraper.titleSelectorPlaceholder': 'CSS 선택자, 예: h1.title',
+  'pages.web-scraper.titleSelectorTooltip': '페이지 제목을 추출하기 위한 CSS 선택자, 비워두면 <title> 태그 사용',
+  'pages.web-scraper.contentSelector': '내용 선택자',
+  'pages.web-scraper.contentSelectorPlaceholder': 'CSS 선택자, 예: article.content',
+  'pages.web-scraper.contentSelectorTooltip': '페이지 본문을 추출하기 위한 CSS 선택자, 비워두면 <body> 태그 사용',
+  'pages.web-scraper.crawlDepth': '크롤링 깊이',
+  'pages.web-scraper.maxPagesPerLevel': '레벨당 최대 페이지 수',
+  'pages.web-scraper.crawlMode': '크롤링 모드',
+  'pages.web-scraper.urlFilter': 'URL 필터 정규식',
+  'pages.web-scraper.urlFilterPlaceholder': '예: ^https://example\\.com/.*',
+  'pages.web-scraper.followExternalLinks': '외부 링크 따르기',
+  'pages.web-scraper.deduplicate': 'URL 중복 제거',
+  'pages.web-scraper.scheduleCron': '스케줄 표현식',
   'pages.web-scraper.scheduleCronPlaceholder': '0 */10 * * * *',
-  'pages.web-scraper.scheduleCronTooltip': '<p>Common examples:</p><ul><li>Every 10 minutes: <code>*/10 * * * *</code></li><li>Hourly: <code>0 * * * *</code></li><li>Daily at midnight: <code>0 0 * * *</code></li><li>Every Monday: <code>0 0 * * 1</code></li></ul>',
-  'pages.web-scraper.mode.single': 'Current page only',
-  'pages.web-scraper.mode.depth': 'Depth-first',
-  'pages.web-scraper.mode.breadth': 'Breadth-first',
-  'pages.web-scraper.submit': 'Create',
-  'pages.web-scraper.update': 'Update',
-  'pages.web-scraper.cancel': 'Cancel',
-  'pages.web-scraper.filterPromptPlaceholder': 'e.g. Filter pages containing "price" or "quote"',
-  // Results page
-  'pages.web-scraper.results.title.resultDetail': 'Scrape result details',
-  // Component ResultPreview
-  'pages.web-scraper.components.ResultPreview.title.pageDetail': 'Page details',
-  // Logs page
-  'pages.web-scraper.scrape-logs.title.logDetail': 'Log details',
+  'pages.web-scraper.scheduleCronTooltip': '<p>일반적인 예:</p><ul><li>10분마다: <code>*/10 * * * *</code></li><li>매시간: <code>0 * * * *</code></li><li>매일 자정: <code>0 0 * * *</code></li><li>매주 월요일: <code>0 0 * * 1</code></li></ul>',
+  'pages.web-scraper.mode.single': '현재 페이지만',
+  'pages.web-scraper.mode.depth': '깊이 우선',
+  'pages.web-scraper.mode.breadth': '너비 우선',
+  'pages.web-scraper.submit': '생성',
+  'pages.web-scraper.update': '업데이트',
+  'pages.web-scraper.cancel': '취소',
+  'pages.web-scraper.filterPromptPlaceholder': '예: "가격" 또는 "견적"이 포함된 페이지 필터링',
+  // 결과 페이지
+  'pages.web-scraper.results.title.resultDetail': '스크래핑 결과 상세',
+  // 컴포넌트 ResultPreview
+  'pages.web-scraper.components.ResultPreview.title.pageDetail': '페이지 상세',
+  // 로그 페이지
+  'pages.web-scraper.scrape-logs.title.logDetail': '로그 상세',
 };

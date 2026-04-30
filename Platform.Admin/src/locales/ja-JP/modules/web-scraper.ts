@@ -1,57 +1,57 @@
 /**
- * web-scraper translation module
- * Web scraping related translations
+ * web-scraper 翻訳モジュール
+ * Webスクレイピング関連翻訳
  */
 
 export default {
-  'pages.web-scraper.matchNotification': 'Match notification',
-  'pages.web-scraper.enableFilter': 'Enable filter',
-  'pages.web-scraper.filterPrompt': 'Filter prompt',
-  'pages.web-scraper.enableTask': 'Enable task',
+  'pages.web-scraper.matchNotification': 'マッチ通知',
+  'pages.web-scraper.enableFilter': 'フィルターを有効化',
+  'pages.web-scraper.filterPrompt': 'フィルタープロンプト',
+  'pages.web-scraper.enableTask': 'タスクを有効化',
 
   // web-scraper/TaskForm.tsx message calls
-  'pages.web-scraper.message.updateFailed': 'Update failed',
-  'pages.web-scraper.message.createFailed': 'Create failed',
+  'pages.web-scraper.message.updateFailed': '更新失敗',
+  'pages.web-scraper.message.createFailed': '作成失敗',
 
   // web-scraper/TaskForm.tsx UI
-  'pages.web-scraper.editTask': 'Edit task',
-  'pages.web-scraper.createTask': 'Create task',
-  'pages.web-scraper.taskName': 'Task name',
-  'pages.web-scraper.taskNameRequired': 'Please enter task name',
-  'pages.web-scraper.taskNamePlaceholder': 'Please enter task name',
-  'pages.web-scraper.targetUrl': 'Target URL',
-  'pages.web-scraper.targetUrlRequired': 'Please enter target URL',
-  'pages.web-scraper.targetUrlInvalid': 'Please enter a valid URL',
+  'pages.web-scraper.editTask': 'タスクを編集',
+  'pages.web-scraper.createTask': 'タスクを新規作成',
+  'pages.web-scraper.taskName': 'タスク名',
+  'pages.web-scraper.taskNameRequired': 'タスク名を入力してください',
+  'pages.web-scraper.taskNamePlaceholder': 'タスク名を入力してください',
+  'pages.web-scraper.targetUrl': 'ターゲットURL',
+  'pages.web-scraper.targetUrlRequired': 'ターゲットURLを入力してください',
+  'pages.web-scraper.targetUrlInvalid': '有効なURLを入力してください',
   'pages.web-scraper.targetUrlPlaceholder': 'https://example.com',
-  'pages.web-scraper.description': 'Description',
-  'pages.web-scraper.descriptionPlaceholder': 'Enter task description (optional)',
-  'pages.web-scraper.titleSelector': 'Title selector',
-  'pages.web-scraper.titleSelectorPlaceholder': 'CSS selector, e.g. h1.title',
-  'pages.web-scraper.titleSelectorTooltip': 'CSS selector for extracting page title, leave empty to use <title> tag',
-  'pages.web-scraper.contentSelector': 'Content selector',
-  'pages.web-scraper.contentSelectorPlaceholder': 'CSS selector, e.g. article.content',
-  'pages.web-scraper.contentSelectorTooltip': 'CSS selector for extracting page content, leave empty to use <body> tag',
-  'pages.web-scraper.crawlDepth': 'Crawl depth',
-  'pages.web-scraper.maxPagesPerLevel': 'Max pages per level',
-  'pages.web-scraper.crawlMode': 'Crawl mode',
-  'pages.web-scraper.urlFilter': 'URL filter regex',
-  'pages.web-scraper.urlFilterPlaceholder': 'e.g. ^https://example\\.com/.*',
-  'pages.web-scraper.followExternalLinks': 'Follow external links',
-  'pages.web-scraper.deduplicate': 'Deduplicate URLs',
-  'pages.web-scraper.scheduleCron': 'Schedule expression',
+  'pages.web-scraper.description': '説明',
+  'pages.web-scraper.descriptionPlaceholder': 'タスクの説明を入力してください（任意）',
+  'pages.web-scraper.titleSelector': 'タイトルセレクター',
+  'pages.web-scraper.titleSelectorPlaceholder': 'CSSセレクター、例: h1.title',
+  'pages.web-scraper.titleSelectorTooltip': 'ページタイトルを抽出するCSSセレクター、空の場合は<title>タグを使用',
+  'pages.web-scraper.contentSelector': 'コンテンツセレクター',
+  'pages.web-scraper.contentSelectorPlaceholder': 'CSSセレクター、例: article.content',
+  'pages.web-scraper.contentSelectorTooltip': 'ページ本文を抽出するCSSセレクター、空の場合は<body>タグを使用',
+  'pages.web-scraper.crawlDepth': 'クロール深度',
+  'pages.web-scraper.maxPagesPerLevel': 'レベルごとの最大ページ数',
+  'pages.web-scraper.crawlMode': 'クロールモード',
+  'pages.web-scraper.urlFilter': 'URLフィルター正規表現',
+  'pages.web-scraper.urlFilterPlaceholder': '例: ^https://example\\.com/.*',
+  'pages.web-scraper.followExternalLinks': '外部リンクをフォロー',
+  'pages.web-scraper.deduplicate': 'URL重複削除',
+  'pages.web-scraper.scheduleCron': 'スケジュール式',
   'pages.web-scraper.scheduleCronPlaceholder': '0 */10 * * * *',
-  'pages.web-scraper.scheduleCronTooltip': '<p>Common examples:</p><ul><li>Every 10 minutes: <code>*/10 * * * *</code></li><li>Hourly: <code>0 * * * *</code></li><li>Daily at midnight: <code>0 0 * * *</code></li><li>Every Monday: <code>0 0 * * 1</code></li></ul>',
-  'pages.web-scraper.mode.single': 'Current page only',
-  'pages.web-scraper.mode.depth': 'Depth-first',
-  'pages.web-scraper.mode.breadth': 'Breadth-first',
-  'pages.web-scraper.submit': 'Create',
-  'pages.web-scraper.update': 'Update',
-  'pages.web-scraper.cancel': 'Cancel',
-  'pages.web-scraper.filterPromptPlaceholder': 'e.g. Filter pages containing "price" or "quote"',
-  // Results page
-  'pages.web-scraper.results.title.resultDetail': 'Scrape result details',
-  // Component ResultPreview
-  'pages.web-scraper.components.ResultPreview.title.pageDetail': 'Page details',
-  // Logs page
-  'pages.web-scraper.scrape-logs.title.logDetail': 'Log details',
+  'pages.web-scraper.scheduleCronTooltip': '<p>よく使われる例:</p><ul><li>10分ごと: <code>*/10 * * * *</code></li><li>毎時: <code>0 * * * *</code></li><li>毎日深夜: <code>0 0 * * *</code></li><li>毎週月曜: <code>0 0 * * 1</code></li></ul>',
+  'pages.web-scraper.mode.single': '現在のページのみ',
+  'pages.web-scraper.mode.depth': '深度優先',
+  'pages.web-scraper.mode.breadth': '幅優先',
+  'pages.web-scraper.submit': '作成',
+  'pages.web-scraper.update': '更新',
+  'pages.web-scraper.cancel': 'キャンセル',
+  'pages.web-scraper.filterPromptPlaceholder': '例: 「価格」または「見積もり」を含むページをフィルター',
+  // 結果ページ
+  'pages.web-scraper.results.title.resultDetail': 'スクレイピング結果詳細',
+  // コンポーネント ResultPreview
+  'pages.web-scraper.components.ResultPreview.title.pageDetail': 'ページ詳細',
+  // ログページ
+  'pages.web-scraper.scrape-logs.title.logDetail': 'ログ詳細',
 };

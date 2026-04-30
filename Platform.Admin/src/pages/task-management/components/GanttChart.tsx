@@ -68,7 +68,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId: initialProjectId }) 
   };
 
   const renderGanttTable = () => {
-    if (!tasks.length) return <Empty description={intl.formatMessage({ id: 'pages.projectManagement.gantt.noTasks' })} />;
+    if (!tasks.length) return <Empty description={intl.formatMessage({ id: 'pages.project.gantt.noTasks' })} />;
 
     const allTasks = flattenTasks(tasks);
     const allDates: Date[] = [];
@@ -176,8 +176,8 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId: initialProjectId }) 
         <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#fff' }}>
           <thead>
             <tr>
-              <th style={{ padding: '12px 8px', borderBottom: '2px solid #1890ff', borderRight: '1px solid #f0f0f0', backgroundColor: '#e6f7ff', textAlign: 'left', fontWeight: 600, color: '#1890ff', position: 'sticky', left: 0, zIndex: 10, minWidth: 250 }}>{intl.formatMessage({ id: 'pages.projectManagement.gantt.table.taskName' })}</th>
-              <th style={{ padding: '12px 8px', borderBottom: '2px solid #1890ff', borderRight: '1px solid #f0f0f0', backgroundColor: '#e6f7ff', fontWeight: 600, color: '#1890ff', position: 'sticky', left: 250, zIndex: 10, width: 120 }}>{intl.formatMessage({ id: 'pages.projectManagement.gantt.table.progress' })}</th>
+              <th style={{ padding: '12px 8px', borderBottom: '2px solid #1890ff', borderRight: '1px solid #f0f0f0', backgroundColor: '#e6f7ff', textAlign: 'left', fontWeight: 600, color: '#1890ff', position: 'sticky', left: 0, zIndex: 10, minWidth: 250 }}>{intl.formatMessage({ id: 'pages.project.gantt.table.taskName' })}</th>
+              <th style={{ padding: '12px 8px', borderBottom: '2px solid #1890ff', borderRight: '1px solid #f0f0f0', backgroundColor: '#e6f7ff', fontWeight: 600, color: '#1890ff', position: 'sticky', left: 250, zIndex: 10, width: 120 }}>{intl.formatMessage({ id: 'pages.project.gantt.table.progress' })}</th>
               <th style={{ padding: '12px 8px', borderBottom: '2px solid #1890ff', backgroundColor: '#e6f7ff', fontWeight: 600, color: '#1890ff', minWidth: totalDays * dayWidth }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span>{dayjs(minDate).format('YYYY-MM-DD')}</span>
@@ -198,9 +198,9 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId: initialProjectId }) 
       {!initialProjectId && (
         <ProCard style={{ marginBottom: 16, borderRadius: 8 }}>
           <Space>
-            <span style={{ fontWeight: 500 }}>{intl.formatMessage({ id: 'pages.projectManagement.gantt.selectProject' })}：</span>
+            <span style={{ fontWeight: 500 }}>{intl.formatMessage({ id: 'pages.project.gantt.selectProject' })}：</span>
             <Select
-              placeholder={intl.formatMessage({ id: 'pages.projectManagement.gantt.allProjects' })}
+              placeholder={intl.formatMessage({ id: 'pages.project.gantt.allProjects' })}
               style={{ width: 220 }}
               value={selectedProjectId}
               onChange={setSelectedProjectId}
@@ -219,7 +219,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId: initialProjectId }) 
           <div style={{ marginTop: 16, padding: '12px 16px', backgroundColor: 'linear-gradient(90deg, #fff7e6 0%, #fffbe6 100%)', borderRadius: 8, border: '1px solid #ffe7ba' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
               <span style={{ fontSize: 16 }}>🔥</span>
-              <strong style={{ color: '#d46b08' }}>{intl.formatMessage({ id: 'pages.projectManagement.gantt.criticalPath' })}</strong>
+              <strong style={{ color: '#d46b08' }}>{intl.formatMessage({ id: 'pages.project.gantt.criticalPath' })}</strong>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {(() => {

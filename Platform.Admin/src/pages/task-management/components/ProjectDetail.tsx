@@ -128,8 +128,8 @@ const CombinedTaskView: React.FC<{ tasks: TaskDto[] }> = ({ tasks }) => {
         <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#fff' }}>
           <thead>
             <tr>
-              <th style={{ padding: '10px 8px', borderBottom: '2px solid #1890ff', borderRight: '1px solid #f0f0f0', backgroundColor: '#e6f7ff', textAlign: 'left', fontWeight: 600, color: '#1890ff', position: 'sticky', top: 0, left: 0, zIndex: 20, minWidth: 200 }}>{intl.formatMessage({ id: 'pages.projectManagement.gantt.table.taskName' })}</th>
-              <th style={{ padding: '10px 8px', borderBottom: '2px solid #1890ff', borderRight: '1px solid #f0f0f0', backgroundColor: '#e6f7ff', fontWeight: 600, color: '#1890ff', position: 'sticky', top: 0, left: 200, zIndex: 20, width: 80 }}>{intl.formatMessage({ id: 'pages.projectManagement.gantt.table.progress' })}</th>
+              <th style={{ padding: '10px 8px', borderBottom: '2px solid #1890ff', borderRight: '1px solid #f0f0f0', backgroundColor: '#e6f7ff', textAlign: 'left', fontWeight: 600, color: '#1890ff', position: 'sticky', top: 0, left: 0, zIndex: 20, minWidth: 200 }}>{intl.formatMessage({ id: 'pages.project.gantt.table.taskName' })}</th>
+              <th style={{ padding: '10px 8px', borderBottom: '2px solid #1890ff', borderRight: '1px solid #f0f0f0', backgroundColor: '#e6f7ff', fontWeight: 600, color: '#1890ff', position: 'sticky', top: 0, left: 200, zIndex: 20, width: 80 }}>{intl.formatMessage({ id: 'pages.project.gantt.table.progress' })}</th>
               <th style={{ padding: '10px 8px', borderBottom: '2px solid #1890ff', backgroundColor: '#e6f7ff', fontWeight: 600, color: '#1890ff', position: 'sticky', top: 0, zIndex: 10, minWidth: totalDays * dayWidth }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
                   <span>{dayjs(minDate).format('YYYY-MM-DD')}</span>
@@ -175,17 +175,17 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
   };
 
   const statusMap: Record<number, { color: string; text: string }> = {
-    [ProjectStatus.Planning]: { color: 'default', text: intl.formatMessage({ id: 'pages.projectManagement.status.planning' }) },
-    [ProjectStatus.InProgress]: { color: 'processing', text: intl.formatMessage({ id: 'pages.projectManagement.status.inProgress' }) },
-    [ProjectStatus.OnHold]: { color: 'warning', text: intl.formatMessage({ id: 'pages.projectManagement.status.onHold' }) },
-    [ProjectStatus.Completed]: { color: 'success', text: intl.formatMessage({ id: 'pages.projectManagement.status.completed' }) },
-    [ProjectStatus.Cancelled]: { color: 'error', text: intl.formatMessage({ id: 'pages.projectManagement.status.cancelled' }) },
+    [ProjectStatus.Planning]: { color: 'default', text: intl.formatMessage({ id: 'pages.project.status.planning' }) },
+    [ProjectStatus.InProgress]: { color: 'processing', text: intl.formatMessage({ id: 'pages.project.status.inProgress' }) },
+    [ProjectStatus.OnHold]: { color: 'warning', text: intl.formatMessage({ id: 'pages.project.status.onHold' }) },
+    [ProjectStatus.Completed]: { color: 'success', text: intl.formatMessage({ id: 'pages.project.status.completed' }) },
+    [ProjectStatus.Cancelled]: { color: 'error', text: intl.formatMessage({ id: 'pages.project.status.cancelled' }) },
   };
 
   const priorityMap: Record<number, { color: string; text: string }> = {
-    [ProjectPriority.Low]: { color: 'default', text: intl.formatMessage({ id: 'pages.projectManagement.priority.low' }) },
-    [ProjectPriority.Medium]: { color: 'blue', text: intl.formatMessage({ id: 'pages.projectManagement.priority.medium' }) },
-    [ProjectPriority.High]: { color: 'red', text: intl.formatMessage({ id: 'pages.projectManagement.priority.high' }) },
+    [ProjectPriority.Low]: { color: 'default', text: intl.formatMessage({ id: 'pages.project.priority.low' }) },
+    [ProjectPriority.Medium]: { color: 'blue', text: intl.formatMessage({ id: 'pages.project.priority.medium' }) },
+    [ProjectPriority.High]: { color: 'red', text: intl.formatMessage({ id: 'pages.project.priority.high' }) },
   };
 
   const statusInfo = statusMap[project.status] || { color: 'default', text: intl.formatMessage({ id: 'pages.table.unknown' }) };
@@ -207,36 +207,36 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
         items={[
           {
             key: 'info',
-            label: intl.formatMessage({ id: 'pages.projectManagement.detail.basicInfo' }),
+            label: intl.formatMessage({ id: 'pages.project.detail.basicInfo' }),
             icon: <ProjectOutlined />,
             children: (
               <ProDescriptions column={isMobile ? 1 : 2} bordered>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.name' })}>{project.name}</ProDescriptions.Item>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.status' })}>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.table.name' })}>{project.name}</ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.table.status' })}>
                   <Tag color={statusInfo.color}>{statusInfo.text}</Tag>
                 </ProDescriptions.Item>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.priority' })}>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.table.priority' })}>
                   <Tag color={priorityInfo.color}>{priorityInfo.text}</Tag>
                 </ProDescriptions.Item>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.progress' })}>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.table.progress' })}>
                   <Progress percent={project.progress} size="small" />
                 </ProDescriptions.Item>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.detail.budget' })}>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.detail.budget' })}>
                   {project.budget ? `¥${project.budget.toLocaleString()}` : '-'}
                 </ProDescriptions.Item>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.startDate' })} span={1}>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.table.startDate' })} span={1}>
                   {project.startDate || '-'}
                 </ProDescriptions.Item>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.endDate' })} span={1}>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.table.endDate' })} span={1}>
                   {project.endDate || '-'}
                 </ProDescriptions.Item>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.detail.description' })} span={2}>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.detail.description' })} span={2}>
                   {project.description || '-'}
                 </ProDescriptions.Item>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.createdAt' })}>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.table.createdAt' })}>
                   {project.createdAt}
                 </ProDescriptions.Item>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.detail.createdBy' })}>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.detail.createdBy' })}>
                   {project.createdByName || '-'}
                 </ProDescriptions.Item>
               </ProDescriptions>
@@ -244,14 +244,14 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
           },
           {
             key: 'tasks',
-            label: intl.formatMessage({ id: 'pages.projectManagement.taskTree.title' }),
+            label: intl.formatMessage({ id: 'pages.project.taskTree.title' }),
             icon: <BarChartOutlined />,
             children: project.id ? (
               <Spin spinning={tasksLoading}>
                 {tasks.length > 0 ? (
                   <CombinedTaskView tasks={tasks} />
                 ) : (
-                  <Empty description={intl.formatMessage({ id: 'pages.projectManagement.taskTree.noTasks' })} />
+                  <Empty description={intl.formatMessage({ id: 'pages.project.taskTree.noTasks' })} />
                 )}
               </Spin>
             ) : null,

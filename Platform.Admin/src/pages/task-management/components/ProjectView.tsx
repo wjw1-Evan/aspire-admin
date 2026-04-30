@@ -73,18 +73,18 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
 
   const handleDelete = useCallback(async (projectId: string) => {
     confirm({
-      title: intl.formatMessage({ id: 'pages.projectManagement.modal.deleteProject' }),
-      content: intl.formatMessage({ id: 'pages.projectManagement.message.confirmDelete' }),
+      title: intl.formatMessage({ id: 'pages.project.modal.deleteProject' }),
+      content: intl.formatMessage({ id: 'pages.project.message.confirmDelete' }),
       okText: intl.formatMessage({ id: 'pages.button.delete' }),
       cancelText: intl.formatMessage({ id: 'pages.table.cancel' }),
       okButtonProps: { danger: true },
       onOk: async () => {
         try {
           await deleteProject(projectId);
-          message.success(intl.formatMessage({ id: 'pages.projectManagement.message.deleteSuccess' }));
+          message.success(intl.formatMessage({ id: 'pages.project.message.deleteSuccess' }));
           fetchStatistics();
         } catch (error) {
-          message.error(intl.formatMessage({ id: 'pages.projectManagement.message.deleteFailed' }));
+          message.error(intl.formatMessage({ id: 'pages.project.message.deleteFailed' }));
         }
       },
     });
@@ -130,7 +130,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
 
   const columns: ProColumns<ProjectDto>[] = useMemo(() => [
     {
-      title: intl.formatMessage({ id: 'pages.projectManagement.table.name' }),
+      title: intl.formatMessage({ id: 'pages.project.table.name' }),
       dataIndex: 'name',
       key: 'name',
       sorter: true,
@@ -147,46 +147,46 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       ),
     },
     {
-      title: intl.formatMessage({ id: 'pages.projectManagement.table.status' }),
+      title: intl.formatMessage({ id: 'pages.project.table.status' }),
       dataIndex: 'status',
       key: 'status',
       sorter: true,
       render: (_: any, record: ProjectDto) => {
         const statusMap: Record<number, { color: string; text: string }> = {
-          [ProjectStatus.Planning]: { color: 'default', text: intl.formatMessage({ id: 'pages.projectManagement.status.planning' }) },
-          [ProjectStatus.InProgress]: { color: 'processing', text: intl.formatMessage({ id: 'pages.projectManagement.status.inProgress' }) },
-          [ProjectStatus.OnHold]: { color: 'warning', text: intl.formatMessage({ id: 'pages.projectManagement.status.onHold' }) },
-          [ProjectStatus.Completed]: { color: 'success', text: intl.formatMessage({ id: 'pages.projectManagement.status.completed' }) },
-          [ProjectStatus.Cancelled]: { color: 'error', text: intl.formatMessage({ id: 'pages.projectManagement.status.cancelled' }) },
+          [ProjectStatus.Planning]: { color: 'default', text: intl.formatMessage({ id: 'pages.project.status.planning' }) },
+          [ProjectStatus.InProgress]: { color: 'processing', text: intl.formatMessage({ id: 'pages.project.status.inProgress' }) },
+          [ProjectStatus.OnHold]: { color: 'warning', text: intl.formatMessage({ id: 'pages.project.status.onHold' }) },
+          [ProjectStatus.Completed]: { color: 'success', text: intl.formatMessage({ id: 'pages.project.status.completed' }) },
+          [ProjectStatus.Cancelled]: { color: 'error', text: intl.formatMessage({ id: 'pages.project.status.cancelled' }) },
         };
         const statusInfo = statusMap[record.status] || { color: 'default', text: intl.formatMessage({ id: 'pages.table.unknown' }) };
         return <Badge status={statusInfo.color as any} text={statusInfo.text} />;
       },
     },
     {
-      title: intl.formatMessage({ id: 'pages.projectManagement.table.progress' }),
+      title: intl.formatMessage({ id: 'pages.project.table.progress' }),
       dataIndex: 'progress',
       key: 'progress',
       sorter: true,
       render: (dom: any) => <Progress percent={dom} size="small" />,
     },
     {
-      title: intl.formatMessage({ id: 'pages.projectManagement.table.priority' }),
+      title: intl.formatMessage({ id: 'pages.project.table.priority' }),
       dataIndex: 'priority',
       key: 'priority',
       sorter: true,
       render: (_: any, record: ProjectDto) => {
         const priorityMap: Record<number, { color: string; text: string }> = {
-          [ProjectPriority.Low]: { color: 'default', text: intl.formatMessage({ id: 'pages.projectManagement.priority.low' }) },
-          [ProjectPriority.Medium]: { color: 'blue', text: intl.formatMessage({ id: 'pages.projectManagement.priority.medium' }) },
-          [ProjectPriority.High]: { color: 'red', text: intl.formatMessage({ id: 'pages.projectManagement.priority.high' }) },
+          [ProjectPriority.Low]: { color: 'default', text: intl.formatMessage({ id: 'pages.project.priority.low' }) },
+          [ProjectPriority.Medium]: { color: 'blue', text: intl.formatMessage({ id: 'pages.project.priority.medium' }) },
+          [ProjectPriority.High]: { color: 'red', text: intl.formatMessage({ id: 'pages.project.priority.high' }) },
         };
         const priorityInfo = priorityMap[record.priority] || { color: 'default', text: intl.formatMessage({ id: 'pages.table.unknown' }) };
         return <Tag color={priorityInfo.color}>{priorityInfo.text}</Tag>;
       },
     },
     {
-      title: intl.formatMessage({ id: 'pages.projectManagement.table.members' }),
+      title: intl.formatMessage({ id: 'pages.project.table.members' }),
       dataIndex: 'projectMembers',
       key: 'projectMembers',
       sorter: true,
@@ -198,28 +198,28 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       },
     },
     {
-      title: intl.formatMessage({ id: 'pages.projectManagement.table.createdBy' }),
+      title: intl.formatMessage({ id: 'pages.project.table.createdBy' }),
       dataIndex: 'createdByName',
       key: 'createdByName',
       sorter: true,
       render: (dom: any) => dom || '-',
     },
     {
-      title: intl.formatMessage({ id: 'pages.projectManagement.table.startDate' }),
+      title: intl.formatMessage({ id: 'pages.project.table.startDate' }),
       dataIndex: 'startDate',
       key: 'startDate',
       sorter: true,
       render: (_: any, record: ProjectDto) => formatDate(record.startDate),
     },
     {
-      title: intl.formatMessage({ id: 'pages.projectManagement.table.endDate' }),
+      title: intl.formatMessage({ id: 'pages.project.table.endDate' }),
       dataIndex: 'endDate',
       key: 'endDate',
       sorter: true,
       render: (_: any, record: ProjectDto) => formatDate(record.endDate),
     },
     {
-      title: intl.formatMessage({ id: 'pages.projectManagement.table.createdAt' }),
+      title: intl.formatMessage({ id: 'pages.project.table.createdAt' }),
       dataIndex: 'createdAt',
       key: 'createdAt',
       sorter: true,
@@ -263,12 +263,12 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       <ProTable<ProjectDto>
         headerTitle={
           <Space size={24}>
-            <Space><ProjectOutlined />{intl.formatMessage({ id: 'pages.projectManagement.title' })}</Space>
+            <Space><ProjectOutlined />{intl.formatMessage({ id: 'pages.project.title' })}</Space>
             <Space size={12}>
-              <Tag color="blue">{intl.formatMessage({ id: 'pages.projectManagement.statistics.totalProjects' })} {statistics?.totalProjects || 0}</Tag>
-              <Tag color="green">{intl.formatMessage({ id: 'pages.projectManagement.statistics.inProgressProjects' })} {statistics?.inProgressProjects || 0}</Tag>
-              <Tag color="cyan">{intl.formatMessage({ id: 'pages.projectManagement.statistics.completedProjects' })} {statistics?.completedProjects || 0}</Tag>
-              <Tag color="red">{intl.formatMessage({ id: 'pages.projectManagement.statistics.delayedProjects' })} {statistics?.delayedProjects || 0}</Tag>
+              <Tag color="blue">{intl.formatMessage({ id: 'pages.project.statistics.totalProjects' })} {statistics?.totalProjects || 0}</Tag>
+              <Tag color="green">{intl.formatMessage({ id: 'pages.project.statistics.inProgressProjects' })} {statistics?.inProgressProjects || 0}</Tag>
+              <Tag color="cyan">{intl.formatMessage({ id: 'pages.project.statistics.completedProjects' })} {statistics?.completedProjects || 0}</Tag>
+              <Tag color="red">{intl.formatMessage({ id: 'pages.project.statistics.delayedProjects' })} {statistics?.delayedProjects || 0}</Tag>
             </Space>
           </Space>
         }
@@ -303,7 +303,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
             prefix={<SearchOutlined />}
           />,
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { setEditingProject(null); setFormVisible(true); }}>
-            {intl.formatMessage({ id: 'pages.projectManagement.createProject' })}
+            {intl.formatMessage({ id: 'pages.project.createProject' })}
           </Button>,
         ]}
       />

@@ -97,4 +97,20 @@ export default {
 
     // ── 服务器错误 (Server) ──
     'SERVER_ERROR': 'Internal server error',
+
+  // ── Document Related (Document) ──
+  'DOCUMENT_NOT_FOUND': '公文不存在',
+  'WORKFLOW_INSTANCE_NOT_FOUND': '流程實例不存在',
+  'WORKFLOW_DEFINITION_NOT_FOUND': '流程定義不存在',
+  'FORM_DEFINITION_NOT_FOUND': '表單定義不存在',
+  'DOCUMENT_TITLE_REQUIRED': '公文標題不能為空',
+  'WORKFLOW_DEFINITION_ID_REQUIRED': '流程定義ID不能為空',
+  'DOCUMENT_ID_REQUIRED': '文檔ID不能為空',
+  'REQUEST_PARAM_REQUIRED': '請求參數不能為空',
+  'REJECT_REASON_REQUIRED': '拒絕原因不能為空',
+  'RETURN_TARGET_NODE_REQUIRED': '退回目標節點不能為空',
+  'RETURN_REASON_REQUIRED': '退回原因不能為空',
+  'DELEGATE_TARGET_USER_REQUIRED': '轉辦目標用戶不能為空',
+  'WORKFLOW_NODE_NOT_CONFIGURED': '流程節點未配置表單定義ID',
+  'NO_PENDING_NODE': '流程實例當前無待處理節點',
 };

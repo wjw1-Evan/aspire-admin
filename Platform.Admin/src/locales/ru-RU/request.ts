@@ -97,4 +97,11 @@ export default {
 
     // ── 服务器错误 (Server) ──
     'SERVER_ERROR': 'Internal server error',
+  'DOCUMENT_ID_REQUIRED': 'Document ID is required',
+  'DOCUMENT_NOT_FOUND': 'Document not found',
+  'DOCUMENT_TITLE_REQUIRED': 'Document title is required',
+  'WORKFLOW_DEFINITION_ID_REQUIRED': 'Workflow definition ID is required',
+  'WORKFLOW_DEFINITION_NOT_FOUND': 'Workflow definition not found',
+  'WORKFLOW_INSTANCE_NOT_FOUND': 'Workflow instance not found',
+  'WORKFLOW_NODE_NOT_CONFIGURED': 'Workflow node not configured with form definition ID',
 };

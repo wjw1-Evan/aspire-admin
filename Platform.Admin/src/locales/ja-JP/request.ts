@@ -97,4 +97,20 @@ export default {
 
     // ── 服务器错误 (Server) ──
     'SERVER_ERROR': 'Internal server error',
+
+  // ── Document Related (Document) ──
+  'DOCUMENT_NOT_FOUND': '文書が見つかりません',
+  'WORKFLOW_INSTANCE_NOT_FOUND': 'ワークフローインスタンスが見つかりません',
+  'WORKFLOW_DEFINITION_NOT_FOUND': 'ワークフロー定義が見つかりません',
+  'FORM_DEFINITION_NOT_FOUND': 'フォーム定義が見つかりません',
+  'DOCUMENT_TITLE_REQUIRED': '文書タイトルは必須です',
+  'WORKFLOW_DEFINITION_ID_REQUIRED': 'ワークフロー定義IDは必須です',
+  'DOCUMENT_ID_REQUIRED': '文書IDは必須です',
+  'REQUEST_PARAM_REQUIRED': 'リクエストパラメータは必須です',
+  'REJECT_REASON_REQUIRED': '却下理由は必須です',
+  'RETURN_TARGET_NODE_REQUIRED': '戻り先ノードは必須です',
+  'RETURN_REASON_REQUIRED': '戻り理由は必須です',
+  'DELEGATE_TARGET_USER_REQUIRED': '委任先ユーザーは必須です',
+  'WORKFLOW_NODE_NOT_CONFIGURED': 'ワークフローノードにフォーム定義IDが設定されていません',
+  'NO_PENDING_NODE': 'ワークフローインスタンスに待機中のノードがありません',
 };

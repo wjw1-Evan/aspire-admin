@@ -97,4 +97,20 @@ export default {
 
     // ── 服务器错误 (Server) ──
     'SERVER_ERROR': '服务器内部错误',
+
+    // ── 公文相关 (Document) ──
+    'DOCUMENT_NOT_FOUND': '公文不存在',
+    'WORKFLOW_INSTANCE_NOT_FOUND': '流程实例不存在',
+    'WORKFLOW_DEFINITION_NOT_FOUND': '流程定义不存在',
+    'FORM_DEFINITION_NOT_FOUND': '表单定义不存在',
+    'DOCUMENT_TITLE_REQUIRED': '公文标题不能为空',
+    'WORKFLOW_DEFINITION_ID_REQUIRED': '流程定义ID不能为空',
+    'DOCUMENT_ID_REQUIRED': '文档ID不能为空',
+    'REQUEST_PARAM_REQUIRED': '请求参数不能为空',
+    'REJECT_REASON_REQUIRED': '拒绝原因不能为空',
+    'RETURN_TARGET_NODE_REQUIRED': '退回目标节点不能为空',
+    'RETURN_REASON_REQUIRED': '退回原因不能为空',
+    'DELEGATE_TARGET_USER_REQUIRED': '转办目标用户不能为空',
+    'WORKFLOW_NODE_NOT_CONFIGURED': '流程节点未配置表单定义ID',
+    'NO_PENDING_NODE': '流程实例当前无待处理节点',
 };

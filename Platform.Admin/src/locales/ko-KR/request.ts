@@ -97,4 +97,20 @@ export default {
 
     // ── 服务器错误 (Server) ──
     'SERVER_ERROR': 'Internal server error',
+
+  // ── Document Related (Document) ──
+  'DOCUMENT_NOT_FOUND': '문서를 찾을 수 없습니다',
+  'WORKFLOW_INSTANCE_NOT_FOUND': '워크플로우 인스턴스를 찾을 수 없습니다',
+  'WORKFLOW_DEFINITION_NOT_FOUND': '워크플로우 정의를 찾을 수 없습니다',
+  'FORM_DEFINITION_NOT_FOUND': '양식 정의를 찾을 수 없습니다',
+  'DOCUMENT_TITLE_REQUIRED': '문서 제목은 필수입니다',
+  'WORKFLOW_DEFINITION_ID_REQUIRED': '워크플로우 정의 ID는 필수입니다',
+  'DOCUMENT_ID_REQUIRED': '문서 ID는 필수입니다',
+  'REQUEST_PARAM_REQUIRED': '요청 매개변수는 필수입니다',
+  'REJECT_REASON_REQUIRED': '거절 사유는 필수입니다',
+  'RETURN_TARGET_NODE_REQUIRED': '반환 대상 노드는 필수입니다',
+  'RETURN_REASON_REQUIRED': '반환 사유는 필수입니다',
+  'DELEGATE_TARGET_USER_REQUIRED': '위임 대상 사용자는 필수입니다',
+  'WORKFLOW_NODE_NOT_CONFIGURED': '워크플로우 노드에 양식 정의 ID가 구성되지 않았습니다',
+  'NO_PENDING_NODE': '워크플로우 인스턴스에 대기 중인 노드가 없습니다',
 };

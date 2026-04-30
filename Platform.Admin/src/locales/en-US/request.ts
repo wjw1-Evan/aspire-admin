@@ -97,4 +97,20 @@ export default {
 
     // ── 服务器错误 (Server) ──
     'SERVER_ERROR': 'Internal server error',
+
+    // ── 公文相关 (Document) ──
+    'DOCUMENT_NOT_FOUND': 'Document not found',
+    'WORKFLOW_INSTANCE_NOT_FOUND': 'Workflow instance not found',
+    'WORKFLOW_DEFINITION_NOT_FOUND': 'Workflow definition not found',
+    'FORM_DEFINITION_NOT_FOUND': 'Form definition not found',
+    'DOCUMENT_TITLE_REQUIRED': 'Document title is required',
+    'WORKFLOW_DEFINITION_ID_REQUIRED': 'Workflow definition ID is required',
+    'DOCUMENT_ID_REQUIRED': 'Document ID is required',
+    'REQUEST_PARAM_REQUIRED': 'Request parameter is required',
+    'REJECT_REASON_REQUIRED': 'Reject reason is required',
+    'RETURN_TARGET_NODE_REQUIRED': 'Return target node is required',
+    'RETURN_REASON_REQUIRED': 'Return reason is required',
+    'DELEGATE_TARGET_USER_REQUIRED': 'Delegate target user is required',
+    'WORKFLOW_NODE_NOT_CONFIGURED': 'Workflow node not configured with form definition ID',
+    'NO_PENDING_NODE': 'No pending node in the workflow instance',
 };

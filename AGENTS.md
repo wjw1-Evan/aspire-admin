@@ -976,7 +976,8 @@ throw new UnauthorizedAccessException(ErrorCode.CurrentCompanyNotFound);
 - 错误码常量定义见 `Platform.ServiceDefaults/Models/ErrorCode.cs`
 - 错误码→消息字典也定义在 `ErrorCode.ErrorMessages`，`BusinessExceptionFilter` 自动查表
 - 前端错误码常量定义见 `Platform.Admin/src/constants/errorCodes.ts`
-- 所有 locale 的 `request.ts` 应包含完整错误码翻译
+- **支持 18 种语言**：zh-CN, zh-TW, en-US, ja-JP, ko-KR, id-ID, pt-BR, es-ES, fr-FR, de-DE, it-IT, ru-RU, ar-EG, th-TH, vi-VN, bn-BD, fa-IR, tr-TR
+- 所有 locale 的 `request.ts` 和 `modules/other.ts` 应包含完整错误码翻译（共 100+ 个错误码）
 
 **原因**：
 

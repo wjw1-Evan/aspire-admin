@@ -26,16 +26,16 @@ const KnowledgeBaseManagement: React.FC = () => {
 
   const handleDelete = (record: KnowledgeBase) => {
     Modal.confirm({
-      title: '确定要删除这个知识库吗？',
-      content: '删除后将无法在工作流中使用该知识库进行内容检索。',
-      okText: '确定',
+      title: intl.formatMessage({ id: 'pages.workflow.knowledgeBase.deleteConfirm' }),
+      content: intl.formatMessage({ id: 'pages.workflow.knowledgeBase.deleteContent' }),
+      okText: intl.formatMessage({ id: 'pages.workflow.knowledgeBase.deleteOk' }),
       okType: 'danger',
-      cancelText: '取消',
+      cancelText: intl.formatMessage({ id: 'pages.workflow.knowledgeBase.deleteCancel' }),
       onOk: async () => {
         try {
           const res = await kbService.deleteKnowledgeBase(record.id);
           if (res.success) {
-            message.success('删除成功');
+            message.success(intl.formatMessage({ id: 'pages.workflow.knowledgeBase.deleteSuccess' }));
             actionRef.current?.reload();
           }
         } catch (error) {
@@ -71,7 +71,7 @@ const KnowledgeBaseManagement: React.FC = () => {
       key: 'category',
       width: 120,
       sorter: true,
-      render: (dom: any) => <Tag color="blue">{dom || '通用'}</Tag>,
+      render: (dom: any) => <Tag color="blue">{dom || intl.formatMessage({ id: 'pages.workflow.knowledgeBase.categoryDefault' })}</Tag>,
     },
     {
       title: intl.formatMessage({ id: 'pages.workflow.knowledgeBase.itemCount' }),
@@ -89,7 +89,7 @@ const KnowledgeBaseManagement: React.FC = () => {
       sorter: true,
       valueType: 'switch',
       render: (dom: any, record: KnowledgeBase) => (
-        <Tag color={record.isActive ? 'success' : 'default'}>{record.isActive ? '启用' : '禁用'}</Tag>
+        <Tag color={record.isActive ? 'success' : 'default'}>{record.isActive ? intl.formatMessage({ id: 'pages.workflow.knowledgeBase.statusEnabled' }) : intl.formatMessage({ id: 'pages.workflow.knowledgeBase.statusDisabled' })}</Tag>
       ),
     },
     {
@@ -101,17 +101,17 @@ const KnowledgeBaseManagement: React.FC = () => {
       valueType: 'dateTime',
     },
     {
-      title: '操作',
+      title: intl.formatMessage({ id: 'pages.workflow.knowledgeBase.action' }),
       key: 'action',
       valueType: 'option',
       fixed: 'right',
       width: 180,
       render: (_: any, record: KnowledgeBase) => (
         <Space size={4}>
-          <Button variant="link" color="cyan" size="small" icon={<FolderOpenOutlined />} onClick={() => history.push(`/workflow/knowledge-base/documents/${record.id}`)}>管理内容</Button>
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleOpenModal(record)}>编辑</Button>
-          <Popconfirm title={`确定删除「${record.name}」？`} onConfirm={() => handleDelete(record)}>
-            <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
+          <Button variant="link" color="cyan" size="small" icon={<FolderOpenOutlined />} onClick={() => history.push(`/workflow/knowledge-base/documents/${record.id}`)}>{intl.formatMessage({ id: 'pages.workflow.knowledgeBase.manageContent' })}</Button>
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleOpenModal(record)}>{intl.formatMessage({ id: 'pages.workflow.knowledgeBase.edit' })}</Button>
+          <Popconfirm title={intl.formatMessage({ id: 'pages.workflow.knowledgeBase.deleteConfirmWithName' }, { name: record.name })} onConfirm={() => handleDelete(record)}>
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.workflow.knowledgeBase.delete' })}</Button>
           </Popconfirm>
         </Space>
       ),
@@ -134,16 +134,16 @@ const KnowledgeBaseManagement: React.FC = () => {
         columns={columns}
         scroll={{ x: 'max-content' }}
         toolBarRender={() => [
-          <Input.Search
-            key="search"
-            placeholder="搜索..."
-            allowClear
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onSearch={(value) => { setSearch(value); actionRef.current?.reload(); }}
-            style={{ width: 260, marginRight: 8 }}
-            prefix={<SearchOutlined />}
-          />,
+           <Input.Search
+             key="search"
+             placeholder={intl.formatMessage({ id: 'pages.workflow.knowledgeBase.search.placeholder' })}
+             allowClear
+             value={search}
+             onChange={(e) => setSearch(e.target.value)}
+             onSearch={(value) => { setSearch(value); actionRef.current?.reload(); }}
+             style={{ width: 260, marginRight: 8 }}
+             prefix={<SearchOutlined />}
+           />,
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => handleOpenModal(null)}>
             {intl.formatMessage({ id: 'pages.workflow.knowledgeBase.add' })}
           </Button>,
@@ -161,7 +161,7 @@ const KnowledgeBaseManagement: React.FC = () => {
             } else {
               await kbService.createKnowledgeBase(values);
             }
-            message.success(editingKb ? '更新成功' : '创建成功');
+            message.success(editingKb ? intl.formatMessage({ id: 'pages.workflow.knowledgeBase.updateSuccess' }) : intl.formatMessage({ id: 'pages.workflow.knowledgeBase.createSuccess' }));
             setIsModalVisible(false);
             actionRef.current?.reload();
           } catch (err) {
@@ -172,10 +172,10 @@ const KnowledgeBaseManagement: React.FC = () => {
         initialValues={editingKb || { isActive: true }}
         width={500}
       >
-        <ProFormText name="name" label="名称" rules={[{ required: true, message: '请输入知识库名称' }]} placeholder="请输入知识库名称" />
-        <ProFormTextArea name="description" label="描述" placeholder="请输入描述" />
-        <ProFormText name="category" label="分类" placeholder="请输入分类" />
-        <ProFormSwitch name="isActive" label="启用" />
+        <ProFormText name="name" label={intl.formatMessage({ id: 'pages.workflow.knowledgeBase.form.name' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.workflow.knowledgeBase.form.nameRequired' }) }]} placeholder={intl.formatMessage({ id: 'pages.workflow.knowledgeBase.form.namePlaceholder' })} />
+        <ProFormTextArea name="description" label={intl.formatMessage({ id: 'pages.workflow.knowledgeBase.form.description' })} placeholder={intl.formatMessage({ id: 'pages.workflow.knowledgeBase.form.descriptionPlaceholder' })} />
+        <ProFormText name="category" label={intl.formatMessage({ id: 'pages.workflow.knowledgeBase.form.category' })} placeholder={intl.formatMessage({ id: 'pages.workflow.knowledgeBase.form.categoryPlaceholder' })} />
+        <ProFormSwitch name="isActive" label={intl.formatMessage({ id: 'pages.workflow.knowledgeBase.form.enabled' })} />
       </ModalForm>
     </PageContainer>
   );

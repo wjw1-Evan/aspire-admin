@@ -39,8 +39,8 @@ const WorkflowMonitor: React.FC = () => {
       if (res.success) {
         setNodeFormDef(res.data?.form || null); setNodeFormInitial(res.data?.initialValues || null);
         setTimeout(() => setNodeFormVisible(true), 50);
-      } else { console.error('获取节点表单失败:', res.message); }
-    } catch (error) { console.error('获取节点表单失败:', error); }
+      } else { console.error(intl.formatMessage({ id: 'pages.workflow.monitor.error.getNodeFormFailed' }), res.message); }
+    } catch (error) { console.error(intl.formatMessage({ id: 'pages.workflow.monitor.error.getNodeFormFailed' }), error); }
     finally { setNodeFormLoading(false); }
   };
 
@@ -67,7 +67,7 @@ const WorkflowMonitor: React.FC = () => {
         if (res.success) {
           setNodeFormVisible(false); setNodeFormDef(null); setNodeFormInitial(null); setCurrentFormInstanceId(null);
         }
-      } catch (error) { console.error('提交表单失败:', error); }
+      } catch (error) { console.error(intl.formatMessage({ id: 'pages.workflow.monitor.error.submitFormFailed' }), error); }
     }
   };
 
@@ -88,16 +88,16 @@ const WorkflowMonitor: React.FC = () => {
             try {
               const [instanceResponse, definitionResponse] = await Promise.all([getWorkflowInstance(record.id!), getWorkflowDetail(record.workflowDefinitionId)]);
               if (instanceResponse.success && instanceResponse.data) setPreviewInstance(instanceResponse.data);
-              if (definitionResponse.success && definitionResponse.data) setPreviewGraph(definitionResponse.data.graph); else setPreviewGraph(null);
+              if (definitionResponse.success && definitionResponse.data) setPreviewGraph(definitionResponse.data.graph); else               setPreviewGraph(null);
               setPreviewVisible(true);
-            } catch (error) { console.error('获取实例详情失败:', error); }
-          }}>进度</Button>
+            } catch (error) { console.error(intl.formatMessage({ id: 'pages.workflow.monitor.error.getInstanceFailed' }), error); }
+          }}>{intl.formatMessage({ id: 'pages.workflow.monitor.action.viewProgress' })}</Button>
           <Button type="link" size="small" icon={<HistoryOutlined />} onClick={async () => {
             try {
               const historyResponse = await getApprovalHistory(record.id!);
               if (historyResponse.success && historyResponse.data) { setHistory(historyResponse.data); setHistoryVisible(true); }
-            } catch (error) { console.error('获取审批历史失败:', error); }
-          }}>历史</Button>
+            } catch (error) { console.error(intl.formatMessage({ id: 'pages.workflow.monitor.error.getHistoryFailed' }), error); }
+          }}>{intl.formatMessage({ id: 'pages.workflow.monitor.action.viewHistory' })}</Button>
           <Button type="link" size="small" icon={<FormOutlined />} onClick={() => { if (record.id) openNodeForm(record.id!, record.currentNodeId); }}>表单</Button>
         </Space>
       ),
@@ -122,15 +122,15 @@ const WorkflowMonitor: React.FC = () => {
           const inputStyle = { width: '100%', padding: '8px 12px', border: '1px solid #d9d9d9', borderRadius: 6, fontSize: 14, lineHeight: 1.5, outline: 'none', backgroundColor: '#fff' };
           switch (field.type) {
             case FormFieldType.Number:
-              return (<div key={`${currentFormInstanceId}-${name}-${index}`} style={fieldStyle}><label style={{ ...labelStyle }} className={isRequired ? 'required' : ''}>{field.label}</label><input name={name} type="number" defaultValue={initVal != null ? String(initVal) : ''} placeholder={field.placeholder || `请输入${field.label}`} style={inputStyle} required={isRequired} step="any" /></div>);
+              return (<div key={`${currentFormInstanceId}-${name}-${index}`} style={fieldStyle}><label style={{ ...labelStyle }} className={isRequired ? 'required' : ''}>{field.label}</label><input name={name} type="number" defaultValue={initVal != null ? String(initVal) : ''} placeholder={field.placeholder || intl.formatMessage({ id: 'pages.workflow.monitor.form.inputPlaceholder' }, { label: field.label })} style={inputStyle} required={isRequired} step="any" /></div>);
             case FormFieldType.Select:
-              return (<div key={`${currentFormInstanceId}-${name}-${index}`} style={fieldStyle}><label style={{ ...labelStyle }} className={isRequired ? 'required' : ''}>{field.label}</label><select name={name} defaultValue={initVal != null ? String(initVal) : ''} style={inputStyle} required={isRequired}><option value="">请选择{field.label}</option>{(field.options || []).map((opt, optIndex) => (<option key={`${opt.value}-${optIndex}`} value={opt.value}>{opt.label}</option>))}</select></div>);
+              return (<div key={`${currentFormInstanceId}-${name}-${index}`} style={fieldStyle}><label style={{ ...labelStyle }} className={isRequired ? 'required' : ''}>{field.label}</label><select name={name} defaultValue={initVal != null ? String(initVal) : ''} style={inputStyle} required={isRequired}><option value="">{intl.formatMessage({ id: 'pages.workflow.monitor.form.selectPlaceholder' }, { label: field.label })}</option>{(field.options || []).map((opt, optIndex) => (<option key={`${opt.value}-${optIndex}`} value={opt.value}>{opt.label}</option>))}</select></div>);
             case FormFieldType.TextArea:
-              return (<div key={`${currentFormInstanceId}-${name}-${index}`} style={fieldStyle}><label style={{ ...labelStyle }} className={isRequired ? 'required' : ''}>{field.label}</label><textarea name={name} defaultValue={initVal != null ? String(initVal) : ''} placeholder={field.placeholder || `请输入${field.label}`} rows={4} style={{ ...inputStyle, resize: 'vertical', minHeight: 80 }} required={isRequired} /></div>);
+              return (<div key={`${currentFormInstanceId}-${name}-${index}`} style={fieldStyle}><label style={{ ...labelStyle }} className={isRequired ? 'required' : ''}>{field.label}</label><textarea name={name} defaultValue={initVal != null ? String(initVal) : ''} placeholder={field.placeholder || intl.formatMessage({ id: 'pages.workflow.monitor.form.inputPlaceholder' }, { label: field.label })} rows={4} style={{ ...inputStyle, resize: 'vertical', minHeight: 80 }} required={isRequired} /></div>);
             case FormFieldType.Switch:
               return (<div key={`${currentFormInstanceId}-${name}-${index}`} style={fieldStyle}><div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}><input name={name} type="checkbox" defaultChecked={!!initVal} style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#1890ff' }} id={`checkbox-${currentFormInstanceId}-${name}-${index}`} /><label htmlFor={`checkbox-${currentFormInstanceId}-${name}-${index}`} style={{ fontSize: 14, fontWeight: 500, color: '#262626', cursor: 'pointer', margin: 0, lineHeight: 1.4 }}>{field.label}</label></div></div>);
             default:
-              return (<div key={`${currentFormInstanceId}-${name}-${index}`} style={fieldStyle}><label style={{ ...labelStyle }} className={isRequired ? 'required' : ''}>{field.label}</label><input name={name} type="text" defaultValue={initVal != null ? String(initVal) : ''} placeholder={field.placeholder || `请输入${field.label}`} style={inputStyle} required={isRequired} /></div>);
+              return (<div key={`${currentFormInstanceId}-${name}-${index}`} style={fieldStyle}><label style={{ ...labelStyle }} className={isRequired ? 'required' : ''}>{field.label}</label><input name={name} type="text" defaultValue={initVal != null ? String(initVal) : ''} placeholder={field.placeholder || intl.formatMessage({ id: 'pages.workflow.monitor.form.inputPlaceholder' }, { label: field.label })} style={inputStyle} required={isRequired} /></div>);
           }
         })}
       </div>
@@ -159,15 +159,15 @@ const WorkflowMonitor: React.FC = () => {
         columns={columns}
         scroll={{ x: 'max-content' }}
         toolBarRender={() => [
-          <Input.Search
-            key="search"
-            placeholder="搜索..."
-            allowClear
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onSearch={(value) => { setSearch(value); (actionRef.current as any)?.reload(); }}
-            style={{ width: 260 }}
-          />,
+           <Input.Search
+             key="search"
+             placeholder={intl.formatMessage({ id: 'pages.workflow.monitor.search.placeholder' })}
+             allowClear
+             value={search}
+             onChange={(e) => setSearch(e.target.value)}
+             onSearch={(value) => { setSearch(value); (actionRef.current as any)?.reload(); }}
+             style={{ width: 260 }}
+           />,
         ]}
       />
       <Modal title={intl.formatMessage({ id: 'pages.workflow.monitor.modal.progressTitle' })} open={previewVisible} onCancel={() => { setPreviewVisible(false); setPreviewInstance(null); }} footer={null} width="90%" style={{ top: 20 }} styles={{ body: { height: 'calc(100vh - 120px)' } }}>

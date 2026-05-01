@@ -18,10 +18,7 @@ public class TenantContextMiddleware
         var userId = JwtHelper.GetUserId(context.User);
         var companyId = JwtHelper.GetCompanyId(context.User);
 
-        if (!string.IsNullOrEmpty(companyId))
-        {
-            PlatformDbContext.SetContext(companyId, userId);
-        }
+        PlatformDbContext.SetContext(companyId ?? "default", userId);
 
         await _next(context);
     }

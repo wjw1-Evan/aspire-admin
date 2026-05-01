@@ -111,11 +111,6 @@ export const errorConfig: RequestConfig = {
       // 401 Unauthorized 表示认证失败
       const isAuthError = error.response?.status === 401;
 
-      // 检查是否是认证相关的错误消息（避免已处理的认证错误重复处理）
-      const isAuthErrorMessage =
-        error.message === 'Authentication handled silently' ||
-        error.message === 'Authentication handled';
-
       // 2. 特殊处理登录错误：只显示友好的消息提示，不显示技术性错误页面
       // 注意：登录错误应该在登录页面中自己处理，这里只做兜底处理
       if (isLoginRequest && error.name === 'BizError') {
@@ -127,7 +122,7 @@ export const errorConfig: RequestConfig = {
 
       console.log('[errorHandler] Proceeding to errorInterceptor.handleError');
 
-      if (isAuthError || isAuthErrorMessage) {
+      if (isAuthError) {
         // 检查是否已经尝试过 token 刷新（由 responseInterceptors 处理）
         // 如果是，说明刷新失败了，跳转到登录页
         if (error?._tokenRefreshAttempted) {

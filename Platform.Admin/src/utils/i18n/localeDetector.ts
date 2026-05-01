@@ -16,6 +16,7 @@ const missingTranslations = new Map<string, MissingTranslation>();
 const translatingIds = new Set<string>();
 let isEnabled = false;
 let consoleWarnSpy: any = null;
+let consoleErrorSpy: any = null;
 const STORAGE_KEY = 'i18n_missing_translations';
 
 /**
@@ -181,17 +182,13 @@ export function startMissingTranslationDetection(): void {
   isEnabled = true;
 
   if (typeof window !== 'undefined') {
+    // 拦截 console.warn
     consoleWarnSpy = console.warn;
-
     console.warn = function(...args: any[]) {
       const message = args[0];
 
-      // 调试：打印所有 console.warn 调用
       if (typeof message === 'string' && message.includes('Missing message')) {
         console.log('[i18n] 🔔 拦截到 console.warn:', message);
-      }
-
-      if (typeof message === 'string' && message.includes('Missing message')) {
         const missingId = parseIntlWarning(message);
         if (missingId && isEnabled) {
           handleMissingTranslation(missingId);
@@ -201,7 +198,24 @@ export function startMissingTranslationDetection(): void {
       return consoleWarnSpy.apply(this, args);
     };
 
+    // 拦截 console.error
+    consoleErrorSpy = console.error;
+    console.error = function(...args: any[]) {
+      const message = args[0];
+
+      if (typeof message === 'string' && message.includes('Missing message')) {
+        console.log('[i18n] 🔔 拦截到 console.error:', message);
+        const missingId = parseIntlWarning(message);
+        if (missingId && isEnabled) {
+          handleMissingTranslation(missingId);
+        }
+      }
+
+      return consoleErrorSpy.apply(this, args);
+    };
+
     console.log('[i18n] 🎯 缺失翻译检测已启动（开发模式）');
+    console.log('[i18n] 📋 console.warn 和 console.error 拦截器已设置');
   } else {
     console.log('[i18n] ℹ️  非浏览器环境，跳过翻译检测');
   }
@@ -216,6 +230,11 @@ export function stopMissingTranslationDetection(): void {
   if (consoleWarnSpy) {
     console.warn = consoleWarnSpy;
     consoleWarnSpy = null;
+  }
+
+  if (consoleErrorSpy) {
+    console.error = consoleErrorSpy;
+    consoleErrorSpy = null;
   }
 
   console.log('[i18n] Missing translation detection disabled');

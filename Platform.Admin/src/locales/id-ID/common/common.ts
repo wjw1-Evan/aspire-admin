@@ -4,6 +4,7 @@
  */
 
 export default {
+  'common.close': 'Tutup',
   'pages.button.query': 'Cari',
   'pages.button.refresh': 'Muat Ulang',
   'pages.button.reset': 'Reset',

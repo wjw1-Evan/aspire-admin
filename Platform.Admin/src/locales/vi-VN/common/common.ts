@@ -4,6 +4,7 @@
  */
 
 export default {
+  'common.close': 'Đóng',
   'pages.boolean.no': 'Không',
   'pages.boolean.yes': 'Có',
   'pages.bulkAction.batchActivate': 'Bulk Activate',

@@ -4,6 +4,7 @@
  */
 
 export default {
+  'common.close': '닫기',
   'pages.bulkAction.batchActivate': '일괄 활성화',
   'pages.bulkAction.batchDeactivate': '일괄 비활성화',
   'pages.bulkAction.batchDelete': '일괄 삭제',

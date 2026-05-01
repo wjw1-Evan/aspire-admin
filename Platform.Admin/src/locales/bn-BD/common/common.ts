@@ -4,6 +4,7 @@
  */
 
 export default {
+  'common.close': 'বন্ধ করুন',
   'pages.button.query': 'অনুসন্ধান',
   'pages.button.refresh': 'রিফ্রেশ',
   'pages.button.reset': 'রিসেট',

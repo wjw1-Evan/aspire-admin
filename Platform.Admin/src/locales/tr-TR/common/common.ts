@@ -4,6 +4,7 @@
  */
 
 export default {
+  'common.close': 'Kapat',
   'pages.bulkAction.batchActivate': 'Bulk Activate',
   'pages.bulkAction.batchDeactivate': 'Bulk Deactivate',
   'pages.bulkAction.batchDelete': 'Bulk Delete',

@@ -4,6 +4,7 @@
  */
 
 export default {
+  'common.close': '關閉',
   'pages.boolean.no': '否',
   'pages.boolean.yes': '是',
   'pages.bulkAction.batchActivate': '批量啟用',

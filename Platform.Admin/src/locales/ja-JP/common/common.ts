@@ -4,6 +4,7 @@
  */
 
 export default {
+  'common.close': '閉じる',
   'common.upload': 'アップロード',
   'pages.button.query': '検索',
   'pages.button.refresh': '更新',

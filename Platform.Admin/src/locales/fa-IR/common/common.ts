@@ -4,6 +4,7 @@
  */
 
 export default {
+  'common.close': 'بستن',
   'pages.button.query': 'جستجو',
   'pages.button.refresh': 'به‌روزرسانی',
   'pages.button.reset': 'بازنشانی',

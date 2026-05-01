@@ -4,6 +4,7 @@
  */
 
 export default {
+  'common.close': '关闭',
   'common.upload': '上传附件',
   'pages.action.create': '新建',
   'pages.action.delete': '删除',

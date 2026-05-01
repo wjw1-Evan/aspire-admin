@@ -4,6 +4,7 @@
  */
 
 export default {
+  'common.close': 'Close',
   'common.upload': 'Upload Attachment',
   'pages.action.create': 'Create',
   'pages.action.delete': 'Delete',

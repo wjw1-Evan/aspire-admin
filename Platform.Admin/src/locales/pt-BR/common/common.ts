@@ -4,6 +4,7 @@
  */
 
 export default {
+  'common.close': 'Fechar',
   'pages.button.query': 'Consultar',
   'pages.button.refresh': 'Atualizar',
   'pages.button.reset': 'Redefinir',

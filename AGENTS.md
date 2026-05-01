@@ -2163,7 +2163,7 @@ message.error(getErrorMessage(response, 'pages.xxx.operationFailed'));
 
 // ✅ 正确：手动优先翻译 errorCode
 const errorMsg = response.errorCode
-  ? intl.formatMessage({ id: response.errorCode, defaultMessage: response.message || '操作失败' })
+  ? intl.formatMessage({ id: response.errorCode })
   : (response.message || intl.formatMessage({ id: 'pages.xxx.operationFailed' }));
 message.error(errorMsg);
 
@@ -2184,7 +2184,7 @@ export function getErrorMessage(
 ): string {
   const intl = getIntl();
   if (response.errorCode) {
-    return intl.formatMessage({ id: response.errorCode, defaultMessage: response.message || intl.formatMessage({ id: fallbackId }) });
+    return intl.formatMessage({ id: response.errorCode });
   }
   return response.message || intl.formatMessage({ id: fallbackId });
 }

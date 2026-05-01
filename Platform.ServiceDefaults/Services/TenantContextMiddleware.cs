@@ -18,7 +18,14 @@ public class TenantContextMiddleware
         var userId = JwtHelper.GetUserId(context.User);
         var companyId = JwtHelper.GetCompanyId(context.User);
 
-        PlatformDbContext.SetContext(companyId ?? "default", userId);
+        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(companyId))
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            await context.Response.WriteAsync("Token无效或已过期");
+            return;
+        }
+
+        PlatformDbContext.SetContext(companyId, userId);
 
         await _next(context);
     }

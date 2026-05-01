@@ -279,10 +279,10 @@ const WebScraperResults: React.FC = () => {
                     <Tag color={currentResult.isMatched ? 'green' : 'default'}>
                       {currentResult.isMatched ? intl.formatMessage({ id: 'pages.webScraper.results.match.matched' }) : intl.formatMessage({ id: 'pages.webScraper.results.match.unmatched' })}
                     </Tag>
-                    <span>{intl.formatMessage({ id: 'pages.webScraper.results.detail.relevance' })}：{currentResult.relevanceScore ?? 0}%</span>
+                    <span>{intl.formatMessage({ id: 'pages.webScraper.results.detail.relevanceLabel' }, { score: currentResult.relevanceScore ?? 0 })}</span>
                   </Space>
                   {currentResult.matchReason && (
-                    <span style={{ color: '#666' }}>{intl.formatMessage({ id: 'pages.webScraper.results.detail.reason' })}：{currentResult.matchReason}</span>
+                    <span style={{ color: '#666' }}>{intl.formatMessage({ id: 'pages.webScraper.results.detail.reasonLabel' }, { reason: currentResult.matchReason })}</span>
                   )}
                 </Space>
               </Card>
@@ -320,7 +320,7 @@ const WebScraperResults: React.FC = () => {
                         <Col span={8} key={idx}>
                           <Card size="small" cover={<img src={img} alt="" style={{ height: 120, objectFit: 'cover' }} />}>
                             <Card.Meta
-                              title={`${intl.formatMessage({ id: 'pages.webScraper.results.tabs.images' })} ${idx + 1}`}
+                              title={intl.formatMessage({ id: 'pages.webScraper.results.tabs.imageIndex' }, { index: idx + 1 })}
                               description={
                                 <a href={img} target="_blank" rel="noopener noreferrer">
                                   {intl.formatMessage({ id: 'pages.webScraper.results.viewOriginal' })}

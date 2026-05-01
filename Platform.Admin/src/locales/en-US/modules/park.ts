@@ -477,6 +477,7 @@ export default {
   'pages.park.visitKnowledgeBase.questionContent': 'Question Content',
   'pages.park.visitKnowledgeBase.questionContentPlaceholder': 'Please enter questions that may be encountered during visit',
   'pages.park.visitKnowledgeBase.questionContentRequired': 'Please enter question content',
+  'pages.park.visitTask.tabTitle': 'Visit Task',
   'pages.park.visitTask.addTask': 'Add Task',
   'pages.park.visitTask.cancel': 'Cancel',
   'pages.park.visitTask.content': 'Visit Notes',

@@ -202,6 +202,7 @@ export default {
   'pages.park.visitTask.edit': '编辑走访任务',
   'pages.park.visitTask.create': '新增走访任务',
   'pages.park.visitTask.detail': '走访任务详情',
+  'pages.park.visitTask.tabTitle': '走访任务',
   'pages.park.visitTask.addTask': '新增任务',
   'pages.park.visitTask.taskTitle': '任务标题',
   'pages.park.visitTask.taskTitlePlaceholder': '如：XX企业日常走访',

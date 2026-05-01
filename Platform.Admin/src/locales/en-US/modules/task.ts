@@ -128,12 +128,10 @@ export default {
 'pages.taskManagement.table.status': 'Status',
   'pages.taskManagement.table.type': 'Type',
   'pages.taskManagement.tags': 'Tags',
-  'pages.taskManagement.tagsPlaceholder': 'Enter tags and press Enter',
   'pages.taskManagement.table.tags': 'Tags',
   'pages.taskManagement.table.updatedAt': 'Updated At',
   'pages.taskManagement.table.taskName': 'Task Name',
   'pages.taskManagement.viewDetails': 'View Details',
-  'pages.taskManagement.title': 'Task Management',
 
   // TaskExecutionPanel
   'pages.taskManagement.execution.message.progressUpdated': 'Task progress updated',

@@ -23,6 +23,7 @@ export {
   getMissingTranslationsCount,
   getMissingTranslationsList,
   clearMissingTranslationsCache,
+  initSavedTranslations,
 } from './localeDetector';
 
 export {

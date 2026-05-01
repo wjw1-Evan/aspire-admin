@@ -2,19 +2,65 @@
  * 缺失翻译检测器 - 通过 console.warn 捕获 React Intl 的缺失消息
  */
 
-import { getIntl as originalGetIntl, addLocale, getLocale } from '@umijs/max';
+import { getIntl as originalGetIntl, addLocale, getLocale, setLocale } from '@umijs/max';
 import { translateText } from './translationService';
 
 interface MissingTranslation {
   id: string;
   locale: string;
   sourceText: string;
+  translated?: string;
 }
 
 const missingTranslations = new Map<string, MissingTranslation>();
 const translatingIds = new Set<string>();
 let isEnabled = false;
 let consoleWarnSpy: any = null;
+const STORAGE_KEY = 'i18n_missing_translations';
+
+/**
+ * 从 localStorage 加载已保存的翻译
+ */
+function loadSavedTranslations(): Record<string, Record<string, string>> {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * 保存翻译到 localStorage
+ */
+function saveTranslationsToStorage(translations: Record<string, Record<string, string>>): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(translations));
+  } catch (error) {
+    console.error('[i18n] Failed to save translations to storage:', error);
+  }
+}
+
+/**
+ * 初始化：加载已保存的翻译并应用到当前 locale
+ */
+export function initSavedTranslations(): void {
+  const saved = loadSavedTranslations();
+  const currentLocale = getLocale();
+
+  if (saved[currentLocale]) {
+    const messages = saved[currentLocale];
+    const currentMessages = getMessages(currentLocale);
+    const merged = { ...currentMessages, ...messages };
+
+    addLocale(currentLocale, merged, {
+      momentLocale: currentLocale.split('-')[1]?.toLowerCase(),
+      antd: { locale: currentLocale } as any,
+    });
+
+    console.log('[i18n] Loaded saved translations for:', currentLocale, Object.keys(messages).length);
+  }
+}
 
 /**
  * 获取当前 locale 的所有消息
@@ -80,7 +126,13 @@ async function handleMissingTranslation(id: string): Promise<void> {
         momentLocale: currentLocale.split('-')[1]?.toLowerCase(),
         antd: { locale: currentLocale } as any,
       });
-      
+
+      // 保存到 localStorage
+      const saved = loadSavedTranslations();
+      if (!saved[currentLocale]) saved[currentLocale] = {};
+      saved[currentLocale][id] = translated;
+      saveTranslationsToStorage(saved);
+
       console.log('[i18n] Translation added:', { id, locale: currentLocale, translated });
     }
   } catch (error) {
@@ -92,18 +144,15 @@ async function handleMissingTranslation(id: string): Promise<void> {
 
 /**
  * 解析 React Intl 的警告消息
+ * React Intl 格式: [React Intl] Missing message: "id" for locale: "en-US"
  */
 function parseIntlWarning(message: string): string | null {
-  const match = message.match(/\[react-intl\]\s*'(.+)'/);
-  if (match) {
-    return match[1];
-  }
-  
-  const missingMatch = message.match(/Missing message\s*['"]([^'"]+)['"]/i);
+  // 匹配格式: Missing message: "id" 或 Missing message: 'id'
+  const missingMatch = message.match(/Missing message:\s*["']([^"']+)["']/i);
   if (missingMatch) {
     return missingMatch[1];
   }
-
+  
   return null;
 }
 

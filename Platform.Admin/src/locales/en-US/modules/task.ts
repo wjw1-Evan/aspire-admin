@@ -173,6 +173,7 @@ export default {
   'pages.taskManagement.taskType.design': 'Design',
   'pages.taskManagement.taskType.testing': 'Testing',
   'pages.taskManagement.taskType.documentation': 'Documentation',
+  'pages.taskManagement.taskTypeOther': 'Other',
   'pages.taskManagement.assignTo': 'Assign To (multiple)',
   'pages.taskManagement.assignToPlaceholder': 'Select users to assign (multiple)',
   'pages.taskManagement.estimatedDurationPlaceholder': 'Enter estimated duration',

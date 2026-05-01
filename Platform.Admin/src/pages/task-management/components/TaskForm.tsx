@@ -121,23 +121,23 @@ const TaskForm: React.FC<TaskFormProps> = ({
     >
       <Row gutter={16}>
         <Col xs={24} sm={24} md={12}>
-          <ProFormText name="taskName" label={intl.formatMessage({ id: 'pages.taskManagement.taskName' })} placeholder={intl.formatMessage({ id: 'pages.taskManagement.taskNamePlaceholder' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.taskManagement.taskNameRequired' }) }]} />
+          <ProFormText name="taskName" label={intl.formatMessage({ id: 'pages.taskManagement.form.taskName' })} placeholder={intl.formatMessage({ id: 'pages.taskManagement.form.taskNamePlaceholder' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.taskManagement.form.taskNameRequired' }) }]} />
         </Col>
         <Col xs={24} sm={24} md={12}>
           <ProFormSelect
             name="taskType"
-            label={intl.formatMessage({ id: 'pages.taskManagement.taskType' })}
+            label={intl.formatMessage({ id: 'pages.taskManagement.form.taskType' })}
             mode="tags"
             fieldProps={{ maxCount: 1 }}
-            placeholder={intl.formatMessage({ id: 'pages.taskManagement.taskTypePlaceholder' })}
+            placeholder={intl.formatMessage({ id: 'pages.taskManagement.form.taskTypePlaceholder' })}
             options={[
               { label: intl.formatMessage({ id: 'pages.taskManagement.taskType.development' }), value: '开发' }, { label: intl.formatMessage({ id: 'pages.taskManagement.taskType.design' }), value: '设计' }, { label: intl.formatMessage({ id: 'pages.taskManagement.taskType.testing' }), value: '测试' }, { label: intl.formatMessage({ id: 'pages.taskManagement.taskType.documentation' }), value: '文档' }, { label: intl.formatMessage({ id: 'pages.taskManagement.taskTypeOther' }), value: '其他' },
             ]}
-            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.taskManagement.taskTypeRequired' }) }]}
+            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.taskManagement.form.taskTypeRequired' }) }]}
           />
         </Col>
       </Row>
-      <ProFormTextArea name="description" label={intl.formatMessage({ id: 'pages.taskManagement.taskDescription' })} placeholder={intl.formatMessage({ id: 'pages.taskManagement.taskDescriptionPlaceholder' })} fieldProps={{ autoSize: { minRows: 3, maxRows: 6 } }} />
+      <ProFormTextArea name="description" label={intl.formatMessage({ id: 'pages.taskManagement.form.description' })} placeholder={intl.formatMessage({ id: 'pages.taskManagement.form.descriptionPlaceholder' })} fieldProps={{ autoSize: { minRows: 3, maxRows: 6 } }} />
       <Row gutter={16}>
         <Col xs={24} sm={24} md={8}>
           <ProFormSelect

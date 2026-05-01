@@ -63,18 +63,21 @@ export async function translateWithOpenAI(
     .replace('{sourceText}', sourceText || text);
 
   try {
-    const response = await fetch('/apiservice/api/xiaoke/chat', {
+    const token = localStorage.getItem('auth_token');
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch('/apiservice/api/translation/translate', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({
-        messages: [
-          {
-            role: 'user',
-            content: `${prompt}\n\n"${text}"`,
-          },
-        ],
+        text,
+        targetLocale,
+        sourceText,
       }),
     });
 

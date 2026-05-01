@@ -260,6 +260,11 @@ export default {
   'pages.park.visitTask.contentPlaceholder': '详细记录走访沟通内容',
   'pages.park.visitTask.feedback': '企业诉求/反馈',
   'pages.park.visitTask.feedbackPlaceholder': '企业提出的问题或建议',
+  'pages.park.visitTask.createdAt': '创建时间',
+  'pages.park.visitTask.visitInfo': '走访信息',
+  'pages.park.visitTask.visitResult': '走访结果',
+  'pages.park.visitTask.noContent': '暂无走访纪要',
+  'pages.park.visitTask.noFeedback': '暂无企业反馈',
 
   // visit-knowledge-base/index.tsx message calls
   'pages.park.visitKnowledgeBase.message.deleteSuccess': '删除成功',

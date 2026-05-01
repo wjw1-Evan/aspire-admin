@@ -546,4 +546,9 @@ export default {
   'pages.park.visitTask.visitType': 'Visit Type',
   'pages.park.visitTask.visitor': 'Visitor',
   'pages.park.visitTask.visitorPlaceholder': 'Actual visitor',
+  'pages.park.visitTask.createdAt': 'Created At',
+  'pages.park.visitTask.visitInfo': 'Visit Information',
+  'pages.park.visitTask.visitResult': 'Visit Result',
+  'pages.park.visitTask.noContent': 'No visit notes yet',
+  'pages.park.visitTask.noFeedback': 'No enterprise feedback yet',
 };

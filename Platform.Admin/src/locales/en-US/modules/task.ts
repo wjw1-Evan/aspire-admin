@@ -63,6 +63,7 @@ export default {
   'pages.taskManagement.form.tags': 'Tags',
   'pages.taskManagement.form.tagsPlaceholder': 'Enter tags and press Enter',
   'pages.taskManagement.taskName': 'Task Name',
+  'pages.taskManagement.taskNamePlaceholder': 'Please enter task name',
   'pages.taskManagement.form.taskName': 'Task Name',
   'pages.taskManagement.form.taskNamePlaceholder': 'Please enter task name',
   'pages.taskManagement.form.taskNameRequired': 'Please enter task name',

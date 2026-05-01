@@ -62,6 +62,7 @@ export default {
   'pages.taskManagement.form.tags': 'Tags',
   'pages.taskManagement.form.tagsPlaceholder': 'Enter tags and press Enter',
   'pages.taskManagement.taskName': '任務名稱',
+  'pages.taskManagement.taskNamePlaceholder': '請輸入任務名稱',
   'pages.taskManagement.form.taskName': '任務名稱',
   'pages.taskManagement.form.taskNamePlaceholder': '請輸入任務名稱',
   'pages.taskManagement.form.taskNameRequired': '請輸入任務名稱',

@@ -34,7 +34,6 @@ const isDev = process.env.NODE_ENV === 'development';
 const loginPath = '/user/login';
 
 if (isDev) {
-  initSavedTranslations();
   startMissingTranslationDetection();
 }
 
@@ -107,6 +106,15 @@ export async function getInitialState(): Promise<{
     ...defaultSettings,
     navTheme: initialTheme,
   } as Partial<LayoutSettings>;
+
+  // 初始化已保存的翻译（开发模式）
+  if (isDev) {
+    try {
+      initSavedTranslations();
+    } catch (error) {
+      console.warn('[i18n] Failed to init saved translations:', error);
+    }
+  }
 
   if (!whiteListPages.includes(location.pathname)) {
     const currentUser = await fetchUserInfo();

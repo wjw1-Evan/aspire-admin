@@ -133,6 +133,15 @@ export default {
   'pages.taskManagement.table.taskName': 'Task Name',
   'pages.taskManagement.viewDetails': 'View Details',
 
+  // Detail execution logs
+  'pages.taskManagement.detail.executedAt': 'Executed at {time}',
+  'pages.taskManagement.detail.message': 'Message: {message}',
+  'pages.taskManagement.detail.error': 'Error: {message}',
+  'pages.taskManagement.detail.progress': 'Progress: {progress}%',
+
+  // Delete confirmation with name
+  'pages.taskManagement.message.confirmDeleteWithName': 'Are you sure you want to delete task "{name}"?',
+
   // TaskExecutionPanel
   'pages.taskManagement.execution.message.progressUpdated': 'Task progress updated',
   'pages.taskManagement.execution.message.taskCompleted': 'Task completed',

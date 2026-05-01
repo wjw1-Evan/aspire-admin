@@ -129,6 +129,18 @@ export default {
   'pages.taskManagement.title': '任务管理',
   'pages.taskManagement.viewDetails': '查看详情',
 
+  // Detail execution logs
+  'pages.taskManagement.detail.executedAt': '执行于 {time}',
+  'pages.taskManagement.detail.message': '消息：{message}',
+  'pages.taskManagement.detail.error': '错误：{message}',
+  'pages.taskManagement.detail.progress': '进度：{progress}%',
+
+  // Search
+  'pages.taskManagement.search.placeholderShort': '搜索...',
+
+  // Delete confirmation with name
+  'pages.taskManagement.message.confirmDeleteWithName': '确定要删除任务 "{name}" 吗？',
+
   // TaskExecutionPanel
   'pages.taskManagement.execution.message.progressUpdated': '任务进度已更新',
   'pages.taskManagement.execution.message.taskCompleted': '任务已完成',

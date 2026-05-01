@@ -784,7 +784,7 @@ await _context.Set<UserCompany>().AddAsync(userCompany);
         var menus = await _menuService.GetUserMenusAsync(membership.RoleIds);
 
         // 5. 生成新的JWT Token（包含新的企业信息）
-        var newToken = _jwtService.GenerateToken(updatedUser);
+        var newToken = _jwtService.GenerateToken(updatedUser.Id!, updatedUser.CurrentCompanyId!);
 
         return new SwitchCompanyResult
         {

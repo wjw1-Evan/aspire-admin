@@ -89,8 +89,8 @@ if (user == null)
 
         await _userService.LogUserActivityAsync(user.Id!, "login", "用户登录", ipAddress, userAgent);
 
-        var token = _jwtService.GenerateToken(user);
-        var refreshToken = _jwtService.GenerateRefreshToken(user);
+        var token = _jwtService.GenerateToken(user.Id!, user.CurrentCompanyId!);
+        var refreshToken = _jwtService.GenerateRefreshToken(user.Id!, user.CurrentCompanyId!);
 
         var expirationMinutes = int.Parse(_configuration["Jwt:ExpirationMinutes"] ?? AuthConstants.DefaultTokenExpirationMinutes.ToString());
         var refreshTokenExpirationDays = int.Parse(_configuration["Jwt:RefreshTokenExpirationDays"] ?? AuthConstants.DefaultRefreshTokenExpirationDays.ToString());
@@ -206,8 +206,8 @@ if (user == null)
         {
             user.CurrentCompanyId = request.CompanyId;
         }
-        var newToken = _jwtService.GenerateToken(user);
-        var newRefreshToken = _jwtService.GenerateRefreshToken(user);
+        var newToken = _jwtService.GenerateToken(user.Id!, user.CurrentCompanyId!);
+        var newRefreshToken = _jwtService.GenerateRefreshToken(user.Id!, user.CurrentCompanyId!);
 
         existingToken.IsRevoked = true;
         existingToken.RevokedAt = DateTime.UtcNow;

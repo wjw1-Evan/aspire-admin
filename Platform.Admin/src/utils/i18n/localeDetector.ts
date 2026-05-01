@@ -1,5 +1,5 @@
 /**
- * 缺失翻译检测器 - 运行时捕获 React Intl 的缺失警告
+ * 缺失翻译检测器 - 通过 console.warn 捕获 React Intl 的缺失消息
  */
 
 import { getIntl as originalGetIntl, addLocale, getLocale } from '@umijs/max';
@@ -14,6 +14,7 @@ interface MissingTranslation {
 const missingTranslations = new Map<string, MissingTranslation>();
 const translatingIds = new Set<string>();
 let isEnabled = false;
+let consoleWarnSpy: any = null;
 
 /**
  * 获取当前 locale 的所有消息
@@ -36,20 +37,11 @@ function getSourceText(id: string): string | undefined {
 }
 
 /**
- * 检查翻译是否缺失
- */
-function isMissing(id: string, locale: string): boolean {
-  if (locale === 'en-US') return false;
-  
-  const messages = getMessages(locale);
-  return !messages[id] || messages[id] === id;
-}
-
-/**
  * 处理缺失的翻译
  */
-async function handleMissingTranslation(id: string, locale: string): Promise<void> {
-  const cacheKey = `${locale}:${id}`;
+async function handleMissingTranslation(id: string): Promise<void> {
+  const currentLocale = getLocale();
+  const cacheKey = `${currentLocale}:${id}`;
   
   if (missingTranslations.has(cacheKey)) {
     return;
@@ -59,33 +51,37 @@ async function handleMissingTranslation(id: string, locale: string): Promise<voi
     return;
   }
 
+  if (currentLocale === 'en-US') {
+    return;
+  }
+
   const sourceText = getSourceText(id);
   if (!sourceText) {
     console.warn('[i18n] Missing source text for:', id);
     return;
   }
 
-  missingTranslations.set(cacheKey, { id, locale, sourceText });
+  missingTranslations.set(cacheKey, { id, locale: currentLocale, sourceText });
   translatingIds.add(cacheKey);
 
-  console.log('[i18n] Missing translation detected:', { id, locale, sourceText });
+  console.log('[i18n] Missing translation detected:', { id, locale: currentLocale, sourceText });
 
   try {
-    const translated = await translateText(sourceText, locale, sourceText);
+    const translated = await translateText(sourceText, currentLocale, sourceText);
     
     if (translated && translated !== sourceText) {
-      const currentMessages = getMessages(locale);
+      const currentMessages = getMessages(currentLocale);
       const updatedMessages = {
         ...currentMessages,
         [id]: translated,
       };
 
-      addLocale(locale, updatedMessages, {
-        momentLocale: locale.split('-')[1]?.toLowerCase(),
-        antd: { locale } as any,
+      addLocale(currentLocale, updatedMessages, {
+        momentLocale: currentLocale.split('-')[1]?.toLowerCase(),
+        antd: { locale: currentLocale } as any,
       });
       
-      console.log('[i18n] Translation added:', { id, locale, translated });
+      console.log('[i18n] Translation added:', { id, locale: currentLocale, translated });
     }
   } catch (error) {
     console.error('[i18n] Translation failed:', error);
@@ -95,45 +91,20 @@ async function handleMissingTranslation(id: string, locale: string): Promise<voi
 }
 
 /**
- * 创建带有缺失检测的 getIntl 包装
+ * 解析 React Intl 的警告消息
  */
-function createMonitoredGetIntl() {
-  const originalCreateIntl = (window as any).__react_intl_createIntl;
+function parseIntlWarning(message: string): string | null {
+  const match = message.match(/\[react-intl\]\s*'(.+)'/);
+  if (match) {
+    return match[1];
+  }
   
-  if (originalCreateIntl) {
-    return;
+  const missingMatch = message.match(/Missing message\s*['"]([^'"]+)['"]/i);
+  if (missingMatch) {
+    return missingMatch[1];
   }
 
-  const { createIntl } = require('react-intl');
-  (window as any).__react_intl_createIntl = createIntl;
-
-  require('react-intl').createIntl = function (config: any, cache?: any) {
-    const originalOnWarn = config.onWarn;
-    
-    const wrappedConfig = {
-      ...config,
-      onWarn: (warning: any, ...args: any[]) => {
-        if (
-          warning &&
-          typeof warning === 'object' &&
-          (warning.message?.includes('Missing message') ||
-            warning.message?.includes('MISSING_TRANSLATION') ||
-            warning.id)
-        ) {
-          const id = warning.id || warning.message?.match(/'(.+)'/)?.[1];
-          if (id && isEnabled) {
-            handleMissingTranslation(id, config.locale);
-          }
-        }
-        
-        if (originalOnWarn) {
-          originalOnWarn(warning, ...args);
-        }
-      },
-    };
-
-    return (window as any).__react_intl_createIntl(wrappedConfig, cache);
-  };
+  return null;
 }
 
 /**
@@ -143,9 +114,22 @@ export function startMissingTranslationDetection(): void {
   if (isEnabled) return;
   
   isEnabled = true;
-  
+
   if (typeof window !== 'undefined') {
-    createMonitoredGetIntl();
+    consoleWarnSpy = console.warn;
+    
+    console.warn = function(...args: any[]) {
+      const message = args[0];
+      
+      if (typeof message === 'string' && message.includes('Missing message')) {
+        const missingId = parseIntlWarning(message);
+        if (missingId && isEnabled) {
+          handleMissingTranslation(missingId);
+        }
+      }
+      
+      return consoleWarnSpy.apply(this, args);
+    };
   }
   
   console.log('[i18n] Missing translation detection enabled');
@@ -156,6 +140,12 @@ export function startMissingTranslationDetection(): void {
  */
 export function stopMissingTranslationDetection(): void {
   isEnabled = false;
+  
+  if (consoleWarnSpy) {
+    console.warn = consoleWarnSpy;
+    consoleWarnSpy = null;
+  }
+  
   console.log('[i18n] Missing translation detection disabled');
 }
 

@@ -17,6 +17,14 @@ public class TenantContextMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
+        // 如果用户未认证，直接跳过（让JWT中间件处理）
+        if (context.User?.Identity?.IsAuthenticated != true)
+        {
+            await _next(context);
+            return;
+        }
+
+        // 用户已认证，检查claims
         var userId = JwtHelper.GetUserId(context.User);
         var companyId = JwtHelper.GetCompanyId(context.User);
 

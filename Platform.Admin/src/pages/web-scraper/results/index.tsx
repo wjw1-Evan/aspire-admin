@@ -207,7 +207,7 @@ const WebScraperResults: React.FC = () => {
       />
 
       <Modal
-        title={intl.formatMessage({ id: 'pages.web-scraper.results.title.resultDetail', defaultMessage: '抓取结果详情' })}
+        title={intl.formatMessage({ id: 'pages.web-scraper.results.title.resultDetail' })}
         open={detailVisible}
         onCancel={() => {
           setDetailVisible(false);

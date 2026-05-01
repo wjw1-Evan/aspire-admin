@@ -74,12 +74,12 @@ const ForgotPasswordContainer: React.FC = () => {
       setLoading(true);
       const res = await sendResetCode({ email: values.email });
       if (res.success) {
-        message.success(intl.formatMessage({ id: 'pages.forgotPassword.sendCodeSuccess', defaultMessage: '验证码已发送至您的邮箱' }));
+        message.success(intl.formatMessage({ id: 'pages.forgotPassword.sendCodeSuccess' }));
         setEmail(values.email);
         setCurrentStep(1);
         setCountdown(60);
       } else {
-        message.error(res.message || intl.formatMessage({ id: 'pages.forgotPassword.sendCodeFailed', defaultMessage: '验证码发送失败，请检查邮箱是否正确' }));
+        message.error(res.message || intl.formatMessage({ id: 'pages.forgotPassword.sendCodeFailed' }));
       }
     } catch (error: any) {
       error.skipGlobalHandler = true;
@@ -94,7 +94,7 @@ const ForgotPasswordContainer: React.FC = () => {
           }))
         );
       } else {
-        const errorMsg = error?.response?.data?.message || error?.message || intl.formatMessage({ id: 'pages.forgotPassword.sendCodeError', defaultMessage: '获取验证码失败' });
+        const errorMsg = error?.response?.data?.message || error?.message || intl.formatMessage({ id: 'pages.forgotPassword.sendCodeError' });
         message.error(errorMsg);
       }
     } finally {
@@ -107,14 +107,14 @@ const ForgotPasswordContainer: React.FC = () => {
     try {
       const res = await sendResetCode({ email });
       if (res.success) {
-        message.success(intl.formatMessage({ id: 'pages.forgotPassword.sendCodeSuccess', defaultMessage: '验证码已发送至您的邮箱' }));
+        message.success(intl.formatMessage({ id: 'pages.forgotPassword.sendCodeSuccess' }));
         setCountdown(60);
       } else {
-        message.error(res.message || intl.formatMessage({ id: 'pages.forgotPassword.sendCodeError', defaultMessage: '获取验证码失败' }));
+        message.error(res.message || intl.formatMessage({ id: 'pages.forgotPassword.sendCodeError' }));
       }
     } catch (error: any) {
       error.skipGlobalHandler = true;
-      message.error(intl.formatMessage({ id: 'pages.forgotPassword.sendCodeError', defaultMessage: '获取验证码失败' }));
+      message.error(intl.formatMessage({ id: 'pages.forgotPassword.sendCodeError' }));
     }
   };
 
@@ -134,10 +134,10 @@ const ForgotPasswordContainer: React.FC = () => {
       });
 
       if (res.success) {
-        message.success(intl.formatMessage({ id: 'pages.forgotPassword.resetSuccess', defaultMessage: '重置密码成功，请使用新密码重新登录' }));
+        message.success(intl.formatMessage({ id: 'pages.forgotPassword.resetSuccess' }));
         setCurrentStep(2);
       } else {
-        message.error(res.message || intl.formatMessage({ id: 'pages.forgotPassword.resetFailed', defaultMessage: '重置密码失败，验证码错误或已过期' }));
+        message.error(res.message || intl.formatMessage({ id: 'pages.forgotPassword.resetFailed' }));
       }
     } catch (error: any) {
       error.skipGlobalHandler = true;
@@ -152,7 +152,7 @@ const ForgotPasswordContainer: React.FC = () => {
           }))
         );
       } else {
-        const errorMsg = error?.response?.data?.message || error?.message || intl.formatMessage({ id: 'pages.forgotPassword.resetError', defaultMessage: '重置密码失败' });
+        const errorMsg = error?.response?.data?.message || error?.message || intl.formatMessage({ id: 'pages.forgotPassword.resetError' });
         message.error(errorMsg);
       }
     } finally {
@@ -171,16 +171,16 @@ const ForgotPasswordContainer: React.FC = () => {
             <div style={{ textAlign: 'center', marginBottom: 24 }}>
               <img alt="logo" src="/logo.svg" style={{ width: 64, height: 64, marginBottom: 16 }} />
               <div style={{ fontSize: 24, fontWeight: 600, color: '#1a1a1a', marginBottom: 8 }}>
-                <FormattedMessage id="pages.forgotPassword.title" defaultMessage="找回密码" />
+                <FormattedMessage id="pages.forgotPassword.title" />
               </div>
             </div>
 
             <Steps
               current={currentStep}
               items={[
-                { title: intl.formatMessage({ id: 'pages.forgotPassword.step1', defaultMessage: '填写邮箱' }) },
-                { title: intl.formatMessage({ id: 'pages.forgotPassword.step2', defaultMessage: '重置密码' }) },
-                { title: intl.formatMessage({ id: 'pages.forgotPassword.step3', defaultMessage: '完成' }) },
+                { title: intl.formatMessage({ id: 'pages.forgotPassword.step1' }) },
+                { title: intl.formatMessage({ id: 'pages.forgotPassword.step2' }) },
+                { title: intl.formatMessage({ id: 'pages.forgotPassword.step3' }) },
               ]}
               style={{ marginBottom: 32 }}
             />
@@ -194,19 +194,19 @@ const ForgotPasswordContainer: React.FC = () => {
                 <Form.Item
                   name="email"
                   rules={[
-                    { required: true, message: <FormattedMessage id="pages.forgotPassword.emailRequired" defaultMessage="请输入注册邮箱！" /> },
-                    { type: 'email', message: <FormattedMessage id="pages.forgotPassword.emailInvalid" defaultMessage="请输入有效的邮箱地址！" /> },
+                    { required: true, message: <FormattedMessage id="pages.forgotPassword.emailRequired" /> },
+                    { type: 'email', message: <FormattedMessage id="pages.forgotPassword.emailInvalid" /> },
                   ]}
                 >
                   <Input
                     size="middle"
                     prefix={<MailOutlined />}
-                    placeholder={intl.formatMessage({ id: 'pages.forgotPassword.emailPlaceholder', defaultMessage: '注册时使用的邮箱' })}
+                    placeholder={intl.formatMessage({ id: 'pages.forgotPassword.emailPlaceholder' })}
                   />
                 </Form.Item>
                 <Form.Item>
                   <Button type="primary" htmlType="submit" size="middle" block loading={loading}>
-                    <FormattedMessage id="pages.forgotPassword.nextStep" defaultMessage="下一步" />
+                    <FormattedMessage id="pages.forgotPassword.nextStep" />
                   </Button>
                 </Form.Item>
               </Form>
@@ -220,13 +220,13 @@ const ForgotPasswordContainer: React.FC = () => {
               >
                 <Form.Item
                   name="code"
-                  rules={[{ required: true, message: <FormattedMessage id="pages.forgotPassword.codeRequired" defaultMessage="请输入验证码！" /> }]}
+                  rules={[{ required: true, message: <FormattedMessage id="pages.forgotPassword.codeRequired" /> }]}
                 >
                   <Space.Compact style={{ width: '100%' }}>
                     <Input
                       size="middle"
                       prefix={<SafetyCertificateOutlined />}
-                      placeholder={intl.formatMessage({ id: 'pages.forgotPassword.codePlaceholder', defaultMessage: '6位邮箱验证码' })}
+                      placeholder={intl.formatMessage({ id: 'pages.forgotPassword.codePlaceholder' })}
                       maxLength={6}
                     />
                     <Button 
@@ -235,34 +235,34 @@ const ForgotPasswordContainer: React.FC = () => {
                       disabled={countdown > 0}
                       style={{ width: '120px' }}
                     >
-                      {countdown > 0 ? `${countdown}s` : intl.formatMessage({ id: 'pages.forgotPassword.resendCode', defaultMessage: '重新获取' })}
+                      {countdown > 0 ? `${countdown}s` : intl.formatMessage({ id: 'pages.forgotPassword.resendCode' })}
                     </Button>
                   </Space.Compact>
                 </Form.Item>
                 <Form.Item
                   name="newPassword"
                   rules={[
-                    { required: true, message: <FormattedMessage id="pages.forgotPassword.passwordRequired" defaultMessage="请输入新密码！" /> },
-                    { min: 6, message: <FormattedMessage id="pages.forgotPassword.passwordMinLength" defaultMessage="密码长度不能小于6位！" /> },
+                    { required: true, message: <FormattedMessage id="pages.forgotPassword.passwordRequired" /> },
+                    { min: 6, message: <FormattedMessage id="pages.forgotPassword.passwordMinLength" /> },
                   ]}
                 >
                   <Input.Password
                     size="middle"
                     prefix={<LockOutlined />}
-                    placeholder={intl.formatMessage({ id: 'pages.forgotPassword.newPasswordPlaceholder', defaultMessage: '新密码' })}
+                    placeholder={intl.formatMessage({ id: 'pages.forgotPassword.newPasswordPlaceholder' })}
                   />
                 </Form.Item>
                 <Form.Item
                   name="confirmPassword"
                   dependencies={['newPassword']}
                   rules={[
-                    { required: true, message: <FormattedMessage id="pages.forgotPassword.confirmPasswordRequired" defaultMessage="请确认新密码！" /> },
+                    { required: true, message: <FormattedMessage id="pages.forgotPassword.confirmPasswordRequired" /> },
                     ({ getFieldValue }) => ({
                       validator(_, value) {
                         if (!value || getFieldValue('newPassword') === value) {
                           return Promise.resolve();
                         }
-                        return Promise.reject(new Error(intl.formatMessage({ id: 'pages.forgotPassword.passwordMismatch', defaultMessage: '两次输入的密码不匹配！' })));
+                        return Promise.reject(new Error(intl.formatMessage({ id: 'pages.forgotPassword.passwordMismatch' })));
                       },
                     }),
                   ]}
@@ -270,12 +270,12 @@ const ForgotPasswordContainer: React.FC = () => {
                   <Input.Password
                     size="middle"
                     prefix={<LockOutlined />}
-                    placeholder={intl.formatMessage({ id: 'pages.forgotPassword.confirmPasswordPlaceholder', defaultMessage: '确认新密码' })}
+                    placeholder={intl.formatMessage({ id: 'pages.forgotPassword.confirmPasswordPlaceholder' })}
                   />
                 </Form.Item>
                 <Form.Item>
                   <Button type="primary" htmlType="submit" size="middle" block loading={loading}>
-                    <FormattedMessage id="pages.forgotPassword.submit" defaultMessage="重置密码" />
+                    <FormattedMessage id="pages.forgotPassword.submit" />
                   </Button>
                 </Form.Item>
               </Form>
@@ -286,18 +286,18 @@ const ForgotPasswordContainer: React.FC = () => {
                 <div style={{ fontSize: 16, color: '#52c41a', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                   <SafetyCertificateOutlined style={{ fontSize: 24 }} />
                   <span>
-                    <FormattedMessage id="pages.forgotPassword.successTitle" defaultMessage="密码重置成功！" />
+                    <FormattedMessage id="pages.forgotPassword.successTitle" />
                   </span>
                 </div>
                 <Button type="primary" size="middle" onClick={() => history.push('/user/login')} block>
-                  <FormattedMessage id="pages.forgotPassword.backToLogin" defaultMessage="返回登录界面" />
+                  <FormattedMessage id="pages.forgotPassword.backToLogin" />
                 </Button>
               </div>
             )}
 
             <div style={{ textAlign: 'center', marginTop: 16 }}>
               <Link to="/user/login">
-                <FormattedMessage id="pages.forgotPassword.loginLink" defaultMessage="想起密码了？返回登录" />
+                <FormattedMessage id="pages.forgotPassword.loginLink" />
               </Link>
             </div>
           </ProCard>

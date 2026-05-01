@@ -89,7 +89,7 @@ const UserCenter: React.FC = () => {
     const updateData = { ...formValues, avatar: lastUploadedAvatar || formValues.avatar };
     const response = await updateUserProfile(updateData);
     if (response.success) {
-      message.success(intl.formatMessage({ id: 'pages.account.center.updateSuccess', defaultMessage: '个人信息更新成功' }));
+      message.success(intl.formatMessage({ id: 'pages.account.center.updateSuccess' }));
       setEditing(false);
       setLastUploadedAvatar(undefined);
       fetchUserProfile();
@@ -158,23 +158,23 @@ const UserCenter: React.FC = () => {
   };
 
   if (loading) {
-    return <div><FormattedMessage id="pages.account.center.loading" defaultMessage="加载中..." /></div>;
+    return <div><FormattedMessage id="pages.account.center.loading" /></div>;
   }
 
   if (!userProfile) {
-    return <div><FormattedMessage id="pages.account.center.userNotExist" defaultMessage="用户信息不存在" /></div>;
+    return <div><FormattedMessage id="pages.account.center.userNotExist" /></div>;
   }
 
-  const pageTitle = intl.formatMessage({ id: 'menu.account.center', defaultMessage: '个人中心' }) + (Settings.title ? ` - ${Settings.title}` : '');
+  const pageTitle = intl.formatMessage({ id: 'menu.account.center' }) + (Settings.title ? ` - ${Settings.title}` : '');
 
   return (
     <>
       <title>{pageTitle}</title>
       <div className={styles.container}>
-        <Title level={2}><UserOutlined style={{ marginRight: '8px' }} /><FormattedMessage id="pages.account.center.title" defaultMessage="个人中心" /></Title>
+        <Title level={2}><UserOutlined style={{ marginRight: '8px' }} /><FormattedMessage id="pages.account.center.title" /></Title>
 
-        <Card title={<FormattedMessage id="pages.account.center.profile" defaultMessage="个人信息" />} className={`${commonStyles.card} ${styles.profileCard}`}
-          extra={<Button type="primary" icon={<EditOutlined />} onClick={() => setEditing(true)} disabled={editing}><FormattedMessage id="pages.account.center.editProfile" defaultMessage="编辑资料" /></Button>}>
+        <Card title={<FormattedMessage id="pages.account.center.profile" />} className={`${commonStyles.card} ${styles.profileCard}`}
+          extra={<Button type="primary" icon={<EditOutlined />} onClick={() => setEditing(true)} disabled={editing}><FormattedMessage id="pages.account.center.editProfile" /></Button>}>
           <div className={styles.avatarSection}>
             {editing ? (
               <div style={{ position: 'relative', display: 'inline-block' }}>
@@ -193,7 +193,7 @@ const UserCenter: React.FC = () => {
             <div style={{ marginTop: '16px' }}>
               <Title level={4}>{userProfile.name || userProfile.displayName || userProfile.username}</Title>
               <Tag color={getRoleTagColor(userProfile.role)}>
-                {userProfile.role === 'admin' ? <FormattedMessage id="pages.account.center.admin" defaultMessage="管理员" /> : <FormattedMessage id="pages.account.center.user" defaultMessage="普通用户" />}
+                {userProfile.role === 'admin' ? <FormattedMessage id="pages.account.center.admin" /> : <FormattedMessage id="pages.account.center.user" />}
               </Tag>
             </div>
           </div>
@@ -202,13 +202,13 @@ const UserCenter: React.FC = () => {
 
            {editing ? (
             <Form form={form} onFinish={handleUpdateProfile} layout="vertical">
-              <Form.Item name="username" label={<span><FormattedMessage id="pages.account.center.username" defaultMessage="用户名" /><Tooltip title={intl.formatMessage({ id: 'pages.account.center.username.notEditable' })}><span style={{ marginLeft: 4, cursor: 'help' }}>ℹ️</span></Tooltip></span>}>
+              <Form.Item name="username" label={<span><FormattedMessage id="pages.account.center.username" /><Tooltip title={intl.formatMessage({ id: 'pages.account.center.username.notEditable' })}><span style={{ marginLeft: 4, cursor: 'help' }}>ℹ️</span></Tooltip></span>}>
                 <Input disabled style={{ color: 'rgba(0, 0, 0, 0.45)' }} />
               </Form.Item>
-              <Form.Item name="name" label={<FormattedMessage id="pages.account.center.name" defaultMessage="姓名" />}><Input placeholder={intl.formatMessage({ id: 'pages.account.center.name.placeholder' })} /></Form.Item>
-              <Form.Item name="email" label={<FormattedMessage id="pages.account.center.email" defaultMessage="邮箱" />} rules={[{ type: 'email', message: intl.formatMessage({ id: 'pages.account.center.email.invalid' }) }]}><Input /></Form.Item>
+              <Form.Item name="name" label={<FormattedMessage id="pages.account.center.name" />}><Input placeholder={intl.formatMessage({ id: 'pages.account.center.name.placeholder' })} /></Form.Item>
+              <Form.Item name="email" label={<FormattedMessage id="pages.account.center.email" />} rules={[{ type: 'email', message: intl.formatMessage({ id: 'pages.account.center.email.invalid' }) }]}><Input /></Form.Item>
               <Form.Item name="phoneNumber" label={intl.formatMessage({ id: 'pages.account.center.phoneNumber' })} rules={[{ pattern: /^1[3-9]\d{9}$/, message: intl.formatMessage({ id: 'pages.account.center.phoneNumber.invalid' }) }]}><Input placeholder={intl.formatMessage({ id: 'pages.account.center.phoneNumber.placeholder' })} maxLength={11} /></Form.Item>
-              <Form.Item name="age" label={<FormattedMessage id="pages.account.center.age" defaultMessage="年龄" />} rules={[{ type: 'number', min: 1, max: 150, message: intl.formatMessage({ id: 'pages.account.center.age.invalid' }) }]}>
+              <Form.Item name="age" label={<FormattedMessage id="pages.account.center.age" />} rules={[{ type: 'number', min: 1, max: 150, message: intl.formatMessage({ id: 'pages.account.center.age.invalid' }) }]}>
                 <InputNumber min={1} max={150} placeholder={intl.formatMessage({ id: 'pages.account.center.age.placeholder' })} style={{ width: '100%' }} />
               </Form.Item>
               <Form.Item name="avatar" hidden><Input /></Form.Item>
@@ -220,16 +220,16 @@ const UserCenter: React.FC = () => {
             </Form>
           ) : (
             <ProDescriptions column={2} bordered>
-              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.username" defaultMessage="用户名" />}><Text strong>{userProfile.username}</Text></ProDescriptions.Item>
-              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.name" defaultMessage="姓名" />}>{userProfile.name || <FormattedMessage id="pages.account.center.notSet" defaultMessage="未设置" />}</ProDescriptions.Item>
-              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.email" defaultMessage="邮箱" />}><MailOutlined style={{ marginRight: '4px' }} />{userProfile.email || <FormattedMessage id="pages.account.center.notSet" defaultMessage="未设置" />}</ProDescriptions.Item>
-              <ProDescriptions.Item label={<Space><MobileOutlined /><FormattedMessage id="pages.account.center.phoneNumber" /></Space>}>{userProfile.phoneNumber || <FormattedMessage id="pages.account.center.notSet" defaultMessage="未设置" />}</ProDescriptions.Item>
-              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.age" defaultMessage="年龄" />}>{userProfile.age || <FormattedMessage id="pages.account.center.notSet" defaultMessage="未设置" />}</ProDescriptions.Item>
-              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.role" defaultMessage="角色" />}><Tag color={getRoleTagColor(userProfile.role)}>{userProfile.role === 'admin' ? <FormattedMessage id="pages.account.center.admin" defaultMessage="管理员" /> : <FormattedMessage id="pages.account.center.user" defaultMessage="普通用户" />}</Tag></ProDescriptions.Item>
-              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.status" defaultMessage="状态" />}><Tag color={userProfile.isActive ? 'green' : 'red'}>{userProfile.isActive ? <FormattedMessage id="pages.account.center.active" defaultMessage="正常" /> : <FormattedMessage id="pages.account.center.inactive" defaultMessage="禁用" />}</Tag></ProDescriptions.Item>
-              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.registerTime" defaultMessage="注册时间" />}><CalendarOutlined style={{ marginRight: '4px' }} />{userProfile.createdAt ? dayjs(userProfile.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
-              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.lastUpdate" defaultMessage="最后更新" />}><CalendarOutlined style={{ marginRight: '4px' }} />{userProfile.updatedAt ? dayjs(userProfile.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
-              {userProfile.lastLoginAt && <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.lastLogin" defaultMessage="最后登录" />}><CalendarOutlined style={{ marginRight: '4px' }} />{dayjs(userProfile.lastLoginAt).format('YYYY-MM-DD HH:mm:ss')}</ProDescriptions.Item>}
+              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.username" />}><Text strong>{userProfile.username}</Text></ProDescriptions.Item>
+              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.name" />}>{userProfile.name || <FormattedMessage id="pages.account.center.notSet" />}</ProDescriptions.Item>
+              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.email" />}><MailOutlined style={{ marginRight: '4px' }} />{userProfile.email || <FormattedMessage id="pages.account.center.notSet" />}</ProDescriptions.Item>
+              <ProDescriptions.Item label={<Space><MobileOutlined /><FormattedMessage id="pages.account.center.phoneNumber" /></Space>}>{userProfile.phoneNumber || <FormattedMessage id="pages.account.center.notSet" />}</ProDescriptions.Item>
+              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.age" />}>{userProfile.age || <FormattedMessage id="pages.account.center.notSet" />}</ProDescriptions.Item>
+              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.role" />}><Tag color={getRoleTagColor(userProfile.role)}>{userProfile.role === 'admin' ? <FormattedMessage id="pages.account.center.admin" /> : <FormattedMessage id="pages.account.center.user" />}</Tag></ProDescriptions.Item>
+              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.status" />}><Tag color={userProfile.isActive ? 'green' : 'red'}>{userProfile.isActive ? <FormattedMessage id="pages.account.center.active" /> : <FormattedMessage id="pages.account.center.inactive" />}</Tag></ProDescriptions.Item>
+              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.registerTime" />}><CalendarOutlined style={{ marginRight: '4px' }} />{userProfile.createdAt ? dayjs(userProfile.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.lastUpdate" />}><CalendarOutlined style={{ marginRight: '4px' }} />{userProfile.updatedAt ? dayjs(userProfile.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+              {userProfile.lastLoginAt && <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.lastLogin" />}><CalendarOutlined style={{ marginRight: '4px' }} />{dayjs(userProfile.lastLoginAt).format('YYYY-MM-DD HH:mm:ss')}</ProDescriptions.Item>}
             </ProDescriptions>
           )}
         </Card>

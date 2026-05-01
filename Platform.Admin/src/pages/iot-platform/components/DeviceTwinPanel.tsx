@@ -47,7 +47,7 @@ const JsonEditor: React.FC<{
             setError(undefined);
             onChange?.(parsed);
         } catch {
-            setError(intl.formatMessage({ id: 'pages.iotPlatform.command.jsonFormatError', defaultMessage: 'JSON 格式错误，请检查' }));
+            setError(intl.formatMessage({ id: 'pages.iotPlatform.command.jsonFormatError' }));
         }
     };
 
@@ -97,7 +97,7 @@ const DeviceTwinPanel: React.FC<DeviceTwinPanelProps> = ({ deviceId }) => {
                 setDesiredDraft(res.data?.desiredProperties ?? {});
             }
         } catch {
-            message.error(intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.loadFailed', defaultMessage: '加载设备孪生失败' }));
+            message.error(intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.loadFailed' }));
         } finally {
             setLoading(false);
         }
@@ -112,11 +112,11 @@ const DeviceTwinPanel: React.FC<DeviceTwinPanelProps> = ({ deviceId }) => {
         try {
             const res = await iotService.updateDesiredProperties(deviceId, desiredDraft);
             if (res.success && res.data) {
-                message.success(intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.desiredPropertiesUpdated', defaultMessage: '期望属性已更新 (版本 {version})' }, { version: res.data.desiredVersion }));
+                message.success(intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.desiredPropertiesUpdated' }, { version: res.data.desiredVersion }));
                 setTwin(res.data);
             }
         } catch {
-            message.error(intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.saveFailed', defaultMessage: '保存失败' }));
+            message.error(intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.saveFailed' }));
         } finally {
             setSaving(false);
         }
@@ -131,7 +131,7 @@ const DeviceTwinPanel: React.FC<DeviceTwinPanelProps> = ({ deviceId }) => {
     if (loading) {
         return (
             <div style={{ textAlign: 'center', padding: 40 }}>
-                <ReloadOutlined spin /> {intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.loading', defaultMessage: '加载设备孪生中...' })}
+                <ReloadOutlined spin /> {intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.loading' })}
             </div>
         );
     }
@@ -157,10 +157,10 @@ const DeviceTwinPanel: React.FC<DeviceTwinPanelProps> = ({ deviceId }) => {
                     ETag: <strong>{twin?.etag?.slice(0, 12) ?? '-'}...</strong>
                 </Text>
                 <Tag color="blue" style={metaTagStyle}>
-                    {intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.desired', defaultMessage: 'Desired' })} v{twin?.desiredVersion ?? '-'}
+                    {intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.desired' })} v{twin?.desiredVersion ?? '-'}
                 </Tag>
                 <Tag color="green" style={metaTagStyle}>
-                    {intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.reported', defaultMessage: 'Reported' })} v{twin?.reportedVersion ?? '-'}
+                    {intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.reported' })} v{twin?.reportedVersion ?? '-'}
                 </Tag>
                 <Button
                     size="small"
@@ -168,14 +168,14 @@ const DeviceTwinPanel: React.FC<DeviceTwinPanelProps> = ({ deviceId }) => {
                     onClick={loadTwin}
                     style={{ marginLeft: 'auto' }}
                 >
-                    {intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.refresh', defaultMessage: '刷新' })}
+                    {intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.refresh' })}
                 </Button>
             </div>
 
             <Alert
                 type="info"
                 showIcon
-                message={intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.desiredInfo', defaultMessage: 'Desired Properties 由管理端配置，设备连接后读取并执行；Reported Properties 由设备上报，反映设备实际状态。' })}
+                message={intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.desiredInfo' })}
                 style={{ marginBottom: 16, fontSize: 12 }}
                 closable
             />
@@ -186,8 +186,8 @@ const DeviceTwinPanel: React.FC<DeviceTwinPanelProps> = ({ deviceId }) => {
                     size="small"
                     title={
                         <Space>
-                            <span>⚙️ {intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.desiredProperties', defaultMessage: 'Desired Properties' })}</span>
-                            <Tag color="blue" style={metaTagStyle}>{intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.desiredVersion', defaultMessage: '版本 {version}' }, { version: twin?.desiredVersion ?? '-' })}</Tag>
+                            <span>⚙️ {intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.desiredProperties' })}</span>
+                            <Tag color="blue" style={metaTagStyle}>{intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.desiredVersion' }, { version: twin?.desiredVersion ?? '-' })}</Tag>
                         </Space>
                     }
                     extra={
@@ -198,7 +198,7 @@ const DeviceTwinPanel: React.FC<DeviceTwinPanelProps> = ({ deviceId }) => {
                             onClick={handleSave}
                             loading={saving}
                         >
-                            {intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.save', defaultMessage: '保存' })}
+                            {intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.save' })}
                         </Button>
                     }
                     bodyStyle={{ padding: '12px 8px' }}
@@ -209,7 +209,7 @@ const DeviceTwinPanel: React.FC<DeviceTwinPanelProps> = ({ deviceId }) => {
                     />
                     {twin?.desiredUpdatedAt && (
                         <Text type="secondary" style={{ fontSize: 11, display: 'block', marginTop: 6 }}>
-                            <ClockCircleOutlined /> {intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.lastUpdate', defaultMessage: '最后更新' })}: {dayjs(twin.desiredUpdatedAt).format('MM-DD HH:mm:ss')}
+                            <ClockCircleOutlined /> {intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.lastUpdate' })}: {dayjs(twin.desiredUpdatedAt).format('MM-DD HH:mm:ss')}
                         </Text>
                     )}
                 </Card>
@@ -219,13 +219,13 @@ const DeviceTwinPanel: React.FC<DeviceTwinPanelProps> = ({ deviceId }) => {
                     size="small"
                     title={
                         <Space>
-                            <span>📡 {intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.reportedProperties', defaultMessage: 'Reported Properties' })}</span>
-                            <Tag color="green" style={metaTagStyle}>{intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.desiredVersion', defaultMessage: '版本 {version}' }, { version: twin?.reportedVersion ?? 0 })}</Tag>
+                            <span>📡 {intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.reportedProperties' })}</span>
+                            <Tag color="green" style={metaTagStyle}>{intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.desiredVersion' }, { version: twin?.reportedVersion ?? 0 })}</Tag>
                         </Space>
                     }
                     extra={
-                        <Tooltip title={intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.readonlyTooltip', defaultMessage: '由设备端上报，管理端只读' })}>
-                            <Tag color="default">{intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.readonly', defaultMessage: '只读' })}</Tag>
+                        <Tooltip title={intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.readonlyTooltip' })}>
+                            <Tag color="default">{intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.readonly' })}</Tag>
                         </Tooltip>
                     }
                     bodyStyle={{ padding: '12px 8px' }}
@@ -236,11 +236,11 @@ const DeviceTwinPanel: React.FC<DeviceTwinPanelProps> = ({ deviceId }) => {
                     />
                     {twin?.reportedUpdatedAt ? (
                         <Text type="secondary" style={{ fontSize: 11, display: 'block', marginTop: 6 }}>
-                            <ClockCircleOutlined /> {intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.desiredLastReport', defaultMessage: '设备最后上报' })}: {dayjs(twin.reportedUpdatedAt).format('MM-DD HH:mm:ss')}
+                            <ClockCircleOutlined /> {intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.desiredLastReport' })}: {dayjs(twin.reportedUpdatedAt).format('MM-DD HH:mm:ss')}
                         </Text>
                     ) : (
                         <Text type="secondary" style={{ fontSize: 11, display: 'block', marginTop: 6 }}>
-                            {intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.noReport', defaultMessage: '设备尚未上报属性' })}
+                            {intl.formatMessage({ id: 'pages.iotPlatform.deviceTwin.noReport' })}
                         </Text>
                     )}
                 </Card>

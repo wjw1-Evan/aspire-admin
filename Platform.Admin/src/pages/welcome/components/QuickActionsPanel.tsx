@@ -115,10 +115,9 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ currentUser }) =>
                         }
 
                         // 尝试获取多语言标题，如果不存在则使用菜单的 title
-                        const menuTitle = intl.formatMessage({ id: localeKey }, { defaultMessage: menu.title || menu.name });
+                        const menuTitle = intl.formatMessage({ id: localeKey });
                         const menuDescription = intl.formatMessage(
-                            { id: `${localeKey}.desc` },
-                            { defaultMessage: menuTitle }
+                            { id: `${localeKey}.desc` }
                         );
 
                         return (
@@ -145,7 +144,7 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ currentUser }) =>
                 </div>
             ) : (
                 <Alert
-                    title={intl.formatMessage({ id: 'pages.welcome.quickActions.empty' }, { defaultMessage: '暂无快速操作' })}
+                    title={intl.formatMessage({ id: 'pages.welcome.quickActions.empty' }, { })}
                     type="info"
                     showIcon
                 />

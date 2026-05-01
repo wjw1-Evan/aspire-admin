@@ -68,7 +68,7 @@ const CommandCenterPanel: React.FC<CommandCenterPanelProps> = ({ deviceId }) => 
             JSON.parse(val);
             setPayloadError(undefined);
         } catch {
-            setPayloadError(intl.formatMessage({ id: 'pages.iotPlatform.command.jsonFormatError', defaultMessage: 'JSON 格式错误，请检查' }));
+            setPayloadError(intl.formatMessage({ id: 'pages.iotPlatform.command.jsonFormatError' }));
         }
     };
 
@@ -87,7 +87,7 @@ const CommandCenterPanel: React.FC<CommandCenterPanelProps> = ({ deviceId }) => 
         try {
             await form.validateFields();
             if (payloadError) {
-                message.error(intl.formatMessage({ id: 'pages.iotPlatform.command.jsonError', defaultMessage: '请修复 JSON 格式错误后再发送' }));
+                message.error(intl.formatMessage({ id: 'pages.iotPlatform.command.jsonError' }));
                 return;
             }
 
@@ -103,14 +103,14 @@ const CommandCenterPanel: React.FC<CommandCenterPanelProps> = ({ deviceId }) => 
             setSending(true);
             const res = await iotService.sendCommand(deviceId, values.commandName, payload, values.ttlHours ?? 24);
             if (res.success && res.data) {
-                message.success(intl.formatMessage({ id: 'pages.iotPlatform.command.sent', defaultMessage: '命令 "{name}" 已发送，ID: {id}' }, { name: values.commandName, id: res.data.id.slice(-8) }));
+                message.success(intl.formatMessage({ id: 'pages.iotPlatform.command.sent' }, { name: values.commandName, id: res.data.id.slice(-8) }));
                 setHistory((prev) => [res.data, ...prev].filter(Boolean) as IoTDeviceCommand[]);
                 form.setFieldValue('commandName', undefined);
                 setPayloadText('{}');
             }
         } catch (err: any) {
             if (err?.errorFields) return;
-            message.error(intl.formatMessage({ id: 'pages.iotPlatform.command.sendFailed', defaultMessage: '发送失败' }) + ': ' + (err?.message ?? intl.formatMessage({ id: 'pages.iotPlatform.command.unknownError', defaultMessage: '未知错误' })));
+            message.error(intl.formatMessage({ id: 'pages.iotPlatform.command.sendFailed' }) + ': ' + (err?.message ?? intl.formatMessage({ id: 'pages.iotPlatform.command.unknownError' })));
         } finally {
             setSending(false);
         }
@@ -128,7 +128,7 @@ const CommandCenterPanel: React.FC<CommandCenterPanelProps> = ({ deviceId }) => 
                     <div style={{ flex: 1, minWidth: 0 }}>
                         <Space size={4} style={{ marginBottom: 4 }}>
                             <Text strong style={{ fontSize: 13 }}>{cmd.commandName}</Text>
-                            <Tag color={cfg.color}>{intl.formatMessage({ id: cfg.labelId, defaultMessage: cfg.defaultLabel })}</Tag>
+                            <Tag color={cfg.color}>{intl.formatMessage({ id: cfg.labelId})}</Tag>
                         </Space>
                         {cmd.payload && (
                             <div
@@ -148,7 +148,7 @@ const CommandCenterPanel: React.FC<CommandCenterPanelProps> = ({ deviceId }) => 
                         )}
                         {cmd.responsePayload && (
                             <div>
-                                <Text type="secondary" style={{ fontSize: 11 }}>{intl.formatMessage({ id: 'pages.iotPlatform.command.reply', defaultMessage: '回复' })}: </Text>
+                                <Text type="secondary" style={{ fontSize: 11 }}>{intl.formatMessage({ id: 'pages.iotPlatform.command.reply' })}: </Text>
                                 <Text style={{ fontFamily: 'monospace', fontSize: 11 }}>
                                     {JSON.stringify(cmd.responsePayload)}
                                 </Text>
@@ -156,7 +156,7 @@ const CommandCenterPanel: React.FC<CommandCenterPanelProps> = ({ deviceId }) => 
                         )}
                         {cmd.errorMessage && (
                             <Text type="danger" style={{ fontSize: 11 }}>
-                                {intl.formatMessage({ id: 'pages.iotPlatform.command.error', defaultMessage: '错误' })}: {cmd.errorMessage}
+                                {intl.formatMessage({ id: 'pages.iotPlatform.command.error' })}: {cmd.errorMessage}
                             </Text>
                         )}
                     </div>
@@ -164,7 +164,7 @@ const CommandCenterPanel: React.FC<CommandCenterPanelProps> = ({ deviceId }) => 
                         <Text type="secondary" style={{ fontSize: 11, display: 'block' }}>
                             {dayjs(cmd.createdAt).format('HH:mm:ss')}
                         </Text>
-                        <Tooltip title={`${intl.formatMessage({ id: 'pages.iotPlatform.command.expires', defaultMessage: '过期' })}: ${dayjs(cmd.expiresAt).format('MM-DD HH:mm')}`}>
+                        <Tooltip title={`${intl.formatMessage({ id: 'pages.iotPlatform.command.expires' })}: ${dayjs(cmd.expiresAt).format('MM-DD HH:mm')}`}>
                             <Text type="secondary" style={{ fontSize: 10 }}>TTL ⏱</Text>
                         </Tooltip>
                     </div>
@@ -177,7 +177,7 @@ const CommandCenterPanel: React.FC<CommandCenterPanelProps> = ({ deviceId }) => 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <Card
                 size="small"
-                title={<><SendOutlined style={{ marginRight: 6, color: '#1677ff' }} />{intl.formatMessage({ id: 'pages.iotPlatform.command.sendPanel', defaultMessage: '发送命令（Direct Method）' })}</>}
+                title={<><SendOutlined style={{ marginRight: 6, color: '#1677ff' }} />{intl.formatMessage({ id: 'pages.iotPlatform.command.sendPanel' })}</>}
                 style={{
                     borderRadius: 8,
                     background: 'linear-gradient(135deg, #f0f5ff 0%, #fff 100%)',
@@ -186,11 +186,11 @@ const CommandCenterPanel: React.FC<CommandCenterPanelProps> = ({ deviceId }) => 
                 <Form form={form} layout="vertical">
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                         <Form.Item
-                            label={intl.formatMessage({ id: 'pages.iotPlatform.command.preset', defaultMessage: '预置命令' })}
+                            label={intl.formatMessage({ id: 'pages.iotPlatform.command.preset' })}
                             style={{ marginBottom: 0 }}
                         >
                             <Select
-                                placeholder={intl.formatMessage({ id: 'pages.iotPlatform.command.presetPlaceholder', defaultMessage: '选择预置命令（或手动输入）' })}
+                                placeholder={intl.formatMessage({ id: 'pages.iotPlatform.command.presetPlaceholder' })}
                                 options={PRESET_COMMANDS}
                                 onChange={handlePresetSelect}
                                 allowClear
@@ -198,16 +198,16 @@ const CommandCenterPanel: React.FC<CommandCenterPanelProps> = ({ deviceId }) => 
                             />
                         </Form.Item>
                         <Form.Item
-                            label={intl.formatMessage({ id: 'pages.iotPlatform.command.name', defaultMessage: '命令名称' })}
+                            label={intl.formatMessage({ id: 'pages.iotPlatform.command.name' })}
                             name="commandName"
-                            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.iotPlatform.command.nameRequired', defaultMessage: '请输入命令名称' }) }]}
+                            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.iotPlatform.command.nameRequired' }) }]}
                             style={{ marginBottom: 0 }}
                         >
-                            <Input placeholder={intl.formatMessage({ id: 'pages.iotPlatform.command.namePlaceholder', defaultMessage: '如 restart、setThreshold' })} />
+                            <Input placeholder={intl.formatMessage({ id: 'pages.iotPlatform.command.namePlaceholder' })} />
                         </Form.Item>
                     </div>
 
-                    <Form.Item label={intl.formatMessage({ id: 'pages.iotPlatform.command.payload', defaultMessage: '命令参数 (JSON)' })} style={{ marginBottom: 0, marginTop: 12 }}>
+                    <Form.Item label={intl.formatMessage({ id: 'pages.iotPlatform.command.payload' })} style={{ marginBottom: 0, marginTop: 12 }}>
                         <TextArea
                             value={payloadText}
                             onChange={(e) => handlePayloadChange(e.target.value)}
@@ -217,7 +217,7 @@ const CommandCenterPanel: React.FC<CommandCenterPanelProps> = ({ deviceId }) => 
                                 fontSize: 12,
                                 border: payloadError ? '1px solid #ff4d4f' : undefined,
                             }}
-                            placeholder={intl.formatMessage({ id: 'pages.iotPlatform.command.payloadPlaceholder', defaultMessage: '{"key": "value"}' })}
+                            placeholder={intl.formatMessage({ id: 'pages.iotPlatform.command.payloadPlaceholder' })}
                         />
                         {payloadError && (
                             <Text type="danger" style={{ fontSize: 12 }}>{payloadError}</Text>
@@ -225,7 +225,7 @@ const CommandCenterPanel: React.FC<CommandCenterPanelProps> = ({ deviceId }) => 
                     </Form.Item>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12 }}>
-                        <Form.Item label={intl.formatMessage({ id: 'pages.iotPlatform.command.ttl', defaultMessage: 'TTL（小时）' })} name="ttlHours" initialValue={24} style={{ marginBottom: 0, flex: '0 0 auto' }}>
+                        <Form.Item label={intl.formatMessage({ id: 'pages.iotPlatform.command.ttl' })} name="ttlHours" initialValue={24} style={{ marginBottom: 0, flex: '0 0 auto' }}>
                             <InputNumber min={1} max={168} style={{ width: 100 }} />
                         </Form.Item>
                         <Button
@@ -235,7 +235,7 @@ const CommandCenterPanel: React.FC<CommandCenterPanelProps> = ({ deviceId }) => 
                             onClick={handleSend}
                             style={{ marginTop: 'auto', marginBottom: 0 }}
                         >
-                            {intl.formatMessage({ id: 'pages.iotPlatform.command.send', defaultMessage: '发送命令' })}
+                            {intl.formatMessage({ id: 'pages.iotPlatform.command.send' })}
                         </Button>
                     </div>
                 </Form>
@@ -243,11 +243,11 @@ const CommandCenterPanel: React.FC<CommandCenterPanelProps> = ({ deviceId }) => 
 
             <Card
                 size="small"
-                title={intl.formatMessage({ id: 'pages.iotPlatform.command.history', defaultMessage: '📋 本次会话命令记录' })}
+                title={intl.formatMessage({ id: 'pages.iotPlatform.command.history' })}
                 bodyStyle={{ padding: '12px 16px', maxHeight: 400, overflow: 'auto' }}
             >
                 {history.length === 0 ? (
-                    <Empty description={intl.formatMessage({ id: 'pages.iotPlatform.command.noHistory', defaultMessage: '暂无命令记录' })} image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                    <Empty description={intl.formatMessage({ id: 'pages.iotPlatform.command.noHistory' })} image={Empty.PRESENTED_IMAGE_SIMPLE} />
                 ) : (
                     <Timeline>
                         {history.map(renderCommandItem)}

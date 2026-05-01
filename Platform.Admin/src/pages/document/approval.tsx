@@ -55,14 +55,14 @@ const ApprovalPage: React.FC = () => {
 
   const handleApprove = async (item: TodoItem) => {
     modal.confirm({
-      title: intl.formatMessage({ id: 'pages.document.approval.confirmApprove', defaultMessage: '确认通过' }),
-      content: intl.formatMessage({ id: 'pages.document.approval.confirmApproveContent', defaultMessage: '确定要通过此审批？' }),
+      title: intl.formatMessage({ id: 'pages.document.approval.confirmApprove' }),
+      content: intl.formatMessage({ id: 'pages.document.approval.confirmApproveContent' }),
       onOk: async () => {
         const res = await executeNodeAction(item.id, item.currentNodeId, {
           action: 'approve',
         });
         if (res.success) {
-          message.success(intl.formatMessage({ id: 'pages.document.approval.approved', defaultMessage: '审批通过' }));
+          message.success(intl.formatMessage({ id: 'pages.document.approval.approved' }));
           actionRef.current?.reload();
         }
       },
@@ -72,21 +72,21 @@ const ApprovalPage: React.FC = () => {
   const handleReject = async (item: TodoItem) => {
     let rejectComment = '';
     modal.confirm({
-      title: intl.formatMessage({ id: 'pages.document.approval.confirmReject', defaultMessage: '拒绝审批' }),
+      title: intl.formatMessage({ id: 'pages.document.approval.confirmReject' }),
       content: (
         <div>
-          <p>{intl.formatMessage({ id: 'pages.document.approval.rejectReason', defaultMessage: '请输入拒绝原因' })}</p>
+          <p>{intl.formatMessage({ id: 'pages.document.approval.rejectReason' })}</p>
           <Input.TextArea
             id="reject-reason-input"
             rows={3}
             onChange={(e) => { rejectComment = e.target.value; }}
-            placeholder={intl.formatMessage({ id: 'pages.document.approval.rejectReasonPlaceholder', defaultMessage: '请输入拒绝原因' })}
+            placeholder={intl.formatMessage({ id: 'pages.document.approval.rejectReasonPlaceholder' })}
           />
         </div>
       ),
       onOk: async () => {
         if (!rejectComment.trim()) {
-          message.warning(intl.formatMessage({ id: 'pages.document.approval.rejectReasonRequired', defaultMessage: '拒绝原因不能为空' }));
+          message.warning(intl.formatMessage({ id: 'pages.document.approval.rejectReasonRequired' }));
           return;
         }
         const res = await executeNodeAction(item.id, item.currentNodeId, {
@@ -94,7 +94,7 @@ const ApprovalPage: React.FC = () => {
           comment: rejectComment,
         });
         if (res.success) {
-          message.success(intl.formatMessage({ id: 'pages.document.approval.rejected', defaultMessage: '已拒绝' }));
+          message.success(intl.formatMessage({ id: 'pages.document.approval.rejected' }));
           actionRef.current?.reload();
         }
       },
@@ -103,53 +103,53 @@ const ApprovalPage: React.FC = () => {
 
   const columns: ProColumns<TodoItem>[] = [
     {
-      title: intl.formatMessage({ id: 'pages.document.table.title', defaultMessage: '公文标题' }),
+      title: intl.formatMessage({ id: 'pages.document.table.title' }),
       dataIndex: ['document', 'title'],
       ellipsis: true,
       sorter: true,
       render: (_, r) => <a onClick={() => set({ viewingInstance: r, detailVisible: true })}><FileTextOutlined /> {r.document?.title || '-'}</a>,
     },
     {
-      title: intl.formatMessage({ id: 'pages.workflow.table.name', defaultMessage: '流程名称' }),
+      title: intl.formatMessage({ id: 'pages.workflow.table.name' }),
       dataIndex: 'definitionName',
       ellipsis: true,
     },
     {
-      title: intl.formatMessage({ id: 'pages.workflow.monitor.table.currentNode', defaultMessage: '当前节点' }),
+      title: intl.formatMessage({ id: 'pages.workflow.monitor.table.currentNode' }),
       dataIndex: ['currentNode', 'label'],
       render: (_, r) => r.currentNode?.label || r.currentNodeId,
     },
     {
-      title: intl.formatMessage({ id: 'pages.document.table.type', defaultMessage: '类型' }),
+      title: intl.formatMessage({ id: 'pages.document.table.type' }),
       dataIndex: ['document', 'documentType'],
       ellipsis: true,
     },
     {
-      title: intl.formatMessage({ id: 'pages.document.table.createdBy', defaultMessage: '发起人' }),
+      title: intl.formatMessage({ id: 'pages.document.table.createdBy' }),
       dataIndex: 'startedBy',
       ellipsis: true,
     },
     {
-      title: intl.formatMessage({ id: 'pages.document.table.createdAt', defaultMessage: '发起时间' }),
+      title: intl.formatMessage({ id: 'pages.document.table.createdAt' }),
       dataIndex: 'startedAt',
       sorter: true,
       render: (dom) => dom ? dayjs(dom as string).format('YYYY-MM-DD HH:mm') : '-',
     },
     {
-      title: intl.formatMessage({ id: 'pages.document.table.action', defaultMessage: '操作' }),
+      title: intl.formatMessage({ id: 'pages.document.table.action' }),
       valueType: 'option',
       fixed: 'right',
       width: 260,
       render: (_, r) => (
         <Space size={4}>
           <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => set({ viewingInstance: r, detailVisible: true })}>
-            {intl.formatMessage({ id: 'pages.document.action.view', defaultMessage: '查看' })}
+            {intl.formatMessage({ id: 'pages.document.action.view' })}
           </Button>
           <Button type="link" size="small" icon={<CheckCircleOutlined />} onClick={() => handleApprove(r)}>
-            {intl.formatMessage({ id: 'pages.document.approval.approve', defaultMessage: '通过' })}
+            {intl.formatMessage({ id: 'pages.document.approval.approve' })}
           </Button>
           <Button type="link" size="small" danger icon={<CloseCircleOutlined />} onClick={() => handleReject(r)}>
-            {intl.formatMessage({ id: 'pages.document.approval.reject', defaultMessage: '拒绝' })}
+            {intl.formatMessage({ id: 'pages.document.approval.reject' })}
           </Button>
           <Button type="link" size="small" icon={<HistoryOutlined />} onClick={async () => {
             try {
@@ -159,7 +159,7 @@ const ApprovalPage: React.FC = () => {
               }
             } catch (error) { console.error('获取审批历史失败:', error); }
           }}>
-            {intl.formatMessage({ id: 'pages.workflow.monitor.action.history', defaultMessage: '历史' })}
+            {intl.formatMessage({ id: 'pages.workflow.monitor.action.history' })}
           </Button>
         </Space>
       ),
@@ -172,7 +172,7 @@ const ApprovalPage: React.FC = () => {
         actionRef={actionRef}
         headerTitle={
           <Space size={24}>
-            <Space><FileTextOutlined />{intl.formatMessage({ id: 'pages.document.approval', defaultMessage: '我的审批' })}</Space>
+            <Space><FileTextOutlined />{intl.formatMessage({ id: 'pages.document.approval' })}</Space>
           </Space>
         }
         request={async (params: any, sort: any, filter: any) => {
@@ -197,7 +197,7 @@ const ApprovalPage: React.FC = () => {
         toolBarRender={() => [
           <Input.Search
             key="search"
-            placeholder={intl.formatMessage({ id: 'pages.document.search.placeholder', defaultMessage: '搜索...' })}
+            placeholder={intl.formatMessage({ id: 'pages.document.search.placeholder' })}
             allowClear
             value={state.search}
             onChange={(e) => set({ search: e.target.value })}
@@ -208,7 +208,7 @@ const ApprovalPage: React.FC = () => {
       />
 
       <Drawer
-        title={intl.formatMessage({ id: 'pages.document.approval.detail', defaultMessage: '审批详情' })}
+        title={intl.formatMessage({ id: 'pages.document.approval.detail' })}
         placement="right"
         open={state.detailVisible}
         onClose={() => set({ detailVisible: false, viewingInstance: null })}
@@ -218,7 +218,7 @@ const ApprovalPage: React.FC = () => {
       </Drawer>
 
       <Modal
-        title={intl.formatMessage({ id: 'pages.workflow.monitor.modal.historyTitle', defaultMessage: '审批历史' })}
+        title={intl.formatMessage({ id: 'pages.workflow.monitor.modal.historyTitle' })}
         open={state.historyVisible}
         onCancel={() => set({ historyVisible: false, history: [] })}
         footer={null}
@@ -227,16 +227,16 @@ const ApprovalPage: React.FC = () => {
         <div>
           {state.history.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 24, color: '#999' }}>
-              {intl.formatMessage({ id: 'pages.workflow.monitor.history.empty', defaultMessage: '暂无审批记录' })}
+              {intl.formatMessage({ id: 'pages.workflow.monitor.history.empty' })}
             </div>
           ) : (
             state.history.map((record, index) => (
               <div key={index} style={{ padding: '12px 0', borderBottom: '1px solid #f0f0f0' }}>
                 <Space direction="vertical" style={{ width: '100%' }}>
-                  <div><strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.approver', defaultMessage: '审批人' })}:</strong> {record.approverName || record.approverId}</div>
-                  <div><strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.action', defaultMessage: '操作' })}:</strong> {(() => { const actionMeta = getStatusMeta(intl, record.action as ApprovalAction, approvalActionMap); return <Tag color={actionMeta.color}>{actionMeta.text}</Tag>; })()}</div>
-                  {record.comment && <div><strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.comment', defaultMessage: '意见' })}:</strong> {record.comment}</div>}
-                  <div><strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.time', defaultMessage: '时间' })}:</strong> {record.approvedAt ? dayjs(record.approvedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</div>
+                  <div><strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.approver' })}:</strong> {record.approverName || record.approverId}</div>
+                  <div><strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.action' })}:</strong> {(() => { const actionMeta = getStatusMeta(intl, record.action as ApprovalAction, approvalActionMap); return <Tag color={actionMeta.color}>{actionMeta.text}</Tag>; })()}</div>
+                  {record.comment && <div><strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.comment' })}:</strong> {record.comment}</div>}
+                  <div><strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.time' })}:</strong> {record.approvedAt ? dayjs(record.approvedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</div>
                 </Space>
               </div>
             ))
@@ -265,29 +265,29 @@ const ApprovalDetail: React.FC<{ item: TodoItem }> = ({ item }) => {
 
   return (
     <div>
-      <ProDescriptions column={1} bordered size="small" title={intl.formatMessage({ id: 'pages.document.detail.title', defaultMessage: '公文信息' })}>
-        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.table.title', defaultMessage: '标题' })}>
+      <ProDescriptions column={1} bordered size="small" title={intl.formatMessage({ id: 'pages.document.detail.title' })}>
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.table.title' })}>
           <strong>{doc?.title || item.document?.title || '-'}</strong>
         </ProDescriptions.Item>
-        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.workflow.table.name', defaultMessage: '流程' })}>{item.definitionName}</ProDescriptions.Item>
-        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.workflow.monitor.table.currentNode', defaultMessage: '当前节点' })}>
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.workflow.table.name' })}>{item.definitionName}</ProDescriptions.Item>
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.workflow.monitor.table.currentNode' })}>
           <Tag color="blue">{item.currentNode?.label || item.currentNodeId}</Tag>
         </ProDescriptions.Item>
-        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.table.type', defaultMessage: '类型' })}>{doc?.documentType || '-'}</ProDescriptions.Item>
-        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.table.createdBy', defaultMessage: '发起人' })}>{item.startedBy}</ProDescriptions.Item>
-        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.table.createdAt', defaultMessage: '发起时间' })}>
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.table.type' })}>{doc?.documentType || '-'}</ProDescriptions.Item>
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.table.createdBy' })}>{item.startedBy}</ProDescriptions.Item>
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.table.createdAt' })}>
           {item.startedAt ? dayjs(item.startedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
         </ProDescriptions.Item>
       </ProDescriptions>
       {doc?.content && (
         <div style={{ marginTop: 16 }}>
-          <h4>{intl.formatMessage({ id: 'pages.document.detail.content', defaultMessage: '公文内容' })}</h4>
+          <h4>{intl.formatMessage({ id: 'pages.document.detail.content' })}</h4>
           <div style={{ padding: 12, border: '1px solid #f0f0f0', borderRadius: 6 }} dangerouslySetInnerHTML={{ __html: doc.content }} />
         </div>
       )}
       {instance?.variables && Object.keys(instance.variables).length > 0 && (
         <div style={{ marginTop: 16 }}>
-          <h4>{intl.formatMessage({ id: 'pages.workflow.monitor.detail.variables', defaultMessage: '流程变量' })}</h4>
+          <h4>{intl.formatMessage({ id: 'pages.workflow.monitor.detail.variables' })}</h4>
           <ProDescriptions column={1} bordered size="small">
             {Object.entries(instance.variables).map(([key, value]) => (
               <ProDescriptions.Item key={key} label={key}>

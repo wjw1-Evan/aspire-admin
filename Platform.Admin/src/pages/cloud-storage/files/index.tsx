@@ -308,7 +308,7 @@ const CloudStorageFilesPage: React.FC = () => {
                             const response = info.file.response as any;
                             if (response?.success === false) {
                                 const errorMsg = response?.errorCode
-                                    ? intl.formatMessage({ id: response.errorCode, defaultMessage: response.message || `${info.file.name} ${intl.formatMessage({ id: 'pages.cloudStorage.message.uploadFailed' })}` })
+                                    ? intl.formatMessage({ id: response.errorCode })
                                     : (response.message || `${info.file.name} ${intl.formatMessage({ id: 'pages.cloudStorage.message.uploadFailed' })}`);
                                 message.error(errorMsg);
                             } else {
@@ -321,7 +321,7 @@ const CloudStorageFilesPage: React.FC = () => {
                         } else if (info.file.status === 'error') {
                             const response = info.file.response as any;
                             const errorMsg = response?.errorCode
-                                ? intl.formatMessage({ id: response.errorCode, defaultMessage: response?.message || `${info.file.name} ${intl.formatMessage({ id: 'pages.cloudStorage.message.uploadFailed' })}` })
+                                ? intl.formatMessage({ id: response.errorCode })
                                 : (response?.message || `${info.file.name} ${intl.formatMessage({ id: 'pages.cloudStorage.message.uploadFailed' })}`);
                             message.error(errorMsg);
                         }

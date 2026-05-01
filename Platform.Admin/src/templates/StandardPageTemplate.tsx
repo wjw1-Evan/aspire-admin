@@ -180,7 +180,7 @@ const XxxManagement: React.FC = () => {
             {intl.formatMessage({ id: 'pages.action.edit' })}
           </Button>
           <Popconfirm
-            title={intl.formatMessage({ id: 'pages.xxx.message.confirmDelete', defaultMessage: '确定删除？' })}
+            title={intl.formatMessage({ id: 'pages.xxx.message.confirmDelete' })}
             onConfirm={async () => {
               const res = await api.delete(r.id);
               if (res.success) {

@@ -77,7 +77,7 @@ const StatisticsOverview: React.FC<StatisticsOverviewProps> = ({ statistics, loa
                 </Col>
                 <Col xs={24} sm={12} md={12} lg={12} xl={8}>
                     <StatCard
-                        title={intl.formatMessage({ id: 'pages.welcome.stats.totalOrganizations', defaultMessage: '组织节点' })}
+                        title={intl.formatMessage({ id: 'pages.welcome.stats.totalOrganizations' })}
                         value={statistics?.totalOrganizations || 0}
                         icon={<ClusterOutlined />}
                         color={token.purple}

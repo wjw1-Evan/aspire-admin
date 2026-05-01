@@ -194,7 +194,7 @@ const WebScraperLogs: React.FC = () => {
       />
 
       <Modal
-        title={intl.formatMessage({ id: 'pages.web-scraper.scrape-logs.title.logDetail', defaultMessage: '日志详情' })}
+        title={intl.formatMessage({ id: 'pages.web-scraper.scrape-logs.title.logDetail' })}
         open={detailVisible}
         onCancel={() => {
           setDetailVisible(false);

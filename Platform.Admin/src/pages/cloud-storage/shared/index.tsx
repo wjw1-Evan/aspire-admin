@@ -59,9 +59,9 @@ const CloudStorageSharedPage: React.FC = () => {
 
     const getAccessTypeTag = (accessType: string) => {
         const m: Record<string, { color: string; text: string }> = {
-            view: { color: 'blue', text: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewOnly', defaultMessage: '查看' }) },
-            download: { color: 'green', text: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewDownload', defaultMessage: '查看和下载' }) },
-            edit: { color: 'orange', text: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewDownloadEdit', defaultMessage: '查看、下载和编辑' }) },
+            view: { color: 'blue', text: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewOnly' }) },
+            download: { color: 'green', text: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewDownload' }) },
+            edit: { color: 'orange', text: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewDownloadEdit' }) },
         };
         const c = m[accessType] || { color: 'default', text: accessType };
         return <Tag color={c.color}>{c.text}</Tag>;
@@ -73,7 +73,6 @@ const CloudStorageSharedPage: React.FC = () => {
             if (res.success) {
                 message.success(intl.formatMessage({
                     id: share.isEnabled ? 'pages.cloudStorage.share.action.disableSuccess' : 'pages.cloudStorage.share.action.enableSuccess',
-                    defaultMessage: share.isEnabled ? '禁用成功' : '启用成功'
                 }));
             } else {
                 message.error(getErrorMessage(res, 'pages.cloudStorage.share.toggleFailed'));
@@ -87,7 +86,7 @@ const CloudStorageSharedPage: React.FC = () => {
         try {
             const res = await api.delete(share.id);
             if (res.success) {
-                message.success(intl.formatMessage({ id: 'pages.cloudStorage.share.deleteSuccess', defaultMessage: '删除成功' }));
+                message.success(intl.formatMessage({ id: 'pages.cloudStorage.share.deleteSuccess' }));
             } else {
                 message.error(getErrorMessage(res, 'pages.cloudStorage.share.deleteFailed'));
             }
@@ -98,12 +97,12 @@ const CloudStorageSharedPage: React.FC = () => {
 
     const columns: ProColumns<FileShare>[] = [
         { title: '文件名', dataIndex: 'fileName', key: 'fileName', sorter: true, copyable: true },
-        { title: '分享类型', dataIndex: 'shareType', key: 'shareType', valueType: 'select', valueEnum: { internal: intl.formatMessage({ id: 'pages.cloudStorage.share.type.internal', defaultMessage: '内部' }), external: intl.formatMessage({ id: 'pages.cloudStorage.share.type.external', defaultMessage: '外部' }) }, renderText: (t: string) => <Tag color={t === 'internal' ? 'blue' : 'green'}>{t === 'internal' ? intl.formatMessage({ id: 'pages.cloudStorage.share.type.internal', defaultMessage: '内部' }) : intl.formatMessage({ id: 'pages.cloudStorage.share.type.external', defaultMessage: '外部' })}</Tag> },
-        { title: '访问权限', dataIndex: 'accessType', key: 'accessType', valueType: 'select', valueEnum: { view: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewOnly', defaultMessage: '仅查看' }), download: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewDownload', defaultMessage: '查看和下载' }), edit: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewDownloadEdit', defaultMessage: '查看、下载和编辑' }) }, renderText: (t: string) => getAccessTypeTag(t) },
-        { title: '状态', dataIndex: 'isEnabled', key: 'isEnabled', valueType: 'select', valueEnum: { enabled: intl.formatMessage({ id: 'pages.cloudStorage.share.status.enabled', defaultMessage: '有效' }), disabled: intl.formatMessage({ id: 'pages.cloudStorage.share.status.disabled', defaultMessage: '禁用' }) }, renderText: (t: boolean, r: FileShare) => {
-            if (!r.isEnabled) return <Tag color="default">{intl.formatMessage({ id: 'pages.cloudStorage.share.status.disabled', defaultMessage: '已禁用' })}</Tag>;
-            if (r.expiresAt && dayjs(r.expiresAt).isBefore(dayjs())) return <Tag color="red">{intl.formatMessage({ id: 'pages.cloudStorage.share.status.expired', defaultMessage: '已过期' })}</Tag>;
-            return <Tag color="green">{intl.formatMessage({ id: 'pages.cloudStorage.share.status.enabled', defaultMessage: '有效' })}</Tag>;
+        { title: '分享类型', dataIndex: 'shareType', key: 'shareType', valueType: 'select', valueEnum: { internal: intl.formatMessage({ id: 'pages.cloudStorage.share.type.internal' }), external: intl.formatMessage({ id: 'pages.cloudStorage.share.type.external' }) }, renderText: (t: string) => <Tag color={t === 'internal' ? 'blue' : 'green'}>{t === 'internal' ? intl.formatMessage({ id: 'pages.cloudStorage.share.type.internal' }) : intl.formatMessage({ id: 'pages.cloudStorage.share.type.external' })}</Tag> },
+        { title: '访问权限', dataIndex: 'accessType', key: 'accessType', valueType: 'select', valueEnum: { view: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewOnly' }), download: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewDownload' }), edit: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewDownloadEdit' }) }, renderText: (t: string) => getAccessTypeTag(t) },
+        { title: '状态', dataIndex: 'isEnabled', key: 'isEnabled', valueType: 'select', valueEnum: { enabled: intl.formatMessage({ id: 'pages.cloudStorage.share.status.enabled' }), disabled: intl.formatMessage({ id: 'pages.cloudStorage.share.status.disabled' }) }, renderText: (t: boolean, r: FileShare) => {
+            if (!r.isEnabled) return <Tag color="default">{intl.formatMessage({ id: 'pages.cloudStorage.share.status.disabled' })}</Tag>;
+            if (r.expiresAt && dayjs(r.expiresAt).isBefore(dayjs())) return <Tag color="red">{intl.formatMessage({ id: 'pages.cloudStorage.share.status.expired' })}</Tag>;
+            return <Tag color="green">{intl.formatMessage({ id: 'pages.cloudStorage.share.status.enabled' })}</Tag>;
         }},
         { title: '下载次数限制', dataIndex: 'maxDownloads', key: 'maxDownloads', valueType: 'digit', sorter: true },
         { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', valueType: 'dateTime', sorter: true },
@@ -117,9 +116,9 @@ const CloudStorageSharedPage: React.FC = () => {
                         message.success(intl.formatMessage({ id: 'pages.cloud-storage.share.message.linkCopied' }));
                     }}>复制链接</Button>
                     <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleOpenModal(r)}>编辑</Button>
-                    <Button type="link" size="small" icon={r.isEnabled ? <LockOutlined /> : <UnlockOutlined />} onClick={() => handleToggleShareEnabled(r)}>{r.isEnabled ? intl.formatMessage({ id: 'pages.cloudStorage.share.action.disable', defaultMessage: '禁用' }) : intl.formatMessage({ id: 'pages.cloudStorage.share.action.enable', defaultMessage: '启用' })}</Button>
+                    <Button type="link" size="small" icon={r.isEnabled ? <LockOutlined /> : <UnlockOutlined />} onClick={() => handleToggleShareEnabled(r)}>{r.isEnabled ? intl.formatMessage({ id: 'pages.cloudStorage.share.action.disable' }) : intl.formatMessage({ id: 'pages.cloudStorage.share.action.enable' })}</Button>
                     <Popconfirm title={`确定删除分享「${r.fileName}」？`} onConfirm={() => handleDeleteShare(r)}>
-                        <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}</Button>
+                        <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete' })}</Button>
                     </Popconfirm>
                 </Space>
             )
@@ -176,7 +175,7 @@ const CloudStorageSharedPage: React.FC = () => {
                 width={600}
                 initialValues={editingShare ? { accessType: editingShare.accessType, password: editingShare.password, expiresAt: editingShare.expiresAt ? dayjs(editingShare.expiresAt) : undefined, maxDownloads: editingShare.maxDownloads, isEnabled: editingShare.isEnabled } : undefined}
             >
-                <ProFormSelect name="accessType" label="访问权限" rules={[{ required: true }]} options={[{ label: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewOnly', defaultMessage: '仅查看' }), value: 'view' }, { label: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewDownload', defaultMessage: '查看和下载' }), value: 'download' }, { label: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewDownloadEdit', defaultMessage: '查看、下载和编辑' }), value: 'edit' }]} />
+                <ProFormSelect name="accessType" label="访问权限" rules={[{ required: true }]} options={[{ label: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewOnly' }), value: 'view' }, { label: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewDownload' }), value: 'download' }, { label: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewDownloadEdit' }), value: 'edit' }]} />
                 <ProFormText name="password" label="访问密码" placeholder="设置访问密码（可选）" />
                 <ProFormDatePicker name="expiresAt" label="过期时间" placeholder="设置过期时间（可选）" />
                 <ProFormDigit name="maxDownloads" label="下载次数限制" min={1} placeholder="设置最大下载次数（可选）" />

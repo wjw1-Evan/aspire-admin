@@ -164,7 +164,7 @@ const ChatHistoryManagement: React.FC = () => {
       <ProTable<ChatHistoryListItem>
         headerTitle={
           <Space size={24}>
-            <Space><MessageOutlined />{intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.title', defaultMessage: '聊天记录管理' })}</Space>
+            <Space><MessageOutlined />{intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.title' })}</Space>
           </Space>
         }
         actionRef={actionRef}

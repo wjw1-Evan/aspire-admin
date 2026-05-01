@@ -59,8 +59,7 @@ const ChangePassword: React.FC = () => {
       if (result.success) {
         const defaultChangePasswordSuccessMessage = intl.formatMessage({
           id: 'pages.changePassword.success',
-          defaultMessage: '密码修改成功！',
-        });
+                  });
         message.success(defaultChangePasswordSuccessMessage);
 
         // 修改成功后清空表单
@@ -72,8 +71,7 @@ const ChangePassword: React.FC = () => {
       setChangePasswordState(result);
       throw new Error(result.message || intl.formatMessage({
         id: 'pages.changePassword.failure',
-        defaultMessage: '密码修改失败，请重试！',
-      }));
+              }));
     } catch (error: any) {
       // 设置错误状态用于表单显示
       const errorCode = error?.info?.errorCode || error?.response?.data?.errorCode;
@@ -92,8 +90,7 @@ const ChangePassword: React.FC = () => {
 
   const pageTitle = intl.formatMessage({
     id: 'menu.account.changePassword',
-    defaultMessage: '修改密码',
-  }) + (Settings.title ? ` - ${Settings.title}` : '');
+      }) + (Settings.title ? ` - ${Settings.title}` : '');
 
   return (
     <>
@@ -102,8 +99,7 @@ const ChangePassword: React.FC = () => {
         <ProCard
           title={intl.formatMessage({
             id: 'menu.account.changePassword',
-            defaultMessage: '修改密码',
-          })}
+                      })}
           className={styles.card}
         >
           <Form
@@ -113,7 +109,7 @@ const ChangePassword: React.FC = () => {
             layout="vertical"
           >
             {code && (
-              <ChangePasswordMessage content={errorMsg || intl.formatMessage({ id: 'pages.changePassword.failure', defaultMessage: '密码修改失败，请重试！' })} />
+              <ChangePasswordMessage content={errorMsg || intl.formatMessage({ id: 'pages.changePassword.failure' })} />
             )}
 
             <Form.Item
@@ -124,7 +120,7 @@ const ChangePassword: React.FC = () => {
                   message: (
                     <FormattedMessage
                       id="pages.changePassword.currentPassword.required"
-                      defaultMessage="请输入当前密码!"
+                     
                     />
                   ),
                 },
@@ -135,8 +131,7 @@ const ChangePassword: React.FC = () => {
                 prefix={<LockOutlined />}
                 placeholder={intl.formatMessage({
                   id: 'pages.changePassword.currentPassword.placeholder',
-                  defaultMessage: '请输入当前密码',
-                })}
+                                  })}
               />
             </Form.Item>
 
@@ -148,7 +143,7 @@ const ChangePassword: React.FC = () => {
                   message: (
                     <FormattedMessage
                       id="pages.changePassword.newPassword.required"
-                      defaultMessage="请输入新密码！"
+                     
                     />
                   ),
                 },
@@ -157,7 +152,7 @@ const ChangePassword: React.FC = () => {
                   message: (
                     <FormattedMessage
                       id="pages.changePassword.newPassword.length"
-                      defaultMessage="密码长度至少6个字符"
+                     
                     />
                   ),
                 },
@@ -168,8 +163,7 @@ const ChangePassword: React.FC = () => {
                 prefix={<LockOutlined />}
                 placeholder={intl.formatMessage({
                   id: 'pages.changePassword.newPassword.placeholder',
-                  defaultMessage: '请输入新密码',
-                })}
+                                  })}
               />
             </Form.Item>
 
@@ -182,7 +176,7 @@ const ChangePassword: React.FC = () => {
                   message: (
                     <FormattedMessage
                       id="pages.changePassword.confirmPassword.required"
-                      defaultMessage="请确认新密码！"
+                     
                     />
                   ),
                 },
@@ -191,7 +185,7 @@ const ChangePassword: React.FC = () => {
                     if (!value || getFieldValue('newPassword') === value) {
                       return Promise.resolve();
                     }
-                    return Promise.reject(new Error(intl.formatMessage({ id: 'pages.changePassword.confirmPassword.mismatch', defaultMessage: '两次输入的密码不一致' })));
+                    return Promise.reject(new Error(intl.formatMessage({ id: 'pages.changePassword.confirmPassword.mismatch' })));
                   },
                 }),
               ]}
@@ -201,8 +195,7 @@ const ChangePassword: React.FC = () => {
                 prefix={<LockOutlined />}
                 placeholder={intl.formatMessage({
                   id: 'pages.changePassword.confirmPassword.placeholder',
-                  defaultMessage: '请确认新密码',
-                })}
+                                  })}
               />
             </Form.Item>
 
@@ -215,8 +208,7 @@ const ChangePassword: React.FC = () => {
               >
                 {intl.formatMessage({
                   id: 'pages.changePassword.submit',
-                  defaultMessage: '修改密码',
-                })}
+                                  })}
               </Button>
             </Form.Item>
           </Form>

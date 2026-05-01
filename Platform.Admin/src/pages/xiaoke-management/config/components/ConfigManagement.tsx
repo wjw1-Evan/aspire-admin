@@ -200,7 +200,7 @@ const ConfigManagement: React.FC = () => {
       <ProTable<XiaokeConfig>
         headerTitle={
           <Space size={24}>
-            <Space><SettingOutlined />{intl.formatMessage({ id: 'pages.xiaokeManagement.config.title', defaultMessage: '小科配置管理' })}</Space>
+            <Space><SettingOutlined />{intl.formatMessage({ id: 'pages.xiaokeManagement.config.title' })}</Space>
           </Space>
         }
         actionRef={actionRef}
@@ -234,7 +234,7 @@ const ConfigManagement: React.FC = () => {
             prefix={<SearchOutlined />}
           />,
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-            {intl.formatMessage({ id: 'pages.xiaokeManagement.config.createConfig', defaultMessage: '新建配置' })}
+            {intl.formatMessage({ id: 'pages.xiaokeManagement.config.createConfig' })}
           </Button>,
         ]}
       />

@@ -47,7 +47,7 @@ const ApprovalOverviewCard: React.FC<ApprovalOverviewCardProps> = ({
       title={
         <Space>
           <CheckCircleOutlined />
-          <span>{intl.formatMessage({ id: 'pages.document.approval', defaultMessage: '我的审批' })}</span>
+          <span>{intl.formatMessage({ id: 'pages.document.approval' })}</span>
         </Space>
       }
       className={styles.card}
@@ -56,7 +56,7 @@ const ApprovalOverviewCard: React.FC<ApprovalOverviewCardProps> = ({
       <Row gutter={[12, 12]}>
         <Col xs={12} sm={12} md={12} lg={6}>
           <StatCard
-            title={intl.formatMessage({ id: 'pages.document.stat.pending', defaultMessage: '待审批' })}
+            title={intl.formatMessage({ id: 'pages.document.stat.pending' })}
             value={statistics?.pendingCount ?? 0}
             icon={<ClockCircleOutlined />}
             color={token.colorWarning}
@@ -67,7 +67,7 @@ const ApprovalOverviewCard: React.FC<ApprovalOverviewCardProps> = ({
         </Col>
         <Col xs={12} sm={12} md={12} lg={6}>
           <StatCard
-            title={intl.formatMessage({ id: 'pages.document.stat.myCreated', defaultMessage: '我发起的' })}
+            title={intl.formatMessage({ id: 'pages.document.stat.myCreated' })}
             value={statistics?.myCreatedCount ?? 0}
             icon={<FileTextOutlined />}
             color={token.colorPrimary}
@@ -78,7 +78,7 @@ const ApprovalOverviewCard: React.FC<ApprovalOverviewCardProps> = ({
         </Col>
         <Col xs={12} sm={12} md={12} lg={6}>
           <StatCard
-            title={intl.formatMessage({ id: 'pages.document.stat.approved', defaultMessage: '已通过' })}
+            title={intl.formatMessage({ id: 'pages.document.stat.approved' })}
             value={statistics?.approvedCount ?? 0}
             icon={<CheckCircleOutlined />}
             color={token.colorSuccess}
@@ -89,7 +89,7 @@ const ApprovalOverviewCard: React.FC<ApprovalOverviewCardProps> = ({
         </Col>
         <Col xs={12} sm={12} md={12} lg={6}>
           <StatCard
-            title={intl.formatMessage({ id: 'pages.document.stat.rejected', defaultMessage: '已驳回' })}
+            title={intl.formatMessage({ id: 'pages.document.stat.rejected' })}
             value={statistics?.rejectedCount ?? 0}
             icon={<CloseCircleOutlined />}
             color={token.colorError}
@@ -103,12 +103,12 @@ const ApprovalOverviewCard: React.FC<ApprovalOverviewCardProps> = ({
       <div style={{ marginTop: 16 }}>
         <Space style={{ marginBottom: 8 }}>
           <ClockCircleOutlined />
-          <span>{intl.formatMessage({ id: 'pages.document.approval.tab.pending', defaultMessage: '待处理列表' })}</span>
+          <span>{intl.formatMessage({ id: 'pages.document.approval.tab.pending' })}</span>
         </Space>
         {pendingDocuments.length === 0 ? (
           <Alert
             type="info"
-            title={intl.formatMessage({ id: 'pages.welcome.myTodoTasks.empty', defaultMessage: '当前没有待办任务' })}
+            title={intl.formatMessage({ id: 'pages.welcome.myTodoTasks.empty' })}
             showIcon
           />
         ) : (
@@ -136,7 +136,7 @@ const ApprovalOverviewCard: React.FC<ApprovalOverviewCardProps> = ({
                   </Text>
                 </Space>
                 <Button type="link" icon={<EyeOutlined />}>
-                  {intl.formatMessage({ id: 'pages.document.action.view', defaultMessage: '详情' })}
+                  {intl.formatMessage({ id: 'pages.document.action.view' })}
                 </Button>
               </li>
             ))}

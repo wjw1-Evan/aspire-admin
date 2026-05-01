@@ -126,7 +126,7 @@ const CloudStorageRecyclePage: React.FC = () => {
                             onOk: async () => {
                                 try {
                                     const res = await api.empty();
-                                    if (res.success && res.data) message.success(intl.formatMessage({ id: 'pages.cloud-storage.recycle.message.emptySuccess', defaultMessage: '清空成功，删除了 {count} 个文件' }, { count: res.data.deletedCount }));
+                                    if (res.success && res.data) message.success(intl.formatMessage({ id: 'pages.cloud-storage.recycle.message.emptySuccess' }, { count: res.data.deletedCount }));
                                     actionRef.current?.reload();
                                 } catch { message.error(intl.formatMessage({ id: 'pages.cloud-storage.recycle.message.emptyFailed' })); }
                             }

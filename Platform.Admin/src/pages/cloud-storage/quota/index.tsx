@@ -90,7 +90,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                 const d = res.data as any;
                 set({ viewingQuota: { ...d, displayName: quota.displayName || quota.username || d.displayName || d.userId || '未知用户', username: quota.username || d.username || d.userId || '-', usedSpace: d.usedSpace ?? 0, fileCount: d.fileCount ?? 0, warningThreshold: d.warningThreshold ?? 80, isEnabled: d.isEnabled !== undefined ? d.isEnabled : true }, detailVisible: true });
             }
-        } catch { message.error(intl.formatMessage({ id: 'pages.cloud-storage.quota.message.fetchFailed', defaultMessage: '获取配额详情失败' })); }
+        } catch { message.error(intl.formatMessage({ id: 'pages.cloud-storage.quota.message.fetchFailed' })); }
     }, [message, intl]);
 
     const handleEdit = useCallback((quota: StorageQuota) => { set({ editingQuota: quota, editQuotaVisible: true }); }, []);
@@ -144,7 +144,7 @@ const CloudStorageQuotaPage: React.FC = () => {
         { title: intl.formatMessage({ id: 'pages.cloud-storage.quota.field.usagePercentage' }), key: 'usagePercentage', render: (_: any, r: StorageQuota) => { const pct = r.totalQuota > 0 ? parseFloat(((r.usedSpace / r.totalQuota) * 100).toFixed(2)) : 0; return <Progress percent={pct} size="small" strokeColor={getUsageColor(pct)} format={(p) => `${p}%`} />; } },
         { title: intl.formatMessage({ id: 'pages.cloud-storage.quota.field.fileCount' }), dataIndex: 'fileCount', key: 'fileCount', sorter: true },
         { title: intl.formatMessage({ id: 'pages.table.status' }), key: 'status', render: (_: any, r: StorageQuota) => getStatusTag(r) },
-        { title: intl.formatMessage({ id: 'pages.table.updatedAt', defaultMessage: '更新时间' }), dataIndex: 'createdAt', key: 'createdAt', sorter: true, render: (dom: any) => dom ? dayjs(dom).format('YYYY-MM-DD HH:mm:ss') : '-' },
+        { title: intl.formatMessage({ id: 'pages.table.updatedAt' }), dataIndex: 'createdAt', key: 'createdAt', sorter: true, render: (dom: any) => dom ? dayjs(dom).format('YYYY-MM-DD HH:mm:ss') : '-' },
         { title: intl.formatMessage({ id: 'pages.table.actions' }), key: 'action', fixed: 'right' as const, render: (_: any, r: StorageQuota) => (<Space>
             <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(r)}>{intl.formatMessage({ id: 'pages.table.edit' })}</Button>
             <Button type="link" size="small" danger icon={<DeleteOutlined />} loading={state.deletingId === r.userId} onClick={() => modal.confirm({ title: intl.formatMessage({ id: 'pages.cloud-storage.quota.confirmDelete.title' }), content: intl.formatMessage({ id: 'pages.cloud-storage.quota.confirmDelete.desc' }), onOk: () => handleDelete(r), okButtonProps: { danger: true } })}>{intl.formatMessage({ id: 'pages.table.delete' })}</Button>

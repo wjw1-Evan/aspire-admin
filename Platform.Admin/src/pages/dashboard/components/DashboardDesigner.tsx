@@ -119,10 +119,10 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
     }));
     const res = await api.reorderCards(dashboardId, positions);
     if (res.success) {
-      message.success(intl.formatMessage({ id: 'pages.dashboard.designer.layoutSaved', defaultMessage: '布局已保存' }));
+      message.success(intl.formatMessage({ id: 'pages.dashboard.designer.layoutSaved' }));
       setHasChanges(false);
     } else {
-      message.error(intl.formatMessage({ id: 'pages.dashboard.deleteFailed', defaultMessage: '删除失败' }));
+      message.error(intl.formatMessage({ id: 'pages.dashboard.deleteFailed' }));
     }
     setSaving(false);
   }, [dashboardId, layouts]);
@@ -138,13 +138,13 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
         dataSource: values.dataSource,
       });
       if (res.success) {
-        message.success(intl.formatMessage({ id: 'pages.dashboard.updateCardSuccess', defaultMessage: '卡片已更新' }));
+        message.success(intl.formatMessage({ id: 'pages.dashboard.updateCardSuccess' }));
         setCardFormOpen(false);
         setEditingCard(null);
         await loadDashboard();
         return true;
       }
-      message.error(intl.formatMessage({ id: 'pages.dashboard.updateCardFailed', defaultMessage: '更新失败' }));
+      message.error(intl.formatMessage({ id: 'pages.dashboard.updateCardFailed' }));
       return false;
     } else {
       // 添加
@@ -160,12 +160,12 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
          height: defaultSize.h,
       });
       if (res.success) {
-        message.success(intl.formatMessage({ id: 'pages.dashboard.addCardSuccess', defaultMessage: '卡片已添加' }));
+        message.success(intl.formatMessage({ id: 'pages.dashboard.addCardSuccess' }));
         setCardFormOpen(false);
         await loadDashboard();
         return true;
       }
-      message.error(intl.formatMessage({ id: 'pages.dashboard.addCardFailed', defaultMessage: '添加失败' }));
+      message.error(intl.formatMessage({ id: 'pages.dashboard.addCardFailed' }));
       return false;
     }
   }, [dashboardId, editingCard, loadDashboard]);
@@ -174,11 +174,11 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
   const handleDeleteCard = useCallback(async (cardId: string) => {
     const res = await api.deleteCard(cardId);
     if (res.success) {
-      message.success(intl.formatMessage({ id: 'pages.dashboard.deleteCardSuccess', defaultMessage: '卡片已删除' }));
+      message.success(intl.formatMessage({ id: 'pages.dashboard.deleteCardSuccess' }));
       setSelectedCardId(null);
       await loadDashboard();
     } else {
-      message.error(intl.formatMessage({ id: 'pages.dashboard.deleteCardFailed', defaultMessage: '删除失败' }));
+      message.error(intl.formatMessage({ id: 'pages.dashboard.deleteCardFailed' }));
     }
   }, [loadDashboard]);
 
@@ -196,7 +196,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
       height: card.height || defaultSize.h,
     });
     if (res.success) {
-      message.success(intl.formatMessage({ id: 'pages.dashboard.copySuccess', defaultMessage: '卡片已复制' }));
+      message.success(intl.formatMessage({ id: 'pages.dashboard.copySuccess' }));
       await loadDashboard();
     }
   }, [dashboardId, loadDashboard]);
@@ -297,7 +297,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
                         <Button type="text" size="small" icon={<CopyOutlined style={{ color: '#fff', fontSize: 13 }} />}
                           onClick={(e) => { e.stopPropagation(); handleCopyCard(card); }} />
                       </Tooltip>
-                      <Popconfirm title={intl.formatMessage({ id: 'pages.dashboard.DashboardDesigner.confirm.deleteCard', defaultMessage: '确定删除此卡片？' })} onConfirm={() => handleDeleteCard(card.id)}
+                      <Popconfirm title={intl.formatMessage({ id: 'pages.dashboard.DashboardDesigner.confirm.deleteCard' })} onConfirm={() => handleDeleteCard(card.id)}
                         onPopupClick={(e) => e.stopPropagation()}>
                         <Tooltip title="删除">
                           <Button type="text" size="small" icon={<DeleteOutlined style={{ color: '#ff4d4f', fontSize: 13 }} />}

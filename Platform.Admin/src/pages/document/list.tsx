@@ -48,30 +48,30 @@ const DocumentManagement: React.FC = () => {
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
   const columns: ProColumns<Document>[] = [
-    { title: intl.formatMessage({ id: 'pages.document.columns.title', defaultMessage: '标题' }), dataIndex: 'title', ellipsis: true, sorter: true, render: (dom: any, r) => <a onClick={() => set({ viewingId: r.id, detailVisible: true })}><FileTextOutlined /> {dom}</a> },
-    { title: intl.formatMessage({ id: 'pages.document.columns.type', defaultMessage: '类型' }), dataIndex: 'documentType', ellipsis: true, sorter: true },
-    { title: intl.formatMessage({ id: 'pages.document.columns.category', defaultMessage: '分类' }), dataIndex: 'category', ellipsis: true, sorter: true, render: (dom: any) => dom ? <Tag color="blue">{dom}</Tag> : '-' },
+    { title: intl.formatMessage({ id: 'pages.document.columns.title' }), dataIndex: 'title', ellipsis: true, sorter: true, render: (dom: any, r) => <a onClick={() => set({ viewingId: r.id, detailVisible: true })}><FileTextOutlined /> {dom}</a> },
+    { title: intl.formatMessage({ id: 'pages.document.columns.type' }), dataIndex: 'documentType', ellipsis: true, sorter: true },
+    { title: intl.formatMessage({ id: 'pages.document.columns.category' }), dataIndex: 'category', ellipsis: true, sorter: true, render: (dom: any) => dom ? <Tag color="blue">{dom}</Tag> : '-' },
     {
-      title: intl.formatMessage({ id: 'pages.document.columns.status', defaultMessage: '状态' }), dataIndex: 'status', sorter: true,
+      title: intl.formatMessage({ id: 'pages.document.columns.status' }), dataIndex: 'status', sorter: true,
       render: (dom: any) => {
         const status = documentStatusMap[dom as DocumentStatus] || { textId: 'pages.document.status.unknown', defaultText: '未知', color: 'default' };
-        return <Tag color={status.color}>{intl.formatMessage({ id: status.textId, defaultMessage: status.defaultText })}</Tag>;
+        return <Tag color={status.color}>{intl.formatMessage({ id: status.textId})}</Tag>;
       },
     },
-    { title: intl.formatMessage({ id: 'pages.document.columns.createdBy', defaultMessage: '创建人' }), dataIndex: 'createdBy', ellipsis: true, sorter: true },
-    { title: intl.formatMessage({ id: 'pages.document.columns.createdAt', defaultMessage: '创建时间' }), dataIndex: 'createdAt', sorter: true, valueType: 'dateTime' },
+    { title: intl.formatMessage({ id: 'pages.document.columns.createdBy' }), dataIndex: 'createdBy', ellipsis: true, sorter: true },
+    { title: intl.formatMessage({ id: 'pages.document.columns.createdAt' }), dataIndex: 'createdAt', sorter: true, valueType: 'dateTime' },
     {
-      title: intl.formatMessage({ id: 'pages.document.table.action', defaultMessage: '操作' }), valueType: 'option', fixed: 'right', width: 180,
+      title: intl.formatMessage({ id: 'pages.document.table.action' }), valueType: 'option', fixed: 'right', width: 180,
       render: (_: any, r: Document) => (
         <Space size={4}>
-          <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => set({ viewingId: r.id, detailVisible: true })}>{intl.formatMessage({ id: 'pages.document.view', defaultMessage: '查看' })}</Button>
+          <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => set({ viewingId: r.id, detailVisible: true })}>{intl.formatMessage({ id: 'pages.document.view' })}</Button>
           {r.status === DocumentStatus.Draft && (
             <>
-              <Button type="link" size="small" icon={<SendOutlined />} onClick={() => set({ submitVisible: true, submittingId: r.id! })}>{intl.formatMessage({ id: 'pages.document.submit', defaultMessage: '提交' })}</Button>
+              <Button type="link" size="small" icon={<SendOutlined />} onClick={() => set({ submitVisible: true, submittingId: r.id! })}>{intl.formatMessage({ id: 'pages.document.submit' })}</Button>
             </>
           )}
-          <Popconfirm title={intl.formatMessage({ id: 'pages.document.deleteConfirm', defaultMessage: '确定删除「{title}」？' }, { title: r.title })} onConfirm={async () => { await api.delete(r.id!); actionRef.current?.reload(); api.statistics().then(res => { if (res.success && res.data) set({ statistics: res.data }); }); }}>
-            <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.document.delete', defaultMessage: '删除' })}</Button>
+          <Popconfirm title={intl.formatMessage({ id: 'pages.document.deleteConfirm' }, { title: r.title })} onConfirm={async () => { await api.delete(r.id!); actionRef.current?.reload(); api.statistics().then(res => { if (res.success && res.data) set({ statistics: res.data }); }); }}>
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.document.delete' })}</Button>
           </Popconfirm>
         </Space>
       ),
@@ -86,13 +86,13 @@ const DocumentManagement: React.FC = () => {
         actionRef={actionRef}
         headerTitle={
           <Space size={24}>
-            <Space><FileTextOutlined />{intl.formatMessage({ id: 'pages.document.title', defaultMessage: '公文管理' })}</Space>
+            <Space><FileTextOutlined />{intl.formatMessage({ id: 'pages.document.title' })}</Space>
             <Space size={12}>
-              <Tag color="blue">{intl.formatMessage({ id: 'pages.document.statistics.total', defaultMessage: '总数' })} {state.statistics?.totalDocuments || 0}</Tag>
-              <Tag color="default">{intl.formatMessage({ id: 'pages.document.statistics.draft', defaultMessage: '草稿' })} {state.statistics?.draftCount || 0}</Tag>
-              <Tag color="processing">{intl.formatMessage({ id: 'pages.document.statistics.pending', defaultMessage: '审批中' })} {state.statistics?.pendingCount || 0}</Tag>
-              <Tag color="success">{intl.formatMessage({ id: 'pages.document.statistics.approved', defaultMessage: '已通过' })} {state.statistics?.approvedCount || 0}</Tag>
-              <Tag color="error">{intl.formatMessage({ id: 'pages.document.statistics.rejected', defaultMessage: '已拒绝' })} {state.statistics?.rejectedCount || 0}</Tag>
+              <Tag color="blue">{intl.formatMessage({ id: 'pages.document.statistics.total' })} {state.statistics?.totalDocuments || 0}</Tag>
+              <Tag color="default">{intl.formatMessage({ id: 'pages.document.statistics.draft' })} {state.statistics?.draftCount || 0}</Tag>
+              <Tag color="processing">{intl.formatMessage({ id: 'pages.document.statistics.pending' })} {state.statistics?.pendingCount || 0}</Tag>
+              <Tag color="success">{intl.formatMessage({ id: 'pages.document.statistics.approved' })} {state.statistics?.approvedCount || 0}</Tag>
+              <Tag color="error">{intl.formatMessage({ id: 'pages.document.statistics.rejected' })} {state.statistics?.rejectedCount || 0}</Tag>
             </Space>
           </Space>
         }
@@ -107,25 +107,25 @@ const DocumentManagement: React.FC = () => {
         toolBarRender={() => [
           <Input.Search
             key="search"
-            placeholder={intl.formatMessage({ id: 'pages.document.searchPlaceholder', defaultMessage: '搜索...' })}
+            placeholder={intl.formatMessage({ id: 'pages.document.searchPlaceholder' })}
             allowClear
             value={state.search}
             onChange={(e) => set({ search: e.target.value })}
             onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
             style={{ width: 260, marginRight: 8 }}
           />,
-          <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ formVisible: true })}>{intl.formatMessage({ id: 'pages.document.createDocument', defaultMessage: '新建公文' })}</Button>,
+          <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ formVisible: true })}>{intl.formatMessage({ id: 'pages.document.createDocument' })}</Button>,
         ]}
       />
 
       <ModalForm
-        title={intl.formatMessage({ id: 'pages.document.createDocument', defaultMessage: '新建公文' })}
+        title={intl.formatMessage({ id: 'pages.document.createDocument' })}
         open={state.formVisible}
         onOpenChange={(open) => { if (!open) set({ formVisible: false }); }}
         onFinish={async (values) => {
           const definitionId = values.workflowDefinitionId;
           if (!definitionId) {
-            message.warning(intl.formatMessage({ id: 'pages.document.message.selectWorkflowFirst', defaultMessage: '请先选择流程' }));
+            message.warning(intl.formatMessage({ id: 'pages.document.message.selectWorkflowFirst' }));
             return false;
           }
           window.location.href = `/document/create-by-workflow?definitionId=${definitionId}`;
@@ -135,9 +135,9 @@ const DocumentManagement: React.FC = () => {
       >
         <ProFormSelect
           name="workflowDefinitionId"
-          label={intl.formatMessage({ id: 'pages.document.selectWorkflow', defaultMessage: '选择流程' })}
-          placeholder={intl.formatMessage({ id: 'pages.document.selectWorkflowPlaceholder', defaultMessage: '请选择流程定义' })}
-          rules={[{ required: true, message: intl.formatMessage({ id: 'pages.document.selectWorkflowRequired', defaultMessage: '请选择流程定义' }) }]}
+          label={intl.formatMessage({ id: 'pages.document.selectWorkflow' })}
+          placeholder={intl.formatMessage({ id: 'pages.document.selectWorkflowPlaceholder' })}
+          rules={[{ required: true, message: intl.formatMessage({ id: 'pages.document.selectWorkflowRequired' }) }]}
           request={async () => {
             try {
               const resp = await getWorkflowList({ page: 1 });
@@ -157,23 +157,23 @@ const DocumentManagement: React.FC = () => {
         />
       </ModalForm>
 
-      <Drawer title={intl.formatMessage({ id: 'pages.document.detail', defaultMessage: '公文详情' })} placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingId: '' })} size="large">
+      <Drawer title={intl.formatMessage({ id: 'pages.document.detail' })} placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingId: '' })} size="large">
         <DocumentDetail id={state.viewingId} />
       </Drawer>
 
       <ModalForm
-        title={intl.formatMessage({ id: 'pages.document.submitApproval', defaultMessage: '提交审批' })}
+        title={intl.formatMessage({ id: 'pages.document.submitApproval' })}
         open={state.submitVisible}
         onOpenChange={(open) => { if (!open) set({ submitVisible: false, submittingId: '' }); }}
         onFinish={async (values) => {
           if (!values.workflowDefinitionId) {
-            message.error(intl.formatMessage({ id: 'pages.document.message.selectWorkflow', defaultMessage: '请选择流程' }));
+            message.error(intl.formatMessage({ id: 'pages.document.message.selectWorkflow' }));
             return false;
           }
           try {
             const res = await submitDocument(state.submittingId, { workflowDefinitionId: values.workflowDefinitionId });
             if (res.success) {
-              message.success(intl.formatMessage({ id: 'pages.document.message.submitted', defaultMessage: '已提交审批' }));
+              message.success(intl.formatMessage({ id: 'pages.document.message.submitted' }));
               set({ submitVisible: false, submittingId: '' });
               actionRef.current?.reload();
               api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
@@ -189,9 +189,9 @@ const DocumentManagement: React.FC = () => {
       >
         <ProFormSelect
           name="workflowDefinitionId"
-          label={intl.formatMessage({ id: 'pages.document.selectWorkflow', defaultMessage: '选择流程' })}
-          placeholder={intl.formatMessage({ id: 'pages.document.selectWorkflowPlaceholder', defaultMessage: '请选择流程定义' })}
-          rules={[{ required: true, message: intl.formatMessage({ id: 'pages.document.selectWorkflowRequired', defaultMessage: '请选择流程定义' }) }]}
+          label={intl.formatMessage({ id: 'pages.document.selectWorkflow' })}
+          placeholder={intl.formatMessage({ id: 'pages.document.selectWorkflowPlaceholder' })}
+          rules={[{ required: true, message: intl.formatMessage({ id: 'pages.document.selectWorkflowRequired' }) }]}
           request={async () => {
             try {
               const resp = await getWorkflowList({ page: 1 });
@@ -223,16 +223,16 @@ const DocumentDetail: React.FC<{ id: string }> = ({ id }) => {
   if (!doc) return null;
   return (
     <ProDescriptions column={1} bordered size="small">
-      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.columns.title', defaultMessage: '标题' })}><strong>{doc.title}</strong></ProDescriptions.Item>
-      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.columns.type', defaultMessage: '类型' })}>{doc.documentType}</ProDescriptions.Item>
-      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.columns.category', defaultMessage: '分类' })}>{doc.category ? <Tag color="blue">{doc.category}</Tag> : '-'}</ProDescriptions.Item>
-      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.columns.status', defaultMessage: '状态' })}>
-        <Tag color={documentStatusMap[doc.status]?.color || 'default'}>{intl.formatMessage({ id: documentStatusMap[doc.status]?.textId, defaultMessage: documentStatusMap[doc.status]?.defaultText || '未知' })}</Tag>
+      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.columns.title' })}><strong>{doc.title}</strong></ProDescriptions.Item>
+      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.columns.type' })}>{doc.documentType}</ProDescriptions.Item>
+      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.columns.category' })}>{doc.category ? <Tag color="blue">{doc.category}</Tag> : '-'}</ProDescriptions.Item>
+      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.columns.status' })}>
+        <Tag color={documentStatusMap[doc.status]?.color || 'default'}>{intl.formatMessage({ id: documentStatusMap[doc.status]?.textId})}</Tag>
       </ProDescriptions.Item>
-      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.columns.createdBy', defaultMessage: '创建人' })}>{doc.createdBy}</ProDescriptions.Item>
-      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.columns.createdAt', defaultMessage: '创建时间' })}>{dayjs(doc.createdAt).format('YYYY-MM-DD HH:mm')}</ProDescriptions.Item>
-      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.columns.updatedAt', defaultMessage: '更新时间' })}>{dayjs(doc.updatedAt).format('YYYY-MM-DD HH:mm')}</ProDescriptions.Item>
-      {doc.content && <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.columns.content', defaultMessage: '内容' })} span={1}><div dangerouslySetInnerHTML={{ __html: doc.content }} /></ProDescriptions.Item>}
+      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.columns.createdBy' })}>{doc.createdBy}</ProDescriptions.Item>
+      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.columns.createdAt' })}>{dayjs(doc.createdAt).format('YYYY-MM-DD HH:mm')}</ProDescriptions.Item>
+      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.columns.updatedAt' })}>{dayjs(doc.updatedAt).format('YYYY-MM-DD HH:mm')}</ProDescriptions.Item>
+      {doc.content && <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.columns.content' })} span={1}><div dangerouslySetInnerHTML={{ __html: doc.content }} /></ProDescriptions.Item>}
     </ProDescriptions>
   );
 };

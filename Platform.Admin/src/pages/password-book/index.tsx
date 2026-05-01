@@ -87,7 +87,7 @@ const PasswordBook: React.FC = () => {
               set({ editingEntry: res.data, formVisible: true });
             }
           }}>{intl.formatMessage({ id: 'pages.action.edit' })}</Button>
-          <Popconfirm title={intl.formatMessage({ id: 'pages.passwordBook.message.confirmDelete', defaultMessage: '确定删除？' }, { name: r.platform })} onConfirm={async () => { await api.delete(r.id); actionRef.current?.reload(); loadStatistics(); }}>
+          <Popconfirm title={intl.formatMessage({ id: 'pages.passwordBook.message.confirmDelete' }, { name: r.platform })} onConfirm={async () => { await api.delete(r.id); actionRef.current?.reload(); loadStatistics(); }}>
             <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.action.delete' })}</Button>
           </Popconfirm>
         </Space>

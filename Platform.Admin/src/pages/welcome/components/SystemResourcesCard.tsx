@@ -171,7 +171,7 @@ color={getResourceColor(String(systemResources.disk?.usagePercent || 0))}
                 }}>
                     <Title level={5} style={{ marginBottom: 12, fontSize: '14px', display: 'flex', alignItems: 'center', gap: 8 }}>
                         <MonitorOutlined style={{ color: token.colorPrimary }} />
-                        {intl.formatMessage({ id: 'pages.welcome.systemDetails' }, { defaultMessage: '系统运行详情' })}
+                        {intl.formatMessage({ id: 'pages.welcome.systemDetails' }, { })}
                         <Tag color="processing" style={{ marginLeft: 8 }}>在线</Tag>
                     </Title>
                     <Row gutter={[16, 12]}>
@@ -206,7 +206,7 @@ color={getResourceColor(String(systemResources.disk?.usagePercent || 0))}
                 }}>
                     <Title level={5} style={{ marginBottom: 12, fontSize: '14px', display: 'flex', alignItems: 'center', gap: 8 }}>
                         <CloudServerOutlined style={{ color: token.colorPrimary }} />
-                        {intl.formatMessage({ id: 'pages.welcome.databaseDetails' }, { defaultMessage: '数据库信息' })}
+                        {intl.formatMessage({ id: 'pages.welcome.databaseDetails' }, { })}
                         <Tag color={systemResources.database?.status === 'Connected' ? 'success' : 'default'} style={{ marginLeft: 8 }}>
                             {systemResources.database?.status === 'Connected' ? '在线' : systemResources.database?.status || '离线'}
                         </Tag>
@@ -223,7 +223,7 @@ color={getResourceColor(String(systemResources.disk?.usagePercent || 0))}
                         ].map((item, idx) => (
                             <Col key={idx} xs={24} sm={12} md={6}>
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <Text type="secondary" style={{ fontSize: '12px' }}>{intl.formatMessage({ id: `pages.welcome.databaseDetails.${item.label}` }, { defaultMessage: item.label })}</Text>
+                                    <Text type="secondary" style={{ fontSize: '12px' }}>{intl.formatMessage({ id: `pages.welcome.databaseDetails.${item.label}` })}</Text>
                                     <Text strong style={{ fontSize: '13px' }}>{item.value || '-'}</Text>
                                 </div>
                             </Col>

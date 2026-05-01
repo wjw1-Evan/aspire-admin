@@ -108,7 +108,7 @@ const WorkflowMonitor: React.FC = () => {
     if (!nodeFormDef) return (
       <div style={{ textAlign: 'center', padding: '60px 20px', color: '#999', fontSize: 14, backgroundColor: '#fafafa', borderRadius: 8, border: '1px dashed #d9d9d9' }}>
         <span style={{ fontSize: 48, display: 'block', marginBottom: 16 }}>📝</span>
-        <div>{intl.formatMessage({ id: 'pages.workflow.monitor.nodeForm.none', defaultMessage: '该节点未绑定表单' })}</div>
+        <div>{intl.formatMessage({ id: 'pages.workflow.monitor.nodeForm.none' })}</div>
       </div>
     );
     return (
@@ -179,7 +179,7 @@ const WorkflowMonitor: React.FC = () => {
                 <span>{intl.formatMessage({ id: 'pages.workflow.monitor.progress.currentNode' })}: {previewInstance.currentNodeId}</span>
                 <span>{intl.formatMessage({ id: 'pages.workflow.monitor.table.startedBy' })}: {previewInstance.startedBy}</span>
                 <Button type="primary" disabled={nodeFormLoading} onClick={() => { if (previewInstance?.id) openNodeForm(previewInstance.id, previewInstance.currentNodeId); }}>
-                  {intl.formatMessage({ id: 'pages.workflow.monitor.action.viewNodeForm', defaultMessage: '节点表单' })}
+                  {intl.formatMessage({ id: 'pages.workflow.monitor.action.viewNodeForm' })}
                 </Button>
               </Space>
             </ProCard>
@@ -189,7 +189,7 @@ const WorkflowMonitor: React.FC = () => {
           </div>
         )}
       </Modal>
-      <Modal title={intl.formatMessage({ id: 'pages.workflow.monitor.modal.nodeFormTitle', defaultMessage: '节点表单' })} open={nodeFormVisible} onCancel={() => { setNodeFormVisible(false); setNodeFormDef(null); setNodeFormInitial(null); setCurrentFormInstanceId(null); }} onOk={submitFormData} width={720} styles={{ body: { maxHeight: '600px', overflowY: 'auto' } }}>
+      <Modal title={intl.formatMessage({ id: 'pages.workflow.monitor.modal.nodeFormTitle' })} open={nodeFormVisible} onCancel={() => { setNodeFormVisible(false); setNodeFormDef(null); setNodeFormInitial(null); setCurrentFormInstanceId(null); }} onOk={submitFormData} width={720} styles={{ body: { maxHeight: '600px', overflowY: 'auto' } }}>
         <div id="node-form-container" style={{ padding: '16px 0' }} key={currentFormInstanceId}>{renderNodeForm()}</div>
       </Modal>
       <Modal title={intl.formatMessage({ id: 'pages.workflow.monitor.modal.historyTitle' })} open={historyVisible} onCancel={() => { setHistoryVisible(false); setHistory([]); }} footer={null} width={800}>

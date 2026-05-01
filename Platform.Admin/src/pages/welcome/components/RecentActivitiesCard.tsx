@@ -77,7 +77,7 @@ const RecentActivitiesCard: React.FC<RecentActivitiesCardProps> = ({ currentUser
                     style={{ padding: 0 }}
                 >
                     <Space size={4}>
-                        {intl.formatMessage({ id: 'pages.common.more', defaultMessage: '更多' })}
+                        {intl.formatMessage({ id: 'pages.common.more' })}
                         <RightOutlined style={{ fontSize: '10px' }} />
                     </Space>
                 </Button>
@@ -201,7 +201,7 @@ const RecentActivitiesCard: React.FC<RecentActivitiesCardProps> = ({ currentUser
                 )}
                 {noMore && activities.length > 0 && (
                     <div style={{ padding: '12px', textAlign: 'center', color: '#bfbfbf', fontSize: '12px' }}>
-                        {intl.formatMessage({ id: 'pages.welcome.recentActivities.noMore', defaultMessage: '没有更多记录了' })}
+                        {intl.formatMessage({ id: 'pages.welcome.recentActivities.noMore' })}
                     </div>
                 )}
             </div>

@@ -63,34 +63,34 @@ const DataSourcePanel: React.FC<{
 
   /** 可用的数据模块选项 */
   const MODULE_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.static', defaultMessage: '静态数据（手动输入）' }), value: 'static' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.task', defaultMessage: '任务统计' }), value: 'task' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.user', defaultMessage: '用户统计' }), value: 'user' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.storage', defaultMessage: '文件存储' }), value: 'storage' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.park', defaultMessage: '园区管理' }), value: 'park' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.workflow', defaultMessage: '工作流' }), value: 'workflow' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.iot', defaultMessage: 'IoT设备' }), value: 'iot' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.visit', defaultMessage: '走访任务' }), value: 'visit' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.document', defaultMessage: '公文管理' }), value: 'document' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.static' }), value: 'static' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.task' }), value: 'task' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.user' }), value: 'user' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.storage' }), value: 'storage' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.park' }), value: 'park' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.workflow' }), value: 'workflow' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.iot' }), value: 'iot' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.visit' }), value: 'visit' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.document' }), value: 'document' },
   ], [intl]);
 
   /** 聚合方式选项 */
   const AGGREGATION_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.count', defaultMessage: '总计' }), value: 'count' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.avg', defaultMessage: '平均值' }), value: 'avg' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.max', defaultMessage: '最大值' }), value: 'max' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.min', defaultMessage: '最小值' }), value: 'min' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.sum', defaultMessage: '求和' }), value: 'sum' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.latest', defaultMessage: '最新值' }), value: 'latest' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.count' }), value: 'count' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.avg' }), value: 'avg' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.max' }), value: 'max' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.min' }), value: 'min' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.sum' }), value: 'sum' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.latest' }), value: 'latest' },
   ], [intl]);
 
   /** 时间范围选项 */
   const TIME_RANGE_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.timeRange.today', defaultMessage: '今天' }), value: 'today' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.timeRange.week', defaultMessage: '本周' }), value: 'week' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.timeRange.month', defaultMessage: '本月' }), value: 'month' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.timeRange.year', defaultMessage: '本年' }), value: 'year' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.timeRange.all', defaultMessage: '全部' }), value: 'all' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.timeRange.today' }), value: 'today' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.timeRange.week' }), value: 'week' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.timeRange.month' }), value: 'month' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.timeRange.year' }), value: 'year' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.timeRange.all' }), value: 'all' },
   ], [intl]);
 
   return (
@@ -202,8 +202,8 @@ const CommonStylePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig
 
   /** 布尔值选项 */
   const BOOLEAN_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.boolean.yes', defaultMessage: '是' }), value: 'true' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.boolean.no', defaultMessage: '否' }), value: 'false' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.boolean.yes' }), value: 'true' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.boolean.no' }), value: 'false' },
   ], [intl]);
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
@@ -243,21 +243,21 @@ const StatisticStylePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleCon
 
   /** 图标选项 */
   const ICON_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.thunder', defaultMessage: '闪电' }), value: 'thunder' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.monitor', defaultMessage: '监控' }), value: 'monitor' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.bulb', defaultMessage: '灯泡' }), value: 'bulb' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.bank', defaultMessage: '银行' }), value: 'bank' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.setting', defaultMessage: '设置' }), value: 'setting' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.sound', defaultMessage: '声音' }), value: 'sound' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.car', defaultMessage: '车辆' }), value: 'car' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.video', defaultMessage: '视频' }), value: 'video' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.thunder' }), value: 'thunder' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.monitor' }), value: 'monitor' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.bulb' }), value: 'bulb' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.bank' }), value: 'bank' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.setting' }), value: 'setting' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.sound' }), value: 'sound' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.car' }), value: 'car' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.video' }), value: 'video' },
   ], [intl]);
 
   /** 趋势选项 */
   const TREND_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.trend.none', defaultMessage: '无' }), value: 'none' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.trend.up', defaultMessage: '上升' }), value: 'up' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.trend.down', defaultMessage: '下降' }), value: 'down' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.trend.none' }), value: 'none' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.trend.up' }), value: 'up' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.trend.down' }), value: 'down' },
   ], [intl]);
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
@@ -283,7 +283,7 @@ const StatisticStylePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleCon
       </div>
       <div>
         <Text type="secondary" style={{ fontSize: 12 }}>图标</Text>
-        <Select value={style.icon || undefined} onChange={(v) => update('icon', v)} size="small" style={{ width: '100%' }} allowClear placeholder={intl.formatMessage({ id: 'pages.dashboard.iconPlaceholder', defaultMessage: '选择图标' })}
+        <Select value={style.icon || undefined} onChange={(v) => update('icon', v)} size="small" style={{ width: '100%' }} allowClear placeholder={intl.formatMessage({ id: 'pages.dashboard.iconPlaceholder' })}
           options={ICON_OPTIONS} />
       </div>
       <div>
@@ -310,9 +310,9 @@ const GaugeStylePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig)
 
   /** 仪表盘样式选项 */
   const GAUGE_STYLE_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.gaugeStyle.default', defaultMessage: '默认' }), value: 'default' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.gaugeStyle.simple', defaultMessage: '简约' }), value: 'simple' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.gaugeStyle.temperature', defaultMessage: '温度' }), value: 'temperature' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.gaugeStyle.default' }), value: 'default' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.gaugeStyle.simple' }), value: 'simple' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.gaugeStyle.temperature' }), value: 'temperature' },
   ], [intl]);
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
@@ -376,8 +376,8 @@ const SeriesDataPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig)
 
   /** 布尔值选项 */
   const BOOLEAN_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.boolean.yes', defaultMessage: '是' }), value: 'true' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.boolean.no', defaultMessage: '否' }), value: 'false' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.boolean.yes' }), value: 'true' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.boolean.no' }), value: 'false' },
   ], [intl]);
 
   return (
@@ -521,10 +521,10 @@ const StatusGridPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig)
 
   /** 状态选项 */
   const STATUS_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.status.normal', defaultMessage: '正常' }), value: 'normal' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.status.busy', defaultMessage: '繁忙' }), value: 'busy' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.status.urgent', defaultMessage: '紧急' }), value: 'urgent' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.status.offline', defaultMessage: '离线' }), value: 'offline' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.status.normal' }), value: 'normal' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.status.busy' }), value: 'busy' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.status.urgent' }), value: 'urgent' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.status.offline' }), value: 'offline' },
   ], [intl]);
 
   return (
@@ -574,22 +574,22 @@ const FunctionModulePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleCon
 
   /** 图标选项 */
   const ICON_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.thunder', defaultMessage: '闪电' }), value: 'thunder' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.monitor', defaultMessage: '监控' }), value: 'monitor' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.bulb', defaultMessage: '灯泡' }), value: 'bulb' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.bank', defaultMessage: '银行' }), value: 'bank' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.setting', defaultMessage: '设置' }), value: 'setting' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.sound', defaultMessage: '声音' }), value: 'sound' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.car', defaultMessage: '车辆' }), value: 'car' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.video', defaultMessage: '视频' }), value: 'video' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.idcard', defaultMessage: 'ID卡' }), value: 'idcard' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.thunder' }), value: 'thunder' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.monitor' }), value: 'monitor' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.bulb' }), value: 'bulb' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.bank' }), value: 'bank' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.setting' }), value: 'setting' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.sound' }), value: 'sound' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.car' }), value: 'car' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.video' }), value: 'video' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.icon.idcard' }), value: 'idcard' },
   ], [intl]);
 
   /** 状态选项 */
   const STATUS_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.status.online', defaultMessage: '在线' }), value: 'online' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.status.warning', defaultMessage: '警告' }), value: 'warning' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.status.offline', defaultMessage: '离线' }), value: 'offline' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.status.online' }), value: 'online' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.status.warning' }), value: 'warning' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.status.offline' }), value: 'offline' },
   ], [intl]);
 
   const addModule = () => {
@@ -655,10 +655,10 @@ const AlertListPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) 
 
   /** 告警级别选项 */
   const ALERT_LEVEL_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.alertLevel.info', defaultMessage: '信息' }), value: 'info' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.alertLevel.warning', defaultMessage: '警告' }), value: 'warning' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.alertLevel.error', defaultMessage: '错误' }), value: 'error' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.alertLevel.critical', defaultMessage: '严重' }), value: 'critical' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.alertLevel.info' }), value: 'info' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.alertLevel.warning' }), value: 'warning' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.alertLevel.error' }), value: 'error' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.alertLevel.critical' }), value: 'critical' },
   ], [intl]);
 
   const addAlert = () => {
@@ -702,9 +702,9 @@ const HeaderPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => 
 
   /** 对齐方式选项 */
   const ALIGNMENT_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.alignment.left', defaultMessage: '左对齐' }), value: 'left' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.alignment.center', defaultMessage: '居中' }), value: 'center' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.alignment.right', defaultMessage: '右对齐' }), value: 'right' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.alignment.left' }), value: 'left' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.alignment.center' }), value: 'center' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.alignment.right' }), value: 'right' },
   ], [intl]);
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
@@ -762,9 +762,9 @@ const TextPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => vo
 
   /** 对齐方式选项 */
   const ALIGNMENT_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.alignment.left', defaultMessage: '左对齐' }), value: 'left' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.alignment.center', defaultMessage: '居中' }), value: 'center' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.alignment.right', defaultMessage: '右对齐' }), value: 'right' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.alignment.left' }), value: 'left' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.alignment.center' }), value: 'center' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.alignment.right' }), value: 'right' },
   ], [intl]);
   return (
     <div>
@@ -794,9 +794,9 @@ const ImagePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => v
   
   /** 图片填充模式选项 */
   const IMAGE_FIT_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.imageFit.cover', defaultMessage: '覆盖' }), value: 'cover' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.imageFit.contain', defaultMessage: '包含' }), value: 'contain' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.imageFit.fill', defaultMessage: '拉伸' }), value: 'fill' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.imageFit.cover' }), value: 'cover' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.imageFit.contain' }), value: 'contain' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.imageFit.fill' }), value: 'fill' },
   ], [intl]);
   
   return (
@@ -905,27 +905,27 @@ const CardConfigForm: React.FC<CardConfigFormProps> = ({ open, onOpenChange, edi
 
   /** 卡片类型选项 */
   const CARD_TYPE_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardTypeGroup.basic', defaultMessage: '── 基础 ──' }), value: '_group_basic', disabled: true },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.statistic', defaultMessage: '统计指标' }), value: 'statistic' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.text', defaultMessage: '文本' }), value: 'text' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.image', defaultMessage: '图片' }), value: 'image' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.header', defaultMessage: '看板标题' }), value: 'header' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.clock', defaultMessage: '时钟' }), value: 'clock' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.statusBar', defaultMessage: '状态栏' }), value: 'statusBar' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardTypeGroup.chart', defaultMessage: '── 图表 ──' }), value: '_group_chart', disabled: true },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.gauge', defaultMessage: '仪表盘' }), value: 'gauge' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.ring', defaultMessage: '环形图' }), value: 'ring' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.lineChart', defaultMessage: '折线图' }), value: 'lineChart' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.barChart', defaultMessage: '柱状图' }), value: 'barChart' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.areaChart', defaultMessage: '面积图' }), value: 'areaChart' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.pieChart', defaultMessage: '饼图' }), value: 'pieChart' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.radarChart', defaultMessage: '雷达图' }), value: 'radarChart' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardTypeGroup.complex', defaultMessage: '── 复合 ──' }), value: '_group_complex', disabled: true },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.statusGrid', defaultMessage: '状态网格' }), value: 'statusGrid' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.functionModule', defaultMessage: '功能模块' }), value: 'functionModule' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.alertList', defaultMessage: '告警列表' }), value: 'alertList' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.progressBar', defaultMessage: '进度条' }), value: 'progressBar' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.table', defaultMessage: '表格' }), value: 'table' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardTypeGroup.basic' }), value: '_group_basic', disabled: true },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.statistic' }), value: 'statistic' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.text' }), value: 'text' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.image' }), value: 'image' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.header' }), value: 'header' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.clock' }), value: 'clock' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.statusBar' }), value: 'statusBar' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardTypeGroup.chart' }), value: '_group_chart', disabled: true },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.gauge' }), value: 'gauge' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.ring' }), value: 'ring' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.lineChart' }), value: 'lineChart' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.barChart' }), value: 'barChart' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.areaChart' }), value: 'areaChart' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.pieChart' }), value: 'pieChart' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.radarChart' }), value: 'radarChart' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardTypeGroup.complex' }), value: '_group_complex', disabled: true },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.statusGrid' }), value: 'statusGrid' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.functionModule' }), value: 'functionModule' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.alertList' }), value: 'alertList' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.progressBar' }), value: 'progressBar' },
+    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.table' }), value: 'table' },
   ], [intl]);
 
   // 当 editingCard 变化时重新初始化

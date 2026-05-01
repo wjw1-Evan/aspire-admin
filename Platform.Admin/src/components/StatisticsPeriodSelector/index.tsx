@@ -85,33 +85,28 @@ const StatisticsPeriodSelector: React.FC<StatisticsPeriodSelectorProps> = ({
         <Radio.Button value="week">
           {intl.formatMessage({
             id: 'pages.statistics.period.week',
-            defaultMessage: '本周',
           })}
         </Radio.Button>
         <Radio.Button value="month">
           {intl.formatMessage({
             id: 'pages.statistics.period.month',
-            defaultMessage: '本月',
           })}
         </Radio.Button>
         <Radio.Button value="quarter">
           {intl.formatMessage({
             id: 'pages.statistics.period.quarter',
-            defaultMessage: '本季',
-          })}
+                      })}
         </Radio.Button>
         <Radio.Button value="year">
           {intl.formatMessage({
             id: 'pages.statistics.period.year',
-            defaultMessage: '本年',
-          })}
+                      })}
         </Radio.Button>
         {showCustom && (
           <Radio.Button value="custom">
             {intl.formatMessage({
               id: 'pages.statistics.period.custom',
-              defaultMessage: '自定义',
-            })}
+                          })}
           </Radio.Button>
         )}
       </Radio.Group>

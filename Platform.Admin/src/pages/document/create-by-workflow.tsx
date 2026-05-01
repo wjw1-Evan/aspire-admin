@@ -187,7 +187,7 @@ const CreateAndStartByWorkflow: React.FC = () => {
                             listType="text"
                         >
                             <Button icon={<UploadOutlined />}>
-                                {intl.formatMessage({ id: 'pages.document.create.form.uploadButton', defaultMessage: '上传附件' })}
+                                {intl.formatMessage({ id: 'pages.document.create.form.uploadButton' })}
                             </Button>
                         </Upload>
                     </ProFormItem>
@@ -230,7 +230,7 @@ const CreateAndStartByWorkflow: React.FC = () => {
                 }
             }
             if (!definitionId) {
-                message.error(intl.formatMessage({ id: 'pages.workflow.select.definition', defaultMessage: '请先选择流程' }));
+                message.error(intl.formatMessage({ id: 'pages.workflow.select.definition' }));
                 return false;
             }
             setLoading(true);
@@ -240,14 +240,14 @@ const CreateAndStartByWorkflow: React.FC = () => {
                 attachmentIds,
             });
             if (resp.success) {
-                message.success(intl.formatMessage({ id: 'pages.document.create.message.createSuccess', defaultMessage: '创建并启动成功' }));
+                message.success(intl.formatMessage({ id: 'pages.document.create.message.createSuccess' }));
                 navigate('/document/list');
                 return true;
             }
             return false;
         } catch (err) {
             console.error(err);
-            message.error(intl.formatMessage({ id: 'pages.document.create.message.createFailed', defaultMessage: '创建失败' }));
+            message.error(intl.formatMessage({ id: 'pages.document.create.message.createFailed' }));
             return false;
         } finally {
             setLoading(false);
@@ -264,7 +264,7 @@ const CreateAndStartByWorkflow: React.FC = () => {
                     initialValues={initialFormValues}
                     submitter={{
                         searchConfig: {
-                            submitText: intl.formatMessage({ id: 'pages.document.createByWorkflow.submit', defaultMessage: '创建并启动' }),
+                            submitText: intl.formatMessage({ id: 'pages.document.createByWorkflow.submit' }),
                             resetText: intl.formatMessage({ id: 'pages.button.cancel' }),
                         },
                         submitButtonProps: {
@@ -278,12 +278,12 @@ const CreateAndStartByWorkflow: React.FC = () => {
                 >
                     <ProFormSelect
                         name="definitionId"
-                        label={intl.formatMessage({ id: 'pages.workflow.select', defaultMessage: '选择流程' })}
+                        label={intl.formatMessage({ id: 'pages.workflow.select' })}
                         rules={[{ required: true }]}
                         options={workflows}
                         onChange={(val) => setDefinitionId(val as string)}
                         allowClear
-                        placeholder={intl.formatMessage({ id: 'pages.workflow.select.placeholder', defaultMessage: '请选择流程定义' })}
+                        placeholder={intl.formatMessage({ id: 'pages.workflow.select.placeholder' })}
                         initialValue={definitionId}
                     />
 
@@ -292,12 +292,12 @@ const CreateAndStartByWorkflow: React.FC = () => {
                             {(formDef.fields || []).map((f) => renderField(f))}
                         </>
                     ) : (
-                        <div style={{ color: '#999' }}>{intl.formatMessage({ id: 'pages.workflow.form.none', defaultMessage: '请选择流程以加载创建表单' })}</div>
+                        <div style={{ color: '#999' }}>{intl.formatMessage({ id: 'pages.workflow.form.none' })}</div>
                     )}
 
                     <ProFormItem
                         name="attachmentIds"
-                        label={intl.formatMessage({ id: 'pages.document.create.form.attachments', defaultMessage: '附件' })}
+                        label={intl.formatMessage({ id: 'pages.document.create.form.attachments' })}
                     >
                         <Upload
                             name="files"
@@ -307,7 +307,7 @@ const CreateAndStartByWorkflow: React.FC = () => {
                             listType="text"
                         >
                             <Button icon={<UploadOutlined />}>
-                                {intl.formatMessage({ id: 'pages.document.create.form.uploadButton', defaultMessage: '上传附件' })}
+                                {intl.formatMessage({ id: 'pages.document.create.form.uploadButton' })}
                             </Button>
                         </Upload>
                     </ProFormItem>

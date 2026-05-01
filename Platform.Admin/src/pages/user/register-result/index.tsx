@@ -36,12 +36,10 @@ const RegisterResult: React.FC = () => {
           icon={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
           title={intl.formatMessage({
             id: 'pages.register.result.title',
-            defaultMessage: '注册成功',
-          })}
+                      })}
           subTitle={intl.formatMessage({
             id: 'pages.register.result.subtitle',
-            defaultMessage: '恭喜您，账号注册成功！',
-          })}
+                      })}
           extra={[
             <Button
               type="primary"
@@ -52,7 +50,7 @@ const RegisterResult: React.FC = () => {
             >
               <FormattedMessage
                 id="pages.register.result.login"
-                defaultMessage="立即登录"
+               
               />
             </Button>,
             <Button
@@ -63,7 +61,7 @@ const RegisterResult: React.FC = () => {
             >
               <FormattedMessage
                 id="pages.register.result.home"
-                defaultMessage="返回首页"
+               
               />
             </Button>,
           ]}

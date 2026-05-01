@@ -235,7 +235,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
     {
       key: 'company',
       icon: <BankOutlined />,
-      label: intl.formatMessage({ id: 'menu.account.company', defaultMessage: '切换企业' }),
+      label: intl.formatMessage({ id: 'menu.account.company' }),
       children: companiesLoading ? [{ key: 'loading', label: <Spin size="small" />, disabled: true }] : companyMenuItems,
     },
     {

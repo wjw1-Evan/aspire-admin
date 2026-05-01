@@ -24,7 +24,7 @@ const CreateDocument: React.FC = () => {
           layout="vertical"
           submitter={{
             searchConfig: {
-              submitText: intl.formatMessage({ id: 'pages.button.next', defaultMessage: '下一步' }),
+              submitText: intl.formatMessage({ id: 'pages.button.next' }),
               resetText: intl.formatMessage({ id: 'pages.button.cancel' }),
             },
             submitButtonProps: {
@@ -39,7 +39,7 @@ const CreateDocument: React.FC = () => {
           onFinish={async (values) => {
             const definitionId: string | undefined = values.workflowDefinitionId;
             if (!definitionId) {
-              message.error(intl.formatMessage({ id: 'pages.workflow.select.definition', defaultMessage: '请先选择流程' }));
+              message.error(intl.formatMessage({ id: 'pages.workflow.select.definition' }));
               return false;
             }
             setLoading(true);
@@ -64,9 +64,9 @@ const CreateDocument: React.FC = () => {
         >
           <ProFormSelect
             name="workflowDefinitionId"
-            label={intl.formatMessage({ id: 'pages.workflow.select', defaultMessage: '选择流程' })}
-            placeholder={intl.formatMessage({ id: 'pages.workflow.select.placeholder', defaultMessage: '请选择流程定义' })}
-            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.workflow.select.definition', defaultMessage: '请选择流程定义' }) }]}
+            label={intl.formatMessage({ id: 'pages.workflow.select' })}
+            placeholder={intl.formatMessage({ id: 'pages.workflow.select.placeholder' })}
+            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.workflow.select.definition' }) }]}
             request={async () => {
               try {
                 const resp = await getWorkflowList({ page: 1 });
@@ -87,8 +87,8 @@ const CreateDocument: React.FC = () => {
 
           <ProForm.Item
             name="attachments"
-            label={intl.formatMessage({ id: 'pages.document.create.form.attachments', defaultMessage: '附件（可在下一步继续上传）' })}
-            extra={intl.formatMessage({ id: 'pages.document.create.form.uploadDescription', defaultMessage: '可在下一步继续上传更多附件' })}
+            label={intl.formatMessage({ id: 'pages.document.create.form.attachments' })}
+            extra={intl.formatMessage({ id: 'pages.document.create.form.uploadDescription' })}
           >
             <Upload
               name="files"
@@ -98,7 +98,7 @@ const CreateDocument: React.FC = () => {
               listType="text"
             >
               <Button icon={<UploadOutlined />}>
-                {intl.formatMessage({ id: 'pages.document.create.form.uploadButton', defaultMessage: '上传附件' })}
+                {intl.formatMessage({ id: 'pages.document.create.form.uploadButton' })}
               </Button>
             </Upload>
           </ProForm.Item>

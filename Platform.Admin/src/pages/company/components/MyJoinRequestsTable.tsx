@@ -49,10 +49,10 @@ const MyJoinRequestsTable: React.FC = () => {
             sorter: true,
             render: (_: any, record: JoinRequestDetail) => {
                 const statusMap: Record<string, { text: string; color: string }> = {
-                    pending: { text: intl.formatMessage({ id: 'pages.status.pending', defaultMessage: '待审核' }), color: 'processing' },
-                    approved: { text: intl.formatMessage({ id: 'pages.status.approved', defaultMessage: '已通过' }), color: 'success' },
-                    rejected: { text: intl.formatMessage({ id: 'pages.status.rejected', defaultMessage: '已拒绝' }), color: 'error' },
-                    cancelled: { text: intl.formatMessage({ id: 'pages.status.cancelled', defaultMessage: '已取消' }), color: 'default' },
+                    pending: { text: intl.formatMessage({ id: 'pages.status.pending' }), color: 'processing' },
+                    approved: { text: intl.formatMessage({ id: 'pages.status.approved' }), color: 'success' },
+                    rejected: { text: intl.formatMessage({ id: 'pages.status.rejected' }), color: 'error' },
+                    cancelled: { text: intl.formatMessage({ id: 'pages.status.cancelled' }), color: 'default' },
                 };
                 const config = statusMap[record.status] || { text: record.status, color: 'default' };
                 return <Tag color={config.color}>{config.text}</Tag>;

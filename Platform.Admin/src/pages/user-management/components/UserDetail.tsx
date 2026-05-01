@@ -120,7 +120,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose, isMobile }) => {
               {user.username}
             </ProDescriptions.Item>
 
-          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.account.center.name', defaultMessage: 'Name' })}>
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.account.center.name' })}>
             {user.name || '-'}
           </ProDescriptions.Item>
 
@@ -132,7 +132,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose, isMobile }) => {
             {user.phoneNumber || '-'}
           </ProDescriptions.Item>
 
-          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.account.center.age', defaultMessage: 'Age' })}>
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.account.center.age' })}>
             {user.age || '-'}
           </ProDescriptions.Item>
 

@@ -223,7 +223,7 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
       </Tabs>
 
       <Modal
-        title={intl.formatMessage({ id: 'pages.web-scraper.components.ResultPreview.title.pageDetail', defaultMessage: '页面详情' })}
+        title={intl.formatMessage({ id: 'pages.web-scraper.components.ResultPreview.title.pageDetail' })}
         open={!!selectedPage}
         onCancel={() => setSelectedPage(null)}
         width={800}

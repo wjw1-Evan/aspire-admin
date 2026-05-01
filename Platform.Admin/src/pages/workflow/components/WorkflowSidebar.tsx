@@ -61,7 +61,7 @@ const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
                   onClick={() => onAddNode(item.type)}
                   onDragStart={(event) => onDragStart(event, item.type)}
                   draggable
-                  title={intl.formatMessage({ id: 'pages.workflow.designer.dragDropTooltip', defaultMessage: '可拖动到右侧区域添加组件' })}
+                  title={intl.formatMessage({ id: 'pages.workflow.designer.dragDropTooltip' })}
                   style={{
                     display: 'flex', alignItems: 'center', padding: 12, marginBottom: 8,
                     border: '1px solid rgba(226, 232, 240, 0.6)', borderRadius: 12, cursor: 'grab',

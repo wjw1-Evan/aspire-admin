@@ -161,8 +161,7 @@ const Login: React.FC = () => {
 
         const defaultLoginSuccessMessage = intl.formatMessage({
           id: 'pages.login.success',
-          defaultMessage: '登录成功！',
-        });
+                  });
         message.success(defaultLoginSuccessMessage);
         await fetchUserInfo();
 
@@ -180,15 +179,13 @@ const Login: React.FC = () => {
       if (errorCode) {
         errorMsg = intl.formatMessage({
           id: errorCode,
-          defaultMessage: intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }),
         });
       } else if (LOGIN_KNOWN_ERRORS.includes(backendMessage as any)) {
         errorMsg = intl.formatMessage({
           id: `pages.login.error.${backendMessage}`,
-          defaultMessage: intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }),
         });
       } else if (!errorMsg) {
-        errorMsg = intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' });
+        errorMsg = intl.formatMessage({ id: 'pages.login.failure' });
       }
 
       // 处理字段级验证错误
@@ -196,7 +193,7 @@ const Login: React.FC = () => {
         console.log('[login] response.errors:', response.errors);
         const fieldErrors = Object.entries(response.errors).map(([field, msgs]) => {
           const errMsg = Array.isArray(msgs) ? msgs[0] : msgs;
-          const translatedErr = intl.formatMessage({ id: errMsg as string, defaultMessage: errMsg as string });
+          const translatedErr = intl.formatMessage({ id: errMsg as string});
           console.log('[login] field error:', field, translatedErr);
           return { name: field as any, errors: [translatedErr] };
         });
@@ -220,7 +217,7 @@ const Login: React.FC = () => {
       if (response?.errors) {
         const fieldErrors = Object.entries(response.errors).map(([field, msgs]) => {
           const errMsg = Array.isArray(msgs) ? msgs[0] : msgs;
-          const translatedErr = intl.formatMessage({ id: errMsg as string, defaultMessage: errMsg as string });
+          const translatedErr = intl.formatMessage({ id: errMsg as string});
           return { name: field as any, errors: [translatedErr] };
         });
         form.setFields(fieldErrors);
@@ -236,10 +233,9 @@ const Login: React.FC = () => {
       if (errorCode) {
         errorMsg = intl.formatMessage({
           id: errorCode,
-          defaultMessage: intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }),
         });
       } else if (!errorMsg) {
-        errorMsg = intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' });
+        errorMsg = intl.formatMessage({ id: 'pages.login.failure' });
       }
 
       setUserLoginState({ status: 'error', message: errorMsg });
@@ -252,8 +248,7 @@ const Login: React.FC = () => {
 
   const pageTitle = intl.formatMessage({
     id: 'menu.login',
-    defaultMessage: '登录页',
-  }) + (Settings.title ? ` - ${Settings.title}` : '');
+      }) + (Settings.title ? ` - ${Settings.title}` : '');
 
 
 
@@ -273,8 +268,7 @@ const Login: React.FC = () => {
                 <div style={{ fontSize: 14, color: '#666', marginBottom: 32 }}>
                   {intl.formatMessage({
                     id: 'pages.login.subTitle',
-                    defaultMessage: '企业级多租户微服务管理平台',
-                  })}
+                                      })}
                 </div>
               </div>
               <ProForm
@@ -290,8 +284,7 @@ const Login: React.FC = () => {
                   <LoginMessage
                     content={intl.formatMessage({
                       id: 'pages.login.accountLogin.errorMessage',
-                      defaultMessage: '账户或密码错误',
-                    })}
+                                          })}
                   />
                 )}
                 {type === 'account' && (
@@ -300,31 +293,29 @@ const Login: React.FC = () => {
                       name="username"
                       placeholder={intl.formatMessage({
                         id: 'pages.login.username.placeholder',
-                        defaultMessage: '用户名',
-                      })}
+                                              })}
                       fieldProps={{ prefix: <UserOutlined /> }}
-                      rules={[{ required: true, message: intl.formatMessage({ id: 'pages.login.username.required', defaultMessage: '请输入用户名!' }) }]}
+                      rules={[{ required: true, message: intl.formatMessage({ id: 'pages.login.username.required' }) }]}
                     />
                     <ProFormText
                       name="password"
                       placeholder={intl.formatMessage({
                         id: 'pages.login.password.placeholder',
-                        defaultMessage: '密码',
-                      })}
+                                              })}
                       fieldProps={{ prefix: <LockOutlined />, type: 'password' }}
-                      rules={[{ required: true, message: intl.formatMessage({ id: 'pages.login.password.required', defaultMessage: '请输入密码！' }) }]}
+                      rules={[{ required: true, message: intl.formatMessage({ id: 'pages.login.password.required' }) }]}
                     />
                   </>
                 )}
               </ProForm>
               <div style={{ marginBottom: 24, textAlign: 'right' }}>
                 <Link to="/user/forgot-password">
-                  <FormattedMessage id="pages.login.forgotPassword" defaultMessage="忘记密码" />
+                  <FormattedMessage id="pages.login.forgotPassword" />
                 </Link>
               </div>
               <div style={{ textAlign: 'center', marginTop: 16 }}>
                 <Link to="/user/register">
-                  <FormattedMessage id="pages.login.register" defaultMessage="没有账号？立即注册" />
+                  <FormattedMessage id="pages.login.register" />
                 </Link>
               </div>
             </ProCard>

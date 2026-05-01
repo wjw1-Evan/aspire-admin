@@ -62,7 +62,7 @@ const StatisticsPage: React.FC = () => {
     const renderTrend = (value?: number, isYoY = true) => {
         if (value === undefined || value === null) return null;
         const isUp = value >= 0; const color = isUp ? '#52c41a' : '#f5222d';
-        const label = isYoY ? intl.formatMessage({ id: 'pages.park.statistics.yoy', defaultMessage: '同比' }) : intl.formatMessage({ id: 'pages.park.statistics.mom', defaultMessage: '环比' });
+        const label = isYoY ? intl.formatMessage({ id: 'pages.park.statistics.yoy' }) : intl.formatMessage({ id: 'pages.park.statistics.mom' });
         return <Space size={4} style={{ fontSize: 12, color }}><span>{label}</span>{isUp ? <ArrowUpOutlined /> : <ArrowDownOutlined />}<span>{Math.abs(value).toFixed(1)}%</span></Space>;
     };
 
@@ -260,11 +260,11 @@ const StatisticsPage: React.FC = () => {
     };
 
     const tabItems = [
-        { key: 'overview', label: intl.formatMessage({ id: 'pages.park.statistics.overview', defaultMessage: '综合概览' }), children: renderOverview() },
-        { key: 'asset', label: intl.formatMessage({ id: 'pages.park.statistics.assetAnalysis', defaultMessage: '资产分析' }), children: renderAssetAnalysis() },
-        { key: 'investment', label: intl.formatMessage({ id: 'pages.park.statistics.investmentAnalysis', defaultMessage: '招商分析' }), children: renderInvestmentAnalysis() },
-        { key: 'tenant', label: intl.formatMessage({ id: 'pages.park.statistics.tenantAnalysis', defaultMessage: '租户分析' }), children: renderTenantAnalysis() },
-        { key: 'service', label: intl.formatMessage({ id: 'pages.park.statistics.serviceAnalysis', defaultMessage: '服务分析' }), children: renderServiceAnalysis() },
+        { key: 'overview', label: intl.formatMessage({ id: 'pages.park.statistics.overview' }), children: renderOverview() },
+        { key: 'asset', label: intl.formatMessage({ id: 'pages.park.statistics.assetAnalysis' }), children: renderAssetAnalysis() },
+        { key: 'investment', label: intl.formatMessage({ id: 'pages.park.statistics.investmentAnalysis' }), children: renderInvestmentAnalysis() },
+        { key: 'tenant', label: intl.formatMessage({ id: 'pages.park.statistics.tenantAnalysis' }), children: renderTenantAnalysis() },
+        { key: 'service', label: intl.formatMessage({ id: 'pages.park.statistics.serviceAnalysis' }), children: renderServiceAnalysis() },
     ];
 
     return (
@@ -272,17 +272,17 @@ const StatisticsPage: React.FC = () => {
             <div style={{ marginBottom: 16, textAlign: 'right' }}>
                 <Space wrap>
                     <StatisticsPeriodSelector value={state.period} dateRange={state.dateRange} onChange={(newDateRange, newPeriod) => { set({ dateRange: newDateRange, period: newPeriod || state.period }); }} />
-                    <Button icon={<RobotOutlined />} onClick={handleGenerateAiReport} type="primary" style={{ background: 'linear-gradient(45deg, #1890ff, #722ed1)', borderColor: 'transparent' }}>{intl.formatMessage({ id: 'pages.park.statistics.aiReport', defaultMessage: 'AI 分析报告' })}</Button>
-                    <Button icon={<ReloadOutlined />} onClick={loadAllStatistics} type="primary" ghost>{intl.formatMessage({ id: 'common.refresh', defaultMessage: '刷新' })}</Button>
+                    <Button icon={<RobotOutlined />} onClick={handleGenerateAiReport} type="primary" style={{ background: 'linear-gradient(45deg, #1890ff, #722ed1)', borderColor: 'transparent' }}>{intl.formatMessage({ id: 'pages.park.statistics.aiReport' })}</Button>
+                    <Button icon={<ReloadOutlined />} onClick={loadAllStatistics} type="primary" ghost>{intl.formatMessage({ id: 'common.refresh' })}</Button>
                 </Space>
             </div>
             <Spin spinning={state.loading}>
                 <Tabs activeKey={state.activeTab} onChange={(key) => set({ activeTab: key })} items={tabItems} type="card" />
             </Spin>
-            <Modal title={<Space orientation="vertical" size={4} style={{ width: '100%' }}><Space><RobotOutlined style={{ color: '#722ed1' }} />{intl.formatMessage({ id: 'pages.park.statistics.aiReportTitle', defaultMessage: 'AI 运营分析报告' })}</Space><div style={{ fontSize: 12, fontWeight: 'normal', color: 'rgba(0, 0, 0, 0.45)', marginLeft: 24 }}>{intl.formatMessage({ id: 'pages.park.statistics.reportPeriod', defaultMessage: '报告周期' })}: <Tag color="blue" style={{ marginRight: 8 }}>{state.period === 'month' ? '本月' : state.period === 'year' ? '本年' : state.period === 'custom' ? '自定义' : state.period}</Tag>{state.dateRange ? `${state.dateRange[0].format('YYYY-MM-DD')} ~ ${state.dateRange[1].format('YYYY-MM-DD')}` : '-'}</div></Space>}
+            <Modal title={<Space orientation="vertical" size={4} style={{ width: '100%' }}><Space><RobotOutlined style={{ color: '#722ed1' }} />{intl.formatMessage({ id: 'pages.park.statistics.aiReportTitle' })}</Space><div style={{ fontSize: 12, fontWeight: 'normal', color: 'rgba(0, 0, 0, 0.45)', marginLeft: 24 }}>{intl.formatMessage({ id: 'pages.park.statistics.reportPeriod' })}: <Tag color="blue" style={{ marginRight: 8 }}>{state.period === 'month' ? '本月' : state.period === 'year' ? '本年' : state.period === 'custom' ? '自定义' : state.period}</Tag>{state.dateRange ? `${state.dateRange[0].format('YYYY-MM-DD')} ~ ${state.dateRange[1].format('YYYY-MM-DD')}` : '-'}</div></Space>}
                 open={state.aiReportVisible} onCancel={() => set({ aiReportVisible: false })} footer={null} width={900}
                 styles={{ body: { maxHeight: '75vh', overflowY: 'auto', padding: '24px' } }}>
-                <Spin spinning={state.aiReportLoading} tip={intl.formatMessage({ id: 'pages.park.statistics.generatingReport', defaultMessage: '正在生成报告，可能需要几十秒...' })}>
+                <Spin spinning={state.aiReportLoading} tip={intl.formatMessage({ id: 'pages.park.statistics.generatingReport' })}>
                     <div dangerouslySetInnerHTML={{ __html: state.aiReportContent }} style={{ fontSize: 15, lineHeight: 1.8, marginBottom: 16 }} />
                     <style>{`.markdown-body table { border-collapse: collapse; width: 100%; margin-bottom: 16px; } .markdown-body th, .markdown-body td { border: 1px solid #d9d9d9; padding: 8px 12px; text-align: left; } .markdown-body th { background-color: #fafafa; font-weight: 600; } .markdown-body tr:nth-child(even) { background-color: #fbfbfb; } .markdown-body blockquote { margin: 0 0 16px; padding: 0 1em; color: #6a737d; border-left: 0.25em solid #dfe2e5; }`}</style>
                 </Spin>

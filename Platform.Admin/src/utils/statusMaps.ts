@@ -35,12 +35,12 @@ export const getStatusMeta = (
     const meta = map[key];
     if (!meta) {
         const text = intl?.formatMessage
-            ? intl.formatMessage({ id: fallback.text, defaultMessage: '未知' })
+            ? intl.formatMessage({ id: fallback.text })
             : fallback.text;
         return { ...fallback, text };
     }
     return {
         color: meta.color,
-        text: intl?.formatMessage ? intl.formatMessage({ id: meta.text, defaultMessage: meta.text }) : meta.text,
+        text: intl?.formatMessage ? intl.formatMessage({ id: meta.text }) : meta.text,
     };
 };

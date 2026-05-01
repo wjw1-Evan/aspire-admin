@@ -21,7 +21,7 @@ const translateMessage = (msg: string, errorCode?: string): string => {
   if (errorCode) {
     try {
       const intl = getIntl();
-      const translated = intl.formatMessage({ id: errorCode, defaultMessage: '' });
+      const translated = intl.formatMessage({ id: errorCode });
       if (translated && translated !== errorCode) {
         return translated;
       }
@@ -336,11 +336,11 @@ class UnifiedErrorInterceptor {
         const fieldErrors = validationErrors[field];
         if (Array.isArray(fieldErrors)) {
           fieldErrors.forEach((err) => {
-            const translated = intl.formatMessage({ id: err as string, defaultMessage: err as string });
+            const translated = intl.formatMessage({ id: err as string });
             errors.push(translated);
           });
         } else if (typeof fieldErrors === 'string') {
-          const translated = intl.formatMessage({ id: fieldErrors as string, defaultMessage: fieldErrors as string });
+          const translated = intl.formatMessage({ id: fieldErrors as string });
           errors.push(translated);
         }
       });
@@ -352,7 +352,7 @@ class UnifiedErrorInterceptor {
     // 2. 有 errorCode 时只翻译 errorCode，不显示 message
     const errorCode = error?.response?.data?.errorCode || error?.info?.errorCode;
     if (errorCode) {
-      const translated = intl.formatMessage({ id: errorCode as string, defaultMessage: errorCode as string });
+      const translated = intl.formatMessage({ id: errorCode as string });
       if (translated !== errorCode) {
         errors.push(translated);
       } else {
@@ -364,7 +364,7 @@ class UnifiedErrorInterceptor {
     // 3. 无 errorCode 时取 message
     const message = error?.response?.data?.message || error?.info?.message;
     if (message) {
-      const translated = intl.formatMessage({ id: message as string, defaultMessage: message as string });
+      const translated = intl.formatMessage({ id: message as string });
       errors.push(translated);
       return errors;
     }
@@ -524,7 +524,7 @@ class UnifiedErrorInterceptor {
       } else if (displayType === ErrorDisplayType.NOTIFICATION) {
         runAfterRender(() =>
           notification.error({
-            message: getIntl(getLocale()).formatMessage({ id: 'request.error.validation', defaultMessage: '验证错误' }),
+            message: getIntl(getLocale()).formatMessage({ id: 'request.error.validation' }),
             description: errors[0],
             duration: 4.5,
           }),
@@ -539,7 +539,7 @@ class UnifiedErrorInterceptor {
           } else if (displayType === ErrorDisplayType.NOTIFICATION) {
             runAfterRender(() =>
               notification.error({
-                message: `${getIntl(getLocale()).formatMessage({ id: 'request.error.validation', defaultMessage: '验证错误' })} ${index + 1}`,
+                message: `${getIntl(getLocale()).formatMessage({ id: 'request.error.validation' })} ${index + 1}`,
                 description: msg,
                 duration: 3,
               }),

@@ -6,7 +6,7 @@ export function getErrorMessage(
 ): string {
   const intl = getIntl();
   if (response.errorCode) {
-    return intl.formatMessage({ id: response.errorCode, defaultMessage: response.message || intl.formatMessage({ id: fallbackId }) });
+    return intl.formatMessage({ id: response.errorCode });
   }
   return response.message || intl.formatMessage({ id: fallbackId });
 }

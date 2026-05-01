@@ -113,12 +113,14 @@ export const errorConfig: RequestConfig = {
       const isMissingCurrentUser =
         error.response?.status === 400 &&
         (messageText?.includes('未找到当前用户信息') ||
+          messageText?.includes('未找到用户信息') ||
           messageText?.toLowerCase?.().includes('current user') ||
           messageText?.toLowerCase?.().includes('unauthorized'));
       // 403 + "未找到用户" 表示 token 无效/过期（后端可能返回 403 而非 401）
       const is403AuthError =
         error.response?.status === 403 &&
         (messageText?.includes('未找到用户') ||
+          messageText?.includes('未找到用户信息') ||
           messageText?.toLowerCase?.().includes('unauthorized'));
 
       // 检查是否是认证相关的错误消息（避免已处理的认证错误重复处理）

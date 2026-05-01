@@ -1,10 +1,10 @@
 /**
- * 模块翻译统一导出入口 (en-US)
- * 
+ * 模块翻译统一导出入口 (pt-BR)
+ *
  * 目录结构:
  * - modules/    - 功能模块翻译
  * - common/     - 通用翻译
- * 
+ *
  * 包含模块: auth, user, task, project, workflow, document, iot, organization, role, company, help, xiaoke, other
  */
 
@@ -26,10 +26,12 @@ import other from './modules/other';
 import dashboard from './modules/dashboard';
 import park from './modules/park';
 import missing from './modules/missing';
+import cloudStorage from './modules/cloud-storage';
+import webScraper from './modules/web-scraper';
 
 // 导出所有模块
 export { common };
-export { auth, user, task, project, workflow, document, iot, organization, role, company, help, xiaoke, dashboard, other, park, missing };
+export { auth, user, task, project, workflow, document, iot, organization, role, company, help, xiaoke, dashboard, other, park, missing, cloudStorage, webScraper };
 
 // 默认导出：合并所有模块
 export default {
@@ -50,4 +52,6 @@ export default {
   ...other,
   ...park,
   ...missing,
+  ...cloudStorage,
+  ...webScraper,
 };

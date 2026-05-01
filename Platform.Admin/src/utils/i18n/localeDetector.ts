@@ -58,6 +58,7 @@ export function initSavedTranslations(): void {
 
     addLocale(currentLocale, merged, {
       momentLocale: currentLocale.split('-')[1]?.toLowerCase(),
+      antd: null as any,
     });
 
     console.log('[i18n] ✅ 已加载保存的翻译:', { locale: currentLocale, count: Object.keys(messages).length, keys: Object.keys(messages) });
@@ -135,6 +136,7 @@ async function handleMissingTranslation(id: string): Promise<void> {
 
       addLocale(currentLocale, updatedMessages, {
         momentLocale: currentLocale.split('-')[1]?.toLowerCase(),
+        antd: null as any,
       });
 
       // 保存到 localStorage

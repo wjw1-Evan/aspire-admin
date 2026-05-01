@@ -263,4 +263,37 @@ public class WebScraperController : BaseApiController
 
         return Success(result);
     }
+
+    /// <summary>
+    /// 获取网页抓取任务统计信息
+    /// </summary>
+    /// <returns>任务统计数据</returns>
+    [HttpGet("tasks/statistics")]
+    public async Task<IActionResult> GetTasksStatistics()
+    {
+        var statistics = await _webScraperService.GetTasksStatisticsAsync(RequiredUserId);
+        return Success(statistics);
+    }
+
+    /// <summary>
+    /// 获取网页抓取结果统计信息
+    /// </summary>
+    /// <returns>结果统计数据</returns>
+    [HttpGet("results/statistics")]
+    public async Task<IActionResult> GetResultsStatistics()
+    {
+        var statistics = await _webScraperService.GetResultsStatisticsAsync(RequiredUserId);
+        return Success(statistics);
+    }
+
+    /// <summary>
+    /// 获取网页抓取日志统计信息
+    /// </summary>
+    /// <returns>日志统计数据</returns>
+    [HttpGet("logs/statistics")]
+    public async Task<IActionResult> GetLogsStatistics()
+    {
+        var statistics = await _webScraperService.GetLogsStatisticsAsync(RequiredUserId);
+        return Success(statistics);
+    }
 }

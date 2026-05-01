@@ -124,3 +124,37 @@ public class WebScrapingResult : MultiTenantEntity
     public double? RelevanceScore { get; set; }
     public DateTime? NotificationSentAt { get; set; }
 }
+
+public class WebScraperStatistics
+{
+    public int TotalTasks { get; set; }
+    public int IdleTasks { get; set; }
+    public int RunningTasks { get; set; }
+    public int SuccessTasks { get; set; }
+    public int FailedTasks { get; set; }
+    public int EnabledTasks { get; set; }
+    public int TotalPagesCrawled { get; set; }
+    public int TotalMatched { get; set; }
+}
+
+public class WebScraperResultStatistics
+{
+    public int TotalResults { get; set; }
+    public int SuccessResults { get; set; }
+    public int FailedResults { get; set; }
+    public int MatchedResults { get; set; }
+    public int TotalImages { get; set; }
+    public int TotalLinks { get; set; }
+    public long TotalContentLength { get; set; }
+}
+
+public class WebScraperLogStatistics
+{
+    public int TotalLogs { get; set; }
+    public int SuccessLogs { get; set; }
+    public int FailedLogs { get; set; }
+    public int PartialSuccessLogs { get; set; }
+    public int RunningLogs { get; set; }
+    public int TotalPagesCrawled { get; set; }
+    public double AverageDuration { get; set; }
+}

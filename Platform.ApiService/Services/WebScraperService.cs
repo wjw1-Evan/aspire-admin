@@ -491,6 +491,71 @@ public class WebScraperService : IWebScraperService
         await _context.SaveChangesAsync();
     }
 
+    public async Task<WebScraperStatistics> GetTasksStatisticsAsync(string userId)
+    {
+        var query = _context.Set<WebScrapingTask>().Where(t => t.UserId == userId);
+
+        var tasks = await query.ToListAsync();
+
+        return new WebScraperStatistics
+        {
+            TotalTasks = tasks.Count,
+            IdleTasks = tasks.Count(t => t.LastStatus == ScrapingStatus.Idle),
+            RunningTasks = tasks.Count(t => t.LastStatus == ScrapingStatus.Running),
+            SuccessTasks = tasks.Count(t => t.LastStatus == ScrapingStatus.Success),
+            FailedTasks = tasks.Count(t => t.LastStatus == ScrapingStatus.Failed),
+            EnabledTasks = tasks.Count(t => t.IsEnabled),
+            TotalPagesCrawled = tasks.Sum(t => t.TotalPagesCrawled),
+            TotalMatched = tasks.Sum(t => t.MatchedCount ?? 0)
+        };
+    }
+
+    public async Task<WebScraperResultStatistics> GetResultsStatisticsAsync(string userId)
+    {
+        var taskIds = await _context.Set<WebScrapingTask>()
+            .Where(t => t.UserId == userId || t.IsPublic)
+            .Select(t => t.Id)
+            .ToListAsync();
+
+        var query = _context.Set<WebScrapingResult>().Where(r => taskIds.Contains(r.TaskId));
+
+        var results = await query.ToListAsync();
+
+        return new WebScraperResultStatistics
+        {
+            TotalResults = results.Count,
+            SuccessResults = results.Count(r => r.Success),
+            FailedResults = results.Count(r => !r.Success),
+            MatchedResults = results.Count(r => r.IsMatched == true),
+            TotalImages = results.Sum(r => r.ImageCount),
+            TotalLinks = results.Sum(r => r.LinkCount),
+            TotalContentLength = results.Sum(r => r.ContentLength)
+        };
+    }
+
+    public async Task<WebScraperLogStatistics> GetLogsStatisticsAsync(string userId)
+    {
+        var taskIds = await _context.Set<WebScrapingTask>()
+            .Where(t => t.UserId == userId)
+            .Select(t => t.Id)
+            .ToListAsync();
+
+        var query = _context.Set<WebScrapingLog>().Where(l => taskIds.Contains(l.TaskId));
+
+        var logs = await query.ToListAsync();
+
+        return new WebScraperLogStatistics
+        {
+            TotalLogs = logs.Count,
+            SuccessLogs = logs.Count(l => l.Status == ScrapingStatus.Success),
+            FailedLogs = logs.Count(l => l.Status == ScrapingStatus.Failed),
+            PartialSuccessLogs = logs.Count(l => l.Status == ScrapingStatus.PartialSuccess),
+            RunningLogs = logs.Count(l => l.Status == ScrapingStatus.Running),
+            TotalPagesCrawled = logs.Sum(l => l.PagesCrawled),
+            AverageDuration = logs.Count > 0 ? logs.Average(l => l.Duration) : 0
+        };
+    }
+
     private async Task UpdateHeartbeatAsync(string taskId, string companyId, string userId, CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)

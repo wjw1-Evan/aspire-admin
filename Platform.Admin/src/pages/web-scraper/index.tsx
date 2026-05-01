@@ -1,14 +1,13 @@
-import React, { useRef, useState, useCallback } from 'react';
-import { request } from '@umijs/max';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
+import { request, getIntl } from '@umijs/max';
 import { Tag, Space, Button, Popconfirm, Modal, message, Switch, Input } from 'antd';
 import { PageContainer, ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
-import { PlusOutlined, PlayCircleOutlined, DeleteOutlined, EyeOutlined, PauseCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, PlayCircleOutlined, DeleteOutlined, EyeOutlined, PauseCircleOutlined, ApartmentOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult } from '@/types';
 import TaskForm from './components/TaskForm';
 import ResultPreview from './components/ResultPreview';
-import { getIntl } from '@umijs/max';
 
 interface WebScrapingTask {
   id: string;
@@ -61,6 +60,17 @@ interface ScrapeResult {
   data?: CrawlResult;
 }
 
+interface TaskStatistics {
+  totalTasks: number;
+  idleTasks: number;
+  runningTasks: number;
+  successTasks: number;
+  failedTasks: number;
+  enabledTasks: number;
+  totalPagesCrawled: number;
+  totalMatched: number;
+}
+
 const api = {
   list: (params: any) =>
     request<ApiResponse<PagedResult<WebScrapingTask>>>('/apiservice/api/web-scraper/tasks', { params }),
@@ -78,6 +88,8 @@ const api = {
     request<ApiResponse<any>>(`/apiservice/api/web-scraper/execute/${id}`, { method: 'POST' }),
   stop: (id: string) =>
     request<ApiResponse<void>>(`/apiservice/api/web-scraper/tasks/${id}/stop`, { method: 'POST' }),
+  statistics: () =>
+    request<ApiResponse<TaskStatistics>>('/apiservice/api/web-scraper/tasks/statistics'),
 };
 
 const statusColors: Record<string, string> = {
@@ -93,28 +105,28 @@ const statusColors: Record<string, string> = {
   partialSuccess: 'warning',
 };
 
-const statusText: Record<string, string> = {
-  Idle: '空闲',
-  idle: '空闲',
-  Running: '运行中',
-  running: '运行中',
-  Success: '成功',
-  success: '成功',
-  Failed: '失败',
-  failed: '失败',
-  PartialSuccess: '部分成功',
-  partialSuccess: '部分成功',
+const statusTextMap: Record<string, string> = {
+  Idle: 'pages.webScraper.status.idle',
+  idle: 'pages.webScraper.status.idle',
+  Running: 'pages.webScraper.status.running',
+  running: 'pages.webScraper.status.running',
+  Success: 'pages.webScraper.status.success',
+  success: 'pages.webScraper.status.success',
+  Failed: 'pages.webScraper.status.failed',
+  failed: 'pages.webScraper.status.failed',
+  PartialSuccess: 'pages.webScraper.status.partialSuccess',
+  partialSuccess: 'pages.webScraper.status.partialSuccess',
 };
 
-const explainCron = (cron: string): string => {
+const explainCron = (cron: string, intl: any): string => {
   const parts = cron?.trim().split(/\s+/);
   if (parts?.length !== 5) return cron;
   const [min, hour, day, month, week] = parts;
-  if (min === '*' && hour === '*') return '每分钟执行';
-  if (min === '0' && hour === '*') return '每小时整点执行';
-  if (min === '0' && hour === '0' && day === '*') return '每天凌晨执行';
-  if (week === '1' && min === '0' && hour === '0') return '每周一执行';
-  if (day === '1' && month === '*' && min === '0' && hour === '0') return '每月1号执行';
+  if (min === '*' && hour === '*') return intl.formatMessage({ id: 'pages.webScraper.cron.everyMinute' });
+  if (min === '0' && hour === '*') return intl.formatMessage({ id: 'pages.webScraper.cron.hourly' });
+  if (min === '0' && hour === '0' && day === '*') return intl.formatMessage({ id: 'pages.webScraper.cron.daily' });
+  if (week === '1' && min === '0' && hour === '0') return intl.formatMessage({ id: 'pages.webScraper.cron.weekly' });
+  if (day === '1' && month === '*' && min === '0' && hour === '0') return intl.formatMessage({ id: 'pages.webScraper.cron.monthly' });
   return `${hour}:${min.padStart(2, '0')} 执行`;
 };
 
@@ -127,6 +139,15 @@ const WebScraper: React.FC = () => {
   const [previewData, setPreviewData] = useState<CrawlResult | null | undefined>(null);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
+  const [statistics, setStatistics] = useState<TaskStatistics | null>(null);
+
+  const loadStatistics = useCallback(() => {
+    api.statistics().then(r => {
+      if (r.success && r.data) setStatistics(r.data);
+    });
+  }, []);
+
+  useEffect(() => { loadStatistics(); }, [loadStatistics]);
 
   const handleEdit = useCallback((record: WebScrapingTask) => {
     setEditingTask(record);
@@ -136,41 +157,46 @@ const WebScraper: React.FC = () => {
   const handleDelete = useCallback(async (id: string) => {
     await api.delete(id);
     actionRef.current?.reload();
+    loadStatistics();
     message.success(intl.formatMessage({ id: 'pages.message.deleteSuccess' }));
-  }, []);
+  }, [intl, loadStatistics]);
 
   const handleToggle = useCallback(async (record: WebScrapingTask) => {
     await api.toggle(record.id);
     actionRef.current?.reload();
+    loadStatistics();
     message.success(record.isEnabled ? intl.formatMessage({ id: 'pages.webScraper.message.disabled' }) : intl.formatMessage({ id: 'pages.webScraper.message.enabled' }));
-  }, []);
+  }, [intl, loadStatistics]);
 
   const handleExecute = useCallback(async (record: WebScrapingTask) => {
     try {
       const res = await api.execute(record.id);
       message.success(res.data?.message || intl.formatMessage({ id: 'pages.webScraper.message.started' }));
       actionRef.current?.reload();
+      loadStatistics();
     } catch (err: any) {
       message.error(err?.response?.data?.message || err?.message || intl.formatMessage({ id: 'pages.webScraper.message.executeFailed' }));
     }
-  }, []);
+  }, [intl, loadStatistics]);
 
   const handleStop = useCallback(async (record: WebScrapingTask) => {
     try {
       await api.stop(record.id);
       message.success(intl.formatMessage({ id: 'pages.webScraper.message.stopped' }));
       actionRef.current?.reload();
+      loadStatistics();
     } catch (err: any) {
       message.error(err?.response?.data?.message || err?.message || intl.formatMessage({ id: 'pages.webScraper.message.stopFailed' }));
     }
-  }, []);
+  }, [intl, loadStatistics]);
 
   const handleFormSuccess = useCallback(() => {
     setFormVisible(false);
     setEditingTask(null);
     actionRef.current?.reload();
+    loadStatistics();
     message.success(editingTask ? intl.formatMessage({ id: 'pages.message.updateSuccess' }) : intl.formatMessage({ id: 'pages.message.createSuccess' }));
-  }, [editingTask]);
+  }, [editingTask, intl, loadStatistics]);
 
   const columns: ProColumns<WebScrapingTask>[] = [
     {
@@ -200,7 +226,7 @@ const WebScraper: React.FC = () => {
       key: 'lastStatus',
       sorter: true,
       render: (dom) => (
-        <Tag color={statusColors[dom as string]}>{statusText[dom as string]}</Tag>
+        <Tag color={statusColors[dom as string]}>{intl.formatMessage({ id: statusTextMap[dom as string] })}</Tag>
       ),
     },
     {
@@ -253,8 +279,8 @@ const WebScraper: React.FC = () => {
       key: 'scheduleCron',
       render: (dom) => dom ? (
         <Space>
-          <Tag color="orange">{dom}</Tag>
-          <span style={{ color: '#999', fontSize: 12 }}>({explainCron(dom as string)})</span>
+          <Tag color="orange">{dom as string}</Tag>
+          <span style={{ color: '#999', fontSize: 12 }}>({explainCron(dom as string, intl)})</span>
         </Space>
       ) : '-',
     },
@@ -281,7 +307,7 @@ const WebScraper: React.FC = () => {
       ),
     },
     {
-      title: intl.formatMessage({ id: 'pages.table.action' }),
+      title: intl.formatMessage({ id: 'pages.webScraper.table.action' }),
       key: 'action',
       valueType: 'option',
       fixed: 'right',
@@ -338,7 +364,18 @@ const WebScraper: React.FC = () => {
   return (
     <PageContainer>
       <ProTable<WebScrapingTask>
-        headerTitle={intl.formatMessage({ id: 'pages.webScraper.title' })}
+        headerTitle={
+          <Space size={24}>
+            <Space><ApartmentOutlined />{intl.formatMessage({ id: 'pages.webScraper.title' })}</Space>
+            <Space size={12}>
+              <Tag color="blue">{intl.formatMessage({ id: 'pages.webScraper.statistics.totalTasks' })} {statistics?.totalTasks || 0}</Tag>
+              <Tag color="processing">{intl.formatMessage({ id: 'pages.webScraper.statistics.runningTasks' })} {statistics?.runningTasks || 0}</Tag>
+              <Tag color="success">{intl.formatMessage({ id: 'pages.webScraper.statistics.successTasks' })} {statistics?.successTasks || 0}</Tag>
+              <Tag color="error">{intl.formatMessage({ id: 'pages.webScraper.statistics.failedTasks' })} {statistics?.failedTasks || 0}</Tag>
+              <Tag color="purple">{intl.formatMessage({ id: 'pages.webScraper.statistics.totalPagesCrawled' })} {statistics?.totalPagesCrawled || 0}</Tag>
+            </Space>
+          </Space>
+        }
         actionRef={actionRef}
         rowKey="id"
         search={false}

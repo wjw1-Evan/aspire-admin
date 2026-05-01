@@ -1,9 +1,9 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { request, useIntl } from '@umijs/max';
 import { Tag, Space, Button, Input, Timeline, Card, Row, Col, Descriptions, Modal, Progress, Statistic } from 'antd';
 import { PageContainer, ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
-import { PlayCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, WarningOutlined, HistoryOutlined, FileTextOutlined } from '@ant-design/icons';
+import { PlayCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, WarningOutlined, HistoryOutlined, FileTextOutlined, ScheduleOutlined } from '@ant-design/icons';
 import { ApiResponse, PagedResult } from '@/types';
 
 interface WebScrapingLog {
@@ -27,21 +27,15 @@ interface TaskOption {
   name: string;
 }
 
-const statusIcons = {
-  Idle: <Tag icon={<HistoryOutlined />} color="default">空闲</Tag>,
-  Running: <Tag icon={<PlayCircleOutlined spin />} color="processing">运行中</Tag>,
-  Success: <Tag icon={<CheckCircleOutlined />} color="success">成功</Tag>,
-  Failed: <Tag icon={<CloseCircleOutlined />} color="error">失败</Tag>,
-  PartialSuccess: <Tag icon={<WarningOutlined />} color="warning">部分成功</Tag>,
-};
-
-const statusText = {
-  Idle: '空闲',
-  Running: '运行中',
-  Success: '成功',
-  Failed: '失败',
-  PartialSuccess: '部分成功',
-};
+interface LogStatistics {
+  totalLogs: number;
+  successLogs: number;
+  failedLogs: number;
+  partialSuccessLogs: number;
+  runningLogs: number;
+  totalPagesCrawled: number;
+  averageDuration: number;
+}
 
 const WebScraperLogs: React.FC = () => {
   const actionRef = useRef<ActionType | undefined>(undefined);
@@ -50,6 +44,7 @@ const WebScraperLogs: React.FC = () => {
   const [tasks, setTasks] = useState<TaskOption[]>([]);
   const [detailVisible, setDetailVisible] = useState(false);
   const [currentLog, setCurrentLog] = useState<WebScrapingLog | null>(null);
+  const [statistics, setStatistics] = useState<LogStatistics | null>(null);
   const intl = useIntl();
 
   const api = {
@@ -61,6 +56,8 @@ const WebScraperLogs: React.FC = () => {
       request<ApiResponse<PagedResult<{ id: string; name: string }>>>('/apiservice/api/web-scraper/tasks', {
         params: { page: 1, pageSize: 100 },
       }),
+    statistics: () =>
+      request<ApiResponse<LogStatistics>>('/apiservice/api/web-scraper/logs/statistics'),
   };
 
   const loadTasks = useCallback(async () => {
@@ -70,9 +67,13 @@ const WebScraperLogs: React.FC = () => {
     }
   }, []);
 
-  React.useEffect(() => {
-    loadTasks();
-  }, [loadTasks]);
+  const loadStatistics = useCallback(() => {
+    api.statistics().then(r => {
+      if (r.success && r.data) setStatistics(r.data);
+    });
+  }, []);
+
+  useEffect(() => { loadTasks(); loadStatistics(); }, [loadTasks, loadStatistics]);
 
   const handleViewDetail = useCallback(async (record: WebScrapingLog) => {
     const res = await api.get(record.id);
@@ -88,35 +89,63 @@ const WebScraperLogs: React.FC = () => {
     return `${(ms / 60000).toFixed(1)}min`;
   };
 
+  const getStatusText = (status: string, intl: any) => {
+    const statusTextMap: Record<string, string> = {
+      Idle: intl.formatMessage({ id: 'pages.webScraper.status.idle' }),
+      Running: intl.formatMessage({ id: 'pages.webScraper.status.running' }),
+      Success: intl.formatMessage({ id: 'pages.webScraper.status.success' }),
+      Failed: intl.formatMessage({ id: 'pages.webScraper.status.failed' }),
+      PartialSuccess: intl.formatMessage({ id: 'pages.webScraper.status.partialSuccess' }),
+    };
+    return statusTextMap[status] || status;
+  };
+
+  const getStatusIcon = (status: string, intl: any) => {
+    const statusConfig: Record<string, { icon: React.ReactNode; color: string }> = {
+      Idle: { icon: <HistoryOutlined />, color: 'default' },
+      Running: { icon: <PlayCircleOutlined spin />, color: 'processing' },
+      Success: { icon: <CheckCircleOutlined />, color: 'success' },
+      Failed: { icon: <CloseCircleOutlined />, color: 'error' },
+      PartialSuccess: { icon: <WarningOutlined />, color: 'warning' },
+    };
+    return statusConfig[status] || { icon: null, color: 'default' };
+  };
+
+  const renderStatusTag = (status: string, intl: any) => {
+    const config = getStatusIcon(status, intl);
+    const text = getStatusText(status, intl);
+    return <Tag icon={config.icon} color={config.color}>{text}</Tag>;
+  };
+
   const columns: ProColumns<WebScrapingLog>[] = [
     {
-      title: '任务名称',
+      title: intl.formatMessage({ id: 'pages.webScraper.logs.table.taskName' }),
       dataIndex: 'taskName',
       ellipsis: true,
       sorter: true,
       render: (_, record) => <Tag color="blue">{record.taskName}</Tag>,
     },
     {
-      title: '状态',
+      title: intl.formatMessage({ id: 'pages.webScraper.logs.table.status' }),
       dataIndex: 'status',
       sorter: true,
-      render: (status) => statusIcons[status as keyof typeof statusIcons] || status,
+      render: (status) => renderStatusTag(status as string, intl),
     },
     {
-      title: '开始时间',
+      title: intl.formatMessage({ id: 'pages.webScraper.logs.table.startTime' }),
       dataIndex: 'startTime',
       sorter: true,
       valueType: 'dateTime',
       render: (_: any, record: WebScrapingLog) => record.startTime ? new Date(record.startTime).toLocaleString() : '-',
     },
     {
-      title: '持续时间',
+      title: intl.formatMessage({ id: 'pages.webScraper.logs.table.duration' }),
       dataIndex: 'duration',
       sorter: true,
       render: (_: any, record: WebScrapingLog) => formatDuration(record.duration),
     },
     {
-      title: '抓取进度',
+      title: intl.formatMessage({ id: 'pages.webScraper.logs.table.progress' }),
       dataIndex: 'pagesCrawled',
       sorter: true,
       render: (pages, record) => {
@@ -135,18 +164,18 @@ const WebScraperLogs: React.FC = () => {
       },
     },
     {
-      title: '成功/失败',
+      title: intl.formatMessage({ id: 'pages.webScraper.logs.table.successFailed' }),
       dataIndex: 'successCount',
       sorter: true,
       render: (_, record) => (
         <Space>
-          <Tag color="success">{record.successCount} 成功</Tag>
-          {record.failedCount > 0 && <Tag color="error">{record.failedCount} 失败</Tag>}
+          <Tag color="success">{intl.formatMessage({ id: 'pages.webScraper.logs.successPages' }, { count: record.successCount })}</Tag>
+          {record.failedCount > 0 && <Tag color="error">{intl.formatMessage({ id: 'pages.webScraper.logs.failedPages' }, { count: record.failedCount })}</Tag>}
         </Space>
       ),
     },
     {
-      title: '操作',
+      title: intl.formatMessage({ id: 'pages.webScraper.logs.table.action' }),
       key: 'action',
       fixed: 'right',
       width: 100,
@@ -157,7 +186,7 @@ const WebScraperLogs: React.FC = () => {
           icon={<FileTextOutlined />}
           onClick={() => handleViewDetail(record)}
         >
-          详情
+          {intl.formatMessage({ id: 'pages.webScraper.action.detail' })}
         </Button>
       ),
     },
@@ -166,7 +195,17 @@ const WebScraperLogs: React.FC = () => {
   return (
     <PageContainer>
       <ProTable<WebScrapingLog>
-        headerTitle="抓取日志"
+        headerTitle={
+          <Space size={24}>
+            <Space><ScheduleOutlined />{intl.formatMessage({ id: 'pages.webScraper.logs.title' })}</Space>
+            <Space size={12}>
+              <Tag color="blue">{intl.formatMessage({ id: 'pages.webScraper.statistics.totalLogs' })} {statistics?.totalLogs || 0}</Tag>
+              <Tag color="success">{intl.formatMessage({ id: 'pages.webScraper.statistics.successLogs' })} {statistics?.successLogs || 0}</Tag>
+              <Tag color="error">{intl.formatMessage({ id: 'pages.webScraper.statistics.failedLogs' })} {statistics?.failedLogs || 0}</Tag>
+              <Tag color="warning">{intl.formatMessage({ id: 'pages.webScraper.statistics.partialSuccessLogs' })} {statistics?.partialSuccessLogs || 0}</Tag>
+            </Space>
+          </Space>
+        }
         actionRef={actionRef}
         rowKey="id"
         search={false}
@@ -181,7 +220,7 @@ const WebScraperLogs: React.FC = () => {
         toolBarRender={() => [
           <Input.Search
             key="search"
-            placeholder="搜索..."
+            placeholder={intl.formatMessage({ id: 'pages.webScraper.logs.search.placeholder' })}
             allowClear
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -194,7 +233,7 @@ const WebScraperLogs: React.FC = () => {
       />
 
       <Modal
-        title={intl.formatMessage({ id: 'pages.web-scraper.scrape-logs.title.logDetail' })}
+        title={intl.formatMessage({ id: 'pages.webScraper.logs.title.logDetail' })}
         open={detailVisible}
         onCancel={() => {
           setDetailVisible(false);
@@ -208,21 +247,21 @@ const WebScraperLogs: React.FC = () => {
             <Row gutter={16} style={{ marginBottom: 16 }}>
               <Col span={8}>
                 <Statistic
-                  title="任务名称"
+                  title={intl.formatMessage({ id: 'pages.webScraper.logs.detail.taskName' })}
                   value={currentLog.taskName}
                   prefix={<Tag color="blue">{currentLog.taskName}</Tag>}
                 />
               </Col>
               <Col span={8}>
                 <Statistic
-                  title="状态"
-                  value={statusText[currentLog.status as keyof typeof statusText]}
-                  prefix={statusIcons[currentLog.status as keyof typeof statusIcons]}
+                  title={intl.formatMessage({ id: 'pages.webScraper.logs.detail.status' })}
+                  value={getStatusText(currentLog.status, intl)}
+                  prefix={getStatusIcon(currentLog.status, intl).icon}
                 />
               </Col>
               <Col span={8}>
                 <Statistic
-                  title="持续时间"
+                  title={intl.formatMessage({ id: 'pages.webScraper.logs.detail.duration' })}
                   value={formatDuration(currentLog.duration)}
                 />
               </Col>
@@ -230,24 +269,24 @@ const WebScraperLogs: React.FC = () => {
 
             <Row gutter={16} style={{ marginBottom: 16 }}>
               <Col span={8}>
-                <Statistic title="开始时间" value={currentLog.startTime ? new Date(currentLog.startTime).toLocaleString() : '-'} />
+                <Statistic title={intl.formatMessage({ id: 'pages.webScraper.logs.detail.startTime' })} value={currentLog.startTime ? new Date(currentLog.startTime).toLocaleString() : '-'} />
               </Col>
               <Col span={8}>
-                <Statistic title="结束时间" value={currentLog.endTime ? new Date(currentLog.endTime).toLocaleString() : '-'} />
+                <Statistic title={intl.formatMessage({ id: 'pages.webScraper.logs.detail.endTime' })} value={currentLog.endTime ? new Date(currentLog.endTime).toLocaleString() : '-'} />
               </Col>
               <Col span={8}>
                 <Statistic
-                  title="抓取页面"
+                  title={intl.formatMessage({ id: 'pages.webScraper.logs.detail.pagesCrawled' })}
                   value={currentLog.pagesCrawled}
                 />
               </Col>
             </Row>
 
-            <Card title="抓取统计" size="small" style={{ marginBottom: 16 }}>
+            <Card title={intl.formatMessage({ id: 'pages.webScraper.logs.detail.scrapeStats' })} size="small" style={{ marginBottom: 16 }}>
               <Row gutter={16}>
                 <Col span={8}>
                   <Statistic
-                    title="成功"
+                    title={intl.formatMessage({ id: 'pages.webScraper.logs.detail.success' })}
                     value={currentLog.successCount}
                     valueStyle={{ color: '#3f8600' }}
                     prefix={<CheckCircleOutlined />}
@@ -255,7 +294,7 @@ const WebScraperLogs: React.FC = () => {
                 </Col>
                 <Col span={8}>
                   <Statistic
-                    title="失败"
+                    title={intl.formatMessage({ id: 'pages.webScraper.logs.detail.failed' })}
                     value={currentLog.failedCount}
                     valueStyle={{ color: '#cf1322' }}
                     prefix={<CloseCircleOutlined />}
@@ -263,7 +302,7 @@ const WebScraperLogs: React.FC = () => {
                 </Col>
                 <Col span={8}>
                   <Statistic
-                    title="成功率"
+                    title={intl.formatMessage({ id: 'pages.webScraper.logs.detail.successRate' })}
                     value={currentLog.pagesCrawled > 0
                       ? ((currentLog.successCount / currentLog.pagesCrawled) * 100).toFixed(1)
                       : 0}
@@ -274,7 +313,7 @@ const WebScraperLogs: React.FC = () => {
             </Card>
 
             {currentLog.errorMessage && (
-              <Card title="错误信息" size="small" style={{ marginBottom: 16 }}>
+              <Card title={intl.formatMessage({ id: 'pages.webScraper.logs.detail.errorInfo' })} size="small" style={{ marginBottom: 16 }}>
                 <Tag color="error">{currentLog.errorMessage}</Tag>
               </Card>
             )}
@@ -283,15 +322,15 @@ const WebScraperLogs: React.FC = () => {
               items={[
                 {
                   color: 'blue',
-                  children: `开始抓取: ${currentLog.startTime ? new Date(currentLog.startTime).toLocaleString() : '-'}`,
+                  children: `${intl.formatMessage({ id: 'pages.webScraper.logs.timeline.startScrape' })}: ${currentLog.startTime ? new Date(currentLog.startTime).toLocaleString() : '-'}`,
                 },
                 {
                   color: currentLog.status === 'Success' || currentLog.status === 'PartialSuccess' ? 'green' : currentLog.status === 'Failed' ? 'red' : 'gray',
-                  children: `抓取完成: ${currentLog.endTime ? new Date(currentLog.endTime).toLocaleString() : '-'}`,
+                  children: `${intl.formatMessage({ id: 'pages.webScraper.logs.timeline.scrapeComplete' })}: ${currentLog.endTime ? new Date(currentLog.endTime).toLocaleString() : '-'}`,
                 },
                 {
                   color: 'gray',
-                  children: `共抓取 ${currentLog.pagesCrawled} 个页面，成功 ${currentLog.successCount} 个，失败 ${currentLog.failedCount} 个`,
+                  children: intl.formatMessage({ id: 'pages.webScraper.logs.timeline.scrapeSummary' }, { total: currentLog.pagesCrawled, success: currentLog.successCount, failed: currentLog.failedCount }),
                 },
               ]}
             />

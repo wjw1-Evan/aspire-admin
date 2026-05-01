@@ -1,9 +1,9 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { request, useIntl } from '@umijs/max';
 import { Tag, Space, Button, Modal, message, Input, Descriptions, Card, Row, Col, Tabs } from 'antd';
 import { PageContainer, ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
-import { EyeOutlined, FileTextOutlined, PictureOutlined, LinkOutlined } from '@ant-design/icons';
+import { EyeOutlined, FileTextOutlined, PictureOutlined, LinkOutlined, DatabaseOutlined } from '@ant-design/icons';
 import { ApiResponse, PagedResult } from '@/types';
 
 interface WebScrapingResult {
@@ -34,6 +34,16 @@ interface TaskOption {
   name: string;
 }
 
+interface ResultStatistics {
+  totalResults: number;
+  successResults: number;
+  failedResults: number;
+  matchedResults: number;
+  totalImages: number;
+  totalLinks: number;
+  totalContentLength: number;
+}
+
 const WebScraperResults: React.FC = () => {
   const actionRef = useRef<ActionType | undefined>(undefined);
   const [detailVisible, setDetailVisible] = useState(false);
@@ -42,6 +52,7 @@ const WebScraperResults: React.FC = () => {
   const [taskId, setTaskId] = useState<string | undefined>();
   const [tasks, setTasks] = useState<TaskOption[]>([]);
   const [activeTab, setActiveTab] = useState('content');
+  const [statistics, setStatistics] = useState<ResultStatistics | null>(null);
   const intl = useIntl();
 
   const api = {
@@ -53,6 +64,8 @@ const WebScraperResults: React.FC = () => {
       request<ApiResponse<PagedResult<{ id: string; name: string }>>>('/apiservice/api/web-scraper/tasks', {
         params: { page: 1, pageSize: 100 },
       }),
+    statistics: () =>
+      request<ApiResponse<ResultStatistics>>('/apiservice/api/web-scraper/results/statistics'),
   };
 
   const loadTasks = useCallback(async () => {
@@ -62,9 +75,13 @@ const WebScraperResults: React.FC = () => {
     }
   }, []);
 
-  React.useEffect(() => {
-    loadTasks();
-  }, [loadTasks]);
+  const loadStatistics = useCallback(() => {
+    api.statistics().then(r => {
+      if (r.success && r.data) setStatistics(r.data);
+    });
+  }, []);
+
+  useEffect(() => { loadTasks(); loadStatistics(); }, [loadTasks, loadStatistics]);
 
   const handleViewDetail = useCallback(async (record: WebScrapingResult) => {
     const res = await api.get(record.id);
@@ -77,20 +94,20 @@ const WebScraperResults: React.FC = () => {
 
   const columns: ProColumns<WebScrapingResult>[] = [
     {
-      title: '任务名称',
+      title: intl.formatMessage({ id: 'pages.webScraper.results.table.taskName' }),
       dataIndex: 'taskName',
       ellipsis: true,
       sorter: true,
       render: (_, record) => <Tag color="blue">{record.taskName}</Tag>,
     },
     {
-      title: '层级',
+      title: intl.formatMessage({ id: 'pages.webScraper.results.table.level' }),
       dataIndex: 'level',
       sorter: true,
-      render: (level) => <Tag>第{level}层</Tag>,
+      render: (level) => <Tag>{intl.formatMessage({ id: 'pages.webScraper.unit.level' })}{level}</Tag>,
     },
     {
-      title: 'URL',
+      title: intl.formatMessage({ id: 'pages.webScraper.results.table.url' }),
       dataIndex: 'url',
       ellipsis: true,
       sorter: true,
@@ -101,56 +118,56 @@ const WebScraperResults: React.FC = () => {
       ),
     },
     {
-      title: '标题',
+      title: intl.formatMessage({ id: 'pages.webScraper.results.table.title' }),
       dataIndex: 'title',
       ellipsis: true,
       sorter: true,
     },
     {
-      title: '状态',
+      title: intl.formatMessage({ id: 'pages.webScraper.results.table.status' }),
       dataIndex: 'success',
       sorter: true,
       render: (success) => (
-        <Tag color={success ? 'success' : 'error'}>{success ? '成功' : '失败'}</Tag>
+        <Tag color={success ? 'success' : 'error'}>{success ? intl.formatMessage({ id: 'pages.webScraper.results.status.success' }) : intl.formatMessage({ id: 'pages.webScraper.results.status.failed' })}</Tag>
       ),
     },
     {
-      title: '匹配',
+      title: intl.formatMessage({ id: 'pages.webScraper.results.table.match' }),
       dataIndex: 'isMatched',
       sorter: true,
       render: (_: any, record: WebScrapingResult) => (
         record.isFiltered ? (
           <Tag color={record.isMatched ? 'green' : 'default'}>
-            {record.isMatched ? `匹配 ${record.relevanceScore || 0}%` : '未匹配'}
+            {record.isMatched ? `${intl.formatMessage({ id: 'pages.webScraper.results.match.matched' })} ${record.relevanceScore || 0}%` : intl.formatMessage({ id: 'pages.webScraper.results.match.unmatched' })}
           </Tag>
         ) : '-'
       ),
     },
     {
-      title: '内容长度',
+      title: intl.formatMessage({ id: 'pages.webScraper.results.table.contentLength' }),
       dataIndex: 'contentLength',
       sorter: true,
       render: (_: any, record: WebScrapingResult) => `${(record.contentLength / 1024).toFixed(2)} KB`,
     },
     {
-      title: '图片数',
+      title: intl.formatMessage({ id: 'pages.webScraper.results.table.imageCount' }),
       dataIndex: 'imageCount',
       sorter: true,
     },
     {
-      title: '链接数',
+      title: intl.formatMessage({ id: 'pages.webScraper.results.table.linkCount' }),
       dataIndex: 'linkCount',
       sorter: true,
     },
     {
-      title: '抓取时间',
+      title: intl.formatMessage({ id: 'pages.webScraper.results.table.scrapeTime' }),
       dataIndex: 'createdAt',
       sorter: true,
       valueType: 'dateTime',
       render: (_: any, record: WebScrapingResult) => record.createdAt ? new Date(record.createdAt).toLocaleString() : '-',
     },
     {
-      title: '操作',
+      title: intl.formatMessage({ id: 'pages.webScraper.results.table.action' }),
       key: 'action',
       fixed: 'right',
       width: 100,
@@ -161,25 +178,35 @@ const WebScraperResults: React.FC = () => {
           icon={<EyeOutlined />}
           onClick={() => handleViewDetail(record)}
         >
-          查看
+          {intl.formatMessage({ id: 'pages.webScraper.action.view' })}
         </Button>
       ),
     },
   ];
 
   const detailColumns = [
-    { title: '标题', dataIndex: 'title' },
-    { title: 'URL', dataIndex: 'url' },
-    { title: '状态', dataIndex: 'success', render: (v: boolean) => v ? '成功' : '失败' },
-    { title: '内容长度', dataIndex: 'contentLength', render: (v: number) => `${(v / 1024).toFixed(2)} KB` },
-    { title: '图片数', dataIndex: 'imageCount' },
-    { title: '链接数', dataIndex: 'linkCount' },
+    { title: intl.formatMessage({ id: 'pages.webScraper.results.detail.title' }), dataIndex: 'title' },
+    { title: intl.formatMessage({ id: 'pages.webScraper.results.detail.url' }), dataIndex: 'url' },
+    { title: intl.formatMessage({ id: 'pages.webScraper.results.detail.status' }), dataIndex: 'success', render: (v: boolean) => v ? intl.formatMessage({ id: 'pages.webScraper.results.status.success' }) : intl.formatMessage({ id: 'pages.webScraper.results.status.failed' }) },
+    { title: intl.formatMessage({ id: 'pages.webScraper.results.detail.contentLength' }), dataIndex: 'contentLength', render: (v: number) => `${(v / 1024).toFixed(2)} KB` },
+    { title: intl.formatMessage({ id: 'pages.webScraper.results.detail.imageCount' }), dataIndex: 'imageCount' },
+    { title: intl.formatMessage({ id: 'pages.webScraper.results.detail.linkCount' }), dataIndex: 'linkCount' },
   ];
 
   return (
     <PageContainer>
       <ProTable<WebScrapingResult>
-        headerTitle="抓取结果"
+        headerTitle={
+          <Space size={24}>
+            <Space><DatabaseOutlined />{intl.formatMessage({ id: 'pages.webScraper.results.title' })}</Space>
+            <Space size={12}>
+              <Tag color="blue">{intl.formatMessage({ id: 'pages.webScraper.statistics.totalResults' })} {statistics?.totalResults || 0}</Tag>
+              <Tag color="success">{intl.formatMessage({ id: 'pages.webScraper.statistics.successResults' })} {statistics?.successResults || 0}</Tag>
+              <Tag color="error">{intl.formatMessage({ id: 'pages.webScraper.statistics.failedResults' })} {statistics?.failedResults || 0}</Tag>
+              <Tag color="purple">{intl.formatMessage({ id: 'pages.webScraper.statistics.matchedResults' })} {statistics?.matchedResults || 0}</Tag>
+            </Space>
+          </Space>
+        }
         actionRef={actionRef}
         rowKey="id"
         search={false}
@@ -194,7 +221,7 @@ const WebScraperResults: React.FC = () => {
         toolBarRender={() => [
           <Input.Search
             key="search"
-            placeholder="搜索URL或标题..."
+            placeholder={intl.formatMessage({ id: 'pages.webScraper.results.search.placeholder' })}
             allowClear
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -207,7 +234,7 @@ const WebScraperResults: React.FC = () => {
       />
 
       <Modal
-        title={intl.formatMessage({ id: 'pages.web-scraper.results.title.resultDetail' })}
+        title={intl.formatMessage({ id: 'pages.webScraper.results.title.resultDetail' })}
         open={detailVisible}
         onCancel={() => {
           setDetailVisible(false);
@@ -219,43 +246,43 @@ const WebScraperResults: React.FC = () => {
         {currentResult && (
           <>
             <Descriptions bordered column={2} style={{ marginBottom: 16 }}>
-              <Descriptions.Item label="任务名称">{currentResult.taskName}</Descriptions.Item>
-              <Descriptions.Item label="URL">
+              <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.results.detail.taskName' })}>{currentResult.taskName}</Descriptions.Item>
+              <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.results.detail.url' })}>
                 <a href={currentResult.url} target="_blank" rel="noopener noreferrer">
                   {currentResult.url}
                 </a>
               </Descriptions.Item>
-              <Descriptions.Item label="标题">{currentResult.title || '-'}</Descriptions.Item>
-              <Descriptions.Item label="状态">
+              <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.results.detail.title' })}>{currentResult.title || '-'}</Descriptions.Item>
+              <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.results.detail.status' })}>
                 <Tag color={currentResult.success ? 'success' : 'error'}>
-                  {currentResult.success ? '成功' : '失败'}
+                  {currentResult.success ? intl.formatMessage({ id: 'pages.webScraper.results.status.success' }) : intl.formatMessage({ id: 'pages.webScraper.results.status.failed' })}
                 </Tag>
               </Descriptions.Item>
-              <Descriptions.Item label="内容长度">
+              <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.results.detail.contentLength' })}>
                 {(currentResult.contentLength / 1024).toFixed(2)} KB
               </Descriptions.Item>
-              <Descriptions.Item label="抓取时间">
+              <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.results.detail.scrapeTime' })}>
                 {currentResult.createdAt ? new Date(currentResult.createdAt).toLocaleString() : '-'}
               </Descriptions.Item>
             </Descriptions>
 
             {currentResult.error && (
-              <Card title="错误信息" size="small" style={{ marginBottom: 16 }}>
+              <Card title={intl.formatMessage({ id: 'pages.webScraper.results.detail.errorInfo' })} size="small" style={{ marginBottom: 16 }}>
                 <Tag color="error">{currentResult.error}</Tag>
               </Card>
             )}
 
             {currentResult.isFiltered && (
-              <Card title="AI筛选结果" size="small" style={{ marginBottom: 16 }}>
+              <Card title={intl.formatMessage({ id: 'pages.webScraper.results.detail.aiFilterResult' })} size="small" style={{ marginBottom: 16 }}>
                 <Space direction="vertical">
                   <Space>
                     <Tag color={currentResult.isMatched ? 'green' : 'default'}>
-                      {currentResult.isMatched ? '匹配' : '未匹配'}
+                      {currentResult.isMatched ? intl.formatMessage({ id: 'pages.webScraper.results.match.matched' }) : intl.formatMessage({ id: 'pages.webScraper.results.match.unmatched' })}
                     </Tag>
-                    <span>相关度：{currentResult.relevanceScore ?? 0}%</span>
+                    <span>{intl.formatMessage({ id: 'pages.webScraper.results.detail.relevance' })}：{currentResult.relevanceScore ?? 0}%</span>
                   </Space>
                   {currentResult.matchReason && (
-                    <span style={{ color: '#666' }}>原因：{currentResult.matchReason}</span>
+                    <span style={{ color: '#666' }}>{intl.formatMessage({ id: 'pages.webScraper.results.detail.reason' })}：{currentResult.matchReason}</span>
                   )}
                 </Space>
               </Card>
@@ -269,13 +296,13 @@ const WebScraperResults: React.FC = () => {
                   key: 'content',
                   label: (
                     <span>
-                      <FileTextOutlined /> 内容
+                      <FileTextOutlined /> {intl.formatMessage({ id: 'pages.webScraper.results.tabs.content' })}
                     </span>
                   ),
                   children: (
                     <Card size="small">
                       <pre style={{ maxHeight: 400, overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-                        {currentResult.content || '无内容'}
+                        {currentResult.content || intl.formatMessage({ id: 'pages.webScraper.results.noContent' })}
                       </pre>
                     </Card>
                   ),
@@ -284,7 +311,7 @@ const WebScraperResults: React.FC = () => {
                   key: 'images',
                   label: (
                     <span>
-                      <PictureOutlined /> 图片 ({currentResult.images?.length || 0})
+                      <PictureOutlined /> {intl.formatMessage({ id: 'pages.webScraper.results.tabs.images' })} ({currentResult.images?.length || 0})
                     </span>
                   ),
                   children: (
@@ -293,10 +320,10 @@ const WebScraperResults: React.FC = () => {
                         <Col span={8} key={idx}>
                           <Card size="small" cover={<img src={img} alt="" style={{ height: 120, objectFit: 'cover' }} />}>
                             <Card.Meta
-                              title={`图片 ${idx + 1}`}
+                              title={`${intl.formatMessage({ id: 'pages.webScraper.results.tabs.images' })} ${idx + 1}`}
                               description={
                                 <a href={img} target="_blank" rel="noopener noreferrer">
-                                  查看原图
+                                  {intl.formatMessage({ id: 'pages.webScraper.results.viewOriginal' })}
                                 </a>
                               }
                             />
@@ -305,7 +332,7 @@ const WebScraperResults: React.FC = () => {
                       ))}
                       {(!currentResult.images || currentResult.images.length === 0) && (
                         <Col span={24}>
-                          <div style={{ textAlign: 'center', color: '#999' }}>无图片</div>
+                          <div style={{ textAlign: 'center', color: '#999' }}>{intl.formatMessage({ id: 'pages.webScraper.results.noImages' })}</div>
                         </Col>
                       )}
                     </Row>
@@ -315,7 +342,7 @@ const WebScraperResults: React.FC = () => {
                   key: 'links',
                   label: (
                     <span>
-                      <LinkOutlined /> 链接 ({currentResult.links?.length || 0})
+                      <LinkOutlined /> {intl.formatMessage({ id: 'pages.webScraper.results.tabs.links' })} ({currentResult.links?.length || 0})
                     </span>
                   ),
                   children: (
@@ -328,7 +355,7 @@ const WebScraperResults: React.FC = () => {
                         </div>
                       ))}
                       {(!currentResult.links || currentResult.links.length === 0) && (
-                        <div style={{ textAlign: 'center', color: '#999' }}>无链接</div>
+                        <div style={{ textAlign: 'center', color: '#999' }}>{intl.formatMessage({ id: 'pages.webScraper.results.noLinks' })}</div>
                       )}
                     </div>
                   ),

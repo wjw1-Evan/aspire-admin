@@ -142,7 +142,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
         <Col xs={24} sm={24} md={8}>
           <ProFormSelect
             name="priority"
-            label={intl.formatMessage({ id: 'pages.taskManagement.priority' })}
+            label={intl.formatMessage({ id: 'pages.taskManagement.form.priority' })}
             options={[
               { label: intl.formatMessage({ id: 'pages.taskManagement.priority.low' }), value: TaskPriority.Low }, { label: intl.formatMessage({ id: 'pages.taskManagement.priority.medium' }), value: TaskPriority.Medium }, { label: intl.formatMessage({ id: 'pages.taskManagement.priority.high' }), value: TaskPriority.High }, { label: intl.formatMessage({ id: 'pages.taskManagement.priority.urgent' }), value: TaskPriority.Urgent },
             ]}
@@ -161,20 +161,20 @@ const TaskForm: React.FC<TaskFormProps> = ({
           />
         </Col>
         <Col xs={24} sm={24} md={8}>
-          <ProFormDigit name="estimatedDuration" label={intl.formatMessage({ id: 'pages.taskManagement.estimatedDuration' })} placeholder={intl.formatMessage({ id: 'pages.taskManagement.estimatedDurationPlaceholder' })} min={0} fieldProps={{ style: { width: '100%' } }} />
+          <ProFormDigit name="estimatedDuration" label={intl.formatMessage({ id: 'pages.taskManagement.form.estimatedDuration' })} placeholder={intl.formatMessage({ id: 'pages.taskManagement.estimatedDurationPlaceholder' })} min={0} fieldProps={{ style: { width: '100%' } }} />
         </Col>
       </Row>
       <Row gutter={16}>
         <Col xs={24} sm={24} md={12}>
-          <ProFormDatePicker name="plannedStartTime" label={intl.formatMessage({ id: 'pages.taskManagement.plannedStartTime' })} showTime format="YYYY-MM-DD HH:mm" placeholder={intl.formatMessage({ id: 'pages.taskManagement.plannedStartTimePlaceholder' })} fieldProps={{ style: { width: '100%' } }} />
+          <ProFormDatePicker name="plannedStartTime" label={intl.formatMessage({ id: 'pages.taskManagement.form.plannedStartTime' })} showTime format="YYYY-MM-DD HH:mm" placeholder={intl.formatMessage({ id: 'pages.taskManagement.plannedStartTimePlaceholder' })} fieldProps={{ style: { width: '100%' } }} />
         </Col>
         <Col xs={24} sm={24} md={12}>
-          <ProFormDatePicker name="plannedEndTime" label={intl.formatMessage({ id: 'pages.taskManagement.plannedEndTime' })} showTime format="YYYY-MM-DD HH:mm" placeholder={intl.formatMessage({ id: 'pages.taskManagement.plannedEndTimePlaceholder' })} fieldProps={{ style: { width: '100%' } }} />
+          <ProFormDatePicker name="plannedEndTime" label={intl.formatMessage({ id: 'pages.taskManagement.form.plannedEndTime' })} showTime format="YYYY-MM-DD HH:mm" placeholder={intl.formatMessage({ id: 'pages.taskManagement.plannedEndTimePlaceholder' })} fieldProps={{ style: { width: '100%' } }} />
         </Col>
       </Row>
       <ProFormSelect
         name="participantIds"
-        label={intl.formatMessage({ id: 'pages.taskManagement.participants' })}
+        label={intl.formatMessage({ id: 'pages.taskManagement.form.participants' })}
         mode="multiple"
         placeholder={intl.formatMessage({ id: 'pages.taskManagement.participantsPlaceholder' })}
         showSearch

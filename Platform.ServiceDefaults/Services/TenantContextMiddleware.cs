@@ -55,21 +55,3 @@ public static class TenantContextMiddlewareExtensions
         return builder.UseMiddleware<TenantContextMiddleware>();
     }
 }
-
-/// <summary>
-/// JWT Claims 解析辅助方法（静态）
-/// </summary>
-public static class JwtHelper
-{
-    /// <summary>
-    /// 从 ClaimsPrincipal 获取企业ID
-    /// </summary>
-    public static string? GetCompanyId(ClaimsPrincipal? principal)
-        => principal?.FindFirst("companyId")?.Value;
-
-    /// <summary>
-    /// 从 ClaimsPrincipal 获取用户ID
-    /// </summary>
-    public static string? GetUserId(ClaimsPrincipal? principal)
-        => principal?.FindFirst("userId")?.Value;
-}

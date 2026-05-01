@@ -197,3 +197,12 @@ public class JwtService : IJwtService
         };
     }
 }
+
+public static class JwtHelper
+{
+    public static string? GetCompanyId(ClaimsPrincipal? principal)
+        => principal?.FindFirst("companyId")?.Value;
+
+    public static string? GetUserId(ClaimsPrincipal? principal)
+        => principal?.FindFirst("userId")?.Value;
+}

@@ -215,6 +215,7 @@ git push origin main
 | 同步等待异步 | 使用 `await` |
 | 缺失权限检查 | 必须使用 `[RequireMenu]` |
 | 循环内调用单条查询 | 必须使用批量查询方法 |
+| 使用 defaultMessage 兜底 | 翻译 key 不存在时应补充翻译，而非使用 defaultMessage |
 
 ---
 

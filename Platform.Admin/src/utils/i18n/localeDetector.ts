@@ -2,7 +2,7 @@
  * 缺失翻译检测器 - 通过 console.warn 捕获 React Intl 的缺失消息
  */
 
-import { getIntl as originalGetIntl, addLocale, getLocale, setLocale } from '@umijs/max';
+import { getIntl as originalGetIntl, addLocale, getLocale } from '@umijs/max';
 import { translateText } from './translationService';
 
 interface MissingTranslation {
@@ -153,55 +153,6 @@ async function handleMissingTranslation(id: string): Promise<void> {
   }
 }
 
-  if (translatingIds.has(cacheKey)) {
-    return;
-  }
-
-  if (currentLocale === 'en-US') {
-    return;
-  }
-
-  const sourceText = getSourceText(id);
-  if (!sourceText) {
-    console.warn('[i18n] Missing source text for:', id);
-    return;
-  }
-
-  missingTranslations.set(cacheKey, { id, locale: currentLocale, sourceText });
-  translatingIds.add(cacheKey);
-
-  console.log('[i18n] Missing translation detected:', { id, locale: currentLocale, sourceText });
-
-  try {
-    const translated = await translateText(sourceText, currentLocale, sourceText);
-    
-    if (translated && translated !== sourceText) {
-      const currentMessages = getMessages(currentLocale);
-      const updatedMessages = {
-        ...currentMessages,
-        [id]: translated,
-      };
-
-      addLocale(currentLocale, updatedMessages, {
-        momentLocale: currentLocale.split('-')[1]?.toLowerCase(),
-        antd: { locale: currentLocale } as any,
-      });
-
-      // 保存到 localStorage
-      const saved = loadSavedTranslations();
-      if (!saved[currentLocale]) saved[currentLocale] = {};
-      saved[currentLocale][id] = translated;
-      saveTranslationsToStorage(saved);
-
-      console.log('[i18n] Translation added:', { id, locale: currentLocale, translated });
-    }
-  } catch (error) {
-    console.error('[i18n] Translation failed:', error);
-  } finally {
-    translatingIds.delete(cacheKey);
-  }
-}
-
 /**
  * 解析 React Intl 的警告消息
  * React Intl 格式: [React Intl] Missing message: "id" for locale: "en-US"
@@ -235,6 +186,11 @@ export function startMissingTranslationDetection(): void {
     console.warn = function(...args: any[]) {
       const message = args[0];
 
+      // 调试：打印所有 console.warn 调用
+      if (typeof message === 'string' && message.includes('Missing message')) {
+        console.log('[i18n] 🔔 拦截到 console.warn:', message);
+      }
+
       if (typeof message === 'string' && message.includes('Missing message')) {
         const missingId = parseIntlWarning(message);
         if (missingId && isEnabled) {
@@ -256,12 +212,12 @@ export function startMissingTranslationDetection(): void {
  */
 export function stopMissingTranslationDetection(): void {
   isEnabled = false;
-  
+
   if (consoleWarnSpy) {
     console.warn = consoleWarnSpy;
     consoleWarnSpy = null;
   }
-  
+
   console.log('[i18n] Missing translation detection disabled');
 }
 

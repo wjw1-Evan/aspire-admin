@@ -48,6 +48,8 @@ export function initSavedTranslations(): void {
   const saved = loadSavedTranslations();
   const currentLocale = getLocale();
 
+  console.log('[i18n] 📦 初始化翻译加载:', { currentLocale, savedLocales: Object.keys(saved) });
+
   if (saved[currentLocale]) {
     const messages = saved[currentLocale];
     const currentMessages = getMessages(currentLocale);
@@ -55,10 +57,11 @@ export function initSavedTranslations(): void {
 
     addLocale(currentLocale, merged, {
       momentLocale: currentLocale.split('-')[1]?.toLowerCase(),
-      antd: { locale: currentLocale } as any,
     });
 
-    console.log('[i18n] Loaded saved translations for:', currentLocale, Object.keys(messages).length);
+    console.log('[i18n] ✅ 已加载保存的翻译:', { locale: currentLocale, count: Object.keys(messages).length, keys: Object.keys(messages) });
+  } else {
+    console.log('[i18n] ℹ️  没有保存的翻译:', { locale: currentLocale });
   }
 }
 
@@ -88,10 +91,67 @@ function getSourceText(id: string): string | undefined {
 async function handleMissingTranslation(id: string): Promise<void> {
   const currentLocale = getLocale();
   const cacheKey = `${currentLocale}:${id}`;
-  
+
+  console.log('[i18n] 🔍 发现未翻译的内容:', { id, locale: currentLocale });
+
   if (missingTranslations.has(cacheKey)) {
+    console.log('[i18n] ⏭️  已在翻译队列中，跳过:', id);
     return;
   }
+
+  if (translatingIds.has(cacheKey)) {
+    console.log('[i18n] ⏳ 正在翻译中，跳过:', id);
+    return;
+  }
+
+  if (currentLocale === 'en-US') {
+    console.log('[i18n] ℹ️  当前语言为 en-US，无需翻译:', id);
+    return;
+  }
+
+  const sourceText = getSourceText(id);
+  if (!sourceText) {
+    console.warn('[i18n] ⚠️  找不到源文本（en-US）:', id);
+    return;
+  }
+
+  missingTranslations.set(cacheKey, { id, locale: currentLocale, sourceText });
+  translatingIds.add(cacheKey);
+
+  console.log('[i18n] 🚀 开始翻译:', { id, sourceText, targetLocale: currentLocale });
+
+  try {
+    const translated = await translateText(sourceText, currentLocale, sourceText);
+
+    console.log('[i18n] ✅ 翻译完成:', { id, sourceText, translated, targetLocale: currentLocale });
+
+    if (translated && translated !== sourceText) {
+      const currentMessages = getMessages(currentLocale);
+      const updatedMessages = {
+        ...currentMessages,
+        [id]: translated,
+      };
+
+      addLocale(currentLocale, updatedMessages, {
+        momentLocale: currentLocale.split('-')[1]?.toLowerCase(),
+      });
+
+      // 保存到 localStorage
+      const saved = loadSavedTranslations();
+      if (!saved[currentLocale]) saved[currentLocale] = {};
+      saved[currentLocale][id] = translated;
+      saveTranslationsToStorage(saved);
+
+      console.log('[i18n] 💾 翻译已保存并应用:', { id, locale: currentLocale });
+    } else {
+      console.log('[i18n] ⚠️  翻译结果与原文相同，跳过保存:', { id, translated });
+    }
+  } catch (error) {
+    console.error('[i18n] ❌ 翻译失败:', { id, error });
+  } finally {
+    translatingIds.delete(cacheKey);
+  }
+}
 
   if (translatingIds.has(cacheKey)) {
     return;
@@ -150,9 +210,11 @@ function parseIntlWarning(message: string): string | null {
   // 匹配格式: Missing message: "id" 或 Missing message: 'id'
   const missingMatch = message.match(/Missing message:\s*["']([^"']+)["']/i);
   if (missingMatch) {
-    return missingMatch[1];
+    const id = missingMatch[1];
+    console.log('[i18n] 📝 捕获到缺失翻译警告:', { id, rawMessage: message });
+    return id;
   }
-  
+
   return null;
 }
 
@@ -160,28 +222,33 @@ function parseIntlWarning(message: string): string | null {
  * 启动缺失翻译检测
  */
 export function startMissingTranslationDetection(): void {
-  if (isEnabled) return;
-  
+  if (isEnabled) {
+    console.log('[i18n] ⚠️  翻译检测已启用，跳过重复启动');
+    return;
+  }
+
   isEnabled = true;
 
   if (typeof window !== 'undefined') {
     consoleWarnSpy = console.warn;
-    
+
     console.warn = function(...args: any[]) {
       const message = args[0];
-      
+
       if (typeof message === 'string' && message.includes('Missing message')) {
         const missingId = parseIntlWarning(message);
         if (missingId && isEnabled) {
           handleMissingTranslation(missingId);
         }
       }
-      
+
       return consoleWarnSpy.apply(this, args);
     };
+
+    console.log('[i18n] 🎯 缺失翻译检测已启动（开发模式）');
+  } else {
+    console.log('[i18n] ℹ️  非浏览器环境，跳过翻译检测');
   }
-  
-  console.log('[i18n] Missing translation detection enabled');
 }
 
 /**

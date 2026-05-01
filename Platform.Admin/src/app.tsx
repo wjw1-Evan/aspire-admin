@@ -24,7 +24,6 @@ import TokenRefreshManager from '@/utils/tokenRefreshManager';
 import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './request-error-config';
 import { getIconFromMap } from '@/utils/iconMap';
-import { startMissingTranslationDetection, initSavedTranslations } from '@/utils/i18n';
 
 // 🚀 核心优化：全量 Layout 系统中剥离大型组件（AiAssistant 是真正的 React 组件，可以使用 lazy）
 const AiAssistant = React.lazy(() => import('@/components/AiAssistant'));
@@ -32,10 +31,6 @@ const AiAssistant = React.lazy(() => import('@/components/AiAssistant'));
 
 const isDev = process.env.NODE_ENV === 'development';
 const loginPath = '/user/login';
-
-if (isDev) {
-  startMissingTranslationDetection();
-}
 
 
 /**
@@ -106,15 +101,6 @@ export async function getInitialState(): Promise<{
     ...defaultSettings,
     navTheme: initialTheme,
   } as Partial<LayoutSettings>;
-
-  // 初始化已保存的翻译（开发模式）
-  if (isDev) {
-    try {
-      initSavedTranslations();
-    } catch (error) {
-      console.warn('[i18n] Failed to init saved translations:', error);
-    }
-  }
 
   if (!whiteListPages.includes(location.pathname)) {
     const currentUser = await fetchUserInfo();

@@ -40,15 +40,4 @@ public interface IChatAiService
     /// <param name="triggerMessage">触发消息</param>
     /// <returns>是否跳过</returns>
     bool ShouldSkipAutomaticAssistantReply(ChatMessage triggerMessage);
-
-    /// <summary>
-    /// 翻译文本到目标语言
-    /// </summary>
-    /// <param name="text">要翻译的文本</param>
-    /// <param name="targetLocale">目标语言区域（如 zh-CN, ja-JP）</param>
-    /// <param name="sourceText">源文本（英文原文，用于上下文）</param>
-    /// <param name="userId">用户ID</param>
-    /// <param name="cancellationToken">取消令牌</param>
-    /// <returns>翻译后的文本</returns>
-    Task<string> TranslateTextAsync(string text, string targetLocale, string? sourceText, string userId, CancellationToken cancellationToken);
 }

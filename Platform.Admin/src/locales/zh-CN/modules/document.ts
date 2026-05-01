@@ -130,4 +130,24 @@ export default {
   'pages.document.selectWorkflow': '选择流程',
   'pages.document.selectWorkflowPlaceholder': '请选择流程定义',
   'pages.document.selectWorkflowRequired': '请选择流程定义',
+
+  // list.tsx columns (pages.document.columns.*)
+  'pages.document.columns.title': '标题',
+  'pages.document.columns.type': '类型',
+  'pages.document.columns.category': '分类',
+  'pages.document.columns.status': '状态',
+  'pages.document.columns.createdBy': '创建人',
+  'pages.document.columns.createdAt': '创建时间',
+  'pages.document.columns.updatedAt': '更新时间',
+  'pages.document.columns.content': '内容',
+
+  // list.tsx statistics (pages.document.statistics.*)
+  'pages.document.statistics.total': '总数',
+  'pages.document.statistics.draft': '草稿',
+  'pages.document.statistics.pending': '审批中',
+  'pages.document.statistics.approved': '已通过',
+  'pages.document.statistics.rejected': '已拒绝',
+
+  // list.tsx search placeholder
+  'pages.document.searchPlaceholder': '搜索标题或编号',
 };

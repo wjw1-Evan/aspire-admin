@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
+using System.Text.Json;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ServiceDefaults.Services;
 
@@ -21,7 +23,14 @@ public class TenantContextMiddleware
         if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(companyId))
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            await context.Response.WriteAsync("Token无效或已过期");
+            context.Response.ContentType = "application/json";
+            var errorResponse = new ApiResponse(
+                success: false,
+                message: "Token无效或已过期",
+                errorCode: "UNAUTHORIZED",
+                traceId: context.TraceIdentifier
+            );
+            await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse));
             return;
         }
 

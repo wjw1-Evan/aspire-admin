@@ -26,9 +26,6 @@ public class PlatformDbContext : DbContext
     public static string? CurrentUserIdValue => _currentUserId.Value;
     public static string? CurrentCompanyIdValue => _currentCompanyId.Value;
 
-    protected string? CurrentUserId => _currentUserId.Value;
-    protected string? CurrentCompanyId => _currentCompanyId.Value;
-
     public static void SetContext(string companyId, string? userId)
     {
         _currentCompanyId.Value = companyId;
@@ -53,8 +50,8 @@ public class PlatformDbContext : DbContext
     private void ApplyAuditInfoCore()
     {
         var now = DateTime.UtcNow;
-        var userId = CurrentUserId;
-        var companyId = CurrentCompanyId;
+        var userId = CurrentUserIdValue;
+        var companyId = CurrentCompanyIdValue;
 
         foreach (var entry in ChangeTracker.Entries())
         {
@@ -144,13 +141,13 @@ public class PlatformDbContext : DbContext
             && typeof(ISoftDeletable).IsAssignableFrom(entityType))
         {
             modelBuilder.Entity<TEntity>().HasQueryFilter(
-                e => ((IMultiTenant)e).CompanyId == CurrentCompanyId
+                e => ((IMultiTenant)e).CompanyId == CurrentCompanyIdValue
                     && ((ISoftDeletable)e).IsDeleted != true);
         }
         else if (typeof(IMultiTenant).IsAssignableFrom(entityType))
         {
             modelBuilder.Entity<TEntity>().HasQueryFilter(
-                e => ((IMultiTenant)e).CompanyId == CurrentCompanyId);
+                e => ((IMultiTenant)e).CompanyId == CurrentCompanyIdValue);
         }
         else if (typeof(ISoftDeletable).IsAssignableFrom(entityType))
         {

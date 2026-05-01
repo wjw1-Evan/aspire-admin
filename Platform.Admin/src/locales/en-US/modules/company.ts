@@ -91,4 +91,5 @@ export default {
   'pages.joinRequests.pending.title': 'Join Requests',
   'pages.joinRequests.search.companyPlaceholder': 'Search company name',
   'pages.joinRequests.search.placeholder': 'Search username or email',
+  'pages.company.requestCancelled': 'Request Cancelled',
 };

@@ -137,4 +137,7 @@ export default {
   'pages.document.statistics.pending': 'Pending',
   'pages.document.statistics.approved': 'Approved',
   'pages.document.statistics.rejected': 'Rejected',
+  'pages.document.message.selectWorkflow': 'Please select workflow',
+  'pages.document.message.selectWorkflowFirst': 'Please select workflow first',
+  'pages.document.message.submitted': 'Submitted for approval',
 };

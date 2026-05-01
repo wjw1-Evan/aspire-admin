@@ -100,4 +100,116 @@ export default {
   // Empty state
   'pages.dashboard.noCards': 'No cards yet',
   'pages.dashboard.noCardsDesc': 'Click the button below to add your first card',
+
+  // Card type groups
+  'pages.dashboard.cardTypeGroup.basic': '-- Basic --',
+  'pages.dashboard.cardTypeGroup.chart': '-- Chart --',
+  'pages.dashboard.cardTypeGroup.complex': '-- Complex --',
+
+  // Card types
+  'pages.dashboard.cardType.statistic': 'Statistic',
+  'pages.dashboard.cardType.text': 'Text',
+  'pages.dashboard.cardType.image': 'Image',
+  'pages.dashboard.cardType.header': 'Dashboard Header',
+  'pages.dashboard.cardType.clock': 'Clock',
+  'pages.dashboard.cardType.statusBar': 'Status Bar',
+  'pages.dashboard.cardType.gauge': 'Gauge',
+  'pages.dashboard.cardType.ring': 'Ring Chart',
+  'pages.dashboard.cardType.lineChart': 'Line Chart',
+  'pages.dashboard.cardType.barChart': 'Bar Chart',
+  'pages.dashboard.cardType.areaChart': 'Area Chart',
+  'pages.dashboard.cardType.pieChart': 'Pie Chart',
+  'pages.dashboard.cardType.radarChart': 'Radar Chart',
+  'pages.dashboard.cardType.statusGrid': 'Status Grid',
+  'pages.dashboard.cardType.functionModule': 'Function Module',
+  'pages.dashboard.cardType.alertList': 'Alert List',
+  'pages.dashboard.cardType.progressBar': 'Progress Bar',
+  'pages.dashboard.cardType.table': 'Table',
+
+  // Data modules
+  'pages.dashboard.dataModule.static': 'Static Data (Manual)',
+  'pages.dashboard.dataModule.task': 'Task Statistics',
+  'pages.dashboard.dataModule.user': 'User Statistics',
+  'pages.dashboard.dataModule.storage': 'File Storage',
+  'pages.dashboard.dataModule.park': 'Park Management',
+  'pages.dashboard.dataModule.workflow': 'Workflow',
+  'pages.dashboard.dataModule.iot': 'IoT Devices',
+  'pages.dashboard.dataModule.visit': 'Visit Tasks',
+  'pages.dashboard.dataModule.document': 'Document Management',
+
+  // Aggregation
+  'pages.dashboard.aggregation.count': 'Count',
+  'pages.dashboard.aggregation.avg': 'Average',
+  'pages.dashboard.aggregation.max': 'Maximum',
+  'pages.dashboard.aggregation.min': 'Minimum',
+  'pages.dashboard.aggregation.sum': 'Sum',
+  'pages.dashboard.aggregation.latest': 'Latest',
+
+  // Time range
+  'pages.dashboard.timeRange.today': 'Today',
+  'pages.dashboard.timeRange.week': 'This Week',
+  'pages.dashboard.timeRange.month': 'This Month',
+  'pages.dashboard.timeRange.year': 'This Year',
+  'pages.dashboard.timeRange.all': 'All',
+
+  // Boolean
+  'pages.dashboard.boolean.yes': 'Yes',
+  'pages.dashboard.boolean.no': 'No',
+
+  // Icons
+  'pages.dashboard.icon.thunder': 'Thunder',
+  'pages.dashboard.icon.monitor': 'Monitor',
+  'pages.dashboard.icon.bulb': 'Bulb',
+  'pages.dashboard.icon.bank': 'Bank',
+  'pages.dashboard.icon.setting': 'Setting',
+  'pages.dashboard.icon.sound': 'Sound',
+  'pages.dashboard.icon.car': 'Vehicle',
+  'pages.dashboard.icon.video': 'Video',
+  'pages.dashboard.icon.idcard': 'ID Card',
+
+  // Trend
+  'pages.dashboard.trend.none': 'None',
+  'pages.dashboard.trend.up': 'Up',
+  'pages.dashboard.trend.down': 'Down',
+
+  // Gauge style
+  'pages.dashboard.gaugeStyle.default': 'Default',
+  'pages.dashboard.gaugeStyle.simple': 'Simple',
+  'pages.dashboard.gaugeStyle.temperature': 'Temperature',
+
+  // Status
+  'pages.dashboard.status.normal': 'Normal',
+  'pages.dashboard.status.busy': 'Busy',
+  'pages.dashboard.status.urgent': 'Urgent',
+  'pages.dashboard.status.offline': 'Offline',
+  'pages.dashboard.status.online': 'Online',
+  'pages.dashboard.status.warning': 'Warning',
+
+  // Alert level
+  'pages.dashboard.alertLevel.info': 'Info',
+  'pages.dashboard.alertLevel.warning': 'Warning',
+  'pages.dashboard.alertLevel.error': 'Error',
+  'pages.dashboard.alertLevel.critical': 'Critical',
+
+  // Alignment
+  'pages.dashboard.alignment.left': 'Left',
+  'pages.dashboard.alignment.center': 'Center',
+  'pages.dashboard.alignment.right': 'Right',
+
+  // Image fit
+  'pages.dashboard.imageFit.cover': 'Cover',
+  'pages.dashboard.imageFit.contain': 'Contain',
+  'pages.dashboard.imageFit.fill': 'Fill',
+
+  // Designer
+  'pages.dashboard.designer.layoutSaved': 'Layout saved',
+  'pages.dashboard.designer.saveFailed': 'Save failed',
+  'pages.dashboard.designer.cardCopied': 'Card copied',
+  'pages.dashboard.designer.addCard': 'Add Card',
+  'pages.dashboard.designer.saveLayout': 'Save Layout',
+  'pages.dashboard.designer.preview': 'Preview',
+  'pages.dashboard.designer.noCardAddFirst': 'No cards yet, click "Add Card" to start designing',
+
+  // Designer confirm dialogs
+  'pages.dashboard.DashboardDesigner.confirm.deleteCard': 'Are you sure to delete this card?',
 };

@@ -322,4 +322,6 @@ export default {
   'pages.workflow.knowledgeBase.form.category': 'Category',
   'pages.workflow.knowledgeBase.form.categoryPlaceholder': 'Please enter category',
   'pages.workflow.knowledgeBase.form.enabled': 'Enabled',
+  'pages.workflow.designer.message.layoutApplied': 'Layout auto-applied',
+  'pages.workflow.designer.message.nodeDeleted': 'Node deleted',
 };

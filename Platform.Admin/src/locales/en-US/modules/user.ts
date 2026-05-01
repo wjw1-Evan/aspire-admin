@@ -153,4 +153,7 @@ export default {
   'pages.userManagement.message.updateSuccess': 'Update successful',
   'pages.userManagement.detail.title': 'User Details',
   'pages.myActivity.statistics.avgDuration': 'Avg Duration',
+  'pages.account.center.upload.success': 'Avatar uploaded successfully',
+  'pages.account.central.upload.imageOnly': 'Only image files can be uploaded',
+  'pages.account.central.upload.imageSizeLimit': 'Image size cannot exceed 5MB',
 };

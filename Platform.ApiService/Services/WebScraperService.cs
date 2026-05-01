@@ -209,7 +209,7 @@ public class WebScraperService : IWebScraperService
             };
 
             var heartbeatCts = new CancellationTokenSource();
-            var heartbeatTask = UpdateHeartbeatAsync(id, taskCompanyId, heartbeatCts.Token);
+            var heartbeatTask = UpdateHeartbeatAsync(id, taskCompanyId, task.UserId, heartbeatCts.Token);
 
             try
             {
@@ -491,7 +491,7 @@ public class WebScraperService : IWebScraperService
         await _context.SaveChangesAsync();
     }
 
-    private async Task UpdateHeartbeatAsync(string taskId, string companyId, CancellationToken cancellationToken)
+    private async Task UpdateHeartbeatAsync(string taskId, string companyId, string userId, CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
         {
@@ -503,7 +503,7 @@ public class WebScraperService : IWebScraperService
                 var context = scope.ServiceProvider.GetRequiredService<DbContext>();
                 var tenantSetter = scope.ServiceProvider.GetRequiredService<ITenantContextSetter>();
 
-                tenantSetter.SetContext(companyId, string.Empty);
+                tenantSetter.SetContext(companyId, userId);
 
                 var task = await context.Set<WebScrapingTask>()
                     .IgnoreQueryFilters()
@@ -512,7 +512,6 @@ public class WebScraperService : IWebScraperService
                 if (task != null && task.LastStatus == ScrapingStatus.Running)
                 {
                     task.LastHeartbeatAt = DateTime.UtcNow;
-                    tenantSetter.SetContext(task.CompanyId, task.UserId);
                     await context.SaveChangesAsync(cancellationToken);
                 }
             }

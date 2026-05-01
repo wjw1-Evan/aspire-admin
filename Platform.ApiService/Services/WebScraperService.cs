@@ -503,7 +503,7 @@ public class WebScraperService : IWebScraperService
                 var context = scope.ServiceProvider.GetRequiredService<DbContext>();
                 var tenantSetter = scope.ServiceProvider.GetRequiredService<ITenantContextSetter>();
 
-                tenantSetter.SetContext(companyId, null);
+                tenantSetter.SetContext(companyId, string.Empty);
 
                 var task = await context.Set<WebScrapingTask>()
                     .IgnoreQueryFilters()
@@ -512,8 +512,8 @@ public class WebScraperService : IWebScraperService
                 if (task != null && task.LastStatus == ScrapingStatus.Running)
                 {
                     task.LastHeartbeatAt = DateTime.UtcNow;
+                    tenantSetter.SetContext(task.CompanyId, task.UserId);
                     await context.SaveChangesAsync(cancellationToken);
-                    _logger.LogDebug("[心跳] 任务 {TaskId} 心跳更新", taskId);
                 }
             }
             catch (OperationCanceledException)

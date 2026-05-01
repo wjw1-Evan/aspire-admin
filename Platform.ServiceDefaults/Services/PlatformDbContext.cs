@@ -26,7 +26,7 @@ public class PlatformDbContext : DbContext
     public static string? CurrentUserIdValue => _currentUserId.Value;
     public static string? CurrentCompanyIdValue => _currentCompanyId.Value;
 
-    public static void SetContext(string companyId, string? userId)
+    public static void SetContext(string companyId, string userId)
     {
         _currentCompanyId.Value = companyId;
         _currentUserId.Value = userId;

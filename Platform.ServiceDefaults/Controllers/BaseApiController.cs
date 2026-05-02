@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
+using System.Security.Authentication;
 
 namespace Platform.ServiceDefaults.Controllers;
 
@@ -33,11 +34,11 @@ public abstract class BaseApiController : ControllerBase
 
     /// <summary>
     /// 当前登录用户的 ID（必填版本）
-    /// 若用户未登录则抛出 
+    /// 若用户未登录则抛出 AuthenticationException（返回 401）
     /// 用于需要强制登录的业务接口
     /// </summary>
     protected string RequiredUserId
-        => CurrentUserId ?? throw new SecurityTokenExpiredException("未找到用户信息");
+        => CurrentUserId ?? throw new AuthenticationException("未找到用户信息");
 
     /// <summary>
     /// 当前用户所属企业的 ID（可空版本）
@@ -47,11 +48,11 @@ public abstract class BaseApiController : ControllerBase
 
     /// <summary>
     /// 当前用户所属企业的 ID（必填版本）
-    /// 若企业信息不存在则抛出
+    /// 若企业信息不存在则抛出 UnauthorizedAccessException（返回 403）
     /// 用于需要多租户隔离的业务接口
     /// </summary>
     protected string RequiredCompanyId
-        => CurrentCompanyId ?? throw new SecurityTokenExpiredException("未找到当前用户的企业信息");
+        => CurrentCompanyId ?? throw new UnauthorizedAccessException("未找到当前用户的企业信息");
 
     /// <summary>
     /// 创建成功响应，将数据包装为统一的 ApiResponse 格式

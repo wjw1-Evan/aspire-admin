@@ -135,8 +135,7 @@ export const errorConfig: RequestConfig = {
           return;
         }
 
-        // 清除 token
-        tokenUtils.clearAllTokens();
+     
 
         // 如果是获取当前用户的请求，不显示错误提示（因为可能是未登录状态）
         const isCurrentUserRequest = error.config?.url?.includes('/apiservice/api/auth/current-user') ||

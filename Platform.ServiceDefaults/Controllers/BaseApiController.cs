@@ -38,7 +38,7 @@ public abstract class BaseApiController : ControllerBase
     /// 用于需要强制登录的业务接口
     /// </summary>
     protected string RequiredUserId
-        => CurrentUserId ?? throw new AuthenticationException("未找到用户信息");
+        => CurrentUserId ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
 
     /// <summary>
     /// 当前用户所属企业的 ID（可空版本）
@@ -52,7 +52,7 @@ public abstract class BaseApiController : ControllerBase
     /// 用于需要多租户隔离的业务接口
     /// </summary>
     protected string RequiredCompanyId
-        => CurrentCompanyId ?? throw new UnauthorizedAccessException("未找到当前用户的企业信息");
+        => CurrentCompanyId ?? throw new UnauthorizedAccessException(ErrorCode.CompanyNotFound);
 
     /// <summary>
     /// 创建成功响应，将数据包装为统一的 ApiResponse 格式

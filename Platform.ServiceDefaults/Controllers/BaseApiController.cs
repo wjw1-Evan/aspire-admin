@@ -38,7 +38,7 @@ public abstract class BaseApiController : ControllerBase
     /// 用于需要强制登录的业务接口
     /// </summary>
     protected string RequiredUserId
-        => CurrentUserId ?? throw new AuthenticationException("未找到用户信息");
+        => CurrentUserId ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
 
     /// <summary>
     /// 当前用户所属企业的 ID（可空版本）

@@ -672,5 +672,6 @@ export const request: RequestConfig = {
     },
   ],
 
-  ...errorConfig,
+  // 手动合并 errorConfig，避免覆盖 responseInterceptors
+  errorConfig: errorConfig.errorConfig,
 };

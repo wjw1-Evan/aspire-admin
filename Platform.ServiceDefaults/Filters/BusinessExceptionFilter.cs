@@ -29,6 +29,7 @@ public class BusinessExceptionFilter : IExceptionFilter
         { typeof(KeyNotFoundException), 404 },
         { typeof(System.Security.Authentication.AuthenticationException), 401 },
         { typeof(UnauthorizedAccessException), 403 },
+        { typeof(Microsoft.IdentityModel.Tokens.SecurityTokenExpiredException), 401 },
     };
 
     public BusinessExceptionFilter(ILogger<BusinessExceptionFilter> logger)

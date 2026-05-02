@@ -127,13 +127,30 @@ export const errorConfig: RequestConfig = {
         // 如果是，说明刷新失败了，跳转到登录页
         if (error?._tokenRefreshAttempted) {
           if (process.env.NODE_ENV === 'development') {
-            console.log('[errorHandler] Token refresh was attempted but failed, redirecting to login');
+            console.log('Token refresh was attempted but failed, redirecting to login');
           }
           // 清除 token 并跳转登录页
           tokenUtils.clearAllTokens();
           AuthenticationService.redirectToLogin('Token refresh failed');
           return;
         }
+
+        // 清除 token
+        tokenUtils.clearAllTokens();
+
+        // 如果是获取当前用户的请求，不显示错误提示（因为可能是未登录状态）
+        const isCurrentUserRequest = error.config?.url?.includes('/apiservice/api/auth/current-user') ||
+          error.config?.url?.includes('/apiservice/api/currentUser');
+        if (isCurrentUserRequest || isAuthError) {
+          // 使用 AuthenticationService 统一跳转
+          AuthenticationService.redirectToLogin(
+            `HTTP ${error.response?.status}`
+          );
+        }
+
+        // 使用 errorInterceptor 静默处理（不显示错误提示给用户）
+        errorInterceptor.handleError(error, context);
+        return; // 不再抛出错误，避免重复处理
       }
 
       // 3. 其他错误使用统一拦截器处理

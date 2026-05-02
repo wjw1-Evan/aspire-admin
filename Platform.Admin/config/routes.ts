@@ -321,6 +321,11 @@ export default [
         path: '/dashboard/share/:token',
         component: './dashboard/share/[token]',
       },
+      {
+        path: '/dashboard/:dashboardId/versions',
+        component: './dashboard/versions',
+        hideInMenu: true,
+      },
     ],
   },
   // 公共分享访问页面（无需布局、无需登录）

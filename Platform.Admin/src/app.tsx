@@ -4,8 +4,7 @@ import type { LayoutSettings } from '@/types';
 import type { CurrentUser, MenuTreeNode } from '@/types';
 import { history, request as requestClient, Link } from '@umijs/max';
 import React, { useEffect, useRef, useMemo } from 'react';
-import { App, Space, ConfigProvider } from 'antd';
-import { theme } from 'antd';
+import { App, Space } from 'antd';
 import { setAppInstance } from '@/utils/antdAppInstance';
 import {
   AvatarDropdown,
@@ -484,16 +483,12 @@ export const layout: RunTimeLayoutConfig = ({
 
 
     childrenRender: (children: React.ReactNode) => {
-      // 根据主题设置选择算法
-      const isDark = initialState?.settings?.navTheme === 'realDark' || initialState?.settings?.navTheme === 'dark';
-      const algorithm = isDark ? theme.darkAlgorithm : theme.defaultAlgorithm;
+
 
       return (
-        <ConfigProvider theme={{ algorithm }}>
-          <App>
-            <AppWrapper currentUser={initialState?.currentUser}>{children}</AppWrapper>
-          </App>
-        </ConfigProvider>
+        <App>
+          <AppWrapper currentUser={initialState?.currentUser}>{children}</AppWrapper>
+        </App>
       );
     },
 

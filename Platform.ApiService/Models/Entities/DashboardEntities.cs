@@ -333,23 +333,111 @@ public class CardDataResponse
     public DateTime RefreshedAt { get; set; }
 }
 
-/// <summary>
-/// 看板统计信息
-/// </summary>
-public class DashboardStatistics
-{
-    /// <summary>总看板数</summary>
-    public int TotalDashboards { get; set; }
+    /// <summary>
+    /// 看板版本实体
+    /// </summary>
+    public class DashboardVersion : BaseEntity
+    {
+        /// <summary>所属看板ID</summary>
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string DashboardId { get; set; } = string.Empty;
 
-    /// <summary>公开看板数</summary>
-    public int PublicDashboards { get; set; }
+        /// <summary>版本号（从1开始递增）</summary>
+        public int VersionNumber { get; set; }
 
-    /// <summary>私有看板数</summary>
-    public int PrivateDashboards { get; set; }
+        /// <summary>看板名称快照</summary>
+        public string Name { get; set; } = string.Empty;
 
-    /// <summary>总卡片数</summary>
-    public int TotalCards { get; set; }
+        /// <summary>描述快照</summary>
+        public string? Description { get; set; }
 
-    /// <summary>最近创建看板数（7天内）</summary>
-    public int RecentCreatedCount { get; set; }
-}
+        /// <summary>布局类型快照</summary>
+        public string LayoutType { get; set; } = "grid";
+
+        /// <summary>主题快照</summary>
+        public string Theme { get; set; } = "light";
+
+        /// <summary>是否公开快照</summary>
+        public bool IsPublic { get; set; }
+
+        /// <summary>卡片列表快照（JSON格式）</summary>
+        public string CardsSnapshot { get; set; } = string.Empty;
+
+        /// <summary>版本备注</summary>
+        public string? Comment { get; set; }
+
+        /// <summary>是否为当前版本</summary>
+        public bool IsCurrentVersion { get; set; } = false;
+
+        /// <summary>创建者用户ID</summary>
+        public string ChangedBy { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// 创建看板版本请求
+    /// </summary>
+    public class CreateDashboardVersionRequest
+    {
+        /// <summary>版本备注</summary>
+        public string? Comment { get; set; }
+    }
+
+    /// <summary>
+    /// 看板版本比较结果
+    /// </summary>
+    public class DashboardVersionComparison
+    {
+        /// <summary>版本1 ID</summary>
+        public string Version1Id { get; set; } = string.Empty;
+
+        /// <summary>版本2 ID</summary>
+        public string Version2Id { get; set; } = string.Empty;
+
+        /// <summary>版本1</summary>
+        public DashboardVersion? Version1 { get; set; }
+
+        /// <summary>版本2</summary>
+        public DashboardVersion? Version2 { get; set; }
+
+        /// <summary>是否有差异</summary>
+        public bool HasDifferences { get; set; }
+
+        /// <summary>比较类型</summary>
+        public string ComparisonType { get; set; } = "json";
+
+        /// <summary>差异内容（JSON对比）</summary>
+        public object? DiffContent { get; set; }
+    }
+
+    /// <summary>
+    /// 看板版本统计信息
+    /// </summary>
+    public class DashboardVersionStatistics
+    {
+        /// <summary>总版本数</summary>
+        public int TotalVersions { get; set; }
+
+        /// <summary>当前版本号</summary>
+        public int CurrentVersionNumber { get; set; }
+    }
+
+    /// <summary>
+    /// 看板统计信息
+    /// </summary>
+    public class DashboardStatistics
+    {
+        /// <summary>总看板数</summary>
+        public int TotalDashboards { get; set; }
+
+        /// <summary>公开看板数</summary>
+        public int PublicDashboards { get; set; }
+
+        /// <summary>私有看板数</summary>
+        public int PrivateDashboards { get; set; }
+
+        /// <summary>总卡片数</summary>
+        public int TotalCards { get; set; }
+
+        /// <summary>最近创建看板数（7天内）</summary>
+        public int RecentCreatedCount { get; set; }
+    }

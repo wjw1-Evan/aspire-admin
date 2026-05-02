@@ -4,7 +4,7 @@ import { Tag, Space, Button, Popconfirm, Grid, message, Input } from 'antd';
 import { Drawer } from 'antd';
 import { PageContainer, ProCard, ModalForm, ProDescriptions, ProTable, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
-import { PlusOutlined, CopyOutlined, ShareAltOutlined, DeleteOutlined, EditOutlined, EyeOutlined, DashboardOutlined, SearchOutlined, FullscreenOutlined } from '@ant-design/icons';
+import { PlusOutlined, CopyOutlined, ShareAltOutlined, DeleteOutlined, EditOutlined, EyeOutlined, DashboardOutlined, SearchOutlined, FullscreenOutlined, HistoryOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import type { ApiResponse, PagedResult } from '@/types';
 import { getErrorMessage } from '@/utils/getErrorMessage';
@@ -175,7 +175,7 @@ const DashboardListPage: React.FC = () => {
     },
     {
       title: intl.formatMessage({ id: 'pages.dashboard.action' }),
-      key: 'action', valueType: 'option', fixed: 'right', width: isMobile ? 120 : 280,
+      key: 'action', valueType: 'option', fixed: 'right', width: isMobile ? 120 : 320,
       render: (_, r) => (
         <Space size={4} wrap>
           <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => handleView(r.id)}>
@@ -189,6 +189,9 @@ const DashboardListPage: React.FC = () => {
           </Button>
           <Button type="link" size="small" icon={<FullscreenOutlined />} onClick={() => handlePreview(r.id)}>
             {intl.formatMessage({ id: 'pages.dashboard.preview' })}
+          </Button>
+          <Button type="link" size="small" icon={<HistoryOutlined />} onClick={() => window.location.href = `/dashboard/${r.id}/versions`}>
+            {intl.formatMessage({ id: 'pages.dashboard.versions' })}
           </Button>
           <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => handleCopy(r.id)}>
             {intl.formatMessage({ id: 'pages.dashboard.copy' })}

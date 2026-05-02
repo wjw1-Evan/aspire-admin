@@ -15,15 +15,18 @@ public class DashboardService : IDashboardService
     private readonly DbContext _context;
     private readonly ILogger<DashboardService> _logger;
     private readonly IDataQueryService _dataQueryService;
+    private readonly IDashboardVersionService _versionService;
 
     public DashboardService(
         DbContext context,
         ILogger<DashboardService> logger,
-        IDataQueryService dataQueryService)
+        IDataQueryService dataQueryService,
+        IDashboardVersionService versionService)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _dataQueryService = dataQueryService ?? throw new ArgumentNullException(nameof(dataQueryService));
+        _versionService = versionService ?? throw new ArgumentNullException(nameof(versionService));
     }
 
     /// <summary>
@@ -54,6 +57,16 @@ public class DashboardService : IDashboardService
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("创建看板成功: {DashboardId}, 名称: {Name}", dashboard.Id, dashboard.Name);
+
+        // 创建初始版本快照
+        try
+        {
+            await _versionService.CreateVersionAsync(dashboard.Id, userId, "初始版本");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "创建初始版本快照失败, DashboardId: {DashboardId}", dashboard.Id);
+        }
 
         return dashboard;
     }
@@ -114,6 +127,16 @@ public class DashboardService : IDashboardService
 
         if (dashboard.UserId != userId)
             throw new UnauthorizedAccessException("无权更新此看板");
+
+        // 更新前创建版本快照
+        try
+        {
+            await _versionService.CreateVersionAsync(id, userId, $"更新前自动快照 - {DateTime.UtcNow:yyyy-MM-dd HH:mm}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "创建版本快照失败, DashboardId: {DashboardId}", id);
+        }
 
         if (!string.IsNullOrEmpty(request.Name))
             dashboard.Name = request.Name;
@@ -271,6 +294,16 @@ public class DashboardService : IDashboardService
         if (dashboard.UserId != userId)
             throw new UnauthorizedAccessException("无权在此看板添加卡片");
 
+        // 添加前创建版本快照
+        try
+        {
+            await _versionService.CreateVersionAsync(dashboardId, userId, $"添加卡片前自动快照 - {DateTime.UtcNow:yyyy-MM-dd HH:mm}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "创建版本快照失败, DashboardId: {DashboardId}", dashboardId);
+        }
+
         var card = new DashboardCard
         {
             DashboardId = dashboardId,
@@ -334,6 +367,16 @@ public class DashboardService : IDashboardService
         if (dashboard.UserId != userId)
             throw new UnauthorizedAccessException("无权更新此卡片");
 
+        // 更新前创建版本快照
+        try
+        {
+            await _versionService.CreateVersionAsync(card.DashboardId, userId, $"更新卡片前自动快照 - {DateTime.UtcNow:yyyy-MM-dd HH:mm}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "创建版本快照失败, DashboardId: {DashboardId}", card.DashboardId);
+        }
+
         if (!string.IsNullOrEmpty(request.Title))
             card.Title = request.Title;
         if (request.PositionX.HasValue)
@@ -377,6 +420,16 @@ public class DashboardService : IDashboardService
         if (dashboard.UserId != userId)
             throw new UnauthorizedAccessException("无权删除此卡片");
 
+        // 删除前创建版本快照
+        try
+        {
+            await _versionService.CreateVersionAsync(card.DashboardId, userId, $"删除卡片前自动快照 - {DateTime.UtcNow:yyyy-MM-dd HH:mm}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "创建版本快照失败, DashboardId: {DashboardId}", card.DashboardId);
+        }
+
         _context.Set<DashboardCard>().Remove(card);
         await _context.SaveChangesAsync();
 
@@ -399,6 +452,16 @@ public class DashboardService : IDashboardService
 
         if (dashboard.UserId != userId)
             throw new UnauthorizedAccessException("无权调整此看板的卡片");
+
+        // 调整前创建版本快照
+        try
+        {
+            await _versionService.CreateVersionAsync(dashboardId, userId, $"调整卡片位置前自动快照 - {DateTime.UtcNow:yyyy-MM-dd HH:mm}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "创建版本快照失败, DashboardId: {DashboardId}", dashboardId);
+        }
 
         foreach (var cardPosition in request.Cards)
         {

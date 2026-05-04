@@ -162,7 +162,6 @@ export default [
   },
   {
     path: '/xiaoke-management',
-    redirect: '/xiaoke-management/config',
     routes: [
       {
         path: '/xiaoke-management/config',
@@ -181,7 +180,6 @@ export default [
   },
   {
     path: '/web-scraper',
-    redirect: '/web-scraper/tasks',
     routes: [
       {
         path: '/web-scraper/tasks',
@@ -199,7 +197,6 @@ export default [
   },
   {
     path: '/workflow',
-    redirect: '/workflow/list',
     routes: [
       {
         path: '/workflow/list',
@@ -225,7 +222,6 @@ export default [
   },
   {
     path: '/document',
-    redirect: '/document/list',
     routes: [
       {
         path: '/document/list',
@@ -247,7 +243,6 @@ export default [
   },
   {
     path: '/visit-management',
-    redirect: '/visit-management/task',
     routes: [
       {
         path: '/visit-management/task',
@@ -269,7 +264,6 @@ export default [
   },
   {
     path: '/park-management',
-    redirect: '/park-management/asset',
     routes: [
       {
         path: '/park-management/asset',

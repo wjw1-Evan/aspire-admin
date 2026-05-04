@@ -323,27 +323,6 @@ export default [
     hideInMenu: true,
   },
   {
-    path: '/cloud-storage-legacy',
-    routes: [
-      {
-        path: '/cloud-storage/files',
-        component: './cloud-storage/files',
-      },
-      {
-        path: '/cloud-storage/shared',
-        component: './cloud-storage/shared',
-      },
-      {
-        path: '/cloud-storage/recycle',
-        component: './cloud-storage/recycle',
-      },
-      {
-        path: '/cloud-storage/quota',
-        component: './cloud-storage/quota',
-      },
-    ],
-  },
-  {
     path: '/dashboard',
     routes: [
       {

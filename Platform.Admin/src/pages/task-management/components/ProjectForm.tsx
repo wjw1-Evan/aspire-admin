@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useIntl } from '@umijs/max';
 import { ModalForm, ProFormText, ProFormTextArea, ProFormSelect, ProFormDatePicker, ProFormDigit } from '@ant-design/pro-form';
 import type { Dayjs } from 'dayjs';
 import type { AppUser } from '@/services/user/api';
@@ -22,6 +23,7 @@ interface ProjectFormProps {
 }
 
 const ProjectForm: React.FC<ProjectFormProps> = ({ open, project, onSuccess, onCancel }) => {
+  const intl = useIntl();
   const isEditing = !!project;
   const [users, setUsers] = useState<AppUser[]>([]);
   const [userOptions, setUserOptions] = useState<{ label: string; value: string }[]>([]);
@@ -107,9 +109,9 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ open, project, onSuccess, onC
     >
       <ProFormText
         name="name"
-        label="项目名称"
-        placeholder="请输入项目名称"
-        rules={[{ required: true, message: '请输入项目名称' }]}
+        label={intl.formatMessage({ id: 'pages.task.project.name' })}
+        placeholder={intl.formatMessage({ id: 'pages.task.project.namePlaceholder' })}
+        rules={[{ required: true, message: intl.formatMessage({ id: 'pages.task.project.nameRequired' }) }]}
       />
 
       <ProFormTextArea
@@ -121,32 +123,32 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ open, project, onSuccess, onC
 
       <ProFormSelect
         name="status"
-        label="项目状态"
+        label={intl.formatMessage({ id: 'pages.task.project.status' })}
         options={[
-          { label: '规划中', value: ProjectStatus.Planning },
-          { label: '进行中', value: ProjectStatus.InProgress },
-          { label: '暂停', value: ProjectStatus.OnHold },
-          { label: '已完成', value: ProjectStatus.Completed },
-          { label: '已取消', value: ProjectStatus.Cancelled },
+          { label: intl.formatMessage({ id: 'pages.task.project.planning' }), value: ProjectStatus.Planning },
+          { label: intl.formatMessage({ id: 'pages.task.project.active' }), value: ProjectStatus.InProgress },
+          { label: intl.formatMessage({ id: 'pages.task.project.paused' }), value: ProjectStatus.OnHold },
+          { label: intl.formatMessage({ id: 'pages.task.project.completed' }), value: ProjectStatus.Completed },
+          { label: intl.formatMessage({ id: 'pages.task.project.cancelled' }), value: ProjectStatus.Cancelled },
         ]}
       />
 
-       <ProFormSelect
+      <ProFormSelect
         name="priority"
-        label="优先级"
+        label={intl.formatMessage({ id: 'pages.task.priority.label' })}
         options={[
-          { label: '低', value: ProjectPriority.Low },
-          { label: '中', value: ProjectPriority.Medium },
-          { label: '高', value: ProjectPriority.High },
+          { label: intl.formatMessage({ id: 'pages.task.priority.low' }), value: ProjectPriority.Low },
+          { label: intl.formatMessage({ id: 'pages.task.priority.medium' }), value: ProjectPriority.Medium },
+          { label: intl.formatMessage({ id: 'pages.task.priority.high' }), value: ProjectPriority.High },
         ]}
       />
 
       <ProFormSelect
         name="memberIds"
-        label="项目成员"
-        placeholder="请选择项目成员"
+        label={intl.formatMessage({ id: 'pages.task.project.members' })}
+        placeholder={intl.formatMessage({ id: 'pages.task.project.selectMembers' })}
         options={userOptions}
-        fieldProps={{ allowClear: true, mode: 'multiple', placeholder: '请选择项目成员' }}
+        fieldProps={{ allowClear: true, mode: 'multiple', placeholder: intl.formatMessage({ id: 'pages.task.project.selectMembers' }) }}
       />
 
       <ProFormDatePicker

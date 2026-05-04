@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { FloatButton, App, Input, Button, Card, Avatar, Spin } from 'antd';
 import { MessageOutlined, CloseOutlined, SendOutlined, AudioOutlined, AudioMutedOutlined } from '@ant-design/icons';
-import { useModel } from '@umijs/max';
+import { useModel, useIntl } from '@umijs/max';
 import { marked } from 'marked';
 import {
   getOrCreateAssistantSession,
@@ -86,6 +86,7 @@ const TypewriterContent: React.FC<{ content: string; isStreaming: boolean; onUpd
 };
 
 const AiAssistant: React.FC = () => {
+  const intl = useIntl();
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser;
   const { message } = App.useApp();
@@ -296,13 +297,13 @@ const AiAssistant: React.FC = () => {
           setSession(assistantSession);
         } else {
           console.error('[AiAssistant] 无法获取或创建助手会话');
-          message.error('会话不存在，请刷新页面重试');
+          message.error(intl.formatMessage({ id: 'components.aiAssistant.sessionNotFound' }));
           setSending(false);
           return;
         }
       } catch (error) {
         console.error('[AiAssistant] 获取或创建助手会话异常:', error);
-        message.error('无法发送消息：会话不存在');
+        message.error(intl.formatMessage({ id: 'components.aiAssistant.sendMessageFailed' }));
         setSending(false);
         return;
       }
@@ -346,15 +347,15 @@ const AiAssistant: React.FC = () => {
         });
       } catch (error) {
         console.error('[AiAssistant] 发送消息失败:', error);
-        message.error('发送消息失败');
+        message.error(intl.formatMessage({ id: 'components.aiAssistant.sendMessageFailed' }));
         setMessages((prev) => prev.filter((msg) => msg.id !== optimisticMessage.id));
       } finally {
         setSending(false);
 
       }
     } catch (error) {
-      console.error('[AiAssistant] 发送��息异常:', error);
-      message.error('发送消息失败');
+      console.error('[AiAssistant] 发送消息异常:', error);
+      message.error(intl.formatMessage({ id: 'components.aiAssistant.sendMessageFailed' }));
       setMessages((prev) => prev.filter((msg) => msg.id !== optimisticMessage.id));
     } finally {
       setSending(false);
@@ -375,7 +376,7 @@ const AiAssistant: React.FC = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      message.error('当前浏览器不支持语音识别');
+      message.error(intl.formatMessage({ id: 'components.aiAssistant.voiceNotSupported' }));
       return;
     }
 
@@ -403,9 +404,9 @@ const AiAssistant: React.FC = () => {
       recognition.onerror = (event: any) => {
         console.error('语音识别错误:', event.error);
         if (event.error === 'not-allowed') {
-          message.error('请允许访问麦克风以使用语音输入');
+          message.error(intl.formatMessage({ id: 'components.aiAssistant.micPermission' }));
         } else {
-          message.error('语音识别出错: ' + event.error);
+          message.error(intl.formatMessage({ id: 'components.aiAssistant.voiceError' }) + ': ' + event.error);
         }
         setIsListening(false);
       };
@@ -760,7 +761,7 @@ const AiAssistant: React.FC = () => {
                         >
                           {isAssistant ? (
                             <TypewriterContent
-                              content={msg.content || '思考中...'}
+                              content={msg.content || intl.formatMessage({ id: 'components.aiAssistant.thinking' })}
                               isStreaming={msg.id in streamingMessages}
                               onUpdate={scrollToBottom}
                             />
@@ -798,7 +799,7 @@ const AiAssistant: React.FC = () => {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder={isListening ? "正在聆听..." : "输入消息..."}
+                placeholder={isListening ? intl.formatMessage({ id: 'components.aiAssistant.listening' }) : intl.formatMessage({ id: 'components.aiAssistant.inputPlaceholder' })}
                 autoSize={{ minRows: 1, maxRows: 4 }}
                 disabled={sending}
                 style={{ flex: 1 }}
@@ -809,7 +810,7 @@ const AiAssistant: React.FC = () => {
                 icon={isListening ? <AudioMutedOutlined /> : <AudioOutlined />}
                 onClick={handleToggleListen}
                 disabled={sending}
-                title={isListening ? "停止录音" : "语音输入"}
+                title={isListening ? intl.formatMessage({ id: 'components.aiAssistant.stopRecording' }) : intl.formatMessage({ id: 'components.aiAssistant.voiceInput' })}
               />
               <Button
                 type="primary"
@@ -827,7 +828,7 @@ const AiAssistant: React.FC = () => {
                 loading={sending}
                 disabled={!inputValue.trim() || sending}
               >
-                发送
+                {intl.formatMessage({ id: 'components.aiAssistant.send' })}
               </Button>
             </div>
             {isListening && (
@@ -839,7 +840,7 @@ const AiAssistant: React.FC = () => {
                     100% { opacity: 0.6; }
                   }
                 `}</style>
-                正在录音，请说话...
+                {intl.formatMessage({ id: 'components.aiAssistant.recording' })}
               </div>
             )}
           </div>

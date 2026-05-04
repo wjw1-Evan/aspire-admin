@@ -212,7 +212,7 @@ const CloudStorageFilesPage: React.FC = () => {
 
     const columns: ProColumns<FileItem>[] = [
         { title: intl.formatMessage({ id: 'pages.cloudStorage.table.name' }), dataIndex: 'name', key: 'name', sorter: true, render: (dom, record) => (<Space>{getFileIcon(record)}<a onClick={() => record.isFolder ? handleFolderClick(record) : handleView(record)} style={{ cursor: 'pointer' }}>{dom}</a></Space>) },
-        { title: intl.formatMessage({ id: 'pages.cloudStorage.table.type' }), dataIndex: 'isFolder', key: 'isFolder', width: 80, render: (dom, record) => record.isFolder ? <Tag color="orange">{intl.formatMessage({ id: 'pages.cloudStorage.type.folder' })}</Tag> : <Tag color="blue">文件</Tag> },
+        { title: intl.formatMessage({ id: 'pages.cloudStorage.table.type' }), dataIndex: 'isFolder', key: 'isFolder', width: 80, render: (dom, record) => record.isFolder ? <Tag color="orange">{intl.formatMessage({ id: 'pages.cloudStorage.type.folder' })}</Tag> : <Tag color="blue">{intl.formatMessage({ id: 'pages.cloud-storage.files.type.file' })}</Tag> },
         { title: intl.formatMessage({ id: 'pages.cloudStorage.table.size' }), dataIndex: 'size', key: 'size', sorter: true, render: (_, r) => r.isFolder ? '-' : formatFileSize(r.size || 0) },
         { title: intl.formatMessage({ id: 'pages.cloudStorage.table.updatedAt' }), dataIndex: 'updatedAt', key: 'updatedAt', sorter: true, render: (dom) => dom && typeof dom === 'string' ? dayjs(dom).format('YYYY-MM-DD HH:mm:ss') : '-' },
         { title: intl.formatMessage({ id: 'pages.cloudStorage.table.creator' }), dataIndex: 'createdByName', key: 'createdByName' },

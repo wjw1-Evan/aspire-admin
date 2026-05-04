@@ -274,7 +274,7 @@ const AssetManagement: React.FC = () => {
                 <ProFormText name="description" label="描述" placeholder="请输入描述信息" />
                 <div style={{ marginBottom: 24 }}>
                     <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>楼宇附件</Typography.Text>
-                    <Upload action="/apiservice/api/cloud-storage/upload" listType="picture" fileList={formState.attachments} onChange={({ fileList }) => setForm({ attachments: fileList })} headers={{ Authorization: `Bearer ${localStorage.getItem('token')}` }} data={(file) => ({ file, isPublic: false, description: 'Building Attachment' })}><Button icon={<UploadOutlined />}>上传附件</Button></Upload>
+                    <Upload action="/apiservice/api/cloud-storage/upload" listType="picture" fileList={formState.attachments} onChange={({ fileList }) => setForm({ attachments: fileList })} headers={{ Authorization: `Bearer ${localStorage.getItem('token')}` }} data={(file) => ({ file, isPublic: false, description: 'Building Attachment' })}><Button icon={<UploadOutlined />}>{intl.formatMessage({ id: 'pages.park.asset.uploadAttachment' })}</Button></Upload>
                 </div>
             </ModalForm>
 

@@ -73,9 +73,9 @@ const VisitStatisticsPage: React.FC = () => {
     ];
 
     const managerColumns: ProColumns<{ name: string; count: number }>[] = [
-        { title: '姓名', dataIndex: 'name', render: (text: any, _: any, index: number) => (<Space>{index < 3 ? <Tag color={index === 0 ? 'gold' : index === 1 ? 'silver' : 'orange'}>{index + 1}</Tag> : <Tag>{index + 1}</Tag>}{text}</Space>) },
-        { title: '走访次数', dataIndex: 'count', sorter: (a, b) => a.count - b.count },
-        { title: '占比', render: (_, record) => { const sum = managerData.reduce((acc, curr) => acc + curr.count, 0); const percent = sum > 0 ? (record.count / sum) * 100 : 0; return <Progress percent={Math.round(percent)} size="small" strokeColor="#722ed1" />; } }
+        { title: intl.formatMessage({ id: 'pages.park.visit.name' }), dataIndex: 'name', render: (text: any, _: any, index: number) => (<Space>{index < 3 ? <Tag color={index === 0 ? 'gold' : index === 1 ? 'silver' : 'orange'}>{index + 1}</Tag> : <Tag>{index + 1}</Tag>}{text}</Space>) },
+        { title: intl.formatMessage({ id: 'pages.park.visit.visitCount' }), dataIndex: 'count', sorter: (a, b) => a.count - b.count },
+        { title: intl.formatMessage({ id: 'pages.park.visit.rating' }), render: (_, record) => { const sum = managerData.reduce((acc, curr) => acc + curr.count, 0); const percent = sum > 0 ? (record.count / sum) * 100 : 0; return <Progress percent={Math.round(percent)} size="small" strokeColor="#722ed1" />; } }
     ];
 
     const trendColumns: ProColumns<{ month: string; count: number }>[] = [

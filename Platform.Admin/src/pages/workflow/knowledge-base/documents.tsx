@@ -58,7 +58,7 @@ const KnowledgeBaseDocuments: React.FC = () => {
 
   const columns: ProColumns<KnowledgeDocument>[] = [
     {
-      title: '标题',
+      title: intl.formatMessage({ id: 'pages.workflow.knowledge.title' }),
       dataIndex: 'title',
       key: 'title',
       sorter: true,
@@ -70,14 +70,14 @@ const KnowledgeBaseDocuments: React.FC = () => {
       ),
     },
     {
-      title: '摘要',
+      title: intl.formatMessage({ id: 'pages.workflow.knowledge.summary' }),
       dataIndex: 'summary',
       key: 'summary',
       ellipsis: true,
       sorter: true,
     },
     {
-      title: '内容预览',
+      title: intl.formatMessage({ id: 'pages.workflow.knowledge.contentPreview' }),
       dataIndex: 'content',
       key: 'content',
       ellipsis: true,
@@ -85,7 +85,7 @@ const KnowledgeBaseDocuments: React.FC = () => {
       sorter: true,
     },
     {
-      title: '排序',
+      title: intl.formatMessage({ id: 'pages.workflow.knowledge.sortOrder' }),
       dataIndex: 'sortOrder',
       key: 'sortOrder',
       width: 80,
@@ -93,7 +93,7 @@ const KnowledgeBaseDocuments: React.FC = () => {
       sorter: true,
     },
     {
-      title: '更新时间',
+      title: intl.formatMessage({ id: 'pages.workflow.knowledge.updatedAt' }),
       dataIndex: 'updatedAt',
       key: 'updatedAt',
       width: 180,
@@ -101,7 +101,7 @@ const KnowledgeBaseDocuments: React.FC = () => {
       sorter: true,
     },
     {
-      title: '操作',
+      title: intl.formatMessage({ id: 'pages.table.action' }),
       key: 'action',
       valueType: 'option',
       fixed: 'right',
@@ -109,8 +109,8 @@ const KnowledgeBaseDocuments: React.FC = () => {
       render: (_: unknown, record: KnowledgeDocument) => (
         <Space size={4}>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleOpenModal(record)}>编辑</Button>
-          <Popconfirm title={`确定删除「${record.title}」？`} onConfirm={() => handleDelete(record)}>
-            <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
+          <Popconfirm title={intl.formatMessage({ id: 'pages.workflow.knowledge.confirmDeleteContent' }, { title: record.title })} onConfirm={() => handleDelete(record)}>
+            <Button type="link" size="small" danger icon={<DeleteOutlined />} >{intl.formatMessage({ id: 'pages.workflow.knowledge.confirmDelete' })}</Button>
           </Popconfirm>
         </Space>
       ),
@@ -171,10 +171,10 @@ const KnowledgeBaseDocuments: React.FC = () => {
         initialValues={editingDoc || undefined}
         width={720}
       >
-        <ProFormText name="title" label="标题" rules={[{ required: true, message: '请输入标题' }]} placeholder="请输入文档标题" />
-        <ProFormTextArea name="content" label="内容" rules={[{ required: true, message: '请输入内容' }]} placeholder="请输入文档内容" />
-        <ProFormTextArea name="summary" label="摘要" placeholder="请输入摘要（可选）" />
-        <ProFormDigit name="sortOrder" label="排序" fieldProps={{ min: 0, style: { width: '100%' } }} placeholder="数值越小越靠前" />
+        <ProFormText name="title" label={intl.formatMessage({ id: 'pages.workflow.knowledge.form.title' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.workflow.knowledge.form.titleRequired' }) }]} placeholder={intl.formatMessage({ id: 'pages.workflow.knowledge.form.titlePlaceholder' })} />
+        <ProFormTextArea name="content" label={intl.formatMessage({ id: 'pages.workflow.knowledge.form.content' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.workflow.knowledge.form.contentRequired' }) }]} placeholder={intl.formatMessage({ id: 'pages.workflow.knowledge.form.contentPlaceholder' })} />
+        <ProFormTextArea name="summary" label={intl.formatMessage({ id: 'pages.workflow.knowledge.summary' })} placeholder={intl.formatMessage({ id: 'pages.workflow.knowledge.form.summaryPlaceholder' })} />
+        <ProFormDigit name="sortOrder" label={intl.formatMessage({ id: 'pages.workflow.knowledge.sortOrder' })} fieldProps={{ min: 0, style: { width: '100%' } }} placeholder={intl.formatMessage({ id: 'pages.workflow.knowledge.form.sortOrderPlaceholder' })} />
       </ModalForm>
     </PageContainer>
   );

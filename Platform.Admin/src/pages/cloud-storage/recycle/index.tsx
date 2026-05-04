@@ -54,7 +54,7 @@ const CloudStorageRecyclePage: React.FC = () => {
                             title: intl.formatMessage({ id: 'pages.cloud-storage.recycle.restoreFile' }),
                             content: (
                                 <Form form={form} layout="vertical">
-                                    <Form.Item name="newName" label={intl.formatMessage({ id: 'pages.cloud-storage.recycle.fileName' })}>
+                                    <Form.Item name="newName" label={intl.formatMessage({ id: 'pages.cloud-storage.recycle.restoreFileLabel' })}>
                                         <Input placeholder={intl.formatMessage({ id: 'pages.cloud-storage.recycle.fileNamePlaceholder' })} />
                                     </Form.Item>
                                 </Form>
@@ -70,7 +70,13 @@ const CloudStorageRecyclePage: React.FC = () => {
                     }}>恢复</Button>
                     <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => {
                         Modal.confirm({
-                            title: '确认永久删除', content: `确定要永久删除文件 "..." 吗？此操作不可恢复。`, okText: '删除', okType: 'danger', onOk: async () => {
+                            title: intl.formatMessage({ id: 'pages.cloud-storage.recycle.confirmDelete' }),
+                            content: intl.formatMessage(
+                                { id: 'pages.cloud-storage.recycle.confirmDeleteContent' },
+                                { name: r.name },
+                            ),
+                            okText: intl.formatMessage({ id: 'pages.cloud-storage.recycle.confirmDeleteOk' }),
+                            okType: 'danger', onOk: async () => {
                                 try { await api.permanentDelete(r.id); message.success(intl.formatMessage({ id: 'pages.cloud-storage.recycle.message.deleteSuccess' })); actionRef.current?.reload(); } catch { message.error(intl.formatMessage({ id: 'pages.cloud-storage.recycle.message.deleteFailed' })); }
                             }
                         });
@@ -85,11 +91,11 @@ const CloudStorageRecyclePage: React.FC = () => {
             <ProTable
                 headerTitle={
                     <Space size={24}>
-                        <Space><DeleteOutlined />回收站</Space>
+                        <Space><DeleteOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.recycle.title' })}</Space>
                         <Space size={12}>
-                            <Tag color="blue">总数 0</Tag>
-                            <Tag color="orange">即将过期 0</Tag>
-                            <Tag color="green">可恢复 0</Tag>
+                            <Tag color="blue">{intl.formatMessage({ id: 'pages.cloud-storage.recycle.tagTotal' }, { count: 0 })}</Tag>
+                            <Tag color="orange">{intl.formatMessage({ id: 'pages.cloud-storage.recycle.tagExpiring' }, { count: 0 })}</Tag>
+                            <Tag color="green">{intl.formatMessage({ id: 'pages.cloud-storage.recycle.tagRestorable' }, { count: 0 })}</Tag>
                         </Space>
                     </Space>
                 }
@@ -109,7 +115,7 @@ const CloudStorageRecyclePage: React.FC = () => {
                 toolBarRender={() => [
                     <Input.Search
                         key="search"
-                        placeholder="搜索..."
+                        placeholder={intl.formatMessage({ id: 'pages.cloud-storage.recycle.searchPlaceholder' })}
                         allowClear
                         value={searchText}
                         onChange={(e) => setSearchText(e.target.value)}
@@ -119,9 +125,9 @@ const CloudStorageRecyclePage: React.FC = () => {
                     />,
                     <Button key="empty" danger type="primary" icon={<ClearOutlined />} onClick={() => {
                         Modal.confirm({
-                            title: '确认清空回收站',
-                            content: '确定要清空整个回收站吗？此操作将永久删除所有文件，无法恢复！',
-                            okText: '清空',
+                            title: intl.formatMessage({ id: 'pages.cloud-storage.recycle.confirmEmpty' }),
+                            content: intl.formatMessage({ id: 'pages.cloud-storage.recycle.confirmEmptyContent' }),
+                            okText: intl.formatMessage({ id: 'pages.cloud-storage.recycle.confirmEmptyOk' }),
                             okType: 'danger',
                             onOk: async () => {
                                 try {
@@ -131,7 +137,7 @@ const CloudStorageRecyclePage: React.FC = () => {
                                 } catch { message.error(intl.formatMessage({ id: 'pages.cloud-storage.recycle.message.emptyFailed' })); }
                             }
                         });
-                    }}>清空回收站</Button>,
+                    }}>{intl.formatMessage({ id: 'pages.cloud-storage.recycle.emptyRecycle' })}</Button>,
                 ]}
             />
         </PageContainer>

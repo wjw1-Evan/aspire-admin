@@ -107,15 +107,15 @@ const CloudStorageSharedPage: React.FC = () => {
         { title: intl.formatMessage({ id: 'pages.cloud-storage.files.downloadLimit' }), dataIndex: 'maxDownloads', key: 'maxDownloads', valueType: 'digit', sorter: true },
         { title: intl.formatMessage({ id: 'pages.cloud-storage.files.createdAt' }), dataIndex: 'createdAt', key: 'createdAt', valueType: 'dateTime', sorter: true },
         {
-            title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 180,
+            title: intl.formatMessage({ id: 'pages.table.action' }), key: 'action', valueType: 'option', fixed: 'right', width: 180,
             render: (_, r: FileShare) => (
                 <Space size={4}>
                     <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => {
                         const url = `${window.location.origin}/share/${r.shareToken}`;
                         navigator.clipboard.writeText(url);
                         message.success(intl.formatMessage({ id: 'pages.cloud-storage.share.message.linkCopied' }));
-                    }}>复制链接</Button>
-                    <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleOpenModal(r)}>编辑</Button>
+                    }}>{intl.formatMessage({ id: 'pages.cloud-storage.shared.action.copyLink' })}</Button>
+                    <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleOpenModal(r)}>{intl.formatMessage({ id: 'pages.cloud-storage.shared.action.edit' })}</Button>
                     <Button type="link" size="small" icon={r.isEnabled ? <LockOutlined /> : <UnlockOutlined />} onClick={() => handleToggleShareEnabled(r)}>{r.isEnabled ? intl.formatMessage({ id: 'pages.cloudStorage.share.action.disable' }) : intl.formatMessage({ id: 'pages.cloudStorage.share.action.enable' })}</Button>
                     <Popconfirm title={intl.formatMessage({ id: 'pages.cloud-storage.share.confirmDelete' }, { name: r.fileName })} onConfirm={() => handleDeleteShare(r)}>
                         <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete' })}</Button>
@@ -155,10 +155,10 @@ const CloudStorageSharedPage: React.FC = () => {
                     menu: { type: 'tab', activeKey: activeTab, onChange: (key) => setActiveTab(key as any) },
                 }}
                 toolBarRender={() => [
-                  <Input.Search
-                    key="search"
-                    placeholder="搜索..."
-                    allowClear
+            <Input.Search
+              key="search"
+              placeholder={intl.formatMessage({ id: 'pages.cloud-storage.recycle.searchPlaceholder' })}
+              allowClear
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
                     onSearch={(value) => { setSearchText(value); actionRef.current?.reload(); }}
@@ -168,18 +168,18 @@ const CloudStorageSharedPage: React.FC = () => {
                 ]}
             />
             <ModalForm
-                title="编辑分享"
+                title={intl.formatMessage({ id: 'pages.cloud-storage.shared.editTitle' })}
                 open={!!editingShare}
                 onOpenChange={(visible) => { if (!visible) setEditingShare(null); }}
                 onFinish={handleEditSave}
                 width={600}
                 initialValues={editingShare ? { accessType: editingShare.accessType, password: editingShare.password, expiresAt: editingShare.expiresAt ? dayjs(editingShare.expiresAt) : undefined, maxDownloads: editingShare.maxDownloads, isEnabled: editingShare.isEnabled } : undefined}
             >
-                <ProFormSelect name="accessType" label="访问权限" rules={[{ required: true }]} options={[{ label: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewOnly' }), value: 'view' }, { label: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewDownload' }), value: 'download' }, { label: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewDownloadEdit' }), value: 'edit' }]} />
-                <ProFormText name="password" label="访问密码" placeholder="设置访问密码（可选）" />
-                <ProFormDatePicker name="expiresAt" label="过期时间" placeholder="设置过期时间（可选）" />
-                <ProFormDigit name="maxDownloads" label="下载次数限制" min={1} placeholder="设置最大下载次数（可选）" />
-                <ProFormSwitch name="isEnabled" label="启用状态" />
+                <ProFormSelect name="accessType" label={intl.formatMessage({ id: 'pages.cloud-storage.shared.accessType' })} rules={[{ required: true }]} options={[{ label: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewOnly' }), value: 'view' }, { label: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewDownload' }), value: 'download' }, { label: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewDownloadEdit' }), value: 'edit' }]} />
+                <ProFormText name="password" label={intl.formatMessage({ id: 'pages.cloud-storage.shared.password' })} placeholder={intl.formatMessage({ id: 'pages.cloud-storage.shared.passwordPlaceholder' })} />
+                <ProFormDatePicker name="expiresAt" label={intl.formatMessage({ id: 'pages.cloud-storage.shared.expiresAt' })} placeholder={intl.formatMessage({ id: 'pages.cloud-storage.shared.expiresAtPlaceholder' })} />
+                <ProFormDigit name="maxDownloads" label={intl.formatMessage({ id: 'pages.cloud-storage.shared.downloadLimit' })} min={1} placeholder={intl.formatMessage({ id: 'pages.cloud-storage.shared.downloadLimitPlaceholder' })} />
+                <ProFormSwitch name="isEnabled" label={intl.formatMessage({ id: 'pages.cloud-storage.shared.isEnabled' })} />
             </ModalForm>
         </PageContainer>
     );

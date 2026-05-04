@@ -423,9 +423,9 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
   const handleDeleteNode = useCallback(() => {
     if (!selectedNode) return;
     confirm({
-      title: '确认删除节点',
-      content: '确定删除该流程节点？删除后与该节点关联的连线也会一并移除。',
-      okText: '删除', cancelText: '取消', okButtonProps: { danger: true },
+      title: intl.formatMessage({ id: 'pages.workflow.designer.confirmDeleteNode' }),
+      content: intl.formatMessage({ id: 'pages.workflow.designer.deleteNodeContent' }),
+      okText: intl.formatMessage({ id: 'pages.workflow.designer.delete' }), cancelText: intl.formatMessage({ id: 'pages.workflow.designer.cancel' }), okButtonProps: { danger: true },
       onOk: () => {
         const targetId = selectedNode.id;
         setNodes(nds => nds.filter(n => n.id !== targetId));
@@ -459,9 +459,9 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
             message.success(intl.formatMessage({ id: 'pages.workflow.designer.message.layoutApplied' }));
           }}>自动排版</Button>
           <Button icon={<CheckCircleOutlined />} onClick={() => {
-            if (validateWorkflow()) message.success(intl.formatMessage({ id: 'pages.message.success' }));
+            if (validateWorkflow()) message.success(intl.formatMessage({ id: 'pages.workflow.designer.messageValidationPassed' }));
           }}>验证</Button>
-          {onClose && <Button onClick={onClose}>退出</Button>}
+          {onClose && <Button onClick={onClose}>{intl.formatMessage({ id: 'pages.workflow.designer.close' })}</Button>}
         </div>
         <ReactFlow
           nodes={nodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}

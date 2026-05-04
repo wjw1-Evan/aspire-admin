@@ -103,32 +103,32 @@ const StatisticsPage: React.FC = () => {
                     <ProCard style={{ height: 140, padding: '12px 16px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                             <div>
-                                <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>实收租金</div>
-                                <div style={{ fontSize: 22, fontWeight: 500, color: '#cf1322' }}>¥{(tenant?.totalReceived || 0).toLocaleString()}</div>
-                            </div>
-                            <div style={{ background: 'linear-gradient(135deg, #fff1f0, #fff7e6)', padding: 8, borderRadius: 6 }}>
-                                <span style={{ fontSize: 16, color: '#cf1322' }}>¥</span>
-                            </div>
-                        </div>
-                        <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>
-                            应收: ¥{(tenant?.totalExpected || 0).toLocaleString()} | 收缴率: <span style={{ color: Number(collectionRate) >= 90 ? '#52c41a' : '#faad14' }}>{collectionRate}%</span>
-                        </div>
+                                <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>{intl.formatMessage({ id: 'pages.park.statistics.rentIncome' })}</div>
+                                 <div style={{ fontSize: 22, fontWeight: 500, color: '#cf1322' }}>¥{(tenant?.totalReceived || 0).toLocaleString()}</div>
+                             </div>
+                             <div style={{ background: 'linear-gradient(135deg, #fff1f0, #fff7e6)', padding: 8, borderRadius: 6 }}>
+                                 <span style={{ fontSize: 16, color: '#cf1322' }}>¥</span>
+                             </div>
+                         </div>
+                         <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>
+                             {intl.formatMessage({ id: 'pages.park.statistics.receivableLabel' })} ¥{(tenant?.totalExpected || 0).toLocaleString()} | {intl.formatMessage({ id: 'pages.park.statistics.collectionRateLabel' })} <span style={{ color: Number(collectionRate) >= 90 ? '#52c41a' : '#faad14' }}>{collectionRate}%</span>
+                         </div>
                     </ProCard>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
                     <ProCard style={{ height: 140, padding: '12px 16px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                             <div>
-                                <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>综合出租率</div>
-                                <div style={{ fontSize: 22, fontWeight: 500, color: getOccupancyColor(calculatedOccupancyRate) }}>{calculatedOccupancyRate.toFixed(1)}%</div>
-                            </div>
-                            <div style={{ background: 'linear-gradient(135deg, #f6ffed, #f9f6f2)', padding: 8, borderRadius: 6 }}>
-                                <span style={{ fontSize: 16, color: getOccupancyColor(calculatedOccupancyRate) }}>%</span>
-                            </div>
-                        </div>
-                        <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>
-                            已出租: {(asset?.rentedArea || 0).toLocaleString()}㎡ | 空置: {vacantArea.toLocaleString()}㎡
-                        </div>
+                                <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>{intl.formatMessage({ id: 'pages.park.statistics.comprehensiveOccupancy' })}</div>
+                                 <div style={{ fontSize: 22, fontWeight: 500, color: getOccupancyColor(calculatedOccupancyRate) }}>{calculatedOccupancyRate.toFixed(1)}%</div>
+                             </div>
+                             <div style={{ background: 'linear-gradient(135deg, #f6ffed, #f9f6f2)', padding: 8, borderRadius: 6 }}>
+                                 <span style={{ fontSize: 16, color: getOccupancyColor(calculatedOccupancyRate) }}>%</span>
+                             </div>
+                         </div>
+                         <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>
+                             {intl.formatMessage({ id: 'pages.park.statistics.rentedLabel' })} {(asset?.rentedArea || 0).toLocaleString()}{intl.formatMessage({ id: 'pages.park.statistics.areaSquareMeters' })} | {intl.formatMessage({ id: 'pages.park.statistics.vacantLabel' })} {vacantArea.toLocaleString()}{intl.formatMessage({ id: 'pages.park.statistics.areaSquareMeters' })}
+                         </div>
                         <Progress percent={calculatedOccupancyRate} size="small" showInfo={false} strokeColor={getOccupancyColor(calculatedOccupancyRate)} style={{ marginTop: 4 }} />
                     </ProCard>
                 </Col>
@@ -136,16 +136,16 @@ const StatisticsPage: React.FC = () => {
                     <ProCard style={{ height: 140, padding: '12px 16px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                             <div>
-                                <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>{isYearly ? '本年新增线索' : '本月新增线索'}</div>
-                                <div style={{ fontSize: 22, fontWeight: 500, color: '#1890ff' }}>{investment?.newLeadsThisMonth || 0}</div>
-                            </div>
-                            <div style={{ background: 'linear-gradient(135deg, #e6f7ff, #f0f5ff)', padding: 8, borderRadius: 6 }}>
-                                <ArrowUpOutlined style={{ fontSize: 16, color: '#1890ff' }} />
-                            </div>
-                        </div>
-                        <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>
-                            洽谈中: {investment?.projectsInNegotiation || 0} | 转化: {Number(investment?.conversionRate || 0).toFixed(1)}%
-                        </div>
+                                <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>{isYearly ? intl.formatMessage({ id: 'pages.park.statistics.newThisYear' }, { type: '' }) : intl.formatMessage({ id: 'pages.park.statistics.newThisMonth' }, { type: '' })}</div>
+                                 <div style={{ fontSize: 22, fontWeight: 500, color: '#1890ff' }}>{investment?.newLeadsThisMonth || 0}</div>
+                             </div>
+                             <div style={{ background: 'linear-gradient(135deg, #e6f7ff, #f0f5ff)', padding: 8, borderRadius: 6 }}>
+                                 <ArrowUpOutlined style={{ fontSize: 16, color: '#1890ff' }} />
+                             </div>
+                         </div>
+                         <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>
+                             {intl.formatMessage({ id: 'pages.park.statistics.negotiationLabel' })} {investment?.projectsInNegotiation || 0} | {intl.formatMessage({ id: 'pages.park.statistics.conversionLabel' })} {Number(investment?.conversionRate || 0).toFixed(1)}%
+                         </div>
                     </ProCard>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>

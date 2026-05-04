@@ -895,6 +895,17 @@ export default {
   'pages.company.myRequests.action.cancel': '撤销申请',
   'pages.company.myRequests.action.leave': '退出企业',
   'pages.company.myRequests.title': '我的申请',
+  'pages.company.joinRequest.companyName': '企业名称',
+  'pages.company.joinRequest.reason': '申请理由',
+  'pages.company.joinRequest.createdAt': '申请时间',
+  'pages.company.joinRequest.reviewer': '审核人',
+  'pages.company.joinRequest.remarks': '备注',
+  'pages.company.joinRequest.rejectReason': '拒绝原因',
+  'pages.company.joinRequest.confirmCancel': '确定要撤销申请吗？',
+  'pages.common.status': '状态',
+  'pages.common.confirm': '确定',
+  'pages.common.cancel': '取消',
+  'pages.common.revoke': '撤销',
 
   // cloud-storage shared action labels
   'pages.cloud-storage.shared.action.revoke': '撤销',

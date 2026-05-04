@@ -28,14 +28,14 @@ const MyJoinRequestsTable: React.FC = () => {
 
     const columns: ProColumns<JoinRequestDetail>[] = [
         {
-            title: '企业名称',
+            title: intl.formatMessage({ id: 'pages.company.joinRequest.companyName' }),
             dataIndex: 'companyName',
             key: 'companyName',
             width: 200,
             sorter: true,
         },
         {
-            title: '申请理由',
+            title: intl.formatMessage({ id: 'pages.company.joinRequest.reason' }),
             dataIndex: 'reason',
             key: 'reason',
             ellipsis: true,
@@ -43,7 +43,7 @@ const MyJoinRequestsTable: React.FC = () => {
             render: (text) => text || '-',
         },
         {
-            title: '状态',
+            title: intl.formatMessage({ id: 'pages.common.status' }),
             dataIndex: 'status',
             key: 'status',
             sorter: true,
@@ -59,33 +59,33 @@ const MyJoinRequestsTable: React.FC = () => {
             },
         },
         {
-            title: '申请时间',
+            title: intl.formatMessage({ id: 'pages.company.joinRequest.createdAt' }),
             dataIndex: 'createdAt',
             key: 'createdAt',
             sorter: true,
             render: (dom: any) => dom ? dayjs(dom).format('YYYY-MM-DD HH:mm:ss') : '-',
         },
         {
-            title: '审核人',
+            title: intl.formatMessage({ id: 'pages.company.joinRequest.reviewer' }),
             dataIndex: 'reviewedByName',
             key: 'reviewedByName',
             sorter: true,
             render: (text) => text || '-',
         },
         {
-            title: '备注',
+            title: intl.formatMessage({ id: 'pages.company.joinRequest.remarks' }),
             dataIndex: 'rejectReason',
             key: 'rejectReason',
             sorter: true,
             render: (dom: any, record: JoinRequestDetail) => {
                 if (record.status === 'rejected') {
-                    return <span style={{ color: token.colorError }}>拒绝原因: {dom}</span>;
+                    return <span style={{ color: token.colorError }}>{intl.formatMessage({ id: 'pages.company.joinRequest.rejectReason' })}: {dom}</span>;
                 }
                 return '-';
             }
         },
         {
-            title: '操作',
+            title: intl.formatMessage({ id: 'pages.table.action' }),
             key: 'action',
             valueType: 'option',
             fixed: 'right',
@@ -93,8 +93,8 @@ const MyJoinRequestsTable: React.FC = () => {
             render: (_, record) => {
                 if (record.status === 'pending') {
                     return (
-                        <Popconfirm title="确定要撤销申请吗？" onConfirm={() => handleCancel(record.id)} okText="确定" cancelText="取消">
-                            <Button type="link" size="small" danger icon={<UndoOutlined />}>撤销</Button>
+                        <Popconfirm title={intl.formatMessage({ id: 'pages.company.joinRequest.confirmCancel' })} onConfirm={() => handleCancel(record.id)} okText={intl.formatMessage({ id: 'pages.common.confirm' })} cancelText={intl.formatMessage({ id: 'pages.common.cancel' })}>
+                            <Button type="link" size="small" danger icon={<UndoOutlined />}>{intl.formatMessage({ id: 'pages.common.revoke' })}</Button>
                         </Popconfirm>
                     );
                 }
@@ -107,7 +107,7 @@ const MyJoinRequestsTable: React.FC = () => {
         <ProTable<JoinRequestDetail>
             headerTitle={
               <Space size={24}>
-                <Space><TeamOutlined />我的加入申请</Space>
+                <Space><TeamOutlined />{intl.formatMessage({ id: 'pages.company.myRequests.title' })}</Space>
               </Space>
             }
             rowKey="id"

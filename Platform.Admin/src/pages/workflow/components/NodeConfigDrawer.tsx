@@ -487,17 +487,17 @@ if (type === 4) return (
                               value: node.id
                             }));
                           return (
-                            <Form.Item
-                              name="defaultNodeId"
-                              label="默认节点"
-                              tooltip="当所有条件都不匹配时，流程跳转到此节点"
-                            >
-                              <Select
-                                placeholder="选择默认节点"
-                                allowClear
-                                options={nodeOptions}
-                              />
-                            </Form.Item>
+                             <Form.Item
+                               name="defaultNodeId"
+                               label={intl.formatMessage({ id: 'pages.flow.node.defaultNode' })}
+                               tooltip={intl.formatMessage({ id: 'pages.flow.node.defaultNodeTooltip' })}
+                             >
+                               <Select
+                                 placeholder={intl.formatMessage({ id: 'pages.flow.node.selectDefaultNode' })}
+                                 allowClear
+                                 options={nodeOptions}
+                               />
+                             </Form.Item>
                           );
                         }}
                       </Form.Item>
@@ -506,19 +506,19 @@ if (type === 4) return (
                 </>
               ),
             },
-            {
-              key: 'advanced',
-              label: '高级设置',
-              children: (
+             {
+               key: 'advanced',
+               label: intl.formatMessage({ id: 'pages.flow.node.advancedSettings' }),
+               children: (
                 <>
                   {selectedNode?.data.nodeType === 'approval' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                      <Form.Item name="allowDelegate" label="允许委托申请" valuePropName="checked"><Switch /></Form.Item>
-                      <Form.Item name="allowReject" label="允许驳回" valuePropName="checked"><Switch /></Form.Item>
-                      <Form.Item name="allowReturn" label="允许退回" valuePropName="checked"><Switch /></Form.Item>
-                      <Form.Item name="timeoutHours" label="审批超时设置 (小时)"><Input type="number" /></Form.Item>
+                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                       <Form.Item name="allowDelegate" label={intl.formatMessage({ id: 'pages.flow.node.allowDelegate' })} valuePropName="checked"><Switch /></Form.Item>
+                       <Form.Item name="allowReject" label={intl.formatMessage({ id: 'pages.flow.node.allowReject' })} valuePropName="checked"><Switch /></Form.Item>
+                       <Form.Item name="allowReturn" label={intl.formatMessage({ id: 'pages.flow.node.allowReturn' })} valuePropName="checked"><Switch /></Form.Item>
+                       <Form.Item name="timeoutHours" label={intl.formatMessage({ id: 'pages.flow.node.timeoutHours' })}><Input type="number" /></Form.Item>
 
-                      <Divider titlePlacement="left" plain>抄送规则 (CC)</Divider>
+                       <Divider titlePlacement="left" plain>{intl.formatMessage({ id: 'pages.flow.node.ccRules' })}</Divider>
                       <Form.List name="ccRules">
                         {(fields, { add, remove }) => (
                           <>
@@ -527,37 +527,37 @@ if (type === 4) return (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                   <Form.Item {...restField} name={[name, 'type']} rules={[{ required: true }]}>
                                     <Select
-                                      placeholder="抄送类型"
-                                      options={[
-                                        { label: '指定用户', value: 0 },
-                                        { label: '指定角色', value: 1 },
-                                        { label: '指定部门', value: 2 }
-                                      ]}
+                                       placeholder={intl.formatMessage({ id: 'pages.flow.node.ccType' })}
+                                       options={[
+                                         { label: intl.formatMessage({ id: 'pages.flow.node.specifyUser' }), value: 0 },
+                                         { label: intl.formatMessage({ id: 'pages.flow.node.specifyRole' }), value: 1 },
+                                         { label: intl.formatMessage({ id: 'pages.flow.node.specifyDepartment' }), value: 2 }
+                                       ]}
                                     />
                                   </Form.Item>
                                   <Form.Item noStyle shouldUpdate={(prev, curr) => prev.ccRules?.[name]?.type !== curr.ccRules?.[name]?.type}>
                                     {({ getFieldValue }) => {
                                       const type = getFieldValue(['ccRules', name, 'type']);
-                                      if (type === 0) return <Form.Item {...restField} name={[name, 'userIds']} rules={[{ required: true }]}><Select mode="multiple" placeholder="选择用户" options={users.map(u => ({ label: u.name || u.username, value: u.id }))} /></Form.Item>;
-                                      if (type === 1) return <Form.Item {...restField} name={[name, 'roleIds']} rules={[{ required: true }]}><Select mode="multiple" placeholder="选择角色" options={roles.map(r => ({ label: r.name, value: r.id }))} /></Form.Item>;
-                                      if (type === 2) return <Form.Item {...restField} name={[name, 'departmentId']} rules={[{ required: true }]}><TreeSelect placeholder="选择部门" showSearch treeDefaultExpandAll treeData={organizationTreeToTreeData(organizationTree)} /></Form.Item>;
+                                       if (type === 0) return <Form.Item {...restField} name={[name, 'userIds']} rules={[{ required: true }]}><Select mode="multiple" placeholder={intl.formatMessage({ id: 'pages.flow.node.selectUser' })} options={users.map(u => ({ label: u.name || u.username, value: u.id }))} /></Form.Item>;
+                                       if (type === 1) return <Form.Item {...restField} name={[name, 'roleIds']} rules={[{ required: true }]}><Select mode="multiple" placeholder={intl.formatMessage({ id: 'pages.flow.node.selectRole' })} options={roles.map(r => ({ label: r.name, value: r.id }))} /></Form.Item>;
+                                       if (type === 2) return <Form.Item {...restField} name={[name, 'departmentId']} rules={[{ required: true }]}><TreeSelect placeholder={intl.formatMessage({ id: 'pages.flow.node.selectDepartment' })} showSearch treeDefaultExpandAll treeData={organizationTreeToTreeData(organizationTree)} /></Form.Item>;
                                       return null;
                                     }}
                                   </Form.Item>
                                 </div>
                               </ProCard>
                             ))}
-                            <Button type="dashed" onClick={() => add()} block size="small" icon={<PlusOutlined />}>添加抄送规则</Button>
+                             <Button type="dashed" onClick={() => add()} block size="small" icon={<PlusOutlined />}>{intl.formatMessage({ id: 'pages.flow.node.addCcRule' })}</Button>
                           </>
                         )}
                       </Form.List>
                     </div>
                   )}
-                  {selectedNode?.data.nodeType === 'start' && (
-                    <Form.Item name="formDefinitionId" label="绑定启动表单">
-                      <Select placeholder="选择流程启动时需要填写的表单" allowClear options={forms.map(f => ({ label: f.name, value: f.id }))} />
-                    </Form.Item>
-                  )}
+                   {selectedNode?.data.nodeType === 'start' && (
+                     <Form.Item name="formDefinitionId" label={intl.formatMessage({ id: 'pages.flow.node.bindStartForm' })}>
+                       <Select placeholder={intl.formatMessage({ id: 'pages.flow.node.selectStartForm' })} allowClear options={forms.map(f => ({ label: f.name, value: f.id }))} />
+                     </Form.Item>
+                   )}
                 </>
               ),
             },

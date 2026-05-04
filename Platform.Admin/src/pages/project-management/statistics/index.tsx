@@ -87,24 +87,24 @@ const StatisticsPage: React.FC = () => {
                     setAiReportContent(res.data);
                 }
             } else {
-                setAiReportContent('生成报告失败，请稍后重试。');
+                setAiReportContent(intl.formatMessage({ id: 'pages.project.statistics.generateFailed' }));
             }
         } catch (error) {
-            setAiReportContent('生成报告失败，请稍后重试。');
+            setAiReportContent(intl.formatMessage({ id: 'pages.project.statistics.generateFailed' }));
         } finally {
             setAiReportLoading(false);
         }
     };
 
     const getPeriodLabel = () => {
-        switch (period) {
-            case 'week': return '本周';
-            case 'month': return '本月';
-            case 'quarter': return '本季';
-            case 'year': return '本年';
-            case 'custom': return '自定义';
-            default: return '本月';
-        }
+        const periodMap: Record<string, string> = {
+            'week': intl.formatMessage({ id: 'pages.project.statistics.period.week' }),
+            'month': intl.formatMessage({ id: 'pages.project.statistics.period.month' }),
+            'quarter': intl.formatMessage({ id: 'pages.project.statistics.period.quarter' }),
+            'year': intl.formatMessage({ id: 'pages.project.statistics.period.year' }),
+            'custom': intl.formatMessage({ id: 'pages.project.statistics.period.custom' }),
+        };
+        return periodMap[period] || periodMap['month'];
     };
 
     const renderProjectCard = () => {
@@ -121,7 +121,7 @@ const StatisticsPage: React.FC = () => {
             <ProCard className="stat-card" style={{ height: 200, padding: '12px 16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                     <div>
-                        <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>项目总数</div>
+                        <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>{intl.formatMessage({ id: 'pages.project.statistics.totalProjects' })}</div>
                         <div style={{ fontSize: 24, fontWeight: 500, color: '#1890ff' }}>{totalProjects}</div>
                     </div>
                     <div style={{ background: 'linear-gradient(135deg, #e6f7ff, #f0f5ff)', padding: 8, borderRadius: 6 }}>
@@ -131,7 +131,7 @@ const StatisticsPage: React.FC = () => {
 
                 <div style={{ marginBottom: 8 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                        <Text type="secondary" style={{ fontSize: 12 }}>总体完成度</Text>
+                        <Text type="secondary" style={{ fontSize: 12 }}>{intl.formatMessage({ id: 'pages.project.statistics.overallCompletion' })}</Text>
                         <Text strong style={{ fontSize: 12 }}>{completionRate}%</Text>
                     </div>
                     <Progress percent={completionRate} showInfo={false} strokeColor={{ '0%': '#108ee9', '100%': '#87d068' }} size="small" />
@@ -141,19 +141,19 @@ const StatisticsPage: React.FC = () => {
                     <Col span={8}>
                         <div style={{ textAlign: 'center' }}>
                             <div style={{ fontSize: 16, fontWeight: 500, color: '#1890ff' }}>{inProgressProjects}</div>
-                            <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>进行中</div>
+                            <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>{intl.formatMessage({ id: 'pages.project.statistics.inProgressProjects' })}</div>
                         </div>
                     </Col>
                     <Col span={8}>
                         <div style={{ textAlign: 'center' }}>
                             <div style={{ fontSize: 16, fontWeight: 500, color: '#52c41a' }}>{completedProjects}</div>
-                            <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>已完成</div>
+                            <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>{intl.formatMessage({ id: 'pages.project.statistics.completedProjects' })}</div>
                         </div>
                     </Col>
                     <Col span={8}>
                         <div style={{ textAlign: 'center' }}>
                             <div style={{ fontSize: 16, fontWeight: 500, color: '#ff4d4f' }}>{delayedProjects}</div>
-                            <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>延期</div>
+                            <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>{intl.formatMessage({ id: 'pages.project.statistics.delayedProjects' })}</div>
                         </div>
                     </Col>
                 </Row>
@@ -174,7 +174,7 @@ const StatisticsPage: React.FC = () => {
             <ProCard className="stat-card" style={{ height: 200, padding: '12px 16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                     <div>
-                        <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>任务总数</div>
+                        <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>{intl.formatMessage({ id: 'pages.project.statistics.taskTotal' })}</div>
                         <div style={{ fontSize: 24, fontWeight: 500, color: '#52c41a' }}>{totalTasks}</div>
                     </div>
                     <div style={{ background: 'linear-gradient(135deg, #f6ffed, #f9f6f2)', padding: 8, borderRadius: 6 }}>
@@ -185,18 +185,18 @@ const StatisticsPage: React.FC = () => {
                 <div style={{ marginBottom: 8 }}>
                     {overdueTasks > 0 ? (
                         <Tag color="error" icon={<WarningOutlined />} style={{ width: '100%', textAlign: 'center', margin: 0 }}>
-                            {overdueTasks} 个逾期
+                            {intl.formatMessage({ id: 'pages.project.statistics.overdueTasks' }, { count: overdueTasks })}
                         </Tag>
                     ) : (
                         <Tag color="success" icon={<CheckCircleOutlined />} style={{ width: '100%', textAlign: 'center', margin: 0 }}>
-                            无逾期任务
+                            {intl.formatMessage({ id: 'pages.project.statistics.noOverdueTasks' })}
                         </Tag>
                     )}
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
                     <div>
-                        <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>已完成</div>
+                        <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>{intl.formatMessage({ id: 'pages.project.statistics.completedProjects' })}</div>
                         <div style={{ fontSize: 16, fontWeight: 500, color: '#52c41a' }}>{completedTasks}</div>
                     </div>
                     <Progress
@@ -224,7 +224,7 @@ const StatisticsPage: React.FC = () => {
             <ProCard className="stat-card" style={{ height: 200, padding: '12px 16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                     <div>
-                        <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>里程碑总数</div>
+                        <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>{intl.formatMessage({ id: 'pages.project.statistics.milestoneTotal' })}</div>
                         <div style={{ fontSize: 24, fontWeight: 500, color: '#faad14' }}>{totalMilestones}</div>
                     </div>
                     <div style={{ background: 'linear-gradient(135deg, #fffbe6, #fff7e6)', padding: 8, borderRadius: 6 }}>
@@ -238,7 +238,7 @@ const StatisticsPage: React.FC = () => {
                             <ClockCircleOutlined style={{ color: '#faad14', fontSize: 14 }} />
                             <div>
                                 <div style={{ fontSize: 14, fontWeight: 500 }}>{pendingMilestones}</div>
-                                <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>待达成</div>
+                                <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>{intl.formatMessage({ id: 'pages.project.statistics.pendingMilestones' })}</div>
                             </div>
                         </div>
                     </Col>
@@ -247,7 +247,7 @@ const StatisticsPage: React.FC = () => {
                             <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 14 }} />
                             <div>
                                 <div style={{ fontSize: 14, fontWeight: 500 }}>{achievedMilestones}</div>
-                                <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>已达成</div>
+                                <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>{intl.formatMessage({ id: 'pages.project.statistics.achievedMilestones' })}</div>
                             </div>
                         </div>
                     </Col>
@@ -256,7 +256,7 @@ const StatisticsPage: React.FC = () => {
                 {delayedMilestones > 0 && (
                     <div style={{ marginTop: 12 }}>
                         <Tag color="error" icon={<WarningOutlined />} style={{ width: '100%', textAlign: 'center', margin: 0 }}>
-                            {delayedMilestones} 个延期
+                            {intl.formatMessage({ id: 'pages.project.statistics.delayedMilestones' }, { count: delayedMilestones })}
                         </Tag>
                     </div>
                 )}
@@ -277,7 +277,7 @@ const StatisticsPage: React.FC = () => {
             <ProCard className="stat-card" style={{ height: 200, padding: '12px 16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                     <div>
-                        <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>团队规模</div>
+                        <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>{intl.formatMessage({ id: 'pages.project.statistics.teamSize' })}</div>
                         <div style={{ fontSize: 24, fontWeight: 500, color: '#722ed1' }}>{totalMembers}</div>
                     </div>
                     <div style={{ background: 'linear-gradient(135deg, #f9f0ff, #efdbff)', padding: 8, borderRadius: 6 }}>
@@ -294,7 +294,7 @@ const StatisticsPage: React.FC = () => {
                             </div>
                         ))
                     ) : (
-                        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无成员" />
+                        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={intl.formatMessage({ id: 'pages.project.statistics.noMembers' })} />
                     )}
                 </div>
             </ProCard>
@@ -321,10 +321,10 @@ const StatisticsPage: React.FC = () => {
                         type="primary"
                         style={{ background: 'linear-gradient(45deg, #1890ff, #722ed1)', borderColor: 'transparent' }}
                     >
-                        AI 分析报告
+                        {intl.formatMessage({ id: 'pages.project.statistics.aiReport' })}
                     </Button>
                     <Button icon={<ReloadOutlined />} onClick={loadStatistics} type="primary" ghost>
-                        刷新
+                        {intl.formatMessage({ id: 'pages.project.statistics.refresh' })}
                     </Button>
                 </Space>
             </div>
@@ -350,7 +350,7 @@ const StatisticsPage: React.FC = () => {
                 title={
                     <Space>
                         <RobotOutlined style={{ color: '#1890ff' }} />
-                        <span>项目运营 AI 深度分析报告</span>
+                        <span>{intl.formatMessage({ id: 'pages.project.statistics.generateReport' })}</span>
                     </Space>
                 }
                 open={aiReportVisible}
@@ -359,7 +359,7 @@ const StatisticsPage: React.FC = () => {
                 width={900}
                 styles={{ body: { maxHeight: '75vh', overflowY: 'auto', padding: '24px' } }}
             >
-                <Spin spinning={aiReportLoading} tip="AI 正在分析大量项目数据，生成专业报告中...">
+                <Spin spinning={aiReportLoading} tip={intl.formatMessage({ id: 'pages.project.statistics.generatingReport' })}>
                     <div
                         dangerouslySetInnerHTML={{ __html: aiReportContent }}
                         style={{ fontSize: 15, lineHeight: 1.8, marginBottom: 16 }}

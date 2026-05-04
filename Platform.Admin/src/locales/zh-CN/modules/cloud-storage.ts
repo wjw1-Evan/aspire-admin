@@ -42,4 +42,41 @@ export default {
   'pages.cloud-storage.recycle.restoreFile': '恢复文件',
   'pages.cloud-storage.recycle.fileName': '文件名',
   'pages.cloud-storage.recycle.fileNamePlaceholder': '请输入文件名',
+
+  // recycle/index.tsx
+  'pages.cloud-storage.recycle.title': '回收站',
+  'pages.cloud-storage.recycle.confirmDelete': '确认永久删除',
+  'pages.cloud-storage.recycle.confirmDeleteContent': '确定要永久删除文件 "{name}" 吗？此操作不可恢复。',
+  'pages.cloud-storage.recycle.confirmDeleteOk': '删除',
+  'pages.cloud-storage.recycle.confirmEmpty': '确认清空回收站',
+  'pages.cloud-storage.recycle.confirmEmptyContent': '确定要清空整个回收站吗？此操作将永久删除所有文件，无法恢复！',
+  'pages.cloud-storage.recycle.confirmEmptyOk': '清空',
+  'pages.cloud-storage.recycle.searchPlaceholder': '搜索...',
+  'pages.cloud-storage.recycle.tagTotal': '总数 {count}',
+  'pages.cloud-storage.recycle.tagExpiring': '即将过期 {count}',
+  'pages.cloud-storage.recycle.tagRestorable': '可恢复 {count}',
+  'pages.cloud-storage.recycle.restore': '恢复',
+  'pages.cloud-storage.recycle.emptyRecycle': '清空回收站',
+  'pages.cloud-storage.recycle.restoreFileTitle': '恢复文件',
+  'pages.cloud-storage.recycle.restoreFileLabel': '文件名',
+
+  // shared/index.tsx
+  'pages.cloud-storage.shared.action.copyLink': '复制链接',
+  'pages.cloud-storage.shared.action.edit': '编辑',
+  'pages.cloud-storage.shared.action.disable': '禁用',
+  'pages.cloud-storage.shared.action.enable': '启用',
+
+  // files/index.tsx
+  'pages.cloud-storage.files.type.file': '文件',
+
+  // shared form labels
+  'pages.cloud-storage.shared.editTitle': '编辑分享',
+  'pages.cloud-storage.shared.accessType': '访问权限',
+  'pages.cloud-storage.shared.password': '访问密码',
+  'pages.cloud-storage.shared.passwordPlaceholder': '设置访问密码（可选）',
+  'pages.cloud-storage.shared.expiresAt': '过期时间',
+  'pages.cloud-storage.shared.expiresAtPlaceholder': '设置过期时间（可选）',
+  'pages.cloud-storage.shared.downloadLimit': '下载次数限制',
+  'pages.cloud-storage.shared.downloadLimitPlaceholder': '设置最大下载次数（可选）',
+  'pages.cloud-storage.shared.isEnabled': '启用状态',
 };

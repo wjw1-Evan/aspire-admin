@@ -91,4 +91,13 @@ export default {
   'pages.parkManagement.tenant.table.tenantName': 'Tenant Name',
   'pages.parkManagement.tenant.table.unitCount': 'Rented Units',
   'pages.parkManagement.tenant.title': 'Tenant Management',
+  'pages.park.asset.tenantName': 'Tenant Name',
+  'pages.park.asset.contractNumber': 'Contract Number',
+  'pages.park.asset.leaseTerm': 'Lease Term',
+  'pages.park.asset.monthlyRent': 'Monthly Rent',
+  'pages.park.asset.uploadAttachment': 'Upload Attachment',
+  'pages.park.asset.noRecords': 'No records',
+  'pages.park.asset.deleteSuccess': 'Deleted successfully',
+  'pages.park.asset.saveFailed': 'Failed to save',
+  'pages.park.asset.deleteFailed': 'Failed to delete',
 };

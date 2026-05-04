@@ -337,4 +337,30 @@ export default {
   'pages.flow.node.selectRole': '选择角色',
   'pages.flow.node.selectDepartment': '选择部门',
   'pages.flow.node.addCcRule': '添加抄送规则',
+
+  // knowledge-base/documents.tsx
+  'pages.workflow.knowledge.summary': '摘要',
+  'pages.workflow.knowledge.summaryPlaceholder': '请输入摘要',
+  'pages.workflow.knowledge.contentPreview': '内容预览',
+  'pages.workflow.knowledge.contentPreviewPlaceholder': '请输入内容',
+  'pages.workflow.knowledge.confirmDelete': '确认删除',
+  'pages.workflow.knowledge.confirmDeleteContent': '确定要删除这篇文档吗？',
+  'pages.workflow.knowledge.form.title': '标题',
+  'pages.workflow.knowledge.form.titlePlaceholder': '请输入文档标题',
+  'pages.workflow.knowledge.form.titleRequired': '请输入标题',
+  'pages.workflow.knowledge.form.content': '内容',
+  'pages.workflow.knowledge.form.contentPlaceholder': '请输入文档内容',
+  'pages.workflow.knowledge.form.contentRequired': '请输入内容',
+  'pages.workflow.knowledge.form.summaryPlaceholder': '请输入摘要（可选）',
+  'pages.workflow.knowledge.form.sortOrderPlaceholder': '数值越小越靠前',
+
+  // WorkflowEditForm / WorkflowCreateForm
+  'pages.workflow.form.versionHistory': '📜 版本历史',
+  'pages.workflow.form.workflowId': '流程 ID',
+  'pages.workflow.form.createTime': '创建时间',
+  'pages.workflow.form.createdBy': '创建人',
+
+  // WorkflowSidebar
+  'pages.workflow.sidebar.deleteConfirmTitle': '确认删除流程',
+  'pages.workflow.sidebar.deleteConfirmContent': '确定要删除流程"{name}"吗？此操作不可恢复。',
 };

@@ -855,4 +855,47 @@ export default {
   'VALIDATION_ROLE_NAME_LENGTH_RANGE': '角色名称长度不符合要求',
   'VALIDATION_ROLE_DEFINITION_LENGTH_RANGE': '角色定义长度不符合要求',
   'pages.notice.empty': '暂无通知公告',
+
+  // task-management
+  'pages.task.project.planning': '规划中',
+  'pages.task.project.active': '进行中',
+  'pages.task.project.paused': '暂停',
+  'pages.task.project.completed': '已完成',
+  'pages.task.project.cancelled': '已取消',
+  'pages.task.priority.low': '低',
+  'pages.task.priority.medium': '中',
+  'pages.task.priority.high': '高',
+  'pages.task.project.selectMembers': '请选择项目成员',
+  'pages.task.task.dueDate': '截止日期',
+
+  // visit-statistics
+  'pages.park.visit.name': '姓名',
+  'pages.park.visit.visitCount': '走访次数',
+  'pages.park.visit.rating': '评分',
+
+  // welcome components
+  'pages.dashboard.welcome.placeholder': '暂无数据',
+
+  // AiAssistant
+  'components.aiAssistant.sessionNotFound': '会话不存在，请刷新页面重试',
+  'components.aiAssistant.sendMessageFailed': '发送消息失败',
+  'components.aiAssistant.voiceNotSupported': '当前浏览器不支持语音识别',
+  'components.aiAssistant.startRecording': '开始录音',
+  'components.aiAssistant.stopRecording': '停止录音',
+  'components.aiAssistant.micPermission': '请允许访问麦克风以使用语音输入',
+  'components.aiAssistant.voiceError': '语音识别出错',
+  'components.aiAssistant.thinking': '思考中...',
+  'components.aiAssistant.listening': '正在聆听...',
+  'components.aiAssistant.inputPlaceholder': '输入消息...',
+  'components.aiAssistant.send': '发送',
+  'components.aiAssistant.recording': '正在录音，请说话...',
+  'components.aiAssistant.voiceInput': '语音输入',
+
+  // MyJoinRequestsTable
+  'pages.company.myRequests.action.cancel': '撤销申请',
+  'pages.company.myRequests.action.leave': '退出企业',
+  'pages.company.myRequests.title': '我的申请',
+
+  // cloud-storage shared action labels
+  'pages.cloud-storage.shared.action.revoke': '撤销',
 };

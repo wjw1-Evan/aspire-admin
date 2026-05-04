@@ -551,4 +551,13 @@ export default {
   'pages.park.visitTask.visitResult': 'Visit Result',
   'pages.park.visitTask.noContent': 'No visit notes yet',
   'pages.park.visitTask.noFeedback': 'No enterprise feedback yet',
+  'pages.park.asset.tenantName': 'Tenant Name',
+  'pages.park.asset.contractNumber': 'Contract Number',
+  'pages.park.asset.leaseTerm': 'Lease Term',
+  'pages.park.asset.monthlyRent': 'Monthly Rent',
+  'pages.park.asset.uploadAttachment': 'Upload Attachment',
+  'pages.park.asset.noRecords': 'No records',
+  'pages.park.asset.deleteSuccess': 'Deleted successfully',
+  'pages.park.asset.saveFailed': 'Failed to save',
+  'pages.park.asset.deleteFailed': 'Failed to delete',
 };

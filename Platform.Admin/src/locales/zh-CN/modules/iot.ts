@@ -211,4 +211,68 @@ export default {
   'pages.iotPlatform.command.reply': '回复',
   'pages.iotPlatform.command.expires': '过期',
   'pages.iotPlatform.command.jsonFormatError': 'JSON 格式错误，请检查',
+
+  // DeviceManagement
+  'pages.iotPlatform.device.type.sensor': '传感器 (Sensor)',
+  'pages.iotPlatform.device.type.actuator': '执行器 (Actuator)',
+  'pages.iotPlatform.device.type.gateway': '网关 (Gateway)',
+  'pages.iotPlatform.device.type.other': '其他 (Other)',
+  'pages.iotPlatform.device.status.online': '在线',
+  'pages.iotPlatform.device.status.offline': '离线',
+  'pages.iotPlatform.device.status.fault': '故障',
+  'pages.iotPlatform.device.status.maintenance': '维护中',
+  'pages.iotPlatform.device.deviceTwinSection': '设备孪生',
+  'pages.iotPlatform.device.deviceTypeLabel': '设备类型',
+  'pages.iotPlatform.device.generateKey': '生成密钥',
+  'pages.iotPlatform.device.primaryKeyLabel': 'Primary Key（明文）',
+  'pages.iotPlatform.device.generateKeyFailed': '生成密钥失败',
+  'pages.iotPlatform.device.deleteFailed': '删除失败',
+
+  // GatewayManagement
+  'pages.iotPlatform.gateway.status.online': '在线',
+  'pages.iotPlatform.gateway.status.offline': '离线',
+  'pages.iotPlatform.gateway.status.fault': '故障',
+  'pages.iotPlatform.gateway.status.maintenance': '维护中',
+  'pages.iotPlatform.gateway.deleteFailed': '删除失败',
+  'pages.iotPlatform.gateway.protocol.mqtt': 'MQTT',
+  'pages.iotPlatform.gateway.protocol.http': 'HTTP',
+  'pages.iotPlatform.gateway.protocol.modbus': 'Modbus',
+  'pages.iotPlatform.gateway.protocol.coap': 'CoAP',
+
+  // DataPointManagement
+  'pages.iotPlatform.datapoint.type.numeric': '数值',
+  'pages.iotPlatform.datapoint.type.boolean': '布尔',
+  'pages.iotPlatform.datapoint.type.string': '字符串',
+  'pages.iotPlatform.datapoint.type.enum': '枚举',
+  'pages.iotPlatform.datapoint.deleteFailed': '删除失败',
+  'pages.iotPlatform.datapoint.valuePreview': '值预览',
+  'pages.iotPlatform.datapoint.collectedAt': '采集时间',
+
+  // EventManagement
+  'pages.iotPlatform.event.level.info': '信息',
+  'pages.iotPlatform.event.level.warning': '警告',
+  'pages.iotPlatform.event.level.error': '错误',
+  'pages.iotPlatform.event.level.critical': '严重',
+  'pages.iotPlatform.event.handling': '处理',
+  'pages.iotPlatform.event.handled': '已处理',
+  'pages.iotPlatform.event.pending': '待处理',
+
+  // CommandCenterPanel
+  'pages.iotPlatform.command.label.restart': 'restart — 重启设备',
+  'pages.iotPlatform.command.label.reboot': 'reboot — 强制重启',
+  'pages.iotPlatform.command.label.getStatus': 'getStatus — 获取设备状态',
+  'pages.iotPlatform.command.label.setReportInterval': 'setReportInterval — 设置上报间隔',
+  'pages.iotPlatform.command.label.setThreshold': 'setThreshold — 设置告警阈值',
+  'pages.iotPlatform.command.label.enableDataPoint': 'enableDataPoint — 启用数据点',
+  'pages.iotPlatform.command.label.disableDataPoint': 'disableDataPoint — 禁用数据点',
+  'pages.iotPlatform.command.label.factoryReset': 'factoryReset — 恢复出厂设置',
+  'pages.iotPlatform.command.status.pending': '待下发',
+  'pages.iotPlatform.command.status.sent': '已下发',
+  'pages.iotPlatform.command.status.executed': '已执行',
+  'pages.iotPlatform.command.status.failed': '执行失败',
+  'pages.iotPlatform.command.status.expired': '已过期',
+
+  // DataCenter
+  'pages.iotPlatform.datacenter.col.valuePreview': '值预览',
+  'pages.iotPlatform.datacenter.copied': '已复制',
 };

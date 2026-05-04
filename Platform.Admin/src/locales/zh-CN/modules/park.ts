@@ -671,4 +671,15 @@ export default {
   'pages.park.statistics.areaSquareMeters': '㎡',
   'pages.park.statistics.rented': '已出租',
   'pages.park.statistics.vacant': '空置',
+
+  // asset/index.tsx
+  'pages.park.asset.tenantName': '租户名称',
+  'pages.park.asset.contractNumber': '合同编号',
+  'pages.park.asset.leaseTerm': '租期',
+  'pages.park.asset.monthlyRent': '月租金',
+  'pages.park.asset.uploadAttachment': '上传附件',
+  'pages.park.asset.noRecords': '暂无记录',
+  'pages.park.asset.deleteSuccess': '删除成功',
+  'pages.park.asset.saveFailed': '保存失败',
+  'pages.park.asset.deleteFailed': '删除失败',
 };

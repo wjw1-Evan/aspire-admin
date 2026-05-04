@@ -7,32 +7,37 @@
 本系统是一个**企业级多租户管理平台**，旨在帮助企业解决以下核心问题：
 
 ### 1. 统一工作台
-- **任务管理**：任务创建、分配、跟踪、进度看板
-- **项目管理**：项目立项、成员协作、里程碑跟踪
+- **任务管理**：任务创建、分配、跟踪、进度看板、任务统计
+- **项目管理**：项目立项、成员协作、里程碑跟踪、项目统计
 - **公文管理**：公文创建、审批、签发、归档全流程闭环
-- **知识库**：文档管理、知识沉淀、检索
+- **知识库**：知识库管理、文档沉淀、全文检索
+- **工作流引擎**：可视化流程设计、审批流转、流程监控
 
 ### 2. 园区资产管理
-- **资产管理**：房源画像、楼铺信息、租赁状态
-- **招商管理**：线索库、商机转化、合同签订
-- **租户服务**：租户档案、走访记录、企业服务
-- **物业管理**：设施维护、工单流转
+- **资产管理**：楼宇/房源画像、楼铺信息、租赁状态监控
+- **招商管理**：线索库、商机转化、招商项目跟进
+- **租户服务**：租户档案、走访记录、合同管理
+- **企业服务**：服务申请、报修处理、企业需求响应
+- **数据统计**：园区运营数据、出租率分析、收益统计
 
 ### 3. IoT 物联网
-- **网关管理**：网关配置、在线状态监控
-- **设备管理**：设备注册、关联关系维护
-- **数据采集**：传感器数据实时采集、历史报表
-- **事件告警**：异常事件监控、告警推送
+- **网关管理**：网关配置、在线状态监控、远程配置
+- **设备管理**：设备注册、关联关系维护、设备孪生
+- **数据采集**：传感器数据实时采集、历史报表、数据点管理
+- **事件告警**：异常事件监控、告警推送、实时数据观测
+- **设备控制**：远程命令下发、期望属性配置
 
 ### 4. AI 智能助手（小科）
-- **智能对话**：基于 OpenAI 的自然语言交互
-- **MCP 工具**：AI 可直接调用企业业务逻辑（审批、查询等）
-- **自动化**：工作流审批、设备状态分析
+- **智能对话**：基于 OpenAI 的自然语言交互，支持流式回复
+- **MCP 工具**：20个业务领域处理器，AI 可直接调用企业业务逻辑
+- **工具能力**：工作流审批、设备控制、数据查询、任务管理、园区运营等
+- **配置管理**：AI 模型配置、会话管理、历史记录存档
 
 ### 5. 云盘协作
-- **文件管理**：分布式存储、秒传、大文件支持
-- **版本管理**：文件多版本、历史追溯
-- **共享协作**：外链分享、权限控制
+- **文件管理**：GridFS 分布式存储、秒传、大文件支持、文件夹管理
+- **版本管理**：文件多版本、历史追溯、版本恢复
+- **共享协作**：外链分享、密码保护、过期时间设置、权限控制
+- **存储配额**：用户/企业级存储限制、使用统计
 
 ### 6. 通知中心
 - **实时推送**：SSE 推送，未读数实时更新
@@ -48,44 +53,51 @@
 
 - **工作流引擎**
   - 可视化拖拽式流程设计，支持复杂分支条件
-  - 流程版本管理，支持回滚
-  - 审批历史全程追溯
+  - 流程版本管理，支持回滚与对比
+  - 审批历史全程追溯，支持审批意见
+  - 支持 Document 与 Variable 两种数据绑定模式
 
 - **实时通知**
-  - SSE 推送，未读数实时更新
+  - SSE 推送，未读数实时更新（30s 心跳机制）
   - 多端同步（Web/App/小程序）
-  - 支持分类筛选、按已读/未读筛选
+  - 支持分类筛选（System/Work/Social/Security）、按已读/未读筛选
 
 - **国密算法支持**
   - SM2 非对称加密、SM3 带盐哈希、SM4 对称加密
   - 数据完整性校验 (SM3-HMAC)
+  - 符合国产密码合规要求
 
-- **AI 智能助手**
-  - 基于 OpenAI 流式回复
-  - MCP 协议支持 AI 调用业务工具
+- **AI 智能助手（小科）**
+  - 基于 OpenAI 流式回复实时推送
+  - MCP 协议支持 AI 调用 20 个业务领域工具
+  - 智能提示词模板与实时资源映射
 
 - **IoT 物联网**
-  - 网关/设备管理
-  - 实时数据采集
-  - 事件告警
+  - 网关/设备全生命周期管理
+  - 实时数据采集与数据点观测
+  - 事件告警与远程设备控制
 
 - **云盘协作**
   - GridFS 分布式存储、大文件、秒传
-  - 多版本管理、外链分享
+  - 多版本管理、外链分享、存储配额控制
+
+- **系统监控**
+  - 实时系统资源监控（CPU/内存/磁盘）
+  - 跨平台支持（Windows/Linux/macOS）
 
 - **多端体验**
-  - Admin (React) 管理后台
-  - App (Expo) 移动端
-  - MiniApp 微信小程序
+  - Admin (React 19 + Ant Design 6) 管理后台
+  - App (Expo 55 + React Native 0.85) 移动端
+  - MiniApp (微信原生) 微信小程序
 
 ## 🛠️ 技术栈 (Technology Stack)
 
 | 层次 | 核心技术 | 描述 |
 | :--- | :--- | :--- |
-| **后端** | **.NET 10 + Aspire 13.2.1** | 最新代 C# 开发框架，支持云原生编排与服务治理。 |
+| **后端** | **.NET 10 + Aspire 13.2.4** | 最新代 C# 开发框架，支持云原生编排与服务治理。 |
 | **数据库** | **MongoDB + EF Core** | 采用 **MongoDB.EntityFrameworkCore** 实现强类型的 NoSQL 访问。 |
-| **管理端** | **React 19.2.5 + Ant Design 6.3.5 + UmiJS 4.6.42** | 面向未来的 Web 开发架构，极致的渲染性能与 UI 细节。 |
-| **移动端** | **Expo 54.0 + React Native 0.83.1** | 跨平台原生体验，支持 Reanimated 超流畅动画方案。 |
+| **管理端** | **React 19.2.5 + Ant Design 6.3.7 + UmiJS 4** | 面向未来的 Web 开发架构，极致的渲染性能与 UI 细节。 |
+| **移动端** | **Expo 55.0 + React Native 0.85.2** | 跨平台原生体验，支持 Reanimated 超流畅动画方案。 |
 | **小程序** | **Native WeChat** | 适配微信原生生态，确保低延时与高兼容性。 |
 | **观测性** | **OpenTelemetry** | 集成指标、日志与链路追踪，全链路健康监控。 |
 | **国密安全** | **BouncyCastle (C#) / sm-crypto (JS)** | 实现 SM2/SM3/SM4 算法，符合国产密码合规要求。 |
@@ -132,11 +144,11 @@ graph TD
 ```
 
 - **Platform.AppHost**：Aspire 编排入口；默认拉起 **MongoDB**、**OpenAI（可选）** 及各 .NET 项目。**Redis 未在默认编排中启用**；若需缓存，在 `AppHost.cs` 增加 `AddRedis` 并对消费方使用 `WithReference(redis)`。
-- **Platform.ApiService**：核心业务 API（工作流、IoT、园区、AI、云盘业务逻辑等）。
+- **Platform.ApiService**：核心业务 API（45个控制器，涵盖工作流、IoT、园区、AI、云盘等业务逻辑）。
 - **Platform.SystemMonitor**：进程级 CPU/内存/磁盘等指标；**不连接业务库 `mongodb`**。
-- **Platform.Admin**：基于 Ant Design 6 打造，强调原生体验与高性能操作视图。
-- **Platform.MiniApp**：涵盖园区全生命周期管理的轻量化业务端。
-- **Platform.App**：提供一致性的原生移动端访问与消息触达。
+- **Platform.Admin**：基于 Ant Design 6 打造的管理后台（23个主要功能模块），强调原生体验与高性能操作视图。
+- **Platform.MiniApp**：涵盖园区全生命周期管理的轻量化微信小程序端。
+- **Platform.App**：基于 Expo 的跨平台原生移动端应用，提供一致性的移动访问与消息触达。
 
 ## 📂 项目结构 (Project Structure)
 
@@ -146,11 +158,11 @@ aspire-admin
 │   ├── AppHost.cs            # 主编排配置（服务发现、YARP 路由、健康检查、环境变量注入）
 │   ├── appsettings.json      # 配置文件（JWT、OpenAI、SMTP、InternalService 密钥等）
 │   └── mongo-init/           # MongoDB 初始化脚本
-├── Platform.ApiService        # 核心业务 API（工作流、IoT、园区、AI、云盘业务逻辑等）
-│   ├── Controllers/          # API 控制器
+├── Platform.ApiService        # 核心业务 API（45个控制器，涵盖工作流、IoT、园区、AI、云盘等业务逻辑）
+│   ├── Controllers/          # API 控制器（45个控制器）
 │   ├── Services/             # 业务服务层
-│   │   ├── McpService.cs    # MCP 服务（简化版本）
-│   │   └── Mcp/             # MCP 工具处理器（15+ Handlers）
+│   │   ├── McpService.cs    # MCP 服务
+│   │   └── Mcp/             # MCP 工具处理器（20个 Handlers）
 │   ├── Models/               # 数据模型
 │   ├── Options/              # 配置选项类
 │   └── docs/                 # 服务文档
@@ -189,12 +201,15 @@ aspire-admin
 ## 🖥 管理后台 (Platform.Admin)
 
 - **极致 UI**：基于 React 19、Ant Design 6 与 UmiJS 4，全面采用原生变量与高性能组件。
-- **核心中心化模块**：
-  - **协同中心**：融合公文（Document）管理与工作流，支持任务看板依赖链与全局进度统计。
-  - **资产中心**：涵盖园区房源画像、招商线索库及租户合同全生命周期监控。
-  - **智能中心**：管理 AI 连接配置、历史会话存档与 MCP 规则链路。
-  - **物联网中心**：网关管理、设备监控、数据点采集与事件告警。
-  - **系统管理**：用户、角色、菜单、权限、组织架构等基础配置。
+- **核心功能模块**（23个主要模块）：
+  - **协同中心**：任务管理、项目管理、公文管理、工作流审批
+  - **资产中心**：园区资产管理、招商管理、租户服务、企业服务
+  - **智能中心**：AI 对话、小科配置、MCP 规则链路
+  - **物联网中心**：网关管理、设备监控、数据点采集、事件告警
+  - **文件存储**：云盘管理、文件分享、版本控制、存储配额
+  - **系统管理**：用户管理、角色权限、菜单配置、组织架构、系统监控
+  - **知识管理**：知识库、文档管理、知识检索
+  - **数据看板**：仪表盘、统计报表、数据可视化
 
 ## 🧩 MCP 服务 (Model Context Protocol)
 
@@ -212,7 +227,7 @@ aspire-admin
 - ✅ **并行执行**：使用 `Task.WhenAll` 并行执行多个工具
 - ✅ **多租户继承**：业务实体 **必须** 继承 `MultiTenantEntity` 以实现自动隔离
 
-### 核心工具集 (21 Handlers)
+### 核心工具集 (20 Handlers)
 
 - **工作流自动化 (Workflow)**
   - 🔍 **查询**：检索流程定义、跟踪运行中的实例
@@ -278,12 +293,14 @@ dotnet run --project Platform.AppHost
 
 启动成功后，可以通过以下地址访问各个服务：
 
-- **Aspire Dashboard**: <http://localhost:17091> - 查看所有服务的实时日志、指标与分布式追踪
-- **API Gateway**: <http://localhost:15000> - YARP 网关统一入口
-- **管理后台 (Admin)**: <http://localhost:15001> - React 管理界面
-- **移动端预览 (Expo Web)**: <http://localhost:15002> - Expo Web 预览
-- **小程序预览**: <http://localhost:15003> - 微信小程序静态资源
-- **API 文档 (Scalar)**: 通过 Aspire Dashboard 对应的服务入口点击跳转
+| 服务 | 地址 | 说明 |
+|------|------|------|
+| **Aspire Dashboard** | <http://localhost:17091> | 查看所有服务的实时日志、指标与分布式追踪 |
+| **API Gateway** | <http://localhost:15000> | YARP 网关统一入口 |
+| **管理后台 (Admin)** | <http://localhost:15001> | React 管理界面（23个功能模块） |
+| **移动端预览 (Expo Web)** | <http://localhost:15002> | Expo Web 预览 |
+| **小程序预览** | <http://localhost:15003> | 微信小程序静态资源 |
+| **API 文档 (Scalar)** | <http://localhost:17091> | 通过 Aspire Dashboard 对应服务入口访问 |
 
 ### 4. 可选配置
 
@@ -361,8 +378,24 @@ dotnet run --project Platform.AppHost
 - 代码通过编译且无警告
 - 添加必要的单元测试
 
-## 📄 开源协议
+## 📊 附录：完整控制器列表
 
-## 📄 开源协议 (License)
+| 模块 | 控制器 | 功能说明 |
+|------|--------|----------|
+| **认证** | AuthController | 用户登录、注册、Token 刷新 |
+| **用户** | UserController, AvatarController | 用户管理、个人资料、头像管理 |
+| **角色权限** | RoleController, MenuController | 角色管理、菜单权限配置 |
+| **任务项目** | TaskController, ProjectController, ProjectStatisticsController | 任务管理、项目管理、项目统计 |
+| **公文** | DocumentController | 公文创建、审批、签发、归档 |
+| **工作流** | WorkflowController | 流程定义、流程实例、审批操作 |
+| **IoT** | IoTController | 网关管理、设备管理、数据采集 |
+| **园区** | ParkAssetController, ParkTenantController, ParkVisitController, ParkInvestmentController, ParkEnterpriseServiceController, ParkStatisticsController | 资产、租户、走访、招商、企业服务 |
+| **文件存储** | CloudStorageController, FileShareController, FileVersionController, FileStorageController | 云盘、分享、版本、存储管理 |
+| **知识库** | KnowledgeBaseController, KnowledgeDocumentController | 知识库、文档管理 |
+| **AI** | ChatAiController, ChatSessionsController, ChatHistoryController, ChatMessagesController, XiaokeConfigController | AI对话、会话、配置 |
+| **系统** | SystemMonitorController, DashboardController, DashboardVersionController | 系统监控、仪表盘 |
+| **其他** | WebScraperController, FormController, RuleController, OrganizationController, SocialController, NotificationController, McpController, CompanyController, StorageQuotaController, QuotaController, StreamController, PublicController | 爬虫、表单、规则、组织、社交、通知、MCP、企业、配额、流、公共接口 |
+
+## 📄 开源协议
 
 基于 [MIT License](LICENSE) 开源。

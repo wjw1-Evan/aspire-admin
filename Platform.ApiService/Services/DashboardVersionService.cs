@@ -14,16 +14,13 @@ namespace Platform.ApiService.Services;
 public class DashboardVersionService : IDashboardVersionService
 {
     private readonly DbContext _context;
-    private readonly IDashboardService _dashboardService;
     private readonly ILogger<DashboardVersionService> _logger;
 
     public DashboardVersionService(
         DbContext context,
-        IDashboardService dashboardService,
         ILogger<DashboardVersionService> logger)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
-        _dashboardService = dashboardService ?? throw new ArgumentNullException(nameof(dashboardService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 

@@ -210,6 +210,7 @@ export default {
   'pages.webScraper.every10Minutes': '每10分钟',
   'pages.webScraper.everyHour': '每小时',
   'pages.webScraper.dailyDawn': '每天凌晨',
+  'pages.webScraper.cron.execute': '执行',
 
   // ResultPreview component
   'pages.webScraper.resultPreview.title': '抓取结果',

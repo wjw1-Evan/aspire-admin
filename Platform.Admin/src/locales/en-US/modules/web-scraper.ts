@@ -244,4 +244,5 @@ export default {
   'pages.webScraper.resultPreview.detail.links': 'Links',
   'pages.webScraper.resultPreview.detail.moreLinks': '...and {count} more links',
   'pages.webScraper.resultPreview.expand': 'Expand',
+  'pages.webScraper.cron.execute': 'Execute',
 };

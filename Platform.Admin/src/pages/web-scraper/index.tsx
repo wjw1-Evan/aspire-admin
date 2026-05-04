@@ -127,7 +127,7 @@ const explainCron = (cron: string, intl: any): string => {
   if (min === '0' && hour === '0' && day === '*') return intl.formatMessage({ id: 'pages.webScraper.cron.daily' });
   if (week === '1' && min === '0' && hour === '0') return intl.formatMessage({ id: 'pages.webScraper.cron.weekly' });
   if (day === '1' && month === '*' && min === '0' && hour === '0') return intl.formatMessage({ id: 'pages.webScraper.cron.monthly' });
-  return `${hour}:${min.padStart(2, '0')} 执行`;
+  return `${hour}:${min.padStart(2, '0')} ${intl.formatMessage({ id: 'pages.webScraper.cron.execute' })}`;
 };
 
 const WebScraper: React.FC = () => {

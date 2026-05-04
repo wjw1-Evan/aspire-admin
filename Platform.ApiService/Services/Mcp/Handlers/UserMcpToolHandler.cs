@@ -42,8 +42,8 @@ public class UserMcpToolHandler : McpToolHandlerBase
                 return await _userService.GetUsersWithPaginationAsync(new Platform.ServiceDefaults.Models.ProTableRequest
                 {
                     Search = args.GetValueOrDefault("search")?.ToString(),
-                    Current = pagination.page,
-                    PageSize = pagination.pageSize
+                    Current = pagination.Current,
+                    PageSize = pagination.PageSize
                 });
             });
 

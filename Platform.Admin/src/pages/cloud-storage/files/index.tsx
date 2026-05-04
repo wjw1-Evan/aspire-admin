@@ -181,7 +181,7 @@ const CloudStorageFilesPage: React.FC = () => {
 
     const handleBatchDelete = useCallback(() => {
         if (state.selectedRowKeys.length === 0) { message.error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.selectFilesToDelete' })); return; }
-        Modal.confirm({ title: '确认删除', content: `确定要删除选中的 ${state.selectedRowKeys.length} 个文件吗？`, onOk: async () => {
+        Modal.confirm({ title: intl.formatMessage({ id: 'pages.cloud-storage.files.confirmDeleteTitle' }), content: intl.formatMessage({ id: 'pages.cloud-storage.files.confirmDelete' }, { count: state.selectedRowKeys.length }), onOk: async () => {
             try { await api.batchDelete(state.selectedRowKeys); message.success(intl.formatMessage({ id: 'pages.cloud-storage.files.message.batchDeleteSuccess' })); set({ selectedRowKeys: [], selectedRows: [] }); actionRef.current?.reload(); }
             catch { message.error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.batchDeleteFailed' })); }
         }});

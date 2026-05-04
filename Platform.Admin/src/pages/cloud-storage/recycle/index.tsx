@@ -32,30 +32,30 @@ const CloudStorageRecyclePage: React.FC = () => {
     const formatFileSize = (bytes: number) => { if (bytes === 0) return '0 B'; const k = 1024; const sizes = ['B', 'KB', 'MB', 'GB', 'TB']; const i = Math.floor(Math.log(bytes) / Math.log(k)); return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]; };
 
     const columns: ProColumns<RecycleItem>[] = [
-        { title: '名称', dataIndex: 'name', key: 'name', sorter: true, copyable: true },
-        { title: '原路径', dataIndex: 'originalPath', key: 'originalPath', ellipsis: true, copyable: true },
-        { title: '大小', dataIndex: 'size', key: 'size', valueType: 'digit', sorter: true, renderText: (size: number, r: RecycleItem) => r.isFolder ? '-' : formatFileSize(size) },
-        { title: '删除时间', dataIndex: 'deletedAt', key: 'deletedAt', valueType: 'dateTime', sorter: true },
-        { title: '删除者', dataIndex: 'deletedByName', key: 'deletedByName', sorter: true },
+        { title: intl.formatMessage({ id: 'pages.cloud-storage.recycle.fileName' }), dataIndex: 'name', key: 'name', sorter: true, copyable: true },
+        { title: intl.formatMessage({ id: 'pages.cloud-storage.recycle.originalPath' }), dataIndex: 'originalPath', key: 'originalPath', ellipsis: true, copyable: true },
+        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.fileSize' }), dataIndex: 'size', key: 'size', valueType: 'digit', sorter: true, renderText: (size: number, r: RecycleItem) => r.isFolder ? '-' : formatFileSize(size) },
+        { title: intl.formatMessage({ id: 'pages.cloud-storage.recycle.deleteTime' }), dataIndex: 'deletedAt', key: 'deletedAt', valueType: 'dateTime', sorter: true },
+        { title: intl.formatMessage({ id: 'pages.cloud-storage.recycle.deletedBy' }), dataIndex: 'deletedByName', key: 'deletedByName', sorter: true },
         {
-            title: '过期状态', key: 'expiry', render: (_, r: RecycleItem) => {
-                if (r.daysUntilPermanentDelete <= 0) return <span style={{ color: '#ff4d4f' }}>已过期</span>;
-                if (r.daysUntilPermanentDelete <= 7) return <span style={{ color: '#fa8c16' }}>{r.daysUntilPermanentDelete}天后过期</span>;
-                return <span style={{ color: '#52c41a' }}>{r.daysUntilPermanentDelete}天后过期</span>;
+            title: intl.formatMessage({ id: 'pages.cloud-storage.recycle.expireStatus' }), key: 'expiry', render: (_, r: RecycleItem) => {
+                if (r.daysUntilPermanentDelete <= 0) return <span style={{ color: '#ff4d4f' }}>{intl.formatMessage({ id: 'pages.cloud-storage.recycle.expired' })}</span>;
+                if (r.daysUntilPermanentDelete <= 7) return <span style={{ color: '#fa8c16' }}>{r.daysUntilPermanentDelete}{intl.formatMessage({ id: 'pages.cloud-storage.recycle.daysUntilExpiry' })}</span>;
+                return <span style={{ color: '#52c41a' }}>{r.daysUntilPermanentDelete}{intl.formatMessage({ id: 'pages.cloud-storage.recycle.daysUntilExpiry' })}</span>;
             }
         },
         {
-            title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 180,
+            title: intl.formatMessage({ id: 'pages.table.action' }), key: 'action', valueType: 'option', fixed: 'right', width: 180,
             render: (_, r: RecycleItem) => (
                 <Space size={4}>
                     <Button type="link" size="small" icon={<UndoOutlined />} onClick={() => {
                         form.setFieldsValue({ newName: r.name });
                         Modal.confirm({
-                            title: '恢复文件',
+                            title: intl.formatMessage({ id: 'pages.cloud-storage.recycle.restoreFile' }),
                             content: (
                                 <Form form={form} layout="vertical">
-                                    <Form.Item name="newName" label="文件名">
-                                        <Input placeholder="请输入文件名" />
+                                    <Form.Item name="newName" label={intl.formatMessage({ id: 'pages.cloud-storage.recycle.fileName' })}>
+                                        <Input placeholder={intl.formatMessage({ id: 'pages.cloud-storage.recycle.fileNamePlaceholder' })} />
                                     </Form.Item>
                                 </Form>
                             ),

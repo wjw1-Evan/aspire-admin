@@ -111,13 +111,13 @@ const UserLog: React.FC = () => {
         actionRef={actionRef}
         headerTitle={
           <Space size={24}>
-            <Space><FileTextOutlined />操作日志</Space>
+            <Space><FileTextOutlined />{intl.formatMessage({ id: 'pages.userLog.title' })}</Space>
             <Space size={12}>
-              <Tag color="blue">总记录 {state.statistics?.total || 0}</Tag>
-              <Tag color="green">成功 {state.statistics?.success || 0}</Tag>
-              <Tag color="red">错误 {state.statistics?.error || 0}</Tag>
-              <Tag color="orange">操作类型 {state.statistics?.actions || 0}</Tag>
-              <Tag color="purple">平均耗时 {state.statistics?.avgDuration || 0}ms</Tag>
+              <Tag color="blue">{intl.formatMessage({ id: 'pages.userLog.totalRecords' })} {state.statistics?.total || 0}</Tag>
+              <Tag color="green">{intl.formatMessage({ id: 'pages.userLog.success' })} {state.statistics?.success || 0}</Tag>
+              <Tag color="red">{intl.formatMessage({ id: 'pages.userLog.error' })} {state.statistics?.error || 0}</Tag>
+              <Tag color="orange">{intl.formatMessage({ id: 'pages.userLog.actionTypes' })} {state.statistics?.actions || 0}</Tag>
+              <Tag color="purple">{intl.formatMessage({ id: 'pages.userLog.avgDuration' })} {state.statistics?.avgDuration || 0}ms</Tag>
             </Space>
           </Space>
         }

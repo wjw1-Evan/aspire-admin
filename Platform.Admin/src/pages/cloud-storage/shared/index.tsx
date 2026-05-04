@@ -96,16 +96,16 @@ const CloudStorageSharedPage: React.FC = () => {
     };
 
     const columns: ProColumns<FileShare>[] = [
-        { title: '文件名', dataIndex: 'fileName', key: 'fileName', sorter: true, copyable: true },
-        { title: '分享类型', dataIndex: 'shareType', key: 'shareType', valueType: 'select', valueEnum: { internal: intl.formatMessage({ id: 'pages.cloudStorage.share.type.internal' }), external: intl.formatMessage({ id: 'pages.cloudStorage.share.type.external' }) }, renderText: (t: string) => <Tag color={t === 'internal' ? 'blue' : 'green'}>{t === 'internal' ? intl.formatMessage({ id: 'pages.cloudStorage.share.type.internal' }) : intl.formatMessage({ id: 'pages.cloudStorage.share.type.external' })}</Tag> },
-        { title: '访问权限', dataIndex: 'accessType', key: 'accessType', valueType: 'select', valueEnum: { view: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewOnly' }), download: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewDownload' }), edit: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewDownloadEdit' }) }, renderText: (t: string) => getAccessTypeTag(t) },
-        { title: '状态', dataIndex: 'isEnabled', key: 'isEnabled', valueType: 'select', valueEnum: { enabled: intl.formatMessage({ id: 'pages.cloudStorage.share.status.enabled' }), disabled: intl.formatMessage({ id: 'pages.cloudStorage.share.status.disabled' }) }, renderText: (t: boolean, r: FileShare) => {
+        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.fileName' }), dataIndex: 'fileName', key: 'fileName', sorter: true, copyable: true },
+        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.shareType' }), dataIndex: 'shareType', key: 'shareType', valueType: 'select', valueEnum: { internal: intl.formatMessage({ id: 'pages.cloudStorage.share.type.internal' }), external: intl.formatMessage({ id: 'pages.cloudStorage.share.type.external' }) }, renderText: (t: string) => <Tag color={t === 'internal' ? 'blue' : 'green'}>{t === 'internal' ? intl.formatMessage({ id: 'pages.cloudStorage.share.type.internal' }) : intl.formatMessage({ id: 'pages.cloudStorage.share.type.external' })}</Tag> },
+        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.accessPermission' }), dataIndex: 'accessType', key: 'accessType', valueType: 'select', valueEnum: { view: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewOnly' }), download: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewDownload' }), edit: intl.formatMessage({ id: 'pages.cloudStorage.share.access.viewDownloadEdit' }) }, renderText: (t: string) => getAccessTypeTag(t) },
+        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.status' }), dataIndex: 'isEnabled', key: 'isEnabled', valueType: 'select', valueEnum: { enabled: intl.formatMessage({ id: 'pages.cloudStorage.share.status.enabled' }), disabled: intl.formatMessage({ id: 'pages.cloudStorage.share.status.disabled' }) }, renderText: (t: boolean, r: FileShare) => {
             if (!r.isEnabled) return <Tag color="default">{intl.formatMessage({ id: 'pages.cloudStorage.share.status.disabled' })}</Tag>;
             if (r.expiresAt && dayjs(r.expiresAt).isBefore(dayjs())) return <Tag color="red">{intl.formatMessage({ id: 'pages.cloudStorage.share.status.expired' })}</Tag>;
             return <Tag color="green">{intl.formatMessage({ id: 'pages.cloudStorage.share.status.enabled' })}</Tag>;
         }},
-        { title: '下载次数限制', dataIndex: 'maxDownloads', key: 'maxDownloads', valueType: 'digit', sorter: true },
-        { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', valueType: 'dateTime', sorter: true },
+        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.downloadLimit' }), dataIndex: 'maxDownloads', key: 'maxDownloads', valueType: 'digit', sorter: true },
+        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.createdAt' }), dataIndex: 'createdAt', key: 'createdAt', valueType: 'dateTime', sorter: true },
         {
             title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 180,
             render: (_, r: FileShare) => (
@@ -117,7 +117,7 @@ const CloudStorageSharedPage: React.FC = () => {
                     }}>复制链接</Button>
                     <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleOpenModal(r)}>编辑</Button>
                     <Button type="link" size="small" icon={r.isEnabled ? <LockOutlined /> : <UnlockOutlined />} onClick={() => handleToggleShareEnabled(r)}>{r.isEnabled ? intl.formatMessage({ id: 'pages.cloudStorage.share.action.disable' }) : intl.formatMessage({ id: 'pages.cloudStorage.share.action.enable' })}</Button>
-                    <Popconfirm title={`确定删除分享「${r.fileName}」？`} onConfirm={() => handleDeleteShare(r)}>
+                    <Popconfirm title={intl.formatMessage({ id: 'pages.cloud-storage.share.confirmDelete' }, { name: r.fileName })} onConfirm={() => handleDeleteShare(r)}>
                         <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete' })}</Button>
                     </Popconfirm>
                 </Space>
@@ -129,15 +129,15 @@ const CloudStorageSharedPage: React.FC = () => {
         <PageContainer>
             <ProTable
                 headerTitle={
-            <Space size={24}>
-              <Space><ShareAltOutlined />我的分享</Space>
-              <Space size={12}>
-                <Tag color="blue">总计 0</Tag>
-                <Tag color="green">启用 0</Tag>
-                <Tag color="orange">已禁用 0</Tag>
-              </Space>
-            </Space>
-          }
+                    <Space size={24}>
+                        <Space><ShareAltOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.share.myShares' })}</Space>
+                        <Space size={12}>
+                            <Tag color="blue">{intl.formatMessage({ id: 'pages.cloud-storage.share.total' })} 0</Tag>
+                            <Tag color="green">{intl.formatMessage({ id: 'pages.cloud-storage.share.enabled' })} 0</Tag>
+                            <Tag color="orange">{intl.formatMessage({ id: 'pages.cloud-storage.share.disabled' })} 0</Tag>
+                        </Space>
+                    </Space>
+                }
                 actionRef={actionRef}
                 rowKey="id"
                 search={false}

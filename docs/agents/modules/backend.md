@@ -114,16 +114,42 @@ public sealed class ProTableRequest
 }
 ```
 
-### 后端实现
+### 返回类型
 
-**[强制]** 必须使用 `ToPagedList()` 扩展方法：
+使用 `System.Linq.Dynamic.Core.PagedResult<T>` 作为分页返回类型：
 
 ```csharp
-// ✅ 正确
-return _context.Set<Entity>().Where(...).ToPagedList(request);
+public async Task<PagedResult<Entity>> GetListAsync(ProTableRequest request)
+{
+    // 实现...
+}
+```
+
+### 后端实现
+
+**[强制]** 必须使用 `ToPagedList()` 扩展方法，并直接返回结果：
+
+```csharp
+// ✅ 正确：使用 ToPagedList 并返回
+public async Task<PagedResult<PasswordBookEntry>> GetEntriesAsync(
+    ProTableRequest request,
+    string userId)
+{
+    if (string.IsNullOrEmpty(userId))
+        throw new ArgumentException("用户ID不能为空", nameof(userId));
+
+    var query = _context.Set<PasswordBookEntry>()
+        .Where(e => e.UserId == userId || e.IsPublic);
+
+    return query.ToPagedList(request);
+}
 
 // ❌ 禁止：手动分页
 var paged = query.Skip((page - 1) * pageSize).Take(pageSize);
+
+// ❌ 禁止：不直接返回 ToPagedList 结果
+var result = query.ToPagedList(request);
+return result;  // 不必要的中间变量
 ```
 
 ## 6.6 异常处理规范

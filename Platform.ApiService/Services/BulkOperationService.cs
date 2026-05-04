@@ -172,10 +172,9 @@ public class BulkOperationService : IBulkOperationService
     /// <summary>
     /// 获取当前用户的批量操作列表
     /// </summary>
-    /// <param name="page">页码</param>
-    /// <param name="pageSize">每页数量</param>
+    /// <param name="request">分页请求参数</param>
     /// <returns>批量操作列表</returns>
-    public Task<System.Linq.Dynamic.Core.PagedResult<BulkOperation>> GetUserBulkOperationsAsync(int page = 1, int pageSize = 20)
+    public Task<System.Linq.Dynamic.Core.PagedResult<BulkOperation>> GetUserBulkOperationsAsync(ProTableRequest request)
     {
         var userId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
 
@@ -184,7 +183,7 @@ public class BulkOperationService : IBulkOperationService
             b.IsDeleted != true;
 
         var query = _context.Set<BulkOperation>().Where(filter);
-        return Task.FromResult(query.ToPagedList(new Platform.ServiceDefaults.Models.ProTableRequest { Current = page, PageSize = pageSize }));
+        return Task.FromResult(query.ToPagedList(request));
     }
 
     /// <summary>

@@ -533,18 +533,18 @@ public class UserService : IUserService
 
     /// <inheritdoc/>
     public async Task<System.Linq.Dynamic.Core.PagedResult<UserActivityLog>> GetAllActivityLogsAsync(
-        int page = 1, int pageSize = 20, string? createdBy = null, string? action = null, string? httpMethod = null,
+        ProTableRequest request, string? createdBy = null, string? httpMethod = null,
         int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null)
     {
-        return await _userActivityLogService.GetAllActivityLogsAsync(new ProTableRequest { Current = page, PageSize = pageSize, Search = action });
+        return await _userActivityLogService.GetAllActivityLogsAsync(request);
     }
 
     /// <inheritdoc/>
     public async Task<System.Linq.Dynamic.Core.PagedResult<ActivityLogListItemResponse>> GetAllActivityLogsWithUsersAsync(
-        int page = 1, int pageSize = 20, string? createdBy = null, string? action = null, string? httpMethod = null,
+        ProTableRequest request, string? createdBy = null, string? httpMethod = null,
         int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null)
     {
-        return await _userActivityLogService.GetAllActivityLogsWithUsersAsync(new ProTableRequest { Current = page, PageSize = pageSize, Search = action });
+        return await _userActivityLogService.GetAllActivityLogsWithUsersAsync(request);
     }
 
     /// <inheritdoc/>

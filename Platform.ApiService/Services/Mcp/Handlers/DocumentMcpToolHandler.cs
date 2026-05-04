@@ -42,11 +42,11 @@ public class DocumentMcpToolHandler : McpToolHandlerBase
             }, PaginationSchema())),
             async (args, uid) =>
             {
-                var (page, pageSize) = ParsePaginationArgs(args, defaultPageSize: 20, maxPageSize: 100);
+                var (Current, PageSize) = ParsePaginationArgs(args, defaultPageSize: 20, maxPageSize: 100);
                 var pageParams = new Platform.ServiceDefaults.Models.ProTableRequest
                 {
-                    Current = page,
-                    PageSize = pageSize,
+                    Current = Current,
+                    PageSize = PageSize,
                     Search = args.GetValueOrDefault("keyword")?.ToString()
                 };
                 
@@ -119,12 +119,12 @@ public class DocumentMcpToolHandler : McpToolHandlerBase
     private async Task<object?> HandleGetFileItemsAsync(Dictionary<string, object> arguments, string currentUserId)
     {
         var parentId = arguments.ContainsKey("parentId") ? (arguments["parentId"]?.ToString() ?? "root") : "root";
-        var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 50, maxPageSize: 200);
+        var (Current, PageSize) = ParsePaginationArgs(arguments, defaultPageSize: 50, maxPageSize: 200);
 
         if (arguments.ContainsKey("search"))
             return await HandleSearchFilesAsync(arguments, currentUserId);
 
-        var query = new Platform.ServiceDefaults.Models.ProTableRequest { Current = page, PageSize = pageSize };
+        var query = new Platform.ServiceDefaults.Models.ProTableRequest { Current = Current, PageSize = PageSize };
 
         var response = await _cloudStorageService.GetFileItemsAsync(parentId, query);
         var items = await response.Queryable.ToListAsync();
@@ -143,8 +143,8 @@ public class DocumentMcpToolHandler : McpToolHandlerBase
         var keyword = arguments.ContainsKey("keyword") ? (arguments["keyword"]?.ToString() ?? "") : (arguments.ContainsKey("search") ? (arguments["search"]?.ToString() ?? "") : "");
         if (string.IsNullOrEmpty(keyword)) return new { error = "关键词必填" };
 
-        var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
-        var request = new Platform.ServiceDefaults.Models.ProTableRequest { Search = keyword, Current = page, PageSize = pageSize };
+        var (Current, PageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
+        var request = new Platform.ServiceDefaults.Models.ProTableRequest { Search = keyword, Current = Current, PageSize = PageSize };
         var response = await _cloudStorageService.SearchFilesAsync(request);
         var items = await response.Queryable.ToListAsync();
         return new

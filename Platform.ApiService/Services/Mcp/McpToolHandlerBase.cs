@@ -65,21 +65,21 @@ public abstract class McpToolHandlerBase : IMcpToolHandler
     /// <summary>
     /// 解析分页参数
     /// </summary>
-    protected static (int page, int pageSize) ParsePaginationArgs(
+    protected static (int Current, int PageSize) ParsePaginationArgs(
         Dictionary<string, object> arguments,
         int defaultPageSize = 20,
         int maxPageSize = 100)
     {
-        var page = 1;
+        var current = 1;
         var pageSize = defaultPageSize;
 
-        if (arguments.ContainsKey("page") && int.TryParse(arguments["page"]?.ToString(), out var p) && p > 0)
-            page = p;
+        if (arguments.ContainsKey("Current") && int.TryParse(arguments["Current"]?.ToString(), out var c) && c > 0)
+            current = c;
 
-        if (arguments.ContainsKey("pageSize") && int.TryParse(arguments["pageSize"]?.ToString(), out var ps) && ps > 0)
+        if (arguments.ContainsKey("PageSize") && int.TryParse(arguments["PageSize"]?.ToString(), out var ps) && ps > 0)
             pageSize = Math.Min(ps, maxPageSize);
 
-        return (page, pageSize);
+        return (current, pageSize);
     }
 
     /// <summary>
@@ -89,8 +89,8 @@ public abstract class McpToolHandlerBase : IMcpToolHandler
     {
         return new Dictionary<string, object>
         {
-            ["page"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 1, ["minimum"] = 1 },
-            ["pageSize"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = defaultPageSize, ["minimum"] = 1, ["maximum"] = maxPageSize }
+            ["Current"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 1, ["minimum"] = 1 },
+            ["PageSize"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = defaultPageSize, ["minimum"] = 1, ["maximum"] = maxPageSize }
         };
     }
 

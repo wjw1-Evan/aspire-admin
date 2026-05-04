@@ -174,32 +174,28 @@ public interface IUserService
     /// <summary>
     /// 获取所有活动日志（分页，管理员功能）
     /// </summary>
-    /// <param name="page">页码（默认1）</param>
-    /// <param name="pageSize">每页大小（默认20）</param>
+    /// <param name="request">分页请求参数</param>
     /// <param name="createdBy">创建者ID（可选，按用户筛选）</param>
-    /// <param name="action">操作类型（可选，按操作类型筛选）</param>
     /// <param name="httpMethod">HTTP请求方法（可选）</param>
     /// <param name="statusCode">HTTP状态码（可选）</param>
     /// <param name="ipAddress">IP地址（可选）</param>
     /// <param name="startDate">开始日期（可选，按时间范围筛选）</param>
     /// <param name="endDate">结束日期（可选，按时间范围筛选）</param>
     /// <returns>活动日志列表和总数</returns>
-    Task<System.Linq.Dynamic.Core.PagedResult<UserActivityLog>> GetAllActivityLogsAsync(int page = 1, int pageSize = 20, string? createdBy = null, string? action = null, string? httpMethod = null, int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null);
+    Task<System.Linq.Dynamic.Core.PagedResult<UserActivityLog>> GetAllActivityLogsAsync(ProTableRequest request, string? createdBy = null, string? httpMethod = null, int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null);
 
     /// <summary>
     /// 获取所有活动日志（包含用户信息，分页，管理员功能）
     /// </summary>
-    /// <param name="page">页码（默认1）</param>
-    /// <param name="pageSize">每页大小（默认20）</param>
+    /// <param name="request">分页请求参数</param>
     /// <param name="createdBy">创建者ID（可选，按用户筛选）</param>
-    /// <param name="action">操作类型（可选，按操作类型筛选）</param>
     /// <param name="httpMethod">HTTP请求方法（可选）</param>
     /// <param name="statusCode">HTTP状态码（可选）</param>
     /// <param name="ipAddress">IP地址（可选）</param>
     /// <param name="startDate">开始日期（可选，按时间范围筛选）</param>
     /// <param name="endDate">结束日期（可选，按时间范围筛选）</param>
     /// <returns>带用户信息的分页活动日志</returns>
-    Task<System.Linq.Dynamic.Core.PagedResult<ActivityLogListItemResponse>> GetAllActivityLogsWithUsersAsync(int page = 1, int pageSize = 20, string? createdBy = null, string? action = null, string? httpMethod = null, int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null);
+    Task<System.Linq.Dynamic.Core.PagedResult<ActivityLogListItemResponse>> GetAllActivityLogsWithUsersAsync(ProTableRequest request, string? createdBy = null, string? httpMethod = null, int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null);
 
     /// <summary>
     /// 记录用户活动日志

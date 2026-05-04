@@ -114,20 +114,20 @@ graph TD
         App["Platform.App (Expo)"]
         MiniApp["Platform.MiniApp (Native)"]
     end
-    
+
     subgraph Backend
         Gateway["YARP Gateway :15000"]
         ApiService["Platform.ApiService"]
         SysMonitor["Platform.SystemMonitor"]
         DataInit["Platform.DataInitializer"]
     end
-    
+
     subgraph Infrastructure
         Aspire["Aspire AppHost"]
         MongoMain[(MongoDB mongodb)]
         MongoStore[(MongoDB storagedb)]
     end
-    
+
     Admin & App & MiniApp --> Gateway
     Gateway --> ApiService
     Gateway --> Storage
@@ -233,23 +233,23 @@ aspire-admin
   - 🔍 **查询**：检索流程定义、跟踪运行中的实例
   - 🛠️ **操作**：AI 可直接执行审批、驳回、退回或转办操作
   - 📑 **追溯**：获取完整的审批历史轨迹
-  
+
 - **物联网交互 (IoT)**
   - 📡 **网关通信**：查询在线网关与关联设备
   - 📈 **数据点观测**：拉取传感器最新的实时数据点观测值，自动生成报表
   - 🔔 **事件告警**：实时监控设备状态与异常事件
-  
+
 - **园区管理 (Park)**
   - 🏢 **资产管理**：房源画像、楼铺信息、租赁状态
   - 🤝 **招商管理**：线索跟进、商机转化、合同签订
   - 👥 **租户服务**：租户档案、走访记录、企业服务
-  
+
 - **企业级协作**
   - **用户/组织**：跨租户身份检索与详细 Profile 查询
   - **任务/项目**：自动化创建、指派负责人、更新进度看板
   - **公文/表单**：文档管理、表单定义、审批流程
   - **云硬盘/通知**：文件管理、版本控制、通知推送
-  
+
 - **系统管理**
   - **菜单/权限**：动态菜单配置、角色权限管理
   - **规则引擎**：动态规则配置、资源管理、提示词模板
@@ -261,7 +261,7 @@ aspire-admin
   - `rule://{id}`: 动态规则配置快照
   - `workflow://{id}`: 流程定义与运行状态
   - `iot://{id}`: 设备健康度与统计数据
-  
+
 - **智能提示词 (Smart Prompts)**
   - 内置 `workflow_analysis`、`device_monitoring` 等专家级模板
   - 减少 Prompt Engineering 成本
@@ -297,7 +297,7 @@ dotnet run --project Platform.AppHost
 |------|------|------|
 | **Aspire Dashboard** | <http://localhost:17091> | 查看所有服务的实时日志、指标与分布式追踪 |
 | **API Gateway** | <http://localhost:15000> | YARP 网关统一入口 |
-| **管理后台 (Admin)** | <http://localhost:15001> | React 管理界面（23个功能模块） |
+| **管理后台 (Admin)** | <http://localhost:15000> | React 管理界面（23个功能模块） |
 | **移动端预览 (Expo Web)** | <http://localhost:15002> | Expo Web 预览 |
 | **小程序预览** | <http://localhost:15003> | 微信小程序静态资源 |
 | **API 文档 (Scalar)** | <http://localhost:17091> | 通过 Aspire Dashboard 对应服务入口访问 |

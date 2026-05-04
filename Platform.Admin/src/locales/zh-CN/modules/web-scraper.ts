@@ -206,4 +206,8 @@ export default {
   'pages.webScraper.statistics.partialSuccessLogs': '部分成功',
   'pages.webScraper.statistics.runningLogs': '运行中',
   'pages.webScraper.statistics.averageDuration': '平均耗时',
+  'pages.webScraper.examples': '常用示例：',
+  'pages.webScraper.every10Minutes': '每10分钟',
+  'pages.webScraper.everyHour': '每小时',
+  'pages.webScraper.dailyDawn': '每天凌晨',
 };

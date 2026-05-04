@@ -181,7 +181,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId: initialProjectId }) 
               <th style={{ padding: '12px 8px', borderBottom: '2px solid #1890ff', backgroundColor: '#e6f7ff', fontWeight: 600, color: '#1890ff', minWidth: totalDays * dayWidth }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span>{dayjs(minDate).format('YYYY-MM-DD')}</span>
-                  <span style={{ fontSize: 12, fontWeight: 400 }}>共 {totalDays} 天</span>
+                  <span style={{ fontSize: 12, fontWeight: 400 }}>{intl.formatMessage({ id: 'pages.taskManagement.timeUnit.totalDays' }, { count: totalDays })}</span>
                   <span>{dayjs(maxDate).format('YYYY-MM-DD')}</span>
                 </div>
               </th>

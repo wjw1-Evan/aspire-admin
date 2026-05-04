@@ -99,8 +99,8 @@ const TaskDetail: React.FC<{ id: string; onClose: () => void; open: boolean; isM
                 <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.plannedEnd' })}>{taskDetail.plannedEndTime ? dayjs(taskDetail.plannedEndTime).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
                 <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.actualStart' })}>{taskDetail.actualStartTime ? dayjs(taskDetail.actualStartTime).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
                 <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.actualEnd' })}>{taskDetail.actualEndTime ? dayjs(taskDetail.actualEndTime).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.estimatedDuration' })}>{taskDetail.estimatedDuration ? `${taskDetail.estimatedDuration} 分钟` : '-'}</ProDescriptions.Item>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.actualDuration' })}>{taskDetail.actualDuration ? `${taskDetail.actualDuration} 分钟` : '-'}</ProDescriptions.Item>
+                 <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.estimatedDuration' })}>{taskDetail.estimatedDuration ? `${taskDetail.estimatedDuration} ${intl.formatMessage({ id: 'pages.taskManagement.timeUnit.minutes' })}` : '-'}</ProDescriptions.Item>
+                 <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.actualDuration' })}>{taskDetail.actualDuration ? `${taskDetail.actualDuration} ${intl.formatMessage({ id: 'pages.taskManagement.timeUnit.minutes' })}` : '-'}</ProDescriptions.Item>
               </ProDescriptions>
             </ProCard>
 

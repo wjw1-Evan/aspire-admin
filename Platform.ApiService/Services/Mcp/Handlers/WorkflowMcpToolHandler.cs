@@ -64,12 +64,12 @@ public class WorkflowMcpToolHandler : McpToolHandlerBase
             )),
             async (args, uid) =>
             {
-                var (page, pageSize) = ParsePaginationArgs(args);
+                var (Current, PageSize) = ParsePaginationArgs(args);
                 var defId = args.GetValueOrDefault("workflowDefinitionId")?.ToString();
                 var statusStr = args.GetValueOrDefault("status")?.ToString();
                 WorkflowStatus? status = null;
                 if (!string.IsNullOrEmpty(statusStr) && Enum.TryParse<WorkflowStatus>(statusStr, out var s)) status = s;
-                var result = await _instanceQueryService.GetInstancesAsync(new Platform.ServiceDefaults.Models.ProTableRequest { Current = page, PageSize = pageSize }, defId, status);
+                var result = await _instanceQueryService.GetInstancesAsync(new Platform.ServiceDefaults.Models.ProTableRequest { Current = Current, PageSize = PageSize }, defId, status);
                 var items = await result.Queryable.ToListAsync();
                 return new { items, rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount };
             });
@@ -87,8 +87,8 @@ public class WorkflowMcpToolHandler : McpToolHandlerBase
             ObjectSchema(PaginationSchema()),
             async (args, uid) =>
             {
-                var (page, pageSize) = ParsePaginationArgs(args);
-                var result = await _todoService.GetTodoInstancesAsync(uid, new Platform.ServiceDefaults.Models.ProTableRequest { Current = page, PageSize = pageSize });
+                var (Current, PageSize) = ParsePaginationArgs(args);
+                var result = await _todoService.GetTodoInstancesAsync(uid, new Platform.ServiceDefaults.Models.ProTableRequest { Current = Current, PageSize = PageSize });
                 var items = await result.Queryable.ToListAsync();
                 return new { items, rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount };
             });

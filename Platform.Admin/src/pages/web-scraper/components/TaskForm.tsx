@@ -193,13 +193,12 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onCancel, onSuccess 
         placeholder={intl.formatMessage({ id: 'pages.web-scraper.scheduleCronPlaceholder' })}
         tooltip={
           <div>
-            <p>常用示例：</p>
-            <ul style={{ margin: '4px 0', paddingLeft: 16 }}>
-              <li>每10分钟：<code>*/10 * * * *</code></li>
-              <li>每小时：<code>0 * * * *</code></li>
-              <li>每天凌晨：<code>0 0 * * *</code></li>
-              <li>每周一：<code>0 0 * * 1</code></li>
-            </ul>
+            <p>{intl.formatMessage({ id: 'pages.webScraper.examples' })}</p>
+              <ul>
+                <li>{intl.formatMessage({ id: 'pages.webScraper.every10Minutes' })}：<code>*/10 * * * *</code></li>
+                <li>{intl.formatMessage({ id: 'pages.webScraper.everyHour' })}：<code>0 * * * *</code></li>
+                <li>{intl.formatMessage({ id: 'pages.webScraper.dailyDawn' })}：<code>0 0 * * *</code></li>
+              </ul>
           </div>
         }
       />

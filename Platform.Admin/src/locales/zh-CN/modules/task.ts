@@ -198,4 +198,7 @@ export default {
   'pages.taskManagement.projectPlaceholder': '请选择项目（可选）',
   'pages.taskManagement.parentTask': '父任务',
   'pages.taskManagement.parentTaskPlaceholder': '请选择父任务（可选）',
+  'pages.taskManagement.timeUnit.minutes': '分钟',
+  'pages.taskManagement.timeUnit.days': '天',
+  'pages.taskManagement.timeUnit.totalDays': '共 {count} 天',
 };

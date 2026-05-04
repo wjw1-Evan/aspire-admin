@@ -54,13 +54,13 @@ public class WebScraperMcpToolHandler : McpToolHandlerBase
             )),
             async (args, uid) =>
             {
-                var (page, pageSize) = ParsePaginationArgs(args);
+                var (Current, PageSize) = ParsePaginationArgs(args);
                 var keyword = args.GetValueOrDefault("keyword")?.ToString();
 
                 var pageParams = new Platform.ServiceDefaults.Models.ProTableRequest
                 {
-                    Current = page,
-                    PageSize = pageSize
+                    Current = Current,
+                    PageSize = PageSize
                 };
 
                 var result = await _webScraperService.GetTasksAsync(pageParams, uid, keyword);
@@ -121,13 +121,13 @@ public class WebScraperMcpToolHandler : McpToolHandlerBase
             )),
             async (args, uid) =>
             {
-                var (page, pageSize) = ParsePaginationArgs(args);
+                var (Current, PageSize) = ParsePaginationArgs(args);
                 var taskId = args.GetValueOrDefault("task_id")?.ToString();
 
                 var pageParams = new Platform.ServiceDefaults.Models.ProTableRequest
                 {
-                    Current = page,
-                    PageSize = pageSize
+                    Current = Current,
+                    PageSize = PageSize
                 };
 
                 var result = await _webScraperService.GetLogsAsync(pageParams, uid, taskId);

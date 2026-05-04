@@ -53,8 +53,8 @@ public class FileShareMcpToolHandler : McpToolHandlerBase
             ObjectSchema(PaginationSchema()),
             async (args, uid) =>
             {
-                var (page, pageSize) = ParsePaginationArgs(args);
-                var pageParams = new Platform.ServiceDefaults.Models.ProTableRequest { Current = page, PageSize = pageSize };
+                var (Current, PageSize) = ParsePaginationArgs(args);
+                var pageParams = new Platform.ServiceDefaults.Models.ProTableRequest { Current = Current, PageSize = PageSize };
                 return await _shareService.GetMySharesAsync(pageParams);
             });
 
@@ -62,8 +62,8 @@ public class FileShareMcpToolHandler : McpToolHandlerBase
             ObjectSchema(PaginationSchema()),
             async (args, uid) =>
             {
-                var (page, pageSize) = ParsePaginationArgs(args);
-                var pageParams = new Platform.ServiceDefaults.Models.ProTableRequest { Current = page, PageSize = pageSize };
+                var (Current, PageSize) = ParsePaginationArgs(args);
+                var pageParams = new Platform.ServiceDefaults.Models.ProTableRequest { Current = Current, PageSize = PageSize };
                 return await _shareService.GetSharedWithMeAsync(pageParams);
             });
     }

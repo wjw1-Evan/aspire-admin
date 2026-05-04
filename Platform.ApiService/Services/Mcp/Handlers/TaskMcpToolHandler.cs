@@ -174,11 +174,11 @@ public class TaskMcpToolHandler : McpToolHandlerBase
     private async Task<object?> HandleGetTasksAsync(Dictionary<string, object> arguments, string currentUserId)
     {
         var currentUser = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == currentUserId);
-        var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
+        var (Current, PageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
         var request = new Platform.ServiceDefaults.Models.ProTableRequest
         {
-            Current = page,
-            PageSize = pageSize,
+            Current = Current,
+            PageSize = PageSize,
             Search = arguments.GetValueOrDefault("search")?.ToString()
         };
 
@@ -393,11 +393,11 @@ public class TaskMcpToolHandler : McpToolHandlerBase
         if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
             return new { error = "无法确定当前企业" };
 
-        var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
+        var (Current, PageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
         var request = new Platform.ServiceDefaults.Models.ProTableRequest
         {
-            Current = page,
-            PageSize = pageSize,
+            Current = Current,
+            PageSize = PageSize,
             Search = arguments.ContainsKey("search") ? arguments["search"]?.ToString() : null
         };
 
@@ -431,11 +431,11 @@ public class TaskMcpToolHandler : McpToolHandlerBase
         if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
             return new { error = "无法确定当前企业" };
 
-        var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
+        var (Current, PageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
         var request = new Platform.ServiceDefaults.Models.ProTableRequest
         {
-            Current = page,
-            PageSize = pageSize,
+            Current = Current,
+            PageSize = PageSize,
             Search = arguments.ContainsKey("search") ? arguments["search"]?.ToString() : null
         };
 

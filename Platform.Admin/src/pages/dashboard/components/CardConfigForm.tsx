@@ -181,7 +181,7 @@ const DataSourcePanel: React.FC<{
 
       <Divider style={{ margin: '8px 0', fontSize: 12 }} />
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>刷新间隔（秒）</Text>
+        <Text type="secondary" style={{ fontSize: 12 }}>{intl.formatMessage({ id: 'pages.dashboard.cardConfig.refreshInterval' })}</Text>
         <InputNumber
           value={dataSource.refreshInterval || 300}
           onChange={(v) => update('refreshInterval', v || 300)}

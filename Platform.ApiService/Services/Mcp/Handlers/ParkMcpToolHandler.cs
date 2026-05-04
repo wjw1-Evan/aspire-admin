@@ -46,12 +46,12 @@ public class ParkMcpToolHandler : McpToolHandlerBase
             ObjectSchema(MergeProperties(new Dictionary<string, object> { ["keyword"] = new Dictionary<string, object> { ["type"] = "string" } }, PaginationSchema())),
             async (args, uid) =>
             {
-                var (page, pageSize) = ParsePaginationArgs(args);
+                var (Current, PageSize) = ParsePaginationArgs(args);
                 return await _assetService.GetBuildingsAsync(new Platform.ServiceDefaults.Models.ProTableRequest
                 {
                     Search = args.GetValueOrDefault("keyword")?.ToString(),
-                    Current = page,
-                    PageSize = pageSize
+                    Current = Current,
+                    PageSize = PageSize
                 });
             });
 
@@ -60,12 +60,12 @@ public class ParkMcpToolHandler : McpToolHandlerBase
             ObjectSchema(MergeProperties(new Dictionary<string, object> { ["keyword"] = new Dictionary<string, object> { ["type"] = "string" } }, PaginationSchema())),
             async (args, uid) =>
             {
-                var (page, pageSize) = ParsePaginationArgs(args);
+                var (Current, PageSize) = ParsePaginationArgs(args);
                 return await _investmentService.GetLeadsAsync(new Platform.ServiceDefaults.Models.ProTableRequest
                 {
                     Search = args.GetValueOrDefault("keyword")?.ToString(),
-                    Current = page,
-                    PageSize = pageSize
+                    Current = Current,
+                    PageSize = PageSize
                 });
             });
 
@@ -88,12 +88,12 @@ public class ParkMcpToolHandler : McpToolHandlerBase
             ObjectSchema(MergeProperties(new Dictionary<string, object> { ["keyword"] = new Dictionary<string, object> { ["type"] = "string" } }, PaginationSchema())),
             async (args, uid) =>
             {
-                var (page, pageSize) = ParsePaginationArgs(args);
+                var (Current, PageSize) = ParsePaginationArgs(args);
                 return await _tenantService.GetTenantsAsync(new Platform.ServiceDefaults.Models.ProTableRequest
                 {
                     Search = args.GetValueOrDefault("keyword")?.ToString(),
-                    Current = page,
-                    PageSize = pageSize
+                    Current = Current,
+                    PageSize = PageSize
                 });
             });
 
@@ -102,12 +102,12 @@ public class ParkMcpToolHandler : McpToolHandlerBase
             ObjectSchema(MergeProperties(new Dictionary<string, object> { ["status"] = new Dictionary<string, object> { ["type"] = "string" } }, PaginationSchema())),
             async (args, uid) =>
             {
-                var (page, pageSize) = ParsePaginationArgs(args);
+                var (Current, PageSize) = ParsePaginationArgs(args);
                 return await _tenantService.GetContractsAsync(new Platform.ServiceDefaults.Models.ProTableRequest
                 {
                     Search = args.GetValueOrDefault("status")?.ToString(),
-                    Current = page,
-                    PageSize = pageSize
+                    Current = Current,
+                    PageSize = PageSize
                 });
             });
 
@@ -116,12 +116,12 @@ public class ParkMcpToolHandler : McpToolHandlerBase
             ObjectSchema(MergeProperties(new Dictionary<string, object> { ["keyword"] = new Dictionary<string, object> { ["type"] = "string" } }, PaginationSchema())),
             async (args, uid) =>
             {
-                var (page, pageSize) = ParsePaginationArgs(args);
+                var (Current, PageSize) = ParsePaginationArgs(args);
                 return await _visitService.GetVisitTasksAsync(new Platform.ServiceDefaults.Models.ProTableRequest
                 {
                     Search = args.GetValueOrDefault("keyword")?.ToString(),
-                    Current = page,
-                    PageSize = pageSize
+                    Current = Current,
+                    PageSize = PageSize
                 });
             });
 
@@ -130,12 +130,12 @@ public class ParkMcpToolHandler : McpToolHandlerBase
             ObjectSchema(MergeProperties(new Dictionary<string, object> { ["status"] = new Dictionary<string, object> { ["type"] = "string" } }, PaginationSchema())),
             async (args, uid) =>
             {
-                var (page, pageSize) = ParsePaginationArgs(args);
+                var (Current, PageSize) = ParsePaginationArgs(args);
                 return await _enterpriseService.GetRequestsAsync(new Platform.ServiceDefaults.Models.ProTableRequest
                 {
                     Search = args.GetValueOrDefault("status")?.ToString(),
-                    Current = page,
-                    PageSize = pageSize
+                    Current = Current,
+                    PageSize = PageSize
                 });
             });
         // 资产详情与删除

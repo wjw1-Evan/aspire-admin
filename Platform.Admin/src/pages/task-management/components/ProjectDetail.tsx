@@ -133,7 +133,7 @@ const CombinedTaskView: React.FC<{ tasks: TaskDto[] }> = ({ tasks }) => {
               <th style={{ padding: '10px 8px', borderBottom: '2px solid #1890ff', backgroundColor: '#e6f7ff', fontWeight: 600, color: '#1890ff', position: 'sticky', top: 0, zIndex: 10, minWidth: totalDays * dayWidth }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
                   <span>{dayjs(minDate).format('YYYY-MM-DD')}</span>
-                  <span style={{ fontWeight: 400 }}>{totalDays}天</span>
+                  <span style={{ fontWeight: 400 }}>{totalDays}{intl.formatMessage({ id: 'pages.taskManagement.timeUnit.days' })}</span>
                   <span>{dayjs(maxDate).format('YYYY-MM-DD')}</span>
                 </div>
               </th>

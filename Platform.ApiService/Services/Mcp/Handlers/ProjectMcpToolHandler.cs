@@ -34,10 +34,10 @@ public class ProjectMcpToolHandler : McpToolHandlerBase
             )),
             async (args, uid) =>
             {
-                var (page, pageSize) = ParsePaginationArgs(args);
+                var (Current, PageSize) = ParsePaginationArgs(args);
                 var keyword = args.GetValueOrDefault("keyword")?.ToString();
                 var status = args.GetValueOrDefault("status")?.ToString();
-                var request = new Platform.ServiceDefaults.Models.ProTableRequest { Current = page, PageSize = pageSize, Search = keyword };
+                var request = new Platform.ServiceDefaults.Models.ProTableRequest { Current = Current, PageSize = PageSize, Search = keyword };
                 var result = await _projectService.GetProjectsListAsync(request, uid);
                 var items = await result.Queryable.ToListAsync();
                 return new { items, rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount };

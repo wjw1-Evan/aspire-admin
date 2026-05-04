@@ -36,14 +36,14 @@ public class FormMcpToolHandler : McpToolHandlerBase
             async (args, uid) =>
             {
                 var keyword = args.GetValueOrDefault("keyword")?.ToString();
-                var (page, pageSize) = ParsePaginationArgs(args);
+                var (Current, PageSize) = ParsePaginationArgs(args);
                 var query = _context.Set<FormDefinition>().Where(
                     f => (string.IsNullOrEmpty(keyword) || f.Name.Contains(keyword)) &&
                          (!args.ContainsKey("isActive") || f.IsActive == (args.GetValueOrDefault("isActive") as bool? ?? true)));
-                var pageParams = new Platform.ServiceDefaults.Models.ProTableRequest { Current = page, PageSize = pageSize };
+                var pageParams = new Platform.ServiceDefaults.Models.ProTableRequest { Current = Current, PageSize = PageSize };
                 var pagedResult = query.ToPagedList(pageParams);
                 var items = await pagedResult.Queryable.ToListAsync();
-                return new { items, rowCount = pagedResult.RowCount, currentPage = page, pageSize, pageCount = (int)Math.Ceiling((double)pagedResult.RowCount / pageSize) };
+                return new { items, rowCount = pagedResult.RowCount, currentPage = Current, PageSize, pageCount = (int)Math.Ceiling((double)pagedResult.RowCount / PageSize) };
             });
 
         RegisterTool("get_form_detail", "获取表单详情。关键词：查看表单,表单字段",

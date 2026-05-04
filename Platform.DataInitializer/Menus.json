@@ -438,16 +438,6 @@
         "SortOrder": 4
     },
     {
-        "Name": "menu-management",
-        "Title": "菜单管理",
-        "Path": "/system/menu-management",
-        "Component": "./menu-management",
-        "Icon": "menu",
-        "ParentId": "system",
-        "SortOrder": 7,
-        "HideInMenu": true
-    },
-    {
         "Name": "data-dashboard",
         "Title": "数据看板",
         "Path": "/dashboard",

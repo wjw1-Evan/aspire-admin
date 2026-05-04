@@ -854,4 +854,5 @@ export default {
   'VALIDATION_CURRENT_PASSWORD_TOO_LONG': '当前密码长度超限',
   'VALIDATION_ROLE_NAME_LENGTH_RANGE': '角色名称长度不符合要求',
   'VALIDATION_ROLE_DEFINITION_LENGTH_RANGE': '角色定义长度不符合要求',
+  'pages.notice.empty': '暂无通知公告',
 };

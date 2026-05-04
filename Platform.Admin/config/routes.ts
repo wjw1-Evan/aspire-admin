@@ -61,7 +61,7 @@ export default [
   // 业务页面路由（从数据库菜单生成，这里只定义路由映射）
   {
     path: '/welcome',
-    component: './Welcome',
+    component: './welcome',
     hideInMenu: true,
   },
 
@@ -106,8 +106,18 @@ export default [
     hideInMenu: true,
   },
   {
+    path: '/notice',
+    component: './notice',
+    hideInMenu: true,
+  },
+  {
     path: '/task-management',
     component: './task-management',
+    hideInMenu: true,
+  },
+  {
+    path: '/project-management',
+    redirect: '/project-management/project',
     hideInMenu: true,
   },
   {
@@ -283,6 +293,31 @@ export default [
   },
   {
     path: '/cloud-storage',
+    redirect: '/cloud-storage/files',
+    hideInMenu: true,
+  },
+  {
+    path: '/cloud-storage/files',
+    component: './cloud-storage/files',
+    hideInMenu: true,
+  },
+  {
+    path: '/cloud-storage/shared',
+    component: './cloud-storage/shared',
+    hideInMenu: true,
+  },
+  {
+    path: '/cloud-storage/recycle',
+    component: './cloud-storage/recycle',
+    hideInMenu: true,
+  },
+  {
+    path: '/cloud-storage/quota',
+    component: './cloud-storage/quota',
+    hideInMenu: true,
+  },
+  {
+    path: '/cloud-storage-legacy',
     routes: [
       {
         path: '/cloud-storage/files',

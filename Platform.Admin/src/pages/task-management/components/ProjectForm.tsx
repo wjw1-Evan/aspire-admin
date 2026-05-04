@@ -99,7 +99,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ open, project, onSuccess, onC
 
   return (
     <ModalForm
-      title={isEditing ? '编辑项目' : '创建项目'}
+      title={isEditing ? intl.formatMessage({ id: 'pages.task.project.editTitle' }) : intl.formatMessage({ id: 'pages.task.project.createTitle' })}
       open={open}
       onOpenChange={(isOpen) => { if (!isOpen) onCancel(); }}
       onFinish={handleSubmit}
@@ -116,8 +116,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ open, project, onSuccess, onC
 
       <ProFormTextArea
         name="description"
-        label="项目描述"
-        placeholder="请输入项目描述"
+        label={intl.formatMessage({ id: 'pages.task.project.description' })}
+        placeholder={intl.formatMessage({ id: 'pages.task.project.descriptionPlaceholder' })}
         fieldProps={{ rows: 4 }}
       />
 
@@ -153,20 +153,20 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ open, project, onSuccess, onC
 
       <ProFormDatePicker
         name="startDate"
-        label="开始日期"
+        label={intl.formatMessage({ id: 'pages.task.project.startDate' })}
         fieldProps={{ style: { width: '100%' } }}
       />
 
       <ProFormDatePicker
         name="endDate"
-        label="结束日期"
+        label={intl.formatMessage({ id: 'pages.task.project.endDate' })}
         fieldProps={{ style: { width: '100%' } }}
       />
 
       <ProFormDigit
         name="budget"
-        label="预算"
-        placeholder="请输入预算"
+        label={intl.formatMessage({ id: 'pages.task.project.budget' })}
+        placeholder={intl.formatMessage({ id: 'pages.task.project.budgetPlaceholder' })}
         min={0}
         fieldProps={{ precision: 2, style: { width: '100%' } }}
       />

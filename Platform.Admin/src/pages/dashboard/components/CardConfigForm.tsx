@@ -1000,7 +1000,7 @@ const CardConfigForm: React.FC<CardConfigFormProps> = ({ open, onOpenChange, edi
       }}
       modalProps={{ destroyOnClose: true }}
     >
-      <ProFormText name="title" label="卡片标题" placeholder="输入卡片标题" rules={[{ required: true, message: '请输入标题' }]} />
+      <ProFormText name="title" label={intl.formatMessage({ id: 'pages.dashboard.card.title' })} placeholder={intl.formatMessage({ id: 'pages.dashboard.card.titlePlaceholder' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.dashboard.card.titleRequired' }) }]} />
 
       <Form.Item label="卡片类型" required>
         <Select
@@ -1021,9 +1021,9 @@ const CardConfigForm: React.FC<CardConfigFormProps> = ({ open, onOpenChange, edi
         defaultActiveKey="type"
         size="small"
         items={[
-          {
+            {
             key: 'type',
-            label: '类型配置',
+            label: intl.formatMessage({ id: 'pages.dashboard.cardType' }),
             children: (
               <div style={{ maxHeight: 400, overflow: 'auto', padding: '8px 0' }}>
                 {renderTypePanel() || <Text type="secondary">此类型无需额外配置</Text>}
@@ -1032,7 +1032,7 @@ const CardConfigForm: React.FC<CardConfigFormProps> = ({ open, onOpenChange, edi
           },
 {
             key: 'style',
-            label: '通用样式',
+            label: intl.formatMessage({ id: 'pages.dashboard.card.style' }),
             children: (
               <div style={{ maxHeight: 400, overflow: 'auto', padding: '8px 0' }}>
                 <CommonStylePanel style={styleConfig} onChange={setStyleConfig} />
@@ -1041,7 +1041,7 @@ const CardConfigForm: React.FC<CardConfigFormProps> = ({ open, onOpenChange, edi
           },
           {
             key: 'datasource',
-            label: '数据源',
+            label: intl.formatMessage({ id: 'pages.dashboard.card.dataSource' }),
             children: (
               <div style={{ maxHeight: 400, overflow: 'auto', padding: '8px 0' }}>
                 <DataSourcePanel dataSource={dataSource} onChange={setDataSource} />
@@ -1050,7 +1050,7 @@ const CardConfigForm: React.FC<CardConfigFormProps> = ({ open, onOpenChange, edi
           },
           {
             key: 'json',
-            label: '高级(JSON)',
+            label: intl.formatMessage({ id: 'pages.dashboard.card.json' }),
             children: (
               <div style={{ padding: '8px 0' }}>
                 <Input.TextArea
@@ -1058,7 +1058,7 @@ const CardConfigForm: React.FC<CardConfigFormProps> = ({ open, onOpenChange, edi
                   onBlur={(e) => { try { setStyleConfig(JSON.parse(e.target.value)); } catch { /* ignore */ } }}
                   rows={12}
                   style={{ fontSize: 12, fontFamily: 'monospace' }}
-                  placeholder="直接编辑完整的 StyleConfig JSON"
+                  placeholder={intl.formatMessage({ id: 'pages.dashboard.card.jsonPlaceholder' })}
                 />
               </div>
             ),

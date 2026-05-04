@@ -809,4 +809,12 @@ export default {
   'pages.common.confirm': '確定',
   'pages.common.cancel': '取消',
   'pages.common.revoke': '撤銷',
+  'pages.task.project.createTitle': '創建項目',
+  'pages.task.project.editTitle': '編輯項目',
+  'pages.task.project.description': '項目描述',
+  'pages.task.project.descriptionPlaceholder': '請輸入項目描述',
+  'pages.task.project.startDate': '開始日期',
+  'pages.task.project.endDate': '結束日期',
+  'pages.task.project.budget': '預算',
+  'pages.task.project.budgetPlaceholder': '請輸入預算',
 };

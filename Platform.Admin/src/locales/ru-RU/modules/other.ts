@@ -830,4 +830,12 @@ export default {
   'pages.common.confirm': 'Confirm',
   'pages.common.cancel': 'Cancel',
   'pages.common.revoke': 'Revoke',
+  'pages.task.project.createTitle': 'Create Project',
+  'pages.task.project.editTitle': 'Edit Project',
+  'pages.task.project.description': 'Description',
+  'pages.task.project.descriptionPlaceholder': 'Enter project description',
+  'pages.task.project.startDate': 'Start Date',
+  'pages.task.project.endDate': 'End Date',
+  'pages.task.project.budget': 'Budget',
+  'pages.task.project.budgetPlaceholder': 'Enter budget',
 };

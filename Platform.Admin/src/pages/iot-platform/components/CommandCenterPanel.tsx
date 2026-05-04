@@ -32,14 +32,14 @@ const { Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 const PRESET_COMMANDS = [
-    { label: 'restart — 重启设备', value: 'restart' },
-    { label: 'reboot — 强制重启', value: 'reboot' },
-    { label: 'getStatus — 获取设备状态', value: 'getStatus' },
-    { label: 'setReportInterval — 设置上报间隔', value: 'setReportInterval' },
-    { label: 'setThreshold — 设置告警阈值', value: 'setThreshold' },
-    { label: 'enableDataPoint — 启用数据点', value: 'enableDataPoint' },
-    { label: 'disableDataPoint — 禁用数据点', value: 'disableDataPoint' },
-    { label: 'factoryReset — 恢复出厂设置', value: 'factoryReset' },
+    { labelId: 'pages.iotPlatform.command.label.restart', value: 'restart' },
+    { labelId: 'pages.iotPlatform.command.label.reboot', value: 'reboot' },
+    { labelId: 'pages.iotPlatform.command.label.getStatus', value: 'getStatus' },
+    { labelId: 'pages.iotPlatform.command.label.setReportInterval', value: 'setReportInterval' },
+    { labelId: 'pages.iotPlatform.command.label.setThreshold', value: 'setThreshold' },
+    { labelId: 'pages.iotPlatform.command.label.enableDataPoint', value: 'enableDataPoint' },
+    { labelId: 'pages.iotPlatform.command.label.disableDataPoint', value: 'disableDataPoint' },
+    { labelId: 'pages.iotPlatform.command.label.factoryReset', value: 'factoryReset' },
 ];
 
 const statusConfig: Record<CommandStatus, { color: string; icon: React.ReactNode; labelId: string; defaultLabel: string }> = {
@@ -191,7 +191,7 @@ const CommandCenterPanel: React.FC<CommandCenterPanelProps> = ({ deviceId }) => 
                         >
                             <Select
                                 placeholder={intl.formatMessage({ id: 'pages.iotPlatform.command.presetPlaceholder' })}
-                                options={PRESET_COMMANDS}
+                                options={PRESET_COMMANDS.map(cmd => ({ label: intl.formatMessage({ id: cmd.labelId }), value: cmd.value }))}
                                 onChange={handlePresetSelect}
                                 allowClear
                                 showSearch

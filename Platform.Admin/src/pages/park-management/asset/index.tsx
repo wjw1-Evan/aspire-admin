@@ -248,7 +248,7 @@ const AssetManagement: React.FC = () => {
                 ]} />
             </ProCard>
 
-            <ModalForm key={buildingState.editingBuilding?.id || 'create-building'}
+                <ModalForm key={buildingState.editingBuilding?.id || 'create-building'}
                 title={buildingState.editingBuilding ? intl.formatMessage({ id: 'pages.park.asset.editBuilding' }) : intl.formatMessage({ id: 'pages.park.asset.addBuilding' })}
                 open={buildingState.modalVisible} onOpenChange={(open) => { if (!open) setBuilding({ modalVisible: false, editingBuilding: null }); }}
                 initialValues={buildingState.editingBuilding ? { name: buildingState.editingBuilding.name, buildingType: buildingState.editingBuilding.buildingType, address: buildingState.editingBuilding.address, totalFloors: buildingState.editingBuilding.totalFloors, totalArea: buildingState.editingBuilding.totalArea, yearBuilt: buildingState.editingBuilding.yearBuilt, deliveryDate: buildingState.editingBuilding.deliveryDate ? dayjs(buildingState.editingBuilding.deliveryDate) : undefined, status: buildingState.editingBuilding.status, description: buildingState.editingBuilding.description } : undefined}
@@ -259,21 +259,21 @@ const AssetManagement: React.FC = () => {
                     if (res.success) { setBuilding({ modalVisible: false, editingBuilding: null }); buildingActionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); api.allBuildings().then(r => { if (r.success && r.data) setForm({ buildings: r.data.queryable || [] }); }); }
                     return res.success;
                 }} autoFocusFirstInput width={640}>
-                <ProFormText name="name" label="楼宇名称" placeholder="请输入楼宇名称" rules={[{ required: true, message: '请输入楼宇名称' }]} />
-                <ProFormSelect name="buildingType" label="楼宇类型" placeholder="请选择类型" options={[{ label: intl.formatMessage({ id: 'pages.park.asset.buildingType.office' }), value: 'Office' }, { label: intl.formatMessage({ id: 'pages.park.asset.buildingType.commercial' }), value: 'Commercial' }, { label: intl.formatMessage({ id: 'pages.park.asset.buildingType.mixed' }), value: 'Mixed' }]} />
-                <ProFormText name="address" label="地址" placeholder="请输入楼宇地址" />
+                <ProFormText name="name" label={intl.formatMessage({ id: 'pages.park.asset.buildingName' })} placeholder={intl.formatMessage({ id: 'pages.park.asset.buildingNamePlaceholder' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.park.asset.buildingNameRequired' }) }]} />
+                <ProFormSelect name="buildingType" label={intl.formatMessage({ id: 'pages.park.asset.buildingType' })} placeholder={intl.formatMessage({ id: 'pages.park.asset.buildingTypePlaceholder' })} options={[{ label: intl.formatMessage({ id: 'pages.park.asset.buildingType.office' }), value: 'Office' }, { label: intl.formatMessage({ id: 'pages.park.asset.buildingType.commercial' }), value: 'Commercial' }, { label: intl.formatMessage({ id: 'pages.park.asset.buildingType.mixed' }), value: 'Mixed' }]} />
+                <ProFormText name="address" label={intl.formatMessage({ id: 'pages.park.asset.address' })} placeholder={intl.formatMessage({ id: 'pages.park.asset.addressPlaceholder' })} />
                 <Row gutter={16}>
-                    <Col span={12}><ProFormText name="totalFloors" label="总楼层" placeholder="楼层数" rules={[{ required: true, message: '请输入楼层数' }]} fieldProps={{ type: 'number' }} /></Col>
-                    <Col span={12}><ProFormText name="totalArea" label="总面积 (m²)" placeholder="总面积" rules={[{ required: true, message: '请输入面积' }]} fieldProps={{ type: 'number' }} /></Col>
+                    <Col span={12}><ProFormText name="totalFloors" label={intl.formatMessage({ id: 'pages.park.asset.totalFloors' })} placeholder={intl.formatMessage({ id: 'pages.park.asset.totalFloorsPlaceholder' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.park.asset.totalFloorsRequired' }) }]} fieldProps={{ type: 'number' }} /></Col>
+                    <Col span={12}><ProFormText name="totalArea" label={intl.formatMessage({ id: 'pages.park.asset.totalArea' })} placeholder={intl.formatMessage({ id: 'pages.park.asset.totalAreaPlaceholder' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.park.asset.totalAreaRequired' }) }]} fieldProps={{ type: 'number' }} /></Col>
                 </Row>
                 <Row gutter={16}>
-                    <Col span={8}><ProFormText name="yearBuilt" label="建成年份" placeholder="建成年份" fieldProps={{ type: 'number' }} /></Col>
-                    <Col span={8}><ProFormDatePicker name="deliveryDate" label="交付日期" placeholder="选择日期" /></Col>
-                    <Col span={8}><ProFormSelect name="status" label="状态" placeholder="请选择状态" options={[{ label: intl.formatMessage({ id: 'pages.park.asset.status.active' }), value: 'Active' }, { label: intl.formatMessage({ id: 'pages.park.asset.status.maintenance' }), value: 'Maintenance' }, { label: intl.formatMessage({ id: 'pages.park.asset.status.inactive' }), value: 'Inactive' }]} /></Col>
+                    <Col span={8}><ProFormText name="yearBuilt" label={intl.formatMessage({ id: 'pages.park.asset.yearBuilt' })} placeholder={intl.formatMessage({ id: 'pages.park.asset.yearBuiltPlaceholder' })} fieldProps={{ type: 'number' }} /></Col>
+                    <Col span={8}><ProFormDatePicker name="deliveryDate" label={intl.formatMessage({ id: 'pages.park.asset.deliveryDate' })} placeholder={intl.formatMessage({ id: 'pages.park.asset.deliveryDatePlaceholder' })} /></Col>
+                    <Col span={8}><ProFormSelect name="status" label={intl.formatMessage({ id: 'pages.park.asset.status' })} placeholder={intl.formatMessage({ id: 'pages.park.asset.statusPlaceholder' })} options={[{ label: intl.formatMessage({ id: 'pages.park.asset.status.active' }), value: 'Active' }, { label: intl.formatMessage({ id: 'pages.park.asset.status.maintenance' }), value: 'Maintenance' }, { label: intl.formatMessage({ id: 'pages.park.asset.status.inactive' }), value: 'Inactive' }]} /></Col>
                 </Row>
-                <ProFormText name="description" label="描述" placeholder="请输入描述信息" />
+                <ProFormText name="description" label={intl.formatMessage({ id: 'pages.park.asset.description' })} placeholder={intl.formatMessage({ id: 'pages.park.asset.descriptionPlaceholder' })} />
                 <div style={{ marginBottom: 24 }}>
-                    <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>楼宇附件</Typography.Text>
+                    <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>{intl.formatMessage({ id: 'pages.park.asset.attachmentsLabel' })}</Typography.Text>
                     <Upload action="/apiservice/api/cloud-storage/upload" listType="picture" fileList={formState.attachments} onChange={({ fileList }) => setForm({ attachments: fileList })} headers={{ Authorization: `Bearer ${localStorage.getItem('token')}` }} data={(file) => ({ file, isPublic: false, description: 'Building Attachment' })}><Button icon={<UploadOutlined />}>{intl.formatMessage({ id: 'pages.park.asset.uploadAttachment' })}</Button></Upload>
                 </div>
             </ModalForm>
@@ -288,16 +288,16 @@ const AssetManagement: React.FC = () => {
                     if (res.success) { setUnit({ modalVisible: false, editingUnit: null }); unitActionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }
                     return res.success;
                 }} autoFocusFirstInput width={640}>
-                <ProFormSelect name="buildingId" label="所属楼宇" placeholder="请选择楼宇" rules={[{ required: true, message: '请选择楼宇' }]} options={formState.buildings.map(b => ({ label: b.name, value: b.id }))} />
-                <ProFormText name="unitNumber" label="房源编号" placeholder="例如：A-101" rules={[{ required: true, message: '请输入房源编号' }]} />
+                <ProFormSelect name="buildingId" label={intl.formatMessage({ id: 'pages.park.asset.buildingId' })} placeholder={intl.formatMessage({ id: 'pages.park.asset.buildingIdPlaceholder' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.park.asset.buildingIdRequired' }) }]} options={formState.buildings.map(b => ({ label: b.name, value: b.id }))} />
+                <ProFormText name="unitNumber" label={intl.formatMessage({ id: 'pages.park.asset.unitNumber' })} placeholder={intl.formatMessage({ id: 'pages.park.asset.unitNumberPlaceholder' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.park.asset.unitNumberRequired' }) }]} />
                 <Row gutter={16}>
-                    <Col span={8}><ProFormText name="floor" label="楼层" placeholder="楼层" rules={[{ required: true, message: '请输入楼层' }]} fieldProps={{ type: 'number' }} /></Col>
-                    <Col span={8}><ProFormText name="area" label="面积 (m²)" placeholder="面积" rules={[{ required: true, message: '请输入面积' }]} fieldProps={{ type: 'number' }} /></Col>
-                    <Col span={8}><ProFormSelect name="unitType" label="类型" placeholder="请选择类型" options={[{ label: intl.formatMessage({ id: 'pages.park.asset.unitType.office' }), value: 'Office' }, { label: intl.formatMessage({ id: 'pages.park.asset.unitType.commercial' }), value: 'Commercial' }, { label: intl.formatMessage({ id: 'pages.park.asset.unitType.warehouse' }), value: 'Warehouse' }]} /></Col>
+                    <Col span={8}><ProFormText name="floor" label={intl.formatMessage({ id: 'pages.park.asset.floor' })} placeholder={intl.formatMessage({ id: 'pages.park.asset.floorPlaceholder' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.park.asset.floorRequired' }) }]} fieldProps={{ type: 'number' }} /></Col>
+                    <Col span={8}><ProFormText name="area" label={intl.formatMessage({ id: 'pages.park.asset.area' })} placeholder={intl.formatMessage({ id: 'pages.park.asset.areaPlaceholder' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.park.asset.areaRequired' }) }]} fieldProps={{ type: 'number' }} /></Col>
+                    <Col span={8}><ProFormSelect name="unitType" label={intl.formatMessage({ id: 'pages.park.asset.unitType' })} placeholder={intl.formatMessage({ id: 'pages.park.asset.unitTypePlaceholder' })} options={[{ label: intl.formatMessage({ id: 'pages.park.asset.unitType.office' }), value: 'Office' }, { label: intl.formatMessage({ id: 'pages.park.asset.unitType.commercial' }), value: 'Commercial' }, { label: intl.formatMessage({ id: 'pages.park.asset.unitType.warehouse' }), value: 'Warehouse' }]} /></Col>
                 </Row>
                 <Row gutter={16}>
-                    <Col span={12}><ProFormText name="monthlyRent" label="月租金 (元)" placeholder="月租金" rules={[{ required: true, message: '请输入月租金' }]} fieldProps={{ type: 'number' }} /></Col>
-                    <Col span={12}><ProFormText name="dailyRent" label="日租金 (元/m²)" placeholder="日租金" fieldProps={{ type: 'number' }} /></Col>
+                    <Col span={12}><ProFormText name="monthlyRent" label={intl.formatMessage({ id: 'pages.park.asset.monthlyRent' })} placeholder={intl.formatMessage({ id: 'pages.park.asset.monthlyRentPlaceholder' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.park.asset.monthlyRentRequired' }) }]} fieldProps={{ type: 'number' }} /></Col>
+                    <Col span={12}><ProFormText name="dailyRent" label={intl.formatMessage({ id: 'pages.park.asset.dailyRent' })} placeholder={intl.formatMessage({ id: 'pages.park.asset.dailyRentPlaceholder' })} fieldProps={{ type: 'number' }} /></Col>
                 </Row>
                 <ProFormText name="description" label="描述" placeholder="请输入描述信息" />
                 <div style={{ marginBottom: 24 }}>

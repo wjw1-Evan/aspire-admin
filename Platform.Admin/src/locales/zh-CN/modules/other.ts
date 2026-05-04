@@ -866,6 +866,14 @@ export default {
   'pages.task.priority.medium': '中',
   'pages.task.priority.high': '高',
   'pages.task.project.selectMembers': '请选择项目成员',
+  'pages.task.project.createTitle': '创建项目',
+  'pages.task.project.editTitle': '编辑项目',
+  'pages.task.project.description': '项目描述',
+  'pages.task.project.descriptionPlaceholder': '请输入项目描述',
+  'pages.task.project.startDate': '开始日期',
+  'pages.task.project.endDate': '结束日期',
+  'pages.task.project.budget': '预算',
+  'pages.task.project.budgetPlaceholder': '请输入预算',
   'pages.task.task.dueDate': '截止日期',
 
   // visit-statistics

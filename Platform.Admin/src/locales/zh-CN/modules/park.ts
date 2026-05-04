@@ -732,4 +732,12 @@ export default {
   'pages.park.asset.status.active': '启用',
   'pages.park.asset.status.maintenance': '维护中',
   'pages.park.asset.status.inactive': '停用',
+  'pages.park.asset.general': '综合',
+  'pages.park.asset.floorsSuffix': '层',
+  'pages.park.asset.available': '可用',
+  'pages.park.asset.descriptionTitle': '描述',
+  'pages.park.asset.basicInfo': '基本信息',
+  'pages.park.asset.descriptionInfo': '描述信息',
+  'pages.park.asset.rentalHistory': '出租历史',
+  'pages.park.asset.leaseStatus': '状态',
 };

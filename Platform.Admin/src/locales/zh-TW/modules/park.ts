@@ -100,4 +100,12 @@ export default {
   'pages.park.asset.deleteSuccess': 'Deleted successfully',
   'pages.park.asset.saveFailed': 'Failed to save',
   'pages.park.asset.deleteFailed': 'Failed to delete',
+  'pages.park.asset.general': '綜合',
+  'pages.park.asset.floorsSuffix': '層',
+  'pages.park.asset.available': '可用',
+  'pages.park.asset.descriptionTitle': '描述',
+  'pages.park.asset.basicInfo': '基本信息',
+  'pages.park.asset.descriptionInfo': '描述信息',
+  'pages.park.asset.rentalHistory': '出租歷史',
+  'pages.park.asset.leaseStatus': '狀態',
 };

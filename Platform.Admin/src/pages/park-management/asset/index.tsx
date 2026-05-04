@@ -135,7 +135,7 @@ const AssetManagement: React.FC = () => {
             Commercial: { color: 'green', text: intl.formatMessage({ id: 'pages.park.asset.buildingType.commercial' }) },
             Mixed: { color: 'orange', text: intl.formatMessage({ id: 'pages.park.asset.buildingType.mixed' }) },
         };
-        const config = typeMap[buildingType || ''] || { color: 'default', text: buildingType || '综合' };
+        const config = typeMap[buildingType || ''] || { color: 'default', text: buildingType || intl.formatMessage({ id: 'pages.park.asset.general' }) };
         return <Tag color={config.color}>{config.text}</Tag>;
     };
 
@@ -180,10 +180,10 @@ const AssetManagement: React.FC = () => {
         { title: intl.formatMessage({ id: 'pages.park.asset.building.name' }), dataIndex: 'name', sorter: true, width: 160, render: (_, record) => (<Space><BankOutlined style={{ color: '#1890ff' }} /><a onClick={() => handleViewBuilding(record.id)}>{record.name}</a></Space>) },
         { title: intl.formatMessage({ id: 'pages.park.asset.building.address' }), dataIndex: 'address', sorter: true, width: 200, ellipsis: true, render: (_, record) => record.address || '-' },
         { title: intl.formatMessage({ id: 'pages.park.asset.building.type' }), dataIndex: 'buildingType', sorter: true, width: 100, render: (_, record) => renderBuildingType(record.buildingType) },
-        { title: intl.formatMessage({ id: 'pages.park.asset.building.floors' }), dataIndex: 'totalFloors', sorter: true, width: 80, align: 'center', render: (_, record) => `${record.totalFloors}层` },
+        { title: intl.formatMessage({ id: 'pages.park.asset.building.floors' }), dataIndex: 'totalFloors', sorter: true, width: 80, align: 'center', render: (_, record) => `${record.totalFloors}${intl.formatMessage({ id: 'pages.park.asset.floorsSuffix' })}` },
         { title: intl.formatMessage({ id: 'pages.park.asset.building.area' }), dataIndex: 'totalArea', sorter: true, width: 120, align: 'right', render: (_, record) => `${record.totalArea?.toLocaleString()} m²` },
         { title: intl.formatMessage({ id: 'pages.park.asset.building.occupancy' }), dataIndex: 'occupancyRate', sorter: true, width: 120, render: (_, record) => (<Tag color={(record.occupancyRate || 0) >= 80 ? 'success' : (record.occupancyRate || 0) >= 50 ? 'processing' : 'exception'}>{record.occupancyRate || 0}%</Tag>) },
-        { title: intl.formatMessage({ id: 'pages.park.asset.building.units' }), dataIndex: 'totalUnits', sorter: true, width: 140, align: 'center', render: (totalUnits, record) => (<Space vertical align="center"><Button type="link" size="small" style={{ fontWeight: 'bold', fontSize: 16, padding: 0 }} onClick={() => { set({ activeTab: 'units' }); unitActionRef.current?.reload(); }}>{totalUnits}</Button><Text type="secondary" style={{ fontSize: 12 }}>可用: {record.availableUnits}</Text></Space>) },
+        { title: intl.formatMessage({ id: 'pages.park.asset.building.units' }), dataIndex: 'totalUnits', sorter: true, width: 140, align: 'center', render: (totalUnits, record) => (<Space vertical align="center"><Button type="link" size="small" style={{ fontWeight: 'bold', fontSize: 16, padding: 0 }} onClick={() => { set({ activeTab: 'units' }); unitActionRef.current?.reload(); }}>{totalUnits}</Button><Text type="secondary" style={{ fontSize: 12 }}>{intl.formatMessage({ id: 'pages.park.asset.available' })}: {record.availableUnits}</Text></Space>) },
         { title: intl.formatMessage({ id: 'pages.park.asset.building.status' }), dataIndex: 'status', sorter: true, width: 100, render: (_, record) => renderBuildingStatus(record.status) },
         { title: intl.formatMessage({ id: 'common.action' }), valueType: 'option', fixed: 'right', width: 180, render: (_, record) => (
             <Space size={4}>
@@ -299,10 +299,10 @@ const AssetManagement: React.FC = () => {
                     <Col span={12}><ProFormText name="monthlyRent" label={intl.formatMessage({ id: 'pages.park.asset.monthlyRent' })} placeholder={intl.formatMessage({ id: 'pages.park.asset.monthlyRentPlaceholder' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.park.asset.monthlyRentRequired' }) }]} fieldProps={{ type: 'number' }} /></Col>
                     <Col span={12}><ProFormText name="dailyRent" label={intl.formatMessage({ id: 'pages.park.asset.dailyRent' })} placeholder={intl.formatMessage({ id: 'pages.park.asset.dailyRentPlaceholder' })} fieldProps={{ type: 'number' }} /></Col>
                 </Row>
-                <ProFormText name="description" label="描述" placeholder="请输入描述信息" />
+                <ProFormText name="description" label={intl.formatMessage({ id: 'pages.park.asset.description' })} placeholder={intl.formatMessage({ id: 'pages.park.asset.descriptionPlaceholder' })} />
                 <div style={{ marginBottom: 24 }}>
-                    <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>房源附件</Typography.Text>
-                    <Upload action="/apiservice/api/cloud-storage/upload" listType="picture" fileList={formState.attachments} onChange={({ fileList }) => setForm({ attachments: fileList })} headers={{ Authorization: `Bearer ${localStorage.getItem('token')}` }} data={(file) => ({ file, isPublic: false, description: 'Property Unit Attachment' })}><Button icon={<UploadOutlined />}>上传附件</Button></Upload>
+                    <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>{intl.formatMessage({ id: 'pages.park.asset.attachmentsLabel' })}</Typography.Text>
+                    <Upload action="/apiservice/api/cloud-storage/upload" listType="picture" fileList={formState.attachments} onChange={({ fileList }) => setForm({ attachments: fileList })} headers={{ Authorization: `Bearer ${localStorage.getItem('token')}` }} data={(file) => ({ file, isPublic: false, description: 'Property Unit Attachment' })}><Button icon={<UploadOutlined />}>{intl.formatMessage({ id: 'pages.park.asset.uploadAttachment' })}</Button></Upload>
                 </div>
             </ModalForm>
 
@@ -312,7 +312,7 @@ const AssetManagement: React.FC = () => {
                         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.asset.detail.field.buildingName' })}>{buildingState.currentBuilding.name}</ProDescriptions.Item>
                         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.asset.detail.field.buildingType' })}><Tag color="blue">{intl.formatMessage({ id: `pages.park.asset.buildingType.${buildingState.currentBuilding.buildingType?.toLowerCase()}`})}</Tag></ProDescriptions.Item>
                         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.asset.detail.field.address' })} span={2}>{buildingState.currentBuilding.address || '-'}</ProDescriptions.Item>
-                        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.asset.detail.field.totalFloors' })}>{buildingState.currentBuilding.totalFloors}层</ProDescriptions.Item>
+                        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.asset.detail.field.totalFloors' })}>{buildingState.currentBuilding.totalFloors}{intl.formatMessage({ id: 'pages.park.asset.floorsSuffix' })}</ProDescriptions.Item>
                         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.asset.detail.field.yearBuilt' })}>{buildingState.currentBuilding.yearBuilt || '-'}</ProDescriptions.Item>
                         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.asset.detail.field.deliveryDate' })}>{buildingState.currentBuilding.deliveryDate ? dayjs(buildingState.currentBuilding.deliveryDate).format('YYYY-MM-DD') : '-'}</ProDescriptions.Item>
                         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.asset.detail.field.totalArea' })}>{buildingState.currentBuilding.totalArea?.toLocaleString()} m²</ProDescriptions.Item>
@@ -322,14 +322,14 @@ const AssetManagement: React.FC = () => {
                         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.asset.detail.field.availableUnits' })}>{buildingState.currentBuilding.availableUnits}</ProDescriptions.Item>
                         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.asset.detail.field.status' })}><Tag color={buildingState.currentBuilding.status === 'Active' ? 'green' : 'orange'}>{intl.formatMessage({ id: `pages.park.asset.status.${buildingState.currentBuilding.status === 'Active' ? 'active' : 'maintenance'}`})}</Tag></ProDescriptions.Item>
                     </ProDescriptions>
-                    {buildingState.currentBuilding.description && (<div><Title level={5}>描述</Title><Text>{buildingState.currentBuilding.description}</Text></div>)}
+                    {buildingState.currentBuilding.description && (<div><Title level={5}>{intl.formatMessage({ id: 'pages.park.asset.descriptionTitle' })}</Title><Text>{buildingState.currentBuilding.description}</Text></div>)}
                 </div>)}
             </Drawer>
 
             <Drawer title={unitState.currentUnit?.unitNumber || intl.formatMessage({ id: 'pages.park.asset.unitDetail' })} open={unitState.detailVisible} onClose={() => { setUnit({ detailVisible: false, currentUnit: null }); }} size="large" loading={unitState.detailLoading}>
                 {unitState.currentUnit && (<Space orientation="vertical" style={{ width: '100%' }} size={24}>
                     <div>
-                        <Title level={5} style={{ marginBottom: 16 }}>基本信息</Title>
+                        <Title level={5} style={{ marginBottom: 16 }}>{intl.formatMessage({ id: 'pages.park.asset.basicInfo' })}</Title>
                         <ProDescriptions bordered column={2} size="small">
                             <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.asset.detail.field.unitNumber' })}>{unitState.currentUnit.unitNumber}</ProDescriptions.Item>
                             <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.asset.detail.field.buildingName' })}>{unitState.currentUnit.buildingName}</ProDescriptions.Item>
@@ -342,12 +342,12 @@ const AssetManagement: React.FC = () => {
                             <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.asset.detail.field.currentTenant' })}>{unitState.currentUnit.currentTenantName || '-'}</ProDescriptions.Item>
                             <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.asset.detail.field.leaseEndDate' })} span={2}>{unitState.currentUnit.leaseEndDate ? dayjs(unitState.currentUnit.leaseEndDate).format('YYYY-MM-DD') : '-'}</ProDescriptions.Item>
                         </ProDescriptions>
-                        {unitState.currentUnit.description && (<div style={{ marginTop: 16 }}><Text type="secondary">描述信息：</Text><Text>{unitState.currentUnit.description}</Text></div>)}
+                        {unitState.currentUnit.description && (<div style={{ marginTop: 16 }}><Text type="secondary">{intl.formatMessage({ id: 'pages.park.asset.descriptionInfo' })}：</Text><Text>{unitState.currentUnit.description}</Text></div>)}
                     </div>
                     <div>
-                        <Title level={5} style={{ marginBottom: 16 }}>出租历史 ({unitState.currentUnit.leaseHistory?.length || 0})</Title>
+                        <Title level={5} style={{ marginBottom: 16 }}>{intl.formatMessage({ id: 'pages.park.asset.rentalHistory' })} ({unitState.currentUnit.leaseHistory?.length || 0})</Title>
                         <ProTable request={async () => ({ data: unitState.currentUnit?.leaseHistory || [], total: unitState.currentUnit?.leaseHistory?.length || 0, success: true })}
-                            columns={[{ title: '租户名称', dataIndex: 'tenantName', key: 'tenantName' }, { title: '合同编号', dataIndex: 'contractNumber', key: 'contractNumber' }, { title: '租期', key: 'period', render: (_, record: any) => (<span style={{ fontSize: 12 }}>{dayjs(record.startDate).format('YYYY-MM-DD')} ~ {dayjs(record.endDate).format('YYYY-MM-DD')}</span>) }, { title: '月租金', dataIndex: 'monthlyRent', key: 'monthlyRent', render: (val: any) => `¥${val?.toLocaleString()}` }, { title: '状态', dataIndex: 'status', key: 'status', render: (status: any) => { const statusColors: Record<string, string> = { Active: 'green', Expired: 'default', Renewed: 'cyan', Terminated: 'red' }; return <Tag color={statusColors[status] || 'blue'}>{status}</Tag>; } }]}
+                            columns={[{ title: intl.formatMessage({ id: 'pages.park.asset.tenantName' }), dataIndex: 'tenantName', key: 'tenantName' }, { title: intl.formatMessage({ id: 'pages.park.asset.contractNumber' }), dataIndex: 'contractNumber', key: 'contractNumber' }, { title: intl.formatMessage({ id: 'pages.park.asset.leaseTerm' }), key: 'period', render: (_, record: any) => (<span style={{ fontSize: 12 }}>{dayjs(record.startDate).format('YYYY-MM-DD')} ~ {dayjs(record.endDate).format('YYYY-MM-DD')}</span>) }, { title: intl.formatMessage({ id: 'pages.park.asset.monthlyRent' }), dataIndex: 'monthlyRent', key: 'monthlyRent', render: (val: any) => `¥${val?.toLocaleString()}` }, { title: intl.formatMessage({ id: 'pages.park.asset.leaseStatus' }), dataIndex: 'status', key: 'status', render: (status: any) => { const statusColors: Record<string, string> = { Active: 'green', Expired: 'default', Renewed: 'cyan', Terminated: 'red' }; return <Tag color={statusColors[status] || 'blue'}>{status}</Tag>; } }]}
                             rowKey="id" pagination={false} search={false} toolBarRender={false} />
                     </div>
                 </Space>)}

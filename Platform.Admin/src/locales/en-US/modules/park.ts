@@ -560,4 +560,12 @@ export default {
   'pages.park.asset.deleteSuccess': 'Deleted successfully',
   'pages.park.asset.saveFailed': 'Failed to save',
   'pages.park.asset.deleteFailed': 'Failed to delete',
+  'pages.park.asset.general': 'General',
+  'pages.park.asset.floorsSuffix': 'F',
+  'pages.park.asset.available': 'Available',
+  'pages.park.asset.descriptionTitle': 'Description',
+  'pages.park.asset.basicInfo': 'Basic Info',
+  'pages.park.asset.descriptionInfo': 'Description',
+  'pages.park.asset.rentalHistory': 'Rental History',
+  'pages.park.asset.leaseStatus': 'Status',
 };

@@ -109,6 +109,7 @@ export default {
   'pages.document.status.approving': '审批中',
   'pages.document.status.draft': '草稿',
   'pages.document.status.rejected': '已拒绝',
+  'pages.document.status.archived': '已归档',
   'pages.document.table.action': '操作',
   'pages.document.table.category': '分类',
   'pages.document.table.createdAt': '创建时间',
@@ -145,9 +146,15 @@ export default {
   'pages.document.statistics.total': '总数',
   'pages.document.statistics.draft': '草稿',
   'pages.document.statistics.pending': '审批中',
-  'pages.document.statistics.approved': '已通过',
+'pages.document.statistics.approved': '已通过',
   'pages.document.statistics.rejected': '已拒绝',
+  'pages.document.statistics.archived': '已归档',
 
-  // list.tsx search placeholder
   'pages.document.searchPlaceholder': '搜索标题或编号',
+
+  'pages.document.action.archive': '归档',
+  'pages.document.message.confirmArchive': '确定要归档公文 {title} 吗？',
+  'pages.document.message.archiveSuccess': '归档成功',
+  'pages.document.confirm': '确定',
+  'pages.document.cancel': '取消',
 };

@@ -132,6 +132,30 @@ public static class ErrorCode
     /// <summary>头像数据过大</summary>
     public const string AvatarTooLarge = "AVATAR_TOO_LARGE";
 
+    /// <summary>文件不存在</summary>
+    public const string FileNotFound = "FILE_NOT_FOUND";
+
+    /// <summary>文件类型不支持生成缩略图</summary>
+    public const string FileThumbnailNotSupported = "FILE_THUMBNAIL_NOT_SUPPORTED";
+
+    /// <summary>生成缩略图失败</summary>
+    public const string FileThumbnailGenerationFailed = "FILE_THUMBNAIL_GENERATION_FAILED";
+
+    /// <summary>缩略图不存在且无法生成</summary>
+    public const string FileThumbnailNotAvailable = "FILE_THUMBNAIL_NOT_AVAILABLE";
+
+    /// <summary>缩略图文件不存在或已被删除</summary>
+    public const string FileThumbnailDeleted = "FILE_THUMBNAIL_DELETED";
+
+    /// <summary>文件类型不支持预览</summary>
+    public const string FilePreviewNotSupported = "FILE_PREVIEW_NOT_SUPPORTED";
+
+    /// <summary>不支持的预览类型</summary>
+    public const string FilePreviewTypeNotSupported = "FILE_PREVIEW_TYPE_NOT_SUPPORTED";
+
+    /// <summary>生成预览失败</summary>
+    public const string FilePreviewGenerationFailed = "FILE_PREVIEW_GENERATION_FAILED";
+
     // ──────────────────────────────────────────────
     // 角色/权限相关 (Role/Permission)
     // ──────────────────────────────────────────────
@@ -600,6 +624,14 @@ public static class ErrorCode
         [OperationFailed] = "操作失败",
         // 文件
         [AvatarTooLarge] = "头像数据过大，请选择小于 2MB 的图片",
+        [FileNotFound] = "文件不存在",
+        [FileThumbnailNotSupported] = "该文件类型不支持生成缩略图",
+        [FileThumbnailGenerationFailed] = "生成缩略图失败",
+        [FileThumbnailNotAvailable] = "缩略图不存在且无法生成",
+        [FileThumbnailDeleted] = "缩略图文件不存在或已被删除",
+        [FilePreviewNotSupported] = "该文件类型不支持预览",
+        [FilePreviewTypeNotSupported] = "不支持的预览类型",
+        [FilePreviewGenerationFailed] = "生成预览失败",
         // 服务器
         [ServerError] = "服务器内部错误",
         // 公文

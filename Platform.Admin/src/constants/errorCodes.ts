@@ -124,6 +124,30 @@ export const COMPANY_EXPIRED = 'COMPANY_EXPIRED';
 /** 头像数据过大 */
 export const AVATAR_TOO_LARGE = 'AVATAR_TOO_LARGE';
 
+/** 文件不存在 */
+export const FILE_NOT_FOUND = 'FILE_NOT_FOUND';
+
+/** 文件类型不支持生成缩略图 */
+export const FILE_THUMBNAIL_NOT_SUPPORTED = 'FILE_THUMBNAIL_NOT_SUPPORTED';
+
+/** 生成缩略图失败 */
+export const FILE_THUMBNAIL_GENERATION_FAILED = 'FILE_THUMBNAIL_GENERATION_FAILED';
+
+/** 缩略图不存在且无法生成 */
+export const FILE_THUMBNAIL_NOT_AVAILABLE = 'FILE_THUMBNAIL_NOT_AVAILABLE';
+
+/** 缩略图文件不存在或已被删除 */
+export const FILE_THUMBNAIL_DELETED = 'FILE_THUMBNAIL_DELETED';
+
+/** 文件类型不支持预览 */
+export const FILE_PREVIEW_NOT_SUPPORTED = 'FILE_PREVIEW_NOT_SUPPORTED';
+
+/** 不支持的预览类型 */
+export const FILE_PREVIEW_TYPE_NOT_SUPPORTED = 'FILE_PREVIEW_TYPE_NOT_SUPPORTED';
+
+/** 生成预览失败 */
+export const FILE_PREVIEW_GENERATION_FAILED = 'FILE_PREVIEW_GENERATION_FAILED';
+
 // ──────────────────────────────────────────────
 // 角色/权限相关 (Role/Permission)
 // ──────────────────────────────────────────────

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using System.Text;
 using SixLabors.ImageSharp;
@@ -69,7 +70,7 @@ public class FilePreviewService : IFilePreviewService
     {
         var fileItem = await _cloudStorageService.GetFileItemAsync(fileItemId);
         if (fileItem == null)
-            throw new ArgumentException("文件不存在", nameof(fileItemId));
+            throw new ArgumentException(ErrorCode.FileNotFound, nameof(fileItemId));
 
         var previewInfo = new FilePreviewInfo
         {
@@ -99,10 +100,10 @@ public class FilePreviewService : IFilePreviewService
     {
         var fileItem = await _cloudStorageService.GetFileItemAsync(fileItemId);
         if (fileItem == null)
-            throw new ArgumentException("文件不存在", nameof(fileItemId));
+            throw new ArgumentException(ErrorCode.FileNotFound, nameof(fileItemId));
 
         if (!IsThumbnailSupported(fileItem.MimeType))
-            throw new InvalidOperationException($"文件类型 {fileItem.MimeType} 不支持生成缩略图");
+            throw new InvalidOperationException($"{ErrorCode.FileThumbnailNotSupported}:{fileItem.MimeType}");
 
         // 如果已有缩略图，直接返回
         if (!string.IsNullOrEmpty(fileItem.ThumbnailGridFSId))
@@ -139,7 +140,7 @@ public class FilePreviewService : IFilePreviewService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to generate thumbnail for file {FileItemId}", fileItemId);
-            throw new InvalidOperationException("生成缩略图失败", ex);
+            throw new InvalidOperationException(ErrorCode.FileThumbnailGenerationFailed, ex);
         }
     }
 
@@ -150,7 +151,7 @@ public class FilePreviewService : IFilePreviewService
     {
         var fileItem = await _cloudStorageService.GetFileItemAsync(fileItemId);
         if (fileItem == null)
-            throw new ArgumentException("文件不存在", nameof(fileItemId));
+            throw new ArgumentException(ErrorCode.FileNotFound, nameof(fileItemId));
 
         if (string.IsNullOrEmpty(fileItem.ThumbnailGridFSId))
         {
@@ -163,7 +164,7 @@ public class FilePreviewService : IFilePreviewService
             }
 
             if (string.IsNullOrEmpty(fileItem?.ThumbnailGridFSId))
-                throw new InvalidOperationException("缩略图不存在且无法生成");
+                throw new InvalidOperationException(ErrorCode.FileThumbnailNotAvailable);
         }
 
         try
@@ -173,7 +174,7 @@ public class FilePreviewService : IFilePreviewService
         }
         catch
         {
-            throw new InvalidOperationException("缩略图文件不存在或已被删除");
+            throw new InvalidOperationException(ErrorCode.FileThumbnailDeleted);
         }
     }
 
@@ -184,10 +185,10 @@ public class FilePreviewService : IFilePreviewService
     {
         var fileItem = await _cloudStorageService.GetFileItemAsync(fileItemId);
         if (fileItem == null)
-            throw new ArgumentException("文件不存在", nameof(fileItemId));
+            throw new ArgumentException(ErrorCode.FileNotFound, nameof(fileItemId));
 
         if (!IsPreviewSupported(fileItem.MimeType))
-            throw new InvalidOperationException($"文件类型 {fileItem.MimeType} 不支持预览");
+            throw new InvalidOperationException($"{ErrorCode.FilePreviewNotSupported}:{fileItem.MimeType}");
 
         var options = previewOptions ?? new PreviewOptions();
         var previewType = GetPreviewTypeEnum(fileItem.MimeType);
@@ -227,7 +228,7 @@ public class FilePreviewService : IFilePreviewService
                     break;
 
                 default:
-                    throw new InvalidOperationException($"不支持的预览类型: {previewType}");
+                    throw new InvalidOperationException($"{ErrorCode.FilePreviewTypeNotSupported}:{previewType}");
             }
 
             return previewContent;
@@ -235,7 +236,7 @@ public class FilePreviewService : IFilePreviewService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to generate preview for file {FileItemId}", fileItemId);
-            throw new InvalidOperationException("生成预览失败", ex);
+            throw new InvalidOperationException(ErrorCode.FilePreviewGenerationFailed, ex);
         }
     }
 

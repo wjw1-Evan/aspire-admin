@@ -94,6 +94,14 @@ export default {
 
     // ── 文件相关 (File) ──
     'AVATAR_TOO_LARGE': '头像数据过大，请选择小于 2MB 的图片',
+    'FILE_NOT_FOUND': '文件不存在',
+    'FILE_THUMBNAIL_NOT_SUPPORTED': '该文件类型不支持生成缩略图',
+    'FILE_THUMBNAIL_GENERATION_FAILED': '生成缩略图失败',
+    'FILE_THUMBNAIL_NOT_AVAILABLE': '缩略图不存在且无法生成',
+    'FILE_THUMBNAIL_DELETED': '缩略图文件不存在或已被删除',
+    'FILE_PREVIEW_NOT_SUPPORTED': '该文件类型不支持预览',
+    'FILE_PREVIEW_TYPE_NOT_SUPPORTED': '不支持的预览类型',
+    'FILE_PREVIEW_GENERATION_FAILED': '生成预览失败',
 
     // ── 服务器错误 (Server) ──
     'SERVER_ERROR': '服务器内部错误',

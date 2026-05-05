@@ -651,25 +651,27 @@ export const request: RequestConfig = {
   ],
 
   responseInterceptors: [
-    (response: any) => {
-      return handleCurrentUserResponse(response);
-    },
-    async (error: any) => {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Request failed:', error.config?.url, error.response?.status);
-      }
+    [
+      (response: any) => {
+        return handleCurrentUserResponse(response);
+      },
+      async (error: any) => {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Request failed:', error.config?.url, error.response?.status);
+        }
 
-      const tokenRefreshResult = await handle401Error(error);
-      if (tokenRefreshResult) {
-        return tokenRefreshResult;
-      }
+        const tokenRefreshResult = await handle401Error(error);
+        if (tokenRefreshResult) {
+          return tokenRefreshResult;
+        }
 
-      // 标记已尝试过 token 刷新，让 errorHandler 知道不要清除 token
-      // 因为我们让 Promise reject，让调用方决定如何处理
-      error._tokenRefreshAttempted = true;
+        // 标记已尝试过 token 刷新，让 errorHandler 知道不要清除 token
+        // 因为我们让 Promise reject，让调用方决定如何处理
+        error._tokenRefreshAttempted = true;
 
-      throw error;
-    },
+        throw error;
+      },
+    ],
   ],
 
   ...errorConfig,

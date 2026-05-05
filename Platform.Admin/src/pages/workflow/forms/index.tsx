@@ -1,8 +1,8 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { Button, Space, Tag, Popconfirm, Input, Empty, Drawer, Form, Input as AntInput, Select, Switch, message, Radio, Upload, Checkbox } from 'antd';
+import { Button, Space, Tag, Popconfirm, Input, Empty, Drawer, Form, Input as AntInput, Select, Switch, message, Radio, Upload, Checkbox, InputNumber, Collapse } from 'antd';
 const { Group: RadioGroup } = Radio;
 import { PageContainer, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
-import { PlusOutlined, DeleteOutlined, EyeOutlined, SaveOutlined, DragOutlined, CloseOutlined, PartitionOutlined, UploadOutlined, EditOutlined } from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined, EyeOutlined, SaveOutlined, DragOutlined, CloseOutlined, PartitionOutlined, UploadOutlined, EditOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import { request, useIntl } from '@umijs/max';
 import { ApiResponse, PagedResult } from '@/types';
 import type { DragEndEvent, DragStartEvent, DragOverEvent } from '@dnd-kit/core';
@@ -215,6 +215,116 @@ function FieldPropertyPanel({ field, onChange, onClose, intl }: {
                         />
                     </div>
                 )}
+                <div className="property-group">
+                    <Collapse
+                        ghost
+                        size="small"
+                        items={[{
+                            key: 'rules',
+                            label: <span style={{ fontWeight: 500 }}>{intl.formatMessage({ id: 'pages.forms.field.rules' })}</span>,
+                            children: (
+                                <div style={{ marginTop: 4 }}>
+                                    {(field.rules || []).map((rule, index) => (
+                                        <div key={index} style={{ marginBottom: 8, padding: '8px 8px 4px', background: '#fafafa', border: '1px solid #f0f0f0', borderRadius: 4 }}>
+                                            <div style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
+                                                <Select
+                                                    value={rule.type}
+                                                    onChange={type => {
+                                                        const newRules = [...(field.rules || [])];
+                                                        newRules[index] = { ...newRules[index], type };
+                                                        onChange({ ...field, rules: newRules });
+                                                    }}
+                                                    style={{ flex: 1 }}
+                                                    placeholder={intl.formatMessage({ id: 'pages.forms.field.rules.type' })}
+                                                    options={[
+                                                        { value: 'required', label: intl.formatMessage({ id: 'pages.forms.field.rules.typeRequired' }) },
+                                                        { value: 'pattern', label: intl.formatMessage({ id: 'pages.forms.field.rules.typePattern' }) },
+                                                        { value: 'min', label: intl.formatMessage({ id: 'pages.forms.field.rules.typeMin' }) },
+                                                        { value: 'max', label: intl.formatMessage({ id: 'pages.forms.field.rules.typeMax' }) },
+                                                        { value: 'minLength', label: intl.formatMessage({ id: 'pages.forms.field.rules.typeMinLength' }) },
+                                                        { value: 'maxLength', label: intl.formatMessage({ id: 'pages.forms.field.rules.typeMaxLength' }) },
+                                                    ]}
+                                                />
+                                                <Button
+                                                    type="text"
+                                                    size="small"
+                                                    danger
+                                                    icon={<MinusCircleOutlined />}
+                                                    onClick={() => {
+                                                        const newRules = (field.rules || []).filter((_, i) => i !== index);
+                                                        onChange({ ...field, rules: newRules });
+                                                    }}
+                                                />
+                                            </div>
+                                            {rule.type === 'pattern' && (
+                                                <AntInput
+                                                    value={rule.pattern}
+                                                    onChange={e => {
+                                                        const newRules = [...(field.rules || [])];
+                                                        newRules[index] = { ...newRules[index], pattern: e.target.value };
+                                                        onChange({ ...field, rules: newRules });
+                                                    }}
+                                                    placeholder={intl.formatMessage({ id: 'pages.forms.field.rules.pattern' })}
+                                                    style={{ marginBottom: 4 }}
+                                                />
+                                            )}
+                                            {(rule.type === 'min' || rule.type === 'max') && (
+                                                <InputNumber
+                                                    value={rule.type === 'min' ? rule.min : rule.max}
+                                                    onChange={val => {
+                                                        const newRules = [...(field.rules || [])];
+                                                        newRules[index] = { ...newRules[index], [rule.type]: val ?? 0 };
+                                                        onChange({ ...field, rules: newRules });
+                                                    }}
+                                                    placeholder={rule.type === 'min'
+                                                        ? intl.formatMessage({ id: 'pages.forms.field.rules.minValue' })
+                                                        : intl.formatMessage({ id: 'pages.forms.field.rules.maxValue' })}
+                                                    style={{ width: '100%', marginBottom: 4 }}
+                                                />
+                                            )}
+                                            {(rule.type === 'minLength' || rule.type === 'maxLength') && (
+                                                <InputNumber
+                                                    value={rule.type === 'minLength' ? rule.min : rule.max}
+                                                    onChange={val => {
+                                                        const newRules = [...(field.rules || [])];
+                                                        newRules[index] = { ...newRules[index], [rule.type === 'minLength' ? 'min' : 'max']: val ?? 0 };
+                                                        onChange({ ...field, rules: newRules });
+                                                    }}
+                                                    placeholder={rule.type === 'minLength'
+                                                        ? intl.formatMessage({ id: 'pages.forms.field.rules.minLengthValue' })
+                                                        : intl.formatMessage({ id: 'pages.forms.field.rules.maxLengthValue' })}
+                                                    style={{ width: '100%', marginBottom: 4 }}
+                                                    min={0}
+                                                />
+                                            )}
+                                            <AntInput
+                                                value={rule.message}
+                                                onChange={e => {
+                                                    const newRules = [...(field.rules || [])];
+                                                    newRules[index] = { ...newRules[index], message: e.target.value };
+                                                    onChange({ ...field, rules: newRules });
+                                                }}
+                                                placeholder={intl.formatMessage({ id: 'pages.forms.field.rules.message' })}
+                                            />
+                                        </div>
+                                    ))}
+                                    <Button
+                                        type="dashed"
+                                        block
+                                        icon={<PlusOutlined />}
+                                        size="small"
+                                        onClick={() => {
+                                            const newRules = [...(field.rules || []), { type: 'required', message: '' }];
+                                            onChange({ ...field, rules: newRules });
+                                        }}
+                                    >
+                                        {intl.formatMessage({ id: 'pages.forms.field.rules.addRule' })}
+                                    </Button>
+                                </div>
+                            ),
+                        }]}
+                    />
+                </div>
             </div>
         </div>
     );

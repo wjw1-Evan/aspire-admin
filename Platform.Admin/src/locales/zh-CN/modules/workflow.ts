@@ -380,4 +380,8 @@ export default {
   // WorkflowSidebar
   'pages.workflow.sidebar.deleteConfirmTitle': '确认删除流程',
   'pages.workflow.sidebar.deleteConfirmContent': '确定要删除流程"{name}"吗？此操作不可恢复。',
+
+  // Node Config Drawer - 开始节点表单绑定
+  'pages.flow.node.bindStartForm': '绑定起始表单',
+  'pages.flow.node.selectStartForm': '选择起始表单',
 };

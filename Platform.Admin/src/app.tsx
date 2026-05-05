@@ -650,6 +650,11 @@ export const request: RequestConfig = {
     },
   ],
 
+  // 先展开 errorConfig（包含错误处理和空的 responseInterceptors）
+  ...errorConfig,
+
+  // 再定义 responseInterceptors，覆盖 errorConfig 中的空实现
+  // 这是关键：确保 token 刷新逻辑生效
   responseInterceptors: [
     [
       (response: any) => {
@@ -673,6 +678,4 @@ export const request: RequestConfig = {
       },
     ],
   ],
-
-  ...errorConfig,
 };

@@ -69,9 +69,14 @@ const WorkflowDesignerModal: React.FC<WorkflowDesignerModalProps> = ({ workflow,
         message.success(intl.formatMessage({ id: 'pages.workflow.message.saveSuccess' }));
         onSuccess();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('保存失败:', error);
-      message.error(intl.formatMessage({ id: 'pages.workflow.message.saveFailed' }));
+      const errorMessage = error?.response?.data?.message || error?.message;
+      if (errorMessage) {
+        message.error(errorMessage);
+      } else {
+        message.error(intl.formatMessage({ id: 'pages.workflow.message.saveFailed' }));
+      }
     } finally {
       setLoading(false);
     }

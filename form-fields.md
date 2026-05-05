@@ -1,0 +1,356 @@
+- generic [ref=e1]:
+  - generic [ref=e7]:
+    - complementary [ref=e9]:
+      - generic [ref=e10]:
+        - menu [ref=e12]:
+          - menuitem "smile 欢迎" [ref=e13] [cursor=pointer]:
+            - link "smile 欢迎" [ref=e15]:
+              - /url: /welcome
+              - generic [ref=e16]:
+                - img "smile" [ref=e18]:
+                  - img [ref=e19]
+                - generic [ref=e21]: 欢迎
+          - menuitem "file-text 公文管理" [ref=e22] [cursor=pointer]:
+            - generic [ref=e24]:
+              - img "file-text" [ref=e26]:
+                - img [ref=e27]
+              - generic [ref=e29]: 公文管理
+          - menuitem "project 项目管理" [ref=e30] [cursor=pointer]:
+            - generic [ref=e32]:
+              - img "project" [ref=e34]:
+                - img [ref=e35]
+              - generic [ref=e37]: 项目管理
+          - menuitem "cloud-server 物联网平台" [ref=e38] [cursor=pointer]:
+            - generic [ref=e40]:
+              - img "cloud-server" [ref=e42]:
+                - img [ref=e43]
+              - generic [ref=e47]: 物联网平台
+          - menuitem "robot 小科管理" [ref=e48] [cursor=pointer]:
+            - generic [ref=e50]:
+              - img "robot" [ref=e52]:
+                - img [ref=e53]
+              - generic [ref=e55]: 小科管理
+          - menuitem "lock 密码本" [ref=e56] [cursor=pointer]:
+            - link "lock 密码本" [ref=e58]:
+              - /url: /password-book
+              - generic [ref=e59]:
+                - img "lock" [ref=e61]:
+                  - img [ref=e62]
+                - generic [ref=e64]: 密码本
+          - menuitem "cloud 网盘管理" [ref=e65] [cursor=pointer]:
+            - generic [ref=e67]:
+              - img "cloud" [ref=e69]:
+                - img [ref=e70]
+              - generic [ref=e72]: 网盘管理
+          - menuitem "global 网页抓取" [ref=e73] [cursor=pointer]:
+            - generic [ref=e75]:
+              - img "global" [ref=e77]:
+                - img [ref=e78]
+              - generic [ref=e80]: 网页抓取
+          - menuitem "dashboard 数据看板" [ref=e81] [cursor=pointer]:
+            - link "dashboard 数据看板" [ref=e83]:
+              - /url: /dashboard
+              - generic [ref=e84]:
+                - img "dashboard" [ref=e86]:
+                  - img [ref=e87]
+                - generic [ref=e89]: 数据看板
+          - menuitem "schedule 走访管理" [ref=e90] [cursor=pointer]:
+            - generic [ref=e92]:
+              - img "schedule" [ref=e94]:
+                - img [ref=e95]
+              - generic [ref=e97]: 走访管理
+          - menuitem "bank 园区管理" [ref=e98] [cursor=pointer]:
+            - generic [ref=e100]:
+              - img "bank" [ref=e102]:
+                - img [ref=e103]
+              - generic [ref=e105]: 园区管理
+          - menuitem "apartment 工作流管理" [expanded] [ref=e106] [cursor=pointer]:
+            - generic [ref=e108]:
+              - img "apartment" [ref=e110]:
+                - img [ref=e111]
+              - generic [ref=e113]: 工作流管理
+          - menu [ref=e1286]:
+            - menuitem "apartment 流程定义" [ref=e1287] [cursor=pointer]:
+              - link "apartment 流程定义" [ref=e1289]:
+                - /url: /workflow/list
+                - generic [ref=e1290]:
+                  - img "apartment" [ref=e1292]:
+                    - img [ref=e1293]
+                  - generic [ref=e1297]: 流程定义
+            - menuitem "form 表单定义" [ref=e1298] [cursor=pointer]:
+              - link "form 表单定义" [ref=e1300]:
+                - /url: /workflow/forms
+                - generic [ref=e1301]:
+                  - img "form" [ref=e1303]:
+                    - img [ref=e1304]
+                  - generic [ref=e1309]: 表单定义
+            - menuitem "monitor 流程监控" [ref=e1310] [cursor=pointer]:
+              - link "monitor 流程监控" [ref=e1312]:
+                - /url: /workflow/monitor
+                - generic [ref=e1313]:
+                  - img "monitor" [ref=e1315]:
+                    - img [ref=e1316]
+                  - generic [ref=e1320]: 流程监控
+            - menuitem "book 知识库管理" [ref=e1321] [cursor=pointer]:
+              - link "book 知识库管理" [ref=e1323]:
+                - /url: /workflow/knowledge-base
+                - generic [ref=e1324]:
+                  - img "book" [ref=e1326]:
+                    - img [ref=e1327]
+                  - generic [ref=e1331]: 知识库管理
+          - menuitem "setting 系统管理" [ref=e114] [cursor=pointer]:
+            - generic [ref=e116]:
+              - img "setting" [ref=e118]:
+                - img [ref=e119]
+              - generic [ref=e121]: 系统管理
+        - generic:
+          - menu
+        - img [ref=e123] [cursor=pointer]
+    - generic [ref=e125]:
+      - banner [ref=e126]
+      - banner [ref=e127]:
+        - generic [ref=e128]:
+          - generic [ref=e130] [cursor=pointer]:
+            - img "logo" [ref=e131]
+            - generic [ref=e133]: admin 的企业
+          - generic [ref=e137]:
+            - generic [ref=e140] [cursor=pointer]: 🇨🇳
+            - generic [ref=e143] [cursor=pointer]:
+              - img "bell" [ref=e144]:
+                - img [ref=e145]
+              - superscript [ref=e147]:
+                - generic [ref=e149]: "1"
+            - generic [ref=e152] [cursor=pointer]:
+              - img "user" [ref=e154]:
+                - img [ref=e155]
+              - generic [ref=e157]: admin
+      - main [ref=e158]:
+        - generic [ref=e159]:
+          - generic [ref=e1340]:
+            - generic [ref=e1342]:
+              - generic [ref=e1345]:
+                - generic [ref=e1347]:
+                  - img "partition" [ref=e1349]:
+                    - img [ref=e1350]
+                  - generic [ref=e1352]: 表单管理
+                - generic [ref=e1354]:
+                  - generic [ref=e1356]: 表单总数 0
+                  - generic [ref=e1358]: 启用数 0
+              - generic [ref=e1359]:
+                - generic [ref=e1360]:
+                  - generic [ref=e1361]:
+                    - searchbox "搜索表单..." [ref=e1363]
+                    - button "search" [ref=e1365] [cursor=pointer]:
+                      - img "search" [ref=e1367]:
+                        - img [ref=e1368]
+                  - button "plus 创建" [ref=e1370] [cursor=pointer]:
+                    - img "plus" [ref=e1372]:
+                      - img [ref=e1373]
+                    - generic [ref=e1376]: 创建
+                - generic [ref=e1377]:
+                  - img "reload" [ref=e1380] [cursor=pointer]:
+                    - img [ref=e1381]
+                  - img "column-height" [ref=e1386] [cursor=pointer]:
+                    - img [ref=e1387]
+                  - img "setting" [ref=e1390] [cursor=pointer]:
+                    - img [ref=e1391]
+            - table [ref=e1399]:
+              - rowgroup [ref=e1406]:
+                - row "名��� 版本 字段数 启用 操作" [ref=e1407]:
+                  - columnheader "名���" [ref=e1408] [cursor=pointer]:
+                    - generic [ref=e1409]:
+                      - generic [ref=e1410]: 名���
+                      - generic [ref=e1412]:
+                        - img [ref=e1413]:
+                          - img [ref=e1414]
+                        - img [ref=e1416]:
+                          - img [ref=e1417]
+                  - columnheader "版本" [ref=e1419] [cursor=pointer]:
+                    - generic [ref=e1420]:
+                      - generic [ref=e1421]: 版本
+                      - generic [ref=e1423]:
+                        - img [ref=e1424]:
+                          - img [ref=e1425]
+                        - img [ref=e1427]:
+                          - img [ref=e1428]
+                  - columnheader "字段数" [ref=e1430]
+                  - columnheader "启用" [ref=e1431]
+                  - columnheader "操作" [ref=e1432]
+              - rowgroup [ref=e1433]:
+                - generic [ref=e1434]:
+                  - generic [ref=e1435]: 名���
+                  - generic [ref=e1437]:
+                    - img [ref=e1438]:
+                      - img [ref=e1439]
+                    - img [ref=e1441]:
+                      - img [ref=e1442]
+                - generic [ref=e1444]:
+                  - generic [ref=e1445]: 版本
+                  - generic [ref=e1447]:
+                    - img [ref=e1448]:
+                      - img [ref=e1449]
+                    - img [ref=e1451]:
+                      - img [ref=e1452]
+                - row "暂无数据 暂无数据" [ref=e1454]:
+                  - cell "暂无数据 暂无数据" [ref=e1455]:
+                    - generic [ref=e1457]:
+                      - img "暂无数据" [ref=e1459]
+                      - generic [ref=e1465]: 暂无数据
+          - button "message" [ref=e1279] [cursor=pointer]:
+            - img "message" [ref=e1281]:
+              - img [ref=e1282]
+      - contentinfo [ref=e1284]:
+        - generic [ref=e1285]: Powered by Evan
+  - dialog "创建表单" [ref=e1467]:
+    - generic [ref=e1469]:
+      - button "关闭" [ref=e1470] [cursor=pointer]:
+        - img "close" [ref=e1471]:
+          - img [ref=e1472]
+      - generic [ref=e1474]: 创建表单
+    - generic [ref=e1476]:
+      - generic [ref=e1477]:
+        - generic [ref=e1478]:
+          - generic [ref=e1479]: 表单名称
+          - textbox "请输入表单名称" [ref=e1480]: 测试表单-全流程验证
+        - generic [ref=e1481]:
+          - generic [ref=e1482]: 是否启用
+          - switch "启用 禁用" [checked] [ref=e1483] [cursor=pointer]:
+            - generic [ref=e1485]:
+              - generic: 启用
+              - generic: 禁用
+        - generic [ref=e1486]:
+          - button "save 保存" [ref=e1488] [cursor=pointer]:
+            - img "save" [ref=e1490]:
+              - img [ref=e1491]
+            - generic [ref=e1493]: 保存
+          - button "eye 预览" [ref=e1495] [cursor=pointer]:
+            - img "eye" [ref=e1497]:
+              - img [ref=e1498]
+            - generic [ref=e1500]: 预览
+      - generic [ref=e1501]:
+        - generic [ref=e1502]:
+          - generic [ref=e1503]: 字段库
+          - generic [ref=e1504]:
+            - button "T 文本" [ref=e1505]:
+              - generic [ref=e1506]: T
+              - generic [ref=e1507]: 文本
+            - button "T- 多行文本" [ref=e1508]:
+              - generic [ref=e1509]: T-
+              - generic [ref=e1510]: 多行文本
+            - button "# 数字" [ref=e1511]:
+              - generic [ref=e1512]: "#"
+              - generic [ref=e1513]: 数字
+            - button "D 日期" [ref=e1514]:
+              - generic [ref=e1515]: D
+              - generic [ref=e1516]: 日期
+            - button "D+ 日期时间" [ref=e1517]:
+              - generic [ref=e1518]: D+
+              - generic [ref=e1519]: 日期时间
+            - button "v 下拉选择" [ref=e1520]:
+              - generic [ref=e1521]: v
+              - generic [ref=e1522]: 下拉选择
+            - button "O 单选" [ref=e1523]:
+              - generic [ref=e1524]: O
+              - generic [ref=e1525]: 单选
+            - button "[] 多选" [ref=e1526]:
+              - generic [ref=e1527]: "[]"
+              - generic [ref=e1528]: 多选
+            - button "S 开关" [ref=e1529]:
+              - generic [ref=e1530]: S
+              - generic [ref=e1531]: 开关
+            - button "A 附件" [ref=e1532]:
+              - generic [ref=e1533]: A
+              - generic [ref=e1534]: 附件
+        - generic [ref=e1535]:
+          - generic [ref=e1536]: 表单画布
+          - generic [ref=e1537]:
+            - button "文本_1 close" [ref=e1558]:
+              - generic [ref=e1559]:
+                - generic [ref=e1560]: 文本_1
+                - textbox [ref=e1561]
+              - button "close" [ref=e1562] [cursor=pointer]:
+                - img "close" [ref=e1564]:
+                  - img [ref=e1565]
+            - button "多行文本_2 close" [ref=e1611]:
+              - generic [ref=e1612]:
+                - generic [ref=e1613]: 多行文本_2
+                - textbox [ref=e1614]
+              - button "close" [ref=e1615] [cursor=pointer]:
+                - img "close" [ref=e1617]:
+                  - img [ref=e1618]
+            - button "数字_3 close" [ref=e1621]:
+              - generic [ref=e1622]:
+                - generic [ref=e1623]: 数字_3
+                - spinbutton [ref=e1624]
+              - button "close" [ref=e1625] [cursor=pointer]:
+                - img "close" [ref=e1627]:
+                  - img [ref=e1628]
+            - button "下拉选择_4 down close" [ref=e1631]:
+              - generic [ref=e1632]:
+                - generic [ref=e1633]: 下拉选择_4
+                - generic [ref=e1634] [cursor=pointer]:
+                  - generic:
+                    - combobox
+                  - img "down" [ref=e1636]:
+                    - img [ref=e1637]
+              - button "close" [ref=e1639] [cursor=pointer]:
+                - img "close" [ref=e1641]:
+                  - img [ref=e1642]
+            - button "单选_5 close" [ref=e1648]:
+              - generic [ref=e1649]:
+                - generic [ref=e1650]: 单选_5
+                - radiogroup [ref=e1651]:
+                  - generic [ref=e1652] [cursor=pointer]:
+                    - radio "选项1" [ref=e1654]
+                    - generic [ref=e1655]: 选项1
+                  - generic [ref=e1656] [cursor=pointer]:
+                    - radio "选项2" [ref=e1658]
+                    - generic [ref=e1659]: 选项2
+              - button "close" [ref=e1660] [cursor=pointer]:
+                - img "close" [ref=e1662]:
+                  - img [ref=e1663]
+            - button "开关_6 是 否 close" [ref=e1666]:
+              - generic [ref=e1667]:
+                - generic [ref=e1668]: 开关_6
+                - switch "是 否" [ref=e1669] [cursor=pointer]:
+                  - generic [ref=e1671]:
+                    - generic: 是
+                    - generic: 否
+              - button "close" [ref=e1672] [cursor=pointer]:
+                - img "close" [ref=e1674]:
+                  - img [ref=e1675]
+        - status [ref=e1547]
+        - generic [ref=e1567]:
+          - generic [ref=e1568]:
+            - generic [ref=e1569]: 字段属性
+            - button "close" [ref=e1570] [cursor=pointer]:
+              - img "close" [ref=e1572]:
+                - img [ref=e1573]
+          - generic [ref=e1575]:
+            - generic [ref=e1576]:
+              - generic [ref=e1577]: 标签
+              - textbox "请输入字段标签" [ref=e1578]: 开关_6
+            - generic [ref=e1579]:
+              - generic [ref=e1580]: 字段标识
+              - textbox "请输入字段标识" [ref=e1581]: field_6
+            - generic [ref=e1582]:
+              - generic [ref=e1583]: 类型
+              - generic [ref=e1584] [cursor=pointer]:
+                - generic "开关" [ref=e1677]:
+                  - text: 开关
+                  - combobox [ref=e1586]
+                - img "down" [ref=e1588]:
+                  - img [ref=e1589]
+            - generic [ref=e1591]:
+              - generic [ref=e1592]: 必填
+              - switch [ref=e1593] [cursor=pointer]
+            - generic [ref=e1596]:
+              - generic [ref=e1597]: 占位符
+              - textbox "请输入占位符" [ref=e1598]
+            - generic [ref=e1599]:
+              - generic [ref=e1600]: 默认值
+              - textbox "请输入默认值" [ref=e1601]
+            - button "collapsed 验证规则" [ref=e1605] [cursor=pointer]:
+              - img "collapsed" [ref=e1607]:
+                - img [ref=e1608]
+              - generic [ref=e1610]: 验证规则

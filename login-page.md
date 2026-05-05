@@ -1,0 +1,657 @@
+- generic [ref=e7]:
+  - complementary [ref=e9]:
+    - generic [ref=e10]:
+      - menu [ref=e12]:
+        - menuitem "smile 欢迎" [ref=e13] [cursor=pointer]:
+          - link "smile 欢迎" [ref=e15]:
+            - /url: /welcome
+            - generic [ref=e16]:
+              - img "smile" [ref=e18]:
+                - img [ref=e19]
+              - generic [ref=e21]: 欢迎
+        - menuitem "file-text 公文管理" [ref=e22] [cursor=pointer]:
+          - generic [ref=e24]:
+            - img "file-text" [ref=e26]:
+              - img [ref=e27]
+            - generic [ref=e29]: 公文管理
+        - menuitem "project 项目管理" [ref=e30] [cursor=pointer]:
+          - generic [ref=e32]:
+            - img "project" [ref=e34]:
+              - img [ref=e35]
+            - generic [ref=e37]: 项目管理
+        - menuitem "cloud-server 物联网平台" [ref=e38] [cursor=pointer]:
+          - generic [ref=e40]:
+            - img "cloud-server" [ref=e42]:
+              - img [ref=e43]
+            - generic [ref=e47]: 物联网平台
+        - menuitem "robot 小科管理" [ref=e48] [cursor=pointer]:
+          - generic [ref=e50]:
+            - img "robot" [ref=e52]:
+              - img [ref=e53]
+            - generic [ref=e55]: 小科管理
+        - menuitem "lock 密码本" [ref=e56] [cursor=pointer]:
+          - link "lock 密码本" [ref=e58]:
+            - /url: /password-book
+            - generic [ref=e59]:
+              - img "lock" [ref=e61]:
+                - img [ref=e62]
+              - generic [ref=e64]: 密码本
+        - menuitem "cloud 网盘管理" [ref=e65] [cursor=pointer]:
+          - generic [ref=e67]:
+            - img "cloud" [ref=e69]:
+              - img [ref=e70]
+            - generic [ref=e72]: 网盘管理
+        - menuitem "global 网页抓取" [ref=e73] [cursor=pointer]:
+          - generic [ref=e75]:
+            - img "global" [ref=e77]:
+              - img [ref=e78]
+            - generic [ref=e80]: 网页抓取
+        - menuitem "dashboard 数据看板" [ref=e81] [cursor=pointer]:
+          - link "dashboard 数据看板" [ref=e83]:
+            - /url: /dashboard
+            - generic [ref=e84]:
+              - img "dashboard" [ref=e86]:
+                - img [ref=e87]
+              - generic [ref=e89]: 数据看板
+        - menuitem "schedule 走访管理" [ref=e90] [cursor=pointer]:
+          - generic [ref=e92]:
+            - img "schedule" [ref=e94]:
+              - img [ref=e95]
+            - generic [ref=e97]: 走访管理
+        - menuitem "bank 园区管理" [ref=e98] [cursor=pointer]:
+          - generic [ref=e100]:
+            - img "bank" [ref=e102]:
+              - img [ref=e103]
+            - generic [ref=e105]: 园区管理
+        - menuitem "apartment 工作流管理" [ref=e106] [cursor=pointer]:
+          - generic [ref=e108]:
+            - img "apartment" [ref=e110]:
+              - img [ref=e111]
+            - generic [ref=e113]: 工作流管理
+        - menuitem "setting 系统管理" [ref=e114] [cursor=pointer]:
+          - generic [ref=e116]:
+            - img "setting" [ref=e118]:
+              - img [ref=e119]
+            - generic [ref=e121]: 系统管理
+      - generic:
+        - menu
+      - img [ref=e123] [cursor=pointer]
+  - generic [ref=e125]:
+    - banner [ref=e126]
+    - banner [ref=e127]:
+      - generic [ref=e128]:
+        - generic [ref=e130] [cursor=pointer]:
+          - img "logo" [ref=e131]
+          - generic [ref=e133]: admin 的企业
+        - generic [ref=e137]:
+          - generic [ref=e140] [cursor=pointer]: 🇨🇳
+          - generic [ref=e143] [cursor=pointer]:
+            - img "bell" [ref=e144]:
+              - img [ref=e145]
+            - superscript [ref=e147]:
+              - generic [ref=e149]: "1"
+          - generic [ref=e152] [cursor=pointer]:
+            - img "user" [ref=e154]:
+              - img [ref=e155]
+            - generic [ref=e157]: admin
+    - main [ref=e158]:
+      - generic [ref=e159]:
+        - generic [ref=e165]:
+          - generic [ref=e169]:
+            - img "user" [ref=e173]:
+              - img [ref=e174]
+            - generic [ref=e177]:
+              - heading "下午好，admin！" [level=1] [ref=e178]
+              - generic [ref=e179]:
+                - text: 欢迎回到 通用管理平台
+                - generic [ref=e180]: admin 的企业
+              - generic [ref=e181]:
+                - generic [ref=e183]:
+                  - img "crown" [ref=e184]:
+                    - img [ref=e185]
+                  - text: 管理员
+                - generic [ref=e188]:
+                  - img "global" [ref=e189]:
+                    - img [ref=e190]
+                  - text: 在线
+            - generic [ref=e193]:
+              - generic [ref=e194]: 5日
+              - generic [ref=e195]: 5月 周二
+          - generic [ref=e196]:
+            - generic [ref=e197]:
+              - generic [ref=e199]:
+                - img "rocket" [ref=e201]:
+                  - img [ref=e202]
+                - generic [ref=e204]: 快速操作
+              - button "down 展开" [ref=e206] [cursor=pointer]:
+                - img "down" [ref=e208]:
+                  - img [ref=e209]
+                - generic [ref=e211]: 展开
+            - generic [ref=e214]:
+              - generic [ref=e218] [cursor=pointer]:
+                - img "file-text" [ref=e220]:
+                  - img [ref=e221]
+                - generic [ref=e223]:
+                  - strong [ref=e225]: 公文列表
+                  - generic [ref=e226]: 查看和管理公文
+              - generic [ref=e230] [cursor=pointer]:
+                - img "schedule" [ref=e232]:
+                  - img [ref=e233]
+                - generic [ref=e235]:
+                  - strong [ref=e237]: 任务管理
+                  - generic [ref=e238]: 查看和管理项目任务
+              - generic [ref=e242] [cursor=pointer]:
+                - img "cloud-server" [ref=e244]:
+                  - img [ref=e245]
+                - generic [ref=e249]:
+                  - strong [ref=e251]: 网关管理
+                  - generic [ref=e252]: 管理物联网网关设备
+              - generic [ref=e256] [cursor=pointer]:
+                - img "setting" [ref=e258]:
+                  - img [ref=e259]
+                - generic [ref=e261]:
+                  - strong [ref=e263]: 配置管理
+                  - generic [ref=e264]: 管理小科AI助手配置
+              - generic [ref=e268] [cursor=pointer]:
+                - img "folder" [ref=e270]:
+                  - img [ref=e271]
+                - generic [ref=e273]:
+                  - strong [ref=e275]: 我的文件
+                  - generic [ref=e276]: 管理个人文件和文件夹
+              - generic [ref=e280] [cursor=pointer]:
+                - img "cloud-server" [ref=e282]:
+                  - img [ref=e283]
+                - generic [ref=e287]:
+                  - strong [ref=e289]: 抓取任务
+                  - generic [ref=e290]: 查看和管理网页抓取任务
+              - generic [ref=e294] [cursor=pointer]:
+                - img "schedule" [ref=e296]:
+                  - img [ref=e297]
+                - generic [ref=e299]:
+                  - strong [ref=e301]: 走访任务
+                  - generic [ref=e302]: 管理企管员走访任务
+              - generic [ref=e306] [cursor=pointer]:
+                - img "home" [ref=e308]:
+                  - img [ref=e309]
+                - generic [ref=e311]:
+                  - strong [ref=e313]: 资产管理
+                  - generic [ref=e314]: 管理园区楼宇房源资产
+              - generic [ref=e318] [cursor=pointer]:
+                - img "apartment" [ref=e320]:
+                  - img [ref=e321]
+                - generic [ref=e323]:
+                  - strong [ref=e325]: 流程定义
+                  - generic [ref=e326]: 管理和配置工作流定义
+              - generic [ref=e330] [cursor=pointer]:
+                - img "user" [ref=e332]:
+                  - img [ref=e333]
+                - generic [ref=e335]:
+                  - strong [ref=e337]: 用户管理
+                  - generic [ref=e338]: 管理系统用户账户
+              - generic [ref=e342] [cursor=pointer]:
+                - img "check-circle" [ref=e344]:
+                  - img [ref=e345]
+                - generic [ref=e348]:
+                  - strong [ref=e350]: 我的审批
+                  - generic [ref=e351]: 处理待审批的公文
+              - generic [ref=e355] [cursor=pointer]:
+                - img "project" [ref=e357]:
+                  - img [ref=e358]
+                - generic [ref=e360]:
+                  - strong [ref=e362]: 项目列表
+                  - generic [ref=e363]: 查看和管理项目列表
+              - generic [ref=e367] [cursor=pointer]:
+                - img "desktop" [ref=e369]:
+                  - img [ref=e370]
+                - generic [ref=e372]:
+                  - strong [ref=e374]: 设备管理
+                  - generic [ref=e375]: 管理物联网终端设备
+              - generic [ref=e379] [cursor=pointer]:
+                - img "message" [ref=e381]:
+                  - img [ref=e382]
+                - generic [ref=e384]:
+                  - strong [ref=e386]: 聊天记录管理
+                  - generic [ref=e387]: 查看和管理聊天记录
+              - generic [ref=e391] [cursor=pointer]:
+                - img "share-alt" [ref=e393]:
+                  - img [ref=e394]
+                - generic [ref=e396]:
+                  - strong [ref=e398]: 共享文件
+                  - generic [ref=e399]: 管理文件分享和共享
+              - generic [ref=e403] [cursor=pointer]:
+                - img "file-search" [ref=e405]:
+                  - img [ref=e406]
+                - generic [ref=e408]:
+                  - strong [ref=e410]: 抓取结果
+                  - generic [ref=e411]: 查看和管理网页抓取结果
+              - generic [ref=e415] [cursor=pointer]:
+                - img "check-square" [ref=e417]:
+                  - img [ref=e418]
+                - generic [ref=e421]:
+                  - strong [ref=e423]: 走访考核
+                  - generic [ref=e424]: 管理走访任务考核情况
+              - generic [ref=e428] [cursor=pointer]:
+                - img "fund" [ref=e430]:
+                  - img [ref=e431]
+                - generic [ref=e433]:
+                  - strong [ref=e435]: 招商管理
+                  - generic [ref=e436]: 管理招商线索与项目
+              - generic [ref=e440] [cursor=pointer]:
+                - img "form" [ref=e442]:
+                  - img [ref=e443]
+                - generic [ref=e446]:
+                  - strong [ref=e448]: 表单定义
+                  - generic [ref=e449]: 管理流程关联表单
+              - generic [ref=e453] [cursor=pointer]:
+                - img "team" [ref=e455]:
+                  - img [ref=e456]
+                - generic [ref=e458]:
+                  - strong [ref=e460]: 角色管理
+                  - generic [ref=e461]: 配置用户角色权限
+              - generic [ref=e465] [cursor=pointer]:
+                - img "file-text" [ref=e467]:
+                  - img [ref=e468]
+                - generic [ref=e470]:
+                  - strong [ref=e472]: 公文管理
+                  - generic [ref=e473]: 管理和审批公文
+              - generic [ref=e477] [cursor=pointer]:
+                - img "bar-chart" [ref=e479]:
+                  - img [ref=e480]
+                - generic [ref=e482]:
+                  - strong [ref=e484]: 统计报表
+                  - generic [ref=e485]: 查看项目数据统计与分析
+              - generic [ref=e489] [cursor=pointer]:
+                - img "database" [ref=e491]:
+                  - img [ref=e492]
+                - generic [ref=e494]:
+                  - strong [ref=e496]: 数据点管理
+                  - generic [ref=e497]: 管理数据采集点配置
+              - generic [ref=e501] [cursor=pointer]:
+                - img "delete" [ref=e503]:
+                  - img [ref=e504]
+                - generic [ref=e506]:
+                  - strong [ref=e508]: 回收站
+                  - generic [ref=e509]: 管理已删除的文件
+              - generic [ref=e513] [cursor=pointer]:
+                - img "history" [ref=e515]:
+                  - img [ref=e516]
+                - generic [ref=e518]:
+                  - strong [ref=e520]: 抓取日志
+                  - generic [ref=e521]: 查看网页抓取执行日志
+              - generic [ref=e525] [cursor=pointer]:
+                - img "database" [ref=e527]:
+                  - img [ref=e528]
+                - generic [ref=e530]:
+                  - strong [ref=e532]: 走访知识库
+                  - generic [ref=e533]: 走访问题与问卷管理
+              - generic [ref=e537] [cursor=pointer]:
+                - img "team" [ref=e539]:
+                  - img [ref=e540]
+                - generic [ref=e542]:
+                  - strong [ref=e544]: 租户管理
+                  - generic [ref=e545]: 管理租户企业与合同
+              - generic [ref=e549] [cursor=pointer]:
+                - img "monitor" [ref=e551]:
+                  - img [ref=e552]
+                - generic [ref=e554]:
+                  - strong [ref=e556]: 流程监控
+                  - generic [ref=e557]: 监控工作流实例执行情况
+              - generic [ref=e561] [cursor=pointer]:
+                - img "bank" [ref=e563]:
+                  - img [ref=e564]
+                - generic [ref=e566]:
+                  - strong [ref=e568]: 企业管理
+                  - generic [ref=e569]: 管理企业信息
+              - generic [ref=e573] [cursor=pointer]:
+                - img "project" [ref=e575]:
+                  - img [ref=e576]
+                - generic [ref=e578]:
+                  - strong [ref=e580]: 项目管理
+                  - generic [ref=e581]: 项目管理功能
+              - generic [ref=e585] [cursor=pointer]:
+                - img "alert" [ref=e587]:
+                  - img [ref=e588]
+                - generic [ref=e590]:
+                  - strong [ref=e592]: 事件告警
+                  - generic [ref=e593]: 查看和管理事件告警
+              - generic [ref=e597] [cursor=pointer]:
+                - img "pie-chart" [ref=e599]:
+                  - img [ref=e600]
+                - generic [ref=e602]:
+                  - strong [ref=e604]: 存储管理
+                  - generic [ref=e605]: 管理存储配额和使用统计
+              - generic [ref=e609] [cursor=pointer]:
+                - img "bar-chart" [ref=e611]:
+                  - img [ref=e612]
+                - generic [ref=e614]:
+                  - strong [ref=e616]: 走访统计报表
+                  - generic [ref=e617]: 企管员走访数据统计与 AI 分析
+              - generic [ref=e621] [cursor=pointer]:
+                - img "file-done" [ref=e623]:
+                  - img [ref=e624]
+                - generic [ref=e626]:
+                  - strong [ref=e628]: 合同管理
+                  - generic [ref=e629]: 管理租赁合同与缴费记录
+              - generic [ref=e633] [cursor=pointer]:
+                - img "book" [ref=e635]:
+                  - img [ref=e636]
+                - generic [ref=e638]:
+                  - strong [ref=e640]: 知识库管理
+                  - generic [ref=e641]: 管理工作流知识库
+              - generic [ref=e645] [cursor=pointer]:
+                - img "history" [ref=e647]:
+                  - img [ref=e648]
+                - generic [ref=e650]:
+                  - strong [ref=e652]: 我的活动
+                  - generic [ref=e653]: 查看个人活动记录
+              - generic [ref=e657] [cursor=pointer]:
+                - img "cloud-server" [ref=e659]:
+                  - img [ref=e660]
+                - generic [ref=e664]:
+                  - strong [ref=e666]: 物联网平台
+                  - generic [ref=e667]: 物联网平台功能
+              - generic [ref=e671] [cursor=pointer]:
+                - img "bar-chart" [ref=e673]:
+                  - img [ref=e674]
+                - generic [ref=e676]:
+                  - strong [ref=e678]: 数据中心
+                  - generic [ref=e679]: 查看数据统计和分析
+              - generic [ref=e683] [cursor=pointer]:
+                - img "customer-service" [ref=e685]:
+                  - img [ref=e686]
+                - generic [ref=e688]:
+                  - strong [ref=e690]: 企业服务
+                  - generic [ref=e691]: 管理园区企业服务申请
+              - generic [ref=e695] [cursor=pointer]:
+                - img "apartment" [ref=e697]:
+                  - img [ref=e698]
+                - generic [ref=e700]:
+                  - strong [ref=e702]: 组织架构
+                  - generic [ref=e703]: 管理企业组织架构与层级
+              - generic [ref=e707] [cursor=pointer]:
+                - img "robot" [ref=e709]:
+                  - img [ref=e710]
+                - generic [ref=e712]:
+                  - strong [ref=e714]: 小科管理
+                  - generic [ref=e715]: 小科管理功能
+              - generic [ref=e719] [cursor=pointer]:
+                - img "bar-chart" [ref=e721]:
+                  - img [ref=e722]
+                - generic [ref=e724]:
+                  - strong [ref=e726]: 统计报表
+                  - generic [ref=e727]: 园区各项业务数据统计与分析
+              - generic [ref=e731] [cursor=pointer]:
+                - img "file-text" [ref=e733]:
+                  - img [ref=e734]
+                - generic [ref=e736]:
+                  - strong [ref=e738]: 操作日志
+                  - generic [ref=e739]: 查看用户操作日志
+              - generic [ref=e743] [cursor=pointer]:
+                - img "lock" [ref=e745]:
+                  - img [ref=e746]
+                - generic [ref=e748]:
+                  - strong [ref=e750]: 密码本
+                  - generic [ref=e751]: 安全保存和管理账号密码
+              - generic [ref=e755] [cursor=pointer]:
+                - img "appstore" [ref=e757]:
+                  - img [ref=e758]
+                - generic [ref=e760]:
+                  - strong [ref=e762]: 菜单管理
+                  - generic [ref=e763]: 管理系统菜单配置
+              - generic [ref=e767] [cursor=pointer]:
+                - img "cloud" [ref=e769]:
+                  - img [ref=e770]
+                - generic [ref=e772]:
+                  - strong [ref=e774]: 网盘管理
+                  - generic [ref=e775]: 云存储文件管理
+              - generic [ref=e779] [cursor=pointer]:
+                - img "global" [ref=e781]:
+                  - img [ref=e782]
+                - generic [ref=e784]:
+                  - strong [ref=e786]: 网页抓取
+                  - generic [ref=e787]: 抓取网页内容，支持深度抓取和定时任务
+              - generic [ref=e791] [cursor=pointer]:
+                - img "dashboard" [ref=e793]:
+                  - img [ref=e794]
+                - generic [ref=e796]:
+                  - strong [ref=e798]: 数据看板
+                  - generic [ref=e799]: 自定义数据可视化看板
+              - generic [ref=e803] [cursor=pointer]:
+                - img "schedule" [ref=e805]:
+                  - img [ref=e806]
+                - generic [ref=e808]:
+                  - strong [ref=e810]: 走访管理
+                  - generic [ref=e811]: 管理走访任务、考核及知识库
+              - generic [ref=e815] [cursor=pointer]:
+                - img "bank" [ref=e817]:
+                  - img [ref=e818]
+                - generic [ref=e820]:
+                  - strong [ref=e822]: 园区管理
+                  - generic [ref=e823]: 园区综合管理功能
+              - generic [ref=e827] [cursor=pointer]:
+                - img "appstore" [ref=e829]:
+                  - img [ref=e830]
+                - generic [ref=e832]:
+                  - strong [ref=e834]: 通知公告
+                  - generic [ref=e835]: 查看和管理系统通知公告
+              - generic [ref=e839] [cursor=pointer]:
+                - img "apartment" [ref=e841]:
+                  - img [ref=e842]
+                - generic [ref=e844]:
+                  - strong [ref=e846]: 工作流管理
+                  - generic [ref=e847]: 管理和监控工作流
+              - generic [ref=e851] [cursor=pointer]:
+                - img "setting" [ref=e853]:
+                  - img [ref=e854]
+                - generic [ref=e856]:
+                  - strong [ref=e858]: 系统管理
+                  - generic [ref=e859]: 系统管理功能
+          - generic [ref=e860]:
+            - generic [ref=e861]:
+              - generic [ref=e863]:
+                - generic [ref=e864]:
+                  - button "drag" [ref=e866]:
+                    - img "drag" [ref=e867]:
+                      - img [ref=e868]
+                  - generic [ref=e870]:
+                    - generic [ref=e873]:
+                      - img "bar-chart" [ref=e875]:
+                        - img [ref=e876]
+                      - generic [ref=e878]: 任务概览
+                    - generic [ref=e879]:
+                      - generic [ref=e880]:
+                        - generic [ref=e884] [cursor=pointer]:
+                          - generic [ref=e885]:
+                            - generic [ref=e887]: 总任务数
+                            - generic [ref=e889]: "1"
+                          - img "bar-chart" [ref=e892]:
+                            - img [ref=e893]
+                        - generic [ref=e898] [cursor=pointer]:
+                          - generic [ref=e899]:
+                            - generic [ref=e901]: 待分配
+                            - generic [ref=e903]: "0"
+                          - img "clock-circle" [ref=e906]:
+                            - img [ref=e907]
+                        - generic [ref=e913] [cursor=pointer]:
+                          - generic [ref=e914]:
+                            - generic [ref=e916]: 进行中
+                            - generic [ref=e918]: "0"
+                          - img "rocket" [ref=e921]:
+                            - img [ref=e922]
+                      - generic [ref=e924]:
+                        - generic [ref=e928] [cursor=pointer]:
+                          - generic [ref=e929]:
+                            - generic [ref=e931]: 已完成
+                            - generic [ref=e933]: "0"
+                          - img "check-circle" [ref=e936]:
+                            - img [ref=e937]
+                        - generic [ref=e943] [cursor=pointer]:
+                          - generic [ref=e944]:
+                            - generic [ref=e946]: 失败
+                            - generic [ref=e948]: "0"
+                          - img "close-circle" [ref=e951]:
+                            - img [ref=e952]
+                        - generic [ref=e957] [cursor=pointer]:
+                          - generic [ref=e958]:
+                            - generic [ref=e960]: 完成率
+                            - generic [ref=e961]:
+                              - generic [ref=e962]: "0.0"
+                              - generic [ref=e963]: "%"
+                          - img "safety" [ref=e966]:
+                            - img [ref=e967]
+                      - generic [ref=e970]:
+                        - generic [ref=e971]:
+                          - img "menu" [ref=e973]:
+                            - img [ref=e974]
+                          - generic [ref=e976]: 我的待办任务
+                        - list [ref=e977]:
+                          - listitem [ref=e978] [cursor=pointer]:
+                            - generic [ref=e979]:
+                              - generic [ref=e981]:
+                                - strong [ref=e984]: test
+                                - generic [ref=e986]: 中
+                              - generic [ref=e988]: 已分配 · admin
+                - generic [ref=e989]:
+                  - button "drag" [ref=e991]:
+                    - img "drag" [ref=e992]:
+                      - img [ref=e993]
+                  - generic [ref=e995]:
+                    - generic [ref=e999]:
+                      - img "folder" [ref=e1001]:
+                        - img [ref=e1002]
+                      - generic [ref=e1004]: 项目列表
+                    - generic [ref=e1005]:
+                      - table [ref=e1013]:
+                        - rowgroup [ref=e1019]:
+                          - row "项目名称 状态 优先级 进度" [ref=e1020]:
+                            - columnheader "项目名称" [ref=e1021]
+                            - columnheader "状态" [ref=e1022]
+                            - columnheader "优先级" [ref=e1023]
+                            - columnheader "进度" [ref=e1024]
+                        - rowgroup [ref=e1025]:
+                          - row "test 规划中 中 0 0%" [ref=e1026]:
+                            - cell "test" [ref=e1027]:
+                              - strong [ref=e1029]: test
+                            - cell "规划中" [ref=e1030]:
+                              - generic [ref=e1031]: 规划中
+                            - cell "中" [ref=e1032]:
+                              - generic [ref=e1033]: 中
+                            - cell "0 0%" [ref=e1034]:
+                              - generic [ref=e1035]:
+                                - progressbar [ref=e1037]:
+                                  - generic "0%" [ref=e1042]
+                                - generic [ref=e1044]: 0%
+                      - button "查看全部项目" [ref=e1046] [cursor=pointer]:
+                        - generic [ref=e1047]: 查看全部项目
+              - generic [ref=e1049]:
+                - generic [ref=e1050]:
+                  - button "drag" [ref=e1052]:
+                    - img "drag" [ref=e1053]:
+                      - img [ref=e1054]
+                  - generic [ref=e1056]:
+                    - generic [ref=e1059]:
+                      - img "check-circle" [ref=e1061]:
+                        - img [ref=e1062]
+                      - generic [ref=e1065]: 我的审批
+                    - generic [ref=e1066]:
+                      - generic [ref=e1067]:
+                        - generic [ref=e1071] [cursor=pointer]:
+                          - generic [ref=e1072]:
+                            - generic [ref=e1074]: 处理中
+                            - generic [ref=e1076]: "0"
+                          - img "clock-circle" [ref=e1079]:
+                            - img [ref=e1080]
+                        - generic [ref=e1086] [cursor=pointer]:
+                          - generic [ref=e1087]:
+                            - generic [ref=e1089]: 我创建的
+                            - generic [ref=e1091]: "0"
+                          - img "file-text" [ref=e1094]:
+                            - img [ref=e1095]
+                        - generic [ref=e1100] [cursor=pointer]:
+                          - generic [ref=e1101]:
+                            - generic [ref=e1103]: 已通过
+                            - generic [ref=e1105]: "0"
+                          - img "check-circle" [ref=e1108]:
+                            - img [ref=e1109]
+                        - generic [ref=e1115] [cursor=pointer]:
+                          - generic [ref=e1116]:
+                            - generic [ref=e1118]: 已拒绝
+                            - generic [ref=e1120]: "0"
+                          - img "close-circle" [ref=e1123]:
+                            - img [ref=e1124]
+                      - generic [ref=e1126]:
+                        - generic [ref=e1127]:
+                          - img "clock-circle" [ref=e1129]:
+                            - img [ref=e1130]
+                          - generic [ref=e1133]: 待审批
+                        - alert [ref=e1134]:
+                          - img "info-circle" [ref=e1136]:
+                            - img [ref=e1137]
+                          - generic [ref=e1140]: 当前没有待办任务
+                - generic [ref=e1141]:
+                  - button "drag" [ref=e1143]:
+                    - img "drag" [ref=e1144]:
+                      - img [ref=e1145]
+                  - generic [ref=e1147]:
+                    - generic [ref=e1150]:
+                      - img "bar-chart" [ref=e1152]:
+                        - img [ref=e1153]
+                      - generic [ref=e1155]: 系统概览
+                    - generic [ref=e1157]:
+                      - generic [ref=e1161]:
+                        - generic [ref=e1162]:
+                          - generic [ref=e1164]: 总用户数
+                          - generic [ref=e1166]: "1"
+                        - img "team" [ref=e1169]:
+                          - img [ref=e1170]
+                      - generic [ref=e1175]:
+                        - generic [ref=e1176]:
+                          - generic [ref=e1178]: 活跃用户
+                          - generic [ref=e1180]: "1"
+                        - img "thunderbolt" [ref=e1183]:
+                          - img [ref=e1184]
+                      - generic [ref=e1189]:
+                        - generic [ref=e1190]:
+                          - generic [ref=e1192]: 管理员
+                          - generic [ref=e1194]: "1"
+                        - img "crown" [ref=e1197]:
+                          - img [ref=e1198]
+                      - generic [ref=e1203]:
+                        - generic [ref=e1204]:
+                          - generic [ref=e1206]: 今日新增
+                          - generic [ref=e1208]: "0"
+                        - img "rocket" [ref=e1211]:
+                          - img [ref=e1212]
+                      - generic [ref=e1217]:
+                        - generic [ref=e1218]:
+                          - generic [ref=e1220]: 角色总数
+                          - generic [ref=e1222]: "1"
+                        - img "block" [ref=e1225]:
+                          - img [ref=e1226]
+                      - generic [ref=e1231]:
+                        - generic [ref=e1232]:
+                          - generic [ref=e1234]: 组织节点
+                          - generic [ref=e1236]: "0"
+                        - img "cluster" [ref=e1239]:
+                          - img [ref=e1240]
+                - generic [ref=e1242]:
+                  - button "drag" [ref=e1244]:
+                    - img "drag" [ref=e1245]:
+                      - img [ref=e1246]
+                  - generic [ref=e1248]:
+                    - generic [ref=e1252]:
+                      - img "bell" [ref=e1254]:
+                        - img [ref=e1255]
+                      - generic [ref=e1257]: 物联网事件告警
+                    - generic [ref=e1259]:
+                      - img "暂无数据" [ref=e1261]
+                      - generic [ref=e1272]: 暂无告警事件
+                - button "drag" [ref=e1274]:
+                  - img "drag" [ref=e1275]:
+                    - img [ref=e1276]
+            - status [ref=e1278]
+        - button "message" [ref=e1279] [cursor=pointer]:
+          - img "message" [ref=e1281]:
+            - img [ref=e1282]
+    - contentinfo [ref=e1284]:
+      - generic [ref=e1285]: Powered by Evan

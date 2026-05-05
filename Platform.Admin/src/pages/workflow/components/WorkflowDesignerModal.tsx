@@ -134,7 +134,6 @@ const WorkflowDesignerModal: React.FC<WorkflowDesignerModalProps> = ({ workflow,
         )}
         <Switch checkedChildren="启用" unCheckedChildren="禁用" checked={formData.isActive} onChange={(v) => setFormData({ ...formData, isActive: v })} disabled={readOnly} />
         <span style={{ color: '#8c8c8c', fontSize: 13, marginLeft: 'auto' }}>
-          {!readOnly && <Button type="primary" size="small" disabled={!formData.name || loading}>保存</Button>}
           <Button size="small" onClick={onCancel}>退出</Button>
         </span>
       </div>

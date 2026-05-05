@@ -1,0 +1,282 @@
+- generic [ref=e1]:
+  - generic [ref=e7]:
+    - complementary [ref=e9]:
+      - generic [ref=e10]:
+        - menu [ref=e12]:
+          - menuitem "smile 欢迎" [ref=e13] [cursor=pointer]:
+            - link "smile 欢迎" [ref=e15]:
+              - /url: /welcome
+              - generic [ref=e16]:
+                - img "smile" [ref=e18]:
+                  - img [ref=e19]
+                - generic [ref=e21]: 欢迎
+          - menuitem "file-text 公文管理" [expanded] [ref=e22] [cursor=pointer]:
+            - generic [ref=e24]:
+              - img "file-text" [ref=e26]:
+                - img [ref=e27]
+              - generic [ref=e29]: 公文管理
+          - menu [ref=e30]:
+            - menuitem "file-text 公文列表" [ref=e31] [cursor=pointer]:
+              - link "file-text 公文列表" [ref=e33]:
+                - /url: /document/list
+                - generic [ref=e34]:
+                  - img "file-text" [ref=e36]:
+                    - img [ref=e37]
+                  - generic [ref=e41]: 公文列表
+            - menuitem "check-circle 我的审批" [ref=e42] [cursor=pointer]:
+              - link "check-circle 我的审批" [ref=e44]:
+                - /url: /document/approval
+                - generic [ref=e45]:
+                  - img "check-circle" [ref=e47]:
+                    - img [ref=e48]
+                  - generic [ref=e53]: 我的审批
+          - menuitem "project 项目管理" [ref=e54] [cursor=pointer]:
+            - generic [ref=e56]:
+              - img "project" [ref=e58]:
+                - img [ref=e59]
+              - generic [ref=e61]: 项目管理
+          - menuitem "cloud-server 物联网平台" [ref=e62] [cursor=pointer]:
+            - generic [ref=e64]:
+              - img "cloud-server" [ref=e66]:
+                - img [ref=e67]
+              - generic [ref=e71]: 物联网平台
+          - menuitem "robot 小科管理" [ref=e72] [cursor=pointer]:
+            - generic [ref=e74]:
+              - img "robot" [ref=e76]:
+                - img [ref=e77]
+              - generic [ref=e79]: 小科管理
+          - menuitem "lock 密码本" [ref=e80] [cursor=pointer]:
+            - link "lock 密码本" [ref=e82]:
+              - /url: /password-book
+              - generic [ref=e83]:
+                - img "lock" [ref=e85]:
+                  - img [ref=e86]
+                - generic [ref=e88]: 密码本
+          - menuitem "cloud 网盘管理" [ref=e89] [cursor=pointer]:
+            - generic [ref=e91]:
+              - img "cloud" [ref=e93]:
+                - img [ref=e94]
+              - generic [ref=e96]: 网盘管理
+          - menuitem "global 网页抓取" [ref=e97] [cursor=pointer]:
+            - generic [ref=e99]:
+              - img "global" [ref=e101]:
+                - img [ref=e102]
+              - generic [ref=e104]: 网页抓取
+          - menuitem "dashboard 数据看板" [ref=e105] [cursor=pointer]:
+            - link "dashboard 数据看板" [ref=e107]:
+              - /url: /dashboard
+              - generic [ref=e108]:
+                - img "dashboard" [ref=e110]:
+                  - img [ref=e111]
+                - generic [ref=e113]: 数据看板
+          - menuitem "schedule 走访管理" [ref=e114] [cursor=pointer]:
+            - generic [ref=e116]:
+              - img "schedule" [ref=e118]:
+                - img [ref=e119]
+              - generic [ref=e121]: 走访管理
+          - menuitem "bank 园区管理" [ref=e122] [cursor=pointer]:
+            - generic [ref=e124]:
+              - img "bank" [ref=e126]:
+                - img [ref=e127]
+              - generic [ref=e129]: 园区管理
+          - menuitem "apartment 工作流管理" [ref=e130] [cursor=pointer]:
+            - generic [ref=e132]:
+              - img "apartment" [ref=e134]:
+                - img [ref=e135]
+              - generic [ref=e137]: 工作流管理
+          - menuitem "setting 系统管理" [ref=e138] [cursor=pointer]:
+            - generic [ref=e140]:
+              - img "setting" [ref=e142]:
+                - img [ref=e143]
+              - generic [ref=e145]: 系统管理
+        - generic:
+          - menu
+        - img [ref=e147] [cursor=pointer]
+    - generic [ref=e149]:
+      - banner [ref=e150]
+      - banner [ref=e151]:
+        - generic [ref=e152]:
+          - generic [ref=e154] [cursor=pointer]:
+            - img "logo" [ref=e155]
+            - generic [ref=e157]: admin 的企业
+          - generic [ref=e161]:
+            - generic [ref=e164] [cursor=pointer]: 🇨🇳
+            - generic [ref=e167] [cursor=pointer]:
+              - img "bell" [ref=e168]:
+                - img [ref=e169]
+              - superscript [ref=e171]:
+                - generic [ref=e173]: "1"
+            - generic [ref=e176] [cursor=pointer]:
+              - img "user" [ref=e178]:
+                - img [ref=e179]
+              - generic [ref=e181]: admin
+      - main [ref=e182]:
+        - generic [ref=e183]:
+          - generic [ref=e192]:
+            - generic [ref=e194]:
+              - generic [ref=e197]:
+                - generic [ref=e199]:
+                  - img "file-text" [ref=e201]:
+                    - img [ref=e202]
+                  - generic [ref=e204]: 公文管理
+                - generic [ref=e206]:
+                  - generic [ref=e208]: 总数 0
+                  - generic [ref=e210]: 草稿 0
+                  - generic [ref=e212]: 审批中 0
+                  - generic [ref=e214]: 已通过 0
+                  - generic [ref=e216]: 已归档 0
+                  - generic [ref=e218]: 已拒绝 0
+              - generic [ref=e219]:
+                - generic [ref=e220]:
+                  - generic [ref=e221]:
+                    - searchbox "搜索标题或编号" [ref=e223]
+                    - button "search" [ref=e225] [cursor=pointer]:
+                      - img "search" [ref=e227]:
+                        - img [ref=e228]
+                  - generic [ref=e230] [cursor=pointer]:
+                    - generic [ref=e231]:
+                      - generic: pages.document.filter.status
+                      - combobox [ref=e232]
+                    - img "down" [ref=e234]:
+                      - img [ref=e235]
+                  - button "plus 新建公文" [ref=e237] [cursor=pointer]:
+                    - img "plus" [ref=e239]:
+                      - img [ref=e240]
+                    - generic [ref=e243]: 新建公文
+                - generic [ref=e244]:
+                  - img "reload" [ref=e247] [cursor=pointer]:
+                    - img [ref=e248]
+                  - img "column-height" [ref=e252] [cursor=pointer]:
+                    - img [ref=e253]
+                  - img "setting" [ref=e256] [cursor=pointer]:
+                    - img [ref=e257]
+            - table [ref=e265]:
+              - rowgroup [ref=e274]:
+                - row "标题 类型 分类 状态 创建人 创建时间 操作" [ref=e275]:
+                  - columnheader "标题" [ref=e276] [cursor=pointer]:
+                    - generic [ref=e277]:
+                      - generic [ref=e278]: 标题
+                      - generic [ref=e280]:
+                        - img [ref=e281]:
+                          - img [ref=e282]
+                        - img [ref=e284]:
+                          - img [ref=e285]
+                  - columnheader "类型" [ref=e287] [cursor=pointer]:
+                    - generic [ref=e288]:
+                      - generic [ref=e289]: 类型
+                      - generic [ref=e291]:
+                        - img [ref=e292]:
+                          - img [ref=e293]
+                        - img [ref=e295]:
+                          - img [ref=e296]
+                  - columnheader "分类" [ref=e298] [cursor=pointer]:
+                    - generic [ref=e299]:
+                      - generic [ref=e300]: 分类
+                      - generic [ref=e302]:
+                        - img [ref=e303]:
+                          - img [ref=e304]
+                        - img [ref=e306]:
+                          - img [ref=e307]
+                  - columnheader "状态" [ref=e309] [cursor=pointer]:
+                    - generic [ref=e310]:
+                      - generic [ref=e311]: 状态
+                      - generic [ref=e313]:
+                        - img [ref=e314]:
+                          - img [ref=e315]
+                        - img [ref=e317]:
+                          - img [ref=e318]
+                  - columnheader "创建人" [ref=e320] [cursor=pointer]:
+                    - generic [ref=e321]:
+                      - generic [ref=e322]: 创建人
+                      - generic [ref=e324]:
+                        - img [ref=e325]:
+                          - img [ref=e326]
+                        - img [ref=e328]:
+                          - img [ref=e329]
+                  - columnheader "创建时间" [ref=e331] [cursor=pointer]:
+                    - generic [ref=e332]:
+                      - generic [ref=e333]: 创建时间
+                      - generic [ref=e335]:
+                        - img [ref=e336]:
+                          - img [ref=e337]
+                        - img [ref=e339]:
+                          - img [ref=e340]
+                  - columnheader "操作" [ref=e342]
+              - rowgroup [ref=e343]:
+                - generic [ref=e344]:
+                  - generic [ref=e345]: 标题
+                  - generic [ref=e347]:
+                    - img [ref=e348]:
+                      - img [ref=e349]
+                    - img [ref=e351]:
+                      - img [ref=e352]
+                - generic [ref=e354]:
+                  - generic [ref=e355]: 类型
+                  - generic [ref=e357]:
+                    - img [ref=e358]:
+                      - img [ref=e359]
+                    - img [ref=e361]:
+                      - img [ref=e362]
+                - generic [ref=e364]:
+                  - generic [ref=e365]: 分类
+                  - generic [ref=e367]:
+                    - img [ref=e368]:
+                      - img [ref=e369]
+                    - img [ref=e371]:
+                      - img [ref=e372]
+                - generic [ref=e374]:
+                  - generic [ref=e375]: 状态
+                  - generic [ref=e377]:
+                    - img [ref=e378]:
+                      - img [ref=e379]
+                    - img [ref=e381]:
+                      - img [ref=e382]
+                - generic [ref=e384]:
+                  - generic [ref=e385]: 创建人
+                  - generic [ref=e387]:
+                    - img [ref=e388]:
+                      - img [ref=e389]
+                    - img [ref=e391]:
+                      - img [ref=e392]
+                - generic [ref=e394]:
+                  - generic [ref=e395]: 创建时间
+                  - generic [ref=e397]:
+                    - img [ref=e398]:
+                      - img [ref=e399]
+                    - img [ref=e401]:
+                      - img [ref=e402]
+                - row "暂无数据 暂无数据" [ref=e404]:
+                  - cell "暂无数据 暂无数据" [ref=e405]:
+                    - generic [ref=e407]:
+                      - img "暂无数据" [ref=e409]
+                      - generic [ref=e415]: 暂无数据
+          - button "message" [ref=e416] [cursor=pointer]:
+            - img "message" [ref=e418]:
+              - img [ref=e419]
+      - contentinfo [ref=e421]:
+        - generic [ref=e422]: Powered by Evan
+  - generic [ref=e423]:
+    - dialog "新建公文":
+      - generic [ref=e424]:
+        - button "Close" [ref=e425] [cursor=pointer]:
+          - generic "关闭" [ref=e426]:
+            - img "close" [ref=e427]:
+              - img [ref=e428]
+        - generic [ref=e431]: 新建公文
+        - generic [ref=e435]:
+          - generic "选择流程" [ref=e437]: "* 选择流程"
+          - generic [ref=e441]:
+            - generic [ref=e442]:
+              - generic: 请选择流程定义
+              - combobox "* 选择流程" [expanded] [active] [ref=e443]:
+                - listbox [ref=e455]:
+                  - generic [ref=e456]:
+                    - img "暂无数据" [ref=e458]
+                    - generic [ref=e464]: 暂无数据
+            - img "search" [ref=e465]:
+              - img [ref=e466]
+        - generic [ref=e450]:
+          - button "取 消" [ref=e451] [cursor=pointer]:
+            - generic [ref=e452]: 取 消
+          - button "确 定" [ref=e453] [cursor=pointer]:
+            - generic [ref=e454]: 确 定

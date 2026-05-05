@@ -1,0 +1,347 @@
+- generic [ref=e1]:
+  - generic [ref=e7]:
+    - complementary [ref=e9]:
+      - generic [ref=e10]:
+        - menu [ref=e12]:
+          - menuitem "smile 欢迎" [ref=e13] [cursor=pointer]:
+            - link "smile 欢迎" [ref=e15]:
+              - /url: /welcome
+              - generic [ref=e16]:
+                - img "smile" [ref=e18]:
+                  - img [ref=e19]
+                - generic [ref=e21]: 欢迎
+          - menuitem "file-text 公文管理" [ref=e22] [cursor=pointer]:
+            - generic [ref=e24]:
+              - img "file-text" [ref=e26]:
+                - img [ref=e27]
+              - generic [ref=e29]: 公文管理
+          - menuitem "project 项目管理" [ref=e30] [cursor=pointer]:
+            - generic [ref=e32]:
+              - img "project" [ref=e34]:
+                - img [ref=e35]
+              - generic [ref=e37]: 项目管理
+          - menuitem "cloud-server 物联网平台" [ref=e38] [cursor=pointer]:
+            - generic [ref=e40]:
+              - img "cloud-server" [ref=e42]:
+                - img [ref=e43]
+              - generic [ref=e47]: 物联网平台
+          - menuitem "robot 小科管理" [ref=e48] [cursor=pointer]:
+            - generic [ref=e50]:
+              - img "robot" [ref=e52]:
+                - img [ref=e53]
+              - generic [ref=e55]: 小科管理
+          - menuitem "lock 密码本" [ref=e56] [cursor=pointer]:
+            - link "lock 密码本" [ref=e58]:
+              - /url: /password-book
+              - generic [ref=e59]:
+                - img "lock" [ref=e61]:
+                  - img [ref=e62]
+                - generic [ref=e64]: 密码本
+          - menuitem "cloud 网盘管理" [ref=e65] [cursor=pointer]:
+            - generic [ref=e67]:
+              - img "cloud" [ref=e69]:
+                - img [ref=e70]
+              - generic [ref=e72]: 网盘管理
+          - menuitem "global 网页抓取" [ref=e73] [cursor=pointer]:
+            - generic [ref=e75]:
+              - img "global" [ref=e77]:
+                - img [ref=e78]
+              - generic [ref=e80]: 网页抓取
+          - menuitem "dashboard 数据看板" [ref=e81] [cursor=pointer]:
+            - link "dashboard 数据看板" [ref=e83]:
+              - /url: /dashboard
+              - generic [ref=e84]:
+                - img "dashboard" [ref=e86]:
+                  - img [ref=e87]
+                - generic [ref=e89]: 数据看板
+          - menuitem "schedule 走访管理" [ref=e90] [cursor=pointer]:
+            - generic [ref=e92]:
+              - img "schedule" [ref=e94]:
+                - img [ref=e95]
+              - generic [ref=e97]: 走访管理
+          - menuitem "bank 园区管理" [ref=e98] [cursor=pointer]:
+            - generic [ref=e100]:
+              - img "bank" [ref=e102]:
+                - img [ref=e103]
+              - generic [ref=e105]: 园区管理
+          - menuitem "apartment 工作流管理" [expanded] [ref=e106] [cursor=pointer]:
+            - generic [ref=e108]:
+              - img "apartment" [ref=e110]:
+                - img [ref=e111]
+              - generic [ref=e113]: 工作流管理
+          - menu [ref=e1286]:
+            - menuitem "apartment 流程定义" [ref=e1287] [cursor=pointer]:
+              - link "apartment 流程定义" [ref=e1289]:
+                - /url: /workflow/list
+                - generic [ref=e1290]:
+                  - img "apartment" [ref=e1292]:
+                    - img [ref=e1293]
+                  - generic [ref=e1297]: 流程定义
+            - menuitem "form 表单定义" [ref=e1298] [cursor=pointer]:
+              - link "form 表单定义" [ref=e1300]:
+                - /url: /workflow/forms
+                - generic [ref=e1301]:
+                  - img "form" [ref=e1303]:
+                    - img [ref=e1304]
+                  - generic [ref=e1309]: 表单定义
+            - menuitem "monitor 流程监控" [ref=e1310] [cursor=pointer]:
+              - link "monitor 流程监控" [ref=e1312]:
+                - /url: /workflow/monitor
+                - generic [ref=e1313]:
+                  - img "monitor" [ref=e1315]:
+                    - img [ref=e1316]
+                  - generic [ref=e1320]: 流程监控
+            - menuitem "book 知识库管理" [ref=e1321] [cursor=pointer]:
+              - link "book 知识库管理" [ref=e1323]:
+                - /url: /workflow/knowledge-base
+                - generic [ref=e1324]:
+                  - img "book" [ref=e1326]:
+                    - img [ref=e1327]
+                  - generic [ref=e1331]: 知识库管理
+          - menuitem "setting 系统管理" [ref=e114] [cursor=pointer]:
+            - generic [ref=e116]:
+              - img "setting" [ref=e118]:
+                - img [ref=e119]
+              - generic [ref=e121]: 系统管理
+        - generic:
+          - menu
+        - img [ref=e123] [cursor=pointer]
+    - generic [ref=e125]:
+      - banner [ref=e126]
+      - banner [ref=e127]:
+        - generic [ref=e128]:
+          - generic [ref=e130] [cursor=pointer]:
+            - img "logo" [ref=e131]
+            - generic [ref=e133]: admin 的企业
+          - generic [ref=e137]:
+            - generic [ref=e140] [cursor=pointer]: 🇨🇳
+            - generic [ref=e143] [cursor=pointer]:
+              - img "bell" [ref=e144]:
+                - img [ref=e145]
+              - superscript [ref=e147]:
+                - generic [ref=e149]: "1"
+            - generic [ref=e152] [cursor=pointer]:
+              - img "user" [ref=e154]:
+                - img [ref=e155]
+              - generic [ref=e157]: admin
+      - main [ref=e158]:
+        - generic [ref=e159]:
+          - generic [ref=e1736]:
+            - generic [ref=e1738]:
+              - generic [ref=e1743]:
+                - img "api" [ref=e1745]:
+                  - img [ref=e1746]
+                - generic [ref=e1748]: 流程名称
+              - generic [ref=e1749]:
+                - generic [ref=e1750]:
+                  - generic [ref=e1751]:
+                    - generic [ref=e1752]:
+                      - img "search" [ref=e1754]:
+                        - img [ref=e1755]
+                      - searchbox "搜索..." [ref=e1757]
+                    - button "search" [ref=e1759] [cursor=pointer]:
+                      - img "search" [ref=e1761]:
+                        - img [ref=e1762]
+                  - button "plus 创建流程" [ref=e1764] [cursor=pointer]:
+                    - img "plus" [ref=e1766]:
+                      - img [ref=e1767]
+                    - generic [ref=e1770]: 创建流程
+                - generic [ref=e1771]:
+                  - img "reload" [ref=e1774] [cursor=pointer]:
+                    - img [ref=e1775]
+                  - img "column-height" [ref=e1779] [cursor=pointer]:
+                    - img [ref=e1780]
+                  - img "setting" [ref=e1783] [cursor=pointer]:
+                    - img [ref=e1784]
+            - table [ref=e1792]:
+              - rowgroup [ref=e1800]:
+                - row "流程名称 分类 版本 状态 创建时间 操作" [ref=e1801]:
+                  - columnheader "流程名称" [ref=e1802] [cursor=pointer]:
+                    - generic [ref=e1803]:
+                      - generic [ref=e1804]: 流程名称
+                      - generic [ref=e1806]:
+                        - img [ref=e1807]:
+                          - img [ref=e1808]
+                        - img [ref=e1810]:
+                          - img [ref=e1811]
+                  - columnheader "分类" [ref=e1813] [cursor=pointer]:
+                    - generic [ref=e1814]:
+                      - generic [ref=e1815]: 分类
+                      - generic [ref=e1817]:
+                        - img [ref=e1818]:
+                          - img [ref=e1819]
+                        - img [ref=e1821]:
+                          - img [ref=e1822]
+                  - columnheader "版本" [ref=e1824]
+                  - columnheader "状态" [ref=e1825] [cursor=pointer]:
+                    - generic [ref=e1826]:
+                      - generic [ref=e1827]: 状态
+                      - generic [ref=e1829]:
+                        - img [ref=e1830]:
+                          - img [ref=e1831]
+                        - img [ref=e1833]:
+                          - img [ref=e1834]
+                  - columnheader "创建时间" [ref=e1836] [cursor=pointer]:
+                    - generic [ref=e1837]:
+                      - generic [ref=e1838]: 创建时间
+                      - generic [ref=e1840]:
+                        - img [ref=e1841]:
+                          - img [ref=e1842]
+                        - img [ref=e1844]:
+                          - img [ref=e1845]
+                  - columnheader "操作" [ref=e1847]
+              - rowgroup [ref=e1848]:
+                - generic [ref=e1849]:
+                  - generic [ref=e1850]: 流程名称
+                  - generic [ref=e1852]:
+                    - img [ref=e1853]:
+                      - img [ref=e1854]
+                    - img [ref=e1856]:
+                      - img [ref=e1857]
+                - generic [ref=e1859]:
+                  - generic [ref=e1860]: 分类
+                  - generic [ref=e1862]:
+                    - img [ref=e1863]:
+                      - img [ref=e1864]
+                    - img [ref=e1866]:
+                      - img [ref=e1867]
+                - generic [ref=e1869]:
+                  - generic [ref=e1870]: 状态
+                  - generic [ref=e1872]:
+                    - img [ref=e1873]:
+                      - img [ref=e1874]
+                    - img [ref=e1876]:
+                      - img [ref=e1877]
+                - generic [ref=e1879]:
+                  - generic [ref=e1880]: 创建时间
+                  - generic [ref=e1882]:
+                    - img [ref=e1883]:
+                      - img [ref=e1884]
+                    - img [ref=e1886]:
+                      - img [ref=e1887]
+                - row "暂无数据 暂无数据" [ref=e1889]:
+                  - cell "暂无数据 暂无数据" [ref=e1890]:
+                    - generic [ref=e1892]:
+                      - img "暂无数据" [ref=e1894]
+                      - generic [ref=e1900]: 暂无数据
+          - button "message" [ref=e1279] [cursor=pointer]:
+            - img "message" [ref=e1281]:
+              - img [ref=e1282]
+      - contentinfo [ref=e1284]:
+        - generic [ref=e1285]: Powered by Evan
+  - dialog "创建流程定义" [ref=e1902]:
+    - generic [ref=e1904]:
+      - button "关闭" [ref=e1905] [cursor=pointer]:
+        - img "close" [ref=e1906]:
+          - img [ref=e1907]
+      - generic [ref=e1909]: 创建流程定义
+    - generic [ref=e1911]:
+      - generic [ref=e1912]:
+        - img "info-circle" [ref=e1913]:
+          - img [ref=e1914]
+        - textbox "请输入流程名称" [ref=e1917]
+        - generic [ref=e1918] [cursor=pointer]:
+          - generic "默认" [ref=e1919]:
+            - text: 默认
+            - combobox [ref=e1920]
+          - img "down" [ref=e1922]:
+            - img [ref=e1923]
+        - switch "启用 禁用" [checked] [ref=e1925] [cursor=pointer]:
+          - generic [ref=e1927]:
+            - generic: 启用
+            - generic: 禁用
+        - generic [ref=e1928]:
+          - button "保 存" [disabled] [ref=e1929]:
+            - generic: 保 存
+          - button "退 出" [ref=e1930] [cursor=pointer]:
+            - generic [ref=e1931]: 退 出
+      - generic [ref=e1933]:
+        - generic [ref=e1934]:
+          - generic [ref=e1936]: 组件库
+          - generic [ref=e1938]:
+            - generic [ref=e1939]: base
+            - generic "可拖动到右侧区域添加组件" [ref=e1941]:
+              - img "play-circle" [ref=e1943]:
+                - img [ref=e1944]
+              - generic [ref=e1948]: 开始
+            - generic "可拖动到右侧区域添加组件" [ref=e1949]:
+              - img "stop" [ref=e1951]:
+                - img [ref=e1952]
+              - generic [ref=e1955]: 结束
+            - generic "可拖动到右侧区域添加组件" [ref=e1956]:
+              - img "check" [ref=e1958]:
+                - img [ref=e1959]
+              - generic [ref=e1962]: 审批
+            - generic "可拖动到右侧区域添加组件" [ref=e1963]:
+              - img "apartment" [ref=e1965]:
+                - img [ref=e1966]
+              - generic [ref=e1969]: 条件
+        - img "menu-fold" [ref=e1971] [cursor=pointer]:
+          - img [ref=e1972]
+        - generic [ref=e1974]:
+          - generic [ref=e1975]:
+            - button "save 保存" [ref=e1976] [cursor=pointer]:
+              - img "save" [ref=e1978]:
+                - img [ref=e1979]
+              - generic [ref=e1981]: 保存
+            - button "branches 自动排版" [ref=e1982] [cursor=pointer]:
+              - img "branches" [ref=e1984]:
+                - img [ref=e1985]
+              - generic [ref=e1987]: 自动排版
+            - button "check-circle 验证" [ref=e1988] [cursor=pointer]:
+              - img "check-circle" [ref=e1990]:
+                - img [ref=e1991]
+              - generic [ref=e1994]: 验证
+            - button "关 闭" [ref=e1995] [cursor=pointer]:
+              - generic [ref=e1996]: 关 闭
+          - generic [ref=e1997]:
+            - generic [ref=e1999]:
+              - generic:
+                - img:
+                  - generic:
+                    - button "Edge from start-1 to approval-1"
+                    - button "Edge from approval-1 to end-1"
+                - generic:
+                  - button "play-circle 开始 流程开始 history v1.0.0" [ref=e2000]:
+                    - generic [ref=e2001]:
+                      - generic [ref=e2004]:
+                        - img "play-circle" [ref=e2006]:
+                          - img [ref=e2007]
+                        - generic [ref=e2010]: 开始
+                      - generic [ref=e2011]: 流程开始
+                      - generic [ref=e2012]:
+                        - img "history" [ref=e2013]:
+                          - img [ref=e2014]
+                        - generic [ref=e2016]: v1.0.0
+                  - button "check 审批 未配置审批人 history v1.0.0" [ref=e2017]:
+                    - generic [ref=e2018]:
+                      - generic [ref=e2021]:
+                        - img "check" [ref=e2023]:
+                          - img [ref=e2024]
+                        - generic [ref=e2026]: 审批
+                      - generic [ref=e2027]: 未配置审批人
+                      - generic [ref=e2028]:
+                        - img "history" [ref=e2029]:
+                          - img [ref=e2030]
+                        - generic [ref=e2032]: v1.0.0
+                  - button "stop 结束 流程结束 history v1.0.0" [ref=e2033]:
+                    - generic [ref=e2034]:
+                      - generic [ref=e2037]:
+                        - img "stop" [ref=e2039]:
+                          - img [ref=e2040]
+                        - generic [ref=e2042]: 结束
+                      - generic [ref=e2043]: 流程结束
+                      - generic [ref=e2044]:
+                        - img "history" [ref=e2045]:
+                          - img [ref=e2046]
+                        - generic [ref=e2048]: v1.0.0
+            - generic [ref=e2049]:
+              - button "zoom in" [ref=e2050] [cursor=pointer]:
+                - img [ref=e2051]
+              - button "zoom out" [ref=e2053] [cursor=pointer]:
+                - img [ref=e2054]
+              - button "fit view" [ref=e2056] [cursor=pointer]:
+                - img [ref=e2057]
+              - button "toggle interactivity" [ref=e2059] [cursor=pointer]:
+                - img [ref=e2060]
+            - img "React Flow mini map" [ref=e2063]

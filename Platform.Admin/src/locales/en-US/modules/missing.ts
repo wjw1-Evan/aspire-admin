@@ -315,4 +315,9 @@ export default {
   'pages.forms.field.rules.maxLengthValue': 'Enter max length',
   'pages.forms.field.rules.message': 'Error Message',
   'pages.forms.field.rules.addRule': 'Add Rule',
+  'pages.forms.action.rollback': 'Rollback',
+  'pages.forms.action.confirmRollback': 'Confirm Rollback',
+  'pages.forms.action.cancelRollback': 'Cancel',
+  'pages.forms.message.confirmRollback': 'Are you sure you want to rollback to version {version}?',
+  'pages.forms.message.rollbackSuccess': 'Rollback successful',
 };

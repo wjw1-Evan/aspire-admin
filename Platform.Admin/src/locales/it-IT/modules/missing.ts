@@ -300,4 +300,9 @@ export default {
   'pages.forms.field.options': 'Options',
   'pages.forms.field.optionsPlaceholder': 'Enter options (one per line)',
   'pages.forms.field.optionsExample': 'Example: Option 1\\nOption 2\\nOption 3',
+  'pages.forms.action.rollback': 'Ripristina',
+  'pages.forms.action.confirmRollback': 'Conferma Ripristino',
+  'pages.forms.action.cancelRollback': 'Annulla',
+  'pages.forms.message.confirmRollback': 'Sei sicuro di voler ripristinare alla versione {version}?',
+  'pages.forms.message.rollbackSuccess': 'Ripristino completato',
 };

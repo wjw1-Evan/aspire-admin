@@ -300,4 +300,9 @@ export default {
   'pages.forms.field.options': 'Options',
   'pages.forms.field.optionsPlaceholder': 'Enter options (one per line)',
   'pages.forms.field.optionsExample': 'Example: Option 1\\nOption 2\\nOption 3',
+  'pages.forms.action.rollback': 'রোলব্যাক',
+  'pages.forms.action.confirmRollback': 'রোলব্যাক নিশ্চিত করুন',
+  'pages.forms.action.cancelRollback': 'বাতিল',
+  'pages.forms.message.confirmRollback': 'আপনি কি নিশ্চিত যে আপনি সংস্করণ {version} এ রোলব্যাক করতে চান?',
+  'pages.forms.message.rollbackSuccess': 'রোলব্যাক সফল',
 };

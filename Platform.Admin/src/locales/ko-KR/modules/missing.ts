@@ -300,4 +300,9 @@ export default {
   'pages.forms.field.options': 'Options',
   'pages.forms.field.optionsPlaceholder': 'Enter options (one per line)',
   'pages.forms.field.optionsExample': 'Example: Option 1\\nOption 2\\nOption 3',
+  'pages.forms.action.rollback': '롤백',
+  'pages.forms.action.confirmRollback': '롤백 확인',
+  'pages.forms.action.cancelRollback': '취소',
+  'pages.forms.message.confirmRollback': '버전 {version}(으)로 롤백하시겠습니까?',
+  'pages.forms.message.rollbackSuccess': '롤백 성공',
 };

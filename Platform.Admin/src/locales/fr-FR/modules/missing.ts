@@ -300,4 +300,9 @@ export default {
   'pages.forms.field.options': 'Options',
   'pages.forms.field.optionsPlaceholder': 'Enter options (one per line)',
   'pages.forms.field.optionsExample': 'Example: Option 1\\nOption 2\\nOption 3',
+  'pages.forms.action.rollback': 'Restaurer',
+  'pages.forms.action.confirmRollback': 'Confirmer la restauration',
+  'pages.forms.action.cancelRollback': 'Annuler',
+  'pages.forms.message.confirmRollback': 'Êtes-vous sûr de vouloir restaurer à la version {version} ?',
+  'pages.forms.message.rollbackSuccess': 'Restauration réussie',
 };

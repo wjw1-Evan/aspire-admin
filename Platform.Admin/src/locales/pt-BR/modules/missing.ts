@@ -300,4 +300,9 @@ export default {
   'pages.forms.field.options': 'Options',
   'pages.forms.field.optionsPlaceholder': 'Enter options (one per line)',
   'pages.forms.field.optionsExample': 'Example: Option 1\\nOption 2\\nOption 3',
+  'pages.forms.action.rollback': 'Reverter',
+  'pages.forms.action.confirmRollback': 'Confirmar Reversão',
+  'pages.forms.action.cancelRollback': 'Cancelar',
+  'pages.forms.message.confirmRollback': 'Tem certeza de que deseja reverter para a versão {version}?',
+  'pages.forms.message.rollbackSuccess': 'Reversão realizada com sucesso',
 };

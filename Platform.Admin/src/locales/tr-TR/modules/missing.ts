@@ -300,4 +300,9 @@ export default {
   'pages.forms.field.options': 'Options',
   'pages.forms.field.optionsPlaceholder': 'Enter options (one per line)',
   'pages.forms.field.optionsExample': 'Example: Option 1\\nOption 2\\nOption 3',
+  'pages.forms.action.rollback': 'Geri Al',
+  'pages.forms.action.confirmRollback': 'Geri Almayı Onayla',
+  'pages.forms.action.cancelRollback': 'İptal',
+  'pages.forms.message.confirmRollback': 'Sürüm {version} sürümüne geri almak istediğinizden emin misiniz?',
+  'pages.forms.message.rollbackSuccess': 'Geri alma başarılı',
 };

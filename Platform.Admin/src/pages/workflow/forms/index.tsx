@@ -1,8 +1,8 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { Button, Space, Tag, Popconfirm, Input, Empty, Drawer, Form, Input as AntInput, Select, Switch, message, Radio, Upload, Checkbox, InputNumber, Collapse } from 'antd';
+import { Button, Space, Tag, Popconfirm, Input, Empty, Drawer, Form, Input as AntInput, Select, Switch, message, Modal, Radio, Upload, Checkbox, InputNumber, Collapse } from 'antd';
 const { Group: RadioGroup } = Radio;
 import { PageContainer, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
-import { PlusOutlined, DeleteOutlined, EyeOutlined, SaveOutlined, DragOutlined, CloseOutlined, PartitionOutlined, UploadOutlined, EditOutlined, MinusCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined, EyeOutlined, SaveOutlined, DragOutlined, CloseOutlined, PartitionOutlined, UploadOutlined, EditOutlined, MinusCircleOutlined, RollbackOutlined } from '@ant-design/icons';
 import { request, useIntl } from '@umijs/max';
 import { ApiResponse, PagedResult } from '@/types';
 import type { DragEndEvent, DragStartEvent, DragOverEvent } from '@dnd-kit/core';
@@ -669,6 +669,33 @@ const FormDefinitionManagement: React.FC = () => {
         }
     };
 
+    const handleRollback = (version: FormVersion) => {
+        Modal.confirm({
+            title: intl.formatMessage({ id: 'pages.forms.action.rollback' }),
+            content: intl.formatMessage({ id: 'pages.forms.message.confirmRollback' }, { version: version.version }),
+            okText: intl.formatMessage({ id: 'pages.forms.action.confirmRollback' }),
+            cancelText: intl.formatMessage({ id: 'pages.forms.action.cancelRollback' }),
+            onOk: async () => {
+                const currentForm = state.versions.find(v => v.formDefinitionId === state.viewingFormId);
+                const currentVersion = state.versions.reduce((max, v) => (v.version ?? 0) > max ? (v.version ?? 0) : max, 0);
+                const res = await api.update(state.viewingFormId!, {
+                    fields: version.fields,
+                    version: currentVersion + 1,
+                });
+                if (res.success) {
+                    message.success(intl.formatMessage({ id: 'pages.forms.message.rollbackSuccess' }));
+                    const versionsRes = await api.getVersions(state.viewingFormId!);
+                    if (versionsRes.success && versionsRes.data) {
+                        const versions = versionsRes.data;
+                        set({ versions, previewVersionId: versions[0]?.id || null, previewFields: versions[0]?.fields || [] });
+                    }
+                    actionRef.current?.reload();
+                    api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
+                }
+            },
+        });
+    };
+
     return (
         <PageContainer>
             <style>{`
@@ -755,11 +782,17 @@ const FormDefinitionManagement: React.FC = () => {
                                     padding: '12px',
                                     cursor: 'pointer',
                                     borderBottom: '1px solid #f0f0f0',
-                                    background: state.previewVersionId === item.id ? '#e6f7ff' : undefined
+                                    background: state.previewVersionId === item.id ? '#e6f7ff' : undefined,
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
                                 }}
                                     onClick={() => set({ previewVersionId: item.id!, previewFields: item.fields || [] })}>
-                                    <div style={{ fontWeight: 500 }}>v{item.version}</div>
-                                    <div style={{ fontSize: 12, color: '#666' }}>{item.fields?.length || 0}{intl.formatMessage({ id: 'pages.forms.detail.fieldCount' })} | {item.isActive ? intl.formatMessage({ id: 'pages.forms.status.enabled' }) : intl.formatMessage({ id: 'pages.forms.status.disabled' })}</div>
+                                    <div>
+                                        <div style={{ fontWeight: 500 }}>v{item.version}</div>
+                                        <div style={{ fontSize: 12, color: '#666' }}>{item.fields?.length || 0}{intl.formatMessage({ id: 'pages.forms.detail.fieldCount' })} | {item.isActive ? intl.formatMessage({ id: 'pages.forms.status.enabled' }) : intl.formatMessage({ id: 'pages.forms.status.disabled' })}</div>
+                                    </div>
+                                    <Button type="link" size="small" icon={<RollbackOutlined />} onClick={(e) => { e.stopPropagation(); handleRollback(item); }}>{intl.formatMessage({ id: 'pages.forms.action.rollback' })}</Button>
                                 </div>
                             ))}
                         </div>

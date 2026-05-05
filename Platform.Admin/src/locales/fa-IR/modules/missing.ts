@@ -300,4 +300,9 @@ export default {
   'pages.forms.field.options': 'Options',
   'pages.forms.field.optionsPlaceholder': 'Enter options (one per line)',
   'pages.forms.field.optionsExample': 'Example: Option 1\\nOption 2\\nOption 3',
+  'pages.forms.action.rollback': 'بازگشت',
+  'pages.forms.action.confirmRollback': 'تأیید بازگشت',
+  'pages.forms.action.cancelRollback': 'لغو',
+  'pages.forms.message.confirmRollback': 'آیا مطمئن هستید که می‌خواهید به نسخه {version} بازگردید؟',
+  'pages.forms.message.rollbackSuccess': 'بازگشت موفقیت‌آمیز',
 };

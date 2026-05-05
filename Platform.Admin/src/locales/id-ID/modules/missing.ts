@@ -300,4 +300,9 @@ export default {
   'pages.forms.field.options': 'Options',
   'pages.forms.field.optionsPlaceholder': 'Enter options (one per line)',
   'pages.forms.field.optionsExample': 'Example: Option 1\\nOption 2\\nOption 3',
+  'pages.forms.action.rollback': 'Kembalikan',
+  'pages.forms.action.confirmRollback': 'Konfirmasi Kembalikan',
+  'pages.forms.action.cancelRollback': 'Batal',
+  'pages.forms.message.confirmRollback': 'Apakah Anda yakin ingin mengembalikan ke versi {version}?',
+  'pages.forms.message.rollbackSuccess': 'Berhasil dikembalikan',
 };

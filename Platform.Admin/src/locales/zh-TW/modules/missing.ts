@@ -300,4 +300,9 @@ export default {
   'pages.forms.field.options': 'Options',
   'pages.forms.field.optionsPlaceholder': 'Enter options (one per line)',
   'pages.forms.field.optionsExample': 'Example: Option 1\\nOption 2\\nOption 3',
+  'pages.forms.action.rollback': '回滾',
+  'pages.forms.action.confirmRollback': '確認回滾',
+  'pages.forms.action.cancelRollback': '取消',
+  'pages.forms.message.confirmRollback': '確定要回滾到版本 {version} 嗎？',
+  'pages.forms.message.rollbackSuccess': '回滾成功',
 };

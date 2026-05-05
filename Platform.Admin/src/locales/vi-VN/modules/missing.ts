@@ -300,4 +300,9 @@ export default {
   'pages.forms.field.options': 'Options',
   'pages.forms.field.optionsPlaceholder': 'Enter options (one per line)',
   'pages.forms.field.optionsExample': 'Example: Option 1\\nOption 2\\nOption 3',
+  'pages.forms.action.rollback': 'Khôi phục',
+  'pages.forms.action.confirmRollback': 'Xác nhận khôi phục',
+  'pages.forms.action.cancelRollback': 'Hủy',
+  'pages.forms.message.confirmRollback': 'Bạn có chắc chắn muốn khôi phục về phiên bản {version}?',
+  'pages.forms.message.rollbackSuccess': 'Khôi phục thành công',
 };

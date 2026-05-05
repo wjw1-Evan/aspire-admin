@@ -300,4 +300,9 @@ export default {
   'pages.forms.field.options': 'Options',
   'pages.forms.field.optionsPlaceholder': 'Enter options (one per line)',
   'pages.forms.field.optionsExample': 'Example: Option 1\\nOption 2\\nOption 3',
+  'pages.forms.action.rollback': 'ย้อนกลับ',
+  'pages.forms.action.confirmRollback': 'ยืนยันย้อนกลับ',
+  'pages.forms.action.cancelRollback': 'ยกเลิก',
+  'pages.forms.message.confirmRollback': 'คุณแน่ใจหรือไม่ว่าต้องการย้อนกลับไปเวอร์ชัน {version}?',
+  'pages.forms.message.rollbackSuccess': 'ย้อนกลับสำเร็จ',
 };

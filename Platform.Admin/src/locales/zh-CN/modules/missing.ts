@@ -315,4 +315,9 @@ export default {
   'pages.forms.field.rules.maxLengthValue': '请输入最大长度',
   'pages.forms.field.rules.message': '错误提示信息',
   'pages.forms.field.rules.addRule': '添加验证规则',
+  'pages.forms.action.rollback': '回滚',
+  'pages.forms.action.confirmRollback': '确认回滚',
+  'pages.forms.action.cancelRollback': '取消',
+  'pages.forms.message.confirmRollback': '确定要回滚到版本 {version} 吗？',
+  'pages.forms.message.rollbackSuccess': '回滚成功',
 };

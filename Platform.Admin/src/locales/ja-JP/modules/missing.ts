@@ -300,4 +300,9 @@ export default {
   'pages.forms.field.options': 'Options',
   'pages.forms.field.optionsPlaceholder': 'Enter options (one per line)',
   'pages.forms.field.optionsExample': 'Example: Option 1\\nOption 2\\nOption 3',
+  'pages.forms.action.rollback': 'ロールバック',
+  'pages.forms.action.confirmRollback': 'ロールバック確認',
+  'pages.forms.action.cancelRollback': 'キャンセル',
+  'pages.forms.message.confirmRollback': 'バージョン {version} にロールバックしてもよろしいですか？',
+  'pages.forms.message.rollbackSuccess': 'ロールバック成功',
 };

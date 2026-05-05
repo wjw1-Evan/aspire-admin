@@ -408,6 +408,9 @@ public static class ErrorCode
     /// <summary>流程实例当前无待处理节点</summary>
     public const string NoPendingNode = "NO_PENDING_NODE";
 
+    /// <summary>流程图形定义不合法</summary>
+    public const string InvalidWorkflowGraph = "INVALID_WORKFLOW_GRAPH";
+
     // ──────────────────────────────────────────────
     // 错误码 → 人类可读消息字典
     // BusinessExceptionFilter 检测到异常消息为已知错误码时，
@@ -548,5 +551,6 @@ public static class ErrorCode
         [DelegateTargetUserRequired] = "转办目标用户不能为空",
         [WorkflowNodeNotConfigured] = "流程节点未配置表单定义ID",
         [NoPendingNode] = "流程实例当前无待处理节点",
+        [InvalidWorkflowGraph] = "流程图形定义不合法",
     };
 }

@@ -8,6 +8,7 @@ using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
+using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using Platform.ApiService.Extensions;
 using System;
@@ -127,7 +128,7 @@ public class WorkflowController : BaseApiController
 
         var (isGraphValid, graphError) = _graphValidator.Validate(request.Graph);
         if (!isGraphValid)
-            throw new ArgumentException($"流程图形定义不合法: {graphError}");
+            throw new ArgumentException($"{ErrorCode.InvalidWorkflowGraph}: {graphError}");
 
         var workflow = new WorkflowDefinition
         {
@@ -157,7 +158,7 @@ public class WorkflowController : BaseApiController
         {
             var (isGraphValid, graphError) = _graphValidator.Validate(request.Graph);
             if (!isGraphValid)
-                throw new ArgumentException($"流程图形定义不合法: {graphError}");
+                throw new ArgumentException($"{ErrorCode.InvalidWorkflowGraph}: {graphError}");
         }
 
         if (!string.IsNullOrEmpty(request.Name)) existing.Name = request.Name;

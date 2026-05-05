@@ -1,6 +1,4 @@
 import React from 'react';
-import { useIntl } from '@umijs/max';
-const intl = useIntl();
 import {
   NodeProps,
   EdgeProps,
@@ -16,6 +14,7 @@ import {
   HistoryOutlined,
 } from '@ant-design/icons';
 
+// 节点基础配置（不含国际化文本）
 export const NODE_CONFIGS = {
   start: {
     color: '#059669',
@@ -23,7 +22,6 @@ export const NODE_CONFIGS = {
     borderColor: '#10b981',
     icon: <PlayCircleOutlined />,
     category: 'base',
-    description: intl?.formatMessage({ id: 'pages.workflow.designer.nodeTypeStartDesc' }) || '流程的起点，定义输入参数',
     version: '1.0.0',
   },
   end: {
@@ -32,7 +30,6 @@ export const NODE_CONFIGS = {
     borderColor: '#ef4444',
     icon: <StopOutlined />,
     category: 'base',
-    description: intl?.formatMessage({ id: 'pages.workflow.designer.nodeTypeEndDesc' }) || '流程的终点，返回结果',
     version: '1.0.0',
   },
   approval: {
@@ -41,7 +38,6 @@ export const NODE_CONFIGS = {
     borderColor: '#3b82f6',
     icon: <CheckOutlined />,
     category: 'base',
-    description: intl?.formatMessage({ id: 'pages.workflow.designer.nodeTypeApprovalDesc' }) || '人工审批环节',
     version: '1.0.0',
   },
   condition: {
@@ -50,7 +46,6 @@ export const NODE_CONFIGS = {
     borderColor: '#f59e0b',
     icon: <ApartmentOutlined />,
     category: 'base',
-    description: intl?.formatMessage({ id: 'pages.workflow.designer.nodeTypeConditionDesc' }) || '条件分支判断',
     version: '1.0.0',
   },
 };

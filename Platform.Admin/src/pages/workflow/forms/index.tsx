@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { Button, Space, Tag, Popconfirm, Input, Empty, Drawer, Form, Input as AntInput, Select, Switch, message, Modal, Radio, Upload, Checkbox, InputNumber, Collapse } from 'antd';
+import { Button, Space, Tag, Popconfirm, Input, Empty, Drawer, Form, Input as AntInput, Select, Switch, Modal, Radio, Upload, Checkbox, InputNumber, Collapse, App } from 'antd';
 const { Group: RadioGroup } = Radio;
 import { PageContainer, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
 import { PlusOutlined, DeleteOutlined, EyeOutlined, SaveOutlined, DragOutlined, CloseOutlined, PartitionOutlined, UploadOutlined, EditOutlined, MinusCircleOutlined, RollbackOutlined } from '@ant-design/icons';
@@ -331,6 +331,7 @@ function FieldPropertyPanel({ field, onChange, onClose, intl }: {
 }
 
 const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefinition) => void; intl: any }> = ({ form, onSave, intl }) => {
+    const { message } = App.useApp();
     const FIELD_TYPES = getFieldTypeConfig(intl);
     const [fields, setFields] = useState<FormField[]>(form.fields || []);
     const [formData, setFormData] = useState({ name: form.name, version: form.version || 1, isActive: form.isActive ?? true });
@@ -594,6 +595,7 @@ const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormDefiniti
 
 const FormDefinitionManagement: React.FC = () => {
     const intl = useIntl();
+    const { message } = App.useApp();
     const actionRef = useRef<ActionType | undefined>(undefined);
     const [state, setState] = useState({
         statistics: null as FormStatistics | null,

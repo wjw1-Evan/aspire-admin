@@ -463,7 +463,6 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
           <Button icon={<CheckCircleOutlined />} onClick={() => {
             if (validateWorkflow()) message.success(intl.formatMessage({ id: 'pages.workflow.designer.messageValidationPassed' }));
           }}>验证</Button>
-          {onClose && <Button onClick={onClose}>{intl.formatMessage({ id: 'pages.workflow.designer.close' })}</Button>}
         </div>
         <ReactFlow
           nodes={nodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}

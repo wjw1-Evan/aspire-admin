@@ -55,7 +55,7 @@ public partial class WorkflowEngine
                     message,
                     NotificationCategory.Work,
                     NotificationLevel.Warning,
-                    actionUrl: $"/workflow/instance-detail?id={instanceId}",
+                    actionUrl: $"/workflow/monitor?instanceId={instanceId}",
                     metadata: new Dictionary<string, string> { { "InstanceId", instanceId }, { "Type", "ApprovalRequired" } }
                 );
             }
@@ -79,7 +79,7 @@ public partial class WorkflowEngine
             $"您的流程已被退回至起始节点，请重新填写并提交：{startNode.Data.Label ?? startNode.Id}",
             NotificationCategory.Work,
             NotificationLevel.Error,
-            actionUrl: $"/workflow/instance-detail?id={instanceId}",
+            actionUrl: $"/workflow/monitor?instanceId={instanceId}",
             metadata: new Dictionary<string, string> { { "InstanceId", instanceId }, { "Type", "ReturnedToStart" } }
         );
     }
@@ -133,7 +133,7 @@ public partial class WorkflowEngine
                     ccMessage,
                     NotificationCategory.Work,
                     NotificationLevel.Info,
-                    actionUrl: $"/workflow/instance-detail?id={instanceId}",
+                    actionUrl: $"/workflow/monitor?instanceId={instanceId}",
                     metadata: new Dictionary<string, string> { { "InstanceId", instanceId }, { "Type", "Cc" } }
                 );
             }

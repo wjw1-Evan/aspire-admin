@@ -291,7 +291,7 @@ public class JoinRequestService : IJoinRequestService
                     $"{applicantName} 申请加入企业 {companyName}" + (string.IsNullOrEmpty(applicant?.Email) ? "" : $" ({applicant.Email})"),
                     NotificationCategory.System,
                     NotificationLevel.Info,
-                    actionUrl: $"/organization/join-requests?companyId={companyId}",
+                    actionUrl: $"/join-requests/pending?companyId={companyId}",
                     metadata: new Dictionary<string, string> { { "RequestId", requestId } }
                 );
             }

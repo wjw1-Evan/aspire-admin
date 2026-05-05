@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { Tag, Space, Button, Modal, Input } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
@@ -10,12 +10,13 @@ import {
   getNodeForm, submitNodeForm, type FormDefinition, FormFieldType,
 } from '@/services/workflow/api';
 import WorkflowDesigner from './components/WorkflowDesigner';
-import { useIntl } from '@umijs/max';
+import { useIntl, useLocation } from '@umijs/max';
 import dayjs from 'dayjs';
 import { getStatusMeta, workflowStatusMap, approvalActionMap } from '@/utils/statusMaps';
 
 const WorkflowMonitor: React.FC = () => {
   const intl = useIntl();
+  const location = useLocation();
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewInstance, setPreviewInstance] = useState<WorkflowInstance | null>(null);
   const [previewGraph, setPreviewGraph] = useState<WorkflowGraph | null>(null);
@@ -28,6 +29,34 @@ const WorkflowMonitor: React.FC = () => {
   const [currentFormInstanceId, setCurrentFormInstanceId] = useState<string | null>(null);
   const actionRef = useRef<any>(null);
   const [search, setSearch] = useState('');
+
+  // Handle instanceId from URL query parameters
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const instanceId = params.get('instanceId');
+    if (instanceId) {
+      // Auto-open preview for the specified instance
+      const loadInstance = async () => {
+        try {
+          const instanceResponse = await getWorkflowInstance(instanceId);
+          if (instanceResponse.success && instanceResponse.data) {
+            const instance = instanceResponse.data;
+            const definitionResponse = await getWorkflowDetail(instance.workflowDefinitionId);
+            setPreviewInstance(instance);
+            if (definitionResponse.success && definitionResponse.data) {
+              setPreviewGraph(definitionResponse.data.graph);
+            } else {
+              setPreviewGraph(null);
+            }
+            setPreviewVisible(true);
+          }
+        } catch (error) {
+          console.error(intl.formatMessage({ id: 'pages.workflow.monitor.error.getInstanceFailed' }), error);
+        }
+      };
+      loadInstance();
+    }
+  }, [location.search, intl]);
 
   const getFlowStatus = (status?: WorkflowStatus | null) => getStatusMeta(intl, status, workflowStatusMap);
 

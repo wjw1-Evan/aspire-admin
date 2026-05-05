@@ -10,3 +10,6 @@ dotnet dev-certs https --trust
 npm install -g npm-check-updates
 
 ncu -u
+
+
+npm install -g oh-my-opencode@latest

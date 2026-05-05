@@ -53,7 +53,7 @@ public class TaskExecutionService : ITaskExecutionService
                 $"任务 \"{task.TaskName}\" 已分配给您。备注：{request.Remarks ?? "无"}",
                 NotificationCategory.Work,
                 NotificationLevel.Info,
-                actionUrl: $"/task-management/detail?id={task.Id}",
+                actionUrl: $"/task-management?taskId={task.Id}",
                 metadata: new Dictionary<string, string> { { "TaskId", task.Id ?? "" }, { "Action", "task_assigned" } }
             );
         }
@@ -109,7 +109,7 @@ public class TaskExecutionService : ITaskExecutionService
                 $"任务 \"{task.TaskName}\" 状态变更为：{GetStatusName(task.Status)}。消息：{request.Message ?? "无"}",
                 NotificationCategory.Work,
                 task.Status == Models.TaskStatus.Failed ? NotificationLevel.Error : NotificationLevel.Info,
-                actionUrl: $"/task-management/detail?id={task.Id}",
+                actionUrl: $"/task-management?taskId={task.Id}",
                 metadata: new Dictionary<string, string> { { "TaskId", task.Id ?? "" }, { "Action", action } }
             );
         }
@@ -151,7 +151,7 @@ public class TaskExecutionService : ITaskExecutionService
                 $"任务 \"{task.TaskName}\" 已完成。备注：{request.Remarks ?? "无"}",
                 NotificationCategory.Work,
                 NotificationLevel.Success,
-                actionUrl: $"/task-management/detail?id={task.Id}",
+                actionUrl: $"/task-management?taskId={task.Id}",
                 metadata: new Dictionary<string, string> { { "TaskId", task.Id ?? "" }, { "Action", "task_completed" } }
             );
         }
@@ -177,7 +177,7 @@ public class TaskExecutionService : ITaskExecutionService
                 $"任务 \"{task.TaskName}\" 已取消。备注：{remarks ?? "无"}",
                 NotificationCategory.Work,
                 NotificationLevel.Warning,
-                actionUrl: $"/task-management/detail?id={task.Id}",
+                actionUrl: $"/task-management?taskId={task.Id}",
                 metadata: new Dictionary<string, string> { { "TaskId", task.Id ?? "" }, { "Action", "task_cancelled" } }
             );
         }

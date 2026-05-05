@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import type { ProColumns } from '@ant-design/pro-table';
 import { PageContainer, ProDescriptions, ProCard } from '@ant-design/pro-components';
-import { useIntl } from '@umijs/max';
+import { useIntl, useLocation } from '@umijs/max';
 import { request } from '@umijs/max';
 import { Button, Tag, Space, Grid, App, Modal, Spin, Timeline, Empty, Progress, Input, Popconfirm } from 'antd';
 import { Drawer } from 'antd';
@@ -145,6 +145,7 @@ const TaskDetail: React.FC<{ id: string; onClose: () => void; open: boolean; isM
 // ==================== Main ====================
 const TaskManagement: React.FC = () => {
   const intl = useIntl();
+  const location = useLocation();
   const { message } = App.useApp();
   const actionRef = useRef<ActionType | undefined>(undefined);
   const screens = useBreakpoint();
@@ -159,6 +160,19 @@ const TaskManagement: React.FC = () => {
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
   const loadStatistics = useCallback(() => api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }), []);
+
+  // 处理 URL 中的 taskId 参数，自动打开任务详情
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const taskId = params.get('taskId');
+    if (taskId) {
+      getTaskById(taskId).then(res => {
+        if (res.success && res.data) {
+          set({ viewingTask: res.data, detailVisible: true });
+        }
+      });
+    }
+  }, [location.search]);
 
   useEffect(() => {
     loadStatistics();

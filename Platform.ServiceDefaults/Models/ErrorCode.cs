@@ -411,6 +411,12 @@ public static class ErrorCode
     /// <summary>流程图形定义不合法</summary>
     public const string InvalidWorkflowGraph = "INVALID_WORKFLOW_GRAPH";
 
+    /// <summary>审批节点缺少审批配置</summary>
+    public const string ApprovalNodeMissingConfig = "APPROVAL_NODE_MISSING_CONFIG";
+
+    /// <summary>审批节点审批人规则不能为空</summary>
+    public const string ApprovalNodeEmptyApprovers = "APPROVAL_NODE_EMPTY_APPROVERS";
+
     // ──────────────────────────────────────────────
     // 错误码 → 人类可读消息字典
     // BusinessExceptionFilter 检测到异常消息为已知错误码时，
@@ -552,5 +558,7 @@ public static class ErrorCode
         [WorkflowNodeNotConfigured] = "流程节点未配置表单定义ID",
         [NoPendingNode] = "流程实例当前无待处理节点",
         [InvalidWorkflowGraph] = "流程图形定义不合法",
+        [ApprovalNodeMissingConfig] = "审批节点缺少审批配置",
+        [ApprovalNodeEmptyApprovers] = "审批节点审批人规则不能为空",
     };
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Services;
 
@@ -135,9 +136,9 @@ public class WorkflowGraphValidator : IWorkflowGraphValidator
                 // 审批节点必须配置审批信息且审批人规则非空
                 var approval = node.Data.Config?.Approval;
                 if (approval == null)
-                    return (false, $"审批节点 {node.Data.Label ?? node.Id} 缺少审批配置");
+                    return (false, $"{ErrorCode.ApprovalNodeMissingConfig}:{node.Data.Label ?? node.Id}");
                 if (approval.Approvers == null || !approval.Approvers.Any())
-                    return (false, $"审批节点 {node.Data.Label ?? node.Id} 的审批人规则不能为空");
+                    return (false, $"{ErrorCode.ApprovalNodeEmptyApprovers}:{node.Data.Label ?? node.Id}");
                 if (approval.TimeoutHours.HasValue && approval.TimeoutHours.Value < 0)
                     return (false, $"审批节点 {node.Data.Label ?? node.Id} 的超时时间必须为非负数");
             }

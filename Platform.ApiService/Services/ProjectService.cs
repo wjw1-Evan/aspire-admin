@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Extensions;
 using System;
@@ -58,7 +59,7 @@ public class ProjectService : IProjectService
     public async Task<ProjectDto> UpdateProjectAsync(UpdateProjectRequest request, string userId)
     {
         var project = await _context.Set<Project>().FirstOrDefaultAsync(x => x.Id == request.ProjectId);
-        if (project == null) throw new KeyNotFoundException($"项目 {request.ProjectId} 不存在");
+        if (project == null) throw new KeyNotFoundException($"{ErrorCode.ProjectNotFound}:{request.ProjectId}");
 
         if (!string.IsNullOrEmpty(request.Name)) project.Name = request.Name;
         if (request.Description != null) project.Description = request.Description;
@@ -91,7 +92,7 @@ public class ProjectService : IProjectService
         var project = await _context.Set<Project>().FirstOrDefaultAsync(x => x.Id == projectId);
         if (project == null) return false;
         if (project.CreatedBy != userId)
-            throw new UnauthorizedAccessException("无权删除此项目");
+            throw new UnauthorizedAccessException(ErrorCode.ProjectDeleteUnauthorized);
 
         _context.Set<Project>().Remove(project);
         await _context.SaveChangesAsync();
@@ -143,8 +144,8 @@ public class ProjectService : IProjectService
     /// <inheritdoc/>
     public async Task<ProjectMemberDto> AddProjectMemberAsync(AddProjectMemberRequest request)
     {
-        if (!await _context.Set<Project>().AnyAsync(x => x.Id == request.ProjectId)) throw new KeyNotFoundException($"项目 {request.ProjectId} 不存在");
-        if (await _context.Set<ProjectMember>().AnyAsync(m => m.ProjectId == request.ProjectId && m.UserId == request.UserId)) throw new InvalidOperationException("该用户已经是项目成员");
+        if (!await _context.Set<Project>().AnyAsync(x => x.Id == request.ProjectId)) throw new KeyNotFoundException($"{ErrorCode.ProjectNotFound}:{request.ProjectId}");
+        if (await _context.Set<ProjectMember>().AnyAsync(m => m.ProjectId == request.ProjectId && m.UserId == request.UserId)) throw new InvalidOperationException(ErrorCode.ProjectMemberAlreadyExists);
 
         var member = new ProjectMember { ProjectId = request.ProjectId, UserId = request.UserId, Role = (ProjectMemberRole)request.Role, Allocation = request.Allocation };
         await _context.Set<ProjectMember>().AddAsync(member);

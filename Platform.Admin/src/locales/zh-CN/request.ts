@@ -106,6 +106,9 @@ export default {
     'DATA_TYPE_REQUIRED': '数据类型不能为空',
     'UNSUPPORTED_MODULE': '不支持的模块',
     'UNSUPPORTED_DATA_TYPE': '不支持的数据类型',
+    'PROJECT_NOT_FOUND': '项目不存在',
+    'PROJECT_DELETE_UNAUTHORIZED': '无权删除此项目',
+    'PROJECT_MEMBER_ALREADY_EXISTS': '该用户已经是项目成员',
 
     // ── 服务器错误 (Server) ──
     'SERVER_ERROR': '服务器内部错误',

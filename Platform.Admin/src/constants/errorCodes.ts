@@ -160,6 +160,15 @@ export const UNSUPPORTED_MODULE = 'UNSUPPORTED_MODULE';
 /** 不支持的数据类型 */
 export const UNSUPPORTED_DATA_TYPE = 'UNSUPPORTED_DATA_TYPE';
 
+/** 项目不存在 */
+export const PROJECT_NOT_FOUND = 'PROJECT_NOT_FOUND';
+
+/** 无权删除项目 */
+export const PROJECT_DELETE_UNAUTHORIZED = 'PROJECT_DELETE_UNAUTHORIZED';
+
+/** 项目成员已存在 */
+export const PROJECT_MEMBER_ALREADY_EXISTS = 'PROJECT_MEMBER_ALREADY_EXISTS';
+
 // ──────────────────────────────────────────────
 // 角色/权限相关 (Role/Permission)
 // ──────────────────────────────────────────────

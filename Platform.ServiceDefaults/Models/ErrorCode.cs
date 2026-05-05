@@ -168,6 +168,15 @@ public static class ErrorCode
     /// <summary>不支持的数据类型</summary>
     public const string UnsupportedDataType = "UNSUPPORTED_DATA_TYPE";
 
+    /// <summary>项目不存在</summary>
+    public const string ProjectNotFound = "PROJECT_NOT_FOUND";
+
+    /// <summary>无权删除项目</summary>
+    public const string ProjectDeleteUnauthorized = "PROJECT_DELETE_UNAUTHORIZED";
+
+    /// <summary>项目成员已存在</summary>
+    public const string ProjectMemberAlreadyExists = "PROJECT_MEMBER_ALREADY_EXISTS";
+
     // ──────────────────────────────────────────────
     // 角色/权限相关 (Role/Permission)
     // ──────────────────────────────────────────────
@@ -648,6 +657,9 @@ public static class ErrorCode
         [DataTypeRequired] = "数据类型不能为空",
         [UnsupportedModule] = "不支持的模块",
         [UnsupportedDataType] = "不支持的数据类型",
+        [ProjectNotFound] = "项目不存在",
+        [ProjectDeleteUnauthorized] = "无权删除此项目",
+        [ProjectMemberAlreadyExists] = "该用户已经是项目成员",
         // 服务器
         [ServerError] = "服务器内部错误",
         // 公文

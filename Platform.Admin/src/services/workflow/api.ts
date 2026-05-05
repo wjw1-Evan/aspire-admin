@@ -342,6 +342,7 @@ export interface FormBinding {
   target: FormTarget;
   dataScopeKey?: string;
   required?: boolean;
+  readOnly?: boolean;
 }
 
 /**

@@ -65,7 +65,11 @@ export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
     switch (nodeType) {
       case 'approval': {
         const approversCount = data.config?.approval?.approvers?.length || 0;
-        return approversCount > 0 ? `配置了 ${approversCount} 条审批规则` : '未配置审批人';
+        const hasForm = !!data.config?.form?.formDefinitionId;
+        if (approversCount > 0 && hasForm) return `配置了 ${approversCount} 条审批规则 · 已绑定表单`;
+        if (approversCount > 0) return `配置了 ${approversCount} 条审批规则`;
+        if (hasForm) return '已绑定表单 · 未配置审批人';
+        return '未配置审批人';
       }
       case 'condition': {
         const branchesCount = data.config?.condition?.branches?.length || 0;

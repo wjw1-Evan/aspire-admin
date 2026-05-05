@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Button, Form, Input, Select, Switch, Space, Divider, Tabs, FormInstance, Tree, TreeSelect } from 'antd';
+import { Button, Form, Input, Select, Switch, Space, Divider, Tabs, FormInstance, Tree, TreeSelect, Radio } from 'antd';
 import { Drawer } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { DeleteOutlined, SaveOutlined, PlusOutlined, InfoCircleOutlined } from '@ant-design/icons';
@@ -10,6 +10,7 @@ import type { AppUser } from '@/services/user/api';
 import type { Role } from '@/services/role/api';
 import type { FormDefinition } from '@/services/form/api';
 import { getWorkflowFormsAndFields, getOrganizationTree, type OrganizationTreeNode } from '@/services/workflow/api';
+import { FormTarget } from '@/services/workflow/api';
 import type { SelectProps } from 'antd';
 import type { DataNode } from 'antd/es/tree';
 
@@ -554,10 +555,36 @@ if (type === 4) return (
                     </div>
                   )}
                    {selectedNode?.data.nodeType === 'start' && (
-                     <Form.Item name="formDefinitionId" label={intl.formatMessage({ id: 'pages.flow.node.bindStartForm' })}>
-                       <Select placeholder={intl.formatMessage({ id: 'pages.flow.node.selectStartForm' })} allowClear options={forms.map(f => ({ label: f.name, value: f.id }))} />
-                     </Form.Item>
-                   )}
+                      <Form.Item name="formDefinitionId" label={intl.formatMessage({ id: 'pages.flow.node.bindStartForm' })}>
+                        <Select placeholder={intl.formatMessage({ id: 'pages.flow.node.selectStartForm' })} allowClear options={forms.map(f => ({ label: f.name, value: f.id }))} />
+                      </Form.Item>
+                    )}
+                   {selectedNode?.data.nodeType === 'approval' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        <Form.Item name="formDefinitionId" label={intl.formatMessage({ id: 'pages.flow.node.bindForm' })}>
+                          <Select placeholder={intl.formatMessage({ id: 'pages.flow.node.selectForm' })} allowClear options={forms.map(f => ({ label: f.name, value: f.id }))} />
+                        </Form.Item>
+                        <Form.Item noStyle shouldUpdate={(prev, curr) => prev.formDefinitionId !== curr.formDefinitionId}>
+                          {({ getFieldValue }) => {
+                            const formId = getFieldValue('formDefinitionId');
+                            if (!formId) return null;
+                            return (
+                              <>
+                                <Form.Item name="formTarget" label={intl.formatMessage({ id: 'pages.flow.node.formTarget' })} initialValue={FormTarget.Document}>
+                                  <Radio.Group>
+                                    <Radio value={FormTarget.Document}>{intl.formatMessage({ id: 'pages.flow.node.formTarget.document' })}</Radio>
+                                    <Radio value={FormTarget.Instance}>{intl.formatMessage({ id: 'pages.flow.node.formTarget.instance' })}</Radio>
+                                  </Radio.Group>
+                                </Form.Item>
+                                <Form.Item name="formReadOnly" label={intl.formatMessage({ id: 'pages.flow.node.formReadOnly' })} valuePropName="checked">
+                                  <Switch />
+                                </Form.Item>
+                              </>
+                            );
+                          }}
+                        </Form.Item>
+                      </div>
+                    )}
                 </>
               ),
             },

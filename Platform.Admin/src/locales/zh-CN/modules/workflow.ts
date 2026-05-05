@@ -384,4 +384,12 @@ export default {
   // Node Config Drawer - 开始节点表单绑定
   'pages.flow.node.bindStartForm': '绑定起始表单',
   'pages.flow.node.selectStartForm': '选择起始表单',
+
+  // Node Config Drawer - 通用表单绑定
+  'pages.flow.node.bindForm': '绑定表单',
+  'pages.flow.node.selectForm': '选择表单',
+  'pages.flow.node.formTarget': '表单数据范围',
+  'pages.flow.node.formTarget.document': '文档',
+  'pages.flow.node.formTarget.instance': '流程实例',
+  'pages.flow.node.formReadOnly': '只读',
 };

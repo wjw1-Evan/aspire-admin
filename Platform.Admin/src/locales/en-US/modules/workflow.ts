@@ -344,4 +344,11 @@ export default {
   'pages.workflow.knowledge.form.contentRequired': 'Please enter content',
   'pages.workflow.knowledge.form.summaryPlaceholder': 'Enter summary (optional)',
   'pages.workflow.knowledge.form.sortOrderPlaceholder': 'Smaller values appear first',
+
+  'pages.flow.node.bindForm': 'Bind Form',
+  'pages.flow.node.selectForm': 'Select form',
+  'pages.flow.node.formTarget': 'Form Data Scope',
+  'pages.flow.node.formTarget.document': 'Document',
+  'pages.flow.node.formTarget.instance': 'Instance',
+  'pages.flow.node.formReadOnly': 'Read Only',
 };

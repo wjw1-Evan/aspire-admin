@@ -299,6 +299,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
       formTarget: config.form?.target,
       formDataScopeKey: config.form?.dataScopeKey,
       formRequired: config.form?.required,
+      formReadOnly: config.form?.readOnly,
     });
   }, [configForm]);
 
@@ -343,6 +344,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
             config.form = {
               formDefinitionId: values.formDefinitionId, target: values.formTarget || FormTarget.Document,
               dataScopeKey: values.formDataScopeKey || undefined, required: values.formRequired || false,
+              readOnly: values.formReadOnly || false,
             };
           }
           let jumpLabel = '';

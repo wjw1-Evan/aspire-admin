@@ -1,8 +1,8 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { PageContainer, ProDescriptions } from '@ant-design/pro-components';
-import { Space, Tag, Button, Input, Modal, App } from 'antd';
+import { Space, Tag, Button, Input, Modal, App, Select } from 'antd';
 import { Drawer } from 'antd';
-import { CheckCircleOutlined, CloseCircleOutlined, FileTextOutlined, EyeOutlined, HistoryOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, CloseCircleOutlined, FileTextOutlined, EyeOutlined, HistoryOutlined, RollbackOutlined, UserSwitchOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import dayjs from 'dayjs';
 import { useIntl } from '@umijs/max';
@@ -101,6 +101,88 @@ const ApprovalPage: React.FC = () => {
     });
   };
 
+  const handleReturn = async (item: TodoItem) => {
+    let returnComment = '';
+    let targetNodeId = '';
+    modal.confirm({
+      title: intl.formatMessage({ id: 'pages.document.approval.confirmReturn' }),
+      content: (
+        <div>
+          <p>{intl.formatMessage({ id: 'pages.document.approval.selectTargetNode' })}</p>
+          <Select
+            style={{ width: '100%', marginBottom: 12 }}
+            placeholder={intl.formatMessage({ id: 'pages.document.approval.selectTargetNode' })}
+            onChange={(value) => { targetNodeId = value; }}
+            options={[]}
+          />
+          <p>{intl.formatMessage({ id: 'pages.document.approval.returnReason' })}</p>
+          <Input.TextArea
+            rows={3}
+            onChange={(e) => { returnComment = e.target.value; }}
+            placeholder={intl.formatMessage({ id: 'pages.document.approval.reasonPlaceholder' })}
+          />
+        </div>
+      ),
+      onOk: async () => {
+        if (!targetNodeId.trim()) {
+          message.warning(intl.formatMessage({ id: 'pages.document.approval.selectTargetNodeRequired' }));
+          return;
+        }
+        const res = await executeNodeAction(item.id, item.currentNodeId, {
+          action: 'return',
+          targetNodeId,
+          comment: returnComment,
+        });
+        if (res.success) {
+          message.success(intl.formatMessage({ id: 'pages.document.approval.returned' }));
+          actionRef.current?.reload();
+        }
+      },
+    });
+  };
+
+  const handleDelegate = async (item: TodoItem) => {
+    let delegateComment = '';
+    let delegateToUserId = '';
+    modal.confirm({
+      title: intl.formatMessage({ id: 'pages.document.approval.confirmDelegate' }),
+      content: (
+        <div>
+          <p>{intl.formatMessage({ id: 'pages.document.approval.delegateTo' })}</p>
+          <Select
+            style={{ width: '100%', marginBottom: 12 }}
+            placeholder={intl.formatMessage({ id: 'pages.document.approval.selectUser' })}
+            onChange={(value) => { delegateToUserId = value; }}
+            options={[]}
+            showSearch
+            filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+          />
+          <p>{intl.formatMessage({ id: 'pages.document.approval.returnReason' })}</p>
+          <Input.TextArea
+            rows={3}
+            onChange={(e) => { delegateComment = e.target.value; }}
+            placeholder={intl.formatMessage({ id: 'pages.document.approval.reasonPlaceholder' })}
+          />
+        </div>
+      ),
+      onOk: async () => {
+        if (!delegateToUserId.trim()) {
+          message.warning(intl.formatMessage({ id: 'pages.document.approval.selectUserRequired' }));
+          return;
+        }
+        const res = await executeNodeAction(item.id, item.currentNodeId, {
+          action: 'delegate',
+          delegateToUserId,
+          comment: delegateComment,
+        });
+        if (res.success) {
+          message.success(intl.formatMessage({ id: 'pages.document.approval.delegated' }));
+          actionRef.current?.reload();
+        }
+      },
+    });
+  };
+
   const columns: ProColumns<TodoItem>[] = [
     {
       title: intl.formatMessage({ id: 'pages.document.table.title' }),
@@ -148,8 +230,14 @@ const ApprovalPage: React.FC = () => {
           <Button type="link" size="small" icon={<CheckCircleOutlined />} onClick={() => handleApprove(r)}>
             {intl.formatMessage({ id: 'pages.document.approval.approve' })}
           </Button>
+          <Button type="link" size="small" color="orange" icon={<RollbackOutlined />} onClick={() => handleReturn(r)}>
+            {intl.formatMessage({ id: 'pages.document.approval.return' })}
+          </Button>
           <Button type="link" size="small" danger icon={<CloseCircleOutlined />} onClick={() => handleReject(r)}>
             {intl.formatMessage({ id: 'pages.document.approval.reject' })}
+          </Button>
+          <Button type="link" size="small" color="purple" icon={<UserSwitchOutlined />} onClick={() => handleDelegate(r)}>
+            {intl.formatMessage({ id: 'pages.document.approval.delegate' })}
           </Button>
           <Button type="link" size="small" icon={<HistoryOutlined />} onClick={async () => {
             try {

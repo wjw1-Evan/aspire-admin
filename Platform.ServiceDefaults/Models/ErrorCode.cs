@@ -417,6 +417,66 @@ public static class ErrorCode
     /// <summary>审批节点审批人规则不能为空</summary>
     public const string ApprovalNodeEmptyApprovers = "APPROVAL_NODE_EMPTY_APPROVERS";
 
+    /// <summary>流程节点不能为空</summary>
+    public const string WorkflowNodesEmpty = "WORKFLOW_NODES_EMPTY";
+
+    /// <summary>存在重复的节点ID</summary>
+    public const string DuplicateNodeId = "DUPLICATE_NODE_ID";
+
+    /// <summary>流程必须包含开始节点</summary>
+    public const string MissingStartNode = "MISSING_START_NODE";
+
+    /// <summary>流程只能包含一个开始节点</summary>
+    public const string MultipleStartNodes = "MULTIPLE_START_NODES";
+
+    /// <summary>流程必须包含结束节点</summary>
+    public const string MissingEndNode = "MISSING_END_NODE";
+
+    /// <summary>连接线源或目标节点为空</summary>
+    public const string EdgeSourceTargetEmpty = "EDGE_SOURCE_TARGET_EMPTY";
+
+    /// <summary>连接线源和目标不能相同（不支持自环）</summary>
+    public const string EdgeSelfLoopNotAllowed = "EDGE_SELF_LOOP_NOT_ALLOWED";
+
+    /// <summary>连接线源节点不存在</summary>
+    public const string EdgeSourceNotFound = "EDGE_SOURCE_NOT_FOUND";
+
+    /// <summary>连接线目标节点不存在</summary>
+    public const string EdgeTargetNotFound = "EDGE_TARGET_NOT_FOUND";
+
+    /// <summary>存在重复的连接线</summary>
+    public const string DuplicateEdge = "DUPLICATE_EDGE";
+
+    /// <summary>存在从开始节点不可达的节点</summary>
+    public const string UnreachableNodes = "UNREACHABLE_NODES";
+
+    /// <summary>从开始节点无法到达任何结束节点</summary>
+    public const string NoPathToEndNode = "NO_PATH_TO_END_NODE";
+
+    /// <summary>开始节点没有出边</summary>
+    public const string StartNodeNoOutgoing = "START_NODE_NO_OUTGOING";
+
+    /// <summary>结束节点没有入边</summary>
+    public const string EndNodeNoIncoming = "END_NODE_NO_INCOMING";
+
+    /// <summary>节点没有出边</summary>
+    public const string NodeNoOutgoing = "NODE_NO_OUTGOING";
+
+    /// <summary>节点没有入边</summary>
+    public const string NodeNoIncoming = "NODE_NO_INCOMING";
+
+    /// <summary>不支持的节点类型</summary>
+    public const string UnsupportedNodeType = "UNSUPPORTED_NODE_TYPE";
+
+    /// <summary>审批节点超时时间必须为非负数</summary>
+    public const string ApprovalTimeoutNegative = "APPROVAL_TIMEOUT_NEGATIVE";
+
+    /// <summary>条件节点缺少出边</summary>
+    public const string ConditionNodeNoOutgoing = "CONDITION_NODE_NO_OUTGOING";
+
+    /// <summary>条件节点的出边需包含条件或默认路径</summary>
+    public const string ConditionNodeInvalidPaths = "CONDITION_NODE_INVALID_PATHS";
+
     // ──────────────────────────────────────────────
     // 错误码 → 人类可读消息字典
     // BusinessExceptionFilter 检测到异常消息为已知错误码时，
@@ -560,5 +620,25 @@ public static class ErrorCode
         [InvalidWorkflowGraph] = "流程图形定义不合法",
         [ApprovalNodeMissingConfig] = "审批节点缺少审批配置",
         [ApprovalNodeEmptyApprovers] = "审批节点审批人规则不能为空",
+        [WorkflowNodesEmpty] = "流程节点不能为空",
+        [DuplicateNodeId] = "存在重复的节点ID",
+        [MissingStartNode] = "流程必须包含开始节点",
+        [MultipleStartNodes] = "流程只能包含一个开始节点",
+        [MissingEndNode] = "流程必须包含结束节点",
+        [EdgeSourceTargetEmpty] = "连接线源或目标节点为空",
+        [EdgeSelfLoopNotAllowed] = "连接线源和目标不能相同（不支持自环）",
+        [EdgeSourceNotFound] = "连接线源节点不存在",
+        [EdgeTargetNotFound] = "连接线目标节点不存在",
+        [DuplicateEdge] = "存在重复的连接线",
+        [UnreachableNodes] = "存在从开始节点不可达的节点",
+        [NoPathToEndNode] = "从开始节点无法到达任何结束节点",
+        [StartNodeNoOutgoing] = "开始节点没有出边",
+        [EndNodeNoIncoming] = "结束节点没有入边",
+        [NodeNoOutgoing] = "节点没有出边",
+        [NodeNoIncoming] = "节点没有入边",
+        [UnsupportedNodeType] = "不支持的节点类型",
+        [ApprovalTimeoutNegative] = "审批节点超时时间必须为非负数",
+        [ConditionNodeNoOutgoing] = "条件节点缺少出边",
+        [ConditionNodeInvalidPaths] = "条件节点的出边需包含条件或默认路径",
     };
 }

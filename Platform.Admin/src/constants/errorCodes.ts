@@ -288,6 +288,75 @@ export const OPERATION_FAILED = 'OPERATION_FAILED';
   /** 流程实例当前无待处理节点 */
   export const NO_PENDING_NODE = 'NO_PENDING_NODE';
 
+  /** 流程图形定义不合法 */
+  export const INVALID_WORKFLOW_GRAPH = 'INVALID_WORKFLOW_GRAPH';
+
+  /** 审批节点缺少审批配置 */
+  export const APPROVAL_NODE_MISSING_CONFIG = 'APPROVAL_NODE_MISSING_CONFIG';
+
+  /** 审批节点审批人规则不能为空 */
+  export const APPROVAL_NODE_EMPTY_APPROVERS = 'APPROVAL_NODE_EMPTY_APPROVERS';
+
+  /** 流程节点不能为空 */
+  export const WORKFLOW_NODES_EMPTY = 'WORKFLOW_NODES_EMPTY';
+
+  /** 存在重复的节点ID */
+  export const DUPLICATE_NODE_ID = 'DUPLICATE_NODE_ID';
+
+  /** 流程必须包含开始节点 */
+  export const MISSING_START_NODE = 'MISSING_START_NODE';
+
+  /** 流程只能包含一个开始节点 */
+  export const MULTIPLE_START_NODES = 'MULTIPLE_START_NODES';
+
+  /** 流程必须包含结束节点 */
+  export const MISSING_END_NODE = 'MISSING_END_NODE';
+
+  /** 连接线源或目标节点为空 */
+  export const EDGE_SOURCE_TARGET_EMPTY = 'EDGE_SOURCE_TARGET_EMPTY';
+
+  /** 连接线源和目标不能相同（不支持自环） */
+  export const EDGE_SELF_LOOP_NOT_ALLOWED = 'EDGE_SELF_LOOP_NOT_ALLOWED';
+
+  /** 连接线源节点不存在 */
+  export const EDGE_SOURCE_NOT_FOUND = 'EDGE_SOURCE_NOT_FOUND';
+
+  /** 连接线目标节点不存在 */
+  export const EDGE_TARGET_NOT_FOUND = 'EDGE_TARGET_NOT_FOUND';
+
+  /** 存在重复的连接线 */
+  export const DUPLICATE_EDGE = 'DUPLICATE_EDGE';
+
+  /** 存在从开始节点不可达的节点 */
+  export const UNREACHABLE_NODES = 'UNREACHABLE_NODES';
+
+  /** 从开始节点无法到达任何结束节点 */
+  export const NO_PATH_TO_END_NODE = 'NO_PATH_TO_END_NODE';
+
+  /** 开始节点没有出边 */
+  export const START_NODE_NO_OUTGOING = 'START_NODE_NO_OUTGOING';
+
+  /** 结束节点没有入边 */
+  export const END_NODE_NO_INCOMING = 'END_NODE_NO_INCOMING';
+
+  /** 节点没有出边 */
+  export const NODE_NO_OUTGOING = 'NODE_NO_OUTGOING';
+
+  /** 节点没有入边 */
+  export const NODE_NO_INCOMING = 'NODE_NO_INCOMING';
+
+  /** 不支持的节点类型 */
+  export const UNSUPPORTED_NODE_TYPE = 'UNSUPPORTED_NODE_TYPE';
+
+  /** 审批节点超时时间必须为非负数 */
+  export const APPROVAL_TIMEOUT_NEGATIVE = 'APPROVAL_TIMEOUT_NEGATIVE';
+
+  /** 条件节点缺少出边 */
+  export const CONDITION_NODE_NO_OUTGOING = 'CONDITION_NODE_NO_OUTGOING';
+
+  /** 条件节点的出边需包含条件或默认路径 */
+  export const CONDITION_NODE_INVALID_PATHS = 'CONDITION_NODE_INVALID_PATHS';
+
   // ──────────────────────────────────────────────
   // DataAnnotation 验证错误码 (Validation Attributes)
   // ──────────────────────────────────────────────

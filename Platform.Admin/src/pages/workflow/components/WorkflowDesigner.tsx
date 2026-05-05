@@ -300,7 +300,9 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
       formDataScopeKey: config.form?.dataScopeKey,
       formRequired: config.form?.required,
       formReadOnly: config.form?.readOnly,
-      nextNodeId: edges.find(e => e.source === node.id)?.target,
+      nextNodeId: node.data?.nodeType === 'approval' ? undefined : edges.find(e => e.source === node.id)?.target,
+      approveNextNodeId: node.data?.nodeType === 'approval' ? edges.find(e => e.source === node.id && e.sourceHandle === 'approve')?.target : undefined,
+      rejectNextNodeId: node.data?.nodeType === 'approval' ? edges.find(e => e.source === node.id && e.sourceHandle === 'reject')?.target : undefined,
     });
   }, [configForm, edges]);
 
@@ -385,12 +387,28 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
           updatedEdges = addEdge(defaultEdge, updatedEdges);
         }
       }
-      if (values.nextNodeId && !selectedNodeConfig?.condition?.branches) {
+      if (values.nextNodeId && !selectedNodeConfig?.condition?.branches && values.nodeType !== 'approval') {
         const edgeId = `${selectedNode.id}-${values.nextNodeId}`;
         const newEdge: Edge = {
           id: edgeId, source: selectedNode.id, target: values.nextNodeId, ...defaultEdgeOptions,
         };
         updatedEdges = addEdge(newEdge, updatedEdges);
+      }
+      if (values.nodeType === 'approval') {
+        if (values.approveNextNodeId) {
+          const edgeId = `${selectedNode.id}-approve-${values.approveNextNodeId}`;
+          const newEdge: Edge = {
+            id: edgeId, source: selectedNode.id, target: values.approveNextNodeId, sourceHandle: 'approve', label: '通过', ...defaultEdgeOptions,
+          };
+          updatedEdges = addEdge(newEdge, updatedEdges);
+        }
+        if (values.rejectNextNodeId) {
+          const edgeId = `${selectedNode.id}-reject-${values.rejectNextNodeId}`;
+          const newEdge: Edge = {
+            id: edgeId, source: selectedNode.id, target: values.rejectNextNodeId, sourceHandle: 'reject', label: '拒绝', ...defaultEdgeOptions,
+          };
+          updatedEdges = addEdge(newEdge, updatedEdges);
+        }
       }
       setNodes(updatedNodes);
       setEdges(updatedEdges);

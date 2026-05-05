@@ -207,7 +207,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                     <Input placeholder={intl.formatMessage({ id: 'pages.workflow.designer.nodeLabel' })} />
                   </Form.Item>
 
-                  {selectedNode?.data.nodeType !== 'end' && (
+                  {selectedNode?.data.nodeType !== 'end' && selectedNode?.data.nodeType !== 'approval' && (
                     <Form.Item name="nextNodeId" label={intl.formatMessage({ id: 'pages.workflow.designer.nextNode' })}>
                       <Select
                         placeholder={intl.formatMessage({ id: 'pages.workflow.designer.selectNextNode' })}
@@ -220,6 +220,35 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                           }))}
                       />
                     </Form.Item>
+                  )}
+
+                  {selectedNode?.data.nodeType === 'approval' && (
+                    <>
+                      <Form.Item name="approveNextNodeId" label={intl.formatMessage({ id: 'pages.workflow.designer.approveNextNode' })}>
+                        <Select
+                          placeholder={intl.formatMessage({ id: 'pages.workflow.designer.selectApproveNextNode' })}
+                          allowClear
+                          options={allNodes
+                            .filter(n => n.id !== selectedNode?.id)
+                            .map(n => ({
+                              label: `${n.data?.label || n.id} (${intl.formatMessage({ id: `pages.workflow.designer.nodeType.${n.data?.nodeType}` })})`,
+                              value: n.id
+                            }))}
+                        />
+                      </Form.Item>
+                      <Form.Item name="rejectNextNodeId" label={intl.formatMessage({ id: 'pages.workflow.designer.rejectNextNode' })}>
+                        <Select
+                          placeholder={intl.formatMessage({ id: 'pages.workflow.designer.selectRejectNextNode' })}
+                          allowClear
+                          options={allNodes
+                            .filter(n => n.id !== selectedNode?.id)
+                            .map(n => ({
+                              label: `${n.data?.label || n.id} (${intl.formatMessage({ id: `pages.workflow.designer.nodeType.${n.data?.nodeType}` })})`,
+                              value: n.id
+                            }))}
+                        />
+                      </Form.Item>
+                    </>
                   )}
                 </>
               ),

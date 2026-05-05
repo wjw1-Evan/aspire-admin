@@ -300,8 +300,9 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
       formDataScopeKey: config.form?.dataScopeKey,
       formRequired: config.form?.required,
       formReadOnly: config.form?.readOnly,
+      nextNodeId: edges.find(e => e.source === node.id)?.target,
     });
-  }, [configForm]);
+  }, [configForm, edges]);
 
   const handleSaveConfig = useCallback(() => {
     if (!selectedNode) return;
@@ -383,6 +384,13 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
           };
           updatedEdges = addEdge(defaultEdge, updatedEdges);
         }
+      }
+      if (values.nextNodeId && !selectedNodeConfig?.condition?.branches) {
+        const edgeId = `${selectedNode.id}-${values.nextNodeId}`;
+        const newEdge: Edge = {
+          id: edgeId, source: selectedNode.id, target: values.nextNodeId, ...defaultEdgeOptions,
+        };
+        updatedEdges = addEdge(newEdge, updatedEdges);
       }
       setNodes(updatedNodes);
       setEdges(updatedEdges);

@@ -8,7 +8,8 @@ export enum DocumentStatus {
   Draft = 0,        // 草稿
   Approving = 1,    // 审批中
   Approved = 2,     // 已通过
-  Rejected = 3      // 已拒绝
+  Rejected = 3,     // 已拒绝
+  Archived = 4      // 已归档
 }
 
 /**
@@ -20,6 +21,7 @@ export type DocumentStatistics = {
   pendingCount: number;
   approvedCount: number;
   rejectedCount: number;
+  archivedCount: number;
   myCreatedCount: number;
 };
 
@@ -255,5 +257,14 @@ export async function getPendingDocuments(params: DocumentQueryParams): Promise<
 export async function getDocumentStatistics(): Promise<ApiResponse<DocumentStatistics>> {
   return request('/apiservice/api/documents/statistics', {
     method: 'GET',
+  });
+}
+
+/**
+ * 归档公文
+ */
+export async function archiveDocument(id: string): Promise<ApiResponse<boolean>> {
+  return request(`/apiservice/api/documents/${id}/archive`, {
+    method: 'POST',
   });
 }

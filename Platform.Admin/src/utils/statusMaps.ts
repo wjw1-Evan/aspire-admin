@@ -8,6 +8,7 @@ export const documentStatusMap: Record<string, StatusMeta> = {
     approving: { color: 'processing', text: 'pages.document.status.approving' },
     approved: { color: 'success', text: 'pages.document.status.approved' },
     rejected: { color: 'error', text: 'pages.document.status.rejected' },
+    archived: { color: 'default', text: 'pages.document.status.archived' },
 };
 
 export const workflowStatusMap: Record<string, StatusMeta> = {

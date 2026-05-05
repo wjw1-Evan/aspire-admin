@@ -155,7 +155,7 @@ const ApprovalPage: React.FC = () => {
             onChange={(value) => { delegateToUserId = value; }}
             options={[]}
             showSearch
-            filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+            filterOption={(input, option) => ((option as any)?.label ?? '').toLowerCase().includes(input.toLowerCase())}
           />
           <p>{intl.formatMessage({ id: 'pages.document.approval.returnReason' })}</p>
           <Input.TextArea

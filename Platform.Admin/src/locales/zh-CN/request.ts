@@ -102,6 +102,10 @@ export default {
     'FILE_PREVIEW_NOT_SUPPORTED': '该文件类型不支持预览',
     'FILE_PREVIEW_TYPE_NOT_SUPPORTED': '不支持的预览类型',
     'FILE_PREVIEW_GENERATION_FAILED': '生成预览失败',
+    'MODULE_REQUIRED': '模块不能为空',
+    'DATA_TYPE_REQUIRED': '数据类型不能为空',
+    'UNSUPPORTED_MODULE': '不支持的模块',
+    'UNSUPPORTED_DATA_TYPE': '不支持的数据类型',
 
     // ── 服务器错误 (Server) ──
     'SERVER_ERROR': '服务器内部错误',

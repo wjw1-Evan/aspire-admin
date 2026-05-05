@@ -29,9 +29,9 @@ public class DataQueryService : IDataQueryService
         if (config == null)
             throw new ArgumentNullException(nameof(config));
         if (string.IsNullOrEmpty(config.Module))
-            throw new ArgumentException("模块不能为空", nameof(config));
+            throw new ArgumentException(ErrorCode.ModuleRequired, nameof(config));
         if (string.IsNullOrEmpty(config.DataType))
-            throw new ArgumentException("数据类型不能为空", nameof(config));
+            throw new ArgumentException(ErrorCode.DataTypeRequired, nameof(config));
 
         _logger.LogInformation("查询数据: Module={Module}, DataType={DataType}, UserId={UserId}", config.Module, config.DataType, userId);
 
@@ -45,7 +45,7 @@ public class DataQueryService : IDataQueryService
             "document" => await QueryDocumentDataAsync(config, userId, companyId),
             "knowledge" => await QueryKnowledgeDataAsync(config, userId, companyId),
             "storage" => await QueryStorageDataAsync(config, userId, companyId),
-            _ => throw new ArgumentException($"不支持的模块: {config.Module}", nameof(config))
+            _ => throw new ArgumentException($"{ErrorCode.UnsupportedModule}:{config.Module}", nameof(config))
         };
     }
 
@@ -62,7 +62,7 @@ public class DataQueryService : IDataQueryService
             "trend" => await QueryTaskTrendAsync(config, userId, companyId, timeRange),
             "list" => await QueryTaskListAsync(config, userId, companyId, timeRange),
             "distribution" => await QueryTaskDistributionAsync(config, userId, companyId, timeRange),
-            _ => throw new ArgumentException($"不支持的数据类型: {config.DataType}", nameof(config))
+            _ => throw new ArgumentException($"{ErrorCode.UnsupportedDataType}:{config.DataType}", nameof(config))
         };
     }
 
@@ -79,7 +79,7 @@ public class DataQueryService : IDataQueryService
             "trend" => await QueryProjectTrendAsync(config, userId, companyId, timeRange),
             "list" => await QueryProjectListAsync(config, userId, companyId, timeRange),
             "distribution" => await QueryProjectDistributionAsync(config, userId, companyId, timeRange),
-            _ => throw new ArgumentException($"不支持的数据类型: {config.DataType}", nameof(config))
+            _ => throw new ArgumentException($"{ErrorCode.UnsupportedDataType}:{config.DataType}", nameof(config))
         };
     }
 
@@ -96,7 +96,7 @@ public class DataQueryService : IDataQueryService
             "trend" => await QueryIoTTrendAsync(config, userId, companyId, timeRange),
             "list" => await QueryIoTListAsync(config, userId, companyId, timeRange),
             "distribution" => await QueryIoTDistributionAsync(config, userId, companyId, timeRange),
-            _ => throw new ArgumentException($"不支持的数据类型: {config.DataType}", nameof(config))
+            _ => throw new ArgumentException($"{ErrorCode.UnsupportedDataType}:{config.DataType}", nameof(config))
         };
     }
 
@@ -113,7 +113,7 @@ public class DataQueryService : IDataQueryService
             "trend" => await QueryWorkflowTrendAsync(config, userId, companyId, timeRange),
             "list" => await QueryWorkflowListAsync(config, userId, companyId, timeRange),
             "distribution" => await QueryWorkflowDistributionAsync(config, userId, companyId, timeRange),
-            _ => throw new ArgumentException($"不支持的数据类型: {config.DataType}", nameof(config))
+            _ => throw new ArgumentException($"{ErrorCode.UnsupportedDataType}:{config.DataType}", nameof(config))
         };
     }
 
@@ -130,7 +130,7 @@ public class DataQueryService : IDataQueryService
             "trend" => await QueryParkTrendAsync(config, userId, companyId, timeRange),
             "list" => await QueryParkListAsync(config, userId, companyId, timeRange),
             "distribution" => await QueryParkDistributionAsync(config, userId, companyId, timeRange),
-            _ => throw new ArgumentException($"不支持的数据类型: {config.DataType}", nameof(config))
+            _ => throw new ArgumentException($"{ErrorCode.UnsupportedDataType}:{config.DataType}", nameof(config))
         };
     }
 
@@ -147,7 +147,7 @@ public class DataQueryService : IDataQueryService
             "trend" => await QueryDocumentTrendAsync(config, userId, companyId, timeRange),
             "list" => await QueryDocumentListAsync(config, userId, companyId, timeRange),
             "distribution" => await QueryDocumentDistributionAsync(config, userId, companyId, timeRange),
-            _ => throw new ArgumentException($"不支持的数据类型: {config.DataType}", nameof(config))
+            _ => throw new ArgumentException($"{ErrorCode.UnsupportedDataType}:{config.DataType}", nameof(config))
         };
     }
 
@@ -164,7 +164,7 @@ public class DataQueryService : IDataQueryService
             "trend" => await QueryKnowledgeTrendAsync(config, userId, companyId, timeRange),
             "list" => await QueryKnowledgeListAsync(config, userId, companyId, timeRange),
             "distribution" => await QueryKnowledgeDistributionAsync(config, userId, companyId, timeRange),
-            _ => throw new ArgumentException($"不支持的数据类型: {config.DataType}", nameof(config))
+            _ => throw new ArgumentException($"{ErrorCode.UnsupportedDataType}:{config.DataType}", nameof(config))
         };
     }
 
@@ -181,7 +181,7 @@ public class DataQueryService : IDataQueryService
             "trend" => await QueryStorageTrendAsync(config, userId, companyId, timeRange),
             "list" => await QueryStorageListAsync(config, userId, companyId, timeRange),
             "distribution" => await QueryStorageDistributionAsync(config, userId, companyId, timeRange),
-            _ => throw new ArgumentException($"不支持的数据类型: {config.DataType}", nameof(config))
+            _ => throw new ArgumentException($"{ErrorCode.UnsupportedDataType}:{config.DataType}", nameof(config))
         };
     }
 

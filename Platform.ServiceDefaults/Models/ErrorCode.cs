@@ -156,6 +156,18 @@ public static class ErrorCode
     /// <summary>生成预览失败</summary>
     public const string FilePreviewGenerationFailed = "FILE_PREVIEW_GENERATION_FAILED";
 
+    /// <summary>模块不能为空</summary>
+    public const string ModuleRequired = "MODULE_REQUIRED";
+
+    /// <summary>数据类型不能为空</summary>
+    public const string DataTypeRequired = "DATA_TYPE_REQUIRED";
+
+    /// <summary>不支持的模块</summary>
+    public const string UnsupportedModule = "UNSUPPORTED_MODULE";
+
+    /// <summary>不支持的数据类型</summary>
+    public const string UnsupportedDataType = "UNSUPPORTED_DATA_TYPE";
+
     // ──────────────────────────────────────────────
     // 角色/权限相关 (Role/Permission)
     // ──────────────────────────────────────────────
@@ -632,6 +644,10 @@ public static class ErrorCode
         [FilePreviewNotSupported] = "该文件类型不支持预览",
         [FilePreviewTypeNotSupported] = "不支持的预览类型",
         [FilePreviewGenerationFailed] = "生成预览失败",
+        [ModuleRequired] = "模块不能为空",
+        [DataTypeRequired] = "数据类型不能为空",
+        [UnsupportedModule] = "不支持的模块",
+        [UnsupportedDataType] = "不支持的数据类型",
         // 服务器
         [ServerError] = "服务器内部错误",
         // 公文

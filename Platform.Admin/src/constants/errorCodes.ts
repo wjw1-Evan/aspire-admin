@@ -148,6 +148,18 @@ export const FILE_PREVIEW_TYPE_NOT_SUPPORTED = 'FILE_PREVIEW_TYPE_NOT_SUPPORTED'
 /** 生成预览失败 */
 export const FILE_PREVIEW_GENERATION_FAILED = 'FILE_PREVIEW_GENERATION_FAILED';
 
+/** 模块不能为空 */
+export const MODULE_REQUIRED = 'MODULE_REQUIRED';
+
+/** 数据类型不能为空 */
+export const DATA_TYPE_REQUIRED = 'DATA_TYPE_REQUIRED';
+
+/** 不支持的模块 */
+export const UNSUPPORTED_MODULE = 'UNSUPPORTED_MODULE';
+
+/** 不支持的数据类型 */
+export const UNSUPPORTED_DATA_TYPE = 'UNSUPPORTED_DATA_TYPE';
+
 // ──────────────────────────────────────────────
 // 角色/权限相关 (Role/Permission)
 // ──────────────────────────────────────────────

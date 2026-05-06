@@ -9,7 +9,7 @@ builder.AddServiceDefaults();
 builder.Services.AddProblemDetails();
 
 // 注册平台数据库与基础设施服务 (DbContext, ITenantContext)
-builder.AddPlatformDatabase("mongodb");
+builder.AddPlatformDatabase();
 
 // Register services
 builder.Services.AddScoped<IDataInitializerService, DataInitializerService>();

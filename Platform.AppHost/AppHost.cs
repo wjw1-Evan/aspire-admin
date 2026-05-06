@@ -58,7 +58,8 @@ var redis = builder.AddRedis("redis")
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
     .WithReference(database)
     .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
-    .WithEnvironment("InternalService__ApiKey", internalServiceApiKey);
+    .WithEnvironment("InternalService__ApiKey", internalServiceApiKey)
+    .WithEnvironment("Database__Provider", dbProvider);
 
 // 系统监控功能已迁移到 Platform.ApiService (路由: /api/system-monitor)
 
@@ -66,6 +67,7 @@ var apiService = builder.AddProject<Projects.Platform_ApiService>("apiservice")
     .WithHttpEndpoint()
     .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
     .WithEnvironment("InternalService__ApiKey", internalServiceApiKey)
+    .WithEnvironment("Database__Provider", dbProvider)
     .WithReference(database)
     .WithReference(chat)
     .WithReference(redis)

@@ -38,9 +38,7 @@ public static class ServiceExtensions
 
             case "mongodb":
             default:
-                builder.AddMongoDbContext<PlatformDbContext>(
-                    connectionName,
-                    databaseName: builder.Configuration["Database:Name"] ?? "appdb");
+                builder.AddMongoDbContext<PlatformDbContext>(connectionName);
                 break;
         }
 

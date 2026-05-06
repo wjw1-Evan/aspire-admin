@@ -19,6 +19,10 @@ public class PlatformDbContext : DbContext
         : base(options)
     {
         _hmacProvider = hmacProvider;
+
+        // 禁用 MongoDB 事务以支持 standalone 服务器
+        // 生产环境应使用副本集以获得完整的事务支持
+        Database.AutoTransactionBehavior = Microsoft.EntityFrameworkCore.AutoTransactionBehavior.Never;
     }
 
     public static string? CurrentUserIdValue => _currentUserId.Value;

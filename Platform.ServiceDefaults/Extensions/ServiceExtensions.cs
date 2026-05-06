@@ -3,6 +3,9 @@ using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
+using Aspire.Microsoft.EntityFrameworkCore.SqlServer;
+using Aspire.Npgsql.EntityFrameworkCore.PostgreSQL;
+using Aspire.MongoDB.EntityFrameworkCore;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -20,7 +23,8 @@ public static class ServiceExtensions
         this IHostApplicationBuilder builder,
         string connectionName = "database")
     {
-        var dbProvider = builder.Configuration["Database:Provider"] ?? "mongodb";
+            var dbProvider = builder.Configuration["Database:Provider"]
+                ?? throw new InvalidOperationException("未配置数据库提供者。请在 appsettings.json 中设置 Database:Provider（mongodb/sqlserver/postgresql）。");
 
         switch (dbProvider.ToLowerInvariant())
         {

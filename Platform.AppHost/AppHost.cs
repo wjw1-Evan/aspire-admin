@@ -29,7 +29,8 @@ var chat = openai.AddModel("chat", modelName).WithHealthCheck();
 
 var environment = builder.Environment.EnvironmentName;
 
-var dbProvider = builder.Configuration["Database:Provider"] ?? "mongodb";
+        var dbProvider = builder.Configuration["Database:Provider"]
+            ?? throw new InvalidOperationException("未配置数据库提供者。请在 appsettings.json 中设置 Database:Provider（mongodb/sqlserver/postgresql）。");
 IResourceBuilder<IResourceWithConnectionString> database;
 
 if (dbProvider.Equals("sqlserver", StringComparison.OrdinalIgnoreCase))

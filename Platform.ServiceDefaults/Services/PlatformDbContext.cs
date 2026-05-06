@@ -79,7 +79,9 @@ public class PlatformDbContext : DbContext
                 if (entity is IIntegrityTrackable && _hmacProvider != null)
                 {
                     var keyFields = ExtractKeyFields(entity);
-                    var hmac = _hmacProvider.ComputeHmac(keyFields, companyId);
+                    // 将 companyId 作为数据的一部分，而不是密钥
+                    var dataToHash = string.IsNullOrEmpty(companyId) ? keyFields : $"{companyId}:{keyFields}";
+                    var hmac = _hmacProvider.ComputeHmac(dataToHash);
                     ((IIntegrityTrackable)entity).IntegrityHash = hmac;
                 }
 

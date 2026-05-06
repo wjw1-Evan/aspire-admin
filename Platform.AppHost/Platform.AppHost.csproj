@@ -21,7 +21,7 @@
     <PackageReference Include="Aspire.Hosting.MongoDB" Version="13.2.4" />
     <PackageReference Include="Aspire.Hosting.Redis" Version="13.2.4" />
     <PackageReference Include="Aspire.Hosting.Yarp" Version="13.2.4" />
-    <PackageReference Include="Scalar.Aspire" Version="0.9.32" />
+    <PackageReference Include="Scalar.Aspire" Version="0.9.34" />
     <PackageReference Include="Aspire.Hosting.OpenAI" Version="13.2.4" />
   </ItemGroup>
 

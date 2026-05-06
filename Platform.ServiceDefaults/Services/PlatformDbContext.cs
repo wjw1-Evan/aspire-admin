@@ -19,6 +19,7 @@ public class PlatformDbContext : DbContext
         : base(options)
     {
         _hmacProvider = hmacProvider;
+         Database.AutoTransactionBehavior = AutoTransactionBehavior.Never;
     }
 
     public static string? CurrentUserIdValue => _currentUserId.Value;
@@ -33,17 +34,6 @@ public class PlatformDbContext : DbContext
 
     private static List<Type>? _cachedEntityTypes;
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        base.OnConfiguring(optionsBuilder);
-
-        // 检测是否为副本集连接，如果不是则禁用事务
-        var connectionString = Database.GetConnectionString();
-        if (string.IsNullOrEmpty(connectionString) || !connectionString.Contains("replicaSet="))
-        {
-            Database.AutoTransactionBehavior = AutoTransactionBehavior.Never;
-        }
-    }
 
     public override int SaveChanges()
     {

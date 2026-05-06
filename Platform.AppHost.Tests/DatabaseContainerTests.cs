@@ -63,19 +63,6 @@ public class DatabaseContainerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 验证配置中包含数据库提供者设置
-    /// </summary>
-    [Fact]
-    public void DatabaseProvider_ShouldBeConfigured()
-    {
-        Assert.NotNull(_builder);
-        var provider = _builder.Configuration["Database:Provider"];
-        Assert.False(string.IsNullOrEmpty(provider),
-            "未找到 Database:Provider 配置，请检查 appsettings.json");
-        Assert.Equal("mongodb", provider);
-    }
-
-    /// <summary>
     /// 验证 Redis 资源在 AppHost 中配置
     /// </summary>
     [Fact]
@@ -180,19 +167,4 @@ public class DatabaseContainerTests : IAsyncLifetime
         Assert.True(found, "未找到 apigateway 资源");
     }
 
-    /// <summary>
-    /// 验证 Database:Provider 配置通过环境变量传递到子项目
-    /// </summary>
-    [Fact]
-    public void DatabaseProvider_ShouldBePassedToChildProjects()
-    {
-        Assert.NotNull(_builder);
-
-        var provider = _builder.Configuration["Database:Provider"];
-        Assert.False(string.IsNullOrEmpty(provider));
-
-        // 验证配置存在且有效
-        var supportedProviders = new[] { "mongodb" };
-        Assert.Contains(provider.ToLowerInvariant(), supportedProviders);
-    }
 }

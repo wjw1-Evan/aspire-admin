@@ -20,14 +20,6 @@ public static class ServiceExtensions
         this IHostApplicationBuilder builder,
         string connectionName = "database")
     {
-        var dbProvider = builder.Configuration["Database:Provider"]
-            ?? throw new InvalidOperationException("未配置数据库提供者。请在 appsettings.json 中设置 Database:Provider（mongodb）。");
-
-        if (dbProvider.ToLowerInvariant() != "mongodb")
-        {
-            throw new InvalidOperationException($"不支持的数据库提供者: {dbProvider}。本项目仅支持 mongodb。");
-        }
-
         builder.AddMongoDbContext<PlatformDbContext>(connectionName);
 
         builder.AddRedisClient( "redis");

@@ -304,7 +304,6 @@ dotnet run --project Platform.AppHost
 
 在 `Platform.AppHost/appsettings.json` 或 `appsettings.Development.json` 中配置：
 
-- **数据库配置**：`Database:Provider` 固定为 `mongodb`，使用 MongoDB 作为主要数据库
 - **OpenAI/Azure OpenAI**：配置 `Parameters:openai-openai-endpoint` 以解锁完整 AI 能力
 - **JWT 密钥**：配置 `Jwt:SecretKey` 用于身份认证（ApiService 与卫星服务需一致，通常由 AppHost 注入）
 - **服务间密钥**：可选配置 `InternalService:ApiKey`；未配置时 AppHost 会生成随机值并注入 ApiService

@@ -82,7 +82,7 @@ public static class MongoDBReplicaSetBuilderExtensions
                 var keyFileContent = builder.Resource.KeyFile.Value;
                 return Task.FromResult<IEnumerable<ContainerFileSystemItem>>(
                     [new ContainerFile { Name = "keyfile", Contents = keyFileContent, Mode = UnixFileMode.UserRead | UnixFileMode.UserWrite }]);
-            });
+            }, 0, 0, UnixFileMode.GroupRead | UnixFileMode.GroupWrite | UnixFileMode.GroupExecute | UnixFileMode.OtherRead | UnixFileMode.OtherWrite | UnixFileMode.OtherExecute);
 
         // 添加成员到副本集
         builder.Resource.AddMember(member.Resource, options);

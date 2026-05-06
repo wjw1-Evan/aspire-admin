@@ -1,7 +1,8 @@
 using System.Text.Json;
-using MongoDB.Bson;
-using MongoDB.Driver;
+using Microsoft.EntityFrameworkCore;
 using Platform.ServiceDefaults.Models;
+using Platform.ServiceDefaults.Services;
+using Platform.ApiService.Models;
 
 namespace Platform.DataInitializer.Services;
 
@@ -15,11 +16,11 @@ public interface IDataInitializerService
 /// 职责：加载 JSON 菜单数据、执行索引脚本、同步菜单
 /// </summary>
 public class DataInitializerService(
-    IMongoDatabase database,
+    PlatformDbContext context,
     ILogger<DataInitializerService> logger,
     ILoggerFactory loggerFactory) : IDataInitializerService
 {
-    private readonly IMongoDatabase _database = database;
+    private readonly PlatformDbContext _context = context;
     private readonly ILogger<DataInitializerService> _logger = logger;
     private readonly ILoggerFactory _loggerFactory = loggerFactory;
 
@@ -28,6 +29,8 @@ public class DataInitializerService(
         _logger.LogInformation("========== 开始数据初始化 ==========");
         try
         {
+            PlatformDbContext.SetContext("default", "system");
+
             await SyncMenusAsync();
             await EnsureDefaultXiaokeConfigAsync();
 
@@ -45,18 +48,18 @@ public class DataInitializerService(
         _logger.LogInformation("检查默认小科配置...");
 
         var defaultCompanyId = "default";
-        var collection = _database.GetCollection<XiaokeConfigInput>("XiaokeConfig");
 
-        var existing = await collection.Find(c => c.IsDefault == true && c.CompanyId == defaultCompanyId).FirstOrDefaultAsync();
+        var existing = await _context.Set<XiaokeConfig>()
+            .FirstOrDefaultAsync(c => c.IsDefault == true && c.CompanyId == defaultCompanyId);
+
         if (existing != null)
         {
             _logger.LogInformation("默认小科配置已存在，跳过创建");
             return;
         }
 
-        var config = new XiaokeConfigInput
+        var config = new XiaokeConfig
         {
-            Id = ObjectId.GenerateNewId().ToString(),
             CompanyId = defaultCompanyId,
             Name = "默认配置",
             Model = "gpt-4o-mini",
@@ -68,91 +71,71 @@ public class DataInitializerService(
             PresencePenalty = 0.0,
             IsEnabled = true,
             IsDefault = true,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
-            IsDeleted = false
         };
 
-        await collection.InsertOneAsync(config);
-        _logger.LogInformation("✅ 已创建默认小科配置: {Model}", config.Model);
-    }
+        await _context.Set<XiaokeConfig>().AddAsync(config);
+        await _context.SaveChangesAsync();
 
-    private class XiaokeConfigInput
-    {
-        public string Id { get; set; } = string.Empty;
-        public string CompanyId { get; set; } = string.Empty;
-        public string Name { get; set; } = string.Empty;
-        public string Model { get; set; } = string.Empty;
-        public string SystemPrompt { get; set; } = string.Empty;
-        public double Temperature { get; set; }
-        public int MaxTokens { get; set; }
-        public double TopP { get; set; }
-        public double FrequencyPenalty { get; set; }
-        public double PresencePenalty { get; set; }
-        public bool IsEnabled { get; set; }
-        public bool IsDefault { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
-        public bool IsDeleted { get; set; }
+        _logger.LogInformation("✅ 已创建默认小科配置: {Model}", config.Model);
     }
 
     private async Task SyncMenusAsync()
     {
         _logger.LogInformation("开始同步系统菜单...");
-        var menusCollection = _database.GetCollection<Menu>("Menu");
 
-        // 加载 JSON 数据
         var jsonPath = Path.Combine(AppContext.BaseDirectory, "Menus.json");
-        if (!File.Exists(jsonPath)) jsonPath = "Menus.json"; // 兜底
+        if (!File.Exists(jsonPath)) jsonPath = "Menus.json";
 
         var json = await File.ReadAllTextAsync(jsonPath);
         var expectedMenus = JsonSerializer.Deserialize<List<Menu>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
 
-        var menuMap = new Dictionary<string, string>(); // Name -> Id
+        var menuMap = new Dictionary<string, string>();
         var now = DateTime.UtcNow;
 
-        // 第一遍：创建或获取菜单，建立 ID 映射
         foreach (var menu in expectedMenus)
         {
-            // 🔒 修复：暂时保存并清空 ParentId。
-            // JSON 中的 ParentId 是父菜单的 Name 字符串，直接插入会导致 MongoDB ObjectId 序列化失败
             var parentName = menu.ParentId;
             menu.ParentId = null;
 
-            var existing = await menusCollection.Find(m => m.Name == menu.Name && m.IsDeleted != true).FirstOrDefaultAsync();
+            var existing = await _context.Set<Menu>()
+                .FirstOrDefaultAsync(m => m.Name == menu.Name && m.IsDeleted != true);
+
             if (existing == null)
             {
-                menu.CreatedAt = now;
-                await menusCollection.InsertOneAsync(menu);
+                _context.Set<Menu>().Add(menu);
+                await _context.SaveChangesAsync();
                 menuMap[menu.Name] = menu.Id;
                 _logger.LogInformation("✅ 创建菜单: {Title}", menu.Title);
             }
             else
             {
                 menuMap[menu.Name] = existing.Id;
-                // 更新菜单基本信息
-                var update = Builders<Menu>.Update
-                    .Set(m => m.Title, menu.Title)
-                    .Set(m => m.Path, menu.Path)
-                    .Set(m => m.Icon, menu.Icon)
-                    .Set(m => m.SortOrder, menu.SortOrder)
-                    .Set(m => m.UpdatedAt, now);
-                await menusCollection.UpdateOneAsync(m => m.Id == existing.Id, update);
+                existing.Title = menu.Title;
+                existing.Path = menu.Path;
+                existing.Icon = menu.Icon;
+                existing.SortOrder = menu.SortOrder;
+                existing.UpdatedAt = now;
+
+                await _context.SaveChangesAsync();
             }
 
-            // 还原 ParentId 用于第二遍关联映射
             menu.ParentId = parentName;
         }
 
-        // 第二遍：建立父子关联（ParentId 在数据库中存的是 ObjectId，但在 JSON 中是父菜单 Name）
         foreach (var menu in expectedMenus)
         {
             if (string.IsNullOrEmpty(menu.ParentId)) continue;
 
             if (menuMap.TryGetValue(menu.ParentId, out var parentId))
             {
-                var update = Builders<Menu>.Update.Set(m => m.ParentId, parentId);
-                await menusCollection.UpdateOneAsync(m => m.Name == menu.Name, update);
+                var menuToUpdate = await _context.Set<Menu>()
+                    .FirstOrDefaultAsync(m => m.Name == menu.Name && m.IsDeleted != true);
+
+                if (menuToUpdate != null && menuToUpdate.ParentId != parentId)
+                {
+                    menuToUpdate.ParentId = parentId;
+                    await _context.SaveChangesAsync();
+                }
             }
         }
 

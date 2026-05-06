@@ -41,17 +41,12 @@ var redis = builder.AddRedis("redis")
     .WithRedisInsight()
     .WithDataVolume();
 
-// 数据初始化服务（一次性任务，完成后自动停止）
+    // 数据初始化服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
-    .WithReference(mongodb)
-    .WaitFor(mongodb)
-   ;
 
 // 系统监控功能已迁移到 Platform.ApiService (路由: /api/system-monitor)
 
 var apiService = builder.AddProject<Projects.Platform_ApiService>("apiservice")
-    .WithReference(mongodb)
-    .WaitFor(mongodb)
     .WithHttpEndpoint()
     .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
     .WithEnvironment("InternalService__ApiKey", internalServiceApiKey)

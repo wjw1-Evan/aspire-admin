@@ -9,7 +9,7 @@ builder.AddServiceDefaults();
 // Add services to the container.
 builder.Services.AddProblemDetails();
 
-// ✅ 一键注册所有 MongoDB 相关服务 (IMongoClient, IMongoDatabase, DbContext)
+// 注册平台数据库与基础设施服务 (DbContext, ITenantContext)
 builder.AddPlatformDatabase("mongodb");
 
 // Register services

@@ -1,22 +1,17 @@
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
 using System.ComponentModel.DataAnnotations;
-
+ 
 namespace Platform.ServiceDefaults.Models;
-
+ 
 /// <summary>
-/// 基础实体类 - 所有微服务通用 (EFCore + MongoDB 兼容)
+/// 基础实体类 - 所有微服务通用 (EF Core)
 /// </summary>
-[BsonIgnoreExtraElements]
 public abstract class BaseEntity : IEntity, ISoftDeletable, ITimestamped, IOperationTrackable, IIntegrityTrackable
 {
     /// <summary>
-    /// 主键ID - MongoDB 自动生成
+    /// 主键ID - 自动生成
     /// </summary>
     [Key]
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
-    public string Id { get; set; } = MongoDB.Bson.ObjectId.GenerateNewId().ToString();
+    public string Id { get; set; } = Guid.NewGuid().ToString();
 
     /// <summary>
     /// 创建时间 - 自动设置 UTC 时间
@@ -41,19 +36,16 @@ public abstract class BaseEntity : IEntity, ISoftDeletable, ITimestamped, IOpera
     /// <summary>
     /// 删除者ID
     /// </summary>
-    [BsonRepresentation(BsonType.ObjectId)]
     public string? DeletedBy { get; set; }
 
     /// <summary>
     /// 创建者ID
     /// </summary>
-    [BsonRepresentation(BsonType.ObjectId)]
     public string? CreatedBy { get; set; }
 
     /// <summary>
     /// 更新者ID
     /// </summary>
-    [BsonRepresentation(BsonType.ObjectId)]
     public string? UpdatedBy { get; set; }
 
     /// <summary>
@@ -66,25 +58,10 @@ public abstract class BaseEntity : IEntity, ISoftDeletable, ITimestamped, IOpera
     /// </summary>
     public string? IntegrityHash { get; set; }
 
-    /// <summary>
-    /// 构造函数 - 生成新的ObjectId
-    /// </summary>
-    // protected BaseEntity()
-    // {
-    //     try
-    //     {
-    //         Id = ObjectId.GenerateNewId().ToString();
-    //     }
-    //     catch
-    //     {
-    //         // 如果ObjectId生成失败，使用GUID作为备选方案
-    //         Id = Guid.NewGuid().ToString("N");
-    //     }
-    // }
 }
 
 /// <summary>
-/// 多租户实体基类 - 包含企业隔离 (EFCore + MongoDB 兼容)
+/// 多租户实体基类 - 包含企业隔离 (EF Core)
 /// </summary>
 public abstract class MultiTenantEntity : BaseEntity, IMultiTenant
 {

@@ -1,6 +1,3 @@
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
-
 namespace Platform.ServiceDefaults.Models;
 
 /// <summary>
@@ -8,7 +5,6 @@ namespace Platform.ServiceDefaults.Models;
 /// 菜单不属于任何企业，通过权限控制显示，所有企业共享相同菜单
 /// v7.0: 统一模型定义，从 ApiService 和 DataInitializer 迁移到 ServiceDefaults
 /// </summary>
-[BsonIgnoreExtraElements]
 public class Menu : BaseEntity
 {
     /// <summary>
@@ -64,7 +60,6 @@ public class Menu : BaseEntity
     /// <summary>
     /// 父菜单ID
     /// </summary>
-    [BsonRepresentation(BsonType.ObjectId)]
     public string? ParentId { get; set; }
 }
 

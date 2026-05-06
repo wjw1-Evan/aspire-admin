@@ -1,8 +1,6 @@
 using System.Linq.Dynamic.Core;
 using System.Reflection;
 using System.Text.Json;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
 
 namespace Platform.ServiceDefaults.Extensions;
 
@@ -21,8 +19,7 @@ public static class QueryableExtensions
             var props = typeof(T).GetProperties()
                 .Where(x => x.CanRead
                     && x.GetIndexParameters().Length == 0
-                    && x.PropertyType == typeof(string)
-                    && !IsObjectIdRepresentation(x))
+                    && x.PropertyType == typeof(string))
                 .Select(x => x.Name)
                 .ToList();
 
@@ -89,11 +86,5 @@ public static class QueryableExtensions
         }
 
         return query.PageResult(page, pageSize);
-    }
-
-    private static bool IsObjectIdRepresentation(PropertyInfo prop)
-    {
-        var attr = prop.GetCustomAttribute<BsonRepresentationAttribute>();
-        return attr != null && attr.Representation == BsonType.ObjectId;
     }
 }

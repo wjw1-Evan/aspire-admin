@@ -1,7 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
 
 using Platform.ServiceDefaults.Models;
 
@@ -27,12 +25,10 @@ public class FileItem : MultiTenantEntity
     public string ParentId { get; set; } = string.Empty;
 
     /// <summary>文件项类型</summary>
-    [BsonRepresentation(BsonType.Int32)]
     public FileItemType Type { get; set; } = FileItemType.File;
 
     /// <summary>是否为文件夹（用于前端兼容）</summary>
     [NotMapped]
-    [BsonIgnore]
     public bool IsFolder => Type == FileItemType.Folder;
 
     /// <summary>文件大小（字节）</summary>
@@ -63,7 +59,6 @@ public class FileItem : MultiTenantEntity
     public int? DaysUntilPermanentDelete { get; set; }
 
     /// <summary>文件状态</summary>
-    [BsonRepresentation(BsonType.Int32)]
     public FileStatus Status { get; set; } = FileStatus.Active;
 
     /// <summary>文件元数据</summary>
@@ -99,11 +94,9 @@ public class FileShare : MultiTenantEntity
     public string ShareToken { get; set; } = string.Empty;
 
     /// <summary>分享类型</summary>
-    [BsonRepresentation(BsonType.Int32)]
     public ShareType Type { get; set; } = ShareType.Link;
 
     /// <summary>分享权限</summary>
-    [BsonRepresentation(BsonType.Int32)]
     public SharePermission Permission { get; set; } = SharePermission.View;
 
     /// <summary>过期时间</summary>

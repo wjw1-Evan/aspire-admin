@@ -15,7 +15,6 @@ using UserCompany = Platform.ApiService.Models.UserCompany;
 using OpenAI;
 using OpenAI.Chat;
 using Microsoft.Extensions.Options;
-using MongoDB.Bson;
 using Platform.ApiService.Workflows.Executors;
 
 namespace Platform.ApiService.Services;
@@ -116,7 +115,7 @@ public partial class WorkflowEngine : IWorkflowEngine
             }
         }
 
-        // 🔍 Diagnostic Audit: Find any empty strings in ObjectId fields
+        // 诊断审计：检查任何空字符串字段（可能导致数据库写入异常）
         void AuditObject(object? obj, string path)
         {
             if (obj == null) return;
@@ -143,10 +142,7 @@ public partial class WorkflowEngine : IWorkflowEngine
                     var val = p.GetValue(obj);
                     if (val is string s && s == string.Empty)
                     {
-                        var attr = p.GetCustomAttribute<MongoDB.Bson.Serialization.Attributes.BsonRepresentationAttribute>();
-                        // 仅对 ObjectId 映射字段报告空字符串（可能导致 MongoDB 写入异常），Condition 等业务空串为合法
-                        if (attr?.Representation == MongoDB.Bson.BsonType.ObjectId)
-                            _logger.LogError("[DIAGNOSTIC] Empty string in ObjectId field: {Path}.{Prop}", path, p.Name);
+                        _logger.LogError("[DIAGNOSTIC] Empty string in field: {Path}.{Prop}", path, p.Name);
                     }
                     else if (val != null && p.PropertyType.IsClass && p.PropertyType != typeof(string))
                     {

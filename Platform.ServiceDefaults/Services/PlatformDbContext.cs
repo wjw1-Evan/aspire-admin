@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using MongoDB.EntityFrameworkCore.Extensions;
 using Platform.ServiceDefaults.Models;
 using System.Reflection;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -20,7 +19,6 @@ public class PlatformDbContext : DbContext
         : base(options)
     {
         _hmacProvider = hmacProvider;
-        Database.AutoTransactionBehavior = AutoTransactionBehavior.Never;
     }
 
     public static string? CurrentUserIdValue => _currentUserId.Value;
@@ -120,7 +118,7 @@ public class PlatformDbContext : DbContext
             modelBuilder.Entity(type);
 
             var tableName = type.Name;
-            modelBuilder.Entity(type).ToCollection(tableName);
+            // EF Core 默认约定：表名 = 实体类名，兼容所有数据库提供者
 
             if (typeof(IMultiTenant).IsAssignableFrom(type) || typeof(ISoftDeletable).IsAssignableFrom(type))
             {

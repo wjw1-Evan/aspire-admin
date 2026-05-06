@@ -10,7 +10,7 @@ namespace Platform.ApiService.Extensions
     public static class SerializationExtensions
     {
         /// <summary>
-        /// 将 System.Text.Json.JsonElement 等不可直接序列化的类型转换为可被 MongoDB 驱动序列化的基础 CLR 类型。
+        /// 将 System.Text.Json.JsonElement 等不可直接序列化的类型转换为基础 CLR 类型。
         /// 同时递归处理字典与数组中的嵌套值。
         /// </summary>
         public static object? SanitizeForMongo(object? value)

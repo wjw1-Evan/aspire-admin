@@ -1,13 +1,11 @@
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
-using Platform.ServiceDefaults.Models;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
 
 /// <summary>
-/// 企业实体（EFCore + MongoDB 兼容）
+/// 企业实体（EF Core）
 /// 修复：使用基础实体类，简化软删除实现
 /// </summary>
 public class Company : BaseEntity

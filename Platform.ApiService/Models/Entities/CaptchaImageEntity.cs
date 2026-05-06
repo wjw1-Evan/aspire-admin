@@ -1,15 +1,10 @@
 using System.ComponentModel.DataAnnotations;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
-
 using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
 
 /// <summary>
 /// 图形验证码实体（全局资源，不属于任何企业）
-/// 使用 MongoDB TTL 索引自动清理过期验证码
-/// v6.1: 使用自定义集合名称修复命名规范问题
 /// </summary>
 public class CaptchaImage : BaseEntity
 {

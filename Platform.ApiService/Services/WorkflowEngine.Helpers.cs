@@ -1,6 +1,5 @@
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
-using MongoDB.Bson;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -207,11 +206,11 @@ public partial class WorkflowEngine
     }
 
     /// <summary>
-    /// Bug 12 修复：生成合法的 MongoDB ObjectId
+    /// 生成新的唯一标识
     /// </summary>
     private string GenerateSafeId()
     {
-        return ObjectId.GenerateNewId().ToString();
+        return Guid.NewGuid().ToString();
     }
 
     /// <summary>

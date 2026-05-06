@@ -1,6 +1,3 @@
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
-
 using Platform.ServiceDefaults.Models;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -157,7 +154,6 @@ public class NodeConfig
 
 public class ApprovalConfig
 {
-    [BsonRepresentation(BsonType.String)]
     public ApprovalType Type { get; set; } = ApprovalType.All;
 
     public List<ApproverRule> Approvers { get; set; } = new();
@@ -175,7 +171,6 @@ public class ApprovalConfig
 
 public class ApproverRule
 {
-    [BsonRepresentation(BsonType.String)]
     public ApproverType Type { get; set; }
 
     public string? UserId { get; set; }
@@ -259,8 +254,6 @@ public class WorkflowDefinition : MultiTenantEntity
     public WorkflowAnalytics Analytics { get; set; } = new();
 
     public WorkflowValidationResult? ValidationResult { get; set; }
-
-    [BsonRepresentation(BsonType.ObjectId)]
     public string? TemplateId { get; set; }
 
     public string? TemplateVersion { get; set; }

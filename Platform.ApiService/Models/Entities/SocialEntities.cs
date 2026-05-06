@@ -1,6 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
 using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
@@ -13,7 +11,6 @@ public class UserLocationBeacon : MultiTenantEntity
     /// <summary>
     /// 用户标识。
     /// </summary>
-    [BsonRepresentation(BsonType.ObjectId)]
     [Required]
     public string UserId { get; set; } = string.Empty;
 

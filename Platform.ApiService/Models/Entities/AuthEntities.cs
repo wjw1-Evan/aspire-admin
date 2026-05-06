@@ -1,5 +1,3 @@
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
 using System.ComponentModel.DataAnnotations;
 using Platform.ServiceDefaults.Models;
 using System.ComponentModel.DataAnnotations.Schema;

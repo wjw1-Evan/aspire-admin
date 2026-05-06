@@ -1,5 +1,5 @@
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
+
+
 using Platform.ServiceDefaults.Models;
 using System.Text.Json.Serialization;
 
@@ -23,14 +23,12 @@ public class AppNotification : MultiTenantEntity
     /// <summary>
     /// 通知分类
     /// </summary>
-    [BsonRepresentation(BsonType.String)]
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public NotificationCategory Category { get; set; } = NotificationCategory.System;
 
     /// <summary>
     /// 提醒级别
     /// </summary>
-    [BsonRepresentation(BsonType.String)]
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public NotificationLevel Level { get; set; } = NotificationLevel.Info;
 

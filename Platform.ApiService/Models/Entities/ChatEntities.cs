@@ -1,8 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.IO;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
 using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
@@ -61,14 +59,12 @@ public class ChatAttachment : MultiTenantEntity
     /// </summary>
     [Required]
     [StringLength(100)]
-    [BsonRepresentation(BsonType.ObjectId)]
     public string SessionId { get; set; } = string.Empty;
 
     /// <summary>
     /// 关联消息标识
     /// </summary>
     [StringLength(100)]
-    [BsonRepresentation(BsonType.ObjectId)]
     public string? MessageId { get; set; }
 
     /// <summary>
@@ -193,7 +189,6 @@ public class ChatMessage : MultiTenantEntity
     /// </summary>
     [Required]
     [StringLength(100)]
-    [BsonRepresentation(BsonType.ObjectId)]
     public string SessionId { get; set; } = string.Empty;
 
     /// <summary>
@@ -218,7 +213,6 @@ public class ChatMessage : MultiTenantEntity
     /// <summary>
     /// 消息类型
     /// </summary>
-    [BsonRepresentation(BsonType.String)]
     public ChatMessageType Type { get; set; } = ChatMessageType.Text;
 
     /// <summary>

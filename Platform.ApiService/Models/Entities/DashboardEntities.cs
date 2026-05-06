@@ -1,5 +1,5 @@
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
+
+
 
 using Platform.ServiceDefaults.Models;
 
@@ -41,7 +41,6 @@ public class Dashboard : MultiTenantEntity
 public class DashboardCard : BaseEntity
 {
     /// <summary>所属看板ID</summary>
-    [BsonRepresentation(BsonType.ObjectId)]
     public string DashboardId { get; set; } = string.Empty;
 
     /// <summary>卡片类型：statistic-统计/chart-图表/table-表格/progress-进度/text-文本/image-图片</summary>
@@ -195,7 +194,6 @@ public class ReorderCardsRequest
 public class CardPosition
 {
     /// <summary>卡片ID</summary>
-    [BsonRepresentation(BsonType.ObjectId)]
     public string Id { get; set; } = string.Empty;
 
     /// <summary>X坐标</summary>
@@ -217,7 +215,6 @@ public class CardPosition
 public class DashboardDto
 {
     /// <summary>看板ID</summary>
-    [BsonRepresentation(BsonType.ObjectId)]
     public string Id { get; set; } = string.Empty;
 
     /// <summary>看板名称</summary>
@@ -254,7 +251,6 @@ public class DashboardDto
 public class DashboardCardDto
 {
     /// <summary>卡片ID</summary>
-    [BsonRepresentation(BsonType.ObjectId)]
     public string Id { get; set; } = string.Empty;
 
     /// <summary>卡片类型</summary>
@@ -339,7 +335,6 @@ public class CardDataResponse
     public class DashboardVersion : BaseEntity
     {
         /// <summary>所属看板ID</summary>
-        [BsonRepresentation(BsonType.ObjectId)]
         public string DashboardId { get; set; } = string.Empty;
 
         /// <summary>版本号（从1开始递增）</summary>

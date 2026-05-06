@@ -1,6 +1,3 @@
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
-
 using Platform.ServiceDefaults.Models;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
@@ -78,7 +75,7 @@ public class WorkflowInstance : MultiTenantEntity
     }
 
     /// <summary>
-    /// 移除指定节点的活跃审批人 (改为清空列表而不是移除对象，防止 EF Core / MongoDB 追踪错误)
+    /// 移除指定节点的活跃审批人 (改为清空列表而不是移除对象，防止 EF Core 追踪错误)
     /// </summary>
     public void RemoveActiveApprovers(string nodeId)
     {
@@ -104,7 +101,6 @@ public class WorkflowInstance : MultiTenantEntity
     /// <summary>
     /// 关联流程定义ID
     /// </summary>
-    [BsonRepresentation(BsonType.ObjectId)]
     public string WorkflowDefinitionId 
     { 
         get => _workflowDefinitionId; 
@@ -115,7 +111,6 @@ public class WorkflowInstance : MultiTenantEntity
     /// <summary>
     /// 关联公文ID
     /// </summary>
-    [BsonRepresentation(BsonType.ObjectId)]
     public string? DocumentId 
     { 
         get => _documentId; 
@@ -125,7 +120,6 @@ public class WorkflowInstance : MultiTenantEntity
     /// <summary>
     /// 流程状态
     /// </summary>
-    [BsonRepresentation(BsonType.String)]
     public WorkflowStatus Status { get; set; } = WorkflowStatus.Running;
 
     /// <summary>

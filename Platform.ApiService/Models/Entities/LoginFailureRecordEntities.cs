@@ -1,5 +1,5 @@
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
+
+
 
 using Platform.ServiceDefaults.Models;
 
@@ -8,7 +8,6 @@ namespace Platform.ApiService.Models;
 /// <summary>
 /// 登录/注册失败记录实体（全局资源，不属于任何企业）
 /// 用于记录用户登录或注册失败次数，失败后要求验证码
-/// 使用 MongoDB TTL 索引自动清理过期记录
 /// </summary>
 public class LoginFailureRecord : BaseEntity
 {

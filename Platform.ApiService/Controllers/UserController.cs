@@ -263,7 +263,7 @@ public class UserController : BaseApiController
     [HttpGet("me/activity-logs/{logId}")]
     public async Task<IActionResult> GetCurrentUserActivityLogById(string logId)
     {
-        if (!MongoDB.Bson.ObjectId.TryParse(logId, out _))
+        // 日志ID现在为 Guid 字符串格式，直接比较即可
             throw new ArgumentException("日志ID格式不正确");
         var log = await _activityLogService.GetCurrentUserActivityLogByIdAsync(RequiredUserId, logId);
         if (log == null) throw new KeyNotFoundException("日志不存在");

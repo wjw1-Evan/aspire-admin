@@ -1,5 +1,3 @@
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
 using Platform.ServiceDefaults.Models;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -7,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Platform.ApiService.Models;
 
 /// <summary>
-/// 角色实体 (EFCore + MongoDB 兼容)
+/// 角色实体 (EF Core)
 /// </summary>
 public class Role : MultiTenantEntity
 {

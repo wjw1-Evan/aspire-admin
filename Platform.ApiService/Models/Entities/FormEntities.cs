@@ -1,5 +1,3 @@
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
 
 using Platform.ServiceDefaults.Models;
 using System;
@@ -69,7 +67,6 @@ public class FormField
     public string Label { get; set; } = string.Empty;
 
     /// <summary>字段类型</summary>
-    [BsonRepresentation(BsonType.String)]
     [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
     public FormFieldType Type { get; set; } = FormFieldType.Text;
 
@@ -131,11 +128,9 @@ public class FormValidationRule
 public class FormBinding
 {
     /// <summary>表单定义ID</summary>
-    [BsonRepresentation(BsonType.ObjectId)]
     public string? FormDefinitionId { get; set; }
 
     /// <summary>目标（文档或实例变量）</summary>
-    [BsonRepresentation(BsonType.String)]
     public FormTarget Target { get; set; } = FormTarget.Document;
 
     /// <summary>在目标中存储的键（若为空则使用字段自身的 dataKey）</summary>

@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using MongoDB.Bson;
 using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
@@ -208,7 +207,7 @@ public class OrganizationService : IOrganizationService
 
     private async Task<AppUser?> FindUserByIdOrUsernameAsync(string userIdOrName)
     {
-        if (!string.IsNullOrWhiteSpace(userIdOrName) && ObjectId.TryParse(userIdOrName, out _))
+        if (!string.IsNullOrWhiteSpace(userIdOrName))
         {
             var u = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == userIdOrName);
             if (u != null) return u;

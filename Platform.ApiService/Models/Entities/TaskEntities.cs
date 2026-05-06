@@ -1,5 +1,3 @@
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
 
 using Platform.ServiceDefaults.Models;
 using System;
@@ -23,15 +21,12 @@ public class WorkTask : MultiTenantEntity
     public string TaskType { get; set; } = string.Empty;
 
     /// <summary>任务状态</summary>
-    [BsonRepresentation(BsonType.Int32)]
     public TaskStatus Status { get; set; } = TaskStatus.Pending;
 
     /// <summary>优先级</summary>
-    [BsonRepresentation(BsonType.Int32)]
     public TaskPriority Priority { get; set; } = TaskPriority.Medium;
 
     /// <summary>分配给的用户ID</summary>
-    [BsonRepresentation(BsonType.ObjectId)]
     public string? AssignedTo { get; set; }
 
     /// <summary>分配时间</summary>
@@ -56,7 +51,6 @@ public class WorkTask : MultiTenantEntity
     public int? ActualDuration { get; set; }
 
     /// <summary>执行结果</summary>
-    [BsonRepresentation(BsonType.Int32)]
     public TaskExecutionResult ExecutionResult { get; set; } = TaskExecutionResult.NotExecuted;
 
     /// <summary>完成百分比 (0-100)</summary>
@@ -75,11 +69,9 @@ public class WorkTask : MultiTenantEntity
     public List<TaskAttachment> Attachments { get; set; } = new();
 
     /// <summary>所属项目ID（可选，支持独立任务）</summary>
-    [BsonRepresentation(BsonType.ObjectId)]
     public string? ProjectId { get; set; }
 
     /// <summary>父任务ID（可选，支持任务层级结构）</summary>
-    [BsonRepresentation(BsonType.ObjectId)]
     public string? ParentTaskId { get; set; }
 
     /// <summary>排序顺序（用于任务树排序）</summary>
@@ -119,11 +111,9 @@ public class TaskAttachment
 public class TaskExecutionLog : MultiTenantEntity
 {
     /// <summary>任务ID</summary>
-    [BsonRepresentation(BsonType.ObjectId)]
     public string TaskId { get; set; } = string.Empty;
 
     /// <summary>执行者ID</summary>
-    [BsonRepresentation(BsonType.ObjectId)]
     public string ExecutedBy { get; set; } = string.Empty;
 
     /// <summary>执行开始时间</summary>
@@ -133,7 +123,6 @@ public class TaskExecutionLog : MultiTenantEntity
     public DateTime? EndTime { get; set; }
 
     /// <summary>执行状态</summary>
-    [BsonRepresentation(BsonType.Int32)]
     public TaskExecutionResult Status { get; set; } = TaskExecutionResult.NotExecuted;
 
     /// <summary>执行消息</summary>

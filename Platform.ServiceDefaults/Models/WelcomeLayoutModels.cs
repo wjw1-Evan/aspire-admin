@@ -1,5 +1,3 @@
-using MongoDB.Bson.Serialization.Attributes;
-
 namespace Platform.ServiceDefaults.Models;
 
 /// <summary>

@@ -1,10 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using MongoDB.EntityFrameworkCore.Extensions;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
-using Aspire.MongoDB.EntityFrameworkCore;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -15,23 +13,22 @@ namespace Microsoft.Extensions.DependencyInjection;
 public static class ServiceExtensions
 {
     /// <summary>
-    /// 一键注册平台所有数据库与基础设施服务。
+    /// 一键注册平台所有基础设施服务（不包含数据库提供者特定注册）。
     /// <list type="bullet">
-    ///   <item>IMongoClient + IMongoDatabase（Aspire 自动注册）</item>
-    ///   <item>PlatformDbContext（EF Core + MongoDB Provider）- 服务层直接使用</item>
-/// <item>ITenantContext（多租户上下文 - 薄封装，委托给 PlatformDbContext.AsyncLocal）</item>
-    ///   <item>IFileStorageFactory（文件存储 / GridFS）</item>
-    ///   <item>MongoDB 全局约定（IgnoreExtraElements + CamelCase）</item>
+    ///   <item>PlatformDbContext - 需在调用方使用具体 EF Core 提供者注册</item>
+    ///   <item>ITenantContext（多租户上下文 - 薄封装，委托给 PlatformDbContext.AsyncLocal）</item>
+    ///   <item>IFileStorageFactory（文件存储 - 需配合具体存储实现）</item>
     /// </list>
     /// </summary>
     public static IHostApplicationBuilder AddPlatformDatabase(this IHostApplicationBuilder builder, string connectionName = "mongodb")
     {
-        // ── Aspire 组件 ──────────────────────────────────
-        // 自动从 AppHost 资源解析连接信息并注册：
-        // 1. IMongoClient / IMongoDatabase (提供给 GridFS / Native Driver)
-        // 2. PlatformDbContext (提供给 Entity Framework Core)
-        builder.AddMongoDBClient(connectionName);
-        builder.AddMongoDbContext<PlatformDbContext>(connectionName);
+        // ── 数据库注册 ──────────────────────────────────
+        // 调用者需要在自己的项目中注册 PlatformDbContext，使用合适的 EF Core 提供者
+        // 示例 (MongoDB): builder.Services.AddDbContext<PlatformDbContext>(options => options.UseMongoDB(connectionString));
+        // 示例 (SQL Server): builder.Services.AddDbContext<PlatformDbContext>(options => options.UseSqlServer(connectionString));
+        // 
+        // 如需使用 GridFS 文件存储，可保留 MongoDB 客户端注册：
+        // builder.AddMongoDBClient(connectionName);
         builder.AddRedisClient(connectionName: "redis");
 
 

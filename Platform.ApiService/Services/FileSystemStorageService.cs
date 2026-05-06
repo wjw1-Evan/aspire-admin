@@ -310,7 +310,7 @@ public class FileSystemStorageService
         else
         {
             var bucketDirs = Directory.GetDirectories(_baseStoragePath);
-            bucketsToCheck.AddRange(bucketDirs.Select(Path.GetFileName));
+            bucketsToCheck.AddRange(bucketDirs.Select(Path.GetFileName).Where(x => x != null)!);
         }
 
         foreach (var bn in bucketsToCheck)

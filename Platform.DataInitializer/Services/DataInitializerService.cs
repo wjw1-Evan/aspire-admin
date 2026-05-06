@@ -2,7 +2,6 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
-using Platform.ApiService.Models;
 
 namespace Platform.DataInitializer.Services;
 
@@ -32,7 +31,6 @@ public class DataInitializerService(
             PlatformDbContext.SetContext("default", "system");
 
             await SyncMenusAsync();
-            await EnsureDefaultXiaokeConfigAsync();
 
             _logger.LogInformation("========== 数据初始化完成 ==========");
         }
@@ -41,42 +39,6 @@ public class DataInitializerService(
             _logger.LogError(ex, "❌ 数据初始化过程中发生错误");
             throw;
         }
-    }
-
-    private async Task EnsureDefaultXiaokeConfigAsync()
-    {
-        _logger.LogInformation("检查默认小科配置...");
-
-        var defaultCompanyId = "default";
-
-        var existing = await _context.Set<XiaokeConfig>()
-            .FirstOrDefaultAsync(c => c.IsDefault == true && c.CompanyId == defaultCompanyId);
-
-        if (existing != null)
-        {
-            _logger.LogInformation("默认小科配置已存在，跳过创建");
-            return;
-        }
-
-        var config = new XiaokeConfig
-        {
-            CompanyId = defaultCompanyId,
-            Name = "默认配置",
-            Model = "gpt-4o-mini",
-            SystemPrompt = "你是小科，请使用简体中文提供简洁、专业且友好的回复。",
-            Temperature = 0.7,
-            MaxTokens = 2000,
-            TopP = 1.0,
-            FrequencyPenalty = 0.0,
-            PresencePenalty = 0.0,
-            IsEnabled = true,
-            IsDefault = true,
-        };
-
-        await _context.Set<XiaokeConfig>().AddAsync(config);
-        await _context.SaveChangesAsync();
-
-        _logger.LogInformation("✅ 已创建默认小科配置: {Model}", config.Model);
     }
 
     private async Task SyncMenusAsync()

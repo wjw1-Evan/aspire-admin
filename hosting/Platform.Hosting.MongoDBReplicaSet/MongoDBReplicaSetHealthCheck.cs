@@ -1,3 +1,4 @@
+using Aspire.Hosting.ApplicationModel;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
@@ -7,18 +8,24 @@ namespace Platform.Hosting.MongoDBReplicaSet;
 
 /// <summary>
 /// MongoDB 副本集健康检查
+/// 验证副本集是否已初始化且有 PRIMARY 节点
 /// </summary>
 public class MongoDBReplicaSetHealthCheck : IHealthCheck
 {
-    private readonly IMongoDatabase _adminDatabase;
+    private readonly MongoDBReplicaSetResource _resource;
+    private readonly ResourceNotificationService _notificationService;
     private readonly ILogger<MongoDBReplicaSetHealthCheck> _logger;
 
     /// <summary>
     /// 初始化副本集健康检查
     /// </summary>
-    public MongoDBReplicaSetHealthCheck(IMongoDatabase adminDatabase, ILogger<MongoDBReplicaSetHealthCheck> logger)
+    public MongoDBReplicaSetHealthCheck(
+        MongoDBReplicaSetResource resource,
+        ResourceNotificationService notificationService,
+        ILogger<MongoDBReplicaSetHealthCheck> logger)
     {
-        _adminDatabase = adminDatabase;
+        _resource = resource;
+        _notificationService = notificationService;
         _logger = logger;
     }
 
@@ -29,47 +36,47 @@ public class MongoDBReplicaSetHealthCheck : IHealthCheck
     {
         try
         {
-            // 执行 replSetGetStatus 命令
-            var command = new BsonDocument { { "replSetGetStatus", 1 } };
-            var result = await _adminDatabase.RunCommandAsync<BsonDocument>(command, readPreference: null, cancellationToken);
-
-            var isOk = result["ok"].ToBoolean();
-            if (!isOk)
+            if (_resource.Members.Count == 0)
             {
-                return HealthCheckResult.Unhealthy("Failed to get replica set status.");
+                return HealthCheckResult.Unhealthy("副本集没有成员");
             }
 
-            bool hasPrimary = false, hasHealthy = false, hasUnhealthy = false;
-            foreach (var member in result["members"].AsBsonArray)
+            var firstMember = _resource.Members.Keys.First();
+            var connectionString = await firstMember.ConnectionStringExpression.GetValueAsync(cancellationToken);
+
+            if (string.IsNullOrEmpty(connectionString))
             {
-                var state = member["state"].AsInt32;
-                var isHealthy = member["health"].ToBoolean() && state is 1 or 2;
-                hasPrimary |= state == 1;
-                hasHealthy |= isHealthy;
-                hasUnhealthy |= !isHealthy;
+                return HealthCheckResult.Unhealthy("无法获取连接字符串");
             }
 
-            if (!hasPrimary)
+            var urlBuilder = new MongoUrlBuilder(connectionString) { DirectConnection = true };
+            var mongoClient = new MongoClient(urlBuilder.ToMongoUrl());
+
+            // 先尝试连接
+            await mongoClient.ListDatabaseNamesAsync(cancellationToken);
+
+            var adminDb = mongoClient.GetDatabase("admin");
+
+            // 检查副本集状态
+            var helloCmd = new BsonDocument { { "hello", 1 } };
+            var result = await adminDb.RunCommandAsync<BsonDocument>(helloCmd, readPreference: null, cancellationToken);
+
+            if (result.TryGetValue("isMaster", out var isMaster) && isMaster.AsBoolean)
             {
-                return HealthCheckResult.Unhealthy("No primary member found.");
+                return HealthCheckResult.Healthy("副本集 PRIMARY 已就绪");
             }
 
-            if (!hasHealthy)
+            if (result.TryGetValue("setName", out var setName))
             {
-                return HealthCheckResult.Unhealthy("No healthy members found.");
+                return HealthCheckResult.Degraded($"副本集 {setName} 已初始化，但尚未选出 PRIMARY");
             }
 
-            if (hasUnhealthy)
-            {
-                return HealthCheckResult.Degraded("Some members are unhealthy.");
-            }
-
-            return HealthCheckResult.Healthy("All members of the replica set are healthy.");
+            return HealthCheckResult.Unhealthy("副本集未初始化");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error checking replica set health.");
-            return HealthCheckResult.Unhealthy("Error checking replica set health.", ex);
+            _logger.LogDebug(ex, "副本集健康检查失败");
+            return HealthCheckResult.Unhealthy($"副本集健康检查失败: {ex.Message}");
         }
     }
 }

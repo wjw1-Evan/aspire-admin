@@ -52,6 +52,7 @@ var redis = builder.AddRedis("redis")
 // 数据初始化服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
     .WithReference(database)
+    .WaitFor(mongoReplicaSet)
     .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
     .WithEnvironment("InternalService__ApiKey", internalServiceApiKey);
 
@@ -64,6 +65,7 @@ var apiService = builder.AddProject<Projects.Platform_ApiService>("apiservice")
     .WithReference(database)
     .WithReference(chat)
     .WithReference(redis)
+    .WaitFor(mongoReplicaSet)
     .WaitFor(redis)
     .WithReplicas(3)
     ;

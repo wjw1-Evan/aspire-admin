@@ -1,7 +1,6 @@
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
-using Aspire.Hosting.Eventing;
-using Aspire.Hosting.Lifecycle;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -9,32 +8,40 @@ using MongoDB.Driver;
 namespace Platform.Hosting.MongoDBReplicaSet;
 
 /// <summary>
-/// MongoDB 副本集事件订阅器
+/// MongoDB 副本集初始化器
+/// 在成员资源就绪后初始化副本集
 /// </summary>
-internal class MongoDBReplicaSetEventingSubscriber(
-    ResourceNotificationService notification,
-    ILogger<MongoDBReplicaSetEventingSubscriber> logger) : IDistributedApplicationEventingSubscriber
+internal class MongoDBReplicaSetInitializer
 {
-    /// <summary>
-    /// 订阅事件
-    /// </summary>
-    public Task SubscribeAsync(IDistributedApplicationEventing eventing, DistributedApplicationExecutionContext context, CancellationToken cancellationToken)
-    {
-        eventing.Subscribe<BeforeStartEvent>(async (@event, ct) =>
-        {
-            foreach (var replicaSet in @event.Model.Resources.OfType<MongoDBReplicaSetResource>())
-            {
-                await InitializeReplicaSetAsync(replicaSet, notification, logger, ct);
-            }
-        });
+    private static readonly SemaphoreSlim _initLock = new(1, 1);
 
-        return Task.CompletedTask;
+    /// <summary>
+    /// 初始化副本集（幂等操作）
+    /// </summary>
+    public static async Task InitializeAsync(
+        MongoDBReplicaSetResource replicaSet,
+        ResourceNotificationService notification,
+        ILogger logger,
+        CancellationToken cancellationToken)
+    {
+        // 使用锁确保只初始化一次
+        if (!await _initLock.WaitAsync(TimeSpan.Zero, cancellationToken))
+        {
+            logger.LogInformation("副本集 '{ReplicaSetName}' 初始化已在进行中，跳过", replicaSet.ReplicaSetName);
+            return;
+        }
+
+        try
+        {
+            await InitializeCoreAsync(replicaSet, notification, logger, cancellationToken);
+        }
+        finally
+        {
+            _initLock.Release();
+        }
     }
 
-    /// <summary>
-    /// 初始化副本集
-    /// </summary>
-    private static async Task InitializeReplicaSetAsync(
+    private static async Task InitializeCoreAsync(
         MongoDBReplicaSetResource replicaSet,
         ResourceNotificationService notification,
         ILogger logger,
@@ -43,9 +50,6 @@ internal class MongoDBReplicaSetEventingSubscriber(
         try
         {
             await notification.PublishUpdateAsync(replicaSet, s => s with { State = "Initializing" });
-
-            // 等待所有成员就绪（依赖的 MongoDB 容器已启动且健康）
-            await notification.WaitForDependenciesAsync(replicaSet, cancellationToken);
 
             if (replicaSet.Members.Count == 0)
             {
@@ -64,7 +68,6 @@ internal class MongoDBReplicaSetEventingSubscriber(
                 return;
             }
 
-            // 使用直连模式连接，保留原始认证信息
             var urlBuilder = new MongoUrlBuilder(connectionString)
             {
                 DirectConnection = true
@@ -72,21 +75,18 @@ internal class MongoDBReplicaSetEventingSubscriber(
 
             var mongoClient = new MongoClient(urlBuilder.ToMongoUrl());
 
-            // 先验证连接可用
             try
             {
                 await mongoClient.ListDatabaseNamesAsync(cancellationToken);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "副本集 '{ReplicaSetName}' 连接失败，请检查 MongoDB 是否正常运行", replicaSet.ReplicaSetName);
+                logger.LogError(ex, "副本集 '{ReplicaSetName}' 连接失败", replicaSet.ReplicaSetName);
                 await notification.PublishUpdateAsync(replicaSet, s => s with { State = "Failed" });
                 return;
             }
 
             var adminDb = mongoClient.GetDatabase("admin");
-
-            // 使用成员的 Aspire 资源名称作为主机名（Docker 网络中可通过资源名访问）
             var initiateCmd = BuildInitiateCommand(replicaSet);
 
             try
@@ -105,9 +105,7 @@ internal class MongoDBReplicaSetEventingSubscriber(
                 return;
             }
 
-            // 等待 PRIMARY 选举完成
             await WaitForPrimaryElectionAsync(adminDb, replicaSet.ReplicaSetName, logger, cancellationToken);
-
             await notification.PublishUpdateAsync(replicaSet, s => s with { State = "Running" });
         }
         catch (Exception ex)
@@ -117,9 +115,6 @@ internal class MongoDBReplicaSetEventingSubscriber(
         }
     }
 
-    /// <summary>
-    /// 构建 rs.initiate 命令
-    /// </summary>
     private static BsonDocument BuildInitiateCommand(MongoDBReplicaSetResource replicaSet)
     {
         var members = replicaSet.Members.Select((kv, index) => new BsonDocument
@@ -140,16 +135,13 @@ internal class MongoDBReplicaSetEventingSubscriber(
         };
     }
 
-    /// <summary>
-    /// 等待 PRIMARY 选举
-    /// </summary>
     private static async Task WaitForPrimaryElectionAsync(
         IMongoDatabase adminDb,
         string replicaSetName,
         ILogger logger,
         CancellationToken cancellationToken)
     {
-        var maxAttempts = 30;
+        var maxAttempts = 20;
         var attempt = 0;
 
         while (attempt < maxAttempts && !cancellationToken.IsCancellationRequested)
@@ -166,13 +158,13 @@ internal class MongoDBReplicaSetEventingSubscriber(
                 }
 
                 attempt++;
-                await Task.Delay(3_000, cancellationToken);
+                await Task.Delay(2_000, cancellationToken);
             }
             catch (Exception ex)
             {
                 logger.LogWarning(ex, "副本集 '{ReplicaSetName}' 第 {Attempt} 次检查 PRIMARY 状态失败", replicaSetName, attempt + 1);
                 attempt++;
-                await Task.Delay(3_000, cancellationToken);
+                await Task.Delay(2_000, cancellationToken);
             }
         }
 

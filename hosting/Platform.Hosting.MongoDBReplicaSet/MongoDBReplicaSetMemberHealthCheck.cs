@@ -5,19 +5,18 @@ namespace Platform.Hosting.MongoDBReplicaSet;
 
 /// <summary>
 /// MongoDB 副本集成员健康检查
+/// 注意：成员健康检查由 Aspire 默认的 MongoDB 健康检查处理，
+/// 此类仅作为后备。实际成员就绪性由 builder.WaitFor(member) 保证。
 /// </summary>
-public class MongoDBReplicaSetMemberHealthCheck(ILogger<MongoDBReplicaSetMemberHealthCheck> logger) : IHealthCheck
+public class MongoDBReplicaSetMemberHealthCheck : IHealthCheck
 {
-    private const int MaxPingAttempts = 2;
-
     /// <summary>
     /// 执行健康检查
     /// </summary>
-    public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
+    public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
-        // 注意：这个健康检查会在 MongoDBReplicaSetEventingSubscriber 中配置
-        // 实际的 MongoDB 客户端会通过依赖注入提供
-        // 这里我们返回 Healthy，因为实际的连接检查会在事件订阅器中处理
-        return await Task.FromResult(HealthCheckResult.Healthy("MongoDB replica set member is ready"));
+        // 成员就绪性由 builder.WaitFor(member) 机制保证
+        // 默认的 MongoDB 健康检查已验证连接可用性
+        return Task.FromResult(HealthCheckResult.Healthy("MongoDB replica set member is ready"));
     }
 }

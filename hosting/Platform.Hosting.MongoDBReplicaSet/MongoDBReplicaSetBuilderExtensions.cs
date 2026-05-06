@@ -1,4 +1,3 @@
-using System.IO;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,7 +23,6 @@ public static class MongoDBReplicaSetBuilderExtensions
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(name);
 
-        // KeyFile 在启用认证 + 副本集时是必需的
         var keyFile = keyFileParameter?.Resource
             ?? ParameterResourceBuilderExtensions.CreateDefaultPasswordParameter(builder, $"{name}-keyfile");
 
@@ -37,7 +35,6 @@ public static class MongoDBReplicaSetBuilderExtensions
                 Properties = []
             });
 
-        // 注册副本集级别的健康检查
         var healthCheckKey = $"{name}_check";
         builder.Services.AddHealthChecks()
             .Add(new HealthCheckRegistration(
@@ -69,32 +66,28 @@ public static class MongoDBReplicaSetBuilderExtensions
         var options = new MongoDBReplicaSetMemberOptions();
         configureMember?.Invoke(options);
 
-        // 配置 MongoDB 服务器参数
-        // --replSet 启用副本集模式
-        // --keyFile 启用副本集内部认证（认证 + 副本集时必需）
-        // --bind_ip_all 允许所有网络接口连接
+        // 将 keyFile 内容作为环境变量传入，通过 entrypoint 脚本创建文件
+        // 这样可以确保文件权限为 0600（MongoDB 必需）
         member
+            .WithEnvironment("MONGO_RS_KEYFILE", builder.Resource.KeyFile)
             .WithArgs("--replSet", builder.Resource.ReplicaSetName)
             .WithArgs("--bind_ip_all")
-            .WithArgs("--keyFile", "/keys/keyfile")
-            .WithContainerFiles("/keys", (context, _) =>
-            {
-                var keyFileContent = builder.Resource.KeyFile.Value;
-                return Task.FromResult<IEnumerable<ContainerFileSystemItem>>(
-                    [new ContainerFile { Name = "keyfile", Contents = keyFileContent, Mode = UnixFileMode.UserRead | UnixFileMode.UserWrite }]);
-            }, 0, 0, UnixFileMode.GroupRead | UnixFileMode.GroupWrite | UnixFileMode.GroupExecute | UnixFileMode.OtherRead | UnixFileMode.OtherWrite | UnixFileMode.OtherExecute);
+            .WithArgs("--keyFile", "/keys/keyfile");
 
-        // 添加成员到副本集
+        // 覆盖 entrypoint：先创建 keyFile 文件（权限 600），再启动 mongod
+        // MongoDB 要求 keyFile 只能由 owner 读写，否则报 "bad file" 错误
+        member.WithEntrypoint("/bin/sh");
+        member.WithArgs("-c",
+            "mkdir -p /keys && " +
+            "printf '%s' \"$MONGO_RS_KEYFILE\" > /keys/keyfile && " +
+            "chmod 600 /keys/keyfile && " +
+            "exec /usr/local/bin/docker-entrypoint.sh mongod");
+
         builder.Resource.AddMember(member.Resource, options);
 
-        // 建立父子关系，副本集等待成员就绪
         builder.WithChildRelationship(member);
         builder.WaitFor(member);
 
-        // 当成员资源就绪（健康检查通过）时，初始化副本集
-        // 使用 OnResourceReady 替代 BeforeStartEvent，避免死锁
-        // BeforeStartEvent 在容器启动前触发，WaitForDependenciesAsync 会等待永远不会就绪的容器
-        // OnResourceReady 在成员健康检查通过后触发，此时可以安全地连接 MongoDB
         member.OnResourceReady(async (mongoServer, @event, ct) =>
         {
             var sp = @event.Services;

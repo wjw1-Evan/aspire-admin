@@ -17,7 +17,7 @@ public static class ServiceExtensions
 {
     /// <summary>
     /// 一键注册平台所有基础设施服务，根据 Database:Provider 配置自动选择 EF Core 提供者。
-    /// 支持: mongodb (默认), sqlserver, postgresql
+    /// 支持: mongodb, sqlserver, postgresql
     /// </summary>
     public static IHostApplicationBuilder AddPlatformDatabase(
         this IHostApplicationBuilder builder,

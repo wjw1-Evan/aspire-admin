@@ -9,17 +9,17 @@ namespace Platform.ApiService.Controllers;
 
 /// <summary>
 /// 文件存储控制器
-/// GridFS 文件上传、下载、删除等操作
+/// 文件系统文件上传、下载、删除等操作
 /// </summary>
 [Authorize]
 [Route("api/files")]
 public class FileStorageController : BaseApiController
 {
-    private readonly GridFSStorageService _storageService;
+    private readonly FileSystemStorageService _storageService;
     private readonly ILogger<FileStorageController> _logger;
 
     public FileStorageController(
-        GridFSStorageService storageService,
+        FileSystemStorageService storageService,
         ILogger<FileStorageController> logger)
     {
         _storageService = storageService;

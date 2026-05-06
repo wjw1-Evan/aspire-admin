@@ -22,9 +22,9 @@ public interface IStorageClient
 
 public class StorageClient : IStorageClient
 {
-    private readonly GridFSStorageService _storageService;
+    private readonly FileSystemStorageService _storageService;
 
-    public StorageClient(GridFSStorageService storageService)
+    public StorageClient(FileSystemStorageService storageService)
     {
         _storageService = storageService;
     }

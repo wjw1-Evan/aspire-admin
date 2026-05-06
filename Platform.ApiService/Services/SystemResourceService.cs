@@ -1,7 +1,7 @@
 using System.Diagnostics;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using MongoDB.Bson;
-using MongoDB.Driver;
+using Platform.ServiceDefaults.Services;
 
 namespace Platform.ApiService.Services;
 
@@ -11,17 +11,17 @@ namespace Platform.ApiService.Services;
 public class SystemResourceService : ISystemResourceService
 {
     private readonly ILogger<SystemResourceService> _logger;
-    private readonly IMongoDatabase? _mongoDatabase;
+    private readonly PlatformDbContext? _dbContext;
 
     /// <summary>
     /// 初始化系统资源采集服务
     /// </summary>
     /// <param name="logger">日志记录器</param>
-    /// <param name="mongoDatabase">MongoDB 数据库实例（可选）</param>
-    public SystemResourceService(ILogger<SystemResourceService> logger, IMongoDatabase? mongoDatabase = null)
+    /// <param name="dbContext">数据库上下文（可选）</param>
+    public SystemResourceService(ILogger<SystemResourceService> logger, PlatformDbContext? dbContext = null)
     {
         _logger = logger;
-        _mongoDatabase = mongoDatabase;
+        _dbContext = dbContext;
     }
 
     /// <summary>
@@ -69,43 +69,34 @@ public class SystemResourceService : ISystemResourceService
     }
 
     /// <summary>
-    /// 获取 MongoDB 数据库统计信息
+    /// 获取数据库统计信息（提供程序无关）
     /// </summary>
     private async Task<object> GetDatabaseInfoAsync()
     {
-        if (_mongoDatabase == null)
+        if (_dbContext == null)
         {
             return new { Name = "未连接", TotalSizeMB = 0, CollectionCount = 0, IndexCount = 0, DataSizeMB = 0, StorageSizeMB = 0, Status = "Unavailable" };
         }
 
         try
         {
-            var databaseName = _mongoDatabase.DatabaseNamespace.DatabaseName;
-            var statsCommand = new BsonDocument("dbStats", 1);
-            var stats = await _mongoDatabase.RunCommandAsync<BsonDocument>(statsCommand);
-
-            var collectionCount = stats.GetValue("collections", 0).ToInt32();
-            var indexCount = stats.GetValue("indexes", 0).ToInt32();
-            var dataSizeMB = Math.Round(stats.GetValue("dataSize", 0).ToInt64() / 1024.0 / 1024.0, 2);
-            var storageSizeMB = Math.Round(stats.GetValue("storageSize", 0).ToInt64() / 1024.0 / 1024.0, 2);
-            var totalSizeMB = Math.Round(stats.GetValue("totalSize", 0).ToInt64() / 1024.0 / 1024.0, 2);
-            var objectCount = stats.GetValue("objects", 0).ToInt64();
+            var databaseName = _dbContext.Database.GetDbConnection().Database;
+            var entityCount = _dbContext.Model.GetEntityTypes().Count();
 
             return new
             {
                 Name = databaseName,
-                TotalSizeMB = totalSizeMB,
-                CollectionCount = collectionCount,
-                IndexCount = indexCount,
-                DataSizeMB = dataSizeMB,
-                StorageSizeMB = storageSizeMB,
-                ObjectCount = objectCount,
+                TotalSizeMB = 0,
+                CollectionCount = entityCount,
+                IndexCount = 0,
+                DataSizeMB = 0,
+                StorageSizeMB = 0,
                 Status = "Connected"
             };
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "获取 MongoDB 数据库统计信息失败");
+            _logger.LogWarning(ex, "获取数据库统计信息失败");
             return new { Name = "Error", TotalSizeMB = 0, CollectionCount = 0, IndexCount = 0, DataSizeMB = 0, StorageSizeMB = 0, Status = "Error" };
         }
     }

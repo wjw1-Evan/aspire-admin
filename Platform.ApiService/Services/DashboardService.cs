@@ -568,7 +568,7 @@ public class DashboardService : IDashboardService
 
         var privateDashboards = totalDashboards - publicDashboards;
 
-        // MongoDB EF Core Provider 不支持 Join，使用子查询方式
+        // 某些 EF Core Provider 不支持 Join，使用子查询方式
         var dashboardIds = await _context.Set<Dashboard>()
             .Where(d => d.CompanyId == companyId)
             .Select(d => d.Id)

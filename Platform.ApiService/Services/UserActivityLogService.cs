@@ -279,11 +279,12 @@ public class UserActivityLogService : IUserActivityLogService
         return await GetActivityLogStatisticsAsync(userId);
     }
 
-    private static bool IsValidObjectId(string? value)
+    private static bool IsValidIdFormat(string? value)
     {
         if (string.IsNullOrEmpty(value)) return false;
-        if (value.Length != 24) return false;
-        return value.All(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
+        // 支持 GUID 或 24 位十六进制字符串
+        return Guid.TryParse(value, out _) ||
+               (value.Length == 24 && value.All(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')));
     }
 
 }

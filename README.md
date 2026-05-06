@@ -95,7 +95,7 @@
 | 层次 | 核心技术 | 描述 |
 | :--- | :--- | :--- |
 | **后端** | **.NET 10 + Aspire 13.2.4** | 最新代 C# 开发框架，支持云原生编排与服务治理。 |
-| **数据库** | **MongoDB + EF Core** | 采用 **MongoDB.EntityFrameworkCore** 实现强类型的 NoSQL 访问。 |
+| **数据库** | **EF Core 多数据库支持** | 通过配置动态切换 MongoDB / SQL Server / PostgreSQL，Provider-Agnostic 设计。 |
 | **管理端** | **React 19.2.5 + Ant Design 6.3.7 + UmiJS 4** | 面向未来的 Web 开发架构，极致的渲染性能与 UI 细节。 |
 | **移动端** | **Expo 55.0 + React Native 0.85.2** | 跨平台原生体验，支持 Reanimated 超流畅动画方案。 |
 | **小程序** | **Native WeChat** | 适配微信原生生态，确保低延时与高兼容性。 |
@@ -105,7 +105,7 @@
 
 ## 🏗 架构总览
 
-业务 API 以 **Platform.ApiService** 为主（模块化单体），集成 GridFS 文件存储接口；**Platform.SystemMonitor** 提供主机资源监控。两者经 **YARP**（`:15000`）按路径前缀转发。详细路由、分库与卫星服务认证见 [**微服务拆分开发指南**](docs/guides/MICROSERVICE-GUIDE.md)。
+业务 API 以 **Platform.ApiService** 为主（模块化单体），集成文件存储接口；**Platform.SystemMonitor** 提供主机资源监控。两者经 **YARP**（`:15000`）按路径前缀转发。详细路由、分库与卫星服务认证见 [**微服务拆分开发指南**](docs/guides/MICROSERVICE-GUIDE.md)。
 
 ```mermaid
 graph TD
@@ -124,28 +124,31 @@ graph TD
 
     subgraph Infrastructure
         Aspire["Aspire AppHost"]
-        MongoMain[(MongoDB mongodb)]
-        MongoStore[(MongoDB storagedb)]
+        MongoMain[(可选的 MongoDB)]
+        SqlServer[(可选的 SQL Server)]
+        Postgres[(可选的 PostgreSQL)]
+        Redis[(Redis)]
     end
 
     Admin & App & MiniApp --> Gateway
     Gateway --> ApiService
-    Gateway --> Storage
     Gateway --> SysMonitor
     ApiService --> MongoMain
-    ApiService -.->|HTTP 服务发现| Storage
-    Storage --> MongoStore
+    ApiService --> SqlServer
+    ApiService --> Postgres
+    ApiService -.->|HTTP 服务发现| Redis
     Aspire -.-> Gateway
     Aspire -.-> ApiService
-    Aspire -.-> Storage
     Aspire -.-> SysMonitor
     Aspire -.-> DataInit
     DataInit --> MongoMain
+    DataInit --> SqlServer
+    DataInit --> Postgres
 ```
 
-- **Platform.AppHost**：Aspire 编排入口；默认拉起 **MongoDB**、**OpenAI（可选）** 及各 .NET 项目。**Redis 未在默认编排中启用**；若需缓存，在 `AppHost.cs` 增加 `AddRedis` 并对消费方使用 `WithReference(redis)`。
+- **Platform.AppHost**：Aspire 编排入口；默认拉起 **多数据库支持**（MongoDB/SQL Server/PostgreSQL）、**OpenAI（可选）** 及各 .NET 项目。通过 `Database:Provider` 配置切换。
 - **Platform.ApiService**：核心业务 API（45个控制器，涵盖工作流、IoT、园区、AI、云盘等业务逻辑）。
-- **Platform.SystemMonitor**：进程级 CPU/内存/磁盘等指标；**不连接业务库 `mongodb`**。
+- **Platform.SystemMonitor**：进程级 CPU/内存/磁盘等指标；**不连接业务库**。
 - **Platform.Admin**：基于 Ant Design 6 打造的管理后台（23个主要功能模块），强调原生体验与高性能操作视图。
 - **Platform.MiniApp**：涵盖园区全生命周期管理的轻量化微信小程序端。
 - **Platform.App**：基于 Expo 的跨平台原生移动端应用，提供一致性的移动访问与消息触达。
@@ -197,6 +200,7 @@ aspire-admin
 - **交互式文档**：内置 **Scalar/OpenAPI** 预览，支持在线调试与 SDK 自动生成。
 - **健康检查**：提供 `/health` 端点，支持 Aspire 自动健康监控。
 - **分布式追踪**：集成 OpenTelemetry，全链路日志、指标与追踪。
+- **多数据库支持**：通过 Aspire 配置（`Database:Provider`）动态切换 MongoDB / SQL Server / PostgreSQL，PlatformDbContext 完全 Provider-Agnostic。
 
 ## 🖥 管理后台 (Platform.Admin)
 
@@ -306,9 +310,10 @@ dotnet run --project Platform.AppHost
 
 在 `Platform.AppHost/appsettings.json` 或 `appsettings.Development.json` 中配置：
 
+- **数据库提供者**：配置 `Database:Provider` 切换数据库类型（`mongodb` / `sqlserver` / `postgresql`）
 - **OpenAI/Azure OpenAI**：配置 `Parameters:openai-openai-endpoint` 以解锁完整 AI 能力
 - **JWT 密钥**：配置 `Jwt:SecretKey` 用于身份认证（ApiService 与卫星服务需一致，通常由 AppHost 注入）
-- **服务间密钥**：可选配置 `InternalService:ApiKey`；未配置时 AppHost 会生成随机值并注入 ApiService / Storage / SystemMonitor（生产环境建议显式配置）
+- **服务间密钥**：可选配置 `InternalService:ApiKey`；未配置时 AppHost 会生成随机值并注入 ApiService
 - **微服务与网关路径**：见 [docs/guides/MICROSERVICE-GUIDE.md](docs/guides/MICROSERVICE-GUIDE.md)
 - **服务副本数**：配置 `ApiService:Replicas` 调整 API 服务实例数量（默认 3，dotnet watch 模式强制为 1）
 - **SSL/HTTPS**：支持自定义证书注入以满足生产安全需求
@@ -323,6 +328,7 @@ dotnet run --project Platform.AppHost
 - **审计追踪**：全自动记录实体创建、修改的时间与人员（CreatedAt/By, UpdatedAt/By）
 - **软删除**：支持逻辑删除，自动过滤已删除数据
 - **LINQ 支持**：完全支持 LINQ 表达式，实现业务逻辑在内存与数据库间的透明映射
+- **多数据库兼容**：PlatformDbContext 完全 Provider-Agnostic，支持 MongoDB / SQL Server / PostgreSQL 等 EF Core 提供者
 
 ### 2. 闭环工作流引擎
 

@@ -121,14 +121,14 @@ public class CompanyService : ICompanyService
         else
         {
             // 自动生成企业代码（参考个人企业生成规则：personal-{user.Id}）
-            // 格式：company-{用户ID的最后12位}（ObjectId 24位十六进制，取后12位确保唯一性）
+            // 格式：company-{用户ID的最后12位}（取后12位确保唯一性）
             int attempts = 0;
             const int maxAttempts = 10;
 
             do
             {
                 // 使用用户ID生成唯一代码（参考 personal-{user.Id} 的规则）
-                // 取用户ID的后12位（ObjectId是24位，取后12位足够唯一）
+                // 取用户ID的后12位（足够唯一）
                 var userIdSuffix = currentUser.Id!.Length > 12
                     ? currentUser.Id.Substring(currentUser.Id.Length - 12)
                     : currentUser.Id;

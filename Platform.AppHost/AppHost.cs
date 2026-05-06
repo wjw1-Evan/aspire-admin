@@ -29,12 +29,31 @@ var chat = openai.AddModel("chat", modelName).WithHealthCheck();
 
 var environment = builder.Environment.EnvironmentName;
 
-var mongo = builder.AddMongoDB("mongo-" + environment)
+var dbProvider = builder.Configuration["Database:Provider"] ?? "mongodb";
+IResourceBuilder<IResourceWithConnectionString> database;
+
+if (dbProvider.Equals("sqlserver", StringComparison.OrdinalIgnoreCase))
+{
+    var sqlServer = builder.AddSqlServer("sqlserver-" + environment)
+        .WithLifetime(ContainerLifetime.Persistent)
+        .WithDataVolume();
+    database = sqlServer.AddDatabase("database");
+}
+else if (dbProvider.Equals("postgresql", StringComparison.OrdinalIgnoreCase))
+{
+    var postgres = builder.AddPostgres("postgres-" + environment)
+        .WithLifetime(ContainerLifetime.Persistent)
+        .WithDataVolume();
+    database = postgres.AddDatabase("database");
+}
+else
+{
+    var mongo = builder.AddMongoDB("mongo-" + environment)
         .WithLifetime(ContainerLifetime.Persistent)
         .WithMongoExpress()
         .WithDataVolume();
-
-var mongodb = mongo.AddDatabase("mongodb");
+    database = mongo.AddDatabase("database");
+}
 
 var redis = builder.AddRedis("redis")
     .WithLifetime(ContainerLifetime.Persistent)
@@ -43,6 +62,9 @@ var redis = builder.AddRedis("redis")
 
     // 数据初始化服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
+    .WithReference(database)
+    .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
+    .WithEnvironment("InternalService__ApiKey", internalServiceApiKey);
 
 // 系统监控功能已迁移到 Platform.ApiService (路由: /api/system-monitor)
 
@@ -50,6 +72,7 @@ var apiService = builder.AddProject<Projects.Platform_ApiService>("apiservice")
     .WithHttpEndpoint()
     .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
     .WithEnvironment("InternalService__ApiKey", internalServiceApiKey)
+    .WithReference(database)
     .WithReference(chat)
     .WithReference(redis)
     .WithReplicas(3)

@@ -278,7 +278,7 @@ public class McpService : IMcpService
             "查|找|搜索|查询|显示|获取|关于|查看|叫|名为|显示|打开|详细",
             "").Trim();
 
-        // 提取 ID（MongoDB ObjectId 或 GUID）
+        // 提取 ID（字符串格式）
         var idMatch = Regex.Match(input, @"\b([a-f0-9]{24}|[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\b", RegexOptions.IgnoreCase);
         var detectedId = idMatch.Success ? idMatch.Value : null;
 

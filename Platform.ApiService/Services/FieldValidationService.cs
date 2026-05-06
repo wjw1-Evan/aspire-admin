@@ -326,14 +326,14 @@ public class FieldValidationService : IFieldValidationService
         {
             foreach (var item in arr)
             {
-                if (item != null && !IsValidObjectId(item.ToString()))
+                if (item != null && !IsValidIdFormat(item.ToString()))
                 {
                     errors.Add($"字段 {field.Label} 包含无效的附件ID");
                     break;
                 }
             }
         }
-        else if (value != null && !IsValidObjectId(value.ToString()))
+        else if (value != null && !IsValidIdFormat(value.ToString()))
         {
             errors.Add($"字段 {field.Label} 的附件ID格式无效");
         }
@@ -378,12 +378,12 @@ public class FieldValidationService : IFieldValidationService
         return bool.TryParse(value.ToString(), out _);
     }
 
-    private bool IsValidObjectId(string? value)
+    private bool IsValidIdFormat(string? value)
     {
         if (string.IsNullOrEmpty(value)) return false;
-        
-        // MongoDB ObjectId 格式验证：24位十六进制字符串
-        return Regex.IsMatch(value, @"^[0-9a-fA-F]{24}$");
+        // 支持多种 ID 格式：GUID 或 24位十六进制字符串
+        return Guid.TryParse(value, out _) || 
+               (value.Length == 24 && Regex.IsMatch(value, @"^[0-9a-fA-F]{24}$"));
     }
 
     #endregion

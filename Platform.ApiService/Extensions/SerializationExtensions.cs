@@ -62,7 +62,7 @@ namespace Platform.ApiService.Extensions
         }
 
         /// <summary>
-        /// 检查是否是MongoDB支持的基本类型
+        /// 检查是否是支持的基本类型
         /// </summary>
         private static bool IsBasicType(object value)
         {

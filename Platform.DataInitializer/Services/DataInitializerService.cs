@@ -15,11 +15,11 @@ public interface IDataInitializerService
 /// 职责：加载 JSON 菜单数据、执行索引脚本、同步菜单
 /// </summary>
 public class DataInitializerService(
-    PlatformDbContext context,
+    DbContext context,
     ILogger<DataInitializerService> logger,
     ILoggerFactory loggerFactory) : IDataInitializerService
 {
-    private readonly PlatformDbContext _context = context;
+    private readonly DbContext _context = context;
     private readonly ILogger<DataInitializerService> _logger = logger;
     private readonly ILoggerFactory _loggerFactory = loggerFactory;
 
@@ -28,7 +28,7 @@ public class DataInitializerService(
         _logger.LogInformation("========== 开始数据初始化 ==========");
         try
         {
-            PlatformDbContext.SetContext("default", "system");
+            //  PlatformDbContext.SetContext("default", "system");
 
             await SyncMenusAsync();
 

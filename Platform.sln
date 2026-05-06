@@ -11,6 +11,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Platform.ApiService", "Plat
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Platform.DataInitializer", "Platform.DataInitializer\Platform.DataInitializer.csproj", "{750AC0BC-C1E9-8E56-4D9F-F471C8C1FA69}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "hosting", "hosting", "{916B61B3-312D-841D-1457-818AC0DB32BA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Platform.Hosting.MongoDBReplicaSet", "hosting\Platform.Hosting.MongoDBReplicaSet\Platform.Hosting.MongoDBReplicaSet.csproj", "{2DAEEABE-7AA4-47F9-9FB9-5605AC4A47C5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,9 +73,24 @@ Global
 		{750AC0BC-C1E9-8E56-4D9F-F471C8C1FA69}.Release|x64.Build.0 = Release|Any CPU
 		{750AC0BC-C1E9-8E56-4D9F-F471C8C1FA69}.Release|x86.ActiveCfg = Release|x86
 		{750AC0BC-C1E9-8E56-4D9F-F471C8C1FA69}.Release|x86.Build.0 = Release|x86
+		{2DAEEABE-7AA4-47F9-9FB9-5605AC4A47C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2DAEEABE-7AA4-47F9-9FB9-5605AC4A47C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2DAEEABE-7AA4-47F9-9FB9-5605AC4A47C5}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2DAEEABE-7AA4-47F9-9FB9-5605AC4A47C5}.Debug|x64.Build.0 = Debug|Any CPU
+		{2DAEEABE-7AA4-47F9-9FB9-5605AC4A47C5}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2DAEEABE-7AA4-47F9-9FB9-5605AC4A47C5}.Debug|x86.Build.0 = Debug|Any CPU
+		{2DAEEABE-7AA4-47F9-9FB9-5605AC4A47C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2DAEEABE-7AA4-47F9-9FB9-5605AC4A47C5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2DAEEABE-7AA4-47F9-9FB9-5605AC4A47C5}.Release|x64.ActiveCfg = Release|Any CPU
+		{2DAEEABE-7AA4-47F9-9FB9-5605AC4A47C5}.Release|x64.Build.0 = Release|Any CPU
+		{2DAEEABE-7AA4-47F9-9FB9-5605AC4A47C5}.Release|x86.ActiveCfg = Release|Any CPU
+		{2DAEEABE-7AA4-47F9-9FB9-5605AC4A47C5}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{2DAEEABE-7AA4-47F9-9FB9-5605AC4A47C5} = {916B61B3-312D-841D-1457-818AC0DB32BA}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7526CAD9-FC16-41A5-B00F-5784D3695B96}

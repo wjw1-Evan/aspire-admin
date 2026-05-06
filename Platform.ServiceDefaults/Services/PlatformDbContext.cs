@@ -19,10 +19,6 @@ public class PlatformDbContext : DbContext
         : base(options)
     {
         _hmacProvider = hmacProvider;
-
-        // 禁用 MongoDB 事务以支持 standalone 服务器
-        // 生产环境应使用副本集以获得完整的事务支持
-        Database.AutoTransactionBehavior = Microsoft.EntityFrameworkCore.AutoTransactionBehavior.Never;
     }
 
     public static string? CurrentUserIdValue => _currentUserId.Value;
@@ -36,6 +32,18 @@ public class PlatformDbContext : DbContext
 
 
     private static List<Type>? _cachedEntityTypes;
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        base.OnConfiguring(optionsBuilder);
+
+        // 检测是否为副本集连接，如果不是则禁用事务
+        var connectionString = Database.GetConnectionString();
+        if (string.IsNullOrEmpty(connectionString) || !connectionString.Contains("replicaSet="))
+        {
+            Database.AutoTransactionBehavior = AutoTransactionBehavior.Never;
+        }
+    }
 
     public override int SaveChanges()
     {

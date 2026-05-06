@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Scalar.Aspire;
 using Aspire.Hosting.Yarp;
 using Aspire.Hosting.Yarp.Transforms;
+using Platform.Hosting.MongoDBReplicaSet;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
@@ -31,11 +32,16 @@ var environment = builder.Environment.EnvironmentName;
 
 IResourceBuilder<IResourceWithConnectionString> database;
 
-var mongo = builder.AddMongoDB("mongo-" + environment)
+// 使用 MongoDB 副本集（支持事务）
+var mongoServer = builder.AddMongoDB("mongo-" + environment)
     .WithLifetime(ContainerLifetime.Persistent)
-    .WithMongoExpress()
     .WithDataVolume();
-database = mongo.AddDatabase("database");
+
+var mongoReplicaSet = builder.AddMongoDBReplicaSet("mongo-rs")
+    .WithMember(mongoServer)
+    .WithMongoExpress(mongoServer);
+
+database = mongoServer.AddDatabase("database");
 
 var redis = builder.AddRedis("redis")
     .WithLifetime(ContainerLifetime.Persistent)

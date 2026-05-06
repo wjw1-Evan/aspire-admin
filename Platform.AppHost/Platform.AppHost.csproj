@@ -11,7 +11,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Platform.ApiService\Platform.ApiService.csproj" />
     <ProjectReference Include="..\Platform.DataInitializer\Platform.DataInitializer.csproj" />
-    <ProjectReference Include="..\hosting\Platform.Hosting.MongoDBReplicaSet\Platform.Hosting.MongoDBReplicaSet.csproj" IsAspireProjectResource="false" />
   </ItemGroup>
 
   <ItemGroup>

@@ -61,10 +61,12 @@ export default {
   'pages.cloud-storage.recycle.restoreFileLabel': '文件名',
 
   // shared/index.tsx
+  'pages.cloud-storage.shared.action.title': '操作',
   'pages.cloud-storage.shared.action.copyLink': '复制链接',
   'pages.cloud-storage.shared.action.edit': '编辑',
   'pages.cloud-storage.shared.action.disable': '禁用',
   'pages.cloud-storage.shared.action.enable': '启用',
+  'pages.cloud-storage.shared.action.revoke': '撤销',
 
   // files/index.tsx
   'pages.cloud-storage.files.type.file': '文件',

@@ -923,4 +923,23 @@ export default {
 
   // cloud-storage shared action labels
   'pages.cloud-storage.shared.action.revoke': '撤销',
+
+  // park.asset module
+  'pages.park.asset.stats.area': '总面积',
+  'pages.park.asset.stats.occupancy': '出租率',
+  'pages.park.asset.stats.properties': '总房源数',
+  'pages.park.asset.stats.units': '总单元数',
+  'pages.park.asset.status.available': '可用',
+  'pages.park.asset.status.rented': '已租',
+  'pages.park.asset.status.reserved': '已预订',
+  'pages.park.asset.title': '资产管理',
+  'pages.park.asset.type.office': '办公楼',
+  'pages.park.asset.type.retail': '零售',
+  'pages.park.asset.type.warehouse': '仓库',
+  'pages.park.asset.type.workshop': '车间',
+
+  // company module
+  'pages.company.joined': '已加入',
+  'pages.company.myCompany': '我的企业',
+  'pages.company.pendingReview': '待审核',
 };

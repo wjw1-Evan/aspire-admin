@@ -150,6 +150,7 @@ public class WorkflowInstance : MultiTenantEntity
     /// <summary>
     /// 审批记录列表
     /// </summary>
+    [NotMapped]
     public List<ApprovalRecord> ApprovalRecords { get; set; } = new();
 
     /// <summary>
@@ -168,9 +169,23 @@ public class WorkflowInstance : MultiTenantEntity
     public DateTime? CompletedAt { get; set; }
 
     /// <summary>
-    /// 流程定义快照（创建实例时保存，确保已创建的流程不受后续定义变更影响）
+    /// 流程定义快照JSON（创建实例时保存，确保已创建的流程不受后续定义变更影响）
     /// </summary>
-    public WorkflowDefinition? WorkflowDefinitionSnapshot { get; set; }
+    public string? WorkflowDefinitionSnapshotJson { get; set; }
+
+    /// <summary>
+    /// 流程定义快照（从JSON反序列化，不持久化）
+    /// </summary>
+    [NotMapped]
+    public WorkflowDefinition? WorkflowDefinitionSnapshot
+    {
+        get => WorkflowDefinitionSnapshotJson != null
+            ? JsonSerializer.Deserialize<WorkflowDefinition>(WorkflowDefinitionSnapshotJson)
+            : null;
+        set => WorkflowDefinitionSnapshotJson = value != null
+            ? JsonSerializer.Serialize(value)
+            : null;
+    }
 
     /// <summary>
     /// 表单定义快照列表（节点ID -> 表单定义，创建实例时保存）

@@ -2,6 +2,7 @@
 
 
 using Platform.ServiceDefaults.Models;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Platform.ApiService.Models;
 
@@ -32,6 +33,7 @@ public class Dashboard : MultiTenantEntity
     public string UserId { get; set; } = string.Empty;
 
     /// <summary>卡片列表</summary>
+    [NotMapped]
     public List<DashboardCard> Cards { get; set; } = new();
 }
 

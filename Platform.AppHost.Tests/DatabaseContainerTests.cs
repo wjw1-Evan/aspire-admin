@@ -9,7 +9,7 @@ namespace Platform.AppHost.Tests;
 
 /// <summary>
 /// 测试 AppHost 启动后数据库容器是否正常运行
-/// 支持 PostgreSQL 和 MongoDB 两种数据库提供者
+/// 支持 MongoDB 数据库提供者
 /// </summary>
 public class DatabaseContainerTests : IAsyncLifetime
 {
@@ -40,33 +40,10 @@ public class DatabaseContainerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 验证 postgresql 资源在 AppHost 中配置（当前配置为 postgresql）
+    /// 验证 mongodb 资源在 AppHost 中配置
     /// </summary>
     [Fact]
-    public void PostgresResource_ShouldExist()
-    {
-        Assert.NotNull(_builder);
-        var environment = _builder.Configuration["DOTNET_ENVIRONMENT"] ?? "Development";
-        var expectedName = $"postgres-{environment}";
-
-        bool found = false;
-        foreach (var resource in _builder.Resources)
-        {
-            if (resource.Name == expectedName)
-            {
-                found = true;
-                break;
-            }
-        }
-
-        Assert.True(found, $"未找到数据库资源: {expectedName}");
-    }
-
-    /// <summary>
-    /// 验证 mongodb 资源在 AppHost 中配置（验证多数据库支持）
-    /// </summary>
-    [Fact]
-    public void MongoResource_ShouldExist_WhenConfigured()
+    public void MongoResource_ShouldExist()
     {
         Assert.NotNull(_builder);
         var environment = _builder.Configuration["DOTNET_ENVIRONMENT"] ?? "Development";
@@ -82,17 +59,7 @@ public class DatabaseContainerTests : IAsyncLifetime
             }
         }
 
-        // 当前配置为 postgresql，mongodb 资源不应存在
-        var currentProvider = _builder.Configuration["Database:Provider"];
-        if (currentProvider.Equals("mongodb", StringComparison.OrdinalIgnoreCase))
-        {
-            Assert.True(found, $"当前配置为 {currentProvider}，但未找到数据库资源: {expectedName}");
-        }
-        else
-        {
-            // 非 mongodb 配置时，资源不应存在
-            Assert.False(found, $"当前配置为 {currentProvider}，但找到了 mongodb 资源: {expectedName}，这是错误的");
-        }
+        Assert.True(found, $"未找到数据库资源: {expectedName}");
     }
 
     /// <summary>
@@ -105,7 +72,7 @@ public class DatabaseContainerTests : IAsyncLifetime
         var provider = _builder.Configuration["Database:Provider"];
         Assert.False(string.IsNullOrEmpty(provider),
             "未找到 Database:Provider 配置，请检查 appsettings.json");
-        Assert.Equal("postgresql", provider);
+        Assert.Equal("mongodb", provider);
     }
 
     /// <summary>
@@ -115,7 +82,7 @@ public class DatabaseContainerTests : IAsyncLifetime
     public void RedisResource_ShouldExist()
     {
         Assert.NotNull(_builder);
-        
+
         bool found = false;
         foreach (var resource in _builder.Resources)
         {
@@ -136,7 +103,7 @@ public class DatabaseContainerTests : IAsyncLifetime
     public void ApiService_ShouldExist()
     {
         Assert.NotNull(_builder);
-        
+
         bool found = false;
         foreach (var resource in _builder.Resources)
         {
@@ -157,7 +124,7 @@ public class DatabaseContainerTests : IAsyncLifetime
     public void DataInitializer_ShouldExist()
     {
         Assert.NotNull(_builder);
-        
+
         bool found = false;
         foreach (var resource in _builder.Resources)
         {
@@ -178,7 +145,7 @@ public class DatabaseContainerTests : IAsyncLifetime
     public void OpenAI_ShouldExist()
     {
         Assert.NotNull(_builder);
-        
+
         bool found = false;
         foreach (var resource in _builder.Resources)
         {
@@ -199,7 +166,7 @@ public class DatabaseContainerTests : IAsyncLifetime
     public void YarpGateway_ShouldExist()
     {
         Assert.NotNull(_builder);
-        
+
         bool found = false;
         foreach (var resource in _builder.Resources)
         {
@@ -220,12 +187,12 @@ public class DatabaseContainerTests : IAsyncLifetime
     public void DatabaseProvider_ShouldBePassedToChildProjects()
     {
         Assert.NotNull(_builder);
-        
+
         var provider = _builder.Configuration["Database:Provider"];
         Assert.False(string.IsNullOrEmpty(provider));
-        
+
         // 验证配置存在且有效
-        var supportedProviders = new[] { "mongodb", "postgresql" };
+        var supportedProviders = new[] { "mongodb" };
         Assert.Contains(provider.ToLowerInvariant(), supportedProviders);
     }
 }

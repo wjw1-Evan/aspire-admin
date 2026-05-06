@@ -30,34 +30,24 @@ var chat = openai.AddModel("chat", modelName).WithHealthCheck();
 var environment = builder.Environment.EnvironmentName;
 
 var dbProvider = builder.Configuration["Database:Provider"]
-    ?? throw new InvalidOperationException("未配置数据库提供者。请在 appsettings.json 中设置 Database:Provider（mongodb/postgresql）。");
+    ?? throw new InvalidOperationException("未配置数据库提供者。请在 appsettings.json 中设置 Database:Provider（mongodb）。");
 IResourceBuilder<IResourceWithConnectionString> database;
 
-if (dbProvider.Equals("postgresql", StringComparison.OrdinalIgnoreCase))
-{
-    var postgres = builder.AddPostgres("postgres-" + environment)
-        .WithLifetime(ContainerLifetime.Persistent)
-        .WithDataVolume();
-    database = postgres.AddDatabase("database");
-}
-else
-{
-    var mongo = builder.AddMongoDB("mongo-" + environment)
-        .WithLifetime(ContainerLifetime.Persistent)
-        .WithMongoExpress()
-        .WithDataVolume();
-    database = mongo.AddDatabase("database");
-}
+var mongo = builder.AddMongoDB("mongo-" + environment)
+    .WithLifetime(ContainerLifetime.Persistent)
+    .WithMongoExpress()
+    .WithDataVolume();
+database = mongo.AddDatabase("database");
 
 var redis = builder.AddRedis("redis")
     .WithLifetime(ContainerLifetime.Persistent)
     .WithRedisInsight()
     .WithDataVolume();
 
+
 // 数据初始化服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
     .WithReference(database)
-    .WaitFor(database)
     .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
     .WithEnvironment("InternalService__ApiKey", internalServiceApiKey)
     .WithEnvironment("Database__Provider", dbProvider);
@@ -70,7 +60,6 @@ var apiService = builder.AddProject<Projects.Platform_ApiService>("apiservice")
     .WithEnvironment("InternalService__ApiKey", internalServiceApiKey)
     .WithEnvironment("Database__Provider", dbProvider)
     .WithReference(database)
-    .WaitFor(database)
     .WithReference(chat)
     .WithReference(redis)
     .WaitFor(redis)

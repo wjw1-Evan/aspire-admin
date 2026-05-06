@@ -3,8 +3,6 @@ using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
-using Aspire.Microsoft.EntityFrameworkCore.SqlServer;
-using Aspire.Npgsql.EntityFrameworkCore.PostgreSQL;
 using Aspire.MongoDB.EntityFrameworkCore;
 
 namespace Microsoft.Extensions.DependencyInjection;
@@ -16,33 +14,23 @@ namespace Microsoft.Extensions.DependencyInjection;
 public static class ServiceExtensions
 {
     /// <summary>
-    /// 一键注册平台所有基础设施服务，根据 Database:Provider 配置自动选择 EF Core 提供者。
-    /// 支持: mongodb, sqlserver, postgresql
+    /// 一键注册平台所有基础设施服务，使用 MongoDB 作为数据库。
     /// </summary>
     public static IHostApplicationBuilder AddPlatformDatabase(
         this IHostApplicationBuilder builder,
         string connectionName = "database")
     {
-            var dbProvider = builder.Configuration["Database:Provider"]
-                ?? throw new InvalidOperationException("未配置数据库提供者。请在 appsettings.json 中设置 Database:Provider（mongodb/sqlserver/postgresql）。");
+        var dbProvider = builder.Configuration["Database:Provider"]
+            ?? throw new InvalidOperationException("未配置数据库提供者。请在 appsettings.json 中设置 Database:Provider（mongodb）。");
 
-        switch (dbProvider.ToLowerInvariant())
+        if (dbProvider.ToLowerInvariant() != "mongodb")
         {
-            case "sqlserver":
-                builder.AddSqlServerDbContext<PlatformDbContext>(connectionName);
-                break;
-
-            case "postgresql":
-                builder.AddNpgsqlDbContext<PlatformDbContext>(connectionName);
-                break;
-
-            case "mongodb":
-            default:
-                builder.AddMongoDbContext<PlatformDbContext>(connectionName);
-                break;
+            throw new InvalidOperationException($"不支持的数据库提供者: {dbProvider}。本项目仅支持 mongodb。");
         }
 
-        builder.AddRedisClient(connectionName: "redis");
+        builder.AddMongoDbContext<PlatformDbContext>(connectionName);
+
+        builder.AddRedisClient( "redis");
 
         builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<PlatformDbContext>());
 

@@ -16,6 +16,11 @@ public class MongoDBReplicaSetResource : Resource, IResourceWithConnectionString
     public string ReplicaSetName { get; }
 
     /// <summary>
+    /// KeyFile 参数资源（副本集内部认证所需）
+    /// </summary>
+    public ParameterResource KeyFile { get; }
+
+    /// <summary>
     /// 副本集成员
     /// </summary>
     public IReadOnlyDictionary<MongoDBServerResource, MongoDBReplicaSetMemberOptions> Members => _members;
@@ -30,10 +35,12 @@ public class MongoDBReplicaSetResource : Resource, IResourceWithConnectionString
     /// </summary>
     /// <param name="name">资源名称</param>
     /// <param name="replicaSetName">副本集名称</param>
-    public MongoDBReplicaSetResource(string name, string replicaSetName)
+    /// <param name="keyFile">KeyFile 参数资源</param>
+    public MongoDBReplicaSetResource(string name, string replicaSetName, ParameterResource keyFile)
         : base(name)
     {
         ReplicaSetName = replicaSetName;
+        KeyFile = keyFile;
     }
 
     /// <summary>

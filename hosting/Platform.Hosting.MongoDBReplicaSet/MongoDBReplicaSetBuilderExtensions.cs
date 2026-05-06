@@ -1,10 +1,9 @@
+using System.IO;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
-using MongoDB.Bson;
-using MongoDB.Driver;
 
 namespace Platform.Hosting.MongoDBReplicaSet;
 
@@ -19,12 +18,17 @@ public static class MongoDBReplicaSetBuilderExtensions
     public static IResourceBuilder<MongoDBReplicaSetResource> AddMongoDBReplicaSet(
         this IDistributedApplicationBuilder builder,
         string name,
-        string replicaSetName = "rs0")
+        string replicaSetName = "rs0",
+        IResourceBuilder<ParameterResource>? keyFileParameter = null)
     {
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(name);
 
-        var resource = new MongoDBReplicaSetResource(name, replicaSetName);
+        // KeyFile 在启用认证 + 副本集时是必需的
+        var keyFile = keyFileParameter?.Resource
+            ?? ParameterResourceBuilderExtensions.CreateDefaultPasswordParameter(builder, $"{name}-keyfile");
+
+        var resource = new MongoDBReplicaSetResource(name, replicaSetName, keyFile);
         var resourceBuilder = builder.AddResource(resource)
             .WithInitialState(new CustomResourceSnapshot
             {
@@ -65,12 +69,20 @@ public static class MongoDBReplicaSetBuilderExtensions
         var options = new MongoDBReplicaSetMemberOptions();
         configureMember?.Invoke(options);
 
-        // 只添加 --replSet 参数
-        // 不使用 --keyFile 以简化开发环境配置
-        // MongoDB 容器通过 MONGO_INITDB_ROOT_USERNAME/PASSWORD 启用认证
+        // 配置 MongoDB 服务器参数
+        // --replSet 启用副本集模式
+        // --keyFile 启用副本集内部认证（认证 + 副本集时必需）
+        // --bind_ip_all 允许所有网络接口连接
         member
             .WithArgs("--replSet", builder.Resource.ReplicaSetName)
-            .WithArgs("--bind_ip_all");
+            .WithArgs("--bind_ip_all")
+            .WithArgs("--keyFile", "/keys/keyfile")
+            .WithContainerFiles("/keys", (context, _) =>
+            {
+                var keyFileContent = builder.Resource.KeyFile.Value;
+                return Task.FromResult<IEnumerable<ContainerFileSystemItem>>(
+                    [new ContainerFile { Name = "keyfile", Contents = keyFileContent, Mode = UnixFileMode.UserRead | UnixFileMode.UserWrite }]);
+            });
 
         // 添加成员到副本集
         builder.Resource.AddMember(member.Resource, options);

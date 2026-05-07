@@ -12,5 +12,5 @@ npm install -g npm-check-updates
 
 ncu -u
 
-Install and configure oh-my-openagent by following the instructions here:
+安装并设置 oh-my-openagent by following the instructions here:
 <https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/refs/heads/dev/docs/guide/installation.md>

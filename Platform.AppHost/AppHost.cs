@@ -31,43 +31,11 @@ var chat = openai.AddModel("chat", modelName).WithHealthCheck();
 
 var environment = builder.Environment.EnvironmentName;
 
-// Percona Server for MongoDB 副本集配置
-var replicaSetName = "rs0";
-var mongoDataPath = Path.GetFullPath("mongo-data");
-Directory.CreateDirectory(mongoDataPath);
+// MongoDB - 使用 Aspire 官方集成，自动处理服务发现和连接字符串映射
+var mongo = builder.AddMongoDB("mongo")
+    .WithLifetime(ContainerLifetime.Persistent);
 
-// 副本集节点 1 (Primary)
-var mongo1 = builder.AddContainer("mongo-rs-1", "percona/percona-server-mongodb")
-    .WithArgs("--replSet", replicaSetName, "--port", "27017")
-    .WithEndpoint(targetPort: 27017, scheme: "tcp")
-    .WithBindMount(source: Path.Combine(mongoDataPath, "rs-1"), target: "/data/db")
-    ;
-
-// 副本集节点 2 (Secondary)
-var mongo2 = builder.AddContainer("mongo-rs-2", "percona/percona-server-mongodb")
-    .WithArgs("--replSet", replicaSetName, "--port", "27017")
-    .WithEndpoint(targetPort: 27018, scheme: "tcp")
-    .WithBindMount(source: Path.Combine(mongoDataPath, "rs-2"), target: "/data/db");
-
-// 副本集节点 3 (Secondary)
-var mongo3 = builder.AddContainer("mongo-rs-3", "percona/percona-server-mongodb")
-    .WithArgs("--replSet", replicaSetName, "--port", "27017")
-    .WithEndpoint(targetPort: 27019, scheme: "tcp")
-    .WithBindMount(source: Path.Combine(mongoDataPath, "rs-3"), target: "/data/db");
-
-// 初始化副本集的容器（已初始化时跳过，避免 already initialized 错误）
-var initScript = $"try {{ var status = rs.status(); print('副本集已初始化，状态: ' + status.ok); }} catch(err) {{ if (err.codeName === 'NotYetInitialized') {{ config = {{ _id: '{replicaSetName}', members: [ {{ _id: 0, host: 'mongo-rs-1:27017' }}, {{ _id: 1, host: 'mongo-rs-2:27017' }}, {{ _id: 2, host: 'mongo-rs-3:27017' }} ] }}; rs.initiate(config); }} else {{ print('检查副本集状态失败: ' + err); quit(1); }} }}";
-
-var mongorsinit = builder.AddContainer("mongo-rs-init", "percona/percona-server-mongodb")
-    .WithEntrypoint("sh")
-    .WithArgs("-c", $"mongosh --host mongo-rs-1 --eval \"{initScript}\"")
-    .WaitFor(mongo1)
-    .WaitFor(mongo2)
-    .WaitFor(mongo3);
-
-// 副本集连接字符串 - 自动发现 Primary 节点
-var connectionString = $"mongodb://mongo-rs-1:27017,localhost:27018,localhost:27019/?replicaSet={replicaSetName}";
-var database = builder.AddConnectionString("database", ReferenceExpression.Create($"{connectionString}"));
+var database = mongo.AddDatabase("database", "platform-db");
 
 var redis = builder.AddRedis("redis")
     .WithLifetime(ContainerLifetime.Persistent)
@@ -77,7 +45,7 @@ var redis = builder.AddRedis("redis")
 // 数据初始化服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
     .WithReference(database)
-    .WaitForCompletion(mongorsinit)
+    .WaitFor(mongo)
     .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
     .WithEnvironment("InternalService__ApiKey", internalServiceApiKey);
 
@@ -89,7 +57,7 @@ var apiService = builder.AddProject<Projects.Platform_ApiService>("apiservice")
     .WithReference(database)
     .WithReference(chat)
     .WithReference(redis)
-    .WaitForCompletion(mongorsinit)
+    .WaitFor(mongo)
     .WaitFor(redis)
     .WithReplicas(3);
 

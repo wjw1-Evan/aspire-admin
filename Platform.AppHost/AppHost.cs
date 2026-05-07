@@ -38,9 +38,7 @@ var mongoServer = builder.AddMongoDB("mongo-" + environment, 27017)
     .WithDataVolume()
     .WithMongoExpress();
 
-mongoServer.AddDatabase("database", "database");
-
-var database = builder.AddMongoDBReplicaSet("database")
+var database = builder.AddMongoDBReplicaSet("mongo-replicaset")
     .WithMember(mongoServer);
 
 var redis = builder.AddRedis("redis")
@@ -51,7 +49,7 @@ var redis = builder.AddRedis("redis")
 
 // 数据初始化服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
-    .WithReference(database)
+    .WithReference(database, "database")
     .WaitFor(database)
     .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
     .WithEnvironment("InternalService__ApiKey", internalServiceApiKey);
@@ -62,7 +60,7 @@ var apiService = builder.AddProject<Projects.Platform_ApiService>("apiservice")
     .WithHttpEndpoint()
     .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
     .WithEnvironment("InternalService__ApiKey", internalServiceApiKey)
-    .WithReference(database)
+    .WithReference(database, "database")
     .WithReference(chat)
     .WithReference(redis)
     .WaitFor(database)

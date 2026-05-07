@@ -1,6 +1,4 @@
 using System.Security.Cryptography;
-using Aspire.Hosting;
-using Aspire.Hosting.ApplicationModel;
 using Microsoft.Extensions.Hosting;
 using Scalar.Aspire;
 using Aspire.Hosting.Yarp;
@@ -31,33 +29,34 @@ var chat = openai.AddModel("chat", modelName).WithHealthCheck();
 
 var environment = builder.Environment.EnvironmentName;
 
+// Redis
+var redis = builder.AddRedis("redis")
+ .WithRedisInsight();
+
 // MongoDB - 使用 Aspire 官方集成，自动处理服务发现和连接字符串映射
 var mongo = builder.AddMongoDB("mongo")
-    .WithLifetime(ContainerLifetime.Persistent);
+    // .WithLifetime(ContainerLifetime.Persistent)
+    .WithMongoExpress()
+    .WithDataVolume()
+;
 
-var database = mongo.AddDatabase("database", "platform-db");
-
-var redis = builder.AddRedis("redis")
-    .WithLifetime(ContainerLifetime.Persistent)
-    .WithRedisInsight()
-    .WithDataVolume();
+var database = mongo.AddDatabase("database", ("platform-db-" + environment).ToLower());
 
 // 数据初始化服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
     .WithReference(database)
-    .WaitFor(mongo)
+    .WaitFor(database)
     .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
     .WithEnvironment("InternalService__ApiKey", internalServiceApiKey);
-
 
 var apiService = builder.AddProject<Projects.Platform_ApiService>("apiservice")
     .WithHttpEndpoint()
     .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
     .WithEnvironment("InternalService__ApiKey", internalServiceApiKey)
     .WithReference(database)
+    .WaitFor(database)
     .WithReference(chat)
     .WithReference(redis)
-    .WaitFor(mongo)
     .WaitFor(redis)
     .WithReplicas(3);
 

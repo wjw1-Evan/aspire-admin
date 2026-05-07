@@ -20,7 +20,7 @@ public static class ServiceExtensions
         this IHostApplicationBuilder builder,
         string connectionName = "database")
     {
-        builder.AddMongoDbContext<PlatformDbContext>(connectionName, "platform-db");
+        builder.AddMongoDbContext<PlatformDbContext>(connectionName);
 
         builder.AddRedisClient("redis");
 

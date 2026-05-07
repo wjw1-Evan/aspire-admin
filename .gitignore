@@ -554,3 +554,6 @@ Platform.Admin/src/.umi
 Platform.Admin/src/.umi-production
 
 .playwright-mcp
+
+# MongoDB replica set data
+**/mongo-data/

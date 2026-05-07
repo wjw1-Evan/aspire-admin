@@ -31,13 +31,22 @@ var chat = openai.AddModel("chat", modelName).WithHealthCheck();
 
 var environment = builder.Environment.EnvironmentName;
 
-// MongoDB 配置
+// MongoDB 副本集配置
+var replicaSetName = "rs0";
 var mongo = builder.AddMongoDB("mongo")
+    .WithArgs("--replSet", replicaSetName)
     .WithDataVolume()
-    .WithLifetime(ContainerLifetime.Persistent)
-    .WithMongoExpress();
+    .WithLifetime(ContainerLifetime.Persistent);
 
 var database = mongo.AddDatabase("database");
+
+// 副本集初始化容器（等待 MongoDB 启动后执行 rs.initiate()）
+var initScript = "config = { _id: 'rs0', version: 1, members: [ { _id: 0, host: 'localhost:27017' } ] }; rs.initiate(config);";
+
+var mongoInit = builder.AddContainer("mongo-init", "mongo")
+    .WithEntrypoint("mongosh")
+    .WithArgs("--host", "mongo", "--eval", initScript)
+    .WaitFor(mongo);
 
 var redis = builder.AddRedis("redis")
     .WithLifetime(ContainerLifetime.Persistent)
@@ -47,7 +56,7 @@ var redis = builder.AddRedis("redis")
 // 数据初始化服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
     .WithReference(database)
-    .WaitFor(mongo)
+    .WaitForCompletion(mongoInit)
     .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
     .WithEnvironment("InternalService__ApiKey", internalServiceApiKey);
 
@@ -59,7 +68,7 @@ var apiService = builder.AddProject<Projects.Platform_ApiService>("apiservice")
     .WithReference(database)
     .WithReference(chat)
     .WithReference(redis)
-    .WaitFor(mongo)
+    .WaitForCompletion(mongoInit)
     .WaitFor(redis)
     .WithReplicas(3);
 

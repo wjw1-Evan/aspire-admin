@@ -34,7 +34,8 @@ var environment = builder.Environment.EnvironmentName;
 // MongoDB 配置
 var mongo = builder.AddMongoDB("mongo")
     .WithDataVolume()
-    .WithLifetime(ContainerLifetime.Persistent);
+    .WithLifetime(ContainerLifetime.Persistent)
+    .WithMongoExpress();
 
 var database = mongo.AddDatabase("database");
 

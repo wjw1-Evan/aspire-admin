@@ -32,14 +32,20 @@ var chat = openai.AddModel("chat", modelName).WithHealthCheck();
 
 var environment = builder.Environment.EnvironmentName;
 
+IResourceBuilder<IResourceWithConnectionString> database;
+
 // 使用 MongoDB 单节点副本集配置（支持事务和变更流）
-var mongoServer = builder.AddMongoDB("mongo-" + environment, 27017)
+var mongoServer = builder.AddPerconaServerForMongoDB("mongo-" + environment, 27017)
     .WithLifetime(ContainerLifetime.Persistent)
     .WithDataVolume()
     .WithMongoExpress();
 
-var database = builder.AddMongoDBReplicaSet("mongo-replicaset")
+mongoServer.AddDatabase("database");
+
+var mongoReplicaSet = builder.AddMongoDBReplicaSet("mongo-replicaset")
     .WithMember(mongoServer);
+
+database = mongoReplicaSet;
 
 var redis = builder.AddRedis("redis")
     .WithLifetime(ContainerLifetime.Persistent)
@@ -49,8 +55,8 @@ var redis = builder.AddRedis("redis")
 
 // 数据初始化服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
-    .WithReference(database, "database")
-    .WaitFor(database)
+    .WithReference(database)
+    .WaitFor(mongoReplicaSet)
     .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
     .WithEnvironment("InternalService__ApiKey", internalServiceApiKey);
 
@@ -60,10 +66,10 @@ var apiService = builder.AddProject<Projects.Platform_ApiService>("apiservice")
     .WithHttpEndpoint()
     .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
     .WithEnvironment("InternalService__ApiKey", internalServiceApiKey)
-    .WithReference(database, "database")
+    .WithReference(database)
     .WithReference(chat)
     .WithReference(redis)
-    .WaitFor(database)
+    .WaitFor(mongoReplicaSet)
     .WaitFor(redis)
     .WithReplicas(3)
     ;

@@ -41,7 +41,8 @@ var mongo1 = builder.AddContainer("mongo-rs-1", "percona/percona-server-mongodb"
     .WithImageTag("latest")
     .WithArgs("--replSet", replicaSetName, "--port", "27017")
     .WithEndpoint(targetPort: 27017, scheme: "tcp")
-    .WithBindMount(source: Path.Combine(mongoDataPath, "rs-1"), target: "/data/db");
+    .WithBindMount(source: Path.Combine(mongoDataPath, "rs-1"), target: "/data/db")
+    ;
 
 // 副本集节点 2 (Secondary)
 var mongo2 = builder.AddContainer("mongo-rs-2", "percona/percona-server-mongodb")
@@ -69,7 +70,7 @@ builder.AddContainer("mongo-rs-init", "percona/percona-server-mongodb")
 
 // 副本集连接字符串 - 自动发现 Primary 节点
 var connectionString = $"mongodb://mongo-rs-1:27017,mongo-rs-2:27017,mongo-rs-3:27017/?replicaSet={replicaSetName}";
-var database = builder.AddConnectionString("database", connectionString);
+var database = builder.AddConnectionString("database", ReferenceExpression.Create($"{connectionString}"));
 
 var redis = builder.AddRedis("redis")
     .WithLifetime(ContainerLifetime.Persistent)

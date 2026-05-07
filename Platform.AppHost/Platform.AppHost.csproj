@@ -6,7 +6,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <UserSecretsId>32dca561-57e0-43ca-8fa6-2ecc6a9a5c73</UserSecretsId>
-    <NoWarn>$(NoWarn);NU1903</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,7 +20,6 @@
     <PackageReference Include="Aspire.Hosting.MongoDB" Version="13.2.4" />
     <PackageReference Include="Aspire.Hosting.Redis" Version="13.2.4" />
     <PackageReference Include="Aspire.Hosting.Yarp" Version="13.2.4" />
-    <PackageReference Include="Fedarovich.Aspire.Hosting.MongoDB.ReplicaSet" Version="13.2.1" />
     <PackageReference Include="Scalar.Aspire" Version="0.9.34" />
     <PackageReference Include="Aspire.Hosting.OpenAI" Version="13.2.4" />
   </ItemGroup>

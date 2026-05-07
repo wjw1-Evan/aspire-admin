@@ -5,7 +5,6 @@ using Microsoft.Extensions.Hosting;
 using Scalar.Aspire;
 using Aspire.Hosting.Yarp;
 using Aspire.Hosting.Yarp.Transforms;
-using Fedarovich.Aspire.Hosting.MongoDB.ReplicaSet;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
@@ -34,18 +33,14 @@ var environment = builder.Environment.EnvironmentName;
 
 IResourceBuilder<IResourceWithConnectionString> database;
 
-// 使用 MongoDB 单节点副本集配置（支持事务和变更流）
-var mongoServer = builder.AddPerconaServerForMongoDB("mongo-" + environment, 27017)
+// 使用简单 MongoDB 配置（无需副本集）
+var mongoServer = builder.AddMongoDB("mongo-" + environment)
     .WithLifetime(ContainerLifetime.Persistent)
     .WithDataVolume()
+    
     .WithMongoExpress();
 
-mongoServer.AddDatabase("database");
-
-var mongoReplicaSet = builder.AddMongoDBReplicaSet("mongo-replicaset")
-    .WithMember(mongoServer);
-
-database = mongoReplicaSet;
+database = mongoServer.AddDatabase("database");
 
 var redis = builder.AddRedis("redis")
     .WithLifetime(ContainerLifetime.Persistent)
@@ -56,7 +51,7 @@ var redis = builder.AddRedis("redis")
 // 数据初始化服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
     .WithReference(database)
-    .WaitFor(mongoReplicaSet)
+    .WaitFor(mongoServer)
     .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
     .WithEnvironment("InternalService__ApiKey", internalServiceApiKey);
 
@@ -69,7 +64,7 @@ var apiService = builder.AddProject<Projects.Platform_ApiService>("apiservice")
     .WithReference(database)
     .WithReference(chat)
     .WithReference(redis)
-    .WaitFor(mongoReplicaSet)
+    .WaitFor(mongoServer)
     .WaitFor(redis)
     .WithReplicas(3)
     ;

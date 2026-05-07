@@ -38,7 +38,6 @@ Directory.CreateDirectory(mongoDataPath);
 
 // 副本集节点 1 (Primary)
 var mongo1 = builder.AddContainer("mongo-rs-1", "percona/percona-server-mongodb")
-    .WithImageTag("latest")
     .WithArgs("--replSet", replicaSetName, "--port", "27017")
     .WithEndpoint(targetPort: 27017, scheme: "tcp")
     .WithBindMount(source: Path.Combine(mongoDataPath, "rs-1"), target: "/data/db")
@@ -46,22 +45,20 @@ var mongo1 = builder.AddContainer("mongo-rs-1", "percona/percona-server-mongodb"
 
 // 副本集节点 2 (Secondary)
 var mongo2 = builder.AddContainer("mongo-rs-2", "percona/percona-server-mongodb")
-    .WithImageTag("latest")
     .WithArgs("--replSet", replicaSetName, "--port", "27017")
     .WithEndpoint(targetPort: 27017, scheme: "tcp")
     .WithBindMount(source: Path.Combine(mongoDataPath, "rs-2"), target: "/data/db");
 
 // 副本集节点 3 (Secondary)
 var mongo3 = builder.AddContainer("mongo-rs-3", "percona/percona-server-mongodb")
-    .WithImageTag("latest")
     .WithArgs("--replSet", replicaSetName, "--port", "27017")
     .WithEndpoint(targetPort: 27017, scheme: "tcp")
     .WithBindMount(source: Path.Combine(mongoDataPath, "rs-3"), target: "/data/db");
 
 // 初始化副本集的容器（执行一次后自动停止）
 var initScript = $"config = {{ _id: '{replicaSetName}', members: [ {{ _id: 0, host: 'mongo-rs-1:27017' }}, {{ _id: 1, host: 'mongo-rs-2:27017' }}, {{ _id: 2, host: 'mongo-rs-3:27017' }} ] }}; rs.initiate(config);";
-builder.AddContainer("mongo-rs-init", "percona/percona-server-mongodb")
-    .WithImageTag("latest")
+
+var mongorsinit = builder.AddContainer("mongo-rs-init", "percona/percona-server-mongodb")
     .WithEntrypoint("sh")
     .WithArgs("-c", $"mongosh --host mongo-rs-1 --eval \"{initScript}\"")
     .WaitFor(mongo1)
@@ -77,17 +74,13 @@ var redis = builder.AddRedis("redis")
     .WithRedisInsight()
     .WithDataVolume();
 
-
 // 数据初始化服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
     .WithReference(database)
-    .WaitFor(mongo1)
-    .WaitFor(mongo2)
-    .WaitFor(mongo3)
+    .WaitForCompletion(mongorsinit)
     .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
     .WithEnvironment("InternalService__ApiKey", internalServiceApiKey);
 
-// 系统监控功能已迁移到 Platform.ApiService (路由: /api/system-monitor)
 
 var apiService = builder.AddProject<Projects.Platform_ApiService>("apiservice")
     .WithHttpEndpoint()
@@ -96,9 +89,7 @@ var apiService = builder.AddProject<Projects.Platform_ApiService>("apiservice")
     .WithReference(database)
     .WithReference(chat)
     .WithReference(redis)
-    .WaitFor(mongo1)
-    .WaitFor(mongo2)
-    .WaitFor(mongo3)
+    .WaitForCompletion(mongorsinit)
     .WaitFor(redis)
     .WithReplicas(3);
 

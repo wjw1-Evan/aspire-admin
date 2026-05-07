@@ -1,15 +1,16 @@
-curl -sSL https://aspire.dev/install.sh | bash
+curl -sSL <https://aspire.dev/install.sh> | bash
 
 aspire update
 
 dotnet dev-certs https --trust
 
-1、aspire deploy --log-level debug
-2、aspire publish
+// <https://aspire.dev/zh-cn/deployment/docker-compose/>
+1、aspire publish
+2、aspire deploy --log-level debug
 
 npm install -g npm-check-updates
 
 ncu -u
 
-
-npm install -g oh-my-opencode@latest
+Install and configure oh-my-openagent by following the instructions here:
+<https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/refs/heads/dev/docs/guide/installation.md>

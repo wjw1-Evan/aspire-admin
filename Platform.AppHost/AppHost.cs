@@ -31,22 +31,51 @@ var chat = openai.AddModel("chat", modelName).WithHealthCheck();
 
 var environment = builder.Environment.EnvironmentName;
 
-// MongoDB 副本集配置
+// MongoDB 三节点副本集配置
 var replicaSetName = "rs0";
-var mongo = builder.AddMongoDB("mongo")
+
+// 副本集节点 1 (Primary)
+var mongo1 = builder.AddMongoDB("mongo-1")
     .WithArgs("--replSet", replicaSetName)
     .WithDataVolume()
     .WithLifetime(ContainerLifetime.Persistent);
 
-var database = mongo.AddDatabase("database");
+// 副本集节点 2 (Secondary)
+var mongo2 = builder.AddMongoDB("mongo-2")
+    .WithArgs("--replSet", replicaSetName)
+    .WithDataVolume()
+    .WithLifetime(ContainerLifetime.Persistent);
 
-// 副本集初始化容器（等待 MongoDB 启动后执行 rs.initiate()）
-var initScript = "config = { _id: 'rs0', version: 1, members: [ { _id: 0, host: 'localhost:27017' } ] }; rs.initiate(config);";
+// 副本集节点 3 (Secondary)
+var mongo3 = builder.AddMongoDB("mongo-3")
+    .WithArgs("--replSet", replicaSetName)
+    .WithDataVolume()
+    .WithLifetime(ContainerLifetime.Persistent);
+
+// 使用第一个节点的数据库
+var database = mongo1.AddDatabase("database");
+
+// 副本集初始化脚本 - 使用 rs.initiate() 初始化三节点副本集
+// 参考: https://www.mongodb.com/docs/manual/reference/method/rs.initiate/
+var initScript = """
+    config = {
+        _id: 'rs0',
+        version: 1,
+        members: [
+            { _id: 0, host: 'mongo-1:27017' },
+            { _id: 1, host: 'mongo-2:27017' },
+            { _id: 2, host: 'mongo-3:27017' }
+        ]
+    };
+    rs.initiate(config);
+    """;
 
 var mongoInit = builder.AddContainer("mongo-init", "mongo")
     .WithEntrypoint("mongosh")
-    .WithArgs("--host", "mongo", "--eval", initScript)
-    .WaitFor(mongo);
+    .WithArgs("--host", "mongo-1", "--eval", initScript)
+    .WaitFor(mongo1)
+    .WaitFor(mongo2)
+    .WaitFor(mongo3);
 
 var redis = builder.AddRedis("redis")
     .WithLifetime(ContainerLifetime.Persistent)

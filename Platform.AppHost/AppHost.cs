@@ -58,15 +58,11 @@ var mongo3 = builder.AddContainer("mongo-rs-3", "percona/percona-server-mongodb"
     .WithBindMount(source: Path.Combine(mongoDataPath, "rs-3"), target: "/data/db");
 
 // 初始化副本集的容器（执行一次后自动停止）
+var initScript = $"config = {{ _id: '{replicaSetName}', members: [ {{ _id: 0, host: 'mongo-rs-1:27017' }}, {{ _id: 1, host: 'mongo-rs-2:27017' }}, {{ _id: 2, host: 'mongo-rs-3:27017' }} ] }}; rs.initiate(config);";
 builder.AddContainer("mongo-rs-init", "percona/percona-server-mongodb")
     .WithImageTag("latest")
-    .WithEntrypoint("mongosh")
-    .WithArgs("--host", "mongo-rs-1", "--eval",
-        $"config = {{ _id: '{replicaSetName}', members: [ " +
-        $"{{ _id: 0, host: 'mongo-rs-1:27017' }}, " +
-        $"{{ _id: 1, host: 'mongo-rs-2:27017' }}, " +
-        $"{{ _id: 2, host: 'mongo-rs-3:27017' }} " +
-        "] }}; rs.initiate(config);")
+    .WithEntrypoint("sh")
+    .WithArgs("-c", $"mongosh --host mongo-rs-1 --eval \"{initScript}\"")
     .WaitFor(mongo1)
     .WaitFor(mongo2)
     .WaitFor(mongo3);

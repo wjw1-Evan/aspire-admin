@@ -31,51 +31,11 @@ var chat = openai.AddModel("chat", modelName).WithHealthCheck();
 
 var environment = builder.Environment.EnvironmentName;
 
-// MongoDB 三节点副本集配置
-var replicaSetName = "rs0";
-
-// 副本集节点 1 (Primary)
-var mongo1 = builder.AddMongoDB("mongo-1")
-    .WithArgs("--replSet", replicaSetName)
-    .WithDataVolume()
+// MongoDB - 使用 Aspire 官方集成，自动处理服务发现和连接字符串映射
+var mongo = builder.AddMongoDB("mongo")
     .WithLifetime(ContainerLifetime.Persistent);
 
-// 副本集节点 2 (Secondary)
-var mongo2 = builder.AddMongoDB("mongo-2")
-    .WithArgs("--replSet", replicaSetName)
-    .WithDataVolume()
-    .WithLifetime(ContainerLifetime.Persistent);
-
-// 副本集节点 3 (Secondary)
-var mongo3 = builder.AddMongoDB("mongo-3")
-    .WithArgs("--replSet", replicaSetName)
-    .WithDataVolume()
-    .WithLifetime(ContainerLifetime.Persistent);
-
-// 使用第一个节点的数据库
-var database = mongo1.AddDatabase("database");
-
-// 副本集初始化脚本 - 使用 rs.initiate() 初始化三节点副本集
-// 参考: https://www.mongodb.com/docs/manual/reference/method/rs.initiate/
-var initScript = """
-    config = {
-        _id: 'rs0',
-        version: 1,
-        members: [
-            { _id: 0, host: 'mongo-1:27017' },
-            { _id: 1, host: 'mongo-2:27017' },
-            { _id: 2, host: 'mongo-3:27017' }
-        ]
-    };
-    rs.initiate(config);
-    """;
-
-var mongoInit = builder.AddContainer("mongo-init", "mongo")
-    .WithEntrypoint("mongosh")
-    .WithArgs("--host", "mongo-1", "--eval", initScript)
-    .WaitFor(mongo1)
-    .WaitFor(mongo2)
-    .WaitFor(mongo3);
+var database = mongo.AddDatabase("database", "platform-db");
 
 var redis = builder.AddRedis("redis")
     .WithLifetime(ContainerLifetime.Persistent)
@@ -85,7 +45,7 @@ var redis = builder.AddRedis("redis")
 // 数据初始化服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
     .WithReference(database)
-    .WaitForCompletion(mongoInit)
+    .WaitFor(mongo)
     .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
     .WithEnvironment("InternalService__ApiKey", internalServiceApiKey);
 
@@ -97,7 +57,7 @@ var apiService = builder.AddProject<Projects.Platform_ApiService>("apiservice")
     .WithReference(database)
     .WithReference(chat)
     .WithReference(redis)
-    .WaitForCompletion(mongoInit)
+    .WaitFor(mongo)
     .WaitFor(redis)
     .WithReplicas(3);
 

@@ -20,9 +20,9 @@ public static class ServiceExtensions
         this IHostApplicationBuilder builder,
         string connectionName = "database")
     {
-        builder.AddMongoDbContext<PlatformDbContext>(connectionName);
+        builder.AddMongoDbContext<PlatformDbContext>(connectionName, "platform-db");
 
-        builder.AddRedisClient( "redis");
+        builder.AddRedisClient("redis");
 
         builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<PlatformDbContext>());
 

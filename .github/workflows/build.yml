@@ -76,7 +76,6 @@ jobs:
           # 构建并推送
           docker buildx build \
             -f $CONTEXT/Dockerfile \
-            --context $CONTEXT \
             --tag ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/apiservice:${{ env.IMAGE_TAG }} \
             --tag ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/apiservice:latest \
             --cache-from type=gha \
@@ -106,7 +105,6 @@ jobs:
 
           docker buildx build \
             -f $CONTEXT/Dockerfile \
-            --context $CONTEXT \
             --tag ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/datainitializer:${{ env.IMAGE_TAG }} \
             --tag ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/datainitializer:latest \
             --cache-from type=gha \

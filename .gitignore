@@ -557,3 +557,4 @@ Platform.Admin/src/.umi-production
 
 # MongoDB replica set data
 **/mongo-data/
+**/aspire-output/

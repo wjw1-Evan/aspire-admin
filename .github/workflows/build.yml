@@ -1,0 +1,145 @@
+name: Build Aspire Images
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_TAG: ${{ github.sha }}
+  DOCKER_BUILDKIT: 1
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ========================================
+      # Admin (React 前端，无外部依赖)
+      # ========================================
+      - name: Build & Push Admin
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Platform.Admin
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository }}/admin:${{ env.IMAGE_TAG }}
+            ${{ env.REGISTRY }}/${{ github.repository }}/admin:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ========================================
+      # ApiService (.NET 后端，依赖 ServiceDefaults)
+      # ========================================
+      - name: Build & Push ApiService
+        run: |
+          CONTEXT=$(mktemp -d)
+
+          # 构建扁平化上下文（与 Aspire 本地 staging 一致）
+          (cd Platform.ApiService && \
+           tar cf - --exclude='bin' --exclude='obj' --exclude='.dockerignore' .) | \
+          (cd $CONTEXT && tar xf -)
+
+          # 保留 ServiceDefaults 的目录结构
+          mkdir -p $CONTEXT/Platform.ServiceDefaults
+          (cd Platform.ServiceDefaults && \
+           tar cf - --exclude='bin' --exclude='obj' --exclude='.dockerignore' .) | \
+          (cd $CONTEXT/Platform.ServiceDefaults && tar xf -)
+
+          # 提供 NuGet 配置
+          cp NuGet.config $CONTEXT/ 2>/dev/null || true
+
+          # 构建并推送
+          docker buildx build \
+            -f $CONTEXT/Dockerfile \
+            --context $CONTEXT \
+            --tag ${{ env.REGISTRY }}/${{ github.repository }}/apiservice:${{ env.IMAGE_TAG }} \
+            --tag ${{ env.REGISTRY }}/${{ github.repository }}/apiservice:latest \
+            --cache-from type=gha \
+            --cache-to type=gha,mode=max \
+            --push \
+            $CONTEXT
+
+          rm -rf $CONTEXT
+
+      # ========================================
+      # DataInitializer (一次性任务，依赖 ServiceDefaults)
+      # ========================================
+      - name: Build & Push DataInitializer
+        run: |
+          CONTEXT=$(mktemp -d)
+
+          (cd Platform.DataInitializer && \
+           tar cf - --exclude='bin' --exclude='obj' --exclude='.dockerignore' .) | \
+          (cd $CONTEXT && tar xf -)
+
+          mkdir -p $CONTEXT/Platform.ServiceDefaults
+          (cd Platform.ServiceDefaults && \
+           tar cf - --exclude='bin' --exclude='obj' --exclude='.dockerignore' .) | \
+          (cd $CONTEXT/Platform.ServiceDefaults && tar xf -)
+
+          cp NuGet.config $CONTEXT/ 2>/dev/null || true
+
+          docker buildx build \
+            -f $CONTEXT/Dockerfile \
+            --context $CONTEXT \
+            --tag ${{ env.REGISTRY }}/${{ github.repository }}/datainitializer:${{ env.IMAGE_TAG }} \
+            --tag ${{ env.REGISTRY }}/${{ github.repository }}/datainitializer:latest \
+            --cache-from type=gha \
+            --cache-to type=gha,mode=max \
+            --push \
+            $CONTEXT
+
+          rm -rf $CONTEXT
+
+      # ========================================
+      # ApiGateway (YARP，FROM 引用 admin 镜像)
+      # ========================================
+      - name: Build & Push ApiGateway
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Platform.AppHost/aspire-output/apigateway.Dockerfile
+          push: true
+          build-args: |
+            ADMIN_IMAGENAME=${{ env.REGISTRY }}/${{ github.repository }}/admin:${{ env.IMAGE_TAG }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository }}/apigateway:${{ env.IMAGE_TAG }}
+            ${{ env.REGISTRY }}/${{ github.repository }}/apigateway:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ========================================
+      # 输出摘要
+      # ========================================
+      - name: Print Build Summary
+        run: |
+          echo "## Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Image | Tag |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-----|" >> $GITHUB_STEP_SUMMARY
+          echo "| \`admin\` | \`${{ env.IMAGE_TAG }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| \`apiservice\` | \`${{ env.IMAGE_TAG }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| \`datainitializer\` | \`${{ env.IMAGE_TAG }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| \`apigateway\` | \`${{ env.IMAGE_TAG }}\` |" >> $GITHUB_STEP_SUMMARY

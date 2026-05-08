@@ -8,6 +8,25 @@ import settings from './ko-KR/settings';
 import request from './ko-KR/request';
 import welcome from './ko-KR/welcome';
 
+import auth from './ko-KR/modules/auth';
+import cloudStorage from './ko-KR/modules/cloud-storage';
+import company from './ko-KR/modules/company';
+import dashboard from './ko-KR/modules/dashboard';
+import document from './ko-KR/modules/document';
+import help from './ko-KR/modules/help';
+import iot from './ko-KR/modules/iot';
+import missing from './ko-KR/modules/missing';
+import organization from './ko-KR/modules/organization';
+import other from './ko-KR/modules/other';
+import park from './ko-KR/modules/park';
+import project from './ko-KR/modules/project';
+import role from './ko-KR/modules/role';
+import task from './ko-KR/modules/task';
+import user from './ko-KR/modules/user';
+import webScraper from './ko-KR/modules/web-scraper';
+import workflow from './ko-KR/modules/workflow';
+import xiaoke from './ko-KR/modules/xiaoke';
+
 export default {
     'navBar.lang': '언어',
     'layout.user.link.help': '도움말',
@@ -26,4 +45,23 @@ export default {
     ...request,
     ...pages,
   ...welcome,
+
+  ...auth,
+  ...cloudStorage,
+  ...company,
+  ...dashboard,
+  ...document,
+  ...help,
+  ...iot,
+  ...missing,
+  ...organization,
+  ...other,
+  ...park,
+  ...project,
+  ...role,
+  ...task,
+  ...user,
+  ...webScraper,
+  ...workflow,
+  ...xiaoke,
 };

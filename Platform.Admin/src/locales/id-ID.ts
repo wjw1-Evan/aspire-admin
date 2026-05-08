@@ -7,6 +7,25 @@ import settingDrawer from './id-ID/settingDrawer';
 import settings from './id-ID/settings';
 import welcome from './id-ID/welcome';
 
+import auth from './id-ID/modules/auth';
+import cloudStorage from './id-ID/modules/cloud-storage';
+import company from './id-ID/modules/company';
+import dashboard from './id-ID/modules/dashboard';
+import document from './id-ID/modules/document';
+import help from './id-ID/modules/help';
+import iot from './id-ID/modules/iot';
+import missing from './id-ID/modules/missing';
+import organization from './id-ID/modules/organization';
+import other from './id-ID/modules/other';
+import park from './id-ID/modules/park';
+import project from './id-ID/modules/project';
+import role from './id-ID/modules/role';
+import task from './id-ID/modules/task';
+import user from './id-ID/modules/user';
+import webScraper from './id-ID/modules/web-scraper';
+import workflow from './id-ID/modules/workflow';
+import xiaoke from './id-ID/modules/xiaoke';
+
 export default {
   'navbar.lang': 'Bahasa',
   'layout.user.link.help': 'Bantuan',
@@ -24,4 +43,23 @@ export default {
   ...component,
   ...pages,
   ...welcome,
+
+  ...auth,
+  ...cloudStorage,
+  ...company,
+  ...dashboard,
+  ...document,
+  ...help,
+  ...iot,
+  ...missing,
+  ...organization,
+  ...other,
+  ...park,
+  ...project,
+  ...role,
+  ...task,
+  ...user,
+  ...webScraper,
+  ...workflow,
+  ...xiaoke,
 };

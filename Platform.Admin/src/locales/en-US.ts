@@ -8,6 +8,25 @@ import settings from './en-US/settings';
 import request from './en-US/request';
 import welcome from './en-US/welcome';
 
+import auth from './en-US/modules/auth';
+import cloudStorage from './en-US/modules/cloud-storage';
+import company from './en-US/modules/company';
+import dashboard from './en-US/modules/dashboard';
+import document from './en-US/modules/document';
+import help from './en-US/modules/help';
+import iot from './en-US/modules/iot';
+import missing from './en-US/modules/missing';
+import organization from './en-US/modules/organization';
+import other from './en-US/modules/other';
+import park from './en-US/modules/park';
+import project from './en-US/modules/project';
+import role from './en-US/modules/role';
+import task from './en-US/modules/task';
+import user from './en-US/modules/user';
+import webScraper from './en-US/modules/web-scraper';
+import workflow from './en-US/modules/workflow';
+import xiaoke from './en-US/modules/xiaoke';
+
 export default {
   'navBar.lang': 'Languages',
   'layout.user.link.help': 'Help',
@@ -26,4 +45,23 @@ export default {
   ...request,
   ...pages,
   ...welcome,
+
+  ...auth,
+  ...cloudStorage,
+  ...company,
+  ...dashboard,
+  ...document,
+  ...help,
+  ...iot,
+  ...missing,
+  ...organization,
+  ...other,
+  ...park,
+  ...project,
+  ...role,
+  ...task,
+  ...user,
+  ...webScraper,
+  ...workflow,
+  ...xiaoke,
 };

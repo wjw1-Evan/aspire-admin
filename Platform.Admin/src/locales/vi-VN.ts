@@ -8,6 +8,25 @@ import settings from './vi-VN/settings';
 import request from './vi-VN/request';
 import welcome from './vi-VN/welcome';
 
+import auth from './vi-VN/modules/auth';
+import cloudStorage from './vi-VN/modules/cloud-storage';
+import company from './vi-VN/modules/company';
+import dashboard from './vi-VN/modules/dashboard';
+import document from './vi-VN/modules/document';
+import help from './vi-VN/modules/help';
+import iot from './vi-VN/modules/iot';
+import missing from './vi-VN/modules/missing';
+import organization from './vi-VN/modules/organization';
+import other from './vi-VN/modules/other';
+import park from './vi-VN/modules/park';
+import project from './vi-VN/modules/project';
+import role from './vi-VN/modules/role';
+import task from './vi-VN/modules/task';
+import user from './vi-VN/modules/user';
+import webScraper from './vi-VN/modules/web-scraper';
+import workflow from './vi-VN/modules/workflow';
+import xiaoke from './vi-VN/modules/xiaoke';
+
 export default {
     'navBar.lang': 'Ngôn ngữ',
     'layout.user.link.help': 'Trợ giúp',
@@ -26,4 +45,23 @@ export default {
     ...request,
     ...pages,
   ...welcome,
+
+  ...auth,
+  ...cloudStorage,
+  ...company,
+  ...dashboard,
+  ...document,
+  ...help,
+  ...iot,
+  ...missing,
+  ...organization,
+  ...other,
+  ...park,
+  ...project,
+  ...role,
+  ...task,
+  ...user,
+  ...webScraper,
+  ...workflow,
+  ...xiaoke,
 };

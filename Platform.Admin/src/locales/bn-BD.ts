@@ -7,6 +7,25 @@ import settingDrawer from './bn-BD/settingDrawer';
 import settings from './bn-BD/settings';
 import welcome from './bn-BD/welcome';
 
+import auth from './bn-BD/modules/auth';
+import cloudStorage from './bn-BD/modules/cloud-storage';
+import company from './bn-BD/modules/company';
+import dashboard from './bn-BD/modules/dashboard';
+import document from './bn-BD/modules/document';
+import help from './bn-BD/modules/help';
+import iot from './bn-BD/modules/iot';
+import missing from './bn-BD/modules/missing';
+import organization from './bn-BD/modules/organization';
+import other from './bn-BD/modules/other';
+import park from './bn-BD/modules/park';
+import project from './bn-BD/modules/project';
+import role from './bn-BD/modules/role';
+import task from './bn-BD/modules/task';
+import user from './bn-BD/modules/user';
+import webScraper from './bn-BD/modules/web-scraper';
+import workflow from './bn-BD/modules/workflow';
+import xiaoke from './bn-BD/modules/xiaoke';
+
 export default {
   'navBar.lang': 'ভাষা',
   'layout.user.link.help': 'সহায়তা',
@@ -24,4 +43,23 @@ export default {
   ...component,
   ...pages,
   ...welcome,
+
+  ...auth,
+  ...cloudStorage,
+  ...company,
+  ...dashboard,
+  ...document,
+  ...help,
+  ...iot,
+  ...missing,
+  ...organization,
+  ...other,
+  ...park,
+  ...project,
+  ...role,
+  ...task,
+  ...user,
+  ...webScraper,
+  ...workflow,
+  ...xiaoke,
 };

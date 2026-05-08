@@ -7,6 +7,25 @@ import settingDrawer from './fa-IR/settingDrawer';
 import settings from './fa-IR/settings';
 import welcome from './fa-IR/welcome';
 
+import auth from './fa-IR/modules/auth';
+import cloudStorage from './fa-IR/modules/cloud-storage';
+import company from './fa-IR/modules/company';
+import dashboard from './fa-IR/modules/dashboard';
+import document from './fa-IR/modules/document';
+import help from './fa-IR/modules/help';
+import iot from './fa-IR/modules/iot';
+import missing from './fa-IR/modules/missing';
+import organization from './fa-IR/modules/organization';
+import other from './fa-IR/modules/other';
+import park from './fa-IR/modules/park';
+import project from './fa-IR/modules/project';
+import role from './fa-IR/modules/role';
+import task from './fa-IR/modules/task';
+import user from './fa-IR/modules/user';
+import webScraper from './fa-IR/modules/web-scraper';
+import workflow from './fa-IR/modules/workflow';
+import xiaoke from './fa-IR/modules/xiaoke';
+
 export default {
   'navBar.lang': 'زبان ها  ',
   'layout.user.link.help': 'کمک',
@@ -24,4 +43,23 @@ export default {
   ...component,
   ...pages,
   ...welcome,
+
+  ...auth,
+  ...cloudStorage,
+  ...company,
+  ...dashboard,
+  ...document,
+  ...help,
+  ...iot,
+  ...missing,
+  ...organization,
+  ...other,
+  ...park,
+  ...project,
+  ...role,
+  ...task,
+  ...user,
+  ...webScraper,
+  ...workflow,
+  ...xiaoke,
 };

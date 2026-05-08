@@ -2,11 +2,16 @@
  * Application constants
  */
 
+import { Platform } from 'react-native';
 import { APIGATEWAY_URL } from '../constants/env-config';
 
 // API Configuration
-export const API_BASE_URL = __DEV__ 
-  ? `${APIGATEWAY_URL}/apiservice`
+// Web 开发模式通过 Metro proxy 转发，使用同源请求避免跨域
+// 原生端直接请求 API 网关
+export const API_BASE_URL = __DEV__
+  ? Platform.OS === 'web'
+    ? ''
+    : `${APIGATEWAY_URL}/apiservice`
   : process.env.EXPO_PUBLIC_API_BASE_URL || 'https://api.yourproduction.com';
 
 // Storage Keys

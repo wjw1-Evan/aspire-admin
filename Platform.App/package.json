@@ -3,8 +3,8 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
-    "dev": "expo start",
-    "start": "expo start",
+    "dev": "expo start --port ${PORT:-8081}",
+    "start": "expo start --port ${PORT:-8081}",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web --port ${PORT:-8081}",

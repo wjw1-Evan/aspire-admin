@@ -22,8 +22,6 @@ public class FileSystemStorageService
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "AspireAdmin",
             "FileStorage");
-
-        Directory.CreateDirectory(_baseStoragePath);
     }
 
     private string GetBucketPath(string bucketName)
@@ -307,7 +305,7 @@ public class FileSystemStorageService
         {
             bucketsToCheck.Add(bucketName);
         }
-        else
+        else if (Directory.Exists(_baseStoragePath))
         {
             var bucketDirs = Directory.GetDirectories(_baseStoragePath);
             bucketsToCheck.AddRange(bucketDirs.Select(Path.GetFileName).Where(x => x != null)!);

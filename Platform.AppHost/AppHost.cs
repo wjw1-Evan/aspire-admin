@@ -66,7 +66,7 @@ var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDisco
 };
 
 var adminbuilder = builder.AddJavaScriptApp("admin", "../Platform.Admin")
-    .WithHttpEndpoint(env: "PORT")
+    // .WithHttpEndpoint(env: "PORT")
     .WithBuildScript("npm run build");
 
 // 添加移动端应用 (Expo) - 仅开发环境
@@ -83,10 +83,11 @@ if (builder.Environment.IsDevelopment())
 var yarp = builder.AddYarp("apigateway")
     .WithHostPort(15000)
     .WithExternalHttpEndpoints()
+    .WithStaticFiles()
     .PublishWithStaticFiles(adminbuilder)
     .WithConfiguration(config =>
     {
-        config.AddRoute(adminbuilder);
+        // config.AddRoute(adminbuilder);
 
         // 微服务路由配置 - 统一通过/{service}路径访问
         // 使用通配符{**catch-all}捕获所有子路径

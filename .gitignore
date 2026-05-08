@@ -557,4 +557,6 @@ Platform.Admin/src/.umi-production
 
 # MongoDB replica set data
 **/mongo-data/
-**/aspire-output/
+Platform.AppHost/aspire-output/
+Platform.AppHost/aspire-output/apigateway.Dockerfile
+Platform.AppHost/aspire-output/docker-compose.yaml

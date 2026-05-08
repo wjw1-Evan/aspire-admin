@@ -8,9 +8,8 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json ./
 
-# [优化] 使用 BuildKit 缓存挂载，避免重复下载 npm 包
-RUN --mount=type=cache,target=/root/.npm \
-    npm install --legacy-peer-deps
+# 安装依赖（依赖 Docker 层缓存）
+RUN npm install --legacy-peer-deps
 
 # Build the application
 FROM base AS builder

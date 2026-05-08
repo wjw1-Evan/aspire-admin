@@ -6,17 +6,14 @@ WORKDIR /app
 COPY Platform.DataInitializer.csproj .
 COPY Platform.ServiceDefaults/Platform.ServiceDefaults.csproj Platform.ServiceDefaults/
 
-# [优化] 使用 BuildKit 缓存挂载，避免重复下载 NuGet 包
-RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
-    dotnet restore
+# 恢复 NuGet 依赖
+RUN dotnet restore
 
 # 复制所有源代码
 COPY . .
 
-# [优化] 发布时跳过 restore（已在上一层完成），使用 NuGet 缓存
-RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
-    dotnet publish "Platform.DataInitializer.csproj" -c Release -o /app/publish \
-    /p:UseAppHost=false --no-restore
+# 发布（依赖 Docker 层缓存，而非 BuildKit 缓存挂载）
+RUN dotnet publish "Platform.DataInitializer.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app

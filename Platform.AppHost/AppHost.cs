@@ -9,9 +9,6 @@ var builder = DistributedApplication.CreateBuilder(args);
 // Add the following line to configure the Docker Compose environment
 builder.AddDockerComposeEnvironment("env");
 
-var registry = builder.AddContainerRegistry("ghcr", "ghcr.io");
-
-
 // 🔒 从 Aspire 配置中读取 JWT 设置
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"]
     ?? throw new InvalidOperationException("缺少 JWT 密钥配置项 'Jwt:SecretKey'。");
@@ -102,9 +99,7 @@ var yarp = builder.AddYarp("apigateway")
             config.AddRoute($"/{service.Key}/{{**catch-all}}", service.Value).WithMaxRequestBodySize(-1).WithTransformPathRouteValues("/{**catch-all}");
         }
 
-    })
-    .WithContainerRegistry(registry)
-;
+    });
 
 
 // 配置 Scalar API 文档

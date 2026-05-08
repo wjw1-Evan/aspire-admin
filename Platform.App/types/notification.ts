@@ -1,4 +1,4 @@
-import { ApiResponse } from './api';
+import { ApiResponse, PagedResult } from './api';
 
 export enum NotificationCategory {
   System = 'System',
@@ -35,14 +35,6 @@ export interface NotificationStatistics {
   Social: number;
   Security: number;
   Total: number;
-}
-
-export interface PagedResult<T> {
-  queryable: T[];
-  rowCount: number;
-  currentPage: number;
-  pageSize: number;
-  pageCount: number;
 }
 
 export type NotificationListResult = ApiResponse<PagedResult<AppNotification>>;

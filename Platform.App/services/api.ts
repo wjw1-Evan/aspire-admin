@@ -154,9 +154,4 @@ const createApiInstance = (): AxiosInstance => {
 // Export the configured instance
 export const apiClient = createApiInstance();
 
-/**
- * Helper function to handle API responses
- */
-export const handleApiResponse = <T>(response: any): ApiResponse<T> => {
-    return response as ApiResponse<T>;
-};
+

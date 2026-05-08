@@ -13,12 +13,12 @@ export interface ApiResponse<T = any> {
     traceId?: string;
 }
 
-export interface PagedResponse<T> {
-    items: T[];
-    total: number;
-    page: number;
+export interface PagedResult<T> {
+    queryable: T[];
+    currentPage: number;
     pageSize: number;
-    totalPages: number;
+    rowCount: number;
+    pageCount: number;
 }
 
 export interface ErrorResponse {

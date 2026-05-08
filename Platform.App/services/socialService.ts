@@ -3,7 +3,7 @@
  * 提供附近的人、位置上报等社交功能 API
  */
 
-import { apiClient, handleApiResponse } from './api';
+import { apiClient } from './api';
 import { ApiResponse } from '../types/api';
 
 /**
@@ -112,11 +112,10 @@ export interface UserLocationInfo {
 export async function updateLocation(
   request: UpdateLocationBeaconRequest,
 ): Promise<ApiResponse<string>> {
-  const response = await apiClient.post<ApiResponse<string>>(
+  return await apiClient.post<any, ApiResponse<string>>(
     '/api/social/location/beacon',
     request,
   );
-  return handleApiResponse<string>(response);
 }
 
 /**
@@ -127,11 +126,10 @@ export async function updateLocation(
 export async function getNearbyUsers(
   request: NearbyUsersRequest,
 ): Promise<ApiResponse<NearbyUsersResponse>> {
-  const response = await apiClient.post<ApiResponse<NearbyUsersResponse>>(
+  return await apiClient.post<any, ApiResponse<NearbyUsersResponse>>(
     '/api/social/nearby-users',
     request,
   );
-  return handleApiResponse<NearbyUsersResponse>(response);
 }
 
 /**
@@ -141,9 +139,8 @@ export async function getNearbyUsers(
 export async function getCurrentUserLocationInfo(): Promise<
   ApiResponse<UserLocationInfo>
 > {
-  const response = await apiClient.get<ApiResponse<UserLocationInfo>>(
+  return await apiClient.get<any, ApiResponse<UserLocationInfo>>(
     '/api/social/location/info',
   );
-  return handleApiResponse<UserLocationInfo>(response);
 }
 

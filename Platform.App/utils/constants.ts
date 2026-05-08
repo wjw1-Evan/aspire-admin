@@ -2,10 +2,12 @@
  * Application constants
  */
 
+import { APIGATEWAY_URL } from '../constants/env-config';
+
 // API Configuration
 export const API_BASE_URL = __DEV__ 
-  ? 'http://localhost:15000/apiservice'
-  : 'https://api.yourproduction.com';
+  ? `${APIGATEWAY_URL}/apiservice`
+  : process.env.EXPO_PUBLIC_API_BASE_URL || 'https://api.yourproduction.com';
 
 // Storage Keys
 export const STORAGE_KEYS = {

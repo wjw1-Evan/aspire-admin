@@ -9,6 +9,11 @@ var builder = DistributedApplication.CreateBuilder(args);
 // Add the following line to configure the Docker Compose environment
 builder.AddDockerComposeEnvironment("env");
 
+// 容器注册表配置（用于 CI/CD 推送镜像）
+var registryEndpoint = builder.AddParameter("registry-endpoint");
+var registryRepository = builder.AddParameter("registry-repository");
+builder.AddContainerRegistry("container-registry", registryEndpoint, registryRepository);
+
 // 🔒 从 Aspire 配置中读取 JWT 设置
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"]
     ?? throw new InvalidOperationException("缺少 JWT 密钥配置项 'Jwt:SecretKey'。");

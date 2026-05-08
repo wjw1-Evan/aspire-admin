@@ -7,8 +7,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_TAG: ${{ github.sha }}
-  DOCKER_BUILDKIT: 1
 
 jobs:
   build:
@@ -23,7 +21,7 @@ jobs:
       - name: Set repository name (lowercase)
         run: echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
 
-      - name: Login to GitHub Container Registry
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -35,99 +33,34 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Install Aspire CLI
+        run: |
+          curl -sSL https://aspire.dev/install.sh | bash
+          echo "$HOME/.aspire/bin" >> $GITHUB_PATH
+          aspire --version
 
-      # ========================================
-      # Admin (React 前端，无外部依赖)
-      # ========================================
-      - name: Build & Push Admin
-        uses: docker/build-push-action@v6
+      - name: Build & Push all images
+        run: aspire do push
+        env:
+          Parameters__registry_endpoint: ${{ env.REGISTRY }}
+          Parameters__registry_repository: ${{ env.REPO_LOWER }}
+
+      - name: Publish Docker Compose artifacts
+        run: |
+          aspire publish \
+            --project Platform.AppHost/Platform.AppHost.csproj \
+            --output-path ./aspire-output
+
+      - name: Upload deployment artifacts
+        uses: actions/upload-artifact@v4
         with:
-          context: ./Platform.Admin
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/admin:${{ env.IMAGE_TAG }}
-            ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/admin:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          name: aspire-deployment-files
+          path: ./aspire-output/
+          retention-days: 30
+          include-hidden-files: true
 
-      # ========================================
-      # .NET 项目：在 runner 上直接 publish（避免 Docker 内项目引用路径问题）
-      # 然后从发布产物构建最小运行时镜像
-      # ========================================
-      - name: Publish .NET projects
-        run: |
-          dotnet publish Platform.ApiService -c Release -o ./publish/apiservice /p:UseAppHost=false
-          dotnet publish Platform.DataInitializer -c Release -o ./publish/datainitializer /p:UseAppHost=false
-
-      - name: Build & Push ApiService
-        run: |
-          printf '%s\n' \
-            'FROM mcr.microsoft.com/dotnet/aspnet:10.0' \
-            'WORKDIR /app' \
-            'ENV ASPNETCORE_URLS=http://+:8080' \
-            'ENV DOTNET_EnableDiagnostics=0' \
-            'COPY . .' \
-            'EXPOSE 8080' \
-            'ENTRYPOINT ["dotnet", "Platform.ApiService.dll"]' \
-            > ./publish/apiservice/Dockerfile
-          docker buildx build \
-            --context ./publish/apiservice \
-            --tag ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/apiservice:${{ env.IMAGE_TAG }} \
-            --tag ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/apiservice:latest \
-            --cache-from type=gha \
-            --cache-to type=gha,mode=max \
-            --push \
-            ./publish/apiservice
-
-      - name: Build & Push DataInitializer
-        run: |
-          printf '%s\n' \
-            'FROM mcr.microsoft.com/dotnet/aspnet:10.0' \
-            'WORKDIR /app' \
-            'ENV ASPNETCORE_URLS=http://+:8080' \
-            'ENV DOTNET_EnableDiagnostics=0' \
-            'COPY . .' \
-            'EXPOSE 8080' \
-            'ENTRYPOINT ["dotnet", "Platform.DataInitializer.dll"]' \
-            > ./publish/datainitializer/Dockerfile
-          docker buildx build \
-            --context ./publish/datainitializer \
-            --tag ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/datainitializer:${{ env.IMAGE_TAG }} \
-            --tag ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/datainitializer:latest \
-            --cache-from type=gha \
-            --cache-to type=gha,mode=max \
-            --push \
-            ./publish/datainitializer
-
-      # ========================================
-      # ApiGateway (YARP，FROM 引用 admin 镜像)
-      # ========================================
-      - name: Build & Push ApiGateway
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Platform.AppHost/aspire-output/apigateway.Dockerfile
-          push: true
-          build-args: |
-            ADMIN_IMAGENAME=${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/admin:${{ env.IMAGE_TAG }}
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/apigateway:${{ env.IMAGE_TAG }}
-            ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/apigateway:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      # ========================================
-      # 输出摘要
-      # ========================================
       - name: Print Build Summary
         run: |
           echo "## Build Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Image | Tag |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------|-----|" >> $GITHUB_STEP_SUMMARY
-          echo "| \`admin\` | \`${{ env.IMAGE_TAG }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| \`apiservice\` | \`${{ env.IMAGE_TAG }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| \`datainitializer\` | \`${{ env.IMAGE_TAG }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| \`apigateway\` | \`${{ env.IMAGE_TAG }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "Images built and pushed via \`aspire do push\`" >> $GITHUB_STEP_SUMMARY

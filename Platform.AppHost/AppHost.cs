@@ -58,7 +58,7 @@ var apiService = builder.AddProject<Projects.Platform_ApiService>("apiservice")
     .WithReference(chat)
     .WithReference(redis)
     .WaitFor(redis)
-    .WithReplicas(3);
+    ;
 
 var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDiscovery>>
 {

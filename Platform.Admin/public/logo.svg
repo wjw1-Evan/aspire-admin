@@ -1,0 +1,28 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Aspire Admin Platform Logo - 现代化设计 -->
+  <!-- 渐变背景 -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1677ff"/>
+      <stop offset="100%" stop-color="#0958d9"/>
+    </linearGradient>
+    <linearGradient id="iconGradient" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.9"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- 圆角背景 -->
+  <rect width="64" height="64" rx="14" fill="url(#bgGradient)"/>
+  
+  <!-- 主图标：向上的箭头/火箭，代表 Aspire（向上提升） -->
+  <!-- 箭头主体 -->
+  <path d="M32 18L42 28H36V38H28V28H22L32 18Z" fill="url(#iconGradient)"/>
+  
+  <!-- 底部平台/基础 -->
+  <rect x="20" y="40" width="24" height="3" rx="1.5" fill="url(#iconGradient)"/>
+  <rect x="20" y="46" width="24" height="3" rx="1.5" fill="url(#iconGradient)" opacity="0.7"/>
+  
+  <!-- 装饰性光点 -->
+  <circle cx="32" cy="28" r="2" fill="#ffffff" opacity="0.6"/>
+</svg>

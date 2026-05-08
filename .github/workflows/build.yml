@@ -20,6 +20,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set repository name (lowercase)
+        run: echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -44,8 +47,8 @@ jobs:
           context: ./Platform.Admin
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}/admin:${{ env.IMAGE_TAG }}
-            ${{ env.REGISTRY }}/${{ github.repository }}/admin:latest
+            ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/admin:${{ env.IMAGE_TAG }}
+            ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/admin:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -74,8 +77,8 @@ jobs:
           docker buildx build \
             -f $CONTEXT/Dockerfile \
             --context $CONTEXT \
-            --tag ${{ env.REGISTRY }}/${{ github.repository }}/apiservice:${{ env.IMAGE_TAG }} \
-            --tag ${{ env.REGISTRY }}/${{ github.repository }}/apiservice:latest \
+            --tag ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/apiservice:${{ env.IMAGE_TAG }} \
+            --tag ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/apiservice:latest \
             --cache-from type=gha \
             --cache-to type=gha,mode=max \
             --push \
@@ -104,8 +107,8 @@ jobs:
           docker buildx build \
             -f $CONTEXT/Dockerfile \
             --context $CONTEXT \
-            --tag ${{ env.REGISTRY }}/${{ github.repository }}/datainitializer:${{ env.IMAGE_TAG }} \
-            --tag ${{ env.REGISTRY }}/${{ github.repository }}/datainitializer:latest \
+            --tag ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/datainitializer:${{ env.IMAGE_TAG }} \
+            --tag ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/datainitializer:latest \
             --cache-from type=gha \
             --cache-to type=gha,mode=max \
             --push \
@@ -123,10 +126,10 @@ jobs:
           file: ./Platform.AppHost/aspire-output/apigateway.Dockerfile
           push: true
           build-args: |
-            ADMIN_IMAGENAME=${{ env.REGISTRY }}/${{ github.repository }}/admin:${{ env.IMAGE_TAG }}
+            ADMIN_IMAGENAME=${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/admin:${{ env.IMAGE_TAG }}
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}/apigateway:${{ env.IMAGE_TAG }}
-            ${{ env.REGISTRY }}/${{ github.repository }}/apigateway:latest
+            ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/apigateway:${{ env.IMAGE_TAG }}
+            ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/apigateway:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

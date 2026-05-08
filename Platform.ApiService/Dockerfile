@@ -3,18 +3,16 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 
-# [优化] 先只复制项目文件，利用 Docker 层缓存
-# 仅当 csproj 变更时才重新下载 NuGet 包
+# [优化] 先只复制 ApiService.csproj 建立层缓存
+# 注意：不复制 ServiceDefaults.csproj，因为其项目引用路径
+# 在容器内 resolve 不正确。真实 restore 在 publish 阶段完成。
 COPY Platform.ApiService.csproj .
-COPY Platform.ServiceDefaults/Platform.ServiceDefaults.csproj Platform.ServiceDefaults/
+RUN dotnet restore "Platform.ApiService.csproj"
 
-# 恢复 NuGet 依赖
-RUN dotnet restore
-
-# 复制所有源代码
+# 复制所有源代码（含 ServiceDefaults，确保项目引用可解析）
 COPY . .
 
-# 发布（依赖 Docker 层缓存，而非 BuildKit 缓存挂载）
+# 发布（隐式 restore 整个依赖树，含 ServiceDefaults 的 NuGet 包）
 RUN dotnet publish "Platform.ApiService.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 # 阶段 2: 运行

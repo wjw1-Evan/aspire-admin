@@ -2,17 +2,15 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 
-# [优化] 先只复制项目文件，利用 Docker 层缓存
+# [优化] 先只复制 csproj 建立层缓存
+# 注意：不复制 ServiceDefaults.csproj，真实 restore 在 publish 完成
 COPY Platform.DataInitializer.csproj .
-COPY Platform.ServiceDefaults/Platform.ServiceDefaults.csproj Platform.ServiceDefaults/
+RUN dotnet restore "Platform.DataInitializer.csproj"
 
-# 恢复 NuGet 依赖
-RUN dotnet restore
-
-# 复制所有源代码
+# 复制所有源代码（含 ServiceDefaults）
 COPY . .
 
-# 发布（依赖 Docker 层缓存，而非 BuildKit 缓存挂载）
+# 发布（隐式 restore 整个依赖树）
 RUN dotnet publish "Platform.DataInitializer.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime

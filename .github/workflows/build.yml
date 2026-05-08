@@ -53,66 +53,53 @@ jobs:
           cache-to: type=gha,mode=max
 
       # ========================================
-      # ApiService (.NET 后端，依赖 ServiceDefaults)
+      # .NET 项目：在 runner 上直接 publish（避免 Docker 内项目引用路径问题）
+      # 然后从发布产物构建最小运行时镜像
       # ========================================
+      - name: Publish .NET projects
+        run: |
+          dotnet publish Platform.ApiService -c Release -o ./publish/apiservice /p:UseAppHost=false
+          dotnet publish Platform.DataInitializer -c Release -o ./publish/datainitializer /p:UseAppHost=false
+
       - name: Build & Push ApiService
         run: |
-          CONTEXT=$(mktemp -d)
-
-          # 构建扁平化上下文（与 Aspire 本地 staging 一致）
-          (cd Platform.ApiService && \
-           tar cf - --exclude='bin' --exclude='obj' --exclude='.dockerignore' .) | \
-          (cd $CONTEXT && tar xf -)
-
-          # 保留 ServiceDefaults 的目录结构
-          mkdir -p $CONTEXT/Platform.ServiceDefaults
-          (cd Platform.ServiceDefaults && \
-           tar cf - --exclude='bin' --exclude='obj' --exclude='.dockerignore' .) | \
-          (cd $CONTEXT/Platform.ServiceDefaults && tar xf -)
-
-          # 提供 NuGet 配置
-          cp NuGet.config $CONTEXT/ 2>/dev/null || true
-
-          # 构建并推送
+          printf '%s\n' \
+            'FROM mcr.microsoft.com/dotnet/aspnet:10.0' \
+            'WORKDIR /app' \
+            'ENV ASPNETCORE_URLS=http://+:8080' \
+            'ENV DOTNET_EnableDiagnostics=0' \
+            'COPY . .' \
+            'EXPOSE 8080' \
+            'ENTRYPOINT ["dotnet", "Platform.ApiService.dll"]' \
+            > ./publish/apiservice/Dockerfile
           docker buildx build \
-            -f $CONTEXT/Dockerfile \
+            --context ./publish/apiservice \
             --tag ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/apiservice:${{ env.IMAGE_TAG }} \
             --tag ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/apiservice:latest \
             --cache-from type=gha \
             --cache-to type=gha,mode=max \
             --push \
-            $CONTEXT
+            ./publish/apiservice
 
-          rm -rf $CONTEXT
-
-      # ========================================
-      # DataInitializer (一次性任务，依赖 ServiceDefaults)
-      # ========================================
       - name: Build & Push DataInitializer
         run: |
-          CONTEXT=$(mktemp -d)
-
-          (cd Platform.DataInitializer && \
-           tar cf - --exclude='bin' --exclude='obj' --exclude='.dockerignore' .) | \
-          (cd $CONTEXT && tar xf -)
-
-          mkdir -p $CONTEXT/Platform.ServiceDefaults
-          (cd Platform.ServiceDefaults && \
-           tar cf - --exclude='bin' --exclude='obj' --exclude='.dockerignore' .) | \
-          (cd $CONTEXT/Platform.ServiceDefaults && tar xf -)
-
-          cp NuGet.config $CONTEXT/ 2>/dev/null || true
-
+          printf '%s\n' \
+            'FROM mcr.microsoft.com/dotnet/aspnet:10.0' \
+            'WORKDIR /app' \
+            'ENV ASPNETCORE_URLS=http://+:8080' \
+            'ENV DOTNET_EnableDiagnostics=0' \
+            'COPY . .' \
+            'EXPOSE 8080' \
+            'ENTRYPOINT ["dotnet", "Platform.DataInitializer.dll"]' \
+            > ./publish/datainitializer/Dockerfile
           docker buildx build \
-            -f $CONTEXT/Dockerfile \
+            --context ./publish/datainitializer \
             --tag ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/datainitializer:${{ env.IMAGE_TAG }} \
             --tag ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/datainitializer:latest \
             --cache-from type=gha \
             --cache-to type=gha,mode=max \
             --push \
-            $CONTEXT
-
-          rm -rf $CONTEXT
+            ./publish/datainitializer
 
       # ========================================
       # ApiGateway (YARP，FROM 引用 admin 镜像)

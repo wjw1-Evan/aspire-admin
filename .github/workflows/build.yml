@@ -37,7 +37,7 @@ jobs:
         run: |
           curl -sSL https://aspire.dev/install.sh | bash
           echo "$HOME/.aspire/bin" >> $GITHUB_PATH
-          aspire --version
+          "$HOME/.aspire/bin/aspire" --version
 
       - name: Build & Push all images
         run: aspire do push

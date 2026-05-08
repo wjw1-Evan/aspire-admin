@@ -167,5 +167,5 @@ export default defineConfig({
   esbuildMinifyIIFE: true,
   requestRecord: {},
   // exportStatic 仅在构建时使用，开发模式下不需要
-  // exportStatic: {},
+  exportStatic: {},
 });

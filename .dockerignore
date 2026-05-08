@@ -1,0 +1,39 @@
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# .NET
+**/bin/
+**/obj/
+**/*.user
+**/*.suo
+**/.vs/
+
+# Node
+**/node_modules/
+
+# Build output
+**/dist/
+**/.umi/
+**/.umi-production/
+**/build/
+**/.next/
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docs
+docs/
+*.md
+
+# Environment
+**/.env
+**/.env.*

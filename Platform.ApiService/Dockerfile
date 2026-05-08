@@ -3,13 +3,21 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 
-# 复制 csproj 并恢复依赖
-COPY ["Platform.ApiService.csproj", "."]
-RUN dotnet restore "Platform.ApiService.csproj"
+# [优化] 先只复制项目文件，利用 Docker 层缓存
+# 仅当 csproj 变更时才重新下载 NuGet 包
+COPY Platform.ApiService.csproj .
+COPY Platform.ServiceDefaults/Platform.ServiceDefaults.csproj Platform.ServiceDefaults/
 
-# 复制源代码并构建
+# [优化] 使用 BuildKit 缓存挂载，避免重复下载 NuGet 包
+RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
+    dotnet restore
+
+# 复制所有源代码
 COPY . .
-RUN dotnet publish "Platform.ApiService.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+# [优化] 发布时同样使用 NuGet 缓存，若 restore 层命中则立即完成
+RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
+    dotnet publish "Platform.ApiService.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 # 阶段 2: 运行
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime

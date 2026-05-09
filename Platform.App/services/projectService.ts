@@ -4,7 +4,8 @@ import {
   CreateProjectRequest,
   UpdateProjectRequest,
   ProjectStatistics,
-  AddProjectMemberRequest
+  AddProjectMemberRequest,
+  ProjectMemberDto
 } from '../types/project';
 
 export const projectService = {

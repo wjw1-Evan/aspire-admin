@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   ScrollView,
@@ -19,10 +19,7 @@ import { router } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { AppStyles, commonStyles } from '../../constants/AppStyles';
 import { taskService } from '../../services/taskService';
-import { taskService as taskManagementService } from '../../services/taskManagementService';
 import { TaskDto, TaskStatus, TaskPriority } from '../../types/task';
-import { ProjectDto } from '../../types/project';
-import { authService } from '../../services/authService';
 
 export default function TaskListScreen() {
   const [tasks, setTasks] = useState<TaskDto[]>([]);
@@ -31,21 +28,8 @@ export default function TaskListScreen() {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<TaskStatus | 'all'>('all');
   const [selectedPriority, setSelectedPriority] = useState<TaskPriority | 'all'>('all');
-  const [projects, setProjects] = useState<ProjectDto[]>([]);
-  const [showFilterModal, setShowFilterModal] = useState(false);
 
-  const currentUser = authService.getCurrentUserSync();
 
-  const loadProjects = async () => {
-    try {
-      const response = await projectService.getMyProjects();
-      if (response.success) {
-        setProjects(response.data || []);
-      }
-    } catch (error) {
-      console.error('加载项目失败:', error);
-    }
-  };
 
   const loadTasks = async (refresh = false) => {
     if (refresh) {
@@ -110,7 +94,7 @@ export default function TaskListScreen() {
   };
 
   useEffect(() => {
-    loadProjects();
+
     loadTasks();
   }, []);
 

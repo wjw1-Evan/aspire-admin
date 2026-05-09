@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';;
 import {
   StyleSheet,
   ScrollView,
@@ -19,7 +19,6 @@ import Toast from 'react-native-toast-message';
 import { AppStyles, commonStyles } from '../../constants/AppStyles';
 import { projectService } from '../../services/projectService';
 import { ProjectDto, ProjectStatus, ProjectPriority } from '../../types/project';
-import { authService } from '../../services/authService';
 
 export default function ProjectListScreen() {
   const [projects, setProjects] = useState<ProjectDto[]>([]);

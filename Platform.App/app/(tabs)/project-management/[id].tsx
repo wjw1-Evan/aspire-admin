@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
   TextInput,
+  RefreshControl,
   Modal,
   KeyboardAvoidingView,
   Platform,
@@ -21,7 +22,6 @@ import Toast from 'react-native-toast-message';
 import { AppStyles, commonStyles } from '../../../constants/AppStyles';
 import { projectService } from '../../../services/projectService';
 import { ProjectDto, UpdateProjectRequest } from '../../../types/project';
-import { authService } from '../../../services/authService';
 import { formatDate } from '../../../utils/dateUtils';
 
 export default function ProjectDetailScreen() {

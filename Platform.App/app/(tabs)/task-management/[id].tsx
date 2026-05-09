@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
   TextInput,
+  RefreshControl,
   Modal,
   KeyboardAvoidingView,
   Platform,
@@ -20,9 +21,7 @@ import { BlurView } from 'expo-blur';
 import Toast from 'react-native-toast-message';
 import { AppStyles, commonStyles } from '../../../constants/AppStyles';
 import { taskService } from '../../../services/taskService';
-import { ProjectDto } from '../../../types/project';
-import { taskService as taskManagementService } from '../../../services/taskManagementService';
-import { authService } from '../../../services/authService';
+import { projectService } from '../../../services/projectService';
 import {
   TaskDto,
   ExecuteTaskRequest,
@@ -43,14 +42,12 @@ export default function TaskDetailScreen() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState<Partial<UpdateTaskRequest>>({});
   const [isSaving, setIsSaving] = useState(false);
-  const [projects, setProjects] = useState<ProjectDto[]>([]);
+  const [projects, setProjects] = useState<any[]>([]);
   const [assigneeOptions, setAssigneeOptions] = useState<any[]>([]);
 
-  const currentUser = authService.getCurrentUserSync();
 
-  const loadProjects = async () => {
     try {
-      const response = await taskManagementService.getProjects();
+      const response = await projectService.getMyProjects();
       if (response.success) {
         setProjects(response.data || []);
       }
@@ -96,7 +93,7 @@ export default function TaskDetailScreen() {
   };
 
   useEffect(() => {
-    loadProjects();
+    
     loadTask();
   }, [id]);
 

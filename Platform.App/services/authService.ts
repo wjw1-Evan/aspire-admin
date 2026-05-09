@@ -1,6 +1,7 @@
 import { apiClient, setToken, clearToken, getToken } from './api';
 import { storage } from '../utils/storage';
 import { STORAGE_KEYS } from '../utils/constants';
+import { tokenUtils } from '../utils/token';
 import {
     LoginRequest,
     LoginResponse,
@@ -41,12 +42,14 @@ export const authService = {
             request
         );
 
-        // Store tokens if login successful
         if (response.success && response.data) {
-            // Use setToken to update both cache and storage
-            await setToken(response.data.token);  // Backend returns 'token' not 'accessToken'
-            await storage.set(STORAGE_KEYS.REFRESH_TOKEN, response.data.refreshToken);
-            // Don't notify here, let the caller decide when to notify (e.g. after fetching user info)
+            const { token, refreshToken, expiresAt } = response.data;
+            const expiresAtMs = expiresAt ? new Date(expiresAt).getTime() : undefined;
+            await setToken(token);
+            await tokenUtils.setRefreshToken(refreshToken);
+            if (expiresAtMs) {
+                await tokenUtils.setTokenExpiresAt(expiresAtMs);
+            }
         }
 
         return response;
@@ -95,9 +98,8 @@ export const authService = {
         } catch (error) {
             console.error('Logout error:', error);
         } finally {
-            // Clear local storage and cache regardless of API response
             await clearToken();
-            await storage.remove(STORAGE_KEYS.REFRESH_TOKEN);
+            await tokenUtils.clearAllTokens();
             await storage.remove(STORAGE_KEYS.USER_INFO);
             await storage.remove(STORAGE_KEYS.CURRENT_COMPANY_ID);
             notifyListeners(false);
@@ -142,13 +144,24 @@ export const authService = {
             { refreshToken } as RefreshTokenRequest
         );
 
-        // Update stored tokens
         if (response.success && response.data) {
-            await setToken(response.data.token);  // Backend returns 'token' not 'accessToken'
-            await storage.set(STORAGE_KEYS.REFRESH_TOKEN, response.data.refreshToken);
+            const { token, refreshToken, expiresAt } = response.data;
+            const expiresAtMs = expiresAt ? new Date(expiresAt).getTime() : undefined;
+            await setToken(token);
+            await tokenUtils.setRefreshToken(refreshToken);
+            if (expiresAtMs) {
+                await tokenUtils.setTokenExpiresAt(expiresAtMs);
+            }
         }
 
         return response;
+    },
+
+    /**
+     * Force notify logout – called from API interceptor when token refresh fails
+     */
+    notifyLogout: () => {
+        notifyListeners(false);
     },
 
     /**

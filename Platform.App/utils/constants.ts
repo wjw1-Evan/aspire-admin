@@ -20,6 +20,7 @@ export const STORAGE_KEYS = {
   REFRESH_TOKEN: '@aspire_refresh_token',
   USER_INFO: '@aspire_user_info',
   CURRENT_COMPANY_ID: '@aspire_current_company_id',
+  TOKEN_EXPIRES: '@aspire_token_expires_at',
 } as const;
 
 // App Configuration

@@ -4,6 +4,7 @@ import { storage } from '../utils/storage';
 import { ApiResponse, ErrorResponse } from '../types/api';
 import { tokenUtils } from '../utils/token';
 import TokenRefreshManager from '../utils/tokenRefreshManager';
+import { authService } from './authService';
 
 /**
  * In-memory token cache to prevent AsyncStorage timing issues
@@ -97,15 +98,9 @@ const createApiInstance = (): AxiosInstance => {
                     const isRefreshTokenRequest = originalRequest?.url?.includes('/refresh-token');
                     const isRetryRequest = originalRequest?._retry;
 
-                    // 如果是刷新 token 请求本身失败，或已经是重试请求，不再尝试刷新
                     if (isRefreshTokenRequest || isRetryRequest) {
-                        // 刷新失败，清除 token 并跳转登录
-                        await clearToken();
-                        await storage.remove(STORAGE_KEYS.REFRESH_TOKEN);
-                        await storage.remove(STORAGE_KEYS.USER_INFO);
-
-                        // Optionally trigger navigation to login
-                        // You can implement a navigation callback here
+                        await tokenUtils.clearAllTokens();
+                        authService.notifyLogout();
                     } else {
                         // 尝试刷新 token
                         const refreshToken = await tokenUtils.getRefreshToken();
@@ -123,10 +118,8 @@ const createApiInstance = (): AxiosInstance => {
                             }
                         }
 
-                        // token 刷新失败，清除 token 并跳转登录
-                        await clearToken();
-                        await storage.remove(STORAGE_KEYS.REFRESH_TOKEN);
-                        await storage.remove(STORAGE_KEYS.USER_INFO);
+                        await tokenUtils.clearAllTokens();
+                        authService.notifyLogout();
                     }
                 }
 

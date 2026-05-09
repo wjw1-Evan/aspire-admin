@@ -114,7 +114,7 @@ const NoticePage: React.FC = () => {
         {loading ? (
           <Skeleton active paragraph={{ rows: 5 }} />
         ) : notices.length > 0 ? (
-          {notices.map((item) => (
+          notices.map((item) => (
                 <div
                   key={item.id}
                   style={{
@@ -156,7 +156,7 @@ const NoticePage: React.FC = () => {
                     </div>
                   </Space>
                 </div>
-              ))}
+              ))
         ) : (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}

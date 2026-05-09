@@ -312,6 +312,11 @@ export const layout: RunTimeLayoutConfig = ({
         history.push(loginPath);
         return;
       }
+      if (tokenUtils.isTokenExpired()) {
+        tokenUtils.clearAllTokens();
+        history.push(loginPath);
+        return;
+      }
     },
     menuDataRender: () => {
       if (
@@ -548,7 +553,9 @@ function handleCurrentUserResponse(response: any): any {
   const userData = response.data?.data;
   if (userData?.isLogin === false) {
     tokenUtils.clearAllTokens();
-    throw new Error('User not found or inactive');
+    const authError: any = new Error('User not found or inactive');
+    authError.response = { status: 401, data: response.data };
+    throw authError;
   }
   return response;
 }

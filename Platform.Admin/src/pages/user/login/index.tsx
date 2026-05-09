@@ -133,6 +133,8 @@ const Login: React.FC = () => {
   const handleSubmit = async (values: API.LoginParams) => {
     setLoading(true);
     try {
+      tokenUtils.clearAllTokens();
+
       const encryptedPassword = values.password
         ? await PasswordEncryption.encrypt(values.password)
         : undefined;
@@ -163,7 +165,12 @@ const Login: React.FC = () => {
           id: 'pages.login.success',
                   });
         message.success(defaultLoginSuccessMessage);
-        await fetchUserInfo();
+
+        try {
+          await fetchUserInfo();
+        } catch (fetchError) {
+          console.warn('[login] fetchUserInfo failed after login:', fetchError);
+        }
 
         // 使用 UmiJS history 进行客户端路由跳转，保持 SPA 特性
         const urlParams = new URL(window.location.href).searchParams;

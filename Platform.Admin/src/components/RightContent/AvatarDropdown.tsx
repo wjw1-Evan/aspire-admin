@@ -51,7 +51,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
 
   const loginOut = async () => {
     await outLogin();
-    tokenUtils.removeToken();
+    tokenUtils.clearAllTokens();
     const { search, pathname } = window.location;
     const urlParams = new URL(window.location.href).searchParams;
     const searchParams = new URLSearchParams({

@@ -64,7 +64,8 @@ class TokenRefreshManager {
       ...originalRequest.headers,
       Authorization: `Bearer ${newToken}`,
     };
-    return requestClient(originalRequest);
+    const { url, ...restConfig } = originalRequest;
+    return requestClient(url, restConfig);
   }
 
   static isRefreshing(): boolean {

@@ -57,7 +57,7 @@ const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({ currentUser, companyInfo 
           : 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
         border: 'none',
         color: 'white',
-        borderRadius: isMobile ? '16px' : '20px',
+        borderRadius: '12px',
         marginBottom: 12,
         overflow: 'hidden',
         position: 'relative'

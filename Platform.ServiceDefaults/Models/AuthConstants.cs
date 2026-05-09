@@ -5,12 +5,6 @@ namespace Platform.ServiceDefaults.Models;
 /// </summary>
 public static class AuthConstants
 {
-    /// <summary>默认 Token 过期分钟数（24小时）</summary>
-    public const int DefaultTokenExpirationMinutes = 1440;
-
-    /// <summary>刷新 Token 过期天数（7天）</summary>
-    public const int DefaultRefreshTokenExpirationDays = 7;
-
     /// <summary>登录失败记录过期分钟数（30分钟）</summary>
     public const int LoginFailureExpiresMinutes = 30;
 

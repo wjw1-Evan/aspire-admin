@@ -92,13 +92,11 @@ if (user == null)
         var token = _jwtService.GenerateToken(user.Id!, user.CurrentCompanyId!);
         var refreshToken = _jwtService.GenerateRefreshToken(user.Id!, user.CurrentCompanyId!);
 
-        var expirationMinutes = int.Parse(_configuration["Jwt:ExpirationMinutes"] ?? AuthConstants.DefaultTokenExpirationMinutes.ToString());
-        var refreshTokenExpirationDays = int.Parse(_configuration["Jwt:RefreshTokenExpirationDays"] ?? AuthConstants.DefaultRefreshTokenExpirationDays.ToString());
         var refreshTokenEntity = new RefreshToken
         {
             UserId = user.Id!,
             Token = refreshToken,
-            ExpiresAt = DateTime.UtcNow.AddDays(refreshTokenExpirationDays),
+            ExpiresAt = DateTime.UtcNow.AddDays(JwtService.RefreshTokenExpirationDays),
             IpAddress = ipAddress,
             UserAgent = userAgent,
             IsRevoked = false
@@ -113,7 +111,7 @@ if (user == null)
             CurrentAuthority = "user",
             Token = token,
             RefreshToken = refreshToken,
-            ExpiresAt = DateTime.UtcNow.AddMinutes(expirationMinutes)
+            ExpiresAt = DateTime.UtcNow.AddMinutes(JwtService.AccessTokenExpirationMinutes)
         };
 
         return loginResult;
@@ -124,6 +122,23 @@ if (user == null)
         if (!string.IsNullOrEmpty(userId))
         {
             await _userService.LogUserActivityAsync(userId, "logout", "用户登出", ipAddress, userAgent);
+
+            var activeTokens = await _context.Set<RefreshToken>()
+                .Where(rt => rt.UserId == userId && rt.IsRevoked == false && rt.ExpiresAt > DateTime.UtcNow)
+                .ToListAsync();
+
+            foreach (var token in activeTokens)
+            {
+                token.IsRevoked = true;
+                token.RevokedAt = DateTime.UtcNow;
+                token.RevokedReason = "用户登出";
+            }
+
+            if (activeTokens.Count > 0)
+            {
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("[Logout] 已吊销用户 {UserId} 的 {Count} 个 refresh token", userId, activeTokens.Count);
+            }
         }
         return true;
     }
@@ -214,13 +229,12 @@ if (user == null)
         existingToken.RevokedReason = "Token轮换";
         await _context.SaveChangesAsync();
 
-        var refreshTokenExpirationDays = int.Parse(_configuration["Jwt:RefreshTokenExpirationDays"] ?? "7");
         var newRefreshTokenEntity = new RefreshToken
         {
             UserId = userId,
             Token = newRefreshToken,
             PreviousToken = existingToken.Token,
-            ExpiresAt = DateTime.UtcNow.AddDays(refreshTokenExpirationDays),
+            ExpiresAt = DateTime.UtcNow.AddDays(JwtService.RefreshTokenExpirationDays),
             IpAddress = ipAddress,
             UserAgent = userAgent,
             LastUsedAt = DateTime.UtcNow,
@@ -231,13 +245,12 @@ if (user == null)
 
         await _userService.LogUserActivityAsync(userId, "refresh_token", "刷新访问token", ipAddress, userAgent);
 
-        var expirationMinutes = int.Parse(_configuration["Jwt:ExpirationMinutes"] ?? "1440");
         var refreshTokenResult = new RefreshTokenResult
         {
             Status = "ok",
             Token = newToken,
             RefreshToken = newRefreshToken,
-            ExpiresAt = DateTime.UtcNow.AddMinutes(expirationMinutes)
+            ExpiresAt = DateTime.UtcNow.AddMinutes(JwtService.AccessTokenExpirationMinutes)
         };
 
         _logger.LogInformation("[RefreshToken] Token 刷新成功! 新 token 前10位: {TokenPrefix}, 新 refreshToken 前10位: {RefreshTokenPrefix}, 过期时间: {ExpiresAt}", 

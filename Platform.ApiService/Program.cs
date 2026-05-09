@@ -195,8 +195,8 @@ if (jwtSecretKey.Length < 32)
     jwtSecretKey = jwtSecretKey.PadRight(32, '0');
 }
 
-var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "Platform.ApiService";
-var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "Platform.Web";
+var jwtIssuer = JwtService.Issuer;
+var jwtAudience = JwtService.Audience;
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useNavigate, getIntl } from '@umijs/max';
-import { Badge, Tabs, Button, List, Space, Empty, Spin, Tag, Typography } from 'antd';
+import { Badge, Button, Space, Empty, Spin, Tag, Typography } from 'antd';
 import { BellOutlined, CheckCircleOutlined, InfoCircleOutlined, WarningOutlined, CloseCircleOutlined, DeleteOutlined, LoadingOutlined } from '@ant-design/icons';
 import HeaderDropdown from '@/components/HeaderDropdown';
 import { useSseConnection } from '@/hooks/useSseConnection';
@@ -159,10 +159,9 @@ const NoticeIcon: React.FC = () => {
           </div>
         ) : notifications.length > 0 ? (
           <>
-            <List
-              dataSource={notifications}
-              renderItem={(item) => (
+            {notifications.map((item) => (
                 <div 
+                  key={item.id}
                   className={styles.notificationItem}
                   style={{ opacity: item.status === 'Read' || item.status === 'read' ? 0.6 : 1 }}
                   onClick={(e) => {
@@ -195,8 +194,7 @@ const NoticeIcon: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              )}
-            />
+              ))}
             <div className="notificationLoadMore">
               {loadingMore && <Spin indicator={<LoadingOutlined spin />} />}
               {!hasMore && notifications.length > 0 && <div style={{ color: 'rgba(0,0,0,0.25)', fontSize: 12 }}>{intl.formatMessage({ id: 'pages.unifiedNotificationCenter.noMore' })}</div>}

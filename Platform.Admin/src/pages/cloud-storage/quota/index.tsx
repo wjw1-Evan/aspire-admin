@@ -4,7 +4,7 @@ import { StatCard } from '@/components';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import { useIntl } from '@umijs/max';
 import { PieChartOutlined, EditOutlined, ReloadOutlined, UserOutlined, CloudOutlined, WarningOutlined, CheckCircleOutlined, BarChartOutlined, TableOutlined, DatabaseOutlined, CloudServerOutlined, LineChartOutlined, PlusOutlined, DeleteOutlined, FileOutlined, CalendarOutlined, SearchOutlined } from '@ant-design/icons';
-import { Grid, Button, Tag, Space, Row, Col, Spin, Progress, Alert, Statistic, Tabs, Popconfirm, Typography, Badge, List, Avatar, Empty, App, Input } from 'antd';
+import { Grid, Button, Tag, Space, Row, Col, Spin, Progress, Alert, Statistic, Tabs, Popconfirm, Typography, Badge, Avatar, Empty, App, Input } from 'antd';
 import { Drawer } from 'antd';
 import { ModalForm, ProFormDigit, ProFormSwitch, ProFormSelect } from '@ant-design/pro-form';
 import { ProCard } from '@ant-design/pro-components';

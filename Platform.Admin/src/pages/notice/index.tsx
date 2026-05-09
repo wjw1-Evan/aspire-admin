@@ -3,7 +3,6 @@ import { PageContainer } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import {
   Card,
-  List,
   Tag,
   Typography,
   Button,
@@ -115,12 +114,9 @@ const NoticePage: React.FC = () => {
         {loading ? (
           <Skeleton active paragraph={{ rows: 5 }} />
         ) : notices.length > 0 ? (
-          <List
-            itemLayout="vertical"
-            dataSource={notices}
-            renderItem={(item) => (
-              <List.Item>
+          {notices.map((item) => (
                 <div
+                  key={item.id}
                   style={{
                     padding: 16,
                     backgroundColor: item.isRead ? '#fafafa' : '#e6f7ff',
@@ -160,9 +156,7 @@ const NoticePage: React.FC = () => {
                     </div>
                   </Space>
                 </div>
-              </List.Item>
-            )}
-          />
+              ))}
         ) : (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}

@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { useIntl, request } from '@umijs/max';
-import { Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, InputNumber, Popconfirm, DatePicker, List, Flex, Upload } from 'antd';
+import { Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, InputNumber, Popconfirm, DatePicker, Flex, Upload } from 'antd';
 import { Drawer } from 'antd';
 import { ProDescriptions } from '@ant-design/pro-components';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
@@ -194,13 +194,33 @@ const ContractManagement: React.FC = () => {
                     </ProDescriptions>
                     <div style={{ marginTop: 24 }}>
                         <Flex justify="space-between" align="center" style={{ marginBottom: 16 }}><Text strong>{intl.formatMessage({ id: 'pages.park.contract.paymentRecords' })}</Text><Button type="primary" ghost size="small" icon={<PlusOutlined />} onClick={() => set({ paymentModalVisible: true })}>{intl.formatMessage({ id: 'pages.park.contract.addRecord' })}</Button></Flex>
-                        <List size="small" dataSource={state.currentContract.paymentRecords || []} renderItem={(item: LeasePaymentRecord) => (<List.Item actions={[<Button type="link" danger size="small" icon={<DeleteOutlined />} onClick={async () => { await api.deletePayment(item.id); const updated = await api.getDetail(state.currentContract!.id); if (updated.success && updated.data) set({ currentContract: updated.data }); }} />]}>
-                            <List.Item.Meta title={<Space><Text strong>¥{item.amount.toLocaleString()}</Text><Tag color="blue">{item.paymentType || intl.formatMessage({ id: 'pages.park.contract.paymentType.rent' })}</Tag></Space>} description={<Text type="secondary">{intl.formatMessage({ id: 'pages.park.contract.date' })}: {dayjs(item.paymentDate).format('YYYY-MM-DD')} | {intl.formatMessage({ id: 'pages.park.contract.method' })}: {item.paymentMethod}</Text>} />
-                        </List.Item>)} />
+                        {state.currentContract.paymentRecords?.map((item: LeasePaymentRecord) => (
+                            <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '12px 0', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+                              <div style={{ flex: 1 }}>
+                                <Space>
+                                  <Text strong>¥{item.amount.toLocaleString()}</Text>
+                                  <Tag color="blue">{item.paymentType || intl.formatMessage({ id: 'pages.park.contract.paymentType.rent' })}</Tag>
+                                </Space>
+                                <div><Text type="secondary">{intl.formatMessage({ id: 'pages.park.contract.date' })}: {dayjs(item.paymentDate).format('YYYY-MM-DD')} | {intl.formatMessage({ id: 'pages.park.contract.method' })}: {item.paymentMethod}</Text></div>
+                              </div>
+                              <Button type="link" danger size="small" icon={<DeleteOutlined />} onClick={async () => { await api.deletePayment(item.id); const updated = await api.getDetail(state.currentContract!.id); if (updated.success && updated.data) set({ currentContract: updated.data }); }} />
+                            </div>
+                          ))}
                     </div>
                     {state.currentContract.attachments && state.currentContract.attachments.length > 0 && (<div style={{ marginTop: 24 }}>
                         <Text strong>{intl.formatMessage({ id: 'pages.park.contract.attachments' })}</Text>
-                        <List size="small" dataSource={state.currentContract.attachments} renderItem={(id) => (<List.Item actions={[<Button type="link" icon={<EyeOutlined />} href={`/apiservice/api/cloud-storage/files/${id}/preview`} target="_blank">{intl.formatMessage({ id: 'pages.park.contract.preview' })}</Button>, <Button type="link" icon={<DownloadOutlined />} href={`/apiservice/api/cloud-storage/files/${id}/download`}>{intl.formatMessage({ id: 'pages.park.contract.download' })}</Button>]}><List.Item.Meta avatar={<PaperClipOutlined />} title={`${intl.formatMessage({ id: 'pages.park.contract.file' })}-${id.substring(0, 8)}`} /></List.Item>)} />
+                        {state.currentContract.attachments.map((id: string) => (
+                            <div key={id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+                              <Space>
+                                <PaperClipOutlined />
+                                <span>{intl.formatMessage({ id: 'pages.park.contract.file' })}-{id.substring(0, 8)}</span>
+                              </Space>
+                              <Space>
+                                <Button type="link" icon={<EyeOutlined />} href={`/apiservice/api/cloud-storage/files/${id}/preview`} target="_blank">{intl.formatMessage({ id: 'pages.park.contract.preview' })}</Button>
+                                <Button type="link" icon={<DownloadOutlined />} href={`/apiservice/api/cloud-storage/files/${id}/download`}>{intl.formatMessage({ id: 'pages.park.contract.download' })}</Button>
+                              </Space>
+                            </div>
+                          ))}
                     </div>)}
                 </div>)}
             </Drawer>

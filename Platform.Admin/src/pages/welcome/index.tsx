@@ -400,13 +400,11 @@ const Welcome: React.FC = () => {
           companyInfo={companyInfo}
         />
 
-        <div style={{ margin: '12px 0' }} />
-
         <QuickActionsPanel
           currentUser={currentUser}
         />
 
-        <div style={{ marginTop: '16px' }}>
+        <div style={{ marginTop: '12px' }}>
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}

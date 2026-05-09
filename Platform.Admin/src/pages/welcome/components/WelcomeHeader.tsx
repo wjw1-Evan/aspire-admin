@@ -14,64 +14,65 @@ const { Title, Paragraph } = Typography;
 const { useBreakpoint } = Grid;
 
 interface WelcomeHeaderProps {
-    readonly currentUser?: API.CurrentUser;
-    readonly companyInfo?: any;
+  readonly currentUser?: API.CurrentUser;
+  readonly companyInfo?: any;
 }
 
 const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({ currentUser, companyInfo }) => {
-    const intl = useIntl();
-    const { token } = theme.useToken();
-    const { styles } = useCommonStyles();
-    const screens = useBreakpoint();
-    const isMobile = !screens.md;
-    const avatarSize = isMobile ? 56 : 80;
-    const bodyPadding = isMobile ? '16px' : '28px';
+  const intl = useIntl();
+  const { token } = theme.useToken();
+  const { styles } = useCommonStyles();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
+  const avatarSize = isMobile ? 56 : 80;
+  const bodyPadding = isMobile ? '16px' : '28px';
 
-    const getUserRoleTags = () => {
-        if (!currentUser?.roles) return [];
+  const getUserRoleTags = () => {
+    if (!currentUser?.roles) return [];
 
-        return currentUser.roles.map((role: string) => {
-            const isAdmin = role === 'admin' || role === '管理员';
-            const tagColor = isAdmin ? 'red' : 'blue';
-            const tagIcon = isAdmin ? <CrownOutlined /> : <UserOutlined />;
+    return currentUser.roles.map((role: string) => {
+      const isAdmin = role === 'admin' || role === '管理员';
+      const tagColor = isAdmin ? 'red' : 'blue';
+      const tagIcon = isAdmin ? <CrownOutlined /> : <UserOutlined />;
 
-            return (
-                <Tag
-                    key={role}
-                    color={tagColor}
-                    icon={tagIcon}
-                    style={{ paddingInline: 6, lineHeight: '20px', fontSize: isMobile ? 11 : 12 }}
-                >
-                    {role}
-                </Tag>
-            );
-        });
-    };
-
-    return (
-        <ProCard
-            className={styles.card}
-            style={{
-                background: token.colorBgContainer === '#ffffff'
-                    ? 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)'
-                    : 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
-                border: 'none',
-                color: 'white',
-                borderRadius: isMobile ? '16px' : '20px',
-                overflow: 'hidden',
-                position: 'relative'
-            }}
-            styles={{ body: { padding: bodyPadding, position: 'relative', zIndex: 1 } }}
+      return (
+        <Tag
+          key={role}
+          color={tagColor}
+          icon={tagIcon}
+          style={{ paddingInline: 6, lineHeight: '20px', fontSize: isMobile ? 11 : 12 }}
         >
-            <div style={{
-                position: 'absolute',
-                top: '-30%',
-                right: '-20%',
-                width: isMobile ? '180px' : '280px',
-                height: isMobile ? '180px' : '280px',
-                background: 'radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 70%)',
-                borderRadius: '50%',
-            }} />
+          {role}
+        </Tag>
+      );
+    });
+  };
+
+  return (
+    <ProCard
+      className={styles.card}
+      style={{
+        background: token.colorBgContainer === '#ffffff'
+          ? 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)'
+          : 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
+        border: 'none',
+        color: 'white',
+        borderRadius: isMobile ? '16px' : '20px',
+        marginBottom: 12,
+        overflow: 'hidden',
+        position: 'relative'
+      }}
+      styles={{ body: { padding: bodyPadding, position: 'relative', zIndex: 1 } }}
+    >
+      <div style={{
+        position: 'absolute',
+        top: '-30%',
+        right: '-20%',
+        width: isMobile ? '180px' : '280px',
+        height: isMobile ? '180px' : '280px',
+        background: 'radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 70%)',
+        borderRadius: '50%',
+      }} />
 
       <Row align="middle" gutter={[isMobile ? 12 : 24, isMobile ? 8 : 12]}>
         <Col xs={6} sm={6} md={5} lg={4} xl={4} xxl={3}>
@@ -137,8 +138,8 @@ const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({ currentUser, companyInfo 
           </div>
         </Col>
       </Row>
-        </ProCard>
-    );
+    </ProCard>
+  );
 };
 
 export default WelcomeHeader;

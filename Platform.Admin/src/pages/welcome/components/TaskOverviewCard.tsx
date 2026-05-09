@@ -32,7 +32,7 @@ const TaskOverviewCard: React.FC<TaskOverviewCardProps> = ({ taskStatistics, tod
                 </Space>
             }
             className={styles.card}
-            style={{ height: '100%' }}
+            style={{ height: '100%', borderRadius: '12px' }}
         >
             <Row gutter={[12, 12]}>
                 <Col xs={24} sm={8}>

@@ -83,7 +83,7 @@ const RecentActivitiesCard: React.FC<RecentActivitiesCardProps> = ({ currentUser
                 </Button>
             }
             className={styles.card}
-            style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+            style={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: '12px' }}
             styles={{ body: { flex: 1, overflow: 'hidden', padding: '12px 24px' } }}
         >
             <div

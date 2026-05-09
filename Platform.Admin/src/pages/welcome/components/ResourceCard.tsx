@@ -23,7 +23,7 @@ const ResourceCard: React.FC<ResourceCardProps> = React.memo(({ title, value, ic
       size="small"
       styles={{ body: { padding: '16px', display: 'flex', flexDirection: 'column', height: '100%' } }}
       style={{
-        borderRadius: '16px',
+        borderRadius: '12px',
         border: `1px solid ${token?.colorBorderSecondary || themeToken.colorBorderSecondary}`,
         backgroundColor: token?.colorBgContainer || themeToken.colorBgContainer,
         height: '100%',

@@ -79,7 +79,7 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ currentUser }) =>
                 ) : null
             }
             className={styles.card}
-            style={{ borderRadius: '16px' }}
+            style={{ borderRadius: '12px' }}
         >
             {quickActionMenus.length > 0 ? (
                 <div ref={contentRef} style={{ 

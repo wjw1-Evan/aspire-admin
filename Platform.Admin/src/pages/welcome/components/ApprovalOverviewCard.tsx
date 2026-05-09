@@ -51,7 +51,7 @@ const ApprovalOverviewCard: React.FC<ApprovalOverviewCardProps> = ({
         </Space>
       }
       className={styles.card}
-      style={{ height: '100%' }}
+      style={{ height: '100%', borderRadius: '12px' }}
     >
       <Row gutter={[12, 12]}>
         <Col xs={12} sm={12} md={12} lg={6}>

@@ -23,7 +23,7 @@ const StatCard: React.FC<StatCardProps> = React.memo(({ title, value, suffix, ic
       className="quick-action-card"
       styles={{ body: { padding: '16px', position: 'relative', overflow: 'hidden' } }}
       style={{
-        borderRadius: '16px',
+        borderRadius: '12px',
         border: `1px solid ${token?.colorBorderSecondary || themeToken.colorBorderSecondary}`,
         backgroundColor: token?.colorBgContainer || themeToken.colorBgContainer,
         boxShadow: '0 2px 8px rgba(0,0,0,0.02)',

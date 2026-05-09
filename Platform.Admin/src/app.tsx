@@ -32,6 +32,57 @@ const AiAssistant = React.lazy(() => import('@/components/AiAssistant'));
 const isDev = process.env.NODE_ENV === 'development';
 const loginPath = '/user/login';
 
+// 浏览器语言到支持语言的映射表
+const LOCALE_ALIAS_MAP: Record<string, string> = {
+  'en': 'en-US', 'en-GB': 'en-US', 'en-AU': 'en-US', 'en-CA': 'en-US',
+  'zh': 'zh-CN', 'zh-Hans': 'zh-CN', 'zh-Hans-CN': 'zh-CN',
+  'zh-HK': 'zh-TW', 'zh-MO': 'zh-TW', 'zh-Hant': 'zh-TW',
+  'fr': 'fr-FR', 'fr-CA': 'fr-FR', 'fr-BE': 'fr-FR', 'fr-CH': 'fr-FR',
+  'de': 'de-DE', 'de-AT': 'de-DE', 'de-CH': 'de-DE',
+  'es': 'es-ES', 'es-MX': 'es-ES', 'es-AR': 'es-ES',
+  'pt': 'pt-BR', 'pt-PT': 'pt-BR',
+  'ru': 'ru-RU',
+  'ja': 'ja-JP',
+  'ko': 'ko-KR',
+  'it': 'it-IT', 'it-CH': 'it-IT',
+  'th': 'th-TH',
+  'vi': 'vi-VN',
+  'tr': 'tr-TR',
+  'ar': 'ar-EG',
+  'bn': 'bn-BD',
+  'fa': 'fa-IR',
+  'id': 'id-ID',
+};
+const SUPPORTED_LOCALES = ['ar-EG', 'bn-BD', 'de-DE', 'en-US', 'es-ES', 'fa-IR', 'fr-FR', 'id-ID', 'it-IT', 'ja-JP', 'ko-KR', 'pt-BR', 'ru-RU', 'th-TH', 'tr-TR', 'vi-VN', 'zh-CN', 'zh-TW'];
+
+/**
+ * 将浏览器语言映射到最接近的支持语言
+ */
+function normalizeBrowserLocale(browserLang: string): string {
+  if (LOCALE_ALIAS_MAP[browserLang]) return LOCALE_ALIAS_MAP[browserLang];
+  if (SUPPORTED_LOCALES.includes(browserLang)) return browserLang;
+  const prefix = browserLang.split('-')[0];
+  if (LOCALE_ALIAS_MAP[prefix]) return LOCALE_ALIAS_MAP[prefix];
+  return 'zh-CN';
+}
+
+/**
+ * 运行时国际化配置 - 自定义语言检测
+ * 解决首次打开时浏览器语言非支持列表导致 warn 的问题
+ */
+export const locale = {
+  getLocale() {
+    if (typeof localStorage !== 'undefined' && navigator.cookieEnabled) {
+      const saved = localStorage.getItem('umi_locale');
+      if (saved) return saved;
+    }
+    if (typeof navigator !== 'undefined' && typeof navigator.language === 'string') {
+      return normalizeBrowserLocale(navigator.language);
+    }
+    return 'zh-CN';
+  },
+};
+
 
 /**
  * @see https://umijs.org/docs/api/runtime-config#getinitialstate

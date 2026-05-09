@@ -217,7 +217,7 @@ export default function TasksListScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: AppStyles.colors.background,
+    backgroundColor: AppStyles.colors.cardBackground,
   },
   list: {
     paddingBottom: 80,

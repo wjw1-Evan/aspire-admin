@@ -204,7 +204,7 @@ export default function ProjectsListScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: AppStyles.colors.background,
+    backgroundColor: AppStyles.colors.cardBackground,
   },
   list: {
     paddingBottom: 80,

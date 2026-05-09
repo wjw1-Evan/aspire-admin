@@ -64,6 +64,7 @@ export default function SearchBar({
 const styles = StyleSheet.create({
   container: {
     paddingVertical: AppStyles.spacing.sm,
+    paddingHorizontal: AppStyles.spacing.md,
     backgroundColor: AppStyles.colors.cardBackground,
   },
   inputWrapper: {

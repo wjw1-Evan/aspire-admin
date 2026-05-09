@@ -1,14 +1,7 @@
-/**
- * Token 刷新管理器
- * 防止并发请求时多次刷新 token
- */
-
 import { request as requestClient } from '@umijs/max';
 import { tokenUtils } from './token';
+import { refreshToken as refreshTokenApi } from '@/services/ant-design-pro/api';
 
-/**
- * Token 刷新结果
- */
 interface TokenRefreshResult {
   success: boolean;
   token?: string;
@@ -16,139 +9,55 @@ interface TokenRefreshResult {
   expiresAt?: number;
 }
 
-/**
- * Token 刷新管理器
- * 单例模式，确保同一时间只有一个刷新请求在进行
- */
 class TokenRefreshManager {
   private static refreshPromise: Promise<TokenRefreshResult | null> | null = null;
 
-  /**
-   * 刷新 token
-   * 如果已经有刷新请求在进行，等待其完成并返回相同的结果
-   */
   static async refresh(refreshToken: string): Promise<TokenRefreshResult | null> {
-    // 如果已经有刷新请求在进行，等待其完成
     if (this.refreshPromise) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Token refresh already in progress, waiting for completion...');
-      }
       return this.refreshPromise;
     }
 
-    // 创建新的刷新请求
     this.refreshPromise = this.doRefresh(refreshToken);
 
     try {
-      const result = await this.refreshPromise;
-      return result;
+      return await this.refreshPromise;
     } finally {
-      // 清除刷新 Promise，允许下次刷新
       this.refreshPromise = null;
     }
   }
 
-  /**
-   * 执行实际的 token 刷新逻辑
-   */
   private static async doRefresh(refreshToken: string): Promise<TokenRefreshResult | null> {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[TokenRefresh] Starting refresh with token:', refreshToken?.substring(0, 20) + '...');
-    }
     try {
-      const { refreshToken: refreshTokenAPI } = await import(
-        '@/services/ant-design-pro/api'
-      );
+      const refreshResponse = await refreshTokenApi({ refreshToken });
 
-      const refreshResponse = await refreshTokenAPI({ refreshToken });
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[TokenRefresh] API response success:', refreshResponse.success);
-        console.log('[TokenRefresh] API response data:', JSON.stringify(refreshResponse.data));
-      }
-
-      if (!refreshResponse.success) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[TokenRefresh] Failed - API success is false');
-          console.log('[TokenRefresh] Error message:', refreshResponse.message);
-        }
-        return {
-          success: false,
-        };
-      }
-
-      if (!refreshResponse.data) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[TokenRefresh] Failed - no data in response');
-        }
-        return {
-          success: false,
-        };
+      if (!refreshResponse.success || !refreshResponse.data) {
+        return { success: false };
       }
 
       const refreshResult = refreshResponse.data as any;
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[TokenRefresh] refreshResult:', JSON.stringify(refreshResult));
-      }
-      
-      // 兼容 RefreshToken 和 refreshToken 两种字段名（后端返回 RefreshToken）
       const newRefreshToken = refreshResult.RefreshToken || refreshResult.refreshToken;
-      const hasValidTokens =
-        refreshResult.status === 'ok' &&
-        refreshResult.token &&
-        newRefreshToken;
 
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[TokenRefresh] hasValidTokens:', hasValidTokens);
-        console.log('[TokenRefresh] status:', refreshResult.status);
-        console.log('[TokenRefresh] has token:', !!refreshResult.token);
-        console.log('[TokenRefresh] has RefreshToken:', !!newRefreshToken);
-      }
-
-      if (hasValidTokens) {
+      if (refreshResult.status === 'ok' && refreshResult.token && newRefreshToken) {
         const expiresAt = refreshResult.expiresAt
           ? new Date(refreshResult.expiresAt).getTime()
           : undefined;
 
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[TokenRefresh] Saving new tokens, expiresAt:', expiresAt);
-        }
-
-        tokenUtils.setTokens(
-          refreshResult.token as string,
-          newRefreshToken as string,
-          expiresAt,
-        );
-
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[TokenRefresh] Tokens saved successfully');
-          console.log('[TokenRefresh] New token (first 20 chars):', refreshResult.token?.substring(0, 20) + '...');
-          console.log('[TokenRefresh] Stored token (first 20 chars):', tokenUtils.getToken()?.substring(0, 20) + '...');
-        }
+        tokenUtils.setTokens(refreshResult.token, newRefreshToken, expiresAt);
 
         return {
           success: true,
-          token: refreshResult.token!,
-          refreshToken: newRefreshToken!,
+          token: refreshResult.token,
+          refreshToken: newRefreshToken,
           expiresAt,
         };
       }
 
-      return {
-        success: false,
-      };
-    } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Token refresh failed:', error);
-      }
-      return {
-        success: false,
-      };
+      return { success: false };
+    } catch {
+      return { success: false };
     }
   }
 
-  /**
-   * 使用新的 token 重试原始请求
-   */
   static retryRequest(originalRequest: any, newToken: string): Promise<any> {
     originalRequest._retry = true;
     originalRequest.headers = {
@@ -158,13 +67,9 @@ class TokenRefreshManager {
     return requestClient(originalRequest);
   }
 
-  /**
-   * 检查是否正在刷新 token
-   */
   static isRefreshing(): boolean {
     return this.refreshPromise !== null;
   }
 }
 
 export default TokenRefreshManager;
-

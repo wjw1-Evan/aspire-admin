@@ -556,7 +556,6 @@ function handleCurrentUserResponse(response: any): any {
 async function handle401Error(error: any): Promise<any> {
   const is401Error = error.response?.status === 401;
 
-  // 403 + "未找到用户信息" 表示 token 无效/过期，也应触发刷新
   const messageText =
     error?.response?.data?.message ||
     error?.response?.data?.errorCode ||
@@ -568,62 +567,19 @@ async function handle401Error(error: any): Promise<any> {
       messageText?.toLowerCase?.().includes('unauthorized') ||
       messageText?.toLowerCase?.().includes('token'));
 
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[Auth] 401 error detected, URL:', error.config?.url);
-    console.log('[Auth] 403 auth error detected:', is403AuthError, 'message:', messageText);
-    console.log('[Auth] Current stored token (first 20):', tokenUtils.getToken()?.substring(0, 20) + '...');
-    console.log('[Auth] Current stored refreshToken (first 20):', tokenUtils.getRefreshToken()?.substring(0, 20) + '...');
-  }
-  if (!is401Error && !is403AuthError) {
-    return null;
-  }
+  if (!is401Error && !is403AuthError) return null;
 
   const isRefreshTokenRequest = error.config?.url?.includes('/refresh-token');
   const isRetryRequest = error.config?._retry;
 
-  if (isRefreshTokenRequest || isRetryRequest) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[Auth] Skipping refresh - already a refresh/retry request');
-    }
-    return null;
-  }
+  if (isRefreshTokenRequest || isRetryRequest) return null;
 
   const refreshToken = tokenUtils.getRefreshToken();
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[Auth] Refresh token available:', !!refreshToken);
-  }
-  if (!refreshToken) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[Auth] No refresh token, will redirect to login');
-    }
-    return null;
-  }
+  if (!refreshToken) return null;
 
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[Auth] Attempting to refresh token...');
-  }
   const refreshResult = await TokenRefreshManager.refresh(refreshToken);
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[Auth] Refresh result:', refreshResult);
-  }
   if (refreshResult?.success && refreshResult.token) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[Auth] Token refreshed successfully');
-      console.log('[Auth] New token (first 20):', refreshResult.token.substring(0, 20) + '...');
-    }
-    // 显式保存新的 tokens（TokenRefreshManager.doRefresh 内部也会调用，这里确保一致性）
-    tokenUtils.setTokens(
-      refreshResult.token,
-      refreshResult.refreshToken || tokenUtils.getRefreshToken()!,
-      refreshResult.expiresAt
-    );
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[Auth] Tokens saved to storage');
-    }
     return TokenRefreshManager.retryRequest(error.config, refreshResult.token);
-  }
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[Auth] Token refresh failed or returned null');
   }
   return null;
 }
@@ -661,19 +617,11 @@ export const request: RequestConfig = {
         return handleCurrentUserResponse(response);
       },
       async (error: any) => {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Request failed:', error.config?.url, error.response?.status);
-        }
-
         const tokenRefreshResult = await handle401Error(error);
         if (tokenRefreshResult) {
           return tokenRefreshResult;
         }
-
-        // 标记已尝试过 token 刷新，让 errorHandler 知道不要清除 token
-        // 因为我们让 Promise reject，让调用方决定如何处理
         error._tokenRefreshAttempted = true;
-
         throw error;
       },
     ],

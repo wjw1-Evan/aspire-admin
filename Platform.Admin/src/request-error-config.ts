@@ -1,11 +1,10 @@
 import type { RequestConfig } from '@umijs/max';
 import { history, getIntl, getLocale } from '@umijs/max';
 import { errorInterceptor } from '@/utils/errorInterceptor';
-import AuthenticationService from '@/utils/authService';
+import { redirectToLogin } from '@/utils/authService';
 import { tokenUtils } from '@/utils/token';
 import { getMessage } from '@/utils/antdAppInstance';
 
-// 将提示操作调度到渲染阶段之外，避免 React 18 并发模式警告
 const runAfterRender = (fn: () => void) => {
   if (typeof queueMicrotask === 'function') {
     queueMicrotask(fn);
@@ -14,83 +13,23 @@ const runAfterRender = (fn: () => void) => {
   }
 };
 
-// 与后端约定的响应数据格式 - 统一 API 标准
-interface ResponseStructure {
-  success: boolean;
-  data?: any;
-  message?: string;
-  errorCode?: string;
-  timestamp?: string;
-  traceId?: string;
-  errors?: any;
-}
-
-// .NET ProblemDetails 错误响应格式
-interface ProblemDetailsResponse {
-  type?: string;
-  title?: string;
-  status?: number;
-  detail?: string;
-  errors?: Record<string, string[]>;
-  traceId?: string;
-}
-
-/**
- * @name 统一错误处理
- * 使用统一的错误拦截器处理所有错误
- * @doc https://umijs.org/docs/max/request#配置
- */
 export const errorConfig: RequestConfig = {
-  // 错误处理： umi@3 的错误处理方案。
   errorConfig: {
-    // 错误抛出 - 支持多种响应格式
     errorThrower: (res) => {
-      // 1. 检查是否是成功响应（有 success 字段且为 true）
-      if (res.success === true) {
-        return; // 成功响应，不抛出错误
-      }
+      if (res.success === true) return;
 
-      // 2. 检查是否是 ProblemDetails 格式（后端错误响应）
-      // .NET 后端使用 ProblemDetails 中间件返回标准错误格式
-      if (res.status && (res.title || res.detail)) {
-        const problemDetails = res as unknown as ProblemDetailsResponse;
-        const error: any = new Error(problemDetails.title || problemDetails.detail || '请求失败');
-        error.name = 'BizError';
-        error.info = {
-          code: problemDetails.type || `HTTP_${problemDetails.status}`,
-          message: problemDetails.title || problemDetails.detail || '请求失败',
-          data: problemDetails,
-          errors: problemDetails.errors,
-        };
-        throw error;
-      }
-
-      // 3. 检查是否是标准错误响应格式（有 success 字段但为 false）
       const tempRes = res as any;
-      const success = tempRes.success;
-      const message = tempRes.message;
-      const errorCode = tempRes.errorCode;
-      const data = tempRes.data;
-
-      if (success === false) {
-        const error: any = new Error(message || '请求失败');
+      if (tempRes.success === false) {
+        const error: any = new Error(tempRes.message || '请求失败');
         error.name = 'BizError';
-        error.info = { message, errorCode, data, errors: tempRes.errors };
+        error.info = { message: tempRes.message, errorCode: tempRes.errorCode, data: tempRes.data, errors: tempRes.errors };
         throw error;
       }
-
-      // 4. 如果都不匹配，可能是网络错误或其他未知错误，不在这里处理
-      // 由响应拦截器的错误处理逻辑处理
     },
 
-    // 统一错误处理
     errorHandler: (error: any, opts: any) => {
       if (opts?.skipErrorHandler) throw error;
-
-      // 如果错误已经被登录页面处理过，直接返回
-      if (error?.skipGlobalHandler) {
-        return;
-      }
+      if (error?.skipGlobalHandler) return;
 
       const context = {
         url: error.config?.url,
@@ -98,70 +37,30 @@ export const errorConfig: RequestConfig = {
         requestId: error.config?.requestId,
       };
 
-      // 1. 统一处理认证错误（含后端返回 400 但表示未登录的情况）
-      const messageText =
-        error?.info?.message ||
-        error?.response?.data?.message ||
-        error?.response?.data?.title ||
-        error?.message;
-
-      const isLoginRequest = error.config?.url?.includes('/apiservice/api/auth/login') ||
-        error.config?.url?.includes('/login');
-
-      // 401 Unauthorized 表示认证失败
+      const isLoginRequest = error.config?.url?.includes('/apiservice/api/auth/login');
       const isAuthError = error.response?.status === 401;
 
-      // 2. 特殊处理登录错误：只显示友好的消息提示，不显示技术性错误页面
-      // 注意：登录错误应该在登录页面中自己处理，这里只做兜底处理
-      if (isLoginRequest && error.name === 'BizError') {
-        // 登录错误已经在登录页面中处理了，这里静默处理即可
-        // 避免显示技术性错误页面
-        console.log('[errorHandler] Login request with BizError - returning early');
+      if (isLoginRequest && error.name === 'BizError') return;
+
+      if (isAuthError) {
+        if (error?._tokenRefreshAttempted) {
+          tokenUtils.clearAllTokens();
+          redirectToLogin('Token refresh failed');
+          return;
+        }
+        const isCurrentUserRequest = error.config?.url?.includes('/apiservice/api/auth/current-user');
+        if (isCurrentUserRequest) {
+          redirectToLogin(`HTTP ${error.response?.status}`);
+        }
+        errorInterceptor.handleError(error, context);
         return;
       }
 
-      console.log('[errorHandler] Proceeding to errorInterceptor.handleError');
-
-      if (isAuthError) {
-        // 检查是否已经尝试过 token 刷新（由 responseInterceptors 处理）
-        // 如果是，说明刷新失败了，跳转到登录页
-        if (error?._tokenRefreshAttempted) {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('Token refresh was attempted but failed, redirecting to login');
-          }
-          // 清除 token 并跳转登录页
-          tokenUtils.clearAllTokens();
-          AuthenticationService.redirectToLogin('Token refresh failed');
-          return;
-        }
-
-     
-
-        // 如果是获取当前用户的请求，不显示错误提示（因为可能是未登录状态）
-        const isCurrentUserRequest = error.config?.url?.includes('/apiservice/api/auth/current-user') ||
-          error.config?.url?.includes('/apiservice/api/currentUser');
-        if (isCurrentUserRequest || isAuthError) {
-          // 使用 AuthenticationService 统一跳转
-          AuthenticationService.redirectToLogin(
-            `HTTP ${error.response?.status}`
-          );
-        }
-
-        // 使用 errorInterceptor 静默处理（不显示错误提示给用户）
-        errorInterceptor.handleError(error, context);
-        return; // 不再抛出错误，避免重复处理
-      }
-
-      // 3. 其他错误使用统一拦截器处理
       errorInterceptor.handleError(error, context);
     },
   },
 
-  // 响应拦截器
   responseInterceptors: [
-    (response) => {
-      // 拦截响应数据，进行个性化处理
-      return response;
-    },
+    (response) => response,
   ],
 };

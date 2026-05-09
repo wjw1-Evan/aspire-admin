@@ -1,5 +1,5 @@
 import React from 'react';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { Platform, StyleSheet } from 'react-native';
 
@@ -8,10 +8,10 @@ import { useColorScheme } from '@/components/useColorScheme';
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
+  name: React.ComponentProps<typeof Ionicons>['name'];
   color: string;
 }) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
+  return <Ionicons size={28} style={{ marginBottom: -3 }} {...props} />;
 }
 
 export default function TabLayout() {
@@ -34,10 +34,24 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="task-management"
+        options={{
+          title: '任务',
+          tabBarIcon: ({ color }) => <TabBarIcon name="list" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="project-management"
+        options={{
+          title: '项目',
+          tabBarIcon: ({ color }) => <TabBarIcon name="folder" color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: '我的',
-          tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
+          tabBarIcon: ({ color }) => <TabBarIcon name="person" color={color} />,
         }}
       />
       <Tabs.Screen

@@ -1,199 +1,73 @@
-import api from './api';
+import { apiClient } from './api';
+import { ApiResponse, PagedResult } from '../types/api';
 import {
   ProjectDto,
+  ProjectMemberDto,
+  ProjectStatistics,
+  ProjectDashboardStatistics,
   CreateProjectRequest,
   UpdateProjectRequest,
-  ProjectStatistics,
-  AddProjectMemberRequest,
-  ProjectMemberDto
+  ProjectQueryParams,
 } from '../types/project';
 
 export const projectService = {
-  /**
-   * 获取项目列表
-   */
-  getProjects: async (params?: {
-    page?: number;
-    pageSize?: number;
-    status?: number;
-    priority?: number;
-    keyword?: string;
-  }) => {
-    try {
-      const response = await api.get<{ data: ProjectDto[]; total: number }>('/api/project/query', { params });
-      return {
-        success: true,
-        data: response.data,
-        total: response.total || 0
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.response?.data?.message || '获取项目列表失败'
-      };
-    }
+  async getProjectList(params: ProjectQueryParams): Promise<ApiResponse<PagedResult<ProjectDto>>> {
+    return await apiClient.get<any, ApiResponse<PagedResult<ProjectDto>>>('/api/project/list', {
+      params,
+    });
   },
 
-  /**
-   * 获取项目详情
-   */
-  getProjectDetail: async (projectId: string) => {
-    try {
-      const response = await api.get<ProjectDto>(`/api/project/${projectId}`);
-      return {
-        success: true,
-        data: response
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.response?.data?.message || '获取项目详情失败'
-      };
-    }
+  async getProjectById(id: string): Promise<ApiResponse<ProjectDto>> {
+    return await apiClient.get<any, ApiResponse<ProjectDto>>(`/api/project/${id}`);
   },
 
-  /**
-   * 创建项目
-   */
-  createProject: async (data: CreateProjectRequest) => {
-    try {
-      const response = await api.post<ProjectDto>('/api/project', data);
-      return {
-        success: true,
-        data: response
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.response?.data?.message || '创建项目失败'
-      };
-    }
+  async createProject(data: CreateProjectRequest): Promise<ApiResponse<ProjectDto>> {
+    return await apiClient.post<any, ApiResponse<ProjectDto>>('/api/project', data);
   },
 
-  /**
-   * 更新项目
-   */
-  updateProject: async (data: UpdateProjectRequest) => {
-    try {
-      const response = await api.put<ProjectDto>(`/api/project/${data.projectId}`, data);
-      return {
-        success: true,
-        data: response
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.response?.data?.message || '更新项目失败'
-      };
-    }
+  async updateProject(id: string, data: UpdateProjectRequest): Promise<ApiResponse<ProjectDto>> {
+    return await apiClient.put<any, ApiResponse<ProjectDto>>(`/api/project/${id}`, data);
   },
 
-  /**
-   * 删除项目
-   */
-  deleteProject: async (projectId: string) => {
-    try {
-      await api.delete(`/api/project/${projectId}`);
-      return {
-        success: true,
-        message: '删除成功'
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.response?.data?.message || '删除项目失败'
-      };
-    }
+  async deleteProject(id: string): Promise<ApiResponse<void>> {
+    return await apiClient.delete<any, ApiResponse<void>>(`/api/project/${id}`);
   },
 
-  /**
-   * 添加项目成员
-   */
-  addProjectMember: async (data: AddProjectMemberRequest) => {
-    try {
-      const response = await api.post<ProjectMemberDto>(`/api/project/${data.projectId}/members`, data);
-      return {
-        success: true,
-        data: response
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.response?.data?.message || '添加成员失败'
-      };
-    }
+  async getProjectStatistics(): Promise<ApiResponse<ProjectStatistics>> {
+    return await apiClient.get<any, ApiResponse<ProjectStatistics>>('/api/project/statistics');
   },
 
-  /**
-   * 移除项目成员
-   */
-  removeProjectMember: async (projectId: string, userId: string) => {
-    try {
-      await api.delete(`/api/project/${projectId}/members/${userId}`);
-      return {
-        success: true,
-        message: '移除成功'
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.response?.data?.message || '移除成员失败'
-      };
-    }
+  async getDashboardStatistics(
+    period?: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<ApiResponse<ProjectDashboardStatistics>> {
+    return await apiClient.get<any, ApiResponse<ProjectDashboardStatistics>>(
+      '/api/project/statistics/dashboard',
+      { params: { period, startDate, endDate } }
+    );
   },
 
-  /**
-   * 更新项目成员角色
-   */
-  updateProjectMemberRole: async (projectId: string, userId: string, data: { role: number; allocation: number }) => {
-    try {
-      const response = await api.put<ProjectMemberDto>(`/api/project/${projectId}/members/${userId}`, data);
-      return {
-        success: true,
-        data: response
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.response?.data?.message || '更新成员角色失败'
-      };
-    }
+  async getProjectMembers(projectId: string): Promise<ApiResponse<ProjectMemberDto[]>> {
+    return await apiClient.get<any, ApiResponse<ProjectMemberDto[]>>(
+      `/api/project/${projectId}/members`
+    );
   },
 
-  /**
-   * 获取项目统计
-   */
-  getProjectStatistics: async () => {
-    try {
-      const response = await api.get<ProjectStatistics>('/api/project/statistics');
-      return {
-        success: true,
-        data: response
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.response?.data?.message || '获取统计信息失败'
-      };
-    }
+  async addProjectMember(
+    projectId: string,
+    userId: string,
+    role?: number
+  ): Promise<ApiResponse<void>> {
+    return await apiClient.post<any, ApiResponse<void>>(
+      `/api/project/${projectId}/members`,
+      { userId, role }
+    );
   },
 
-  /**
-   * 获取我的项目列表（快速访问）
-   */
-  getMyProjects: async () => {
-    try {
-      const response = await api.get<{ data: ProjectDto[]; total: number }>('/api/project/my-projects');
-      return {
-        success: true,
-        data: response.data,
-        total: response.total || 0
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.response?.data?.message || '获取项目列表失败'
-      };
-    }
-  }
+  async removeProjectMember(projectId: string, userId: string): Promise<ApiResponse<void>> {
+    return await apiClient.delete<any, ApiResponse<void>>(
+      `/api/project/${projectId}/members/${userId}`
+    );
+  },
 };

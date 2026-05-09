@@ -1,17 +1,16 @@
 import React from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
 import { Platform, StyleSheet } from 'react-native';
 
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
-  name: React.ComponentProps<typeof Ionicons>['name'];
+  name: React.ComponentProps<typeof FontAwesome>['name'];
   color: string;
 }) {
-  return <Ionicons size={28} style={{ marginBottom: -3 }} {...props} />;
+  return <FontAwesome size={24} style={{ marginBottom: -3 }} {...props} />;
 }
 
 export default function TabLayout() {
@@ -21,10 +20,9 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
         headerShown: false,
         tabBarStyle: styles.tabBar,
+        tabBarLabelStyle: styles.tabBarLabel,
       }}>
       <Tabs.Screen
         name="index"
@@ -34,14 +32,14 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="task-management"
+        name="tasks"
         options={{
           title: '任务',
-          tabBarIcon: ({ color }) => <TabBarIcon name="list" color={color} />,
+          tabBarIcon: ({ color }) => <TabBarIcon name="check-square-o" color={color} />,
         }}
       />
       <Tabs.Screen
-        name="project-management"
+        name="projects"
         options={{
           title: '项目',
           tabBarIcon: ({ color }) => <TabBarIcon name="folder" color={color} />,
@@ -51,13 +49,13 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: '我的',
-          tabBarIcon: ({ color }) => <TabBarIcon name="person" color={color} />,
+          tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
         }}
       />
       <Tabs.Screen
         name="two"
         options={{
-          href: null, // Hide this screen from tabs
+          href: null,
         }}
       />
     </Tabs>
@@ -72,6 +70,9 @@ const styles = StyleSheet.create({
       },
       default: {},
     }),
+  },
+  tabBarLabel: {
+    fontSize: 11,
   },
 });
 

@@ -1,8 +1,44 @@
-export type ProjectStatus = 'planning' | 'in_progress' | 'on_hold' | 'completed' | 'cancelled';
+export enum ProjectStatus {
+  Planning = 0,
+  InProgress = 1,
+  OnHold = 2,
+  Completed = 3,
+  Cancelled = 4,
+}
 
-export type ProjectPriority = 'low' | 'medium' | 'high';
+export enum ProjectPriority {
+  Low = 0,
+  Medium = 1,
+  High = 2,
+}
 
-export type ProjectMemberRole = 'manager' | 'member' | 'viewer';
+export enum ProjectMemberRole {
+  Manager = 0,
+  Member = 1,
+  Viewer = 2,
+}
+
+export interface ProjectDto {
+  id: string;
+  name: string;
+  description?: string;
+  status: ProjectStatus;
+  statusName: string;
+  priority: ProjectPriority;
+  priorityName: string;
+  progress: number;
+  startDate?: string;
+  endDate?: string;
+  budget?: number;
+  createdBy?: string;
+  createdByName?: string;
+  createdAt: string;
+  updatedAt?: string;
+  memberIds?: string[];
+  projectMembers?: string[];
+  canEdit?: boolean;
+  canDelete?: boolean;
+}
 
 export interface ProjectMemberDto {
   id?: string;
@@ -10,61 +46,10 @@ export interface ProjectMemberDto {
   userId: string;
   userName?: string;
   userEmail?: string;
-  role: number;
+  role: ProjectMemberRole;
   roleName: string;
-  allocation: number;
-}
-
-export interface ProjectDto {
-  id?: string;
-  name: string;
-  description?: string;
-  status: number;
-  statusName: string;
-  startDate?: string;
-  endDate?: string;
-  progress: number;
-  memberIds?: string[];
-  projectMembers?: ProjectMemberDto[];
-  budget?: number;
-  priority: number;
-  priorityName: string;
-  createdBy?: string;
-  createdByName?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  canEdit: boolean;
-  canDelete: boolean;
-}
-
-export interface CreateProjectRequest {
-  name: string;
-  description?: string;
-  status?: number;
-  startDate?: string;
-  endDate?: string;
-  memberIds?: string[];
-  budget?: number;
-  priority?: number;
-}
-
-export interface UpdateProjectRequest {
-  projectId: string;
-  name?: string;
-  description?: string;
-  status?: number;
-  startDate?: string;
-  endDate?: string;
-  memberIds?: string[];
-  budget?: number;
-  priority?: number;
-}
-
-export interface AddProjectMemberRequest {
-  projectId: string;
-  userId: string;
-  role: number;
-  allocation: number;
+  allocation?: number;
+  createdAt: string;
 }
 
 export interface ProjectStatistics {
@@ -72,24 +57,63 @@ export interface ProjectStatistics {
   inProgressProjects: number;
   completedProjects: number;
   delayedProjects: number;
-  projectsByStatus: Record<string, number>;
-  projectsByPriority: Record<string, number>;
 }
 
-export interface CreateMilestoneRequest {
-  projectId: string;
+export interface TaskOverview {
+  totalTasks: number;
+  overdueTasks: number;
+  completedTasks: number;
+  completionRate: number;
+}
+
+export interface MemberStatistics {
+  totalMembers: number;
+  membersByRole: Record<string, number>;
+}
+
+export interface MilestoneStatistics {
+  totalMilestones: number;
+  pendingMilestones: number;
+  achievedMilestones: number;
+  delayedMilestones: number;
+}
+
+export interface ProjectDashboardStatistics {
+  project: ProjectStatistics;
+  task: TaskOverview;
+  member: MemberStatistics;
+  milestone: MilestoneStatistics;
+}
+
+export interface CreateProjectRequest {
   name: string;
-  targetDate: string;
   description?: string;
+  status?: ProjectStatus;
+  priority?: ProjectPriority;
+  startDate?: string;
+  endDate?: string;
+  memberIds?: string[];
+  budget?: number;
 }
 
-export interface TaskDependencyDto {
-  id?: string;
-  predecessorTaskId: string;
-  predecessorTaskName?: string;
-  successorTaskId: string;
-  successorTaskName?: string;
-  dependencyType: number;
-  dependencyTypeName: string;
-  lagDays: number;
+export interface UpdateProjectRequest {
+  projectId: string;
+  name?: string;
+  description?: string;
+  status?: ProjectStatus;
+  priority?: ProjectPriority;
+  startDate?: string;
+  endDate?: string;
+  memberIds?: string[];
+  budget?: number;
+}
+
+export interface ProjectQueryParams {
+  page?: number;
+  pageSize?: number;
+  keyword?: string;
+  status?: ProjectStatus;
+  priority?: ProjectPriority;
+  sortField?: string;
+  sortOrder?: 'asc' | 'desc';
 }

@@ -98,6 +98,13 @@ function RootLayoutNav() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="notifications" options={{ title: '通知中心' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="project/[id]" options={{ title: '项目详情' }} />
+        <Stack.Screen name="project/create" options={{ headerShown: false }} />
+        <Stack.Screen name="project/edit/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="task/[id]" options={{ title: '任务详情' }} />
+        <Stack.Screen name="task/create" options={{ headerShown: false }} />
+        <Stack.Screen name="task/edit/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="task/execute/[id]" options={{ headerShown: false }} />
       </Stack>
       <Toast
         config={{

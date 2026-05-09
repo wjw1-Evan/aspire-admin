@@ -1,220 +1,74 @@
-import api from './api';
+import { apiClient } from './api';
+import { ApiResponse, PagedResult } from '../types/api';
 import {
   TaskDto,
+  TaskStatistics,
+  TaskExecutionLogDto,
   CreateTaskRequest,
   UpdateTaskRequest,
   ExecuteTaskRequest,
   CompleteTaskRequest,
-  TaskStatistics,
-  AssignTaskRequest,
-  BatchUpdateTaskStatusRequest,
-  TaskExecutionLogDto
+  TaskQueryParams,
 } from '../types/task';
 
 export const taskService = {
-  /**
-   * 获取任务列表
-   */
-  getTasks: async (params?: {
-    page?: number;
-    pageSize?: number;
-    status?: number;
-    priority?: number;
-    keyword?: string;
-    projectId?: string;
-  }) => {
-    try {
-      const response = await api.get<{ data: TaskDto[]; total: number }>('/api/task/query', { params });
-      return {
-        success: true,
-        data: response.data,
-        total: response.total || 0
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.response?.data?.message || '获取任务列表失败'
-      };
-    }
+  async getTaskList(params: TaskQueryParams): Promise<ApiResponse<PagedResult<TaskDto>>> {
+    return await apiClient.get<any, ApiResponse<PagedResult<TaskDto>>>('/api/task/list', {
+      params,
+    });
   },
 
-  /**
-   * 获取任务详情
-   */
-  getTaskDetail: async (taskId: string) => {
-    try {
-      const response = await api.get<TaskDto>(`/api/task/${taskId}`);
-      return {
-        success: true,
-        data: response
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.response?.data?.message || '获取任务详情失败'
-      };
-    }
+  async getTaskById(id: string): Promise<ApiResponse<TaskDto>> {
+    return await apiClient.get<any, ApiResponse<TaskDto>>(`/api/task/${id}`);
   },
 
-  /**
-   * 创建任务
-   */
-  createTask: async (data: CreateTaskRequest) => {
-    try {
-      const response = await api.post<TaskDto>('/api/task/create', data);
-      return {
-        success: true,
-        data: response
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.response?.data?.message || '创建任务失败'
-      };
-    }
+  async createTask(data: CreateTaskRequest): Promise<ApiResponse<TaskDto>> {
+    return await apiClient.post<any, ApiResponse<TaskDto>>('/api/task/create', data);
   },
 
-  /**
-   * 更新任务
-   */
-  updateTask: async (data: UpdateTaskRequest) => {
-    try {
-      const response = await api.put<TaskDto>(`/api/task/${data.taskId}`, data);
-      return {
-        success: true,
-        data: response
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.response?.data?.message || '更新任务失败'
-      };
-    }
+  async updateTask(data: UpdateTaskRequest): Promise<ApiResponse<TaskDto>> {
+    return await apiClient.put<any, ApiResponse<TaskDto>>('/api/task/update', data);
   },
 
-  /**
-   * 删除任务
-   */
-  deleteTask: async (taskId: string) => {
-    try {
-      await api.delete(`/api/task/${taskId}`);
-      return {
-        success: true,
-        message: '删除成功'
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.response?.data?.message || '删除任务失败'
-      };
-    }
+  async deleteTask(id: string): Promise<ApiResponse<void>> {
+    return await apiClient.delete<any, ApiResponse<void>>(`/api/task/${id}`);
   },
 
-  /**
-   * 执行任务（更新状态）
-   */
-  executeTask: async (data: ExecuteTaskRequest) => {
-    try {
-      const response = await api.post<TaskDto>('/api/task/execute', data);
-      return {
-        success: true,
-        data: response
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.response?.data?.message || '执行任务失败'
-      };
-    }
+  async cancelTask(id: string): Promise<ApiResponse<void>> {
+    return await apiClient.delete<any, ApiResponse<void>>(`/api/task/${id}/cancel`);
   },
 
-  /**
-   * 完成任务
-   */
-  completeTask: async (data: CompleteTaskRequest) => {
-    try {
-      const response = await api.post<TaskDto>('/api/task/complete', data);
-      return {
-        success: true,
-        data: response
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.response?.data?.message || '完成任务失败'
-      };
-    }
+  async executeTask(data: ExecuteTaskRequest): Promise<ApiResponse<void>> {
+    return await apiClient.post<any, ApiResponse<void>>('/api/task/execute', data);
   },
 
-  /**
-   * 分配任务
-   */
-  assignTask: async (data: AssignTaskRequest) => {
-    try {
-      const response = await api.post<TaskDto>('/api/task/assign', data);
-      return {
-        success: true,
-        data: response
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.response?.data?.message || '分配任务失败'
-      };
-    }
+  async completeTask(data: CompleteTaskRequest): Promise<ApiResponse<void>> {
+    return await apiClient.post<any, ApiResponse<void>>('/api/task/complete', data);
   },
 
-  /**
-   * 批量更新任务状态
-   */
-  batchUpdateStatus: async (data: BatchUpdateTaskStatusRequest) => {
-    try {
-      await api.post('/api/task/batch-update-status', data);
-      return {
-        success: true,
-        message: '更新成功'
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.response?.data?.message || '批量更新失败'
-      };
-    }
+  async getTaskLogs(taskId: string): Promise<ApiResponse<TaskExecutionLogDto[]>> {
+    return await apiClient.get<any, ApiResponse<TaskExecutionLogDto[]>>(
+      `/api/task/${taskId}/logs`
+    );
   },
 
-  /**
-   * 获取任务统计
-   */
-  getTaskStatistics: async () => {
-    try {
-      const response = await api.get<TaskStatistics>('/api/task/statistics');
-      return {
-        success: true,
-        data: response
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.response?.data?.message || '获取统计信息失败'
-      };
-    }
+  async getTaskStatistics(): Promise<ApiResponse<TaskStatistics>> {
+    return await apiClient.get<any, ApiResponse<TaskStatistics>>('/api/task/statistics');
   },
 
-  /**
-   * 获取任务执行日志
-   */
-  getExecutionLogs: async (taskId: string) => {
-    try {
-      const response = await api.get<TaskExecutionLogDto[]>(`/api/task/${taskId}/logs`);
-      return {
-        success: true,
-        data: response
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.response?.data?.message || '获取执行日志失败'
-      };
-    }
-  }
+  async getMyTodoTasks(): Promise<ApiResponse<TaskDto[]>> {
+    return await apiClient.get<any, ApiResponse<TaskDto[]>>('/api/task/my/todo');
+  },
+
+  async getTasksByProject(projectId: string): Promise<ApiResponse<TaskDto[]>> {
+    return await apiClient.get<any, ApiResponse<TaskDto[]>>(
+      `/api/task/project/${projectId}`
+    );
+  },
+
+  async getTaskTree(projectId?: string): Promise<ApiResponse<TaskDto[]>> {
+    return await apiClient.get<any, ApiResponse<TaskDto[]>>('/api/task/tree', {
+      params: { projectId },
+    });
+  },
 };

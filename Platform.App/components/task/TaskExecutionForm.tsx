@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppStyles } from '../../constants/AppStyles';
 import { TaskExecutionResult } from '../../types/task';
 
@@ -54,8 +55,10 @@ export default function TaskExecutionForm({
     await onComplete(executionResult, completeRemarks.trim() || undefined, errorMessage.trim() || undefined);
   };
 
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={onCancel} disabled={saving}>
           <Text style={styles.cancelText}>取消</Text>

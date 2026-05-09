@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { AppStyles, commonStyles } from '../../constants/AppStyles';
 import { projectService } from '../../services/projectService';
@@ -34,6 +35,7 @@ export default function ProjectDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const loadData = async () => {
     try {
@@ -113,7 +115,7 @@ export default function ProjectDetailScreen() {
           ),
         }}
       />
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView style={[styles.container, { paddingTop: insets.top }]} contentContainerStyle={{ paddingHorizontal: AppStyles.spacing.md }} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.name}>{project.name}</Text>
           <View style={styles.tags}>
@@ -223,7 +225,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: AppStyles.colors.background,
-    padding: AppStyles.spacing.md,
   },
   header: {
     marginBottom: AppStyles.spacing.md,

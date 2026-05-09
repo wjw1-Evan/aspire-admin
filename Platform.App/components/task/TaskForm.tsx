@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppStyles } from '../../constants/AppStyles';
 import {
   TaskDto,
@@ -88,11 +89,12 @@ export default function TaskForm({
   };
 
   const canSave = taskName.trim().length > 0 && !saving;
+  const insets = useSafeAreaInsets();
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
+      style={[styles.container, { paddingTop: insets.top }]}
     >
       <View style={styles.header}>
         <TouchableOpacity onPress={onCancel} disabled={saving}>

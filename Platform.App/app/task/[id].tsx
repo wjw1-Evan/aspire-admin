@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { AppStyles, commonStyles } from '../../constants/AppStyles';
 import { taskService } from '../../services/taskService';
@@ -34,6 +35,7 @@ export default function TaskDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [cancelConfirmVisible, setCancelConfirmVisible] = useState(false);
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const loadData = async () => {
     try {
@@ -110,7 +112,7 @@ export default function TaskDetailScreen() {
           ),
         }}
       />
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView style={[styles.container, { paddingTop: insets.top }]} contentContainerStyle={{ padding: AppStyles.spacing.md, paddingBottom: 80 }} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.name}>{task.taskName}</Text>
           <View style={styles.tagsRow}>
@@ -254,7 +256,7 @@ export default function TaskDetailScreen() {
         )}
       </ScrollView>
 
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + AppStyles.spacing.md }]}>
         {canExecute && (
           <TouchableOpacity
             style={styles.primaryButton}
@@ -305,8 +307,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: AppStyles.colors.background,
-    padding: AppStyles.spacing.md,
-    paddingBottom: 80,
   },
   header: {
     marginBottom: AppStyles.spacing.md,

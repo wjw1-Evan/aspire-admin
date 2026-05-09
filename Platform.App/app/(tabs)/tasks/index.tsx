@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { AppStyles } from '../../../constants/AppStyles';
 import { taskService } from '../../../services/taskService';
@@ -30,6 +31,7 @@ const STATUS_TABS = [
 
 export default function TasksListScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [tasks, setTasks] = useState<TaskDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -158,7 +160,7 @@ export default function TasksListScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
         {renderHeader()}
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={AppStyles.colors.primary} />
@@ -169,7 +171,7 @@ export default function TasksListScreen() {
 
   if (error && tasks.length === 0) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
         {renderHeader()}
         <ErrorView message={error} onRetry={() => fetchTasks(1)} />
       </View>
@@ -177,7 +179,7 @@ export default function TasksListScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <FlatList
         data={tasks}
         keyExtractor={item => item.id}
@@ -204,7 +206,7 @@ export default function TasksListScreen() {
         showsVerticalScrollIndicator={false}
       />
       <TouchableOpacity
-        style={styles.fab}
+        style={[styles.fab, { bottom: insets.bottom + AppStyles.spacing.lg }]}
         onPress={() => router.push({ pathname: '/task/create', params: { projects: JSON.stringify(projects) } })}
         activeOpacity={0.8}
       >
@@ -218,6 +220,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: AppStyles.colors.cardBackground,
+  },
+  fab: {
+    position: 'absolute',
+    right: AppStyles.spacing.lg,
+    bottom: AppStyles.spacing.lg,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: AppStyles.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...AppStyles.shadows.lg,
   },
   list: {
     paddingBottom: 80,
@@ -266,17 +280,5 @@ const styles = StyleSheet.create({
   },
   footerLoader: {
     paddingVertical: AppStyles.spacing.lg,
-  },
-  fab: {
-    position: 'absolute',
-    right: AppStyles.spacing.lg,
-    bottom: AppStyles.spacing.lg,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: AppStyles.colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...AppStyles.shadows.lg,
   },
 });

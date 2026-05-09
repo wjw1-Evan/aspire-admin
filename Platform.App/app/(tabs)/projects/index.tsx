@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { AppStyles } from '../../../constants/AppStyles';
 import { projectService } from '../../../services/projectService';
@@ -28,6 +29,7 @@ const STATUS_TABS = [
 
 export default function ProjectsListScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [projects, setProjects] = useState<ProjectDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -145,7 +147,7 @@ export default function ProjectsListScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
         {renderHeader()}
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={AppStyles.colors.primary} />
@@ -156,7 +158,7 @@ export default function ProjectsListScreen() {
 
   if (error && projects.length === 0) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
         {renderHeader()}
         <ErrorView message={error} onRetry={() => fetchProjects(1)} />
       </View>
@@ -164,7 +166,7 @@ export default function ProjectsListScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <FlatList
         data={projects}
         keyExtractor={item => item.id}
@@ -191,7 +193,7 @@ export default function ProjectsListScreen() {
         showsVerticalScrollIndicator={false}
       />
       <TouchableOpacity
-        style={styles.fab}
+        style={[styles.fab, { bottom: insets.bottom + AppStyles.spacing.lg }]}
         onPress={() => router.push('/project/create')}
         activeOpacity={0.8}
       >

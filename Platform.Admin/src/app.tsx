@@ -583,6 +583,7 @@ async function handle401Error(error: any): Promise<any> {
 
   const refreshToken = tokenUtils.getRefreshToken();
   if (!refreshToken) return null;
+  if (tokenUtils.isRefreshTokenExpired()) return null;
 
   const refreshResult = await TokenRefreshManager.refresh(refreshToken);
   if (refreshResult?.success && refreshResult.token) {

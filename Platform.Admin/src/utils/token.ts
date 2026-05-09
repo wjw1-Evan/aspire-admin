@@ -1,6 +1,7 @@
 const TOKEN_KEY = 'auth_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
 const TOKEN_EXPIRES_KEY = 'token_expires_at';
+const REFRESH_TOKEN_EXPIRES_KEY = 'refresh_token_expires_at';
 
 // Token 过期缓冲时间（毫秒）
 // 提前这个时间认为 token 过期，以便有时间刷新
@@ -55,12 +56,59 @@ export const tokenUtils = {
     localStorage.removeItem(TOKEN_EXPIRES_KEY);
   },
 
+  // 从 JWT 解析过期时间戳
+  getTokenExpiryFromJwt: (token: string): number | null => {
+    try {
+      const payload = token.split('.')[1];
+      const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+      if (decoded.exp) {
+        return decoded.exp * 1000;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  },
+
+  // 刷新 Token 过期时间
+  setRefreshTokenExpiresAt: (expiresAt: number) => {
+    localStorage.setItem(REFRESH_TOKEN_EXPIRES_KEY, expiresAt.toString());
+  },
+
+  getRefreshTokenExpiresAt: (): number | null => {
+    const expiresAt = localStorage.getItem(REFRESH_TOKEN_EXPIRES_KEY);
+    return expiresAt ? parseInt(expiresAt, 10) : null;
+  },
+
+  removeRefreshTokenExpiresAt: () => {
+    localStorage.removeItem(REFRESH_TOKEN_EXPIRES_KEY);
+  },
+
+  isRefreshTokenExpired: (): boolean => {
+    const expiresAt = tokenUtils.getRefreshTokenExpiresAt();
+    if (expiresAt) {
+      return Date.now() >= expiresAt;
+    }
+    const refreshToken = tokenUtils.getRefreshToken();
+    if (refreshToken) {
+      const tokenExpiry = tokenUtils.getTokenExpiryFromJwt(refreshToken);
+      if (tokenExpiry) {
+        return Date.now() >= tokenExpiry;
+      }
+    }
+    return false;
+  },
+
   // 设置所有token信息
   setTokens: (token: string, refreshToken: string, expiresAt?: number) => {
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
     if (expiresAt) {
       localStorage.setItem(TOKEN_EXPIRES_KEY, expiresAt.toString());
+    }
+    const refreshExpiry = tokenUtils.getTokenExpiryFromJwt(refreshToken);
+    if (refreshExpiry) {
+      localStorage.setItem(REFRESH_TOKEN_EXPIRES_KEY, refreshExpiry.toString());
     }
   },
 
@@ -69,6 +117,7 @@ export const tokenUtils = {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(TOKEN_EXPIRES_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_EXPIRES_KEY);
   },
 
   // 检查token是否过期
@@ -88,17 +137,4 @@ export const tokenUtils = {
     return Date.now() >= expiresAt - TOKEN_EXPIRY_BUFFER;
   },
 
-  // 从 JWT token payload 解析过期时间
-  getTokenExpiryFromJwt: (token: string): number | null => {
-    try {
-      const payload = token.split('.')[1];
-      const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
-      if (decoded.exp) {
-        return decoded.exp * 1000; // 转换为毫秒
-      }
-      return null;
-    } catch {
-      return null;
-    }
-  },
 };

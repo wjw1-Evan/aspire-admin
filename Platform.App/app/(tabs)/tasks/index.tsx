@@ -86,14 +86,14 @@ export default function TasksListScreen() {
     } catch {}
   }, []);
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     try {
       const res = await projectService.getProjectList({ page: 1, pageSize: 100 });
       if (res.success && res.data) {
         setProjects(res.data.queryable || []);
       }
     } catch {}
-  };
+  }, []);
 
   useEffect(() => {
     setPage(1);
@@ -107,8 +107,7 @@ export default function TasksListScreen() {
       setPage(1);
       fetchTasks(1);
       fetchStatistics();
-      fetchProjects();
-    }, [fetchTasks, fetchStatistics, fetchProjects])
+    }, [fetchTasks, fetchStatistics])
   );
 
   const handleSearch = (text: string) => {

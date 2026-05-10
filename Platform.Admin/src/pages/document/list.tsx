@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useIntl } from '@umijs/max';
 import { PageContainer, ProDescriptions, ProFormSelect, ProFormText, ProFormTextArea, ModalForm } from '@ant-design/pro-components';
-import { Space, Tag, Button, App, Input, Popconfirm, Select, Form, Modal } from 'antd';
+import { Space, Tag, Button, App, Input, Popconfirm, Form, Modal } from 'antd';
 import { Drawer } from 'antd';
 import { FileTextOutlined, PlusOutlined, EyeOutlined, SendOutlined, DeleteOutlined, EditOutlined, FileProtectOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
@@ -44,7 +44,6 @@ const [state, setState] = useState({
     detailVisible: false,
     viewingId: '',
     search: '',
-    status: undefined as number | undefined,
     formVisible: false,
     submitVisible: false,
     submittingId: '',
@@ -124,7 +123,7 @@ const [state, setState] = useState({
         }
         request={async (params: any, sort: any, filter: any) => {
           const { current, pageSize } = params;
-          const res = await api.list({ page: current, pageSize, search: state.search, status: state.status, sort, filter });
+          const res = await api.list({ page: current, pageSize, search: state.search, sort, filter });
           api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
         }}
@@ -139,22 +138,6 @@ const [state, setState] = useState({
             onChange={(e) => set({ search: e.target.value })}
             onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
             style={{ width: 260, marginRight: 8 }}
-          />,
-          <Select
-            key="status"
-            allowClear
-            placeholder={intl.formatMessage({ id: 'pages.document.filter.status' })}
-            value={state.status}
-            onChange={(value) => { set({ status: value }); actionRef.current?.reload(); }}
-            style={{ width: 120, marginRight: 8 }}
-            options={[
-              { label: intl.formatMessage({ id: 'pages.document.filter.all' }), value: undefined },
-              { label: intl.formatMessage({ id: 'pages.document.status.draft' }), value: DocumentStatus.Draft },
-              { label: intl.formatMessage({ id: 'pages.document.status.approving' }), value: DocumentStatus.Approving },
-              { label: intl.formatMessage({ id: 'pages.document.status.approved' }), value: DocumentStatus.Approved },
-              { label: intl.formatMessage({ id: 'pages.document.status.rejected' }), value: DocumentStatus.Rejected },
-              { label: intl.formatMessage({ id: 'pages.document.status.archived' }), value: DocumentStatus.Archived },
-            ]}
           />,
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ formVisible: true })}>{intl.formatMessage({ id: 'pages.document.createDocument' })}</Button>,
         ]}
@@ -343,7 +326,7 @@ const DocumentEditDrawer: React.FC<{ id: string; visible: boolean; onClose: () =
       placement="right"
       open={visible}
       onClose={onClose}
-      width={500}
+      size="large"
       destroyOnClose
     >
       <Form form={form} layout="vertical" onFinish={handleFinish}>

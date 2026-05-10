@@ -81,15 +81,16 @@ if (builder.Environment.IsDevelopment())
 // 小程序直接在微信开发者工具中预览/发布，不参与容器编排
 
 var yarp = builder.AddYarp("apigateway")
+
     .WithEndpoint("http", endpoint =>
     {
         endpoint.Port = 15000;
-        endpoint.IsProxied = false;
-        endpoint.IsExternal = true;
+
         endpoint.TargetHost = "0.0.0.0";
     })
-    .WithEnvironment("ASPNETCORE_URLS", "http://0.0.0.0:15000")
-    .WithStaticFiles("../Platform.Admin/dist")
+    //  .WithHostPort(15000)
+    // .WithEnvironment("ASPNETCORE_URLS", "http://0.0.0.0:15000")
+    .WithStaticFiles()
     .PublishWithStaticFiles(adminbuilder)
     .WithConfiguration(config =>
     {

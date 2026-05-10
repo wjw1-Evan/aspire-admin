@@ -71,6 +71,8 @@ public class TaskService : ITaskService
     {
         var map = all.ToDictionary(t => t.Id!);
         var roots = new List<TaskDto>();
+        // 先清除所有预加载的 Children，避免 QueryTasksAsync 中已附加的子任务重复添加
+        foreach (var t in all) t.Children = null;
         foreach (var t in all)
         {
             if (string.IsNullOrEmpty(t.ParentTaskId) || !map.ContainsKey(t.ParentTaskId))

@@ -165,11 +165,10 @@ const CloudStorageQuotaPage: React.FC = () => {
                             actionRef={tableRef}
                             rowKey="userId"
                             search={false}
-                            request={async (params: any) => {
-                                const { current, pageSize, sortBy, sortOrder } = params;
+                            request={async (params: any, sort: any, filter: any) => {
                                 const res = await request<ApiResponse<PagedResult<StorageQuota>>>('/apiservice/api/storage-quota/list', {
                                     method: 'GET',
-                                    params: { page: current, pageSize, sortBy, sortOrder, companyId: state.currentCompanyId, search: searchText },
+                                    params: { ...params, sort, filter, companyId: state.currentCompanyId, search: searchText },
                                 });
                                 if (res.success && res.data) {
                                     return { data: res.data.queryable || [], total: res.data.rowCount || 0, success: true };

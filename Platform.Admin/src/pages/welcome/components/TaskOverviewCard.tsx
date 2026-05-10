@@ -1,11 +1,12 @@
 import * as API from '@/types';
-import React from 'react';
-import { Row, Col, Space, Alert, Typography, Tag, theme } from 'antd';
+import React, { useState } from 'react';
+import { Row, Col, Space, Alert, Typography, Tag, theme, Checkbox, message } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { BarChartOutlined, ClockCircleOutlined, RocketOutlined, CheckCircleOutlined, CloseCircleOutlined, SafetyOutlined, MenuOutlined } from '@ant-design/icons';
 import { useIntl, history } from '@umijs/max';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import StatCard from './StatCard';
+import { completeTask } from '@/services/task/api';
 import type { TaskStatistics, TaskDto } from '@/services/task/api';
 
 
@@ -16,12 +17,35 @@ interface TaskOverviewCardProps {
     readonly todoTasks: TaskDto[];
     readonly loading: boolean;
     readonly currentUser?: API.CurrentUser;
+    readonly onTaskComplete?: () => void;
 }
 
-const TaskOverviewCard: React.FC<TaskOverviewCardProps> = ({ taskStatistics, todoTasks, loading, currentUser }) => {
+const TaskOverviewCard: React.FC<TaskOverviewCardProps> = ({ taskStatistics, todoTasks, loading, currentUser, onTaskComplete }) => {
     const intl = useIntl();
     const { token } = theme.useToken();
     const { styles } = useCommonStyles();
+    const [completingTaskIds, setCompletingTaskIds] = useState<Set<string>>(new Set());
+
+    const handleCompleteTask = async (taskId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (completingTaskIds.has(taskId)) return;
+
+        setCompletingTaskIds(prev => new Set(prev).add(taskId));
+        try {
+            await completeTask({ taskId, executionResult: 1 });
+            message.success('任务已完成');
+            onTaskComplete?.();
+        } catch (error) {
+            console.error('完成任务失败:', error);
+            message.error('完成任务失败，请重试');
+        } finally {
+            setCompletingTaskIds(prev => {
+                const next = new Set(prev);
+                next.delete(taskId);
+                return next;
+            });
+        }
+    };
 
     return (
         <ProCard
@@ -128,22 +152,33 @@ const TaskOverviewCard: React.FC<TaskOverviewCardProps> = ({ taskStatistics, tod
                                 }}
                                 onClick={() => history.push(`/task-management?taskId=${task.id}`)}
                             >
-                                <Space orientation="vertical" size={2} style={{ width: '100%' }}>
-                                    <Space>
-                                        <Text strong>{task.taskName}</Text>
-                                        {task.priorityName && (
-                                            <Tag
-                                                color="processing"
-                                                style={{ paddingInline: 6, lineHeight: '20px', fontSize: 12 }}
-                                            >
-                                                {task.priorityName}
-                                            </Tag>
-                                        )}
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                                    <div
+                                        onClick={(e) => task.id && handleCompleteTask(task.id, e)}
+                                        style={{ paddingTop: 2 }}
+                                    >
+                                        <Checkbox
+                                            checked={false}
+                                            disabled={!task.id || completingTaskIds.has(task.id)}
+                                        />
+                                    </div>
+                                    <Space orientation="vertical" size={2} style={{ flex: 1, minWidth: 0 }}>
+                                        <Space>
+                                            <Text strong style={{ fontSize: 13 }}>{task.taskName}</Text>
+                                            {task.priorityName && (
+                                                <Tag
+                                                    color="processing"
+                                                    style={{ paddingInline: 6, lineHeight: '20px', fontSize: 12 }}
+                                                >
+                                                    {task.priorityName}
+                                                </Tag>
+                                            )}
+                                        </Space>
+                                        <Text type="secondary" style={{ fontSize: 12 }}>
+                                            {task.statusName} · {task.assignedToName || currentUser?.displayName || currentUser?.username}
+                                        </Text>
                                     </Space>
-                                    <Text type="secondary" style={{ fontSize: 12 }}>
-                                        {task.statusName} · {task.assignedToName || currentUser?.displayName || currentUser?.username}
-                                    </Text>
-                                </Space>
+                                </div>
                             </li>
                         ))}
                     </ul>

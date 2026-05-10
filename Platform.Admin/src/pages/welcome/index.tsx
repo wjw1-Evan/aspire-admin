@@ -320,8 +320,12 @@ const Welcome: React.FC = () => {
     setActiveId(event.active.id);
   }, []);
 
+  const handleTaskComplete = useCallback(() => {
+    fetchStatistics();
+  }, [fetchStatistics]);
+
   const renderCard = (cardId: string) => {
-    const cardProps = {
+    const cardProps: any = {
       loading,
       currentUser,
       taskStatistics,
@@ -329,6 +333,7 @@ const Welcome: React.FC = () => {
       statistics,
       docStatistics,
       pendingDocs,
+      onTaskComplete: handleTaskComplete,
     };
 
     const cardComponent = (() => {

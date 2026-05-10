@@ -169,8 +169,7 @@ const FormDefinitionManagement: React.FC = () => {
                 search={false}
                 scroll={{ x: 'max-content' }}
                 request={async (params: any, sort: any, filter: any) => {
-                    const { current, pageSize } = params;
-                    const res = await api.list({ page: current, pageSize, search: state.search, sort, filter });
+                    const res = await api.list({ ...params, search: state.search, sort, filter });
                     api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
                     return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
                 }}

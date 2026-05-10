@@ -275,14 +275,13 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
         actionRef={tableActionRef}
         rowKey="id"
         search={false}
-        request={async (params: any) => {
-          const { current, pageSize, sortBy, sortOrder } = params;
+        request={async (params: any, sort: any) => {
+          const { current, pageSize } = params;
           const response = await getProjectList({
             page: current,
             pageSize,
             search: searchText,
-            sortBy,
-            sortOrder,
+            sort,
           });
           if (response.success && response.data) {
             return { data: response.data.queryable || [], total: response.data.rowCount || 0, success: true };

@@ -47,7 +47,7 @@ public class FileShareService : IFileShareService
         // 验证文件是否存在
         var fileItem = await _cloudStorageService.GetFileItemAsync(fileItemId);
         if (fileItem == null)
-            throw new ArgumentException("文件不存在", nameof(fileItemId));
+            throw new ArgumentException(ErrorCode.FileNotFound, nameof(fileItemId));
 
         // 生成唯一的分享令牌
         var shareToken = GenerateShareToken();

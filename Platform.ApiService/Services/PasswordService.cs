@@ -60,7 +60,7 @@ public class PasswordService : IPasswordService
             var newPassword = _encryptionService.TryDecryptPassword(request.NewPassword);
 
             if (!_passwordHasher.VerifyPassword(oldPassword, user.PasswordHash))
-                throw new ArgumentException("旧密码不正确");
+                throw new ArgumentException(ErrorCode.InvalidOldPassword);
 
             _validationService.ValidatePassword(newPassword);
 

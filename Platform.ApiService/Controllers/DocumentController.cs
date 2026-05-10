@@ -6,6 +6,7 @@ using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
+using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using System;
 using System.Collections.Generic;
@@ -95,7 +96,7 @@ public class DocumentController : BaseApiController
     public async Task<IActionResult> CreateDocument([FromBody] CreateDocumentRequest request)
     {
         if (string.IsNullOrEmpty(request.Title))
-            throw new ArgumentException("公文标题不能为空");
+            throw new ArgumentException(ErrorCode.DocumentTitleRequired);
 
         var document = await _documentService.CreateDocumentAsync(request);
         return Success(document);
@@ -137,7 +138,7 @@ public class DocumentController : BaseApiController
     public async Task<IActionResult> SubmitDocument(string id, [FromBody] SubmitDocumentRequest request)
     {
         if (string.IsNullOrEmpty(request.WorkflowDefinitionId))
-            throw new ArgumentException("流程定义ID不能为空");
+            throw new ArgumentException(ErrorCode.WorkflowDefinitionIdRequired);
 
         var instance = await _documentService.SubmitDocumentAsync(id, request.WorkflowDefinitionId, request.Variables);
         return Success(instance);
@@ -151,10 +152,10 @@ public class DocumentController : BaseApiController
     public async Task<IActionResult> ApproveDocument(string id, [FromBody] ApprovalRequest request)
     {
         if (string.IsNullOrEmpty(id))
-            throw new ArgumentException("文档ID不能为空");
+            throw new ArgumentException(ErrorCode.DocumentIdRequired);
 
         if (request == null)
-            throw new ArgumentException("请求参数不能为空");
+            throw new ArgumentException(ErrorCode.RequestParamRequired);
 
         var document = await _documentService.GetDocumentAsync(id);
         if (document == null || string.IsNullOrEmpty(document.WorkflowInstanceId))
@@ -165,7 +166,7 @@ public class DocumentController : BaseApiController
             throw new KeyNotFoundException($"流程实例 {document.WorkflowInstanceId} 不存在");
 
         if (string.IsNullOrEmpty(instance.CurrentNodeId))
-            throw new InvalidOperationException("流程实例当前无待处理节点");
+            throw new InvalidOperationException(ErrorCode.NoPendingNode);
 
         var userId = RequiredUserId;
         var result = await _workflowEngine.ProcessApprovalAsync(
@@ -187,13 +188,13 @@ public class DocumentController : BaseApiController
     public async Task<IActionResult> RejectDocument(string id, [FromBody] ApprovalRequest request)
     {
         if (string.IsNullOrEmpty(id))
-            throw new ArgumentException("文档ID不能为空");
+            throw new ArgumentException(ErrorCode.DocumentIdRequired);
 
         if (request == null)
-            throw new ArgumentException("请求参数不能为空");
+            throw new ArgumentException(ErrorCode.RequestParamRequired);
 
         if (string.IsNullOrEmpty(request.Comment))
-            throw new ArgumentException("拒绝原因不能为空");
+            throw new ArgumentException(ErrorCode.RejectReasonRequired);
 
         var document = await _documentService.GetDocumentAsync(id);
         if (document == null || string.IsNullOrEmpty(document.WorkflowInstanceId))
@@ -204,7 +205,7 @@ public class DocumentController : BaseApiController
             throw new KeyNotFoundException($"流程实例 {document.WorkflowInstanceId} 不存在");
 
         if (string.IsNullOrEmpty(instance.CurrentNodeId))
-            throw new InvalidOperationException("流程实例当前无待处理节点");
+            throw new InvalidOperationException(ErrorCode.NoPendingNode);
 
         var userId = RequiredUserId;
         var result = await _workflowEngine.ProcessApprovalAsync(
@@ -228,10 +229,10 @@ public class DocumentController : BaseApiController
         var userId = RequiredUserId;
 
         if (string.IsNullOrEmpty(request.TargetNodeId))
-            throw new ArgumentException("退回目标节点不能为空");
+            throw new ArgumentException(ErrorCode.ReturnTargetNodeRequired);
 
         if (string.IsNullOrEmpty(request.Comment))
-            throw new ArgumentException("退回原因不能为空");
+            throw new ArgumentException(ErrorCode.ReturnReasonRequired);
 
         var document = await _documentService.GetDocumentAsync(id);
         if (document == null || string.IsNullOrEmpty(document.WorkflowInstanceId))
@@ -255,7 +256,7 @@ public class DocumentController : BaseApiController
     public async Task<IActionResult> DelegateDocument(string id, [FromBody] DelegateDocumentRequest request)
     {
         if (string.IsNullOrEmpty(request.DelegateToUserId))
-            throw new ArgumentException("转办目标用户不能为空");
+            throw new ArgumentException(ErrorCode.DelegateTargetUserRequired);
 
         var document = await _documentService.GetDocumentAsync(id);
         if (document == null || string.IsNullOrEmpty(document.WorkflowInstanceId))
@@ -266,7 +267,7 @@ public class DocumentController : BaseApiController
             throw new KeyNotFoundException($"流程实例 {document.WorkflowInstanceId} 不存在");
 
         if (string.IsNullOrEmpty(instance.CurrentNodeId))
-            throw new InvalidOperationException("流程实例当前无待处理节点");
+            throw new InvalidOperationException(ErrorCode.NoPendingNode);
 
         var userId = RequiredUserId;
         var result = await _workflowEngine.ProcessApprovalAsync(
@@ -343,7 +344,7 @@ public class DocumentController : BaseApiController
         else
         {
             if (string.IsNullOrEmpty(binding.FormDefinitionId))
-                throw new ArgumentException("流程节点未配置表单定义ID");
+                throw new ArgumentException(ErrorCode.WorkflowNodeNotConfigured);
 
             form = await _formDefinitionService.GetFormByIdAsync(binding.FormDefinitionId);
             if (form == null)

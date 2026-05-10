@@ -459,7 +459,7 @@ public class AuthController : BaseApiController
         var user = await _userService.GetByIdAsync(userId);
         if (user == null)
         {
-            throw new ArgumentException("用户不存在");
+            throw new ArgumentException(ErrorCode.UserNotFound);
         }
 
         if (user.EmailVerifiedAt.HasValue)

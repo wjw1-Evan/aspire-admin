@@ -151,7 +151,7 @@ public class CompanyController : BaseApiController
         if (string.IsNullOrEmpty(companyId))
         {
             logger.LogWarning("GetCurrentCompany: [最终未找到企业] UserId: {UserId}", userId);
-            throw new UnauthorizedAccessException("未找到当前企业信息");
+            throw new UnauthorizedAccessException(ErrorCode.CurrentCompanyNotFound);
         }
 
         var company = await _companyService.GetCompanyByIdAsync(companyId);

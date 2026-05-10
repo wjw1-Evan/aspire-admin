@@ -581,21 +581,21 @@ public class WorkflowController : BaseApiController
 
             case "reject":
                 if (string.IsNullOrWhiteSpace(request.Comment))
-                    throw new ArgumentException("拒绝原因不能为空");
+                    throw new ArgumentException(ErrorCode.RejectReasonRequired);
                 await _workflowEngine.ProcessApprovalAsync(id, nodeId, ApprovalAction.Reject, userId, request.Comment);
                 return Success(null, "审批已拒绝");
 
             case "return":
                 if (string.IsNullOrEmpty(request.TargetNodeId))
-                    throw new ArgumentException("退回目标节点不能为空");
+                    throw new ArgumentException(ErrorCode.ReturnTargetNodeRequired);
                 if (string.IsNullOrWhiteSpace(request.Comment))
-                    throw new ArgumentException("退回原因不能为空");
+                    throw new ArgumentException(ErrorCode.ReturnReasonRequired);
                 await _workflowEngine.ReturnToNodeAsync(id, request.TargetNodeId, request.Comment, userId);
                 return Success(null, "已退回");
 
             case "delegate":
                 if (string.IsNullOrEmpty(request.DelegateToUserId))
-                    throw new ArgumentException("转办目标用户不能为空");
+                    throw new ArgumentException(ErrorCode.DelegateTargetUserRequired);
                 await _workflowEngine.ProcessApprovalAsync(id, nodeId, ApprovalAction.Delegate, userId, request.Comment, request.DelegateToUserId);
                 return Success(null, "已转办");
 

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Platform.ApiService.Models;
 using Platform.ApiService.Validators;
 using Platform.ApiService.Extensions;
+using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Extensions;
 using System.Linq;
@@ -570,7 +571,7 @@ public class CloudStorageService : ICloudStorageService
     public async Task<FilePreviewInfo> GetPreviewInfoAsync(string id)
     {
         var item = await GetFileItemAsync(id);
-        if (item == null) throw new ArgumentException("文件不存在");
+        if (item == null) throw new ArgumentException(ErrorCode.FileNotFound);
         return new FilePreviewInfo
         {
             FileId = id,

@@ -1,6 +1,7 @@
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Entities;
 using Platform.ApiService.Models.Workflow;
+using Platform.ServiceDefaults.Models;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,7 +33,7 @@ public partial class WorkflowEngine
         var definition = instance.WorkflowDefinitionSnapshot ?? await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == instance.WorkflowDefinitionId);
         if (definition == null)
         {
-            throw new InvalidOperationException("流程定义不存在");
+            throw new InvalidOperationException(ErrorCode.WorkflowDefinitionNotFound);
         }
 
         var currentNode = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
@@ -143,7 +144,7 @@ public partial class WorkflowEngine
         var instance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
         if (instance == null)
         {
-            throw new InvalidOperationException("流程实例不存在");
+            throw new InvalidOperationException(ErrorCode.WorkflowInstanceNotFound);
         }
 
         if (instance.Status != WorkflowStatus.Running && instance.Status != WorkflowStatus.Waiting)
@@ -154,7 +155,7 @@ public partial class WorkflowEngine
         var definition = instance.WorkflowDefinitionSnapshot ?? await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == instance.WorkflowDefinitionId);
         if (definition == null)
         {
-            throw new InvalidOperationException("流程定义不存在");
+            throw new InvalidOperationException(ErrorCode.WorkflowDefinitionNotFound);
         }
 
         var node = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
@@ -379,7 +380,7 @@ public partial class WorkflowEngine
         var definition = instance.WorkflowDefinitionSnapshot ?? await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == instance.WorkflowDefinitionId);
         if (definition == null)
         {
-            throw new InvalidOperationException("流程定义不存在");
+            throw new InvalidOperationException(ErrorCode.WorkflowDefinitionNotFound);
         }
 
         var currentNode = definition.Graph.Nodes.FirstOrDefault(n => n.Id == instance.CurrentNodeId);

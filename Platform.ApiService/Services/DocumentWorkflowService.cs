@@ -33,7 +33,7 @@ public class DocumentWorkflowService : IDocumentWorkflowService
     {
         var document = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == documentId);
         if (document == null)
-            throw new InvalidOperationException("公文不存在");
+            throw new InvalidOperationException(ErrorCode.DocumentNotFound);
 
         if (document.Status != DocumentStatus.Draft)
             throw new InvalidOperationException("只有草稿状态的公文可以提交");
@@ -69,11 +69,11 @@ public class DocumentWorkflowService : IDocumentWorkflowService
     public async Task<Document> CreateDocumentForWorkflowAsync(string workflowDefinitionId, Dictionary<string, object> values, List<string>? attachmentIds = null)
     {
         if (string.IsNullOrWhiteSpace(workflowDefinitionId))
-            throw new ArgumentException("流程定义ID不能为空", nameof(workflowDefinitionId));
+            throw new ArgumentException(ErrorCode.WorkflowDefinitionIdRequired, nameof(workflowDefinitionId));
 
         var definition = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowDefinitionId);
         if (definition == null)
-            throw new InvalidOperationException("流程定义不存在");
+            throw new InvalidOperationException(ErrorCode.WorkflowDefinitionNotFound);
 
         var binding = definition.Graph.Nodes.FirstOrDefault(n => n.Data.NodeType == "start")?.Data.Config?.Form;
         if (binding == null || binding.Target != FormTarget.Document)
@@ -87,7 +87,7 @@ public class DocumentWorkflowService : IDocumentWorkflowService
 
         var form = await _context.Set<FormDefinition>().FirstOrDefaultAsync(x => x.Id == binding.FormDefinitionId);
         if (form == null)
-            throw new InvalidOperationException("表单定义不存在");
+            throw new InvalidOperationException(ErrorCode.FormDefinitionNotFound);
 
         values ??= new Dictionary<string, object>();
         values = SerializationExtensions.SanitizeDictionary(values);

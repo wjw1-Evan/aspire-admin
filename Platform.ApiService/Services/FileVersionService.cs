@@ -43,7 +43,7 @@ public class FileVersionService : IFileVersionService
         if (file == null || file.Length == 0) throw new ArgumentException("文件不能为空");
 
         var fileItem = await _cloudStorageService.GetFileItemAsync(fileItemId);
-        if (fileItem == null) throw new ArgumentException("文件不存在");
+        if (fileItem == null) throw new ArgumentException(ErrorCode.FileNotFound);
         if (fileItem.Type != FileItemType.File) throw new InvalidOperationException("只能为文件创建版本");
 
         string fileHash;

@@ -1,4 +1,5 @@
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Extensions;
 using System.Linq.Dynamic.Core;
@@ -34,7 +35,7 @@ public class XiaokeConfigService : IXiaokeConfigService
         var companyId =  _tenantContext.GetCurrentCompanyId();
         if (string.IsNullOrEmpty(companyId))
         {
-            throw new UnauthorizedAccessException("未找到当前企业信息");
+            throw new UnauthorizedAccessException(ErrorCode.CurrentCompanyNotFound);
         }
         return companyId;
     }

@@ -194,7 +194,7 @@ throw new InvalidOperationException(ErrorCode.RoleNameExists);
 
         if (role.Name?.ToLower() == "admin" || role.Name?.ToLower() == "系统管理员")
         {
-            throw new InvalidOperationException("不能删除系统管理员角色");
+            throw new InvalidOperationException(ErrorCode.SystemRoleCannotDelete);
         }
 
         var userCompaniesWithRole = await _context.Set<UserCompany>().Where(uc =>

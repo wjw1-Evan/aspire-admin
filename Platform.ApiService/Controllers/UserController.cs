@@ -208,7 +208,7 @@ public class UserController : BaseApiController
         {
             var phoneNumber = request.PhoneNumber.Trim();
             if (phoneNumber.Length != 11 || !phoneNumber.StartsWith("1") || !phoneNumber.All(char.IsDigit))
-                throw new ArgumentException("手机号格式不正确");
+                throw new ArgumentException(ErrorCode.InvalidPhoneFormat);
         }
         await _userService.UpdateUserProfileAsync(RequiredUserId, request);
         return Success(await _authService.GetCurrentUserAsync(RequiredUserId));

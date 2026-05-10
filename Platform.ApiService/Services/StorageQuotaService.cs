@@ -504,7 +504,7 @@ public class StorageQuotaService : IStorageQuotaService
         // 获取当前企业ID
         var currentCompanyId =  _tenantContext.GetCurrentCompanyId();
         if (string.IsNullOrEmpty(currentCompanyId))
-            throw new InvalidOperationException("未找到当前企业信息");
+            throw new InvalidOperationException(ErrorCode.CurrentCompanyNotFound);
 
         // 获取当前企业的所有用户
         var users = await _context.Set<AppUser>().Where(u => u.CurrentCompanyId == currentCompanyId).ToListAsync();
@@ -744,7 +744,7 @@ public class StorageQuotaService : IStorageQuotaService
         // 企业维度统计应与列表一致：基于企业全部用户 + 实时文件统计
         var currentCompanyId =  _tenantContext.GetCurrentCompanyId();
         if (string.IsNullOrEmpty(currentCompanyId))
-            throw new InvalidOperationException("未找到当前企业信息");
+            throw new InvalidOperationException(ErrorCode.CurrentCompanyNotFound);
 
         // 获取企业用户
         var users = await _context.Set<AppUser>().Where(u => u.CurrentCompanyId == currentCompanyId).ToListAsync();

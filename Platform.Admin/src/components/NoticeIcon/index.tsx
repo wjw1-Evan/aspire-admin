@@ -166,7 +166,9 @@ const NoticeIcon: React.FC = () => {
                   style={{ opacity: item.status === 'Read' || item.status === 'read' ? 0.6 : 1 }}
                   onClick={(e) => {
                     if (item.actionUrl) {
-                      navigate(item.actionUrl);
+                      const separator = item.actionUrl.includes('?') ? '&' : '?';
+                      navigate(`${item.actionUrl}${separator}_t=${Date.now()}`);
+                      setPopoverOpen(false);
                     } else if (item.status === 'Unread' || item.status === 'unread') {
                       handleMarkAsRead(e, item.id);
                     }

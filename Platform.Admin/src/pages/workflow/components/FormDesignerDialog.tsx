@@ -72,7 +72,7 @@ const FormDesignerDialog: React.FC<FormDesignerDialogProps> = ({ visible, editin
       width={960}
       style={{ top: 20 }}
       footer={null}
-      destroyOnClose
+      destroyOnHidden
     >
       {showNameInput && (
         <div style={{ marginBottom: 16 }}>

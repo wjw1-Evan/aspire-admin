@@ -91,7 +91,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onCancel, onSuccess 
       }}
       modalProps={{
         width: 700,
-        destroyOnClose: true,
+        destroyOnHidden: true,
       }}
       submitter={{
         searchConfig: {

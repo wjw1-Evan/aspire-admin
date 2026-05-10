@@ -998,7 +998,7 @@ const CardConfigForm: React.FC<CardConfigFormProps> = ({ open, onOpenChange, edi
           dataSource: JSON.stringify(dataSource),
         });
       }}
-      modalProps={{ destroyOnClose: true }}
+      modalProps={{ destroyOnHidden: true }}
     >
       <ProFormText name="title" label={intl.formatMessage({ id: 'pages.dashboard.card.title' })} placeholder={intl.formatMessage({ id: 'pages.dashboard.card.titlePlaceholder' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.dashboard.card.titleRequired' }) }]} />
 

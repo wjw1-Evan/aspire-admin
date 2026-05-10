@@ -155,7 +155,7 @@ const BulkOperationsPanel: React.FC<BulkOperationsPanelProps> = ({
       onCancel={handleClose}
       footer={null}
       width={640}
-      destroyOnClose
+      destroyOnHidden
     >
       <div data-testid="bulk-operations-panel">
         {!currentOperation ? (

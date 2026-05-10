@@ -226,9 +226,10 @@ const TaskManagement: React.FC = () => {
         request={async (params: any, sort: any, filter: any) => {
           loadStatistics();
           const res = await api.list({ ...params, search: state.search, sort, filter });
-          return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+          const items = (res.data?.queryable || []).filter((t: TaskDto) => !t.parentTaskId);
+          return { data: items, total: res.data?.rowCount || 0, success: res.success };
         }}
-        columns={columns} rowKey="id" search={false}
+        columns={columns} rowKey="id" search={false} expandable={{ defaultExpandAllRows: true }}
         headerTitle={
           <Space size={24}>
             <Space><ProjectOutlined />{intl.formatMessage({ id: 'pages.taskManagement.title' })}</Space>

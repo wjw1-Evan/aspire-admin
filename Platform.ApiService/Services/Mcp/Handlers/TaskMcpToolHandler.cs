@@ -13,25 +13,21 @@ public class TaskMcpToolHandler : McpToolHandlerBase
     private readonly DbContext _context;
 
     private readonly ITaskService _taskService;
-    private readonly IProjectService _projectService;
     private readonly ILogger<TaskMcpToolHandler> _logger;
 
     /// <summary>
-    /// 初始化任务与项目管理 MCP 处理器
+    /// 初始化任务管理 MCP 处理器
     /// </summary>
     /// <param name="context">数据库上下文</param>
     /// <param name="taskService">任务服务</param>
-    /// <param name="projectService">项目服务</param>
     /// <param name="logger">日志处理器</param>
     public TaskMcpToolHandler(DbContext context,
         ITaskService taskService,
-        IProjectService projectService,
         ILogger<TaskMcpToolHandler> logger
     ) {
         _context = context;
         
         _taskService = taskService;
-        _projectService = projectService;
         _logger = logger;
 
         #region 任务工具注册
@@ -131,42 +127,6 @@ public class TaskMcpToolHandler : McpToolHandlerBase
                 PaginationSchema()
             )),
             HandleGetMyTasksAsync);
-
-        #endregion
-
-        #region 项目工具注册
-
-        RegisterTool("get_projects", "获取所有项目列表。关键词：项目,计划,工程",
-            ObjectSchema(MergeProperties(
-                new Dictionary<string, object>
-                {
-                    ["search"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "搜索关键词" },
-                    ["status"] = new Dictionary<string, object> { ["type"] = "integer", ["description"] = "项目状态" }
-                },
-                PaginationSchema()
-            )),
-            HandleGetProjectsAsync);
-
-        RegisterTool("get_project_detail", "获取项目的详细规划与团队架构。支持通过 ID 或项目名称查询。关键词：项目详情,项目概览",
-            ObjectSchema(new Dictionary<string, object>
-            {
-                ["projectId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "项目ID" },
-                ["name"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "项目名称" }
-            }),
-            HandleGetProjectDetailAsync);
-
-        RegisterTool("create_project", "启动新项目并设定起止日期。关键词：新建项目,创建项目,启动项目",
-            ObjectSchema(new Dictionary<string, object>
-            {
-                ["name"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "项目名称" },
-                ["description"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "项目描述" },
-                ["startDate"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "开始日期" },
-                ["endDate"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "结束日期" }
-            }, ["name"]),
-            HandleCreateProjectAsync);
-
-        RegisterTool("get_project_statistics", "获取项目整体进度统计数据。关键词：项目统计",
-            HandleGetProjectStatisticsAsync);
 
         #endregion
     }
@@ -423,81 +383,5 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             pageSize = response.PageSize,
             pageCount = response.PageCount
         };
-    }
-
-    private async Task<object?> HandleGetProjectsAsync(Dictionary<string, object> arguments, string currentUserId)
-    {
-        var currentUser = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == currentUserId);
-        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
-            return new { error = "无法确定当前企业" };
-
-        var (Current, PageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
-        var request = new Platform.ServiceDefaults.Models.ProTableRequest
-        {
-            Current = Current,
-            PageSize = PageSize,
-            Search = arguments.ContainsKey("search") ? arguments["search"]?.ToString() : null
-        };
-
-        var result = await _projectService.GetProjectsListAsync(request, currentUserId);
-        var items = await result.Queryable.ToListAsync();
-        return new
-        {
-            items = items.Select(p => new { p.Id, p.Name, p.Description, p.StartDate, p.EndDate, p.Status, p.StatusName, memberCount = result.RowCount, p.Progress }).ToList(),
-            rowCount = result.RowCount,
-            currentPage = result.CurrentPage,
-            pageSize = result.PageSize,
-            pageCount = result.PageCount
-        };
-    }
-
-    private async Task<object?> HandleGetProjectDetailAsync(Dictionary<string, object> arguments, string currentUserId)
-    {
-        var projectId = arguments.GetValueOrDefault("projectId")?.ToString();
-        var name = arguments.GetValueOrDefault("name")?.ToString();
-
-        if (string.IsNullOrEmpty(projectId))
-        {
-            if (string.IsNullOrEmpty(name)) return new { error = "未提供项目ID或名称" };
-
-            var searchResult = await _projectService.GetProjectsListAsync(new Platform.ServiceDefaults.Models.ProTableRequest { Search = name, Current = 1, PageSize = 1 }, currentUserId);
-            var searchItems = await searchResult.Queryable.ToListAsync();
-            if (searchItems.Any()) projectId = searchItems.First().Id;
-            else return new { error = "未找到该项目" };
-        }
-
-        if (string.IsNullOrEmpty(projectId)) return new { error = "项目不存在" };
-        var project = await _projectService.GetProjectByIdAsync(projectId);
-        if (project == null) return new { error = "项目不存在" };
-
-        var members = await _projectService.GetProjectMembersAsync(projectId);
-        return new
-        {
-            project = new { project.Id, project.Name, project.Description, project.StartDate, project.EndDate, project.Status, project.Progress },
-            members = members.Select(m => new { m.UserId, username = m.UserName, m.Role }).ToList()
-        };
-    }
-
-    private async Task<object?> HandleCreateProjectAsync(Dictionary<string, object> arguments, string currentUserId)
-    {
-        var name = arguments.ContainsKey("name") ? arguments["name"]?.ToString() : null;
-        if (string.IsNullOrEmpty(name)) return new { error = "项目名称必填" };
-
-        var request = new CreateProjectRequest
-        {
-            Name = name,
-            Description = arguments.ContainsKey("description") ? arguments["description"]?.ToString() : null,
-            StartDate = arguments.ContainsKey("startDate") && DateTime.TryParse(arguments["startDate"]?.ToString(), out var start) ? start : null,
-            EndDate = arguments.ContainsKey("endDate") && DateTime.TryParse(arguments["endDate"]?.ToString(), out var end) ? end : null
-        };
-
-        var project = await _projectService.CreateProjectAsync(request);
-        return new { success = true, projectId = project.Id, projectName = project.Name };
-    }
-
-    private async Task<object?> HandleGetProjectStatisticsAsync(Dictionary<string, object> arguments, string currentUserId)
-    {
-        var stats = await _projectService.GetProjectStatisticsAsync();
-        return stats;
     }
 }

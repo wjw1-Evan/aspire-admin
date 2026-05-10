@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
@@ -19,12 +20,10 @@ public class ParkInvestmentController : BaseApiController
     /// <summary>
     /// 初始化招商管理控制器
     /// </summary>
-    /// <param name="investmentService">招商管理服务</param>
-    /// <param name="logger">日志服务</param>
     public ParkInvestmentController(IParkInvestmentService investmentService, ILogger<ParkInvestmentController> logger)
     {
-        _investmentService = investmentService;
-        _logger = logger;
+        _investmentService = investmentService ?? throw new ArgumentNullException(nameof(investmentService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     #region 线索管理
@@ -33,116 +32,74 @@ public class ParkInvestmentController : BaseApiController
     /// 获取线索列表
     /// </summary>
     [HttpGet("leads/list")]
+    [RequireMenu("park-management-investment")]
     public async Task<IActionResult> GetLeads([FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request)
     {
-        try
-        {
-            var result = await _investmentService.GetLeadsAsync(request);
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取线索列表失败");
-            throw new ArgumentException("获取线索列表失败");
-        }
+        var result = await _investmentService.GetLeadsAsync(request);
+        return Success(result);
     }
 
     /// <summary>
     /// 获取单个线索
     /// </summary>
     [HttpGet("leads/{id}")]
+    [RequireMenu("park-management-investment")]
     public async Task<IActionResult> GetLead(string id)
     {
-        try
-        {
-            var result = await _investmentService.GetLeadByIdAsync(id);
-            if (result == null)
-                throw new ArgumentException("线索不存在");
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取线索详情失败: {Id}", id);
-            throw new ArgumentException("获取线索详情失败");
-        }
+        var result = await _investmentService.GetLeadByIdAsync(id);
+        if (result == null)
+            throw new KeyNotFoundException(ErrorCode.ResourceNotFound);
+        return Success(result);
     }
 
     /// <summary>
     /// 创建线索
     /// </summary>
     [HttpPost("leads")]
+    [RequireMenu("park-management-investment")]
     public async Task<IActionResult> CreateLead([FromBody] CreateInvestmentLeadRequest request)
     {
-        try
-        {
-            var result = await _investmentService.CreateLeadAsync(request);
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "创建线索失败");
-            throw new ArgumentException("创建线索失败: " + ex.Message);
-        }
+        var result = await _investmentService.CreateLeadAsync(request);
+        return Success(result);
     }
 
     /// <summary>
     /// 更新线索
     /// </summary>
     [HttpPut("leads/{id}")]
+    [RequireMenu("park-management-investment")]
     public async Task<IActionResult> UpdateLead(string id, [FromBody] CreateInvestmentLeadRequest request)
     {
-        try
-        {
-            var result = await _investmentService.UpdateLeadAsync(id, request);
-            if (result == null)
-                throw new ArgumentException("线索不存在");
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "更新线索失败: {Id}", id);
-            throw new ArgumentException("更新线索失败: " + ex.Message);
-        }
+        var result = await _investmentService.UpdateLeadAsync(id, request);
+        if (result == null)
+            throw new KeyNotFoundException(ErrorCode.ResourceNotFound);
+        return Success(result);
     }
 
     /// <summary>
     /// 删除线索
     /// </summary>
     [HttpDelete("leads/{id}")]
+    [RequireMenu("park-management-investment")]
     public async Task<IActionResult> DeleteLead(string id)
     {
-        try
-        {
-            var result = await _investmentService.DeleteLeadAsync(id);
-            if (!result)
-                throw new ArgumentException("线索不存在或无法删除");
-            return Success(true);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "删除线索失败: {Id}", id);
-            throw new ArgumentException("删除线索失败: " + ex.Message);
-        }
+        var result = await _investmentService.DeleteLeadAsync(id);
+        if (!result)
+            throw new KeyNotFoundException(ErrorCode.ResourceNotFound);
+        return Success(true);
     }
 
     /// <summary>
     /// 将线索转化为项目
     /// </summary>
     [HttpPost("leads/{id}/convert")]
+    [RequireMenu("park-management-investment")]
     public async Task<IActionResult> ConvertLeadToProject(string id)
     {
-        try
-        {
-            var result = await _investmentService.ConvertLeadToProjectAsync(id);
-            if (result == null)
-                throw new ArgumentException("线索不存在或状态不正确");
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "转化线索失败: {Id}", id);
-            throw new ArgumentException("转化线索失败: " + ex.Message);
-        }
+        var result = await _investmentService.ConvertLeadToProjectAsync(id);
+        if (result == null)
+            throw new KeyNotFoundException(ErrorCode.ResourceNotFound);
+        return Success(result);
     }
 
     #endregion
@@ -153,96 +110,61 @@ public class ParkInvestmentController : BaseApiController
     /// 获取项目列表
     /// </summary>
     [HttpGet("projects/list")]
+    [RequireMenu("park-management-investment")]
     public async Task<IActionResult> GetProjects([FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request)
     {
-        try
-        {
-            var result = await _investmentService.GetProjectsAsync(request);
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取项目列表失败");
-            throw new ArgumentException("获取项目列表失败");
-        }
+        var result = await _investmentService.GetProjectsAsync(request);
+        return Success(result);
     }
 
     /// <summary>
     /// 获取单个项目
     /// </summary>
     [HttpGet("projects/{id}")]
+    [RequireMenu("park-management-investment")]
     public async Task<IActionResult> GetProject(string id)
     {
-        try
-        {
-            var result = await _investmentService.GetProjectByIdAsync(id);
-            if (result == null)
-                throw new ArgumentException("项目不存在");
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取项目详情失败: {Id}", id);
-            throw new ArgumentException("获取项目详情失败");
-        }
+        var result = await _investmentService.GetProjectByIdAsync(id);
+        if (result == null)
+            throw new KeyNotFoundException(ErrorCode.ResourceNotFound);
+        return Success(result);
     }
 
     /// <summary>
     /// 创建项目
     /// </summary>
     [HttpPost("projects")]
+    [RequireMenu("park-management-investment")]
     public async Task<IActionResult> CreateProject([FromBody] CreateInvestmentProjectRequest request)
     {
-        try
-        {
-            var result = await _investmentService.CreateProjectAsync(request);
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "创建项目失败");
-            throw new ArgumentException("创建项目失败: " + ex.Message);
-        }
+        var result = await _investmentService.CreateProjectAsync(request);
+        return Success(result);
     }
 
     /// <summary>
     /// 更新项目
     /// </summary>
     [HttpPut("projects/{id}")]
+    [RequireMenu("park-management-investment")]
     public async Task<IActionResult> UpdateProject(string id, [FromBody] CreateInvestmentProjectRequest request)
     {
-        try
-        {
-            var result = await _investmentService.UpdateProjectAsync(id, request);
-            if (result == null)
-                throw new ArgumentException("项目不存在");
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "更新项目失败: {Id}", id);
-            throw new ArgumentException("更新项目失败: " + ex.Message);
-        }
+        var result = await _investmentService.UpdateProjectAsync(id, request);
+        if (result == null)
+            throw new KeyNotFoundException(ErrorCode.ResourceNotFound);
+        return Success(result);
     }
 
     /// <summary>
     /// 删除项目
     /// </summary>
     [HttpDelete("projects/{id}")]
+    [RequireMenu("park-management-investment")]
     public async Task<IActionResult> DeleteProject(string id)
     {
-        try
-        {
-            var result = await _investmentService.DeleteProjectAsync(id);
-            if (!result)
-                throw new ArgumentException("项目不存在或无法删除");
-            return Success(true);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "删除项目失败: {Id}", id);
-            throw new ArgumentException("删除项目失败: " + ex.Message);
-        }
+        var result = await _investmentService.DeleteProjectAsync(id);
+        if (!result)
+            throw new KeyNotFoundException(ErrorCode.ResourceNotFound);
+        return Success(true);
     }
 
     #endregion
@@ -252,21 +174,12 @@ public class ParkInvestmentController : BaseApiController
     /// <summary>
     /// 获取招商统计
     /// </summary>
-    /// <param name="startDate">开始日期</param>
-    /// <param name="endDate">结束日期</param>
     [HttpGet("statistics")]
+    [RequireMenu("park-management-investment")]
     public async Task<IActionResult> GetInvestmentStatistics([FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
     {
-        try
-        {
-            var result = await _investmentService.GetStatisticsAsync(startDate, endDate);
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取招商统计失败");
-            throw new ArgumentException("获取招商统计失败");
-        }
+        var result = await _investmentService.GetStatisticsAsync(startDate, endDate);
+        return Success(result);
     }
 
     #endregion

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
@@ -12,6 +13,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/park/statistics")]
+[RequireMenu("park-management-dashboard")]
 public class ParkStatisticsController : BaseApiController
 {
     private readonly IParkStatisticsService _statisticsService;
@@ -37,15 +39,7 @@ public class ParkStatisticsController : BaseApiController
         [FromQuery] DateTime? endDate = null,
         [FromBody] object? statisticsData = null)
     {
-        try
-        {
-            var result = await _statisticsService.GenerateAiReportAsync(startDate, endDate, statisticsData);
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "生成 AI 报告失败");
-            throw new ArgumentException("生成 AI 报告失败");
-        }
+        var result = await _statisticsService.GenerateAiReportAsync(startDate, endDate, statisticsData);
+        return Success(result);
     }
 }

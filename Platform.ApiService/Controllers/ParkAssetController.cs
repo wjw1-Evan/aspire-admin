@@ -1,5 +1,5 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
@@ -24,8 +24,8 @@ public class ParkAssetController : BaseApiController
     /// <param name="logger">日志服务</param>
     public ParkAssetController(IParkAssetService assetService, ILogger<ParkAssetController> logger)
     {
-        _assetService = assetService;
-        _logger = logger;
+        _assetService = assetService ?? throw new ArgumentNullException(nameof(assetService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     #region 楼宇管理
@@ -34,96 +34,64 @@ public class ParkAssetController : BaseApiController
     /// 获取楼宇列表
     /// </summary>
     [HttpGet("buildings/list")]
+    [RequireMenu("park-management-asset")]
     public async Task<IActionResult> GetBuildings([FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request)
     {
-        try
-        {
-            var result = await _assetService.GetBuildingsAsync(request);
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取楼宇列表失败");
-            throw new ArgumentException("获取楼宇列表失败");
-        }
+        var result = await _assetService.GetBuildingsAsync(request);
+        return Success(result);
     }
 
     /// <summary>
     /// 获取单个楼宇
     /// </summary>
     [HttpGet("buildings/{id}")]
+    [RequireMenu("park-management-asset")]
     public async Task<IActionResult> GetBuilding(string id)
     {
-        try
-        {
-            var result = await _assetService.GetBuildingByIdAsync(id);
-            if (result == null)
-                throw new ArgumentException("楼宇不存在");
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取楼宇详情失败: {Id}", id);
-            throw new ArgumentException("获取楼宇详情失败");
-        }
+        var result = await _assetService.GetBuildingByIdAsync(id);
+        if (result == null)
+            throw new KeyNotFoundException(ErrorCode.ResourceNotFound);
+        return Success(result);
     }
 
     /// <summary>
     /// 创建楼宇
     /// </summary>
     [HttpPost("buildings")]
+    [RequireMenu("park-management-asset")]
     public async Task<IActionResult> CreateBuilding([FromBody] CreateBuildingRequest request)
     {
-        try
-        {
-            var result = await _assetService.CreateBuildingAsync(request);
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "创建楼宇失败");
-            throw new ArgumentException("创建楼宇失败: " + ex.Message);
-        }
+        if (string.IsNullOrEmpty(request.Name))
+            throw new ArgumentException("楼宇名称不能为空", nameof(request));
+
+        var result = await _assetService.CreateBuildingAsync(request);
+        return Success(result);
     }
 
     /// <summary>
     /// 更新楼宇
     /// </summary>
     [HttpPut("buildings/{id}")]
+    [RequireMenu("park-management-asset")]
     public async Task<IActionResult> UpdateBuilding(string id, [FromBody] UpdateBuildingRequest request)
     {
-        try
-        {
-            var result = await _assetService.UpdateBuildingAsync(id, request);
-            if (result == null)
-                throw new ArgumentException("楼宇不存在");
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "更新楼宇失败: {Id}", id);
-            throw new ArgumentException("更新楼宇失败: " + ex.Message);
-        }
+        var result = await _assetService.UpdateBuildingAsync(id, request);
+        if (result == null)
+            throw new KeyNotFoundException(ErrorCode.ResourceNotFound);
+        return Success(result);
     }
 
     /// <summary>
     /// 删除楼宇
     /// </summary>
     [HttpDelete("buildings/{id}")]
+    [RequireMenu("park-management-asset")]
     public async Task<IActionResult> DeleteBuilding(string id)
     {
-        try
-        {
-            var result = await _assetService.DeleteBuildingAsync(id);
-            if (!result)
-                throw new ArgumentException("楼宇不存在或无法删除");
-            return Success(true);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "删除楼宇失败: {Id}", id);
-            throw new ArgumentException("删除楼宇失败: " + ex.Message);
-        }
+        var result = await _assetService.DeleteBuildingAsync(id);
+        if (!result)
+            throw new KeyNotFoundException(ErrorCode.ResourceNotFound);
+        return Success(true);
     }
 
     #endregion
@@ -134,96 +102,61 @@ public class ParkAssetController : BaseApiController
     /// 获取房源列表
     /// </summary>
     [HttpGet("properties/list")]
+    [RequireMenu("park-management-asset")]
     public async Task<IActionResult> GetProperties([FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request)
     {
-        try
-        {
-            var result = await _assetService.GetPropertyUnitsAsync(request);
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取房源列表失败");
-            throw new ArgumentException("获取房源列表失败");
-        }
+        var result = await _assetService.GetPropertyUnitsAsync(request);
+        return Success(result);
     }
 
     /// <summary>
     /// 获取单个房源
     /// </summary>
     [HttpGet("properties/{id}")]
+    [RequireMenu("park-management-asset")]
     public async Task<IActionResult> GetProperty(string id)
     {
-        try
-        {
-            var result = await _assetService.GetPropertyUnitByIdAsync(id);
-            if (result == null)
-                throw new ArgumentException("房源不存在");
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取房源详情失败: {Id}", id);
-            throw new ArgumentException("获取房源详情失败");
-        }
+        var result = await _assetService.GetPropertyUnitByIdAsync(id);
+        if (result == null)
+            throw new KeyNotFoundException(ErrorCode.ResourceNotFound);
+        return Success(result);
     }
 
     /// <summary>
     /// 创建房源
     /// </summary>
     [HttpPost("properties")]
+    [RequireMenu("park-management-asset")]
     public async Task<IActionResult> CreateProperty([FromBody] CreatePropertyUnitRequest request)
     {
-        try
-        {
-            var result = await _assetService.CreatePropertyUnitAsync(request);
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "创建房源失败");
-            throw new ArgumentException("创建房源失败: " + ex.Message);
-        }
+        var result = await _assetService.CreatePropertyUnitAsync(request);
+        return Success(result);
     }
 
     /// <summary>
     /// 更新房源
     /// </summary>
     [HttpPut("properties/{id}")]
+    [RequireMenu("park-management-asset")]
     public async Task<IActionResult> UpdateProperty(string id, [FromBody] CreatePropertyUnitRequest request)
     {
-        try
-        {
-            var result = await _assetService.UpdatePropertyUnitAsync(id, request);
-            if (result == null)
-                throw new ArgumentException("房源不存在");
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "更新房源失败: {Id}", id);
-            throw new ArgumentException("更新房源失败: " + ex.Message);
-        }
+        var result = await _assetService.UpdatePropertyUnitAsync(id, request);
+        if (result == null)
+            throw new KeyNotFoundException(ErrorCode.ResourceNotFound);
+        return Success(result);
     }
 
     /// <summary>
     /// 删除房源
     /// </summary>
     [HttpDelete("properties/{id}")]
+    [RequireMenu("park-management-asset")]
     public async Task<IActionResult> DeleteProperty(string id)
     {
-        try
-        {
-            var result = await _assetService.DeletePropertyUnitAsync(id);
-            if (!result)
-                throw new ArgumentException("房源不存在或无法删除");
-            return Success(true);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "删除房源失败: {Id}", id);
-            throw new ArgumentException("删除房源失败: " + ex.Message);
-        }
+        var result = await _assetService.DeletePropertyUnitAsync(id);
+        if (!result)
+            throw new KeyNotFoundException(ErrorCode.ResourceNotFound);
+        return Success(true);
     }
 
     #endregion
@@ -236,18 +169,11 @@ public class ParkAssetController : BaseApiController
     /// <param name="startDate">开始日期</param>
     /// <param name="endDate">结束日期</param>
     [HttpGet("asset/statistics")]
+    [RequireMenu("park-management-asset")]
     public async Task<IActionResult> GetAssetStatistics([FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
     {
-        try
-        {
-            var result = await _assetService.GetAssetStatisticsAsync(startDate, endDate);
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取资产统计失败");
-            throw new ArgumentException("获取资产统计失败");
-        }
+        var result = await _assetService.GetAssetStatisticsAsync(startDate, endDate);
+        return Success(result);
     }
 
     #endregion

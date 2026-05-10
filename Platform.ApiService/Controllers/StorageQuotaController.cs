@@ -45,20 +45,8 @@ public class StorageQuotaController : BaseApiController
     [HttpGet("my-quota")]
     public async Task<IActionResult> GetMyQuota()
     {
-        try
-        {
-            var quota = await _storageQuotaService.GetUserQuotaAsync();
-            return Success(quota);
-        }
-        catch (InvalidOperationException ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取我的配额失败");
-            throw new ArgumentException("操作失败");
-        }
+        var quota = await _storageQuotaService.GetUserQuotaAsync();
+        return Success(quota);
     }
 
     /// <summary>
@@ -69,24 +57,8 @@ public class StorageQuotaController : BaseApiController
     [HttpGet("user/{userId?}")]
     public async Task<IActionResult> GetUserQuota(string? userId = null)
     {
-        try
-        {
-            var quota = await _storageQuotaService.GetUserQuotaAsync(userId);
-            return Success(quota);
-        }
-        catch (ArgumentException ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取用户配额失败, UserId: {UserId}", userId);
-            throw new ArgumentException("操作失败");
-        }
+        var quota = await _storageQuotaService.GetUserQuotaAsync(userId);
+        return Success(quota);
     }
 
     /// <summary>
@@ -105,24 +77,12 @@ public class StorageQuotaController : BaseApiController
         var validation = ValidateModelState();
         if (validation != null) return validation;
 
-        try
-        {
-            var quota = await _storageQuotaService.SetUserQuotaAsync(
-                userId,
-                request.TotalQuota,
-                request.WarningThreshold,
-                request.IsEnabled);
-            return Success(quota, "配额设置成功");
-        }
-        catch (ArgumentException ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "设置用户配额失败, UserId: {UserId}", userId);
-            throw new ArgumentException("操作失败");
-        }
+        var quota = await _storageQuotaService.SetUserQuotaAsync(
+            userId,
+            request.TotalQuota,
+            request.WarningThreshold,
+            request.IsEnabled);
+        return Success(quota, "配额设置成功");
     }
 
     /// <summary>
@@ -143,16 +103,8 @@ public class StorageQuotaController : BaseApiController
         if (request.QuotaSettings.Count > 100)
             throw new ArgumentException("批量操作最多支持100个用户");
 
-        try
-        {
-            var result = await _storageQuotaService.BatchSetUserQuotasAsync(request.QuotaSettings);
-            return Success(result, $"批量设置完成，成功 {result.SuccessCount} 个，失败 {result.FailureCount} 个");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "批量设置配额失败");
-            throw new ArgumentException("操作失败");
-        }
+        var result = await _storageQuotaService.BatchSetUserQuotasAsync(request.QuotaSettings);
+        return Success(result, $"批量设置完成，成功 {result.SuccessCount} 个，失败 {result.FailureCount} 个");
     }
 
     /// <summary>
@@ -167,24 +119,8 @@ public class StorageQuotaController : BaseApiController
         if (string.IsNullOrWhiteSpace(userId))
             throw new ArgumentException("用户ID不能为空");
 
-        try
-        {
-            var quota = await _storageQuotaService.RecalculateUserStorageAsync(userId);
-            return Success(quota, "存储使用量重新计算完成");
-        }
-        catch (ArgumentException ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "重新计算存储失败, UserId: {UserId}", userId);
-            throw new ArgumentException("操作失败");
-        }
+        var quota = await _storageQuotaService.RecalculateUserStorageAsync(userId);
+        return Success(quota, "存储使用量重新计算完成");
     }
 
     /// <summary>
@@ -199,26 +135,9 @@ public class StorageQuotaController : BaseApiController
         if (string.IsNullOrWhiteSpace(userId))
             throw new ArgumentException("用户ID不能为空");
 
-        try
-        {
-            // 清除配额，恢复为未分配状态
-            const long defaultQuota = 0;
-            var quota = await _storageQuotaService.SetUserQuotaAsync(userId, defaultQuota, 0, false);
-            return Success(quota, "已清除用户配额，需管理员重新分配后才能使用网盘");
-        }
-        catch (ArgumentException ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "删除配额失败, UserId: {UserId}", userId);
-            throw new ArgumentException("操作失败");
-        }
+        const long defaultQuota = 0;
+        var quota = await _storageQuotaService.SetUserQuotaAsync(userId, defaultQuota, 0, false);
+        return Success(quota, "已清除用户配额，需管理员重新分配后才能使用网盘");
     }
 
     #endregion
@@ -233,16 +152,8 @@ public class StorageQuotaController : BaseApiController
     [HttpGet("usage-stats")]
     public async Task<IActionResult> GetUsageStats([FromQuery] string? userId = null)
     {
-        try
-        {
-            var stats = await _storageQuotaService.GetStorageUsageStatsAsync(userId);
-            return Success(stats);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取存储统计失败");
-            throw new ArgumentException("操作失败");
-        }
+        var stats = await _storageQuotaService.GetStorageUsageStatsAsync(userId);
+        return Success(stats);
     }
 
     #endregion
@@ -263,16 +174,8 @@ public class StorageQuotaController : BaseApiController
         [FromQuery] string? companyId = null,
         [FromQuery] bool? isEnabled = null)
     {
-        try
-        {
-            var result = await _storageQuotaService.GetStorageQuotaListAsync(pageParams, companyId, isEnabled);
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取存储配额列表失败");
-            throw new ArgumentException("操作失败");
-        }
+        var result = await _storageQuotaService.GetStorageQuotaListAsync(pageParams, companyId, isEnabled);
+        return Success(result);
     }
 
     #endregion
@@ -287,16 +190,8 @@ public class StorageQuotaController : BaseApiController
     [RequireMenu("cloud-storage-quota")]
     public async Task<IActionResult> GetCompanyUsage()
     {
-        try
-        {
-            var statistics = await _storageQuotaService.GetCompanyStorageStatisticsAsync();
-            return Success(statistics);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取企业存储统计失败");
-            throw new ArgumentException("操作失败");
-        }
+        var statistics = await _storageQuotaService.GetCompanyStorageStatisticsAsync();
+        return Success(statistics);
     }
 
     /// <summary>
@@ -311,16 +206,8 @@ public class StorageQuotaController : BaseApiController
         if (topCount < 1 || topCount > 100)
             throw new ArgumentException("返回数量必须在 1-100 之间");
 
-        try
-        {
-            var ranking = await _storageQuotaService.GetStorageUsageRankingAsync(topCount);
-            return Success(ranking);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取存储排行失败");
-            throw new ArgumentException("操作失败");
-        }
+        var ranking = await _storageQuotaService.GetStorageUsageRankingAsync(topCount);
+        return Success(ranking);
     }
 
     /// <summary>
@@ -338,16 +225,8 @@ public class StorageQuotaController : BaseApiController
         if (warningThreshold < 0.1 || warningThreshold > 1.0)
             throw new ArgumentException("警告阈值必须在 0.1-1.0 之间");
 
-        try
-        {
-            var pagedResult = await _storageQuotaService.GetQuotaWarningsPaginatedAsync(pageParams, warningThreshold);
-            return Success(pagedResult);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取配额警告失败");
-            throw new ArgumentException("操作失败");
-        }
+        var pagedResult = await _storageQuotaService.GetQuotaWarningsPaginatedAsync(pageParams, warningThreshold);
+        return Success(pagedResult);
     }
 
     #endregion
@@ -362,17 +241,8 @@ public class StorageQuotaController : BaseApiController
     [RequireMenu("cloud-storage-quota")]
     public async Task<IActionResult> CleanupUnusedQuotas()
     {
-        try
-        {
-            var result = await _storageQuotaService.CleanupUnusedQuotasAsync();
-            var companyId =  _tenantContext.GetCurrentCompanyId();
-            return Success(result, $"清理完成，删除了 {result.SuccessCount} 个未使用的配额记录");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "清理配额记录失败");
-            throw new ArgumentException("操作失败");
-        }
+        var result = await _storageQuotaService.CleanupUnusedQuotasAsync();
+        return Success(result, $"清理完成，删除了 {result.SuccessCount} 个未使用的配额记录");
     }
 
     /// <summary>
@@ -390,31 +260,15 @@ public class StorageQuotaController : BaseApiController
         if (requiredSize < 0)
             throw new ArgumentException("需要的空间大小不能为负数");
 
-        try
+        var isAvailable = await _storageQuotaService.CheckStorageAvailabilityAsync(userId, requiredSize);
+        var result = new
         {
-            var isAvailable = await _storageQuotaService.CheckStorageAvailabilityAsync(userId, requiredSize);
-            var result = new
-            {
-                UserId = userId,
-                RequiredSize = requiredSize,
-                IsAvailable = isAvailable,
-                Message = isAvailable ? "存储空间充足" : "存储空间不足或未分配配额"
-            };
-            return Success(result);
-        }
-        catch (ArgumentException ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "检查存储可用性失败, UserId: {UserId}", userId);
-            throw new ArgumentException("操作失败");
-        }
+            UserId = userId,
+            RequiredSize = requiredSize,
+            IsAvailable = isAvailable,
+            Message = isAvailable ? "存储空间充足" : "存储空间不足或未分配配额"
+        };
+        return Success(result);
     }
 
     /// <summary>
@@ -433,24 +287,8 @@ public class StorageQuotaController : BaseApiController
         var validation = ValidateModelState();
         if (validation != null) return validation;
 
-        try
-        {
-            var quota = await _storageQuotaService.UpdateStorageUsageAsync(userId, request.SizeChange);
-            return Success(quota, "存储使用量更新成功");
-        }
-        catch (ArgumentException ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "更新存储使用量失败, UserId: {UserId}", userId);
-            throw new ArgumentException("操作失败");
-        }
+        var quota = await _storageQuotaService.UpdateStorageUsageAsync(userId, request.SizeChange);
+        return Success(quota, "存储使用量更新成功");
     }
 
     #endregion

@@ -1,6 +1,6 @@
-import { EditOutlined, UserOutlined, MailOutlined, MobileOutlined, CalendarOutlined, CameraOutlined, DeleteOutlined } from '@ant-design/icons';
+import { EditOutlined, UserOutlined, MailOutlined, MobileOutlined, CalendarOutlined, CameraOutlined, DeleteOutlined, LockOutlined } from '@ant-design/icons';
 import { FormattedMessage, useIntl, request, useModel } from '@umijs/max';
-import { App, Avatar, Button, Card, Divider, Space, Tag, Typography, Form, Input, InputNumber, Tooltip } from 'antd';
+import { App, Avatar, Button, Card, Divider, Space, Tag, Typography, Form, Input, InputNumber, Tooltip, Alert, Modal } from 'antd';
 import { ProDescriptions } from '@ant-design/pro-components';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import { createStyles } from 'antd-style';
@@ -9,7 +9,9 @@ import { getUserAvatar } from '@/utils/avatar';
 import dayjs from 'dayjs';
 import { getCurrentUserProfile, updateUserProfile } from '@/services/ant-design-pro/api';
 import { getErrorMessage } from '@/utils/getErrorMessage';
-import type { ApiResponse } from '@/types';
+import { changePassword } from '@/services/ant-design-pro/api';
+import { PasswordEncryption } from '@/utils/encryption';
+import type { ApiResponse, ChangePasswordResult, ChangePasswordParams } from '@/types';
 import Settings from '../../../../config/defaultSettings';
 
 const { Title, Text } = Typography;
@@ -157,6 +159,53 @@ const UserCenter: React.FC = () => {
     }
   };
 
+  // Change Password State
+  const [changePasswordModalVisible, setChangePasswordModalVisible] = useState(false);
+  const [changePasswordState, setChangePasswordState] = useState<ChangePasswordResult>({});
+  const [changePasswordForm] = Form.useForm();
+
+  const handleChangePassword = async (values: ChangePasswordParams) => {
+    try {
+      const encryptedCurrentPassword = await PasswordEncryption.encrypt(values.currentPassword || '');
+      const encryptedNewPassword = await PasswordEncryption.encrypt(values.newPassword || '');
+      const result = await changePassword({
+        ...values,
+        currentPassword: encryptedCurrentPassword,
+        newPassword: encryptedNewPassword,
+      });
+      if (result.success) {
+        message.success(intl.formatMessage({ id: 'pages.changePassword.success' }));
+        setChangePasswordModalVisible(false);
+        setChangePasswordState({});
+        changePasswordForm.resetFields();
+        return;
+      }
+      setChangePasswordState(result);
+      throw new Error(result.message || intl.formatMessage({ id: 'pages.changePassword.failure' }));
+    } catch (error: any) {
+      const errorCode = error?.info?.errorCode || error?.response?.data?.errorCode;
+      if (errorCode) {
+        setChangePasswordState({
+          code: errorCode,
+          message: error.info?.message || error.message,
+        });
+      }
+      throw error;
+    }
+  };
+
+  const handleOpenChangePassword = () => {
+    setChangePasswordState({});
+    changePasswordForm.resetFields();
+    setChangePasswordModalVisible(true);
+  };
+
+  const handleCancelChangePassword = () => {
+    setChangePasswordModalVisible(false);
+    setChangePasswordState({});
+    changePasswordForm.resetFields();
+  };
+
   if (loading) {
     return <div><FormattedMessage id="pages.account.center.loading" /></div>;
   }
@@ -233,6 +282,94 @@ const UserCenter: React.FC = () => {
             </ProDescriptions>
           )}
         </Card>
+
+        <Card className={commonStyles.card} style={{ marginTop: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Space>
+              <LockOutlined style={{ fontSize: 18, color: '#1890ff' }} />
+              <span style={{ fontWeight: 500 }}><FormattedMessage id="menu.account.changePassword" /></span>
+            </Space>
+            <Button type="primary" ghost icon={<LockOutlined />} onClick={handleOpenChangePassword}>
+              <FormattedMessage id="menu.account.changePassword" />
+            </Button>
+          </div>
+        </Card>
+
+        <Modal
+          title={<Space><LockOutlined /><FormattedMessage id="menu.account.changePassword" /></Space>}
+          open={changePasswordModalVisible}
+          onCancel={handleCancelChangePassword}
+          footer={null}
+          destroyOnClose
+          width={480}
+        >
+          {changePasswordState.code && (
+            <Alert
+              style={{ marginBottom: 24 }}
+              message={changePasswordState.message || intl.formatMessage({ id: 'pages.changePassword.failure' })}
+              type="error"
+              showIcon
+            />
+          )}
+          <Form
+            form={changePasswordForm}
+            onFinish={handleChangePassword}
+            layout="vertical"
+          >
+            <Form.Item
+              name="currentPassword"
+              rules={[{ required: true, message: <FormattedMessage id="pages.changePassword.currentPassword.required" /> }]}
+            >
+              <Input.Password
+                prefix={<LockOutlined />}
+                placeholder={intl.formatMessage({ id: 'pages.changePassword.currentPassword.placeholder' })}
+                size="middle"
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="newPassword"
+              rules={[
+                { required: true, message: <FormattedMessage id="pages.changePassword.newPassword.required" /> },
+                { min: 6, message: <FormattedMessage id="pages.changePassword.newPassword.length" /> },
+              ]}
+            >
+              <Input.Password
+                prefix={<LockOutlined />}
+                placeholder={intl.formatMessage({ id: 'pages.changePassword.newPassword.placeholder' })}
+                size="middle"
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="confirmPassword"
+              dependencies={['newPassword']}
+              rules={[
+                { required: true, message: <FormattedMessage id="pages.changePassword.confirmPassword.required" /> },
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    if (!value || getFieldValue('newPassword') === value) {
+                      return Promise.resolve();
+                    }
+                    return Promise.reject(new Error(intl.formatMessage({ id: 'pages.changePassword.confirmPassword.mismatch' })));
+                  },
+                }),
+              ]}
+            >
+              <Input.Password
+                prefix={<LockOutlined />}
+                placeholder={intl.formatMessage({ id: 'pages.changePassword.confirmPassword.placeholder' })}
+                size="middle"
+              />
+            </Form.Item>
+
+            <Form.Item>
+              <Button type="primary" htmlType="submit" block size="middle">
+                <FormattedMessage id="pages.changePassword.submit" />
+              </Button>
+            </Form.Item>
+          </Form>
+        </Modal>
       </div>
     </>
   );

@@ -40,12 +40,6 @@ export default [
 
   // 隐藏页面（不在菜单中显示，但需要路由）
   {
-    name: 'change-password',
-    path: '/user/change-password',
-    component: './user/change-password',
-    hideInMenu: true,
-  },
-  {
     name: 'account.center',
     path: '/account/center',
     component: './account/center',

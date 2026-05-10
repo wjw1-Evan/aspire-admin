@@ -125,10 +125,6 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
       loginOut();
       return;
     }
-    if (key === 'change-password') {
-      history.push('/user/change-password');
-      return;
-    }
     if (key === 'center') {
       history.push('/account/center');
       return;
@@ -221,11 +217,6 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
           key: 'center',
           icon: <UserOutlined />,
           label: intl.formatMessage({ id: 'menu.account.center' }),
-        },
-        {
-          key: 'change-password',
-          icon: <LockOutlined />,
-          label: intl.formatMessage({ id: 'menu.account.changePassword' }),
         },
         {
           type: 'divider' as const,

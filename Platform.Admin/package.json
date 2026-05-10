@@ -44,8 +44,8 @@
     "jsencrypt": "^3.5.4",
     "mammoth": "^1.12.0",
     "marked": "^18.0.3",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
     "react-grid-layout": "^2.2.3",
     "react-resizable": "^3.1.3",
     "reactflow": "^11.11.4",
@@ -53,11 +53,11 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.6.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/sm-crypto": "^0.3.4",
-    "@umijs/max": "^4.6.49",
+    "@umijs/max": "^4.6.51",
     "cross-env": "^10.1.0",
     "typescript": "^6.0.3",
     "umi-presets-pro": "^2.0.3"

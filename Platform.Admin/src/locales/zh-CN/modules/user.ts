@@ -116,6 +116,7 @@ export default {
   'pages.userManagement.message.activated': '用户已启用',
   'pages.userManagement.message.confirmRemove': '确认移除',
   'pages.userManagement.message.confirmRemoveUser': '确定要将该用户从当前企业移除吗？',
+  'pages.userManagement.message.confirmRemoveUserWithName': '确定移除用户 "{name}" 吗？',
   'pages.userManagement.action.confirmRemove': '确认移除',
   'pages.userManagement.action.remove': '移除',
   'pages.userManagement.action.approve': '通过',

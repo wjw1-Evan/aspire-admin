@@ -365,6 +365,7 @@ export default {
   'pages.flow.node.addCcRule': '添加抄送规则',
 
   // knowledge-base/documents.tsx
+  'pages.workflow.knowledgeBase.document.title': '文档列表',
   'pages.workflow.knowledge.summary': '摘要',
   'pages.workflow.knowledge.summaryPlaceholder': '请输入摘要',
   'pages.workflow.knowledge.contentPreview': '内容预览',

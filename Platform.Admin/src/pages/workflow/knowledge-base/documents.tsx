@@ -134,7 +134,7 @@ const KnowledgeBaseDocuments: React.FC = () => {
       }
     >
       <ProTable
-        headerTitle="文档列表"
+        headerTitle={<Space><FileTextOutlined />{intl.formatMessage({ id: 'pages.workflow.knowledgeBase.document.title' })}</Space>}
         rowKey="id"
         search={{ labelWidth: 'auto' }}
         request={async (params: any, sort: any, filter: any) => {

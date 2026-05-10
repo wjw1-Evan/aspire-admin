@@ -322,6 +322,7 @@ export default {
   'pages.workflow.knowledgeBase.delete': 'Delete',
   'pages.workflow.knowledgeBase.search.placeholder': 'Search...',
   'pages.workflow.knowledgeBase.updateSuccess': 'Updated successfully',
+  'pages.workflow.knowledgeBase.document.title': 'Documents',
   'pages.workflow.knowledge.summary': 'Summary',
   'pages.workflow.knowledge.summaryPlaceholder': 'Enter summary',
   'pages.workflow.knowledge.contentPreview': 'Content Preview',

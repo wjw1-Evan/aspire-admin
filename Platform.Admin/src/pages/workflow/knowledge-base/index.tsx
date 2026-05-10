@@ -122,6 +122,7 @@ const KnowledgeBaseManagement: React.FC = () => {
     <PageContainer>
       <ProTable
         actionRef={actionRef}
+        headerTitle={<Space><BookOutlined />{intl.formatMessage({ id: 'pages.workflow.knowledgeBase.title' })}</Space>}
         rowKey="id"
         search={false}
         request={async (params: any, sort: any, filter: any) => {

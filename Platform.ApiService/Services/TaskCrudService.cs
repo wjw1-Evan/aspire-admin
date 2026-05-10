@@ -80,9 +80,10 @@ public class TaskCrudService : ITaskCrudService
         return task == null ? null : await ConvertToTaskDtoAsync(task);
     }
 
-    public async Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> QueryTasksAsync(ProTableRequest request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> QueryTasksAsync(ProTableRequest request, bool rootOnly = false)
     {
         var q = _context.Set<WorkTask>().AsQueryable();
+        if (rootOnly) q = q.Where(t => t.ParentTaskId == null || t.ParentTaskId == "");
         var pagedResult = q.ToPagedList(request);
         var tasks = await pagedResult.Queryable.ToListAsync();
         var total = pagedResult.RowCount;

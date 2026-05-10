@@ -25,7 +25,7 @@ public class TaskService : ITaskService
 
     public Task<TaskDto> CreateTaskAsync(CreateTaskRequest request) => _crudService.CreateTaskAsync(request);
     public Task<TaskDto?> GetTaskByIdAsync(string taskId) => _crudService.GetTaskByIdAsync(taskId);
-    public Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> QueryTasksAsync(ServiceDefaults.Models.ProTableRequest request) => _crudService.QueryTasksAsync(request);
+    public Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> QueryTasksAsync(ServiceDefaults.Models.ProTableRequest request, bool rootOnly = false) => _crudService.QueryTasksAsync(request, rootOnly);
     public Task<TaskDto> UpdateTaskAsync(UpdateTaskRequest request, string userId) => _crudService.UpdateTaskAsync(request, userId);
     public Task<bool> DeleteTaskAsync(string taskId, string userId) => _crudService.DeleteTaskAsync(taskId, userId);
     public Task<int> BatchUpdateTaskStatusAsync(List<string> taskIds, Models.TaskStatus status) => _crudService.BatchUpdateTaskStatusAsync(taskIds, status);

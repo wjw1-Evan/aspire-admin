@@ -6,7 +6,7 @@ public interface ITaskCrudService
 {
     Task<TaskDto> CreateTaskAsync(CreateTaskRequest request);
     Task<TaskDto?> GetTaskByIdAsync(string taskId);
-    Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> QueryTasksAsync(Platform.ServiceDefaults.Models.ProTableRequest request);
+    Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> QueryTasksAsync(Platform.ServiceDefaults.Models.ProTableRequest request, bool rootOnly = false);
     Task<TaskDto> UpdateTaskAsync(UpdateTaskRequest request, string userId);
     Task<bool> DeleteTaskAsync(string taskId, string userId);
     Task<int> BatchUpdateTaskStatusAsync(List<string> taskIds, Models.TaskStatus status);

@@ -30,7 +30,7 @@ public interface ITaskService
     /// </summary>
     /// <param name="request">查询请求</param>
     /// <returns>任务列表</returns>
-    Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> QueryTasksAsync(Platform.ServiceDefaults.Models.ProTableRequest request);
+    Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> QueryTasksAsync(Platform.ServiceDefaults.Models.ProTableRequest request, bool rootOnly = false);
 
     /// <summary>
     /// 更新任务

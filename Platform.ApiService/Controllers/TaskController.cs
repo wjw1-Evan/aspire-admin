@@ -88,7 +88,7 @@ public class TaskController : BaseApiController
     {
         try
         {
-            var result = await _taskService.QueryTasksAsync(request);
+            var result = await _taskService.QueryTasksAsync(request, rootOnly: true);
             return Success(result);
         }
         catch (Exception ex)

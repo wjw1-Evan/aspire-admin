@@ -161,3 +161,93 @@ jobs:
 1. **登录态保持**：使用 `storageState` 保存登录态，避免每个测试都登录
 2. **超时设置**：CI 环境适当增加超时时间
 3. **并行执行**：注意测试数据隔离，避免并发冲突
+
+### 9.10 用户体验测试（新增）
+
+#### 为什么要测用户体验？
+
+功能测试保证"功能能用"，用户体验测试保证"用户用得舒服"。前者会拦截 bug，后者会拦截用户流失。
+
+#### 关键用户体验测试场景
+
+| 测试场景 | 测试方法 | 通过标准 |
+|---------|---------|---------|
+| **页面加载时间** | 记录 `goto` 到 `ProTable` 可见的时间 | ≤ 3s |
+| **操作反馈** | 点击按钮后检测 loading 状态出现 | ≤ 500ms |
+| **空状态显示** | 无数据时检测引导提示是否存在 | 显示空状态组件 |
+| **错误提示** | 模拟网络断开，检测错误提示 | 显示友好错误信息 |
+| **移动端布局** | 缩放到 375px 宽度，检测元素不溢出 | 无重叠、不截断 |
+| **表单校验** | 不填必填项直接提交，检测校验提示 | 立即显示校验信息 |
+| **键盘导航** | Tab 切换字段，Enter 提交 | 焦点顺序正确、可提交 |
+
+#### 性能感知测试
+
+用户对"快"的感知不只是真实响应时间，还有**感知性能**：
+
+```typescript
+// ✅ 测试：点击操作后是否有即时反馈
+test('点击新建按钮有 loading 反馈', async ({ page }) => {
+  await page.goto('/task-management');
+  const button = page.getByRole('button', { name: '新建' });
+
+  // 点击前按钮没有 loading 类
+  await expect(button).not.toHaveClass(/loading/);
+
+  await button.click();
+
+  // 点击后立即显示 loading
+  await expect(button).toHaveClass(/loading/);
+});
+
+// ✅ 测试：空数据时显示引导
+test('无数据时显示空状态', async ({ page }) => {
+  await page.goto('/task-management');
+  // 如果没有数据，应该看到 Empty 组件
+  await expect(page.getByText('暂无数据')).toBeVisible();
+  // 并且有新建按钮可以操作
+  await expect(page.getByRole('button', { name: '新建' })).toBeVisible();
+});
+```
+
+#### 易用性测试
+
+```typescript
+// ✅ 测试：删除操作有二次确认
+test('删除前弹出确认框', async ({ page }) => {
+  await page.goto('/task-management');
+  await page.getByRole('button', { name: '删除' }).first().click();
+
+  // 弹出 Popconfirm
+  await expect(page.getByText('确定要删除吗？')).toBeVisible();
+  await page.getByRole('button', { name: '确定' }).click();
+});
+
+// ✅ 测试：错误信息友好可读
+test('网络错误时显示友好提示', async ({ page }) => {
+  await page.route('**/api/**', route => route.abort());
+  await page.goto('/task-management');
+
+  // 显示友好错误信息，不是技术堆栈
+  await expect(page.getByText(/网|加载|失败|请稍后/)).toBeVisible();
+});
+```
+
+#### 跨浏览器体验一致性
+
+关键页面需要在 Chrome、Firefox、Safari 上验证：
+
+- 布局没有偏移或重叠
+- 字体在不同系统上可读
+- 弹窗在窄屏上正常显示
+- 滚动行为一致
+
+#### 关键用户体验检查清单
+
+编写测试时，问自己：
+
+- [ ] **加载体验** — 页面加载慢的场景有覆盖吗？
+- [ ] **错误恢复** — 用户能在错误场景下恢复操作吗？
+- [ ] **操作确认** — 删除、批量操作等有确认流程测试吗？
+- [ ] **空/满状态** — 边界数据状态（0 条、大量数据）测试了吗？
+- [ ] **移动端** — 窄屏下关键功能还能正常使用吗？
+- [ ] **反馈及时性** — 每个操作后用户能看到反馈吗？

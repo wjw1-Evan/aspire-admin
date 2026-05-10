@@ -243,3 +243,144 @@ _logger.LogInformation("LLM Response: {Response}", response.Content);
 // 在浏览器 DevTools 中查看网络请求
 // 筛选 /apiservice/api/chat-ai 相关请求
 ```
+
+### 11.12 对话体验设计（新增）
+
+#### 对话交互的核心原则
+
+AI 聊天的用户体验与传统 UI 不同——用户用自然语言与系统交互，体验好坏取决于**回复速度、准确性和上下文连贯性**。
+
+#### 流式响应（Streaming）
+
+流式响应是 AI 聊天的**基础用户体验要求**：
+
+| 方式 | 用户体验 | 推荐场景 |
+|------|---------|---------|
+| **流式响应**（SSE） | 用户看到 AI 逐字输出，感觉"在思考" | 所有聊天场景 |
+| **非流式响应** | 用户盯着 loading，不知道 AI 在不在工作 | 应避免使用 |
+
+```csharp
+// 流式响应实现要点
+public async IAsyncEnumerable<string> StreamMessageAsync(
+    string sessionId,
+    string message,
+    string userId,
+    CancellationToken cancellationToken)
+{
+    // 1. 立即返回"已收到"的视觉反馈
+    await SaveUserMessageAsync(sessionId, message, userId);
+
+    // 2. 一边生成一边输出
+    await foreach (var chunk in _llmService.StreamAsync(context, cancellationToken))
+    {
+        yield return chunk;
+        // 每 100ms 至少推送一次，保持前端的"正在输出"效果
+    }
+}
+```
+
+#### 聊天的状态管理
+
+| 状态 | 用户看到 | 实现要点 |
+|------|---------|---------|
+| **空闲** | 输入框可用，显示历史消息 | 正常状态 |
+| **发送中** | 用户消息出现 + 打字指示器 | 立即显示用户消息，不等待后端 |
+| **AI 回复中** | 逐字输出 + 可随时停止 | SSE 流式 + 中止令牌 |
+| **回复完成** | 完整回复 + 可继续输入 | 滚动到底部 |
+| **出错** | 错误提示 + 重发按钮 | 不丢失刚才的输入 |
+
+```typescript
+// 前端聊天状态管理示例
+const [chatState, setChatState] = useState<'idle' | 'sending' | 'responding' | 'error'>('idle');
+
+// 发送消息
+async function handleSend(content: string) {
+  // 立即显示用户消息（乐观更新）
+  addMessage({ role: 'user', content });
+  setChatState('responding');
+
+  try {
+    // 流式接收 AI 回复
+    await streamResponse(sessionId, content, (chunk) => {
+      updateLastMessage(chunk); // 逐字追加
+    });
+    setChatState('idle');
+  } catch (e) {
+    setChatState('error');
+    showRetryOption();
+  }
+}
+```
+
+#### 错误恢复设计
+
+AI 的不可靠性比传统系统更高，错误恢复设计尤为重要：
+
+```typescript
+// ✅ 好的错误恢复
+try {
+  const response = await api.sendMessage({ sessionId, message });
+} catch (error) {
+  // 1. 不丢失上下文
+  // 2. 提供重试选项
+  // 3. 给出友好提示说明原因
+  showError('回复生成中断', {
+    description: '网络不稳定，请重试或换一种问法',
+    actions: [
+      { label: '重试', onPress: () => resend() },
+      { label: '换个问法', onPress: () => clearAndRetry() },
+    ],
+  });
+}
+
+// ❌ 差的错误处理
+catch (error) {
+  message.error('请求失败');
+  // 用户不知道刚才说了什么，不知道怎么恢复
+}
+```
+
+#### 会话延续体验
+
+| 场景 | 好的体验 | 差的体验 |
+|------|---------|---------|
+| 刷新页面 | 自动恢复上次对话列表和最后一条消息 | 回到空聊天界面 |
+| 切换会话 | 保留切换前的位置和滚动 | 滚动到最顶部 |
+| 长时间未活动 | 提示"继续上次的讨论" | 清空上下文 |
+| 多轮对话 | AI 记得之前说过的内容 | AI 问同样的信息第二次 |
+
+#### 输入体验设计
+
+```typescript
+// 输入框设计的用户体验要点
+<Input.TextArea
+  // ✅ 支持 Enter 发送，Shift+Enter 换行
+  onKeyDown={(e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  }}
+  // ✅ 保留草稿
+  value={draft}
+  onChange={(e) => saveDraft(sessionId, e.target.value)}
+  // ✅ 发送中禁用
+  disabled={chatState === 'responding'}
+  // ✅ 占位符提示
+  placeholder="输入消息，Enter 发送"
+  // ✅ 高度自适应
+  autoSize={{ minRows: 1, maxRows: 6 }}
+/>
+```
+
+#### 关键用户体验检查清单
+
+开发聊天功能时，问自己：
+
+- [ ] **流式输出** — 用户能看到 AI 逐字回复吗？还是需要等全部生成完？
+- [ ] **即时反馈** — 发送消息后用户消息立即出现在聊天区域吗？
+- [ ] **错误恢复** — LLM 调用失败时，用户能不丢上下文重试吗？
+- [ ] **会话延续** — 刷新后能回到之前的对话吗？
+- [ ] **输入体验** — Enter 发送、草稿保存、高度自适应都支持了吗？
+- [ ] **打字指示器** — AI 回复中有打字效果吗？还是让用户面对空白发呆？
+- [ ] **上下文管理** — 长对话中有没有提供历史摘要或上下文管理？

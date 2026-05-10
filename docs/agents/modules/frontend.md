@@ -2,6 +2,26 @@
 
 > **开发标准参考**：`src/pages/password-book/index.tsx` 是所有列表页面的开发标准。
 
+---
+
+## 🧭 目录
+
+- [7.1 路由与菜单](#71-路由与菜单)
+- [7.2 API 端点规范](#72-api-端点规范)
+- [7.3 类型安全](#73-类型安全)
+- [7.4 统一 API 响应类型](#74-统一-api-响应类型)
+- [7.5 列表页面关键结构](#75-列表页面关键结构)
+- [7.6 表单处理规范](#76-表单处理规范)
+- [7.7 错误处理规范](#77-错误处理规范)
+- [7.8 国际化 (i18n)](#78-国际化-i18n)
+- [7.9 统一开发标准](#79-统一开发标准)
+- [7.10 已重构页面清单](#710-已重构页面清单)
+- [7.11 认证与 Token 管理](#711-认证与-token-管理)
+- [7.12 SSE 连接管理](#712-sse-连接管理)
+- [7.13 用户体验设计要点（新增）](#713-用户体验设计要点新增)
+
+---
+
 ## 7.1 路由与菜单
 
 ### 菜单数据初始化
@@ -33,6 +53,8 @@
 }
 ```
 
+---
+
 ## 7.2 API 端点规范
 
 ### 后端路由约定
@@ -58,6 +80,8 @@ const api = {
 };
 ```
 
+---
+
 ## 7.3 类型安全
 
 **[强制]** 禁止使用 `any` 类型，定义具体接口：
@@ -68,6 +92,8 @@ interface TaskFormValues {
   priority?: number;
 }
 ```
+
+---
 
 ## 7.4 统一 API 响应类型
 
@@ -90,6 +116,8 @@ export interface PagedResult<T> {
   pageCount: number;
 }
 ```
+
+---
 
 ## 7.5 列表页面关键结构
 
@@ -124,6 +152,8 @@ const columns: ProColumns<Entry>[] = [
 ];
 ```
 
+---
+
 ## 7.6 表单处理规范
 
 使用 `@ant-design/pro-components` 的 `ModalForm` 组件：
@@ -141,6 +171,15 @@ const columns: ProColumns<Entry>[] = [
 </ModalForm>
 ```
 
+### 表单用户体验要点
+
+- **失焦校验**：用户离开字段时即时校验，不打断输入流
+- **提交 loading**：提交按钮自动进入 loading 状态，防止重复提交
+- **保留上下文**：表单验证失败时，保留已填内容不丢失
+- **智能默认值**：常用字段预填合理默认值，减少输入
+
+---
+
 ## 7.7 错误处理规范
 
 **[强制]** 前端显示错误信息时，必须优先使用 `errorCode` 进行 i18n 翻译：
@@ -149,6 +188,17 @@ const columns: ProColumns<Entry>[] = [
 import { getErrorMessage } from '@/utils/getErrorMessage';
 message.error(getErrorMessage(response, 'pages.xxx.operationFailed'));
 ```
+
+### 用户体验层面的错误处理
+
+| 错误场景 | 推荐处理方式 | 不推荐的处理方式 |
+|---------|------------|----------------|
+| 网络断开 | 显示友好提示 + 重试按钮 | 直接白屏或报 JSON 解析错误 |
+| 表单提交失败 | 保留表单内容，定位到错误字段 | 清空表单让用户重新填 |
+| Token 过期 | 自动刷新 Token 并重试请求 | 直接跳转登录页丢失当前操作 |
+| 请求超时 | 提示"请求超时，请检查网络" | 没有任何反馈（页面卡死） |
+
+---
 
 ## 7.8 国际化 (i18n)
 
@@ -169,6 +219,8 @@ intl.formatMessage({ id: 'pages.xxx.title' })
 | 按钮文本 | `pages.{module}.button.{action}` |
 | 列标题 | `pages.{module}.columns.{field}` |
 
+---
+
 ## 7.9 统一开发标准
 
 > **开发标准参考**：`src/templates/StandardPageTemplate.tsx`
@@ -188,6 +240,8 @@ intl.formatMessage({ id: 'pages.xxx.title' })
 | **9. 代码组织** | 按顺序：导入 → 类型 → API → 组件 |
 | **10. 错误处理** | 使用 `getErrorMessage` 工具函数 |
 
+---
+
 ## 7.10 已重构页面清单
 
 | 页面 | 路径 | 完成项 |
@@ -204,14 +258,108 @@ intl.formatMessage({ id: 'pages.xxx.title' })
 | 网页抓取 | `src/pages/web-scraper/index.tsx` | ✅ 国际化 |
 | 分享页面 | `src/pages/share/index.tsx` | ✅ 国际化 |
 
+---
+
 ## 7.11 认证与 Token 管理
 
 - **Token 存储**：`localStorage`，键名 `auth_token`、`refresh_token`
 - **自动刷新**：`src/utils/tokenRefreshManager.ts`，401 时自动刷新并重试
 - **密码加密**：登录密码使用国密 SM2 非对称加密传输
 
+---
+
 ## 7.12 SSE 连接管理
 
 - **核心 Hook**：`src/hooks/useSseConnection.ts`
 - **连接端点**：`/apiservice/api/stream/sse?token=<jwt>`
 - **认证方式**：通过查询参数 `?token=` 传递 JWT
+
+---
+
+## 7.13 用户体验设计要点（新增）
+
+### 页面状态设计原则
+
+每个页面必须覆盖以下 5 种状态：
+
+```tsx
+// 1. 加载状态
+if (loading) return <Skeleton active />;
+
+// 2. 空状态
+if (data.length === 0) return <Empty description="暂无数据" />;
+
+// 3. 错误状态
+if (error) return <Result status="error" title="加载失败" extra={<Button onClick={retry}>重试</Button>} />;
+
+// 4. 无权限
+if (!hasPermission) return <Result status="403" title="暂无权限" subTitle="请联系管理员开通" />;
+
+// 5. 正常展示
+return <ProTable dataSource={data} />;
+```
+
+### 移动端适配要点
+
+所有列表页面必须考虑移动端显示：
+
+| 事项 | 说明 |
+|------|------|
+| **响应式列数** | 窄屏时自动隐藏非关键列 |
+| **触摸友好** | 按钮最小 44px，点击反馈明显 |
+| **安全区域** | 适配刘海屏、底部 Home Indicator |
+| **横向滚动** | 表格内容过多时允许横向滚动 |
+
+> 参考 `src/pages/password-book/index.tsx` 中的 `responsive` 列配置。
+
+### 操作反馈设计
+
+| 用户操作 | 反馈方式 | 时机 |
+|---------|---------|------|
+| 点击按钮 | 按钮显示 loading | 立即（< 100ms） |
+| 提交表单 | 按钮 loading + "提交中..." | 点击确认时 |
+| 操作成功 | `message.success` + 关闭弹窗 | 接口返回时 |
+| 操作失败 | 定位到错误字段 + 提示 | 接口返回时 |
+| 删除确认 | `Popconfirm` 弹窗 | 点击删除时 |
+| 长时间操作 | 进度条 + 百分比显示 | 超过 3s 时 |
+
+### 常见前端用户体验反模式
+
+```tsx
+// ❌ 反模式 1：没有 loading 状态
+const [data, setData] = useState([]);
+useEffect(() => { fetchData().then(setData); }, []);
+// 页面会先白屏，等数据加载完才突然出现
+
+// ✅ 正确：始终有 loading
+const [loading, setLoading] = useState(true);
+useEffect(() => {
+  setLoading(true);
+  fetchData().then(setData).finally(() => setLoading(false));
+}, []);
+
+// ❌ 反模式 2：错误静默处理
+try { await submit();
+} catch (e) {} // 用户点了提交毫无反应
+
+// ✅ 正确：错误一定有反馈
+try { await submit();
+} catch (e) { message.error(getErrorMessage(e)); }
+
+// ❌ 反模式 3：表单提交成功后清空所有内容
+// 用户需要全部重新填写
+
+// ✅ 正确：保留一些上下文，或者提示用户下一步可以做什么
+```
+
+### 关键用户体验检查清单
+
+开发每个页面时，问自己：
+
+- [ ] **加载中** — 用户看到的是 Skeleton 还是白屏？
+- [ ] **空状态** — 没数据时是空表格还是友好的引导？
+- [ ] **出错时** — 用户知道怎么恢复吗？
+- [ ] **移动端** — 手机上看布局会乱吗？
+- [ ] **操作后** — 用户知道操作成功了吗？下一步去哪？
+- [ ] **键盘可操作** — 能 Tab 切换字段、Enter 提交吗？
+- [ ] **加载超时** — 超过 3 秒的请求有进度提示吗？

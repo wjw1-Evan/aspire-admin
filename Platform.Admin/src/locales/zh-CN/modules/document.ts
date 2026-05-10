@@ -157,4 +157,13 @@ export default {
   'pages.document.message.archiveSuccess': '归档成功',
   'pages.document.confirm': '确定',
   'pages.document.cancel': '取消',
+
+  // DocumentEditDrawer (document/list.tsx)
+  'pages.document.edit.title': '编辑公文',
+  'pages.document.form.title': '标题',
+  'pages.document.form.titleRequired': '请输入标题',
+  'pages.document.form.content': '内容',
+  'pages.document.form.documentType': '文档类型',
+  'pages.document.form.category': '分类',
+  'pages.document.save': '保存',
 };

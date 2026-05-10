@@ -159,6 +159,7 @@ const TaskManagement: React.FC = () => {
     search: '',
   });
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
+  const [expandedRowKeys, setExpandedRowKeys] = useState<string[]>([]);
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
   const loadStatistics = useCallback(() => api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }), []);
@@ -227,9 +228,11 @@ const TaskManagement: React.FC = () => {
           loadStatistics();
           const res = await api.list({ ...params, search: state.search, sort, filter });
           const items = (res.data?.queryable || []).filter((t: TaskDto) => !t.parentTaskId);
+          setExpandedRowKeys(items.map((t: TaskDto) => t.id!));
           return { data: items, total: res.data?.rowCount || 0, success: res.success };
         }}
-        columns={columns} rowKey="id" search={false} expandable={{ defaultExpandAllRows: true }}
+        columns={columns} rowKey="id" search={false}
+        expandable={{ expandedRowKeys, onExpandedRowsChange: (keys) => setExpandedRowKeys(keys as string[]) }}
         headerTitle={
           <Space size={24}>
             <Space><ProjectOutlined />{intl.formatMessage({ id: 'pages.taskManagement.title' })}</Space>

@@ -39,7 +39,6 @@ const VisitKnowledgeBase: React.FC = () => {
         allQuestions: [] as VisitQuestion[],
         statistics: null as VisitStatistics | null,
         search: '',
-        sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
         generatingAnswer: false,
     });
     const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
@@ -91,28 +90,11 @@ const VisitKnowledgeBase: React.FC = () => {
                 </Space>
               </Space>
             }
-                request={async (params: any) => {
-                    const { current, pageSize } = params;
-                    const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-                    const res = await api.questions({ page: current, pageSize, search: state.search, ...sortParams });
+                request={async (params: any, sort: any, filter: any) => {
+                    const res = await api.questions({ ...params, search: state.search, sort, filter });
                     return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
                 }}
                 columns={columns} search={false}
-                scroll={{ x: 'max-content' }}
-                toolBarRender={() => [
-                    <Input.Search
-                        key="search"
-                        placeholder={intl.formatMessage({ id: 'common.search' })}
-                        allowClear
-                        value={state.search}
-                        onChange={(e) => set({ search: e.target.value })}
-                        onSearch={(v) => { set({ search: v }); actionRef.current?.reload(); }}
-                        style={{ width: 260, marginRight: 8 }}
-                        prefix={<SearchOutlined />}
-                    />,
-                    <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { set({ editingQuestion: null }); setTimeout(() => form.resetFields(), 0); set({ formVisible: true }); }}>{intl.formatMessage({ id: 'pages.park.visitKnowledge.addQuestion' })}</Button>,
-                ]}
-                onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
             />
 
             <ModalForm form={form} key={state.editingQuestion?.id || 'create-question'} title={state.editingQuestion ? intl.formatMessage({ id: 'pages.park.visitKnowledge.editQuestion' }) : intl.formatMessage({ id: 'pages.park.visitKnowledge.addQuestion' })} open={state.formVisible} onOpenChange={(open) => { if (!open) { form.resetFields(); set({ formVisible: false, editingQuestion: null }); } }}

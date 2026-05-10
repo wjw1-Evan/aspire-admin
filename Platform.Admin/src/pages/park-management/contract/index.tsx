@@ -61,7 +61,6 @@ const ContractManagement: React.FC = () => {
     const { message } = App.useApp();
     const actionRef = useRef<ActionType | undefined>(undefined);
     const [searchParams, setSearchParams] = useState({ search: '' });
-    const [sorter, setSorter] = useState<{ sortBy: string; sortOrder: string } | undefined>(undefined);
     const [state, setState] = useState({
         statistics: null as TenantStatistics | null, contractModalVisible: false, paymentModalVisible: false,
         detailDrawerVisible: false, currentContract: null as LeaseContract | null, detailLoading: false,
@@ -138,13 +137,10 @@ const ContractManagement: React.FC = () => {
                             <Tag color="purple">{intl.formatMessage({ id: 'pages.park.contract.statistics.expectedThisMonth' })} ¥{state.statistics?.totalExpected?.toLocaleString() || 0}</Tag>
                         </Space>
                     </Space>
-            } request={async (params: any) => {
-                const { current, pageSize } = params;
-                const sortParams = sorter?.sortBy && sorter?.sortOrder ? sorter : undefined;
-                const res = await api.list({ page: current, pageSize, search: searchParams.search, ...sortParams });
+            } request={async (params: any, sort: any, filter: any) => {
+                const res = await api.list({ ...params, search: searchParams.search, sort, filter });
                 return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
             }} columns={columns} rowKey="id" search={false}
-                onChange={(_p, _f, s: any) => setSorter(s?.order ? { sortBy: s.field as string, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined)}
                 scroll={{ x: 'max-content' }}
                 toolBarRender={() => [
                     <Input.Search

@@ -1,8 +1,8 @@
 # MCP 服务与 AI 能力整合
 
-## 4. MCP 服务与 AI 能力整合
+## 10. MCP 服务与 AI 能力整合
 
-### 4.1 MCP 核心架构
+### 10.1 MCP 核心架构
 
 **位置**：`Platform.ApiService/Services/McpService.cs`
 
@@ -17,7 +17,7 @@
 - 最低匹配分数阈值 5.0（`MinimumMatchScore = 5.0`）
 - 安全过滤：检测用户消息是否包含操作意图，防止误执行
 
-### 4.2 MCP 控制器
+### 10.2 MCP 控制器
 
 **位置**：`Platform.ApiService/Controllers/McpController.cs`
 
@@ -26,7 +26,7 @@
 - `POST api/mcp/tools/list` - 列出所有可用工具
 - `POST api/mcp/tools/call` - 调用指定工具
 
-### 4.3 MCP Handlers 列表（20个）
+### 10.3 MCP Handlers 列表（20 个）
 
 | Handler 文件 | 功能领域 | 状态 |
 |-------------|---------|------|
@@ -51,7 +51,7 @@
 | WebScraperMcpToolHandler.cs | 网页抓取 | ✅ |
 | ChatAiMcpToolHandler.cs | AI 聊天 | ✅ |
 
-### 4.4 Handler 开发标准
+### 10.4 Handler 开发标准
 
 所有 Handler 必须实现 `IMcpToolHandler` 接口：
 
@@ -104,7 +104,7 @@ public class XxxMcpToolHandler : BaseMcpToolHandler, IMcpToolHandler
 }
 ```
 
-### 4.5 MCP 工具匹配机制
+### 10.5 MCP 工具匹配机制
 
 **工作流程**：
 
@@ -121,7 +121,7 @@ public class XxxMcpToolHandler : BaseMcpToolHandler, IMcpToolHandler
 - 参数名匹配：+3 分
 - 用户消息包含操作动词：+2 分
 
-### 4.6 参数解析
+### 10.6 参数解析
 
 `ResolveParameters` 支持以下格式：
 
@@ -137,7 +137,7 @@ public class XxxMcpToolHandler : BaseMcpToolHandler, IMcpToolHandler
 解析结果: { "id": "507f1f77bcf86cd799439011" }
 ```
 
-### 4.7 安全过滤
+### 10.7 安全过滤
 
 McpService 内置安全过滤，检测用户消息是否包含危险操作：
 
@@ -154,7 +154,7 @@ if (ContainsDangerousOperations(userMessage))
 }
 ```
 
-### 4.8 AI 助手使用建议
+### 10.8 AI 助手使用建议
 
 **对于 AI 助手**：
 
@@ -174,9 +174,9 @@ AI 操作:
 4. 解析返回结果并展示给用户
 ```
 
-### 4.9 新增 MCP Handler 流程
+### 10.9 新增 MCP Handler 流程
 
-1. 在 `Platform.ApiService/Services/Mcp/` 下创建 Handler 文件
+1. 在 `Platform.ApiService/Services/Mcp/Handlers/` 下创建 Handler 文件
 2. 实现 `IMcpToolHandler` 接口
 3. 继承 `BaseMcpToolHandler`（可选，提供通用方法）
 4. 注册服务（自动发现，无需手动注册）

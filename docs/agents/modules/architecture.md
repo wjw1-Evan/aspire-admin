@@ -37,7 +37,7 @@ aspire-admin/
 ├── Platform.DataInitializer/      # 数据初始化服务
 │   └── Menus.json               # 菜单配置
 ├── Platform.Admin/              # React 管理后台
-│   ├── src/pages/              # 业务页面（22 个模块）
+│   ├── src/pages/              # 业务页面（23 个模块）
 │   ├── src/services/           # API 服务层
 │   └── src/locales/            # 国际化翻译（18 种语言）
 ├── Platform.App/                # Expo 移动端 App

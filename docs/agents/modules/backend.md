@@ -224,14 +224,23 @@ await Response.WriteAsync($"event: ping\ndata: {DateTime.UtcNow}\n\n");
 | 控制器 | 功能模块 |
 |--------|---------|
 | AuthController | 认证管理 |
-| UserController | 用户管理 |
-| RoleController | 角色管理 |
-| TaskController | 任务管理 |
+| UserController, AvatarController | 用户管理 |
+| RoleController, MenuController | 角色权限 |
+| CompanyController, OrganizationController | 企业管理 |
+| TaskController, ProjectController, ProjectStatisticsController | 任务项目 |
 | WorkflowController | 工作流 |
 | IoTController | IoT 物联网 |
 | PasswordBookController | 密码本 |
-| ParkAsset/Tenant/Visit/InvestmentController | 园区管理 |
-| ChatAi/XiaokeConfigController | 小科 AI |
+| ParkAssetController, ParkTenantController, ParkVisitController, ParkInvestmentController, ParkEnterpriseServiceController, ParkStatisticsController | 园区管理 |
+| ChatAiController, ChatSessionsController, ChatHistoryController, ChatMessagesController, XiaokeConfigController | 小科 AI |
 | McpController | MCP 服务 |
+| DocumentController | 公文管理 |
+| CloudStorageController, FileShareController, FileVersionController, FileStorageController, StorageQuotaController | 文件存储 |
+| KnowledgeBaseController, KnowledgeDocumentController | 知识库 |
+| WebScraperController | 网页抓取 |
+| FormController, RuleController | 表单规则 |
+| SocialController, NotificationController | 社交通知 |
+| SystemMonitorController, DashboardController, DashboardVersionController | 系统监控 |
+| StreamController, PublicController, QuotaController | 公共设施 |
 
-> 完整 43 个控制器见 `Platform.ApiService/Controllers/` 目录。
+> 完整 44 个控制器见 `Platform.ApiService/Controllers/` 目录。

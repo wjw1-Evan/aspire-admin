@@ -192,12 +192,17 @@ intl.formatMessage({ id: 'pages.xxx.title' })
 
 | 页面 | 路径 | 完成项 |
 |------|------|--------|
-| 密码本 | `src/pages/password-book/index.tsx` | ✅ 国际化、统计信息 |
+| 密码本 | `src/pages/password-book/index.tsx` | ✅ 国际化、移动端适配、统计信息 |
 | 任务管理 | `src/pages/task-management/index.tsx` | ✅ ModalForm、国际化 |
 | IoT 平台 | `src/pages/iot-platform/index.tsx` | ✅ 国际化、移动端适配 |
-| 用户管理 | `src/pages/user-management/index.tsx` | ✅ 统一状态管理 |
+| 用户管理 | `src/pages/user-management/index.tsx` | ✅ 统一状态管理、国际化 |
 | 工作流表单 | `src/pages/workflow/forms/index.tsx` | ✅ ModalForm、国际化 |
 | 项目管理 | `src/pages/project-management/index.tsx` | ✅ 国际化、统计信息 |
+| 云存储文件 | `src/pages/cloud-storage/files/index.tsx` | ✅ 国际化 |
+| 园区租户 | `src/pages/park-management/tenant/index.tsx` | ✅ 国际化 |
+| 组织架构 | `src/pages/organization/index.tsx` | ✅ 国际化 |
+| 网页抓取 | `src/pages/web-scraper/index.tsx` | ✅ 国际化 |
+| 分享页面 | `src/pages/share/index.tsx` | ✅ 国际化 |
 
 ## 7.11 认证与 Token 管理
 

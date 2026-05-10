@@ -15,6 +15,7 @@
 | **测试相关** | [测试规范](docs/agents/modules/testing.md) | Playwright 测试、测试账号 |
 | **移动端/小程序** | [多端规范](docs/agents/modules/mobile.md) | Expo App、微信小程序 |
 | **小科 AI** | [AI 聊天系统](docs/agents/modules/xiaoke.md) | 聊天服务、LLM 集成 |
+| **架构与代码位置** | [架构规范](docs/agents/modules/architecture.md) | 项目结构、技术栈、已重构页面清单 |
 | **Git 提交** | [交互规范](#2-交互与-git-提交规范) | 提交格式、自动推送 |
 
 ## 1. 核心架构与技术栈
@@ -30,7 +31,7 @@
 ### 核心项目结构
 
 - `Platform.AppHost/AppHost.cs`：微服务资源编排入口
-- `Platform.ApiService`：后端核心业务网关（43 个控制器，213+ 服务文件）
+- `Platform.ApiService`：后端核心业务网关（44 个控制器，215+ 服务文件）
 - `Platform.ServiceDefaults`：共享基础设施层
 - `Platform.Admin` / `Platform.App` / `Platform.MiniApp`：多端前端应用
 
@@ -42,10 +43,14 @@
 | **IoT 物联网** | IoTController | iot-platform/ | 网关、设备、数据点 |
 | **园区管理** | ParkAsset/Tenant/Visit/InvestmentController | park-management/ | 资产、租户、招商 |
 | **密码本** | PasswordBookController | password-book/ | 安全密码管理 |
+| **知识库** | KnowledgeBase/DocumentController | workflow/knowledge-base/ | 知识库与文档 |
+| **文件存储** | FileStorage/CloudStorage/VersionController | cloud-storage/ | 云存储、版本管理 |
 | **任务项目** | Task/ProjectController | task-management/ | 任务、项目管理 |
+| **公文管理** | DocumentController | document/ | 公文创建、审批 |
 | **小科 AI** | ChatAi/XiaokeConfigController | xiaoke-management/ | AI 对话、配置 |
+| **网页抓取** | WebScraperController | web-scraper/ | 网页内容抓取 |
 
-> **完整模块列表**见：[后端规范 - 6.1 控制器规范](docs/agents/modules/backend.md#61-控制器规范)
+> **完整模块与控制器列表**见：[架构规范 - 核心业务模块](docs/agents/modules/architecture.md#核心业务模块) 或 [后端规范 - 控制器完整列表](docs/agents/modules/backend.md#610-控制器完整列表)
 
 ## 2. 交互与 Git 提交规范
 
@@ -72,7 +77,7 @@ git status
 ```bash
 git add -A
 git commit -m "<提交信息>"
-git push origin main
+git push origin HEAD
 ```
 
 #### 提交信息规范
@@ -107,6 +112,21 @@ git push origin main
 - 各子文档如有原则重复，优先合并至本规范。
 - 发现实现与本规范不符时，优先以模块文档和本规范为准，及时修订文档与代码。
 - 所有新功能迭代前，务必查阅相关模块文档以确保架构走向不偏离。
+
+## 5. 开发规范
+
+以下模块文档是各领域的具体开发规范，由 AGENTS.md 统一索引：
+
+| 编号 | 规范文档 | 覆盖范围 |
+|------|---------|---------|
+| 6 | [后端开发规范](docs/agents/modules/backend.md) | 控制器、服务层、数据库、权限、异常处理、SSE |
+| 7 | [前端开发规范](docs/agents/modules/frontend.md) | React 页面、路由、API、状态管理、表单、国际化 |
+| 8 | [移动端与小程序](docs/agents/modules/mobile.md) | Expo App、微信小程序、API 对接 |
+| 9 | [测试规范](docs/agents/modules/testing.md) | Playwright 测试、测试账号、调试技巧 |
+| 10 | [MCP 集成](docs/agents/modules/mcp.md) | MCP Handlers、AI 工具调用 |
+| 11 | [小科 AI 系统](docs/agents/modules/xiaoke.md) | 聊天服务、LLM 集成、消息流程 |
+
+> 各模块的内部小节编号（如 `6.1`、`7.1`）与上表对应。
 
 ## 附录：模块文档索引
 

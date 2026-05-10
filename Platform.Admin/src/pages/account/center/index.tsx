@@ -74,17 +74,20 @@ const UserCenter: React.FC = () => {
 
   useEffect(() => { fetchUserProfile(); }, []);
 
-  useEffect(() => {
-    if (editing && userProfile) {
-      form.setFieldsValue({
-        username: userProfile.username, name: userProfile.name, email: userProfile.email,
-        phoneNumber: userProfile.phoneNumber, age: userProfile.age, avatar: userProfile.avatar,
-      });
+  const handleOpenEditModal = () => {
+    if (userProfile) {
       setAvatarPreview(userProfile.avatar);
-    } else {
-      setAvatarPreview(userProfile?.avatar);
     }
-  }, [editing, userProfile, form]);
+    setEditing(true);
+    setTimeout(() => {
+      if (userProfile) {
+        form.setFieldsValue({
+          username: userProfile.username, name: userProfile.name, email: userProfile.email,
+          phoneNumber: userProfile.phoneNumber, age: userProfile.age, avatar: userProfile.avatar,
+        });
+      }
+    }, 0);
+  };
 
   const handleUpdateProfile = async (values: any) => {
     const { username: _username, ...formValues } = values;
@@ -168,10 +171,11 @@ const UserCenter: React.FC = () => {
     try {
       const encryptedCurrentPassword = await PasswordEncryption.encrypt(values.currentPassword || '');
       const encryptedNewPassword = await PasswordEncryption.encrypt(values.newPassword || '');
+      // 后端 [Compare("NewPassword")] 对比原始值，所以 confirmPassword 需传入相同密文
       const result = await changePassword({
-        ...values,
         currentPassword: encryptedCurrentPassword,
         newPassword: encryptedNewPassword,
+        confirmPassword: encryptedNewPassword,
       });
       if (result.success) {
         message.success(intl.formatMessage({ id: 'pages.changePassword.success' }));
@@ -183,14 +187,29 @@ const UserCenter: React.FC = () => {
       setChangePasswordState(result);
       throw new Error(result.message || intl.formatMessage({ id: 'pages.changePassword.failure' }));
     } catch (error: any) {
-      const errorCode = error?.info?.errorCode || error?.response?.data?.errorCode;
-      if (errorCode) {
-        setChangePasswordState({
-          code: errorCode,
-          message: error.info?.message || error.message,
+      // BizError：2xx + success=false（从 errorThrower 抛出）
+      const bizData = error?.info;
+      // HTTP 错误：非 2xx（从 umi-request 抛出）
+      const httpData = error?.data || error?.response?.data;
+      const errorData = bizData || httpData || {};
+      const errorCode = errorData.errorCode;
+      // 优先使用后端返回的校验错误详情数组
+      let errorMessage = errorData.message || error.message;
+      if (errorData.errors) {
+        const fieldErrors: string[] = [];
+        Object.entries(errorData.errors).forEach(([, msgs]) => {
+          if (Array.isArray(msgs)) {
+            fieldErrors.push(...msgs);
+          }
         });
+        if (fieldErrors.length > 0) {
+          errorMessage = fieldErrors.join('；');
+        }
       }
-      throw error;
+      setChangePasswordState({
+        code: errorCode || 'UNKNOWN',
+        message: errorMessage,
+      });
     }
   };
 
@@ -223,22 +242,9 @@ const UserCenter: React.FC = () => {
         <Title level={2}><UserOutlined style={{ marginRight: '8px' }} /><FormattedMessage id="pages.account.center.title" /></Title>
 
         <Card title={<FormattedMessage id="pages.account.center.profile" />} className={`${commonStyles.card} ${styles.profileCard}`}
-          extra={<Button type="primary" icon={<EditOutlined />} onClick={() => setEditing(true)} disabled={editing}><FormattedMessage id="pages.account.center.editProfile" /></Button>}>
+          extra={<Button type="primary" icon={<EditOutlined />} onClick={handleOpenEditModal}><FormattedMessage id="pages.account.center.editProfile" /></Button>}>
           <div className={styles.avatarSection}>
-            {editing ? (
-              <div style={{ position: 'relative', display: 'inline-block' }}>
-                <Avatar size={80} src={getUserAvatar(typeof avatarPreview === 'string' ? avatarPreview : userProfile?.avatar)} icon={<UserOutlined />} />
-                <label style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: '50%', backgroundColor: '#1890ff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '2px solid #fff', boxShadow: '0 2px 4px rgba(0,0,0,0.2)', zIndex: 10 }}>
-                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} />
-                  <CameraOutlined style={{ color: '#fff', fontSize: 14 }} />
-                </label>
-                 {(typeof avatarPreview === 'string' ? avatarPreview : userProfile?.avatar) && (
-                   <Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={handleAvatarDelete} style={{ position: 'absolute', top: -8, right: -8, minWidth: 24, height: 24, padding: 0, zIndex: 10 }} title={intl.formatMessage({ id: 'pages.account.center.avatar.delete' })} />
-                 )}
-              </div>
-            ) : (
-              <Avatar size={80} src={getUserAvatar(userProfile?.avatar)} icon={<UserOutlined />} />
-            )}
+            <Avatar size={80} src={getUserAvatar(userProfile?.avatar)} icon={<UserOutlined />} />
             <div style={{ marginTop: '16px' }}>
               <Title level={4}>{userProfile.name || userProfile.displayName || userProfile.username}</Title>
               <Tag color={getRoleTagColor(userProfile.role)}>
@@ -249,38 +255,18 @@ const UserCenter: React.FC = () => {
 
           <Divider />
 
-           {editing ? (
-            <Form form={form} onFinish={handleUpdateProfile} layout="vertical">
-              <Form.Item name="username" label={<span><FormattedMessage id="pages.account.center.username" /><Tooltip title={intl.formatMessage({ id: 'pages.account.center.username.notEditable' })}><span style={{ marginLeft: 4, cursor: 'help' }}>ℹ️</span></Tooltip></span>}>
-                <Input disabled style={{ color: 'rgba(0, 0, 0, 0.45)' }} />
-              </Form.Item>
-              <Form.Item name="name" label={<FormattedMessage id="pages.account.center.name" />}><Input placeholder={intl.formatMessage({ id: 'pages.account.center.name.placeholder' })} /></Form.Item>
-              <Form.Item name="email" label={<FormattedMessage id="pages.account.center.email" />} rules={[{ type: 'email', message: intl.formatMessage({ id: 'pages.account.center.email.invalid' }) }]}><Input /></Form.Item>
-              <Form.Item name="phoneNumber" label={intl.formatMessage({ id: 'pages.account.center.phoneNumber' })} rules={[{ pattern: /^1[3-9]\d{9}$/, message: intl.formatMessage({ id: 'pages.account.center.phoneNumber.invalid' }) }]}><Input placeholder={intl.formatMessage({ id: 'pages.account.center.phoneNumber.placeholder' })} maxLength={11} /></Form.Item>
-              <Form.Item name="age" label={<FormattedMessage id="pages.account.center.age" />} rules={[{ type: 'number', min: 1, max: 150, message: intl.formatMessage({ id: 'pages.account.center.age.invalid' }) }]}>
-                <InputNumber min={1} max={150} placeholder={intl.formatMessage({ id: 'pages.account.center.age.placeholder' })} style={{ width: '100%' }} />
-              </Form.Item>
-              <Form.Item name="avatar" hidden><Input /></Form.Item>
-              <Form.Item>
-                <div style={{ textAlign: 'right' }}>
-                  <Space><Button onClick={handleCancelEdit}><FormattedMessage id="pages.account.center.cancel" /></Button><Button type="primary" htmlType="submit"><FormattedMessage id="pages.account.center.save" /></Button></Space>
-                </div>
-              </Form.Item>
-            </Form>
-          ) : (
-            <ProDescriptions column={2} bordered>
-              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.username" />}><Text strong>{userProfile.username}</Text></ProDescriptions.Item>
-              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.name" />}>{userProfile.name || <FormattedMessage id="pages.account.center.notSet" />}</ProDescriptions.Item>
-              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.email" />}><MailOutlined style={{ marginRight: '4px' }} />{userProfile.email || <FormattedMessage id="pages.account.center.notSet" />}</ProDescriptions.Item>
-              <ProDescriptions.Item label={<Space><MobileOutlined /><FormattedMessage id="pages.account.center.phoneNumber" /></Space>}>{userProfile.phoneNumber || <FormattedMessage id="pages.account.center.notSet" />}</ProDescriptions.Item>
-              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.age" />}>{userProfile.age || <FormattedMessage id="pages.account.center.notSet" />}</ProDescriptions.Item>
-              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.role" />}><Tag color={getRoleTagColor(userProfile.role)}>{userProfile.role === 'admin' ? <FormattedMessage id="pages.account.center.admin" /> : <FormattedMessage id="pages.account.center.user" />}</Tag></ProDescriptions.Item>
-              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.status" />}><Tag color={userProfile.isActive ? 'green' : 'red'}>{userProfile.isActive ? <FormattedMessage id="pages.account.center.active" /> : <FormattedMessage id="pages.account.center.inactive" />}</Tag></ProDescriptions.Item>
-              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.registerTime" />}><CalendarOutlined style={{ marginRight: '4px' }} />{userProfile.createdAt ? dayjs(userProfile.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
-              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.lastUpdate" />}><CalendarOutlined style={{ marginRight: '4px' }} />{userProfile.updatedAt ? dayjs(userProfile.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
-              {userProfile.lastLoginAt && <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.lastLogin" />}><CalendarOutlined style={{ marginRight: '4px' }} />{dayjs(userProfile.lastLoginAt).format('YYYY-MM-DD HH:mm:ss')}</ProDescriptions.Item>}
-            </ProDescriptions>
-          )}
+          <ProDescriptions column={2} bordered>
+            <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.username" />}><Text strong>{userProfile.username}</Text></ProDescriptions.Item>
+            <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.name" />}>{userProfile.name || <FormattedMessage id="pages.account.center.notSet" />}</ProDescriptions.Item>
+            <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.email" />}><MailOutlined style={{ marginRight: '4px' }} />{userProfile.email || <FormattedMessage id="pages.account.center.notSet" />}</ProDescriptions.Item>
+            <ProDescriptions.Item label={<Space><MobileOutlined /><FormattedMessage id="pages.account.center.phoneNumber" /></Space>}>{userProfile.phoneNumber || <FormattedMessage id="pages.account.center.notSet" />}</ProDescriptions.Item>
+            <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.age" />}>{userProfile.age || <FormattedMessage id="pages.account.center.notSet" />}</ProDescriptions.Item>
+            <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.role" />}><Tag color={getRoleTagColor(userProfile.role)}>{userProfile.role === 'admin' ? <FormattedMessage id="pages.account.center.admin" /> : <FormattedMessage id="pages.account.center.user" />}</Tag></ProDescriptions.Item>
+            <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.status" />}><Tag color={userProfile.isActive ? 'green' : 'red'}>{userProfile.isActive ? <FormattedMessage id="pages.account.center.active" /> : <FormattedMessage id="pages.account.center.inactive" />}</Tag></ProDescriptions.Item>
+            <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.registerTime" />}><CalendarOutlined style={{ marginRight: '4px' }} />{userProfile.createdAt ? dayjs(userProfile.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+            <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.lastUpdate" />}><CalendarOutlined style={{ marginRight: '4px' }} />{userProfile.updatedAt ? dayjs(userProfile.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+            {userProfile.lastLoginAt && <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.lastLogin" />}><CalendarOutlined style={{ marginRight: '4px' }} />{dayjs(userProfile.lastLoginAt).format('YYYY-MM-DD HH:mm:ss')}</ProDescriptions.Item>}
+          </ProDescriptions>
         </Card>
 
         <Card className={commonStyles.card} style={{ marginTop: 16 }}>
@@ -296,17 +282,56 @@ const UserCenter: React.FC = () => {
         </Card>
 
         <Modal
+          title={<Space><UserOutlined /><FormattedMessage id="pages.account.center.editProfile" /></Space>}
+          open={editing}
+          onCancel={handleCancelEdit}
+          footer={null}
+          destroyOnHidden
+          width={520}
+        >
+          <div style={{ textAlign: 'center', marginBottom: 24 }}>
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+              <Avatar size={80} src={getUserAvatar(typeof avatarPreview === 'string' ? avatarPreview : userProfile?.avatar)} icon={<UserOutlined />} />
+              <label style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: '50%', backgroundColor: '#1890ff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '2px solid #fff', boxShadow: '0 2px 4px rgba(0,0,0,0.2)', zIndex: 10 }}>
+                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} />
+                <CameraOutlined style={{ color: '#fff', fontSize: 14 }} />
+              </label>
+               {(typeof avatarPreview === 'string' ? avatarPreview : userProfile?.avatar) && (
+                 <Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={handleAvatarDelete} style={{ position: 'absolute', top: -8, right: -8, minWidth: 24, height: 24, padding: 0, zIndex: 10 }} title={intl.formatMessage({ id: 'pages.account.center.avatar.delete' })} />
+               )}
+            </div>
+          </div>
+          <Form form={form} onFinish={handleUpdateProfile} layout="vertical">
+            <Form.Item name="username" label={<span><FormattedMessage id="pages.account.center.username" /><Tooltip title={intl.formatMessage({ id: 'pages.account.center.username.notEditable' })}><span style={{ marginLeft: 4, cursor: 'help' }}>ℹ️</span></Tooltip></span>}>
+              <Input disabled style={{ color: 'rgba(0, 0, 0, 0.45)' }} />
+            </Form.Item>
+            <Form.Item name="name" label={<FormattedMessage id="pages.account.center.name" />}><Input placeholder={intl.formatMessage({ id: 'pages.account.center.name.placeholder' })} /></Form.Item>
+            <Form.Item name="email" label={<FormattedMessage id="pages.account.center.email" />} rules={[{ type: 'email', message: intl.formatMessage({ id: 'pages.account.center.email.invalid' }) }]}><Input /></Form.Item>
+            <Form.Item name="phoneNumber" label={intl.formatMessage({ id: 'pages.account.center.phoneNumber' })} rules={[{ pattern: /^1[3-9]\d{9}$/, message: intl.formatMessage({ id: 'pages.account.center.phoneNumber.invalid' }) }]}><Input placeholder={intl.formatMessage({ id: 'pages.account.center.phoneNumber.placeholder' })} maxLength={11} /></Form.Item>
+            <Form.Item name="age" label={<FormattedMessage id="pages.account.center.age" />} rules={[{ type: 'number', min: 1, max: 150, message: intl.formatMessage({ id: 'pages.account.center.age.invalid' }) }]}>
+              <InputNumber min={1} max={150} placeholder={intl.formatMessage({ id: 'pages.account.center.age.placeholder' })} style={{ width: '100%' }} />
+            </Form.Item>
+            <Form.Item name="avatar" hidden><Input /></Form.Item>
+            <Form.Item>
+              <div style={{ textAlign: 'right' }}>
+                <Space><Button onClick={handleCancelEdit}><FormattedMessage id="pages.account.center.cancel" /></Button><Button type="primary" htmlType="submit"><FormattedMessage id="pages.account.center.save" /></Button></Space>
+              </div>
+            </Form.Item>
+          </Form>
+        </Modal>
+
+        <Modal
           title={<Space><LockOutlined /><FormattedMessage id="menu.account.changePassword" /></Space>}
           open={changePasswordModalVisible}
           onCancel={handleCancelChangePassword}
           footer={null}
-          destroyOnClose
+          destroyOnHidden
           width={480}
         >
           {changePasswordState.code && (
             <Alert
               style={{ marginBottom: 24 }}
-              message={changePasswordState.message || intl.formatMessage({ id: 'pages.changePassword.failure' })}
+              title={changePasswordState.message || intl.formatMessage({ id: 'pages.changePassword.failure' })}
               type="error"
               showIcon
             />

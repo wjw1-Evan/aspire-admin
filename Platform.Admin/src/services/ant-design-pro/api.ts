@@ -41,7 +41,7 @@ export async function resetPassword(body: { email: string; code: string; newPass
   return request('/apiservice/api/auth/reset-password', { method: 'POST', data: body });
 }
 
-export async function changePassword(body: { currentPassword: string; newPassword: string }): Promise<ApiResponse<unknown>> {
+export async function changePassword(body: { currentPassword: string; newPassword: string; confirmPassword?: string }): Promise<ApiResponse<unknown>> {
   return request('/apiservice/api/auth/change-password', { method: 'POST', data: body });
 }
 

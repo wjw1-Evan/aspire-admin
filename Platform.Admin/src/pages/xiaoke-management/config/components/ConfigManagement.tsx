@@ -206,15 +206,8 @@ const ConfigManagement: React.FC = () => {
         actionRef={actionRef}
         rowKey="id"
         search={false}
-        request={async (params: any) => {
-          const { current, pageSize, sortBy, sortOrder } = params;
-          const response = await getXiaokeConfigs({
-            page: current,
-            pageSize,
-            search: searchText,
-            sortBy,
-            sortOrder,
-          });
+        request={async (params: any, sort: any, filter: any) => {
+          const response = await getXiaokeConfigs({ ...params, search: searchText, sort, filter });
           if (response.success && response.data) {
             return { data: response.data.queryable || [], total: response.data.rowCount || 0, success: true };
           }

@@ -170,15 +170,8 @@ const ChatHistoryManagement: React.FC = () => {
         actionRef={actionRef}
         rowKey="sessionId"
         search={false}
-        request={async (params: any) => {
-          const { current, pageSize, sortBy, sortOrder } = params;
-          const resp = await getChatHistory({
-            page: current,
-            pageSize,
-            search: searchText,
-            sortBy,
-            sortOrder,
-          });
+        request={async (params: any, sort: any, filter: any) => {
+          const resp = await getChatHistory({ ...params, search: searchText, sort, filter });
           if (resp.success && resp.data) {
             return { data: resp.data.queryable || [], total: resp.data.rowCount || 0, success: true };
           }

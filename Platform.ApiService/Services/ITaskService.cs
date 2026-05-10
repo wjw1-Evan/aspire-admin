@@ -66,8 +66,9 @@ public interface ITaskService
     /// </summary>
     /// <param name="taskId">任务ID</param>
     /// <param name="remarks">取消备注</param>
+    /// <param name="currentUserId">当前用户ID</param>
     /// <returns>取消后的任务</returns>
-    Task<TaskDto> CancelTaskAsync(string taskId, string? remarks = null);
+    Task<TaskDto> CancelTaskAsync(string taskId, string? remarks, string currentUserId);
 
     /// <summary>
     /// 删除任务
@@ -120,6 +121,14 @@ public interface ITaskService
     /// <returns>创建的任务列表</returns>
     /// <param name="request">分页请求参数</param>
     Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> GetUserCreatedTasksAsync(string userId, Platform.ServiceDefaults.Models.ProTableRequest request);
+
+    /// <summary>
+    /// 获取用户接收的任务（分配给该用户）
+    /// </summary>
+    /// <param name="userId">用户ID</param>
+    /// <param name="request">分页请求参数</param>
+    /// <returns>接收的任务列表</returns>
+    Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> GetUserReceivedTasksAsync(string userId, Platform.ServiceDefaults.Models.ProTableRequest request);
 
     /// <summary>
     /// 批量更新任务状态

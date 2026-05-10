@@ -239,6 +239,22 @@ public class TaskCrudService : ITaskCrudService
         };
     }
 
+    public async Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> GetUserReceivedTasksAsync(string userId, ProTableRequest request)
+    {
+        var q = _context.Set<WorkTask>().Where(t => t.AssignedTo == userId);
+        var pagedResult = q.ToPagedList(request);
+        var tasks = await pagedResult.Queryable.ToListAsync();
+        var dtos = await ConvertToTaskDtosAsync(tasks);
+        return new System.Linq.Dynamic.Core.PagedResult<TaskDto>
+        {
+            Queryable = dtos.AsQueryable(),
+            CurrentPage = pagedResult.CurrentPage,
+            PageSize = pagedResult.PageSize,
+            RowCount = pagedResult.RowCount,
+            PageCount = pagedResult.PageCount
+        };
+    }
+
     private async Task<List<TaskDto>> ConvertToTaskDtosAsync(IEnumerable<WorkTask> tasks)
     {
         var list = tasks.ToList();
@@ -324,6 +340,7 @@ public class TaskCrudService : ITaskCrudService
         StatusName = GetStatusName(t.Status),
         Priority = (int)t.Priority,
         PriorityName = GetPriorityName(t.Priority),
+        CreatedAt = t.CreatedAt,
         CreatedBy = t.CreatedBy ?? "",
         AssignedTo = t.AssignedTo,
         AssignedAt = t.AssignedAt,

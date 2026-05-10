@@ -12,4 +12,5 @@ public interface ITaskCrudService
     Task<int> BatchUpdateTaskStatusAsync(List<string> taskIds, Models.TaskStatus status);
     Task<List<TaskDto>> GetUserTodoTasksAsync(string userId);
     Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> GetUserCreatedTasksAsync(string userId, Platform.ServiceDefaults.Models.ProTableRequest request);
+    Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> GetUserReceivedTasksAsync(string userId, Platform.ServiceDefaults.Models.ProTableRequest request);
 }

@@ -127,6 +127,8 @@ public class TaskDto
 
     public string? CreatedByName { get; set; }
 
+    public DateTime? CreatedAt { get; set; }
+
     public string? AssignedTo { get; set; }
 
     public string? AssignedToName { get; set; }

@@ -1,12 +1,12 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import type { ProColumns } from '@ant-design/pro-table';
 import { PageContainer, ProDescriptions, ProCard } from '@ant-design/pro-components';
-import { useIntl, useLocation } from '@umijs/max';
+import { useIntl, useLocation, useModel } from '@umijs/max';
 import { request } from '@umijs/max';
-import { Button, Tag, Space, Grid, App, Modal, Spin, Timeline, Empty, Progress, Input, Popconfirm } from 'antd';
+import { Button, Tag, Space, Grid, App, Spin, Timeline, Empty, Progress, Input, Popconfirm } from 'antd';
 import { Drawer } from 'antd';
 import { ProTable, ActionType } from '@ant-design/pro-table';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined, ReloadOutlined, PlayCircleOutlined, StopOutlined, SearchOutlined, ProjectOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, PlayCircleOutlined, SearchOutlined, ProjectOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult } from '@/types';
 import { getTaskStatusColor, getTaskPriorityColor } from '@/utils/task';
@@ -150,6 +150,8 @@ const TaskManagement: React.FC = () => {
   const actionRef = useRef<ActionType | undefined>(undefined);
   const screens = useBreakpoint();
   const isMobile = !screens.md;
+  const { initialState } = useModel('@@initialState');
+  const currentUserId = initialState?.currentUser?.id;
   const [state, setState] = useState({
     statistics: null as TaskStatistics | null,
     formVisible: false, detailVisible: false, executionVisible: false,
@@ -190,31 +192,43 @@ const TaskManagement: React.FC = () => {
     { title: intl.formatMessage({ id: 'pages.taskManagement.table.createdBy' }), dataIndex: 'createdByName', key: 'createdBy', width: 100, sorter: true, render: (_: unknown, r: TaskDto) => r.createdByName || '-' },
     { title: intl.formatMessage({ id: 'pages.taskManagement.table.plannedEnd' }), dataIndex: 'plannedEndTime', key: 'plannedEndTime', width: 150, sorter: true, render: (_: unknown, r: TaskDto) => r.plannedEndTime ? dayjs(r.plannedEndTime).format('YYYY-MM-DD HH:mm') : '-' },
     { title: intl.formatMessage({ id: 'pages.taskManagement.table.createdAt' }), dataIndex: 'createdAt', key: 'createdAt', width: 150, sorter: true, render: (_: unknown, r: TaskDto) => r.createdAt ? dayjs(r.createdAt).format('YYYY-MM-DD HH:mm') : '-' },
-    { title: intl.formatMessage({ id: 'pages.table.actions' }), key: 'action', valueType: 'option', fixed: 'right', width: 180, render: (_: React.ReactNode, r: TaskDto) => (
-      <Space size={4}>
-        <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingTask: r, formVisible: true })}>{intl.formatMessage({ id: 'pages.taskManagement.action.edit' })}</Button>
-        {r.status !== TaskStatusEnum.Completed && r.status !== TaskStatusEnum.Cancelled && (
-          <>
-            <Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={() => set({ viewingTask: r, executionVisible: true })}>{intl.formatMessage({ id: 'pages.taskManagement.action.execute' })}</Button>
-            <Button type="link" size="small" icon={<StopOutlined />} onClick={() => {
-              Modal.confirm({ title: intl.formatMessage({ id: 'pages.taskManagement.action.cancel' }), content: intl.formatMessage({ id: 'pages.taskManagement.message.confirmCancel' }), onOk: () => api.cancel(r.id || '').then(res => { if (res.success) { message.success(intl.formatMessage({ id: 'pages.taskManagement.message.cancelSuccess' })); actionRef.current?.reload(); loadStatistics(); } else { message.error(getErrorMessage(res, 'pages.taskManagement.message.cancelFailed')); } }) });
-            }}>{intl.formatMessage({ id: 'pages.taskManagement.action.cancel' })}</Button>
-          </>
-        )}
-        <Popconfirm title={intl.formatMessage({ id: 'pages.taskManagement.message.confirmDeleteWithName' }, { name: r.taskName })} onConfirm={() => api.delete(r.id || '').then(res => { if (res.success) { message.success(intl.formatMessage({ id: 'pages.taskManagement.message.deleteSuccess' })); actionRef.current?.reload(); loadStatistics(); } else { message.error(getErrorMessage(res, 'pages.taskManagement.message.deleteFailed')); } })}>
-          <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.taskManagement.action.delete' })}</Button>
-        </Popconfirm>
-      </Space>
-    )},
-  ], [intl, message, loadStatistics]);
+    { title: intl.formatMessage({ id: 'pages.table.actions' }), key: 'action', valueType: 'option', fixed: 'right', width: 200, render: (_: React.ReactNode, r: TaskDto) => {
+      const hasStarted = r.status >= TaskStatusEnum.InProgress;
+      const isCreator = currentUserId ? r.createdBy === currentUserId : false;
+      const isAssignee = currentUserId ? r.assignedTo === currentUserId : false;
+
+      return (
+        <Space size={4}>
+          {/* 我发布的：任务未开始时显示编辑和删除 */}
+          {isCreator && !hasStarted && (
+            <>
+              <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingTask: r, formVisible: true })}>{intl.formatMessage({ id: 'pages.taskManagement.action.edit' })}</Button>
+              <Popconfirm title={intl.formatMessage({ id: 'pages.taskManagement.message.confirmDeleteWithName' }, { name: r.taskName })} onConfirm={() => api.delete(r.id || '').then(res => { if (res.success) { message.success(intl.formatMessage({ id: 'pages.taskManagement.message.deleteSuccess' })); actionRef.current?.reload(); loadStatistics(); } else { message.error(getErrorMessage(res, 'pages.taskManagement.message.deleteFailed')); } })}>
+                <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.taskManagement.action.delete' })}</Button>
+              </Popconfirm>
+            </>
+          )}
+
+          {/* 我收到的：任务未完成/未取消时显示执行按钮，可更新进度或完成任务 */}
+          {isAssignee && r.status !== TaskStatusEnum.Completed && r.status !== TaskStatusEnum.Cancelled && (
+            <Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={() => { set({ viewingTask: r, executionVisible: true }); }}>
+              {intl.formatMessage({ id: 'pages.taskManagement.action.execute' })}
+            </Button>
+          )}
+        </Space>
+      );
+    }},
+  ], [intl, message, loadStatistics, currentUserId]);
 
   return (
     <PageContainer>
-      <ProTable actionRef={actionRef} request={async (params: any, sort: any, filter: any) => {
-        const res = await api.list({ ...params, search: state.search, sort, filter });
-        loadStatistics();
-        return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
-      }} columns={columns} rowKey="id" search={false}
+      <ProTable actionRef={actionRef}
+        request={async (params: any, sort: any, filter: any) => {
+          loadStatistics();
+          const res = await api.list({ ...params, search: state.search, sort, filter });
+          return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+        }}
+        columns={columns} rowKey="id" search={false}
         headerTitle={
           <Space size={24}>
             <Space><ProjectOutlined />{intl.formatMessage({ id: 'pages.taskManagement.title' })}</Space>

@@ -31,11 +31,12 @@ public class TaskService : ITaskService
     public Task<int> BatchUpdateTaskStatusAsync(List<string> taskIds, Models.TaskStatus status) => _crudService.BatchUpdateTaskStatusAsync(taskIds, status);
     public Task<List<TaskDto>> GetUserTodoTasksAsync(string userId) => _crudService.GetUserTodoTasksAsync(userId);
     public Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> GetUserCreatedTasksAsync(string userId, ServiceDefaults.Models.ProTableRequest request) => _crudService.GetUserCreatedTasksAsync(userId, request);
+    public Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> GetUserReceivedTasksAsync(string userId, ServiceDefaults.Models.ProTableRequest request) => _crudService.GetUserReceivedTasksAsync(userId, request);
 
     public Task<TaskDto> AssignTaskAsync(AssignTaskRequest request) => _executionService.AssignTaskAsync(request);
     public Task<TaskDto> ExecuteTaskAsync(ExecuteTaskRequest request) => _executionService.ExecuteTaskAsync(request);
     public Task<TaskDto> CompleteTaskAsync(CompleteTaskRequest request) => _executionService.CompleteTaskAsync(request);
-    public Task<TaskDto> CancelTaskAsync(string taskId, string? remarks = null) => _executionService.CancelTaskAsync(taskId, remarks);
+    public Task<TaskDto> CancelTaskAsync(string taskId, string? remarks, string currentUserId) => _executionService.CancelTaskAsync(taskId, remarks, currentUserId);
     public Task<TaskDto> UpdateTaskProgressAsync(string taskId, int progress) => _executionService.UpdateTaskProgressAsync(taskId, progress);
 
     public Task<string> AddTaskDependencyAsync(string predecessorTaskId, string successorTaskId, int dependencyType, int lagDays) =>

@@ -343,6 +343,16 @@ export async function getMyCreatedTasks(page: number = 1, pageSize: number = 10)
 }
 
 /**
+ * 获取我接收的任务（分配给当前用户）
+ */
+export async function getMyReceivedTasks(params: any) {
+  return request<ApiResponse<PagedResult<TaskDto>>>('/apiservice/api/task/my/received', {
+    method: 'POST',
+    data: params,
+  });
+}
+
+/**
  * 批量更新任务状态
  */
 export async function batchUpdateTaskStatus(taskIds: string[], status: number) {

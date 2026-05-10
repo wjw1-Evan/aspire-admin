@@ -126,6 +126,11 @@ export default {
   'pages.taskManagement.table.taskName': '任务名称',
   'pages.taskManagement.table.type': '任务类型',
   'pages.taskManagement.table.updatedAt': '更新时间',
+  'pages.taskManagement.tab.all': '全部任务',
+  'pages.taskManagement.tab.created': '我发布的',
+  'pages.taskManagement.tab.received': '我收到的',
+  'pages.taskManagement.action.start': '开始任务',
+  'pages.taskManagement.message.cancelDisabledByStarted': '该任务已被用户开始执行，无法取消',
   'pages.taskManagement.title': '任务管理',
   'pages.taskManagement.viewDetails': '查看详情',
 

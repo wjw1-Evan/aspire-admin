@@ -159,10 +159,14 @@ public class TaskExecutionService : ITaskExecutionService
         return await GetTaskDtoAsync(task);
     }
 
-    public async Task<TaskDto> CancelTaskAsync(string taskId, string? remarks = null)
+    public async Task<TaskDto> CancelTaskAsync(string taskId, string? remarks, string currentUserId)
     {
         var task = await _context.Set<WorkTask>().FirstOrDefaultAsync(x => x.Id == taskId);
         if (task == null) throw new KeyNotFoundException($"任务 {taskId} 不存在");
+
+        // 发布者不能取消已被用户开始执行的任务
+        if (task.CreatedBy == currentUserId && task.Status >= Models.TaskStatus.InProgress)
+            throw new InvalidOperationException("该任务已被用户开始执行，无法取消");
 
         task.Status = Models.TaskStatus.Cancelled;
         if (!string.IsNullOrEmpty(remarks)) task.Remarks = remarks;

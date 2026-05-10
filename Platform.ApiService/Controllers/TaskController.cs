@@ -166,7 +166,7 @@ public class TaskController : BaseApiController
     [HttpPost("{taskId}/cancel")]
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> CancelTask(string taskId, [FromQuery] string? remarks = null)
-        => Success(await _taskService.CancelTaskAsync(taskId, remarks));
+        => Success(await _taskService.CancelTaskAsync(taskId, remarks, RequiredUserId));
 
     /// <summary>
     /// 删除任务
@@ -261,6 +261,14 @@ public class TaskController : BaseApiController
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> GetMyCreatedTasks([FromBody] Platform.ServiceDefaults.Models.ProTableRequest request)
         => Success(await _taskService.GetUserCreatedTasksAsync(RequiredUserId, request));
+
+    /// <summary>
+    /// 获取我接收的任务（分配给当前用户）
+    /// </summary>
+    [HttpPost("my/received")]
+    [RequireMenu("project-management-task")]
+    public async Task<IActionResult> GetMyReceivedTasks([FromBody] Platform.ServiceDefaults.Models.ProTableRequest request)
+        => Success(await _taskService.GetUserReceivedTasksAsync(RequiredUserId, request));
 
     /// <summary>
     /// 批量更新任务状态

@@ -103,6 +103,8 @@ export default {
   'pages.taskManagement.status.inProgress': '执行中',
   'pages.taskManagement.status.paused': '暂停',
   'pages.taskManagement.status.pending': '待分配',
+  'pages.taskManagement.status': '状态',
+  'pages.taskManagement.currentProgress': '当前进度',
   'pages.taskManagement.table.action': '操作',
   'pages.taskManagement.table.actualDuration': '实际耗时',
   'pages.taskManagement.table.actualEnd': '实际完成',

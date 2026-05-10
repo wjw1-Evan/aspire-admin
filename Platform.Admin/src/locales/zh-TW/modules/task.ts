@@ -105,6 +105,8 @@ export default {
   'pages.taskManagement.status.inProgress': 'In Progress',
   'pages.taskManagement.status.paused': 'Paused',
   'pages.taskManagement.status.pending': 'Pending',
+  'pages.taskManagement.status': '狀態',
+  'pages.taskManagement.currentProgress': '目前進度',
   'pages.taskManagement.table.action': 'Action',
   'pages.taskManagement.table.actualDuration': 'Actual Duration',
   'pages.taskManagement.table.actualEnd': 'Actual End',

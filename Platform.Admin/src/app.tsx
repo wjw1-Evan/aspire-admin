@@ -103,6 +103,20 @@ export async function getInitialState(): Promise<{
       return undefined;
     }
 
+    if (tokenUtils.isTokenExpired()) {
+      const storedRefreshToken = tokenUtils.getRefreshToken();
+      if (storedRefreshToken && !tokenUtils.isRefreshTokenExpired()) {
+        const refreshResult = await TokenRefreshManager.refresh(storedRefreshToken);
+        if (!refreshResult?.success) {
+          tokenUtils.clearAllTokens();
+          return undefined;
+        }
+      } else {
+        tokenUtils.clearAllTokens();
+        return undefined;
+      }
+    }
+
     try {
       // 1. 先尝试获取基础用户信息
       const msg = await queryCurrentUser();
@@ -666,6 +680,9 @@ export const request: RequestConfig = {
 
   requestInterceptors: [
     (config: any) => {
+      if (config.__skipAuth) {
+        return config;
+      }
       const token = tokenUtils.getToken();
       if (process.env.NODE_ENV === 'development' && config.url?.includes('current-user')) {
         console.log('[RequestInterceptor] Adding token:', token?.substring(0, 20) + '...');

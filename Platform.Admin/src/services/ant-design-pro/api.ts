@@ -70,5 +70,5 @@ export async function verifyImageCaptcha(captchaId: string, captchaCode: string,
 }
 
 export async function refreshToken(body: { refreshToken: string }): Promise<ApiResponse<LoginResult>> {
-  return request('/apiservice/api/auth/refresh-token', { method: 'POST', data: body });
+  return request('/apiservice/api/auth/refresh-token', { method: 'POST', data: body, __skipAuth: true });
 }

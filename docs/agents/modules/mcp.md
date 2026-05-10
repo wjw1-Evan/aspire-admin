@@ -26,7 +26,7 @@
 - `POST api/mcp/tools/list` - 列出所有可用工具
 - `POST api/mcp/tools/call` - 调用指定工具
 
-### 10.3 MCP Handlers 列表（20 个）
+### 10.3 MCP Handlers 列表（30 个）
 
 | Handler 文件 | 功能领域 | 状态 |
 |-------------|---------|------|
@@ -41,6 +41,7 @@
 | PasswordBookMcpToolHandler.cs | 密码本 | ✅ |
 | NotificationMcpToolHandler.cs | 通知推送 | ✅ |
 | FileShareMcpToolHandler.cs | 文件分享 | ✅ |
+| FileVersionMcpToolHandler.cs | 文件版本 | ✅ |
 | FormMcpToolHandler.cs | 表单管理 | ✅ |
 | MenuMcpToolHandler.cs | 菜单管理 | ✅ |
 | SocialMcpToolHandler.cs | 社交功能 | ✅ |
@@ -49,7 +50,13 @@
 | StatisticsMcpToolHandler.cs | 统计分析 | ✅ |
 | SystemMcpToolHandler.cs | 系统管理 | ✅ |
 | WebScraperMcpToolHandler.cs | 网页抓取 | ✅ |
-| ChatAiMcpToolHandler.cs | AI 聊天 | ✅ |
+| DashboardMcpToolHandler.cs | 数据看板 | ✅ |
+| AuthMcpToolHandler.cs | 用户认证 | ✅ |
+| CompanyMcpToolHandler.cs | 企业管理 | ✅ |
+| **CloudStorageMcpToolHandler.cs** | **云盘管理** | ✅ **新增** |
+| **StorageQuotaMcpToolHandler.cs** | **存储配额** | ✅ **新增** |
+| **ChatAiMcpToolHandler.cs** | **AI 聊天** | ✅ **新增** |
+| **XiaokeConfigMcpToolHandler.cs** | **小科配置** | ✅ **新增** |
 
 ### 10.4 Handler 开发标准
 

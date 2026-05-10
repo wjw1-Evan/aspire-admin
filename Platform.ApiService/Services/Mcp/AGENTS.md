@@ -1,10 +1,10 @@
 # MCP 处理器指南 (Platform.ApiService/Services/Mcp)
 
 ## OVERVIEW
-本目录定义了系统内 21 个 MCP 工具处理器，通过 Model Context Protocol 向 AI 助手投射深度业务能力。
+本目录定义了系统内 30 个 MCP 工具处理器，通过 Model Context Protocol 向 AI 助手投射深度业务能力。
 
 ## HANDLERS
-系统内置以下 21 个领域处理器（位于 `Handlers/` 目录）：
+系统内置以下 30 个领域处理器（位于 `Handlers/` 目录）：
 - **任务管理**: Task
 - **项目协作**: Project
 - **密码本**: PasswordBook
@@ -18,13 +18,19 @@
 - **用户管理**: User
 - **园区资产**: Park
 - **组织架构**: Organization
-- **公告通知**: Notice
 - **菜单权限**: Menu
 - **加入申请**: JoinRequest
 - **文件版本**: FileVersion
 - **IoT 设备**: IoT
 - **文档管理**: Document
 - **文件共享**: FileShare
+- **数据看板**: Dashboard
+- **用户认证**: Auth
+- **企业管理**: Company
+- **云盘管理**: CloudStorage (新增)
+- **存储配额**: StorageQuota (新增)
+- **AI 聊天**: ChatAi (新增)
+- **小科配置**: XiaokeConfig (新增)
 - **基础支持**: McpToolHandlerBase (抽象基类)
 
 ## WHERE TO LOOK

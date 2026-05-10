@@ -9,20 +9,31 @@ interface TokenRefreshResult {
   expiresAt?: number;
 }
 
+/** 刷新 API 响应 data 结构（后端 JsonNamingPolicy.CamelCase） */
+interface RefreshApiData {
+  status?: string;
+  token?: string;
+  refreshToken?: string;
+  expiresAt?: string;
+}
+
 class TokenRefreshManager {
   private static refreshPromise: Promise<TokenRefreshResult | null> | null = null;
+  private static currentRefreshingToken: string | null = null;
 
   static async refresh(refreshToken: string): Promise<TokenRefreshResult | null> {
     if (this.refreshPromise) {
       return this.refreshPromise;
     }
 
+    this.currentRefreshingToken = refreshToken;
     this.refreshPromise = this.doRefresh(refreshToken);
 
     try {
       return await this.refreshPromise;
     } finally {
       this.refreshPromise = null;
+      this.currentRefreshingToken = null;
     }
   }
 
@@ -34,20 +45,19 @@ class TokenRefreshManager {
         return { success: false };
       }
 
-      const refreshResult = refreshResponse.data as any;
-      const newRefreshToken = refreshResult.RefreshToken || refreshResult.refreshToken;
+      const data = refreshResponse.data as RefreshApiData;
 
-      if (refreshResult.status === 'ok' && refreshResult.token && newRefreshToken) {
-        const expiresAt = refreshResult.expiresAt
-          ? new Date(refreshResult.expiresAt).getTime()
+      if (data.status === 'ok' && data.token && data.refreshToken) {
+        const expiresAt = data.expiresAt
+          ? new Date(data.expiresAt).getTime()
           : undefined;
 
-        tokenUtils.setTokens(refreshResult.token, newRefreshToken, expiresAt);
+        tokenUtils.setTokens(data.token, data.refreshToken, expiresAt);
 
         return {
           success: true,
-          token: refreshResult.token,
-          refreshToken: newRefreshToken,
+          token: data.token,
+          refreshToken: data.refreshToken,
           expiresAt,
         };
       }

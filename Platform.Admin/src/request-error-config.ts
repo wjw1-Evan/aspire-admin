@@ -1,17 +1,7 @@
 import type { RequestConfig } from '@umijs/max';
-import { history, getIntl, getLocale } from '@umijs/max';
 import { errorInterceptor } from '@/utils/errorInterceptor';
 import { redirectToLogin } from '@/utils/authService';
 import { tokenUtils } from '@/utils/token';
-import { getMessage } from '@/utils/antdAppInstance';
-
-const runAfterRender = (fn: () => void) => {
-  if (typeof queueMicrotask === 'function') {
-    queueMicrotask(fn);
-  } else {
-    setTimeout(fn, 0);
-  }
-};
 
 export const errorConfig: RequestConfig = {
   errorConfig: {
@@ -43,16 +33,8 @@ export const errorConfig: RequestConfig = {
       if (isLoginRequest && error.name === 'BizError') return;
 
       if (isAuthError) {
-        if (error?._tokenRefreshAttempted) {
-          tokenUtils.clearAllTokens();
-          redirectToLogin('Token refresh failed');
-          return;
-        }
-        const isCurrentUserRequest = error.config?.url?.includes('/apiservice/api/auth/current-user');
-        if (isCurrentUserRequest) {
-          redirectToLogin(`HTTP ${error.response?.status}`);
-        }
-        errorInterceptor.handleError(error, context);
+        tokenUtils.clearAllTokens();
+        redirectToLogin('登录已过期，请重新登录');
         return;
       }
 

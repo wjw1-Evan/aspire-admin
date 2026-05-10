@@ -364,6 +364,12 @@ export const layout: RunTimeLayoutConfig = ({
         return;
       }
       if (tokenUtils.isTokenExpired()) {
+        const refreshToken = tokenUtils.getRefreshToken();
+        if (refreshToken && !tokenUtils.isRefreshTokenExpired()) {
+          // 不阻塞页面导航，异步刷新；API 401 拦截器会兜底重试
+          TokenRefreshManager.refresh(refreshToken).catch(() => {});
+          return;
+        }
         tokenUtils.clearAllTokens();
         history.push(loginPath);
         return;
@@ -636,6 +642,15 @@ async function handle401Error(error: any): Promise<any> {
   if (!refreshToken) return null;
   if (tokenUtils.isRefreshTokenExpired()) return null;
 
+  const originalAuthHeader = error.config?.headers?.Authorization;
+  const currentToken = tokenUtils.getToken();
+  const originalToken = typeof originalAuthHeader === 'string'
+    ? originalAuthHeader.replace('Bearer ', '')
+    : null;
+  if (currentToken && originalToken && currentToken !== originalToken) {
+    return TokenRefreshManager.retryRequest(error.config, currentToken);
+  }
+
   const refreshResult = await TokenRefreshManager.refresh(refreshToken);
   if (refreshResult?.success && refreshResult.token) {
     return TokenRefreshManager.retryRequest(error.config, refreshResult.token);
@@ -680,7 +695,6 @@ export const request: RequestConfig = {
         if (tokenRefreshResult) {
           return tokenRefreshResult;
         }
-        error._tokenRefreshAttempted = true;
         throw error;
       },
     ],

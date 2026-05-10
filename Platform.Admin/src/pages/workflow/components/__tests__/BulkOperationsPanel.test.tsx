@@ -1,14 +1,13 @@
-// @ts-nocheck
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { ConfigProvider } from 'antd';
+import { App, ConfigProvider } from 'antd';
 import { IntlProvider } from '@umijs/max';
 import BulkOperationsPanel from '../BulkOperationsPanel';
 import * as workflowApi from '@/services/workflow/api';
 
 // Mock the workflow API
 jest.mock('@/services/workflow/api');
-const mockWorkflowApi = workflowApi as jest.Mocked<typeof workflowApi>;
+const mockWorkflowApi = jest.mocked(workflowApi);
 
 // Mock the hooks
 jest.mock('@/hooks/useMessage', () => ({
@@ -19,6 +18,29 @@ jest.mock('@/hooks/useMessage', () => ({
         info: jest.fn(),
     }),
 }));
+
+// Override antd mock to also mock App.useApp
+jest.mock('antd', () => {
+    const originalAntd = jest.requireActual('antd');
+    return {
+        ...originalAntd,
+        Grid: {
+            ...originalAntd.Grid,
+            useBreakpoint: () => ({ md: true }),
+        },
+        App: {
+            ...originalAntd.App,
+            useApp: () => ({
+                message: {
+                    success: jest.fn(),
+                    error: jest.fn(),
+                    warning: jest.fn(),
+                    info: jest.fn(),
+                },
+            }),
+        },
+    };
+});
 
 // Mock antd Grid
 jest.mock('antd', () => {

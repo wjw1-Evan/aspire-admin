@@ -89,7 +89,7 @@ const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
                     <div style={{ fontSize: 14, fontWeight: 600, color: '#1e293b', marginBottom: 2 }}>
                       {intl.formatMessage({ id: `pages.workflow.designer.add${item.type.charAt(0).toUpperCase() + item.type.slice(1)}` })}
                     </div>
-                    <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.4 }}>{item.description}</div>
+                    <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.4 }}>{(item as any).description || ''}</div>
                   </div>
                 </div>
               ))}

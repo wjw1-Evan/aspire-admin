@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { Tag, Space, Button, Modal, Input } from 'antd';
+import { Tag, Space, Button, Modal, Input, Form, InputNumber, Switch, Select, Checkbox } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { EyeOutlined, MonitorOutlined, HistoryOutlined, FormOutlined, SearchOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns } from '@ant-design/pro-table';
@@ -60,6 +60,14 @@ const WorkflowMonitor: React.FC = () => {
 
   const getFlowStatus = (status?: WorkflowStatus | null) => getStatusMeta(intl, status, workflowStatusMap);
 
+  const [nodeForm] = Form.useForm();
+
+  useEffect(() => {
+    if (nodeFormInitial && nodeFormVisible) {
+      nodeForm.setFieldsValue(nodeFormInitial);
+    }
+  }, [nodeFormInitial, nodeFormVisible, nodeForm]);
+
   const openNodeForm = async (instanceId: string, currentNodeId?: string) => {
     setNodeFormDef(null); setNodeFormInitial(null); setNodeFormVisible(false);
     setCurrentFormInstanceId(instanceId); setNodeFormLoading(true);
@@ -67,36 +75,24 @@ const WorkflowMonitor: React.FC = () => {
       const res = await getNodeForm(instanceId, currentNodeId || '');
       if (res.success) {
         setNodeFormDef(res.data?.form || null); setNodeFormInitial(res.data?.initialValues || null);
+        nodeForm.resetFields();
         setTimeout(() => setNodeFormVisible(true), 50);
       } else { console.error(intl.formatMessage({ id: 'pages.workflow.monitor.error.getNodeFormFailed' }), res.message); }
     } catch (error) { console.error(intl.formatMessage({ id: 'pages.workflow.monitor.error.getNodeFormFailed' }), error); }
     finally { setNodeFormLoading(false); }
   };
 
-  const collectFormData = (): Record<string, any> => {
-    const formEl = document.getElementById('node-form-container');
-    const values: Record<string, any> = {};
-    if (formEl) {
-      const inputs = formEl.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('input[name],textarea[name],select[name]');
-      inputs.forEach((el) => {
-        const name = el.name; if (!name) return;
-        if (el.type === 'checkbox') { values[name] = (el as HTMLInputElement).checked; }
-        else if (el.type === 'number') { const numValue = (el as HTMLInputElement).value; values[name] = numValue === '' ? null : Number(numValue); }
-        else { const textValue = el.value.trim(); values[name] = textValue === '' ? null : textValue; }
-      });
-    }
-    return values;
-  };
-
   const submitFormData = async () => {
-    const values = collectFormData();
-    if (currentFormInstanceId) {
-      try {
-        const res = await submitNodeForm(currentFormInstanceId!, previewInstance?.currentNodeId || '', values);
-        if (res.success) {
-          setNodeFormVisible(false); setNodeFormDef(null); setNodeFormInitial(null); setCurrentFormInstanceId(null);
-        }
-      } catch (error) { console.error(intl.formatMessage({ id: 'pages.workflow.monitor.error.submitFormFailed' }), error); }
+    if (!currentFormInstanceId) return;
+    try {
+      const values = await nodeForm.validateFields();
+      const res = await submitNodeForm(currentFormInstanceId!, previewInstance?.currentNodeId || '', values);
+      if (res.success) {
+        setNodeFormVisible(false); setNodeFormDef(null); setNodeFormInitial(null); setCurrentFormInstanceId(null);
+      }
+    } catch (error) {
+      if (error && typeof error === 'object' && 'errorFields' in error) return; // validation error, handled by form
+      console.error(intl.formatMessage({ id: 'pages.workflow.monitor.error.submitFormFailed' }), error);
     }
   };
 
@@ -141,28 +137,55 @@ const WorkflowMonitor: React.FC = () => {
       </div>
     );
     return (
-      <div>
+      <Form form={nodeForm} layout="vertical" key={currentFormInstanceId}>
         {nodeFormDef.fields?.map((field, index) => {
           const name = field.dataKey || field.label;
-          const initVal = (nodeFormInitial || {})[name];
-          const isRequired = field.required;
-          const fieldStyle = { marginBottom: 20 };
-          const labelStyle = { display: 'block', fontSize: 14, fontWeight: 500, color: '#262626', marginBottom: 8, lineHeight: 1.4 };
-          const inputStyle = { width: '100%', padding: '8px 12px', border: '1px solid #d9d9d9', borderRadius: 6, fontSize: 14, lineHeight: 1.5, outline: 'none', backgroundColor: '#fff' };
+          const label = field.label;
+          const placeholder = field.placeholder || intl.formatMessage({ id: 'pages.workflow.monitor.form.inputPlaceholder' }, { label });
           switch (field.type) {
             case FormFieldType.Number:
-              return (<div key={`${currentFormInstanceId}-${name}-${index}`} style={fieldStyle}><label style={{ ...labelStyle }} className={isRequired ? 'required' : ''}>{field.label}</label><input name={name} type="number" defaultValue={initVal != null ? String(initVal) : ''} placeholder={field.placeholder || intl.formatMessage({ id: 'pages.workflow.monitor.form.inputPlaceholder' }, { label: field.label })} style={inputStyle} required={isRequired} step="any" /></div>);
+              return (
+                <Form.Item key={`${currentFormInstanceId}-${name}-${index}`} name={name} label={label} rules={field.required ? [{ required: true, message: `请填写${label}` }] : []}>
+                  <InputNumber style={{ width: '100%' }} placeholder={placeholder} />
+                </Form.Item>
+              );
             case FormFieldType.Select:
-              return (<div key={`${currentFormInstanceId}-${name}-${index}`} style={fieldStyle}><label style={{ ...labelStyle }} className={isRequired ? 'required' : ''}>{field.label}</label><select name={name} defaultValue={initVal != null ? String(initVal) : ''} style={inputStyle} required={isRequired}><option value="">{intl.formatMessage({ id: 'pages.workflow.monitor.form.selectPlaceholder' }, { label: field.label })}</option>{(field.options || []).map((opt, optIndex) => (<option key={`${opt.value}-${optIndex}`} value={opt.value}>{opt.label}</option>))}</select></div>);
+              return (
+                <Form.Item key={`${currentFormInstanceId}-${name}-${index}`} name={name} label={label} rules={field.required ? [{ required: true, message: `请选择${label}` }] : []}>
+                  <Select placeholder={placeholder} allowClear>
+                    {(field.options || []).map((opt, optIndex) => (
+                      <Select.Option key={`${opt.value}-${optIndex}`} value={opt.value}>{opt.label}</Select.Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              );
             case FormFieldType.TextArea:
-              return (<div key={`${currentFormInstanceId}-${name}-${index}`} style={fieldStyle}><label style={{ ...labelStyle }} className={isRequired ? 'required' : ''}>{field.label}</label><textarea name={name} defaultValue={initVal != null ? String(initVal) : ''} placeholder={field.placeholder || intl.formatMessage({ id: 'pages.workflow.monitor.form.inputPlaceholder' }, { label: field.label })} rows={4} style={{ ...inputStyle, resize: 'vertical', minHeight: 80 }} required={isRequired} /></div>);
+              return (
+                <Form.Item key={`${currentFormInstanceId}-${name}-${index}`} name={name} label={label} rules={field.required ? [{ required: true, message: `请填写${label}` }] : []}>
+                  <Input.TextArea rows={4} placeholder={placeholder} />
+                </Form.Item>
+              );
             case FormFieldType.Switch:
-              return (<div key={`${currentFormInstanceId}-${name}-${index}`} style={fieldStyle}><div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}><input name={name} type="checkbox" defaultChecked={!!initVal} style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#1890ff' }} id={`checkbox-${currentFormInstanceId}-${name}-${index}`} /><label htmlFor={`checkbox-${currentFormInstanceId}-${name}-${index}`} style={{ fontSize: 14, fontWeight: 500, color: '#262626', cursor: 'pointer', margin: 0, lineHeight: 1.4 }}>{field.label}</label></div></div>);
+              return (
+                <Form.Item key={`${currentFormInstanceId}-${name}-${index}`} name={name} label={label} valuePropName="checked">
+                  <Switch />
+                </Form.Item>
+              );
+            case FormFieldType.Checkbox:
+              return (
+                <Form.Item key={`${currentFormInstanceId}-${name}-${index}`} name={name} label={label} valuePropName="checked">
+                  <Checkbox>{label}</Checkbox>
+                </Form.Item>
+              );
             default:
-              return (<div key={`${currentFormInstanceId}-${name}-${index}`} style={fieldStyle}><label style={{ ...labelStyle }} className={isRequired ? 'required' : ''}>{field.label}</label><input name={name} type="text" defaultValue={initVal != null ? String(initVal) : ''} placeholder={field.placeholder || intl.formatMessage({ id: 'pages.workflow.monitor.form.inputPlaceholder' }, { label: field.label })} style={inputStyle} required={isRequired} /></div>);
+              return (
+                <Form.Item key={`${currentFormInstanceId}-${name}-${index}`} name={name} label={label} rules={field.required ? [{ required: true, message: `请填写${label}` }] : []}>
+                  <Input placeholder={placeholder} />
+                </Form.Item>
+              );
           }
         })}
-      </div>
+      </Form>
     );
   };
 
@@ -218,8 +241,8 @@ const WorkflowMonitor: React.FC = () => {
           </div>
         )}
       </Modal>
-      <Modal title={intl.formatMessage({ id: 'pages.workflow.monitor.modal.nodeFormTitle' })} open={nodeFormVisible} onCancel={() => { setNodeFormVisible(false); setNodeFormDef(null); setNodeFormInitial(null); setCurrentFormInstanceId(null); }} onOk={submitFormData} width={720} styles={{ body: { maxHeight: '600px', overflowY: 'auto' } }}>
-        <div id="node-form-container" style={{ padding: '16px 0' }} key={currentFormInstanceId}>{renderNodeForm()}</div>
+      <Modal title={intl.formatMessage({ id: 'pages.workflow.monitor.modal.nodeFormTitle' })} open={nodeFormVisible} onCancel={() => { setNodeFormVisible(false); setNodeFormDef(null); nodeForm.resetFields(); setNodeFormInitial(null); setCurrentFormInstanceId(null); }} onOk={submitFormData} width={720} styles={{ body: { maxHeight: '600px', overflowY: 'auto' } }}>
+        <div style={{ padding: '16px 0' }}>{renderNodeForm()}</div>
       </Modal>
       <Modal title={intl.formatMessage({ id: 'pages.workflow.monitor.modal.historyTitle' })} open={historyVisible} onCancel={() => { setHistoryVisible(false); setHistory([]); }} footer={null} width={800}>
         <div>

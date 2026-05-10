@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Button, Form, Input, Select, Switch, Space, Divider, Tabs, FormInstance, Tree, TreeSelect, Radio } from 'antd';
+import { Button, Form, Input, Select, Switch, Space, Divider, Tabs, FormInstance, TreeSelect, Radio } from 'antd';
 import { Drawer } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { DeleteOutlined, SaveOutlined, PlusOutlined, InfoCircleOutlined } from '@ant-design/icons';
@@ -299,11 +299,13 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                                        if (type === 1) return <Form.Item {...restField} name={[name, 'roleIds']} rules={[{ required: true }]}><Select mode="multiple" placeholder={intl.formatMessage({ id: 'pages.workflow.designer.selectRole' })} options={roles.map(r => ({ label: r.name, value: r.id }))} /></Form.Item>;
 if (type === 2) return (
                                          <Form.Item {...restField} name={[name, 'departmentId']} rules={[{ required: true }]}>
-                                           <Select
+                                           <TreeSelect
                                              placeholder={intl.formatMessage({ id: 'pages.workflow.designer.selectDepartment' })}
-                                            showSearch
-                                            {...({ treeDefaultExpandAll: true, treeData: organizationTreeToTreeData(organizationTree), treeNodeFilterProp: "title" } as any)}
-                                          />
+                                             showSearch
+                                             treeDefaultExpandAll
+                                             treeData={organizationTreeToTreeData(organizationTree)}
+                                             treeNodeFilterProp="title"
+                                           />
                                         </Form.Item>
                                       );
 if (type === 3) return (
@@ -585,7 +587,7 @@ if (type === 4) return (
                                       const type = getFieldValue(['ccRules', name, 'type']);
                                        if (type === 0) return <Form.Item {...restField} name={[name, 'userIds']} rules={[{ required: true }]}><Select mode="multiple" placeholder={intl.formatMessage({ id: 'pages.flow.node.selectUser' })} options={users.map(u => ({ label: u.name || u.username, value: u.id }))} /></Form.Item>;
                                        if (type === 1) return <Form.Item {...restField} name={[name, 'roleIds']} rules={[{ required: true }]}><Select mode="multiple" placeholder={intl.formatMessage({ id: 'pages.flow.node.selectRole' })} options={roles.map(r => ({ label: r.name, value: r.id }))} /></Form.Item>;
-                                       if (type === 2) return <Form.Item {...restField} name={[name, 'departmentId']} rules={[{ required: true }]}><TreeSelect placeholder={intl.formatMessage({ id: 'pages.flow.node.selectDepartment' })} showSearch treeDefaultExpandAll treeData={organizationTreeToTreeData(organizationTree)} /></Form.Item>;
+                                       if (type === 2) return <Form.Item {...restField} name={[name, 'departmentId']} rules={[{ required: true }]}><TreeSelect placeholder={intl.formatMessage({ id: 'pages.flow.node.selectDepartment' })} showSearch treeDefaultExpandAll treeNodeFilterProp="title" treeData={organizationTreeToTreeData(organizationTree)} /></Form.Item>;
                                       return null;
                                     }}
                                   </Form.Item>

@@ -67,7 +67,7 @@ return (
           onChange={(v) => setFormData({ ...formData, isActive: v })}
         />
         <span style={{ color: '#8c8c8c', fontSize: 13, marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Button type="primary" size="small" disabled={!formData.name || !formData.name}>保存</Button>
+          {!formData.name && <span style={{ color: '#ff4d4f', fontSize: 12 }}>请填写流程名称</span>}
           <Button size="small" onClick={onCancel}>退出</Button>
         </span>
       </div>

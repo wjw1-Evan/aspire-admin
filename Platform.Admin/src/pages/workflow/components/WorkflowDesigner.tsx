@@ -306,120 +306,112 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
     });
   }, [configForm, edges]);
 
+  const formatApprovers = useCallback((rules: any[]): ApproverRule[] => {
+    return (rules || []).flatMap((rule: any) => {
+      if (rule.type === 0) {
+        const uids = Array.isArray(rule.userIds) ? rule.userIds : rule.userId ? [rule.userId] : [];
+        return uids.filter((id: string) => id).map((uid: string) => ({ type: ApproverType.User, userId: uid } as ApproverRule));
+      }
+      if (rule.type === 1) {
+        const rids = Array.isArray(rule.roleIds) ? rule.roleIds : rule.roleId ? [rule.roleId] : [];
+        return rids.filter((id: string) => id).map((rid: string) => ({ type: ApproverType.Role, roleId: rid } as ApproverRule));
+      }
+      if (rule.type === 2) return { type: ApproverType.Department, departmentId: rule.departmentId };
+      if (rule.type === 3) return { type: ApproverType.FormField, formFieldKey: rule.formFieldKey };
+      return rule;
+    });
+  }, []);
+
+  const buildApprovalConfig = useCallback((values: any): NodeConfig => ({
+    approval: {
+      type: values.approvalType || 0,
+      approvers: formatApprovers(values.approvers),
+      allowDelegate: values.allowDelegate || false,
+      allowReject: values.allowReject !== false,
+      allowReturn: values.allowReturn || false,
+      timeoutHours: values.timeoutHours,
+    },
+  }), [formatApprovers]);
+
+  const buildConditionConfig = useCallback((values: any): NodeConfig => {
+    const branches = (values.branches || []).map((branch: any, idx: number) => ({
+      id: branch.id || `branch-${idx}`,
+      label: branch.label || `分支 ${idx + 1}`,
+      conditions: (branch.conditions || []).map((c: any) => ({
+        formId: c.formId, variable: c.variable, operator: c.operator || 'equals', value: c.value,
+      })),
+      logicalOperator: branch.logicalOperator || 'and',
+      targetNodeId: branch.targetNodeId?.trim() !== '' ? branch.targetNodeId : undefined,
+      order: idx,
+    }));
+    return { condition: { branches, defaultNodeId: values.defaultNodeId || undefined, expression: values.expression || undefined } };
+  }, []);
+
+  const buildFormConfig = useCallback((values: any): NodeConfig | null => {
+    if (!values.formDefinitionId?.trim()) return null;
+    return {
+      form: {
+        formDefinitionId: values.formDefinitionId,
+        target: values.formTarget || FormTarget.Document,
+        dataScopeKey: values.formDataScopeKey || undefined,
+        required: values.formRequired || false,
+        readOnly: values.formReadOnly || false,
+      },
+    };
+  }, []);
+
+  const buildNodeEdges = useCallback((values: any, selectedNodeId: string, config: NodeConfig): Edge[] => {
+    const newEdges: Edge[] = [];
+    const addEdgeIfTarget = (targetId: string, overrides: Partial<Edge>) => {
+      if (!targetId) return;
+      const edgeId = `${selectedNodeId}-${overrides.sourceHandle || 'next'}-${targetId}`;
+      newEdges.push({ id: edgeId, source: selectedNodeId, target: targetId, ...defaultEdgeOptions, ...overrides });
+    };
+
+    if (config.condition?.branches) {
+      config.condition.branches.forEach((branch: any) => {
+        if (branch.targetNodeId) addEdgeIfTarget(branch.targetNodeId, { sourceHandle: branch.id, label: branch.label });
+      });
+      if (config.condition.defaultNodeId) addEdgeIfTarget(config.condition.defaultNodeId, { sourceHandle: 'default', label: '默认' });
+    } else if (values.nodeType === 'approval') {
+      addEdgeIfTarget(values.approveNextNodeId, { sourceHandle: 'approve', label: '通过', data: { condition: 'approve' } });
+      addEdgeIfTarget(values.rejectNextNodeId, { sourceHandle: 'reject', label: '拒绝', data: { condition: 'reject' } });
+    } else if (values.nextNodeId) {
+      addEdgeIfTarget(values.nextNodeId, {});
+    }
+    return newEdges;
+  }, [defaultEdgeOptions]);
+
   const handleSaveConfig = useCallback(() => {
     if (!selectedNode) return;
     configForm.validateFields().then((values) => {
       const updatedNodes = nodes.map((node: Node): Node => {
-        if (node.id === selectedNode.id) {
-          const config: NodeConfig = {};
-          if (values.nodeType === 'approval') {
-            const formatApprovers = (rules: any[]) => (rules || []).flatMap((rule: any) => {
-              if (rule.type === 0) {
-                const uids = Array.isArray(rule.userIds) ? rule.userIds : rule.userId ? [rule.userId] : [];
-                return uids.filter((id: string) => id).map((uid: string) => ({ type: ApproverType.User, userId: uid } as ApproverRule));
-              }
-              if (rule.type === 1) {
-                const rids = Array.isArray(rule.roleIds) ? rule.roleIds : rule.roleId ? [rule.roleId] : [];
-                return rids.filter((id: string) => id).map((rid: string) => ({ type: ApproverType.Role, roleId: rid } as ApproverRule));
-              }
-              if (rule.type === 2) return { type: ApproverType.Department, departmentId: rule.departmentId };
-              if (rule.type === 3) return { type: ApproverType.FormField, formFieldKey: rule.formFieldKey };
-              return rule;
-            });
-            config.approval = {
-              type: values.approvalType || 0, approvers: formatApprovers(values.approvers),
-              allowDelegate: values.allowDelegate || false, allowReject: values.allowReject !== false,
-              allowReturn: values.allowReturn || false, timeoutHours: values.timeoutHours,
-            };
-          } else if (values.nodeType === 'condition') {
-            const branches = (values.branches || []).map((branch: any, idx: number) => ({
-              id: branch.id || `branch-${idx}`, label: branch.label || `分支 ${idx + 1}`,
-              conditions: (branch.conditions || []).map((c: any) => ({
-                formId: c.formId, variable: c.variable, operator: c.operator || 'equals', value: c.value,
-              })),
-              logicalOperator: branch.logicalOperator || 'and',
-              targetNodeId: branch.targetNodeId?.trim() !== '' ? branch.targetNodeId : undefined,
-              order: idx,
-            }));
-            config.condition = { branches, defaultNodeId: values.defaultNodeId || undefined, expression: values.expression || undefined };
-          }
-          if (values.formDefinitionId?.trim() !== '') {
-            config.form = {
-              formDefinitionId: values.formDefinitionId, target: values.formTarget || FormTarget.Document,
-              dataScopeKey: values.formDataScopeKey || undefined, required: values.formRequired || false,
-              readOnly: values.formReadOnly || false,
-            };
-          }
-          let jumpLabel = '';
-          if (values.nodeType === 'condition' && config.condition?.branches) {
-            jumpLabel = `${config.condition.branches.length} 条分支`;
-          }
-          return {
-            ...node,
-            data: {
-              ...node.data, label: values.label,
-              typeLabel: typeLabels[values.nodeType as keyof typeof typeLabels] || values.nodeType,
-              config, jumpLabel,
-            },
-          };
-        }
-        return node;
-      });
-      let updatedEdges = edges.filter(e => e.source !== selectedNode.id);
-      const selectedNodeConfig = updatedNodes.find(n => n.id === selectedNode.id)?.data.config;
-      if (selectedNodeConfig?.condition?.branches) {
-        selectedNodeConfig.condition.branches.forEach((branch: any) => {
-          if (branch.targetNodeId) {
-            const edgeId = `${selectedNode.id}-${branch.id}-${branch.targetNodeId}`;
-            const newEdge: Edge = {
-              id: edgeId, source: selectedNode.id, target: branch.targetNodeId,
-              sourceHandle: branch.id, label: branch.label, ...defaultEdgeOptions,
-            };
-            updatedEdges = addEdge(newEdge, updatedEdges);
-          }
-        });
-        if (selectedNodeConfig.condition.defaultNodeId) {
-          const defaultEdgeId = `${selectedNode.id}-default-${selectedNodeConfig.condition.defaultNodeId}`;
-          const defaultEdge: Edge = {
-            id: defaultEdgeId, source: selectedNode.id, target: selectedNodeConfig.condition.defaultNodeId,
-            sourceHandle: 'default', label: '默认', ...defaultEdgeOptions,
-          };
-          updatedEdges = addEdge(defaultEdge, updatedEdges);
-        }
-      }
-      if (values.nextNodeId && !selectedNodeConfig?.condition?.branches && values.nodeType !== 'approval') {
-        const edgeId = `${selectedNode.id}-${values.nextNodeId}`;
-        const newEdge: Edge = {
-          id: edgeId, source: selectedNode.id, target: values.nextNodeId, ...defaultEdgeOptions,
+        if (node.id !== selectedNode.id) return node;
+        let config: NodeConfig = {};
+        if (values.nodeType === 'approval') config = buildApprovalConfig(values);
+        else if (values.nodeType === 'condition') config = buildConditionConfig(values);
+        const formConfig = buildFormConfig(values);
+        if (formConfig?.form) config.form = formConfig.form;
+        const jumpLabel = values.nodeType === 'condition' && config.condition?.branches
+          ? `${config.condition.branches.length} 条分支` : '';
+        return {
+          ...node,
+          data: {
+            ...node.data, label: values.label,
+            typeLabel: typeLabels[values.nodeType as keyof typeof typeLabels] || values.nodeType,
+            config, jumpLabel,
+          },
         };
-        updatedEdges = addEdge(newEdge, updatedEdges);
-      }
-      if (values.nodeType === 'approval') {
-        if (values.approveNextNodeId) {
-          const edgeId = `${selectedNode.id}-approve-${values.approveNextNodeId}`;
-          const newEdge: Edge = {
-            id: edgeId, source: selectedNode.id, target: values.approveNextNodeId, sourceHandle: 'approve', label: '通过',
-            data: { condition: 'approve' },
-            ...defaultEdgeOptions,
-          };
-          updatedEdges = addEdge(newEdge, updatedEdges);
-        }
-        if (values.rejectNextNodeId) {
-          const edgeId = `${selectedNode.id}-reject-${values.rejectNextNodeId}`;
-          const newEdge: Edge = {
-            id: edgeId, source: selectedNode.id, target: values.rejectNextNodeId, sourceHandle: 'reject', label: '拒绝',
-            data: { condition: 'reject' },
-            ...defaultEdgeOptions,
-          };
-          updatedEdges = addEdge(newEdge, updatedEdges);
-        }
-      }
+      });
+      const selectedNodeConfig = updatedNodes.find(n => n.id === selectedNode.id)?.data.config || {};
+      const newEdges = buildNodeEdges(values, selectedNode.id, selectedNodeConfig);
+      const updatedEdges = [...edges.filter(e => e.source !== selectedNode.id), ...newEdges];
       setNodes(updatedNodes);
       setEdges(updatedEdges);
       setConfigDrawerVisible(false);
       message.success(intl.formatMessage({ id: 'pages.workflow.designer.message.configSaved' }));
     }).catch(() => { });
-  }, [selectedNode, configForm, nodes, setNodes, edges, setEdges, typeLabels, intl, message, defaultEdgeOptions]);
+  }, [selectedNode, configForm, nodes, setNodes, edges, setEdges, typeLabels, intl, message, buildApprovalConfig, buildConditionConfig, buildFormConfig, buildNodeEdges]);
 
   const validateWorkflow = useCallback(() => {
     const startNodes = nodes.filter(n => n.data.nodeType === 'start');

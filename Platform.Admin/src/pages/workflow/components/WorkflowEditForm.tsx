@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Spin, Result } from 'antd';
-import { InfoCircleOutlined, SaveOutlined } from '@ant-design/icons';
+import { InfoCircleOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import { useMessage } from '@/hooks/useMessage';
 import { updateWorkflow, getWorkflowDetail, type WorkflowDefinition, type WorkflowGraph } from '@/services/workflow/api';
@@ -103,9 +103,6 @@ const WorkflowEditForm: React.FC<WorkflowEditFormProps> = ({ workflow, onSuccess
                     <span style={{ background: '#8c8c8c', color: '#fff', padding: '2px 8px', borderRadius: 4, fontSize: 12 }}>已禁用</span>
                 )}
                 <span style={{ color: '#8c8c8c', fontSize: 13, marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {!readOnly && (
-                        <Button type="primary" size="small" icon={<SaveOutlined />} onClick={() => handleSave(fullWorkflow.graph)}>保存</Button>
-                    )}
                     <Button size="small" onClick={onCancel}>退出</Button>
                 </span>
             </div>
@@ -113,7 +110,7 @@ const WorkflowEditForm: React.FC<WorkflowEditFormProps> = ({ workflow, onSuccess
                 <WorkflowDesigner
                     open={true}
                     graph={fullWorkflow.graph}
-                    onSave={undefined}
+                    onSave={readOnly ? undefined : handleSave}
                     onClose={onCancel}
                     readOnly={readOnly}
                 />

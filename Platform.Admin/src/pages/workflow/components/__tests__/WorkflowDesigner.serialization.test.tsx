@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ConfigProvider } from 'antd';
@@ -17,7 +16,8 @@ window.matchMedia = window.matchMedia || function() {
 
 // Mock ResizeObserver for ReactFlow
 global.ResizeObserver = class ResizeObserver {
-  constructor(cb) { this.cb = cb; }
+  cb: any;
+  constructor(cb: any) { this.cb = cb; }
   observe() {}
   unobserve() {}
   disconnect() {}
@@ -80,7 +80,7 @@ describe('WorkflowDesigner - API Payload Payload Formatting', () => {
 
     // Wait for the UI and flow to render
     await waitFor(() => {
-        // Find the '保存' button (use aria-label or span text depending on Antd design)
+        // Find the '保存' button
         expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument();
     });
 
@@ -92,7 +92,7 @@ describe('WorkflowDesigner - API Payload Payload Formatting', () => {
         expect(handleSaveMock).toHaveBeenCalledTimes(1);
     });
 
-    const savedPayload = handleSaveMock.mock.calls[0][0] as WorkflowGraph;
+    const savedPayload: WorkflowGraph = handleSaveMock.mock.calls[0][0];
 
     // 1. Verify Node payload structure (No root fields leaking, wrapped correctly in 'data')
     expect(savedPayload.nodes).toHaveLength(2);

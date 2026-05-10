@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ConfigProvider } from 'antd';
@@ -8,7 +7,7 @@ import * as workflowApi from '@/services/workflow/api';
 
 // Mock the workflow API
 jest.mock('@/services/workflow/api');
-const mockWorkflowApi = workflowApi as jest.Mocked<typeof workflowApi>;
+const mockWorkflowApi = jest.mocked(workflowApi);
 
 // Mock the hooks
 jest.mock('@/hooks/useMessage', () => ({

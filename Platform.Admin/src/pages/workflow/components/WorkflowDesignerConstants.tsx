@@ -23,6 +23,7 @@ export const NODE_CONFIGS = {
     icon: <PlayCircleOutlined />,
     category: 'base',
     version: '1.0.0',
+    description: '流程的起点，每个流程有且仅有一个开始节点',
   },
   end: {
     color: '#dc2626',
@@ -31,6 +32,7 @@ export const NODE_CONFIGS = {
     icon: <StopOutlined />,
     category: 'base',
     version: '1.0.0',
+    description: '流程的终点，表示流程执行完毕',
   },
   approval: {
     color: '#2563eb',
@@ -39,6 +41,7 @@ export const NODE_CONFIGS = {
     icon: <CheckOutlined />,
     category: 'base',
     version: '1.0.0',
+    description: '审批节点，支持会签、或签、顺序审批等多种审批方式',
   },
   condition: {
     color: '#d97706',
@@ -47,6 +50,7 @@ export const NODE_CONFIGS = {
     icon: <ApartmentOutlined />,
     category: 'base',
     version: '1.0.0',
+    description: '条件分支节点，根据条件判断选择不同的流转路径',
   },
 };
 

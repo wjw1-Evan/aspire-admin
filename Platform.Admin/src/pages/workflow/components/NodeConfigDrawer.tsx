@@ -2,14 +2,16 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Button, Form, Input, Select, Switch, Space, Divider, Tabs, FormInstance, TreeSelect, Radio } from 'antd';
 import { Drawer } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
-import { DeleteOutlined, SaveOutlined, PlusOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { DeleteOutlined, SaveOutlined, PlusOutlined, InfoCircleOutlined, EditOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import { NODE_CONFIGS } from './WorkflowDesignerConstants';
 import { Node } from 'reactflow';
 import type { AppUser } from '@/services/user/api';
 import type { Role } from '@/services/role/api';
-import type { FormDefinition } from '@/services/form/api';
+import type { FormDefinition as ApiFormDefinition } from '@/services/form/api';
+import type { FormDefinition } from '@/pages/workflow/forms/types';
 import { getWorkflowFormsAndFields, getOrganizationTree, type OrganizationTreeNode } from '@/services/workflow/api';
+import FormDesignerDialog from './FormDesignerDialog';
 import { FormTarget } from '@/services/workflow/api';
 import type { SelectProps } from 'antd';
 import type { DataNode } from 'antd/es/tree';
@@ -39,7 +41,7 @@ export interface NodeConfigDrawerProps {
   readOnly?: boolean;
   users: AppUser[];
   roles: Role[];
-  forms: FormDefinition[];
+  forms: ApiFormDefinition[];
   availableVariables: { label: string; value: string }[];
   workflowDefinitionId?: string;
   allNodes?: Node[];
@@ -67,6 +69,8 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
   const [loadingOrgs, setLoadingOrgs] = useState(false);
   const [departmentModalVisible, setDepartmentModalVisible] = useState(false);
   const [currentApproverIndex, setCurrentApproverIndex] = useState<number | null>(null);
+  const [formDesignerVisible, setFormDesignerVisible] = useState(false);
+  const [formDesignerEditingForm, setFormDesignerEditingForm] = useState<FormDefinition | null>(null);
 
   // 从前端节点数据中提取表单信息
   const extractFormsFromNodes = useCallback(() => {
@@ -140,11 +144,48 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
     }
   }, [visible, workflowDefinitionId, allNodes, extractFormsFromNodes]);
 
-  // 获取选中表单的字段
   const getSelectedFormFields = (formId: string | undefined): WorkflowFormField[] => {
     if (!formId) return [];
-    const form = workflowForms.find(f => f.id === formId);
-    return form?.fields || [];
+    const boundForm = workflowForms.find(f => f.id === formId);
+    if (boundForm?.fields?.length) return boundForm.fields;
+    const formDef = forms.find(f => f.id === formId);
+    if (!formDef?.fields?.length) return [];
+    return formDef.fields.map(field => ({
+      id: field.id || 'unknown',
+      label: field.label || '',
+      dataKey: field.dataKey || '',
+      type: field.type,
+      required: field.required || false,
+    }));
+  };
+
+  const getFormFieldsPreview = (formId: string | undefined) => {
+    const fields = getSelectedFormFields(formId);
+    if (!fields.length) return null;
+    return (
+      <div style={{ marginTop: 8, padding: 8, background: '#f5f5f5', borderRadius: 6, fontSize: 12 }}>
+        <div style={{ fontWeight: 500, marginBottom: 6, color: '#595959' }}>表单字段 ({fields.length})</div>
+        {fields.map(f => (
+          <div key={f.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '3px 0', borderBottom: '1px solid #e8e8e8' }}>
+            <span style={{ color: '#262626' }}>{f.label}</span>
+            <span style={{ color: '#8c8c8c' }}>({f.dataKey})</span>
+            <span style={{ color: '#bfbfbf', fontSize: 11 }}>{f.type}</span>
+            {f.required && <span style={{ color: '#ff4d4f' }}>*</span>}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const handleOpenFormDesigner = (form?: ApiFormDefinition | null) => {
+    setFormDesignerEditingForm(form as unknown as FormDefinition | null);
+    setFormDesignerVisible(true);
+  };
+
+  const handleFormDesignerSuccess = (form: FormDefinition) => {
+    setFormDesignerVisible(false);
+    setFormDesignerEditingForm(null);
+    configForm.setFieldsValue({ formDefinitionId: form.id });
   };
 
   // 转换组织树为 Ant Design TreeSelect 格式
@@ -387,12 +428,12 @@ if (type === 4) return (
                                                 label="表单"
                                                 rules={[{ required: true, message: '请选择表单' }]}
                                               >
-                                                <Select
-                                                  placeholder="选择流程中使用的表单"
-                                                  showSearch
-                                                  loading={loading}
-                                                  options={workflowForms.map(f => ({ label: f.name, value: f.id }))}
-                                                />
+                                                  <Select
+                                                    placeholder="选择表单"
+                                                    showSearch
+                                                    loading={loading}
+                                                    options={forms.map(f => ({ label: f.name, value: f.id }))}
+                                                  />
                                               </Form.Item>
 
                                               {/* 字段选择 */}
@@ -601,35 +642,62 @@ if (type === 4) return (
                     </div>
                   )}
                    {selectedNode?.data.nodeType === 'start' && (
-                      <Form.Item name="formDefinitionId" label={intl.formatMessage({ id: 'pages.flow.node.bindStartForm' })}>
-                        <Select placeholder={intl.formatMessage({ id: 'pages.flow.node.selectStartForm' })} allowClear options={forms.map(f => ({ label: f.name, value: f.id }))} />
-                      </Form.Item>
-                    )}
-                   {selectedNode?.data.nodeType === 'approval' && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                        <Form.Item name="formDefinitionId" label={intl.formatMessage({ id: 'pages.flow.node.bindForm' })}>
-                          <Select placeholder={intl.formatMessage({ id: 'pages.flow.node.selectForm' })} allowClear options={forms.map(f => ({ label: f.name, value: f.id }))} />
-                        </Form.Item>
-                        <Form.Item noStyle shouldUpdate={(prev, curr) => prev.formDefinitionId !== curr.formDefinitionId}>
-                          {({ getFieldValue }) => {
-                            const formId = getFieldValue('formDefinitionId');
-                            if (!formId) return null;
-                            return (
-                              <>
-                                <Form.Item name="formTarget" label={intl.formatMessage({ id: 'pages.flow.node.formTarget' })} initialValue={FormTarget.Document}>
-                                  <Radio.Group>
-                                    <Radio value={FormTarget.Document}>{intl.formatMessage({ id: 'pages.flow.node.formTarget.document' })}</Radio>
-                                    <Radio value={FormTarget.Instance}>{intl.formatMessage({ id: 'pages.flow.node.formTarget.instance' })}</Radio>
-                                  </Radio.Group>
-                                </Form.Item>
-                                <Form.Item name="formReadOnly" label={intl.formatMessage({ id: 'pages.flow.node.formReadOnly' })} valuePropName="checked">
-                                  <Switch />
-                                </Form.Item>
-                              </>
-                            );
-                          }}
-                        </Form.Item>
-                      </div>
+                       <Form.Item name="formDefinitionId" label={intl.formatMessage({ id: 'pages.flow.node.bindStartForm' })}>
+                         <Select placeholder={intl.formatMessage({ id: 'pages.flow.node.selectStartForm' })} allowClear options={forms.map(f => ({ label: f.name, value: f.id }))} />
+                       </Form.Item>
+                     )}
+                     {selectedNode?.data.nodeType === 'start' && (
+                       <Form.Item noStyle shouldUpdate={(prev, curr) => prev.formDefinitionId !== curr.formDefinitionId}>
+                         {({ getFieldValue }) => {
+                           const fid = getFieldValue('formDefinitionId');
+                           if (!fid) return null;
+                           return (
+                             <>
+                               <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                                 <Button size="small" icon={<EditOutlined />} onClick={() => handleOpenFormDesigner(forms.find(f => f.id === fid))}>编辑表单</Button>
+                                 <Button size="small" icon={<PlusOutlined />} onClick={() => handleOpenFormDesigner(null)}>新建表单</Button>
+                               </div>
+                               {getFormFieldsPreview(fid)}
+                             </>
+                           );
+                         }}
+                       </Form.Item>
+                     )}
+                    {selectedNode?.data.nodeType === 'approval' && (
+                       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                         <Form.Item name="formDefinitionId" label={intl.formatMessage({ id: 'pages.flow.node.bindForm' })}>
+                           <Select placeholder={intl.formatMessage({ id: 'pages.flow.node.selectForm' })} allowClear options={forms.map(f => ({ label: f.name, value: f.id }))} />
+                         </Form.Item>
+                         <Form.Item noStyle shouldUpdate={(prev, curr) => prev.formDefinitionId !== curr.formDefinitionId}>
+                           {({ getFieldValue }) => {
+                             const formId = getFieldValue('formDefinitionId');
+                             return (
+                               <>
+                                 {formId && (
+                                   <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                                     <Button size="small" icon={<EditOutlined />} onClick={() => handleOpenFormDesigner(forms.find(f => f.id === formId))}>编辑表单</Button>
+                                     <Button size="small" icon={<PlusOutlined />} onClick={() => handleOpenFormDesigner(null)}>新建表单</Button>
+                                   </div>
+                                 )}
+                                 {getFormFieldsPreview(formId)}
+                                 {formId && (
+                                   <>
+                                     <Form.Item name="formTarget" label={intl.formatMessage({ id: 'pages.flow.node.formTarget' })} initialValue={FormTarget.Document}>
+                                       <Radio.Group>
+                                         <Radio value={FormTarget.Document}>{intl.formatMessage({ id: 'pages.flow.node.formTarget.document' })}</Radio>
+                                         <Radio value={FormTarget.Instance}>{intl.formatMessage({ id: 'pages.flow.node.formTarget.instance' })}</Radio>
+                                       </Radio.Group>
+                                     </Form.Item>
+                                     <Form.Item name="formReadOnly" label={intl.formatMessage({ id: 'pages.flow.node.formReadOnly' })} valuePropName="checked">
+                                       <Switch />
+                                     </Form.Item>
+                                   </>
+                                 )}
+                               </>
+                             );
+                           }}
+                         </Form.Item>
+                       </div>
                     )}
                 </>
               ),
@@ -637,6 +705,13 @@ if (type === 4) return (
           ]}
         />
       </Form>
+
+      <FormDesignerDialog
+        visible={formDesignerVisible}
+        editingForm={formDesignerEditingForm}
+        onClose={() => { setFormDesignerVisible(false); setFormDesignerEditingForm(null); }}
+        onSuccess={handleFormDesignerSuccess}
+      />
     </Drawer>
   );
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Tag, Progress, Tabs, Space, Grid, Empty, Spin, Tooltip } from 'antd';
+import { Tag, Progress, Space, Grid, Empty, Spin, Tooltip } from 'antd';
 import { Drawer } from 'antd';
 import { ProDescriptions } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
@@ -72,14 +72,18 @@ const CombinedTaskView: React.FC<{ tasks: TaskDto[] }> = ({ tasks }) => {
     return (
       <React.Fragment key={task.id}>
         <tr style={{ backgroundColor: level > 0 ? '#fafafa' : '#fff' }}>
-          <td style={{ padding: '10px 8px', borderBottom: '1px solid #f0f0f0', borderRight: '1px solid #f0f0f0', backgroundColor: '#fff', position: 'sticky', top: 0, left: 0, zIndex: 11, minWidth: 200 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: level * 20 }}>
-              <span style={{ color: '#bfbfbf', fontSize: 10 }}>{level > 0 ? '└' : ''}</span>
+          <td style={{ padding: '10px 8px', borderBottom: '1px solid #f0f0f0', borderRight: '1px solid #f0f0f0', backgroundColor: '#fff', position: 'sticky', top: 0, left: 0, zIndex: 11, minWidth: 280 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, marginLeft: level * 20 }}>
+              <span style={{ color: '#bfbfbf', fontSize: 10, marginTop: 2 }}>{level > 0 ? '└' : ''}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: level === 0 ? 600 : 400, color: '#262626', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: 13 }}>{task.taskName}</div>
-                <div style={{ display: 'flex', gap: 3, marginTop: 2 }}>
+                <div style={{ display: 'flex', gap: 3, marginTop: 2, flexWrap: 'wrap' }}>
                   <Tag color={getTaskStatusColor(task.status)} style={{ fontSize: 10, padding: '0 3px', margin: 0 }}>{task.statusName}</Tag>
                   {task.priorityName && <Tag color={getTaskPriorityColor(task.priority)} style={{ fontSize: 10, padding: '0 3px', margin: 0 }}>{task.priorityName}</Tag>}
+                  {task.taskType && <Tag style={{ fontSize: 10, padding: '0 3px', margin: 0 }}>{task.taskType}</Tag>}
+                </div>
+                <div style={{ fontSize: 11, color: '#8c8c8c', marginTop: 2, lineHeight: '18px' }}>
+                  {task.assignedToName && <span>分配给: {task.assignedToName}</span>}
                 </div>
               </div>
             </div>
@@ -203,61 +207,49 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
       onClose={() => onClose()}
       width={isMobile ? 'large' : 900}
     >
-      <Tabs
-        items={[
-          {
-            key: 'info',
-            label: intl.formatMessage({ id: 'pages.project.detail.basicInfo' }),
-            icon: <ProjectOutlined />,
-            children: (
-              <ProDescriptions column={isMobile ? 1 : 2} bordered>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.table.name' })}>{project.name}</ProDescriptions.Item>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.table.status' })}>
-                  <Tag color={statusInfo.color}>{statusInfo.text}</Tag>
-                </ProDescriptions.Item>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.table.priority' })}>
-                  <Tag color={priorityInfo.color}>{priorityInfo.text}</Tag>
-                </ProDescriptions.Item>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.table.progress' })}>
-                  <Progress percent={project.progress} size="small" />
-                </ProDescriptions.Item>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.detail.budget' })}>
-                  {project.budget ? `¥${project.budget.toLocaleString()}` : '-'}
-                </ProDescriptions.Item>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.table.startDate' })} span={1}>
-                  {project.startDate || '-'}
-                </ProDescriptions.Item>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.table.endDate' })} span={1}>
-                  {project.endDate || '-'}
-                </ProDescriptions.Item>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.detail.description' })} span={2}>
-                  {project.description || '-'}
-                </ProDescriptions.Item>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.table.createdAt' })}>
-                  {project.createdAt}
-                </ProDescriptions.Item>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.detail.createdBy' })}>
-                  {project.createdByName || '-'}
-                </ProDescriptions.Item>
-              </ProDescriptions>
-            ),
-          },
-          {
-            key: 'tasks',
-            label: intl.formatMessage({ id: 'pages.project.taskTree.title' }),
-            icon: <BarChartOutlined />,
-            children: project.id ? (
-              <Spin spinning={tasksLoading}>
-                {tasks.length > 0 ? (
-                  <CombinedTaskView tasks={tasks} />
-                ) : (
-                  <Empty description={intl.formatMessage({ id: 'pages.project.taskTree.noTasks' })} />
-                )}
-              </Spin>
-            ) : null,
-          },
-        ]}
-      />
+      <ProDescriptions column={isMobile ? 1 : 2} bordered style={{ marginBottom: 24 }}>
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.table.name' })}>{project.name}</ProDescriptions.Item>
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.table.status' })}>
+          <Tag color={statusInfo.color}>{statusInfo.text}</Tag>
+        </ProDescriptions.Item>
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.table.priority' })}>
+          <Tag color={priorityInfo.color}>{priorityInfo.text}</Tag>
+        </ProDescriptions.Item>
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.table.progress' })}>
+          <Progress percent={project.progress} size="small" />
+        </ProDescriptions.Item>
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.detail.budget' })}>
+          {project.budget ? `¥${project.budget.toLocaleString()}` : '-'}
+        </ProDescriptions.Item>
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.table.startDate' })} span={1}>
+          {project.startDate || '-'}
+        </ProDescriptions.Item>
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.table.endDate' })} span={1}>
+          {project.endDate || '-'}
+        </ProDescriptions.Item>
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.detail.description' })} span={2}>
+          {project.description || '-'}
+        </ProDescriptions.Item>
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.table.createdAt' })}>
+          {project.createdAt}
+        </ProDescriptions.Item>
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.detail.createdBy' })}>
+          {project.createdByName || '-'}
+        </ProDescriptions.Item>
+      </ProDescriptions>
+
+      <div style={{ marginBottom: 12, fontWeight: 600, fontSize: 15, color: '#262626' }}>
+        <BarChartOutlined style={{ marginRight: 8 }} />{intl.formatMessage({ id: 'pages.project.taskTree.title' })}
+      </div>
+      {project.id ? (
+        <Spin spinning={tasksLoading}>
+          {tasks.length > 0 ? (
+            <CombinedTaskView tasks={tasks} />
+          ) : (
+            <Empty description={intl.formatMessage({ id: 'pages.project.taskTree.noTasks' })} />
+          )}
+        </Spin>
+      ) : null}
     </Drawer>
   );
 };

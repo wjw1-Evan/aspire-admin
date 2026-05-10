@@ -205,6 +205,11 @@ export default {
   'pages.webScraper.statistics.partialSuccessLogs': 'Partial Success',
   'pages.webScraper.statistics.runningLogs': 'Running',
   'pages.webScraper.statistics.averageDuration': 'Average Duration',
+  'pages.webScraper.examples': 'Common examples:',
+  'pages.webScraper.every10Minutes': 'Every 10 minutes',
+  'pages.webScraper.everyHour': 'Every hour',
+  'pages.webScraper.dailyDawn': 'Daily at dawn',
+  'pages.webScraper.cron.execute': 'Execute',
   'pages.webScraper.resultPreview.title': 'Scrape Results',
   'pages.webScraper.resultPreview.tab.summary': 'Summary',
   'pages.webScraper.resultPreview.tab.pages': 'Pages',
@@ -244,5 +249,4 @@ export default {
   'pages.webScraper.resultPreview.detail.links': 'Links',
   'pages.webScraper.resultPreview.detail.moreLinks': '...and {count} more links',
   'pages.webScraper.resultPreview.expand': 'Expand',
-  'pages.webScraper.cron.execute': 'Execute',
 };

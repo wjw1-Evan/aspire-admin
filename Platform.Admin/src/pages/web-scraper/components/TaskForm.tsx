@@ -32,9 +32,9 @@ interface TaskFormProps {
 }
 
 const modeOptions = [
-  { label: 'pages.web-scraper.mode.single', value: 'singlePage' },
-  { label: 'pages.web-scraper.mode.depth', value: 'depthFirst' },
-  { label: 'pages.web-scraper.mode.breadth', value: 'breadthFirst' },
+  { label: 'pages.webScraper.mode.single', value: 'singlePage' },
+  { label: 'pages.webScraper.mode.depth', value: 'depthFirst' },
+  { label: 'pages.webScraper.mode.breadth', value: 'breadthFirst' },
 ];
 
 const api = {
@@ -75,14 +75,14 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onCancel, onSuccess 
       }
       onSuccess();
     } catch {
-      message.error(task?.id ? intl.formatMessage({ id: 'pages.web-scraper.message.updateFailed' }) : intl.formatMessage({ id: 'pages.web-scraper.message.createFailed' }));
+      message.error(task?.id ? intl.formatMessage({ id: 'pages.webScraper.message.updateFailed' }) : intl.formatMessage({ id: 'pages.webScraper.message.createFailed' }));
     }
     return true;
   };
 
   return (
     <ModalForm
-      title={task?.id ? intl.formatMessage({ id: 'pages.web-scraper.editTask' }) : intl.formatMessage({ id: 'pages.web-scraper.createTask' })}
+      title={task?.id ? intl.formatMessage({ id: 'pages.webScraper.editTask' }) : intl.formatMessage({ id: 'pages.webScraper.createTask' })}
       open={visible}
       form={form}
       onFinish={handleFinish}
@@ -95,63 +95,63 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onCancel, onSuccess 
       }}
       submitter={{
         searchConfig: {
-          submitText: task?.id ? intl.formatMessage({ id: 'pages.web-scraper.update' }) : intl.formatMessage({ id: 'pages.web-scraper.submit' }),
-          resetText: intl.formatMessage({ id: 'pages.web-scraper.cancel' }),
+          submitText: task?.id ? intl.formatMessage({ id: 'pages.webScraper.update' }) : intl.formatMessage({ id: 'pages.webScraper.submit' }),
+          resetText: intl.formatMessage({ id: 'pages.webScraper.cancel' }),
         },
       }}
     >
       <ProFormText
         name="name"
-        label={intl.formatMessage({ id: 'pages.web-scraper.taskName' })}
-        rules={[{ required: true, message: intl.formatMessage({ id: 'pages.web-scraper.taskNameRequired' }) }]}
-        placeholder={intl.formatMessage({ id: 'pages.web-scraper.taskNamePlaceholder' })}
+        label={intl.formatMessage({ id: 'pages.webScraper.taskName' })}
+        rules={[{ required: true, message: intl.formatMessage({ id: 'pages.webScraper.taskNameRequired' }) }]}
+        placeholder={intl.formatMessage({ id: 'pages.webScraper.taskNamePlaceholder' })}
       />
 
       <ProFormText
         name="targetUrl"
-        label={intl.formatMessage({ id: 'pages.web-scraper.targetUrl' })}
+        label={intl.formatMessage({ id: 'pages.webScraper.targetUrl' })}
         rules={[
-          { required: true, message: intl.formatMessage({ id: 'pages.web-scraper.targetUrlRequired' }) },
-          { type: 'url', message: intl.formatMessage({ id: 'pages.web-scraper.targetUrlInvalid' }) },
+          { required: true, message: intl.formatMessage({ id: 'pages.webScraper.targetUrlRequired' }) },
+          { type: 'url', message: intl.formatMessage({ id: 'pages.webScraper.targetUrlInvalid' }) },
         ]}
-        placeholder={intl.formatMessage({ id: 'pages.web-scraper.targetUrlPlaceholder' })}
+        placeholder={intl.formatMessage({ id: 'pages.webScraper.targetUrlPlaceholder' })}
       />
 
       <ProFormTextArea
         name="description"
-        label={intl.formatMessage({ id: 'pages.web-scraper.description' })}
-        placeholder={intl.formatMessage({ id: 'pages.web-scraper.descriptionPlaceholder' })}
+        label={intl.formatMessage({ id: 'pages.webScraper.description' })}
+        placeholder={intl.formatMessage({ id: 'pages.webScraper.descriptionPlaceholder' })}
       />
 
       <Row gutter={16}>
         <Col span={12}>
           <ProFormText
             name="titleSelector"
-            label={intl.formatMessage({ id: 'pages.web-scraper.titleSelector' })}
-            placeholder={intl.formatMessage({ id: 'pages.web-scraper.titleSelectorPlaceholder' })}
-            tooltip={intl.formatMessage({ id: 'pages.web-scraper.titleSelectorTooltip' })}
+            label={intl.formatMessage({ id: 'pages.webScraper.titleSelector' })}
+            placeholder={intl.formatMessage({ id: 'pages.webScraper.titleSelectorPlaceholder' })}
+            tooltip={intl.formatMessage({ id: 'pages.webScraper.titleSelectorTooltip' })}
           />
         </Col>
         <Col span={12}>
           <ProFormText
             name="contentSelector"
-            label={intl.formatMessage({ id: 'pages.web-scraper.contentSelector' })}
-            placeholder={intl.formatMessage({ id: 'pages.web-scraper.contentSelectorPlaceholder' })}
-            tooltip={intl.formatMessage({ id: 'pages.web-scraper.contentSelectorTooltip' })}
+            label={intl.formatMessage({ id: 'pages.webScraper.contentSelector' })}
+            placeholder={intl.formatMessage({ id: 'pages.webScraper.contentSelectorPlaceholder' })}
+            tooltip={intl.formatMessage({ id: 'pages.webScraper.contentSelectorTooltip' })}
           />
         </Col>
       </Row>
 
       <Row gutter={16}>
         <Col span={8}>
-          <Form.Item label={intl.formatMessage({ id: 'pages.web-scraper.crawlDepth' })} name="crawlDepth">
+          <Form.Item label={intl.formatMessage({ id: 'pages.webScraper.crawlDepth' })} name="crawlDepth">
             <InputNumber min={0} max={3} style={{ width: '100%' }} />
           </Form.Item>
         </Col>
         <Col span={8}>
           <ProFormDigit
             name="maxPagesPerLevel"
-            label={intl.formatMessage({ id: 'pages.web-scraper.maxPagesPerLevel' })}
+            label={intl.formatMessage({ id: 'pages.webScraper.maxPagesPerLevel' })}
             min={1}
             max={500}
             fieldProps={{ precision: 0 }}
@@ -160,7 +160,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onCancel, onSuccess 
         <Col span={8}>
           <ProFormSelect
             name="mode"
-            label={intl.formatMessage({ id: 'pages.web-scraper.crawlMode' })}
+            label={intl.formatMessage({ id: 'pages.webScraper.crawlMode' })}
             options={modeOptions.map(opt => ({ label: intl.formatMessage({ id: opt.label}), value: opt.value }))}
             initialValue="breadthFirst"
           />
@@ -171,17 +171,17 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onCancel, onSuccess 
         <Col span={12}>
           <ProFormText
             name="urlFilterPattern"
-            label={intl.formatMessage({ id: 'pages.web-scraper.urlFilter' })}
-            placeholder={intl.formatMessage({ id: 'pages.web-scraper.urlFilterPlaceholder' })}
+            label={intl.formatMessage({ id: 'pages.webScraper.urlFilter' })}
+            placeholder={intl.formatMessage({ id: 'pages.webScraper.urlFilterPlaceholder' })}
           />
         </Col>
         <Col span={6}>
-          <Form.Item label={intl.formatMessage({ id: 'pages.web-scraper.followExternalLinks' })} name="followExternalLinks" valuePropName="checked">
+          <Form.Item label={intl.formatMessage({ id: 'pages.webScraper.followExternalLinks' })} name="followExternalLinks" valuePropName="checked">
             <Switch />
           </Form.Item>
         </Col>
         <Col span={6}>
-          <Form.Item label={intl.formatMessage({ id: 'pages.web-scraper.deduplicate' })} name="deduplicate" valuePropName="checked">
+          <Form.Item label={intl.formatMessage({ id: 'pages.webScraper.deduplicate' })} name="deduplicate" valuePropName="checked">
             <Switch defaultChecked />
           </Form.Item>
         </Col>
@@ -189,8 +189,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onCancel, onSuccess 
 
       <ProFormText
         name="scheduleCron"
-        label={intl.formatMessage({ id: 'pages.web-scraper.scheduleCron' })}
-        placeholder={intl.formatMessage({ id: 'pages.web-scraper.scheduleCronPlaceholder' })}
+        label={intl.formatMessage({ id: 'pages.webScraper.scheduleCron' })}
+        placeholder={intl.formatMessage({ id: 'pages.webScraper.scheduleCronPlaceholder' })}
         tooltip={
           <div>
             <p>{intl.formatMessage({ id: 'pages.webScraper.examples' })}</p>
@@ -205,12 +205,12 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onCancel, onSuccess 
 
        <Row gutter={16}>
          <Col span={6}>
-           <Form.Item label={intl.formatMessage({ id: 'pages.web-scraper.enableFilter' })} name="enableFilter" valuePropName="checked">
+           <Form.Item label={intl.formatMessage({ id: 'pages.webScraper.enableFilter' })} name="enableFilter" valuePropName="checked">
              <Switch />
            </Form.Item>
          </Col>
          <Col span={6}>
-           <Form.Item label={intl.formatMessage({ id: 'pages.web-scraper.matchNotification' })} name="notifyOnMatch" valuePropName="checked">
+           <Form.Item label={intl.formatMessage({ id: 'pages.webScraper.matchNotification' })} name="notifyOnMatch" valuePropName="checked">
              <Switch defaultChecked />
            </Form.Item>
          </Col>
@@ -218,8 +218,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onCancel, onSuccess 
 
       <ProFormTextArea
         name="filterPrompt"
-        label={intl.formatMessage({ id: 'pages.web-scraper.filterPrompt' })}
-        placeholder={intl.formatMessage({ id: 'pages.web-scraper.filterPromptPlaceholder' })}
+        label={intl.formatMessage({ id: 'pages.webScraper.filterPrompt' })}
+        placeholder={intl.formatMessage({ id: 'pages.webScraper.filterPromptPlaceholder' })}
         fieldProps={{
           rows: 2,
           showCount: true,
@@ -227,7 +227,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onCancel, onSuccess 
         }}
       />
 
-      <Form.Item label={intl.formatMessage({ id: 'pages.web-scraper.enableTask' })} name="isEnabled" valuePropName="checked">
+      <Form.Item label={intl.formatMessage({ id: 'pages.webScraper.enableTask' })} name="isEnabled" valuePropName="checked">
         <Switch defaultChecked />
       </Form.Item>
     </ModalForm>

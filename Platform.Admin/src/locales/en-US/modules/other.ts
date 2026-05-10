@@ -813,6 +813,7 @@ export default {
   'pages.park.asset.unitType.commercial': 'Commercial',
   'pages.park.asset.unitType.office': 'Office',
   'pages.park.asset.unitType.warehouse': 'Warehouse',
+  'pages.park.asset.unitType.other': 'Other',
 
   // ── Password Book ──
   'pages.passwordBook.account': 'Account',

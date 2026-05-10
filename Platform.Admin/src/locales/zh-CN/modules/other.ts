@@ -302,6 +302,7 @@ export default {
   'pages.park.asset.unitType.office': '办公',
   'pages.park.asset.unitType.commercial': '商铺',
   'pages.park.asset.unitType.warehouse': '仓储',
+  'pages.park.asset.unitType.other': '其他',
   'pages.park.asset.unit.status.available': '空置',
   'pages.park.asset.unit.status.rented': '已出租',
   'pages.park.asset.unit.status.reserved': '预留',

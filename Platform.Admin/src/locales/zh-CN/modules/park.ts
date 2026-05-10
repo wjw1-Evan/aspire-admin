@@ -716,6 +716,8 @@ export default {
   'pages.park.asset.area': '面积 (m²)',
   'pages.park.asset.areaPlaceholder': '面积',
   'pages.park.asset.areaRequired': '请输入面积',
+  'pages.park.asset.unitType': '房源类型',
+  'pages.park.asset.unitTypePlaceholder': '请选择类型',
   'pages.park.asset.monthlyRentPlaceholder': '月租金',
   'pages.park.asset.monthlyRentRequired': '请输入月租金',
   'pages.park.asset.dailyRent': '日租金 (元/m²)',

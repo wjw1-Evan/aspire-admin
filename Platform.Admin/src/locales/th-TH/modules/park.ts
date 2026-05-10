@@ -107,5 +107,7 @@ export default {
   'pages.park.asset.basicInfo': 'Basic Info',
   'pages.park.asset.descriptionInfo': 'Description',
   'pages.park.asset.rentalHistory': 'Rental History',
+  'pages.park.asset.unitType': 'Unit Type',
+  'pages.park.asset.unitTypePlaceholder': 'Please select type',
   'pages.park.asset.leaseStatus': 'Status',
 };

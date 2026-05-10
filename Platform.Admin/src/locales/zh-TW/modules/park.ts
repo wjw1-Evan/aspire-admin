@@ -107,5 +107,7 @@ export default {
   'pages.park.asset.basicInfo': '基本信息',
   'pages.park.asset.descriptionInfo': '描述信息',
   'pages.park.asset.rentalHistory': '出租歷史',
+  'pages.park.asset.unitType': '房源類型',
+  'pages.park.asset.unitTypePlaceholder': '請選擇類型',
   'pages.park.asset.leaseStatus': '狀態',
 };

@@ -180,6 +180,7 @@ export default {
   'pages.taskManagement.plannedEndTimePlaceholder': '請選擇計劃完成時間',
   'pages.taskManagement.participantsPlaceholder': '請選擇參與者',
   'pages.taskManagement.tagsPlaceholder': '請輸入或選擇標籤',
+  'pages.taskManagement.remarks': '備註',
   'pages.taskManagement.remarksPlaceholder': '請輸入備註訊息',
   'pages.taskManagement.project': '所屬項目',
   'pages.taskManagement.projectPlaceholder': '請選擇項目（可選）',

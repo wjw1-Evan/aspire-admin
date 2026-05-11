@@ -1,15 +1,42 @@
 export default {
-  // 回收站消息
+  // 文件管理
+  'pages.cloud-storage.files.fileSize': 'File Size',
+
+  // 回收站
   'pages.cloud-storage.recycle.message.restoreSuccess': 'Restore successful',
   'pages.cloud-storage.recycle.message.restoreFailed': 'Restore failed',
   'pages.cloud-storage.recycle.message.deleteSuccess': 'Delete successful',
   'pages.cloud-storage.recycle.message.deleteFailed': 'Delete failed',
   'pages.cloud-storage.recycle.message.emptySuccess': 'Empty successful, deleted {count} files',
   'pages.cloud-storage.recycle.message.emptyFailed': 'Empty failed',
+  'pages.cloud-storage.recycle.fileName': 'File Name',
+  'pages.cloud-storage.recycle.originalPath': 'Original Path',
+  'pages.cloud-storage.recycle.deleteTime': 'Delete Time',
+  'pages.cloud-storage.recycle.deletedBy': 'Deleted By',
+  'pages.cloud-storage.recycle.expireStatus': 'Expiry Status',
+  'pages.cloud-storage.recycle.expired': 'Expired',
+  'pages.cloud-storage.recycle.daysUntilExpiry': ' days until expiry',
+  'pages.cloud-storage.recycle.restoreFile': 'Restore File',
+  'pages.cloud-storage.recycle.fileNamePlaceholder': 'Please enter file name',
   
   // 分享管理消息
   'pages.cloud-storage.share.message.updateSuccess': 'Update successful',
   'pages.cloud-storage.share.message.linkCopied': 'Share link copied',
+  
+  // 文件管理
+  'pages.cloud-storage.files.fileName': 'File Name',
+  'pages.cloud-storage.files.shareType': 'Share Type',
+  'pages.cloud-storage.files.accessPermission': 'Access Permission',
+  'pages.cloud-storage.files.status': 'Status',
+  'pages.cloud-storage.files.downloadLimit': 'Download Limit',
+  'pages.cloud-storage.files.createdAt': 'Created At',
+
+  // 分享管理
+  'pages.cloud-storage.share.myShares': 'My Shares',
+  'pages.cloud-storage.share.total': 'Total',
+  'pages.cloud-storage.share.enabled': 'Enabled',
+  'pages.cloud-storage.share.disabled': 'Disabled',
+  'pages.cloud-storage.share.confirmDelete': 'Are you sure to delete share "{name}"?',
   
   // 配额管理消息
   'pages.cloud-storage.quota.message.updateSuccess': 'Quota updated successfully',

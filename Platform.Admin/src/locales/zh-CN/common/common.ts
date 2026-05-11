@@ -51,7 +51,7 @@ export default {
   'pages.common.more': '更多',
   'pages.common.refresh': '刷新',
   'pages.common.reset': '重置',
-  'pages.common.search': '搜索',
+  'pages.common.search': '搜索...',
   'pages.message.applicationApproved': '申请已通过',
   'pages.message.applicationCancelled': '申请已撤回',
   'pages.message.applicationFailed': '申请失败',

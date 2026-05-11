@@ -584,4 +584,97 @@ export default {
   'pages.park.asset.unitType': 'Unit Type',
   'pages.park.asset.unitTypePlaceholder': 'Please select type',
   'pages.park.asset.leaseStatus': 'Status',
+
+  // asset/index.tsx - building form fields
+  'pages.park.asset.buildingName': 'Building Name',
+  'pages.park.asset.buildingNamePlaceholder': 'Enter building name',
+  'pages.park.asset.buildingNameRequired': 'Please enter building name',
+  'pages.park.asset.buildingType': 'Building Type',
+  'pages.park.asset.buildingTypePlaceholder': 'Select type',
+  'pages.park.asset.address': 'Address',
+  'pages.park.asset.addressPlaceholder': 'Enter building address',
+  'pages.park.asset.totalFloors': 'Total Floors',
+  'pages.park.asset.totalFloorsPlaceholder': 'Number of floors',
+  'pages.park.asset.totalFloorsRequired': 'Please enter number of floors',
+  'pages.park.asset.totalArea': 'Total Area (m²)',
+  'pages.park.asset.totalAreaPlaceholder': 'Total area',
+  'pages.park.asset.totalAreaRequired': 'Please enter total area',
+  'pages.park.asset.yearBuilt': 'Year Built',
+  'pages.park.asset.yearBuiltPlaceholder': 'Year',
+  'pages.park.asset.deliveryDate': 'Delivery Date',
+  'pages.park.asset.deliveryDatePlaceholder': 'Select date',
+  'pages.park.asset.status': 'Status',
+  'pages.park.asset.statusPlaceholder': 'Select status',
+  'pages.park.asset.description': 'Description',
+  'pages.park.asset.descriptionPlaceholder': 'Enter description',
+  'pages.park.asset.attachmentsLabel': 'Attachments',
+
+  // asset/index.tsx - unit form fields
+  'pages.park.asset.buildingId': 'Building',
+  'pages.park.asset.buildingIdPlaceholder': 'Select building',
+  'pages.park.asset.buildingIdRequired': 'Please select a building',
+  'pages.park.asset.unitNumber': 'Unit Number',
+  'pages.park.asset.unitNumberPlaceholder': 'e.g. A-101',
+  'pages.park.asset.unitNumberRequired': 'Please enter unit number',
+  'pages.park.asset.floor': 'Floor',
+  'pages.park.asset.floorPlaceholder': 'Floor number',
+  'pages.park.asset.floorRequired': 'Please enter floor number',
+  'pages.park.asset.area': 'Area (m²)',
+  'pages.park.asset.areaPlaceholder': 'Area',
+  'pages.park.asset.areaRequired': 'Please enter area',
+  'pages.park.asset.monthlyRentPlaceholder': 'Monthly rent',
+  'pages.park.asset.monthlyRentRequired': 'Please enter monthly rent',
+  'pages.park.asset.dailyRent': 'Daily Rent (Yuan/m²)',
+  'pages.park.asset.dailyRentPlaceholder': 'Daily rent',
+
+  // asset/index.tsx - page UI labels
+  'pages.park.asset.buildings': 'Buildings',
+  'pages.park.asset.units': 'Units',
+  'pages.park.asset.buildingDetail': 'Building Details',
+  'pages.park.asset.unitDetail': 'Unit Details',
+  'pages.park.asset.addBuilding': 'Add Building',
+  'pages.park.asset.editBuilding': 'Edit Building',
+  'pages.park.asset.addUnit': 'Add Unit',
+  'pages.park.asset.editUnit': 'Edit Unit',
+
+  // asset/index.tsx - building type tags
+  'pages.park.asset.buildingType.office': 'Office',
+  'pages.park.asset.buildingType.commercial': 'Commercial',
+  'pages.park.asset.buildingType.mixed': 'Mixed',
+
+  // asset/index.tsx - building status tags
+  'pages.park.asset.status.active': 'Active',
+  'pages.park.asset.status.maintenance': 'Maintenance',
+  'pages.park.asset.status.inactive': 'Inactive',
+
+  // asset/index.tsx - unit type tags
+  'pages.park.asset.unitType.office': 'Office',
+  'pages.park.asset.unitType.commercial': 'Commercial',
+  'pages.park.asset.unitType.warehouse': 'Warehouse',
+  'pages.park.asset.unitType.other': 'Other',
+
+  // asset/index.tsx - unit status tags
+  'pages.park.asset.unit.status.available': 'Available',
+  'pages.park.asset.unit.status.rented': 'Rented',
+  'pages.park.asset.unit.status.reserved': 'Reserved',
+  'pages.park.asset.unit.status.maintenance': 'Maintenance',
+
+  // asset/index.tsx - building table columns
+  'pages.park.asset.building.name': 'Building Name',
+  'pages.park.asset.building.address': 'Address',
+  'pages.park.asset.building.type': 'Type',
+  'pages.park.asset.building.floors': 'Floors',
+  'pages.park.asset.building.area': 'Total Area',
+  'pages.park.asset.building.occupancy': 'Occupancy Rate',
+  'pages.park.asset.building.units': 'Units',
+  'pages.park.asset.building.status': 'Status',
+
+  // asset/index.tsx - unit table columns
+  'pages.park.asset.unit.number': 'Unit Number',
+  'pages.park.asset.unit.building': 'Building',
+  'pages.park.asset.unit.floor': 'Floor',
+  'pages.park.asset.unit.area': 'Area',
+  'pages.park.asset.unit.rent': 'Monthly Rent',
+  'pages.park.asset.unit.type': 'Type',
+  'pages.park.asset.unit.status': 'Status',
 };

@@ -192,6 +192,7 @@ export default {
   'pages.taskManagement.plannedEndTimePlaceholder': 'Select planned end time',
   'pages.taskManagement.participantsPlaceholder': 'Select participants',
   'pages.taskManagement.tagsPlaceholder': 'Enter or select tags',
+  'pages.taskManagement.remarks': 'Remarks',
   'pages.taskManagement.remarksPlaceholder': 'Enter remarks',
   'pages.taskManagement.project': 'Project',
   'pages.taskManagement.projectPlaceholder': 'Select project (optional)',

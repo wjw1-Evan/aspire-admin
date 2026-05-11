@@ -29,16 +29,21 @@ var chat = openai.AddModel("chat", modelName).WithHealthCheck();
 
 var environment = builder.Environment.EnvironmentName;
 
-// Redis
-var redis = builder.AddRedis("redis")
- .WithRedisInsight();
+// Redis - 测试模式跳过 RedisInsight GUI，减少容器资源竞争
+var redis = builder.AddRedis("redis");
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    redis = redis.WithRedisInsight();
+}
 
 // MongoDB - 使用 Aspire 官方集成，自动处理服务发现和连接字符串映射
-var mongo = builder.AddMongoDB("mongo")
-    // .WithLifetime(ContainerLifetime.Persistent)
-    .WithMongoExpress()
-    .WithDataVolume()
-;
+var mongo = builder.AddMongoDB("mongo");
+// 测试模式跳过 MongoExpress GUI，减少容器资源竞争
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    mongo = mongo.WithDataVolume();
+    mongo = mongo.WithMongoExpress();
+}
 
 var database = mongo.AddDatabase("database", ("platform-db-" + environment).ToLower());
 
@@ -84,8 +89,7 @@ var yarp = builder.AddYarp("apigateway")
 
     .WithEndpoint("http", endpoint =>
     {
-        endpoint.Port = 15000;
-
+        endpoint.Port = builder.Environment.IsEnvironment("Testing") ? 15001 : 15000;
         endpoint.TargetHost = "0.0.0.0";
     })
     //  .WithHostPort(15000)

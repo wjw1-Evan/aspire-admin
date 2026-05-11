@@ -1,54 +1,18 @@
-using System;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Threading.Tasks;
-using Aspire.Hosting;
-using Aspire.Hosting.Testing;
 using Xunit;
 
 namespace Platform.AppHost.Tests;
 
-public class UserRegistrationTests : IAsyncLifetime
+[Collection("AspireApp")]
+public class UserRegistrationTests
 {
-    private DistributedApplication? _app;
-    private HttpClient? _httpClient;
+    private readonly AppHostFixture _fixture;
 
-    public async Task InitializeAsync()
+    public UserRegistrationTests(AppHostFixture fixture)
     {
-        var builder = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Platform_AppHost>();
-        builder.Configuration["DOTNET_ENVIRONMENT"] = "Testing";
-        _app = await builder.BuildAsync();
-        await _app.StartAsync();
-
-        _httpClient = _app.CreateHttpClient("apiservice");
-
-        await WaitForServiceReadyAsync(_httpClient);
-    }
-
-    public async Task DisposeAsync()
-    {
-        if (_app != null)
-            await _app.DisposeAsync();
-    }
-
-    private static async Task WaitForServiceReadyAsync(HttpClient httpClient)
-    {
-        var maxRetries = 30;
-        for (var i = 0; i < maxRetries; i++)
-        {
-            try
-            {
-                var response = await httpClient.GetAsync("/health");
-                if (response.IsSuccessStatusCode)
-                    return;
-            }
-            catch
-            {
-            }
-
-            await Task.Delay(TimeSpan.FromSeconds(1));
-        }
+        _fixture = fixture;
     }
 
     [Fact]
@@ -69,7 +33,7 @@ public class UserRegistrationTests : IAsyncLifetime
 
         for (var retry = 0; retry < 10; retry++)
         {
-            response = await _httpClient!.PostAsJsonAsync("/api/auth/register", request);
+            response = await _fixture.ApiClient.PostAsJsonAsync("/api/auth/register", request);
             var content = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)

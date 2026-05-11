@@ -59,7 +59,7 @@ const GatewayManagement = React.forwardRef<GatewayManagementRef, any>((props, re
     { title: intl.formatMessage({ id: 'pages.iotPlatform.gateway.columns.enabled' }), dataIndex: 'isEnabled', sorter: true, render: (dom) => <Tag color={dom ? 'green' : 'red'}>{dom ? intl.formatMessage({ id: 'pages.iotPlatform.datapoint.yes' }) : intl.formatMessage({ id: 'pages.iotPlatform.datapoint.no' })}</Tag> },
     { title: intl.formatMessage({ id: 'pages.iotPlatform.table.action' }), valueType: 'option', fixed: 'right', width: 180, render: (_, record) => (
       <Space size={4}>
-        <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { set({ editingGateway: record, formVisible: true }); form.setFieldsValue({ ...record, config: record.config || undefined }); }}>{intl.formatMessage({ id: 'pages.iotPlatform.gateway.edit' })}</Button>
+        <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { set({ editingGateway: record, formVisible: true }); form.setFieldsValue({ ...record, config: record.config || undefined }); }}>{intl.formatMessage({ id: 'pages.table.edit' })}</Button>
         <Popconfirm title={intl.formatMessage({ id: 'pages.iotPlatform.gateway.deleteConfirm' }, { name: record.title })} onConfirm={async () => { const res = await iotService.deleteGateway(record.id); if (res.success) { message.success(intl.formatMessage({ id: 'pages.iotPlatform.gateway.message.deleteSuccess' })); actionRef.current?.reload(); fetchStatistics(); } }}>
           <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.iotPlatform.gateway.delete' })}</Button>
         </Popconfirm>

@@ -91,7 +91,7 @@ const DataPointManagement = React.forwardRef<DataPointManagementRef, any>((props
     { title: intl.formatMessage({ id: 'pages.iotPlatform.datapoint.enabled' }), dataIndex: 'isEnabled', sorter: true, render: (dom) => <Tag color={dom ? 'success' : 'default'}>{dom ? intl.formatMessage({ id: 'pages.iotPlatform.datapoint.enabledStatus' }) : intl.formatMessage({ id: 'pages.iotPlatform.datapoint.disabledStatus' })}</Tag> },
     { title: intl.formatMessage({ id: 'pages.iotPlatform.table.action' }), valueType: 'option', fixed: 'right', width: 180, render: (_, record) => (
       <Space size={4}>
-        <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { set({ editingDataPoint: record, formVisible: true }); form.setFieldsValue(record); }}>{intl.formatMessage({ id: 'pages.iotPlatform.datapoint.edit' })}</Button>
+        <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { set({ editingDataPoint: record, formVisible: true }); form.setFieldsValue(record); }}>{intl.formatMessage({ id: 'pages.table.edit' })}</Button>
         <Popconfirm title={intl.formatMessage({ id: 'pages.iotPlatform.datapoint.deleteConfirm' }, { name: record.name })} onConfirm={async () => { const res = await iotService.deleteDataPoint(record.id); if (res.success) { message.success(intl.formatMessage({ id: 'pages.iotPlatform.datapoint.message.deleteSuccess' })); actionRef.current?.reload(); fetchStatistics(); } }}>
           <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.iotPlatform.datapoint.delete' })}</Button>
         </Popconfirm>

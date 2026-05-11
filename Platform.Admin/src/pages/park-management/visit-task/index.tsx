@@ -70,7 +70,7 @@ const VisitTaskPage: React.FC = () => {
             title: intl.formatMessage({ id: 'pages.park.visitTask.action' }), valueType: 'option', fixed: 'right', width: 180, render: (_: any, r: VisitTask) => (
                 <Space size={4}>
                     <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => handleViewTask(r.id)}>{intl.formatMessage({ id: 'pages.park.visitTask.view' })}</Button>
-                    {r.status !== 'Completed' && <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingTask: r, formVisible: true })}>{intl.formatMessage({ id: 'pages.park.visitTask.edit' })}</Button>}
+                    {r.status !== 'Completed' && <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingTask: r, formVisible: true })}>{intl.formatMessage({ id: 'pages.table.edit' })}</Button>}
                     {r.status !== 'Completed' && <Popconfirm title={intl.formatMessage({ id: 'pages.park.visitTask.deleteConfirm' }, { title: r.title })} onConfirm={() => handleDelete(r.id)} okText={intl.formatMessage({ id: 'pages.park.visitTask.ok' })} cancelText={intl.formatMessage({ id: 'pages.park.visitTask.cancel' })}><Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.park.visitTask.delete' })}</Button></Popconfirm>}
                 </Space>
             )

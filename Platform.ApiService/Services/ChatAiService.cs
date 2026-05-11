@@ -505,7 +505,7 @@ public class ChatAiService : IChatAiService
                 var hasRealTitle = session.TopicTags?.Any(t => t != "assistant" && t != "direct") == true;
                 if (!hasRealTitle)
                 {
-                    _ = GenerateConversationTitleAsync(session.Id, cancellationToken);
+                    await GenerateConversationTitleAsync(session.Id);
                 }
             }
         }
@@ -514,7 +514,7 @@ public class ChatAiService : IChatAiService
     /// <summary>
     /// 使用 LLM 自动生成对话标题（含重试机制，适用于 fire-and-forget 场景）
     /// </summary>
-    private async Task GenerateConversationTitleAsync(string sessionId, CancellationToken cancellationToken)
+    private async Task GenerateConversationTitleAsync(string sessionId)
     {
         int maxRetries = 3;
         for (int attempt = 1; attempt <= maxRetries; attempt++)

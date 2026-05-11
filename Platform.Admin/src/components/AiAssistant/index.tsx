@@ -13,7 +13,7 @@ import {
 } from '@/services/chat/api';
 import { useSseConnection } from '@/hooks/useSseConnection';
 import type { ChatMessage, ChatSession } from '@/services/chat/api';
-import { AI_ASSISTANT_ID, AI_ASSISTANT_NAME, AI_ASSISTANT_AVATAR } from '@/constants/ai';
+import { AI_ASSISTANT_ID, AI_ASSISTANT_AVATAR } from '@/constants/ai';
 import { getUserAvatar } from '@/utils/avatar';
 
 const { TextArea } = Input;
@@ -731,7 +731,7 @@ const AiAssistant: React.FC<AiAssistantProps> = ({ defaultOpen }) => {
                       }}>
                   {s.topicTags?.[0] && s.topicTags[0] !== 'assistant' && s.topicTags[0] !== 'direct'
                     ? s.topicTags[0]
-                    : `${AI_ASSISTANT_NAME} ${intl.formatMessage({ id: 'components.aiAssistant.conversation' })}`}
+                    : `          ${intl.formatMessage({ id: 'components.aiAssistant.name' })} ${intl.formatMessage({ id: 'components.aiAssistant.conversation' })}`}
                       </div>
                     ),
                     onClick: () => switchToSession(s),
@@ -753,7 +753,7 @@ const AiAssistant: React.FC<AiAssistantProps> = ({ defaultOpen }) => {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, cursor: 'pointer' }}>
                 <Avatar src={AI_ASSISTANT_AVATAR} size={32} />
                 <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: 16 }}>{AI_ASSISTANT_NAME}</div>
+                  <div style={{ fontWeight: 600, fontSize: 16 }}>{intl.formatMessage({ id: 'components.aiAssistant.name' })}</div>
                   {session?.topicTags && session.topicTags.length > 0 && session.topicTags[0] !== 'assistant' && session.topicTags[0] !== 'direct' ? (
                     <div style={{
                       fontSize: 12, color: '#999',
@@ -805,7 +805,7 @@ const AiAssistant: React.FC<AiAssistantProps> = ({ defaultOpen }) => {
             ) : messages.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '60px 20px', color: '#999' }}>
                 <MessageOutlined style={{ fontSize: 48, display: 'block', marginBottom: 16, opacity: 0.3 }} />
-                <div style={{ fontSize: 16, marginBottom: 8 }}>{AI_ASSISTANT_NAME}</div>
+                <div style={{ fontSize: 16, marginBottom: 8 }}>{intl.formatMessage({ id: 'components.aiAssistant.name' })}</div>
                 <div>{intl.formatMessage({ id: 'components.aiAssistant.empty' })}</div>
               </div>
             ) : (
@@ -815,7 +815,7 @@ const AiAssistant: React.FC<AiAssistantProps> = ({ defaultOpen }) => {
                   const currentUserId = currentUser?.id;
                   const isUser = currentUserId && msg.senderId === currentUserId;
                   const senderAvatar = isAssistant ? AI_ASSISTANT_AVATAR : getUserAvatar(currentUser?.avatar);
-                  const senderName = isAssistant ? AI_ASSISTANT_NAME : (msg.senderName || currentUser?.displayName || currentUser?.username || '我');
+                  const senderName = isAssistant ? intl.formatMessage({ id: 'components.aiAssistant.name' }) : (msg.senderName || currentUser?.displayName || currentUser?.username || '我');
 
                   return (
                     <div
@@ -933,7 +933,7 @@ const AiAssistant: React.FC<AiAssistantProps> = ({ defaultOpen }) => {
           icon={<MessageOutlined />}
           type="primary"
           onClick={() => setOpen(true)}
-          tooltip={AI_ASSISTANT_NAME}
+          tooltip={intl.formatMessage({ id: 'components.aiAssistant.name' })}
         />
       )}
     </div>

@@ -15,4 +15,5 @@ export default {
   'components.aiAssistant.send': 'Send',
   'components.aiAssistant.recording': 'Recording, please speak...',
   'components.aiAssistant.voiceInput': 'Voice Input',
+  'components.aiAssistant.name': 'Kai',
 };

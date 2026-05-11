@@ -814,6 +814,7 @@ export default {
   'components.aiAssistant.send': 'Send',
   'components.aiAssistant.recording': 'Recording, please speak...',
   'components.aiAssistant.voiceInput': 'Voice Input',
+  'components.aiAssistant.name': 'Kai',
   'pages.company.myRequests.action.cancel': 'Cancel Request',
   'pages.company.myRequests.action.leave': 'Leave Company',
   'pages.company.myRequests.title': 'My Requests',

@@ -99,7 +99,7 @@ public class XiaokeConfigController : BaseApiController
     public async Task<IActionResult> DeleteConfig(string id)
     {
         var deleted = await _xiaokeConfigService.DeleteConfigAsync(id);
-        return Success(true);
+        return Success(deleted);
     }
 
     /// <summary>
@@ -111,6 +111,6 @@ public class XiaokeConfigController : BaseApiController
     public async Task<IActionResult> SetDefaultConfig(string id)
     {
         var success = await _xiaokeConfigService.SetDefaultConfigAsync(id);
-        return Success(true);
+        return Success(success);
     }
 }

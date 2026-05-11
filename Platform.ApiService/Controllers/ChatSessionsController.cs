@@ -52,4 +52,28 @@ public class ChatSessionsController : BaseApiController
         var session = await _chatService.GetOrCreateAssistantSessionAsync();
         return Success(session);
     }
+
+    /// <summary>
+    /// 创建新的小科会话
+    /// </summary>
+    [HttpPost("assistant/new")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    public async Task<IActionResult> CreateNewAssistantSession()
+    {
+        var session = await _chatService.CreateNewAssistantSessionAsync();
+        return Success(session);
+    }
+
+    /// <summary>
+    /// 根据ID获取会话
+    /// </summary>
+    [HttpGet("{sessionId}")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetSessionById(string sessionId)
+    {
+        var session = await _chatService.GetSessionByIdAsync(sessionId);
+        if (session == null)
+            return NotFound(new { success = false, message = "会话不存在" });
+        return Success(session);
+    }
 }

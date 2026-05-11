@@ -41,7 +41,8 @@ public class ChatHistoryService : IChatHistoryService
             LastMessageExcerpt = s.LastMessageExcerpt,
             LastMessageAt = s.LastMessageAt,
             MessageCount = messageCounts.GetValueOrDefault(s.Id!, 0),
-            CreatedAt = s.CreatedAt
+            CreatedAt = s.CreatedAt,
+            TopicTags = s.TopicTags
         }).ToList();
 
         return new System.Linq.Dynamic.Core.PagedResult<ChatHistoryListItemDto>

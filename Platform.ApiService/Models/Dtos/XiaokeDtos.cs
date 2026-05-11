@@ -100,6 +100,8 @@ public class ChatHistoryListItemDto
     public int MessageCount { get; set; }
 
     public DateTime? CreatedAt { get; set; }
+
+    public List<string>? TopicTags { get; set; }
 }
 
 public class ChatHistoryDetailResponse

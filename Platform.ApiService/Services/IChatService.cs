@@ -84,6 +84,11 @@ public interface IChatService
     Task<ChatSession> GetOrCreateAssistantSessionAsync();
 
     /// <summary>
+    /// 创建新的小科会话
+    /// </summary>
+    Task<ChatSession> CreateNewAssistantSessionAsync();
+
+    /// <summary>
     /// 发送消息并流式生成 AI 回复（支持回调）
     /// </summary>
     /// <param name="request">发送请求</param>

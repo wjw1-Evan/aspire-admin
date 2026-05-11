@@ -15,6 +15,11 @@ public interface IAiAssistantCoordinator
     /// 为当前登录用户确保 AI 助手专属会话存在。
     /// </summary>
     Task<ChatSession> EnsureAssistantSessionForCurrentUserAsync();
+
+    /// <summary>
+    /// 为当前用户创建一个新的 AI 助手会话（每次都新建）。
+    /// </summary>
+    Task<ChatSession> CreateNewAssistantSessionAsync();
 }
 
 /// <summary>
@@ -45,7 +50,6 @@ public class AiAssistantCoordinator : IAiAssistantCoordinator
     /// <inheritdoc />
     public async Task<ChatSession> EnsureAssistantSessionForCurrentUserAsync()
     {
-        
         var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
         var user = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == currentUserId)
             ?? throw new InvalidOperationException("未找到当前用户信息，无法创建 AI 助手会话。");
@@ -81,6 +85,53 @@ public class AiAssistantCoordinator : IAiAssistantCoordinator
             return existing[0];
         }
 
+
+        var participantNames = new Dictionary<string, string>
+        {
+            [user.Id] = user.Name ?? user.Username,
+            [AiAssistantConstants.AssistantUserId] = AiAssistantConstants.AssistantDisplayName
+        };
+
+        var participantAvatars = new Dictionary<string, string>();
+        if (!string.IsNullOrWhiteSpace(user.Avatar))
+        {
+            participantAvatars[user.Id] = user.Avatar;
+        }
+        participantAvatars[AiAssistantConstants.AssistantUserId] = AiAssistantConstants.AssistantAvatarUrl;
+
+        var unreadCounts = new Dictionary<string, int>
+        {
+            [user.Id] = 0,
+            [AiAssistantConstants.AssistantUserId] = 0
+        };
+
+        var session = new ChatSession
+        {
+            CompanyId = companyId,
+            Participants = new List<string> { user.Id, AiAssistantConstants.AssistantUserId },
+            ParticipantNames = participantNames,
+            ParticipantAvatars = participantAvatars,
+            UnreadCounts = unreadCounts,
+            TopicTags = new List<string> { "assistant", "direct" }
+        };
+
+        await _context.Set<ChatSession>().AddAsync(session);
+        await _context.SaveChangesAsync();
+        return session;
+    }
+
+    /// <inheritdoc />
+    public async Task<ChatSession> CreateNewAssistantSessionAsync()
+    {
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
+        var user = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == currentUserId)
+            ?? throw new InvalidOperationException("未找到当前用户信息，无法创建 AI 助手会话。");
+
+        var companyId = user.CurrentCompanyId ?? user.PersonalCompanyId;
+        if (string.IsNullOrWhiteSpace(companyId))
+        {
+            throw new InvalidOperationException("当前用户尚未加入任何企业，无法建立 AI 助手会话。");
+        }
 
         var participantNames = new Dictionary<string, string>
         {

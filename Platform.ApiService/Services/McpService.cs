@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services.Mcp;
@@ -16,20 +17,26 @@ public class McpService : IMcpService
 {
     private const int MaxMatchedTools = 2;
     private const double MinimumMatchScore = 5.0;
+    private const string ToolsCacheKey = "McpService_AllTools";
+    private static readonly TimeSpan ToolsCacheDuration = TimeSpan.FromMinutes(10);
 
     private readonly IEnumerable<IMcpToolHandler> _handlers;
+    private readonly IMemoryCache _cache;
     private readonly ILogger<McpService> _logger;
 
     /// <summary>
     /// 初始化 MCP 服务
     /// </summary>
     /// <param name="handlers">工具处理器集合</param>
+    /// <param name="cache">内存缓存</param>
     /// <param name="logger">日志对象</param>
     public McpService(
         IEnumerable<IMcpToolHandler> handlers,
+        IMemoryCache cache,
         ILogger<McpService> logger)
     {
         _handlers = handlers;
+        _cache = cache ?? throw new ArgumentNullException(nameof(cache));
         _logger = logger;
     }
 
@@ -104,12 +111,11 @@ public class McpService : IMcpService
     /// <param name="cancellationToken">取消令牌</param>
     /// <returns>工具执行结果摘要，若无匹配则返回 null</returns>
     public async Task<McpToolExecutionResult?> DetectAndCallMcpToolsAsync(
-        ChatSession session,
-        ChatMessage userMessage,
+        string userMessageContent,
         string currentUserId,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(userMessage.Content))
+        if (string.IsNullOrWhiteSpace(userMessageContent))
             return null;
 
         try
@@ -118,12 +124,12 @@ public class McpService : IMcpService
             if (!tools.Any()) return null;
 
             // 1. 匹配工具
-            var matchedTools = ScoreAndMatchTools(userMessage.Content, tools);
+            var matchedTools = ScoreAndMatchTools(userMessageContent, tools);
             if (!matchedTools.Any()) return null;
 
             // 2. 过滤命令类工具（无动作意图时不执行 create/delete/update）
             var actionKeywords = new[] { "删", "建", "新", "改", "设", "转", "审", "批", "标记", "处", "退", "增", "加", "去", "撤" };
-            var hasActionIntent = actionKeywords.Any(k => userMessage.Content.Contains(k));
+            var hasActionIntent = actionKeywords.Any(k => userMessageContent.Contains(k));
 
             var toolsToExecute = matchedTools.Where(t =>
             {
@@ -140,7 +146,7 @@ public class McpService : IMcpService
             {
                 try
                 {
-                    var args = ResolveParameters(tool, userMessage.Content);
+                    var args = ResolveParameters(tool, userMessageContent);
                     var response = await CallToolAsync(
                         new McpCallToolRequest { Name = tool.Name, Arguments = args },
                         currentUserId);
@@ -208,12 +214,17 @@ public class McpService : IMcpService
 
     private async Task<List<McpTool>> GetAllToolsAsync()
     {
-        var allTools = new List<McpTool>();
-        foreach (var handler in _handlers)
+        return await _cache.GetOrCreateAsync(ToolsCacheKey, async entry =>
         {
-            allTools.AddRange(await handler.GetToolDefinitionsAsync());
-        }
-        return allTools;
+            entry.AbsoluteExpirationRelativeToNow = ToolsCacheDuration;
+
+            var allTools = new List<McpTool>();
+            foreach (var handler in _handlers)
+            {
+                allTools.AddRange(await handler.GetToolDefinitionsAsync());
+            }
+            return allTools;
+        }) ?? new List<McpTool>();
     }
 
     /// <summary>

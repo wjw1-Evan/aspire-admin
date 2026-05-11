@@ -25,5 +25,5 @@ public interface IMcpService
     /// <summary>
     /// 自动检测并调用相关的 MCP 工具（AI 助手前置处理）
     /// </summary>
-    Task<McpToolExecutionResult?> DetectAndCallMcpToolsAsync(ChatSession session, ChatMessage userMessage, string currentUserId, CancellationToken cancellationToken);
+    Task<McpToolExecutionResult?> DetectAndCallMcpToolsAsync(string userMessageContent, string currentUserId, CancellationToken cancellationToken);
 }

@@ -161,11 +161,16 @@ public class ChatAiService : IChatAiService
                 xiaokeConfig.Model, xiaokeConfig.Temperature, xiaokeConfig.MaxTokens);
 
             var systemPrompt = await GetEffectiveSystemPrompt(triggerMessage.SenderId, xiaokeConfig);
-            var conversationMessages = await BuildAssistantConversationMessagesAsync(session, triggerMessage, cancellationToken);
+
+            var conversationTask = BuildAssistantConversationMessagesAsync(session, triggerMessage, cancellationToken);
+            var mcpTask = _mcpService.DetectAndCallMcpToolsAsync(triggerMessage.Content, triggerMessage.SenderId, cancellationToken);
+            await Task.WhenAll(conversationTask, mcpTask);
+
+            var conversationMessages = await conversationTask;
             if (conversationMessages.Count == 0) return null;
             _logger.LogInformation("历史记录构建完成，共 {Count} 条消息。", conversationMessages.Count);
 
-            var mcpResult = await _mcpService.DetectAndCallMcpToolsAsync(session, triggerMessage, triggerMessage.SenderId, cancellationToken);
+            var mcpResult = await mcpTask;
             string? toolResultContext = mcpResult?.Context;
             _logger.LogInformation("MCP 工具检查完成。是否有工具上下文: {HasContext}", !string.IsNullOrEmpty(toolResultContext));
 
@@ -493,6 +498,78 @@ public class ChatAiService : IChatAiService
         if (session != null)
         {
             await _sessionService.UpdateSessionAfterMessageAsync(session, msg, AiAssistantConstants.AssistantUserId);
+
+            // 自动总结对话标题（仅在标题还是默认标签 "assistant"/"direct" 时触发）
+            if (!string.IsNullOrWhiteSpace(finalContent))
+            {
+                var hasRealTitle = session.TopicTags?.Any(t => t != "assistant" && t != "direct") == true;
+                if (!hasRealTitle)
+                {
+                    _ = GenerateConversationTitleAsync(session.Id, cancellationToken);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 使用 LLM 自动生成对话标题
+    /// </summary>
+    private async Task GenerateConversationTitleAsync(string sessionId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var messages = await _context.Set<ChatMessage>()
+                .Where(m => m.SessionId == sessionId && !m.IsRecalled && m.IsDeleted != true)
+                .OrderBy(m => m.CreatedAt)
+                .Take(6)
+                .ToListAsync();
+
+            if (messages.Count < 2) return;
+
+            var conversationPreview = new StringBuilder();
+            foreach (var m in messages)
+            {
+                var role = m.SenderId == AiAssistantConstants.AssistantUserId ? "助手" : "用户";
+                var content = m.Content?.Length > 100 ? m.Content[..100] + "..." : m.Content;
+                conversationPreview.AppendLine($"{role}: {content}");
+            }
+
+            var systemPrompt = "你是一个对话标题生成器。根据以下对话内容，生成一个简短的中文标题（不超过15个字），概括对话主题。只输出标题本身，不要加引号和额外说明。";
+            var titleMessages = new List<Microsoft.Extensions.AI.ChatMessage>
+            {
+                new(ChatRole.System, systemPrompt),
+                new(ChatRole.User, conversationPreview.ToString())
+            };
+
+            var response = await _openAiClient.GetResponseAsync(titleMessages, new ChatOptions
+            {
+                Temperature = 0.3f,
+                MaxOutputTokens = 50,
+                ModelId = "gpt-4o-mini"
+            }, cancellationToken);
+
+            var title = response?.Text?.Trim().Trim('"', '\'', '「', '」').Trim();
+            if (string.IsNullOrWhiteSpace(title) || title.Length > 50) return;
+
+            var session = await _context.Set<ChatSession>().FirstOrDefaultAsync(s => s.Id == sessionId);
+            if (session == null) return;
+
+            session.TopicTags ??= new List<string>();
+            // 替换默认标签（assistant/direct）为真实标题，或追加到空列表
+            if (session.TopicTags.Count > 0 && (session.TopicTags[0] == "assistant" || session.TopicTags[0] == "direct"))
+            {
+                session.TopicTags[0] = title;
+            }
+            else if (session.TopicTags.Count == 0)
+            {
+                session.TopicTags.Add(title);
+            }
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("自动生成对话标题成功 | 会话={SessionId} | 标题={Title}", sessionId, title);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "自动生成对话标题失败 | 会话={SessionId}", sessionId);
         }
     }
 

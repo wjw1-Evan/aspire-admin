@@ -117,6 +117,9 @@ public class ChatSessionService : IChatSessionService
     public async Task<ChatSession> GetOrCreateAssistantSessionAsync()
     => await _aiAssistantCoordinator.EnsureAssistantSessionForCurrentUserAsync();
 
+    public async Task<ChatSession> CreateNewAssistantSessionAsync()
+    => await _aiAssistantCoordinator.CreateNewAssistantSessionAsync();
+
     public async Task<ChatSession> GetOrCreateDirectSessionAsync(string participantUserId)
     {
         var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);

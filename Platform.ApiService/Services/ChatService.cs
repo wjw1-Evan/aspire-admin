@@ -141,4 +141,7 @@ public class ChatService : IChatService
 
     public Task<ChatSession> GetOrCreateAssistantSessionAsync()
         => _sessionService.GetOrCreateAssistantSessionAsync();
+
+    public Task<ChatSession> CreateNewAssistantSessionAsync()
+        => _sessionService.CreateNewAssistantSessionAsync();
 }

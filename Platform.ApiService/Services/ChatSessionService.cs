@@ -314,14 +314,10 @@ public class ChatSessionService : IChatSessionService
         if (session == null) return;
 
         session.TopicTags ??= new List<string>();
-        if (session.TopicTags.Count > 0 && (session.TopicTags[0] == "assistant" || session.TopicTags[0] == "direct"))
-        {
+        if (session.TopicTags.Count > 0)
             session.TopicTags[0] = title;
-        }
-        else if (session.TopicTags.Count == 0)
-        {
+        else
             session.TopicTags.Add(title);
-        }
         await _context.SaveChangesAsync();
         _logger.LogInformation("【标题调试】更新会话标题 | 会话={SessionId} | 标题={Title}", sessionId, title);
 

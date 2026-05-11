@@ -58,42 +58,15 @@ public class ChatService : IChatService
 
         var session = await _sessionService.EnsureSessionAccessibleAsync(request.SessionId);
 
-        var messageCount = await _sessionService.GetMessageCountAsync(session.Id);
-        _logger.LogInformation("【标题调试】发送消息后消息数 | 会话={SessionId} | 计数={Count}", session.Id, messageCount);
-
-        if (messageCount == 1)
+        // Phase 1：TopicTags 仍是默认值时，用消息内容做标题
+        if ((session.TopicTags?.Any(t => t != "assistant" && t != "direct") != true)
+            && !string.IsNullOrWhiteSpace(userMessage.Content))
         {
-            var title = userMessage.Content?.Trim();
-            if (!string.IsNullOrWhiteSpace(title))
-            {
-                if (title.Length > 50) title = title[..50] + "...";
-                _logger.LogInformation("【标题调试】第一条消息，使用内容作为标题 | 会话={SessionId} | 标题={Title}", session.Id, title);
-                await _sessionService.UpdateSessionTitleAsync(session.Id, title);
-            }
+            var title = userMessage.Content.Trim();
+            if (title.Length > 50) title = title[..50] + "...";
+            await _sessionService.UpdateSessionTitleAsync(session.Id, title);
         }
-        else if (messageCount == 2)
-        {
-            _logger.LogInformation("【标题调试】第二条消息，触发 AI 总结标题 | 会话={SessionId}", session.Id);
-            var (companyId, userId) = (session.CompanyId, userMessage.SenderId);
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await using var scope = _scopeFactory.CreateAsyncScope();
-                    var tenantSetter = scope.ServiceProvider.GetRequiredService<ITenantContextSetter>();
-                    tenantSetter.SetContext(companyId, userId);
-
-                    var aiService = scope.ServiceProvider.GetRequiredService<IChatAiService>();
-                    _logger.LogInformation("【标题调试】开始 AI 总结标题 | 会话={SessionId}", session.Id);
-                    await aiService.GenerateConversationTitleAsync(session.Id);
-                    _logger.LogInformation("【标题调试】AI 总结标题完成 | 会话={SessionId}", session.Id);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "【标题调试】AI 总结标题失败 | 会话={SessionId}", session.Id);
-                }
-            });
-        }
+        // Phase 2 见 CompleteStreamingMessageAsync（第二轮对话后 AI 总结）
 
         if (session.Participants.Contains(AiAssistantConstants.AssistantUserId) && userMessage.Type == ChatMessageType.Text)
         {

@@ -499,173 +499,87 @@ public class ChatAiService : IChatAiService
         {
             await _sessionService.UpdateSessionAfterMessageAsync(session, msg, AiAssistantConstants.AssistantUserId);
 
-            // 自动总结对话标题（仅在标题还是默认标签 "assistant"/"direct" 时触发）
+            // 第二阶段：第二轮对话（2条用户消息）完成后，触发 AI 总结标题
             if (!string.IsNullOrWhiteSpace(finalContent))
             {
-                var hasRealTitle = session.TopicTags?.Any(t => t != "assistant" && t != "direct") == true;
-                if (!hasRealTitle)
+                var userMsgCount = await _context.Set<ChatMessage>()
+                    .CountAsync(m => m.SessionId == msg.SessionId && !m.IsRecalled && m.IsDeleted != true
+                        && m.SenderId != AiAssistantConstants.AssistantUserId);
+
+                if (userMsgCount == 2)
                 {
+                    _logger.LogInformation("【标题调试】AI 总结标题触发 | 会话={SessionId}", session.Id);
                     await GenerateConversationTitleAsync(session.Id);
                 }
             }
         }
     }
 
-    /// <summary>
-    /// 使用 LLM 自动生成对话标题（含重试机制，适用于 fire-and-forget 场景）
-    /// </summary>
     public async Task GenerateConversationTitleAsync(string sessionId)
     {
-        _logger.LogInformation("【标题调试】开始生成对话标题 | 会话={SessionId}", sessionId);
-        int maxRetries = 3;
-        for (int attempt = 1; attempt <= maxRetries; attempt++)
+        var messages = await _context.Set<ChatMessage>()
+            .Where(m => m.SessionId == sessionId && !m.IsRecalled && m.IsDeleted != true)
+            .OrderBy(m => m.CreatedAt)
+            .Take(6)
+            .ToListAsync();
+
+        if (messages.Count < 2) return;
+
+        var preview = new StringBuilder();
+        foreach (var m in messages)
+        {
+            var role = m.SenderId == AiAssistantConstants.AssistantUserId ? "助手" : "用户";
+            var content = m.Content?.Length > 100 ? m.Content[..100] + "..." : m.Content;
+            preview.AppendLine($"{role}: {content}");
+        }
+
+        // 调用 OpenAI 生成标题（3 次重试）
+        string? title = null;
+        for (int attempt = 1; attempt <= 3; attempt++)
         {
             try
             {
-                var messages = await _context.Set<ChatMessage>()
-                    .Where(m => m.SessionId == sessionId && !m.IsRecalled && m.IsDeleted != true)
-                    .OrderBy(m => m.CreatedAt)
-                    .Take(6)
-                    .ToListAsync(CancellationToken.None);
+                var response = await _openAiClient.GetResponseAsync(
+                    new List<Microsoft.Extensions.AI.ChatMessage>
+                    {
+                        new(ChatRole.System, "你是一个对话标题生成器。根据以下对话内容，生成一个简短的中文标题（不超过15个字），概括对话主题。只输出标题本身，不要加引号和额外说明。"),
+                        new(ChatRole.User, preview.ToString())
+                    },
+                    new ChatOptions { Temperature = 0.3f, MaxOutputTokens = 50, ModelId = "gpt-4o-mini" },
+                    CancellationToken.None);
 
-                _logger.LogInformation("【标题调试】查询到消息数 | 会话={SessionId} | 数量={Count}", sessionId, messages.Count);
-                if (messages.Count < 2)
-                {
-                    _logger.LogInformation("【标题调试】消息不足2条，跳过标题生成 | 会话={SessionId}", sessionId);
-                    return;
-                }
-
-                var conversationPreview = new StringBuilder();
-                foreach (var m in messages)
-                {
-                    var role = m.SenderId == AiAssistantConstants.AssistantUserId ? "助手" : "用户";
-                    var content = m.Content?.Length > 100 ? m.Content[..100] + "..." : m.Content;
-                    conversationPreview.AppendLine($"{role}: {content}");
-                }
-
-                _logger.LogInformation("【标题调试】调用 OpenAI 生成标题 | 会话={SessionId} | 参考消息数={Count}", sessionId, messages.Count);
-                var systemPrompt = "你是一个对话标题生成器。根据以下对话内容，生成一个简短的中文标题（不超过15个字），概括对话主题。只输出标题本身，不要加引号和额外说明。";
-                var titleMessages = new List<Microsoft.Extensions.AI.ChatMessage>
-                {
-                    new(ChatRole.System, systemPrompt),
-                    new(ChatRole.User, conversationPreview.ToString())
-                };
-
-                var response = await _openAiClient.GetResponseAsync(titleMessages, new ChatOptions
-                {
-                    Temperature = 0.3f,
-                    MaxOutputTokens = 50,
-                    ModelId = "gpt-4o-mini"
-                }, CancellationToken.None);
-
-                var title = response?.Text?.Trim().Trim('"', '\'', '「', '」').Trim();
-                _logger.LogInformation("【标题调试】OpenAI 返回标题 | 会话={SessionId} | 原始标题={RawTitle}", sessionId, title);
-                if (string.IsNullOrWhiteSpace(title) || title.Length > 50)
-                {
-                    _logger.LogWarning("【标题调试】标题无效或过长，跳过保存 | 会话={SessionId} | 标题={Title}", sessionId, title);
-                    return;
-                }
-
-                var session = await _context.Set<ChatSession>().FirstOrDefaultAsync(s => s.Id == sessionId);
-                if (session == null)
-                {
-                    _logger.LogWarning("【标题调试】会话不存在，无法保存标题 | 会话={SessionId}", sessionId);
-                    return;
-                }
-
-                session.TopicTags ??= new List<string>();
-                if (session.TopicTags.Count > 0 && (session.TopicTags[0] == "assistant" || session.TopicTags[0] == "direct"))
-                {
-                    session.TopicTags[0] = title;
-                }
-                else if (session.TopicTags.Count == 0)
-                {
-                    session.TopicTags.Add(title);
-                }
-                await _context.SaveChangesAsync();
-                _logger.LogInformation("【标题调试】自动生成对话标题成功 | 会话={SessionId} | 标题={Title}", sessionId, title);
-
-                try
-                {
-                    await _broadcaster.BroadcastSessionUpdatedAsync(
-                        session.Participants,
-                        new ChatSessionRealtimePayload { Session = session, BroadcastAtUtc = DateTime.UtcNow });
-                    _logger.LogInformation("【标题调试】广播标题更新成功 | 会话={SessionId}", sessionId);
-                }
-                catch (Exception broadcastEx)
-                {
-                    _logger.LogWarning(broadcastEx, "【标题调试】广播标题更新失败 | 会话={SessionId}", sessionId);
-                }
-
-                return;
+                title = response?.Text?.Trim().Trim('"', '\'', '「', '」').Trim();
+                if (!string.IsNullOrWhiteSpace(title) && title.Length <= 50) break;
+                title = null;
             }
-            catch (Exception ex) when (attempt < maxRetries)
+            catch (Exception) when (attempt < 3)
             {
-                _logger.LogWarning(ex, "【标题调试】自动生成对话标题失败(第{Attempt}/{MaxRetries}次)，即将重试 | 会话={SessionId}", attempt, maxRetries, sessionId);
-                await Task.Delay(TimeSpan.FromSeconds(1) * attempt, CancellationToken.None);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "【标题调试】自动生成对话标题失败(已重试{MaxRetries}次) | 会话={SessionId}", maxRetries, sessionId);
+                await Task.Delay(TimeSpan.FromSeconds(1) * attempt);
             }
         }
 
-        _logger.LogInformation("【标题调试】进入回退标题逻辑 | 会话={SessionId}", sessionId);
-        try
+        // OpenAI 失败时用第一条用户消息回退
+        if (string.IsNullOrWhiteSpace(title))
         {
-            var fallbackMessages = await _context.Set<ChatMessage>()
-                .Where(m => m.SessionId == sessionId && !m.IsRecalled && m.IsDeleted != true)
-                .OrderBy(m => m.CreatedAt)
-                .Take(6)
-                .ToListAsync(CancellationToken.None);
-
-            var firstUserMsg = fallbackMessages.FirstOrDefault(m => m.SenderId != AiAssistantConstants.AssistantUserId);
-            if (firstUserMsg?.Content == null)
-            {
-                _logger.LogWarning("【标题调试】未找到用户消息，无法设置回退标题 | 会话={SessionId}", sessionId);
-                return;
-            }
-
-            var fallbackTitle = firstUserMsg.Content.Trim();
-            if (string.IsNullOrWhiteSpace(fallbackTitle))
-            {
-                _logger.LogWarning("【标题调试】用户消息内容为空，无法设置回退标题 | 会话={SessionId}", sessionId);
-                return;
-            }
-            if (fallbackTitle.Length > 50) fallbackTitle = fallbackTitle[..50] + "...";
-
-            var fallbackSession = await _context.Set<ChatSession>().FirstOrDefaultAsync(s => s.Id == sessionId);
-            if (fallbackSession == null)
-            {
-                _logger.LogWarning("【标题调试】会话不存在，无法设置回退标题 | 会话={SessionId}", sessionId);
-                return;
-            }
-            if (fallbackSession.TopicTags?.Any(t => t != "assistant" && t != "direct") == true)
-            {
-                _logger.LogInformation("【标题调试】已有真实标题，跳过回退 | 会话={SessionId}", sessionId);
-                return;
-            }
-
-            fallbackSession.TopicTags ??= new List<string>();
-            if (fallbackSession.TopicTags.Count > 0 && (fallbackSession.TopicTags[0] == "assistant" || fallbackSession.TopicTags[0] == "direct"))
-            {
-                fallbackSession.TopicTags[0] = fallbackTitle;
-            }
-            else if (fallbackSession.TopicTags.Count == 0)
-            {
-                fallbackSession.TopicTags.Add(fallbackTitle);
-            }
-            await _context.SaveChangesAsync();
-            _logger.LogInformation("【标题调试】使用用户消息作为回退标题 | 会话={SessionId} | 标题={Title}", sessionId, fallbackTitle);
-
-            await _broadcaster.BroadcastSessionUpdatedAsync(
-                fallbackSession.Participants,
-                new ChatSessionRealtimePayload { Session = fallbackSession, BroadcastAtUtc = DateTime.UtcNow });
+            title = messages.FirstOrDefault(m => m.SenderId != AiAssistantConstants.AssistantUserId)?.Content?.Trim() ?? "";
+            if (title == "") return;
         }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "【标题调试】设置回退标题失败 | 会话={SessionId}", sessionId);
-        }
+
+        if (title.Length > 50) title = title[..50] + "...";
+
+        var session = await _context.Set<ChatSession>().FirstOrDefaultAsync(s => s.Id == sessionId);
+        if (session == null) return;
+
+        session.TopicTags ??= new List<string>();
+        if (session.TopicTags.Count > 0)
+            session.TopicTags[0] = title;
+        else
+            session.TopicTags.Add(title);
+        await _context.SaveChangesAsync();
+
+        await _broadcaster.BroadcastSessionUpdatedAsync(
+            session.Participants,
+            new ChatSessionRealtimePayload { Session = session, BroadcastAtUtc = DateTime.UtcNow });
     }
 
     public bool ShouldSkipAutomaticAssistantReply(ChatMessage triggerMessage)

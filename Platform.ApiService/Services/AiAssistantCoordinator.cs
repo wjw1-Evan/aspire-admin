@@ -74,11 +74,15 @@ public class AiAssistantCoordinator : IAiAssistantCoordinator
     private async Task<ChatSession> EnsureAssistantSessionAsync(AppUser user, string companyId)
     {
         _logger.LogDebug("正在查找用户 {UserId} 的现有助手会话 (企业: {CompanyId})", user.Id, companyId);
-        var existing = await _context.Set<ChatSession>().Where(session =>
-            session.CompanyId == companyId &&
-            session.Participants.Count == 2 &&
-            session.Participants.Contains(user.Id) &&
-            session.Participants.Contains(AiAssistantConstants.AssistantUserId)).Take(1).ToListAsync();
+        var existing = await _context.Set<ChatSession>()
+            .Where(session =>
+                session.CompanyId == companyId &&
+                session.Participants.Count == 2 &&
+                session.Participants.Contains(user.Id) &&
+                session.Participants.Contains(AiAssistantConstants.AssistantUserId))
+            .OrderByDescending(s => s.LastMessageAt ?? s.CreatedAt)
+            .Take(1)
+            .ToListAsync();
         if (existing.Count > 0)
         {
             _logger.LogDebug("找到现有助手会话: {SessionId}", existing[0].Id);

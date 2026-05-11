@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { App, ConfigProvider } from 'antd';
+import { App, ConfigProvider, Grid } from 'antd';
 import { IntlProvider } from '@umijs/max';
 import BulkOperationsPanel from '../BulkOperationsPanel';
 import * as workflowApi from '@/services/workflow/api';
@@ -19,14 +19,13 @@ jest.mock('@/hooks/useMessage', () => ({
     }),
 }));
 
-// Override antd mock to also mock App.useApp
 jest.mock('antd', () => {
     const originalAntd = jest.requireActual('antd');
     return {
         ...originalAntd,
         Grid: {
             ...originalAntd.Grid,
-            useBreakpoint: () => ({ md: true }),
+            useBreakpoint: jest.fn(() => ({ md: true })),
         },
         App: {
             ...originalAntd.App,
@@ -38,18 +37,6 @@ jest.mock('antd', () => {
                     info: jest.fn(),
                 },
             }),
-        },
-    };
-});
-
-// Mock antd Grid
-jest.mock('antd', () => {
-    const originalAntd = jest.requireActual('antd');
-    return {
-        ...originalAntd,
-        Grid: {
-            ...originalAntd.Grid,
-            useBreakpoint: () => ({ md: true }),
         },
     };
 });
@@ -270,18 +257,7 @@ describe('BulkOperationsPanel', () => {
 
     describe('响应式布局', () => {
         it('应该在移动端正确显示', () => {
-            // Mock移动端断点
-            jest.doMock('antd', () => {
-                const originalAntd = jest.requireActual('antd');
-                return {
-                    ...originalAntd,
-                    Grid: {
-                        ...originalAntd.Grid,
-                        useBreakpoint: () => ({ md: false }),
-                    },
-                };
-            });
-
+            (Grid.useBreakpoint as jest.Mock).mockReturnValue({ md: false });
             renderWithProviders(<BulkOperationsPanel {...defaultProps} />);
 
             // 验证组件能正常渲染

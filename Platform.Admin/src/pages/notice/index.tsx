@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import {
@@ -11,6 +11,7 @@ import {
   Space,
   Divider,
   Skeleton,
+  message,
 } from 'antd';
 import {
   NotificationOutlined,
@@ -20,79 +21,67 @@ import {
   ReloadOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import { getNotifications, markAllAsRead, AppNotification } from '@/services/notification/api';
 
 const { Text, Title } = Typography;
 
-interface Notice {
-  id: string;
-  title: string;
-  content: string;
-  type: 'system' | 'announcement' | 'warning' | 'info';
-  isRead: boolean;
-  createdAt: string;
-}
+const typeMap: Record<string, { label: string; color: string }> = {
+  System: { label: '系统', color: 'success' },
+  Work: { label: '工作', color: 'blue' },
+  Social: { label: '社交', color: 'purple' },
+  Security: { label: '安全', color: 'warning' },
+};
+
+const typeIconMap: Record<string, React.ReactNode> = {
+  System: <CheckCircleOutlined style={{ color: '#52c41a' }} />,
+  Warning: <WarningOutlined style={{ color: '#faad14' }} />,
+  Info: <InfoCircleOutlined style={{ color: '#1890ff' }} />,
+};
+
+const getIcon = (category: string) => {
+  return typeIconMap[category] || <NotificationOutlined style={{ color: '#722ed1' }} />;
+};
+
+const getTagInfo = (category: string) => {
+  return typeMap[category] || { label: '信息', color: 'default' };
+};
 
 const NoticePage: React.FC = () => {
   const intl = useIntl();
   const [loading, setLoading] = useState(false);
-  const [notices, setNotices] = useState<Notice[]>([]);
+  const [notices, setNotices] = useState<AppNotification[]>([]);
+  const [markingAll, setMarkingAll] = useState(false);
 
-  const fetchNotices = async () => {
+  const unreadCount = notices.filter((n) => n.status === 'Unread').length;
+
+  const fetchNotices = useCallback(async () => {
     setLoading(true);
     try {
-      setTimeout(() => {
-        setNotices([
-          {
-            id: '1',
-            title: '系统维护通知',
-            content: '系统将于今晚 22:00-24:00 进行例行维护，期间部分功能可能无法使用。',
-            type: 'system',
-            isRead: false,
-            createdAt: new Date().toISOString(),
-          },
-          {
-            id: '2',
-            title: '功能更新公告',
-            content: '新增菜单管理功能，管理员可以查看系统菜单结构。',
-            type: 'announcement',
-            isRead: false,
-            createdAt: new Date(Date.now() - 86400000).toISOString(),
-          },
-        ]);
-        setLoading(false);
-      }, 500);
+      const res = await getNotifications({ page: 1, pageSize: 50 });
+      if (res.success && res.data) {
+        setNotices(res.data.queryable || []);
+      }
     } catch {
+      /* silently ignore */
+    } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchNotices();
-  }, []);
+  }, [fetchNotices]);
 
-  const getIcon = (type: string) => {
-    switch (type) {
-      case 'system':
-        return <CheckCircleOutlined style={{ color: '#52c41a' }} />;
-      case 'warning':
-        return <WarningOutlined style={{ color: '#faad14' }} />;
-      case 'info':
-        return <InfoCircleOutlined style={{ color: '#1890ff' }} />;
-      default:
-        return <NotificationOutlined style={{ color: '#722ed1' }} />;
-    }
-  };
-
-  const getTagColor = (type: string) => {
-    switch (type) {
-      case 'system':
-        return 'success';
-      case 'warning':
-        return 'warning';
-      case 'info':
-        return 'blue';
-      default:
-        return 'purple';
+  const handleMarkAllAsRead = async () => {
+    setMarkingAll(true);
+    try {
+      await markAllAsRead();
+      setNotices((prev) => prev.map((n) => ({ ...n, status: 'Read' })));
+      message.success(intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAsReadSuccess' }));
+    } catch {
+      message.error(intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAsReadFailed' }));
+    } finally {
+      setMarkingAll(false);
     }
   };
 
@@ -106,57 +95,66 @@ const NoticePage: React.FC = () => {
           </Space>
         }
         extra={
-          <Button icon={<ReloadOutlined />} onClick={fetchNotices}>
-            {intl.formatMessage({ id: 'pages.common.refresh' })}
-          </Button>
+          <Space>
+            {unreadCount > 0 && (
+              <Button
+                type="primary"
+                icon={<CheckCircleOutlined />}
+                onClick={handleMarkAllAsRead}
+                loading={markingAll}
+              >
+                {intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAllAsRead' })}
+              </Button>
+            )}
+            <Button icon={<ReloadOutlined />} onClick={fetchNotices}>
+              {intl.formatMessage({ id: 'pages.common.refresh' })}
+            </Button>
+          </Space>
         }
       >
         {loading ? (
           <Skeleton active paragraph={{ rows: 5 }} />
         ) : notices.length > 0 ? (
-          notices.map((item) => (
-                <div
-                  key={item.id}
-                  style={{
-                    padding: 16,
-                    backgroundColor: item.isRead ? '#fafafa' : '#e6f7ff',
-                    borderRadius: 8,
-                    borderLeft: `4px solid ${
-                      item.isRead ? '#d9d9d9' : '#1890ff'
-                    }`,
-                  }}
-                >
-                  <Space align="start" style={{ width: '100%' }}>
-                    {getIcon(item.type)}
-                    <div style={{ flex: 1 }}>
-                      <Space>
-                        <Title level={5} style={{ margin: 0 }}>
-                          {!item.isRead && (
-                            <Badge status="processing" style={{ marginRight: 8 }} />
-                          )}
-                          {item.title}
-                        </Title>
-                        <Tag color={getTagColor(item.type)}>
-                          {item.type === 'system'
-                            ? '系统'
-                            : item.type === 'announcement'
-                            ? '公告'
-                            : item.type === 'warning'
-                            ? '警告'
-                            : '信息'}
-                        </Tag>
-                      </Space>
-                      <Divider style={{ margin: '8px 0' }} />
-                      <Text type="secondary">{item.content}</Text>
-                      <div style={{ marginTop: 8 }}>
-                        <Text type="secondary" style={{ fontSize: 12 }}>
-                          {dayjs(item.createdAt).format('YYYY-MM-DD HH:mm:ss')}
-                        </Text>
-                      </div>
+          notices.map((item) => {
+            const tagInfo = getTagInfo(item.category);
+            const isUnread = item.status === 'Unread';
+            return (
+              <div
+                key={item.id}
+                style={{
+                  padding: 16,
+                  backgroundColor: isUnread ? '#e6f7ff' : '#fafafa',
+                  borderRadius: 8,
+                  borderLeft: `4px solid ${isUnread ? '#1890ff' : '#d9d9d9'}`,
+                  marginBottom: 8,
+                }}
+              >
+                <Space align="start" style={{ width: '100%' }}>
+                  {getIcon(item.category)}
+                  <div style={{ flex: 1 }}>
+                    <Space>
+                      <Title level={5} style={{ margin: 0 }}>
+                        {isUnread && (
+                          <Badge status="processing" style={{ marginRight: 8 }} />
+                        )}
+                        {item.title}
+                      </Title>
+                      <Tag color={tagInfo.color}>{tagInfo.label}</Tag>
+                    </Space>
+                    <Divider style={{ margin: '8px 0' }} />
+                    <Text type="secondary">{item.content}</Text>
+                    <div style={{ marginTop: 8 }}>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        {item.createdAt
+                          ? dayjs(item.createdAt).format('YYYY-MM-DD HH:mm:ss')
+                          : ''}
+                      </Text>
                     </div>
-                  </Space>
-                </div>
-              ))
+                  </div>
+                </Space>
+              </div>
+            );
+          })
         ) : (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useNavigate, getIntl } from '@umijs/max';
 import { Badge, Button, Space, Empty, Spin, Tag, Typography } from 'antd';
 import { BellOutlined, CheckCircleOutlined, InfoCircleOutlined, WarningOutlined, CloseCircleOutlined, DeleteOutlined, LoadingOutlined } from '@ant-design/icons';
@@ -42,8 +42,6 @@ const NoticeIcon: React.FC = () => {
   const [hasMore, setHasMore] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const listRef = useRef<HTMLDivElement>(null);
-  const unread = unreadCount;
-  const read = statistics.Total - unreadCount;
   const total = statistics.Total;
   const isInitialLoad = useRef(true);
 
@@ -127,28 +125,33 @@ const NoticeIcon: React.FC = () => {
   const notificationList = (
     <div className={styles.notificationPanel}>
       <div className={styles.notificationHeader}>
-        <Text strong>{intl.formatMessage({ id: 'pages.unifiedNotificationCenter.title' })}</Text>
-        <Space>
-        <Button
-             type={showUnreadOnly ? 'primary' : 'default'}
-             size="small"
-             onClick={() => { setShowUnreadOnly(!showUnreadOnly); isInitialLoad.current = true; }}
-           >
-             {intl.formatMessage({ id: 'pages.unifiedNotificationCenter.unread' })}
-           </Button>
-           <Button
-             type="link"
-             size="small"
-             onClick={() => handleMarkAllAsRead()}
-             icon={<CheckCircleOutlined />}
-           >
-             {intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAllAsRead' })}
-           </Button>
-        </Space>
-      </div>
-      <div className={styles.notificationStats}>
-        <span style={{ color: '#1677ff' }}>{intl.formatMessage({ id: 'pages.unifiedNotificationCenter.unreadCount' }, { count: unread })}</span>
-        <span style={{ color: '#52c41a' }}>{intl.formatMessage({ id: 'pages.unifiedNotificationCenter.readCount' }, { count: read })}</span>
+        <Text strong style={{ fontSize: 16 }}>{intl.formatMessage({ id: 'pages.unifiedNotificationCenter.title' })}</Text>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+          {unreadCount > 0 && (
+            <Button
+                type={showUnreadOnly ? 'primary' : 'default'}
+                size="small"
+                style={{ marginRight: 4 }}
+                onClick={() => { setShowUnreadOnly(!showUnreadOnly); isInitialLoad.current = true; }}
+              >
+                {intl.formatMessage({ id: 'pages.unifiedNotificationCenter.unread' })}
+              </Button>
+            )}
+            {unreadCount > 0 && (
+              <Button
+                type="link"
+                size="small"
+                onClick={() => handleMarkAllAsRead()}
+                icon={<CheckCircleOutlined />}
+              >
+                {intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAllAsRead' })}
+              </Button>
+            )}
+         </div>
+       </div>
+       <div className={styles.notificationStats}>
+         <span style={{ color: '#1677ff' }}>{intl.formatMessage({ id: 'pages.unifiedNotificationCenter.unreadCount' }, { count: unreadCount })}</span>
+         <span style={{ color: '#52c41a' }}>{intl.formatMessage({ id: 'pages.unifiedNotificationCenter.readCount' }, { count: total - unreadCount })}</span>
         <span>{intl.formatMessage({ id: 'pages.unifiedNotificationCenter.totalCount' }, { count: total })}</span>
       </div>
       

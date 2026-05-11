@@ -216,12 +216,11 @@ const AiAssistant: React.FC<AiAssistantProps> = ({ defaultOpen }) => {
           return updated;
         });
 
-        // 如果没有标题，刷新会话获取自动生成的标题
-        if (!session.topicTags || session.topicTags.length === 0) {
-          getSession(session.id).then((updatedSession) => {
-            if (updatedSession) setSession(updatedSession);
-          });
-        }
+        // 每次消息完成都刷新会话，确保能捕获到后台生成的标题
+        // （SSE SessionUpdated 广播可能因网络原因未到达，此调用作为可靠 fallback）
+        getSession(session.id).then((updatedSession) => {
+          if (updatedSession) setSession(updatedSession);
+        });
       }
     });
 

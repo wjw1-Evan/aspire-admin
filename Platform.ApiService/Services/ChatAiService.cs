@@ -594,6 +594,46 @@ public class ChatAiService : IChatAiService
                 _logger.LogWarning(ex, "自动生成对话标题失败(已重试{MaxRetries}次) | 会话={SessionId}", maxRetries, sessionId);
             }
         }
+
+        try
+        {
+            var fallbackMessages = await _context.Set<ChatMessage>()
+                .Where(m => m.SessionId == sessionId && !m.IsRecalled && m.IsDeleted != true)
+                .OrderBy(m => m.CreatedAt)
+                .Take(6)
+                .ToListAsync(CancellationToken.None);
+
+            var firstUserMsg = fallbackMessages.FirstOrDefault(m => m.SenderId != AiAssistantConstants.AssistantUserId);
+            if (firstUserMsg?.Content == null) return;
+
+            var fallbackTitle = firstUserMsg.Content.Trim();
+            if (string.IsNullOrWhiteSpace(fallbackTitle)) return;
+            if (fallbackTitle.Length > 50) fallbackTitle = fallbackTitle[..50] + "...";
+
+            var fallbackSession = await _context.Set<ChatSession>().FirstOrDefaultAsync(s => s.Id == sessionId);
+            if (fallbackSession == null) return;
+            if (fallbackSession.TopicTags?.Any(t => t != "assistant" && t != "direct") == true) return;
+
+            fallbackSession.TopicTags ??= new List<string>();
+            if (fallbackSession.TopicTags.Count > 0 && (fallbackSession.TopicTags[0] == "assistant" || fallbackSession.TopicTags[0] == "direct"))
+            {
+                fallbackSession.TopicTags[0] = fallbackTitle;
+            }
+            else if (fallbackSession.TopicTags.Count == 0)
+            {
+                fallbackSession.TopicTags.Add(fallbackTitle);
+            }
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("使用用户消息作为回退标题 | 会话={SessionId} | 标题={Title}", sessionId, fallbackTitle);
+
+            await _broadcaster.BroadcastSessionUpdatedAsync(
+                fallbackSession.Participants,
+                new ChatSessionRealtimePayload { Session = fallbackSession, BroadcastAtUtc = DateTime.UtcNow });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "设置回退标题失败 | 会话={SessionId}", sessionId);
+        }
     }
 
     public bool ShouldSkipAutomaticAssistantReply(ChatMessage triggerMessage)

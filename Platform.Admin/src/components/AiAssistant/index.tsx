@@ -712,9 +712,9 @@ const AiAssistant: React.FC<AiAssistantProps> = ({ defaultOpen }) => {
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
                       }}>
-                        {s.topicTags?.[0] && s.topicTags[0] !== 'assistant'
-                          ? s.topicTags[0]
-                          : `${AI_ASSISTANT_NAME} ${intl.formatMessage({ id: 'components.aiAssistant.conversation' })}`}
+                  {s.topicTags?.[0] && s.topicTags[0] !== 'assistant' && s.topicTags[0] !== 'direct'
+                    ? s.topicTags[0]
+                    : `${AI_ASSISTANT_NAME} ${intl.formatMessage({ id: 'components.aiAssistant.conversation' })}`}
                       </div>
                     ),
                     onClick: () => switchToSession(s),
@@ -737,14 +737,18 @@ const AiAssistant: React.FC<AiAssistantProps> = ({ defaultOpen }) => {
                 <Avatar src={AI_ASSISTANT_AVATAR} size={32} />
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ fontWeight: 600, fontSize: 16 }}>{AI_ASSISTANT_NAME}</div>
-                  {session?.topicTags && session.topicTags.length > 0 && session.topicTags[0] !== 'assistant' && (
+                  {session?.topicTags && session.topicTags.length > 0 && session.topicTags[0] !== 'assistant' && session.topicTags[0] !== 'direct' ? (
                     <div style={{
                       fontSize: 12, color: '#999',
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200,
                     }}>
                       {session.topicTags[0]}
                     </div>
-                  )}
+                  ) : session ? (
+                    <div style={{ fontSize: 12, color: '#bbb' }}>
+                      {intl.formatMessage({ id: 'components.aiAssistant.identifying' })}
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </Dropdown>

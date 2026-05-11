@@ -85,7 +85,11 @@ const ChatHistoryManagement: React.FC = () => {
         if (tag && tag !== 'assistant' && tag !== 'direct') {
           return <span style={{ fontWeight: 500 }}>{tag}</span>;
         }
-        return <span style={{ color: '#999' }}>{record.sessionId}</span>;
+        return (
+          <span style={{ color: '#999' }}>
+            {intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.table.defaultTitle' })}
+          </span>
+        );
       },
     },
     {

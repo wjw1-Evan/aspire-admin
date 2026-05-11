@@ -40,6 +40,11 @@ const ChatHistoryDetail: React.FC<ChatHistoryDetailProps> = ({
         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.detail.sessionId' })}>
           {session.id}
         </ProDescriptions.Item>
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.detail.topicTags' })}>
+          {session.topicTags && session.topicTags.length > 0
+            ? session.topicTags.join(' / ')
+            : '-'}
+        </ProDescriptions.Item>
         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.detail.participants' })}>
           <Space>
             {session.participants.map((participantId) => (

@@ -902,6 +902,7 @@ export default {
   'components.aiAssistant.newConversation': 'New Conversation',
   'components.aiAssistant.conversation': 'Conversation',
   'components.aiAssistant.createSessionFailed': 'Failed to create new conversation, please try again',
+'components.aiAssistant.identifying': 'Identifying...',
   'pages.company.myRequests.action.cancel': 'Cancel Request',
   'pages.company.myRequests.action.leave': 'Leave Company',
   'pages.company.myRequests.title': 'My Requests',

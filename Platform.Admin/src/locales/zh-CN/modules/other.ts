@@ -910,6 +910,7 @@ export default {
   'components.aiAssistant.newConversation': '新建对话',
   'components.aiAssistant.conversation': '对话',
   'components.aiAssistant.createSessionFailed': '创建新对话失败，请重试',
+  'components.aiAssistant.identifying': '正在识别...',
 
   // MyJoinRequestsTable
   'pages.company.myRequests.action.cancel': '撤销申请',

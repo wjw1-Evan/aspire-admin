@@ -60,17 +60,14 @@ public class KnowledgeDocumentService : IKnowledgeDocumentService
 
     public async Task<bool> DeleteAsync(string id)
     {
-        var doc = await _context.Set<KnowledgeDocument>().FirstOrDefaultAsync(x => x.Id == id);
-        if (doc == null) return false;
-
         var entity = await _context.Set<KnowledgeDocument>().FirstOrDefaultAsync(x => x.Id == id);
-        if (entity != null) { _context.Set<KnowledgeDocument>().Remove(entity); await _context.SaveChangesAsync(); }
-        var result = entity != null;
-        if (result)
-        {
-            await UpdateKnowledgeBaseItemCount(doc.KnowledgeBaseId, -1);
-        }
-        return result;
+        if (entity == null) return false;
+
+        var knowledgeBaseId = entity.KnowledgeBaseId;
+        _context.Set<KnowledgeDocument>().Remove(entity);
+        await _context.SaveChangesAsync();
+        await UpdateKnowledgeBaseItemCount(knowledgeBaseId, -1);
+        return true;
     }
 
     private async Task UpdateKnowledgeBaseItemCount(string knowledgeBaseId, int delta)

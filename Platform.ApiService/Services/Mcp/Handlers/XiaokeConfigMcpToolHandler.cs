@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using Microsoft.Extensions.Logging;
@@ -8,19 +9,23 @@ namespace Platform.ApiService.Services.Mcp.Handlers;
 /// <summary>
 /// 小科 AI 配置 MCP 工具处理器 - 提供小科配置管理和聊天历史查询能力
 /// </summary>
+/// <remarks>
+/// 聊天域服务（IChatHistoryService）通过 IServiceScopeFactory 惰性解析，
+/// 避免 DI 容器在构造时解析到 IMcpService → IChatAiService → ... → 本 Handler 的循环链。
+/// </remarks>
 public class XiaokeConfigMcpToolHandler : McpToolHandlerBase
 {
     private readonly IXiaokeConfigService _xiaokeConfigService;
-    private readonly IChatHistoryService _chatHistoryService;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<XiaokeConfigMcpToolHandler> _logger;
 
     public XiaokeConfigMcpToolHandler(
         IXiaokeConfigService xiaokeConfigService,
-        IChatHistoryService chatHistoryService,
+        IServiceScopeFactory scopeFactory,
         ILogger<XiaokeConfigMcpToolHandler> logger)
     {
         _xiaokeConfigService = xiaokeConfigService;
-        _chatHistoryService = chatHistoryService;
+        _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
         _logger = logger;
 
         #region 小科配置管理
@@ -71,8 +76,7 @@ public class XiaokeConfigMcpToolHandler : McpToolHandlerBase
             {
                 ["name"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "配置名称" },
                 ["model"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "AI 模型名称" },
-                ["endpoint"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "API 端点" },
-                ["apiKey"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "API 密钥" },
+
                 ["systemPrompt"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "系统提示词" },
                 ["temperature"] = new Dictionary<string, object> { ["type"] = "number", ["description"] = "温度参数（0-2）" },
                 ["maxTokens"] = new Dictionary<string, object> { ["type"] = "integer", ["description"] = "最大 Token 数" },
@@ -164,9 +168,11 @@ public class XiaokeConfigMcpToolHandler : McpToolHandlerBase
             )),
             async (args, uid) =>
             {
+                using var scope = _scopeFactory.CreateScope();
+                var chatHistoryService = scope.ServiceProvider.GetRequiredService<IChatHistoryService>();
                 var (Current, PageSize) = ParsePaginationArgs(args);
                 var request = new Platform.ServiceDefaults.Models.ProTableRequest { Current = Current, PageSize = PageSize, Search = args.GetValueOrDefault("keyword")?.ToString() };
-                var result = await _chatHistoryService.GetChatHistoryAsync(request);
+                var result = await chatHistoryService.GetChatHistoryAsync(request);
                 var items = await result.Queryable.ToListAsync();
                 return new { items, rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount };
             });
@@ -178,9 +184,11 @@ public class XiaokeConfigMcpToolHandler : McpToolHandlerBase
             }, ["sessionId"]),
             async (args, uid) =>
             {
+                using var scope = _scopeFactory.CreateScope();
+                var chatHistoryService = scope.ServiceProvider.GetRequiredService<IChatHistoryService>();
                 var sessionId = args.GetValueOrDefault("sessionId")?.ToString();
                 if (string.IsNullOrEmpty(sessionId)) return new { error = "sessionId 必填" };
-                var detail = await _chatHistoryService.GetChatHistoryDetailAsync(sessionId);
+                var detail = await chatHistoryService.GetChatHistoryDetailAsync(sessionId);
                 if (detail == null) return new { error = "会话不存在" };
                 return detail;
             });
@@ -192,9 +200,11 @@ public class XiaokeConfigMcpToolHandler : McpToolHandlerBase
             }, ["sessionId"]),
             async (args, uid) =>
             {
+                using var scope = _scopeFactory.CreateScope();
+                var chatHistoryService = scope.ServiceProvider.GetRequiredService<IChatHistoryService>();
                 var sessionId = args.GetValueOrDefault("sessionId")?.ToString();
                 if (string.IsNullOrEmpty(sessionId)) return new { error = "sessionId 必填" };
-                var result = await _chatHistoryService.DeleteChatHistoryAsync(sessionId);
+                var result = await chatHistoryService.DeleteChatHistoryAsync(sessionId);
                 return result ? new { message = "聊天历史已删除" } : new { error = "会话不存在" };
             });
 

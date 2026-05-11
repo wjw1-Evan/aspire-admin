@@ -1,26 +1,30 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Platform.ApiService.Services.Mcp.Handlers;
 
 /// <summary>
 /// 小科 AI 聊天 MCP 工具处理器 - 提供会话管理和消息交互能力
 /// </summary>
+/// <remarks>
+/// 聊天域服务（IChatSessionService）通过 IServiceScopeFactory 惰性解析，
+/// 避免 DI 容器在构造时解析到 IMcpService → IChatAiService → ... → 本 Handler 的循环链。
+/// </remarks>
 public class ChatAiMcpToolHandler : McpToolHandlerBase
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly IAiSuggestionService _aiSuggestionService;
     private readonly ILogger<ChatAiMcpToolHandler> _logger;
 
     public ChatAiMcpToolHandler(
-        IServiceProvider serviceProvider,
+        IServiceScopeFactory scopeFactory,
         IAiSuggestionService aiSuggestionService,
         ILogger<ChatAiMcpToolHandler> logger)
     {
-        _serviceProvider = serviceProvider;
+        _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
         _aiSuggestionService = aiSuggestionService;
         _logger = logger;
 
@@ -36,10 +40,11 @@ public class ChatAiMcpToolHandler : McpToolHandlerBase
             )),
             async (args, uid) =>
             {
+                using var scope = _scopeFactory.CreateScope();
+                var sessionService = scope.ServiceProvider.GetRequiredService<IChatSessionService>();
                 var (Current, PageSize) = ParsePaginationArgs(args);
                 var request = new Platform.ServiceDefaults.Models.ProTableRequest { Current = Current, PageSize = PageSize, Search = args.GetValueOrDefault("keyword")?.ToString() };
-                var chatService = _serviceProvider.GetRequiredService<IChatService>();
-                var result = await chatService.GetSessionsAsync(request);
+                var result = await sessionService.GetSessionsAsync(request);
                 var items = await result.Queryable.ToListAsync();
                 return new { items, rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount };
             });
@@ -47,8 +52,9 @@ public class ChatAiMcpToolHandler : McpToolHandlerBase
         RegisterTool("get_or_create_assistant_session", "获取或创建与小科 AI 的对话。每个用户只有一个与小科的默认会话。关键词：小科对话,AI对话,开始聊天",
             async (args, uid) =>
             {
-                var chatService = _serviceProvider.GetRequiredService<IChatService>();
-                return await chatService.GetOrCreateAssistantSessionAsync();
+                using var scope = _scopeFactory.CreateScope();
+                var sessionService = scope.ServiceProvider.GetRequiredService<IChatSessionService>();
+                return await sessionService.GetOrCreateAssistantSessionAsync();
             });
 
         RegisterTool("get_session_by_id", "根据会话 ID 获取聊天会话详情。关键词：会话详情,查询会话,查看对话",
@@ -58,10 +64,11 @@ public class ChatAiMcpToolHandler : McpToolHandlerBase
             }, ["sessionId"]),
             async (args, uid) =>
             {
+                using var scope = _scopeFactory.CreateScope();
+                var sessionService = scope.ServiceProvider.GetRequiredService<IChatSessionService>();
                 var sessionId = args.GetValueOrDefault("sessionId")?.ToString();
                 if (string.IsNullOrEmpty(sessionId)) return new { error = "sessionId 必填" };
-                var chatService = _serviceProvider.GetRequiredService<IChatService>();
-                var session = await chatService.GetSessionByIdAsync(sessionId);
+                var session = await sessionService.GetSessionByIdAsync(sessionId);
                 if (session == null) return new { error = "会话不存在" };
                 return session;
             });
@@ -79,12 +86,13 @@ public class ChatAiMcpToolHandler : McpToolHandlerBase
             }, ["sessionId"]),
             async (args, uid) =>
             {
+                using var scope = _scopeFactory.CreateScope();
+                var sessionService = scope.ServiceProvider.GetRequiredService<IChatSessionService>();
                 var sessionId = args.GetValueOrDefault("sessionId")?.ToString();
                 if (string.IsNullOrEmpty(sessionId)) return new { error = "sessionId 必填" };
                 var limit = int.TryParse(args.GetValueOrDefault("limit")?.ToString(), out var l) ? l : 20;
                 var request = new ChatMessageListRequest { Limit = limit, Cursor = args.GetValueOrDefault("cursor")?.ToString() };
-                var chatService = _serviceProvider.GetRequiredService<IChatService>();
-                var (messages, hasMore, nextCursor) = await chatService.GetMessagesAsync(sessionId, request);
+                var (messages, hasMore, nextCursor) = await sessionService.GetMessagesAsync(sessionId, request);
                 return new { items = messages, hasMore, nextCursor };
             });
 
@@ -97,17 +105,17 @@ public class ChatAiMcpToolHandler : McpToolHandlerBase
             }, ["sessionId", "content"]),
             async (args, uid) =>
             {
+                using var scope = _scopeFactory.CreateScope();
+                var sessionService = scope.ServiceProvider.GetRequiredService<IChatSessionService>();
                 var sessionId = args.GetValueOrDefault("sessionId")?.ToString();
                 var content = args.GetValueOrDefault("content")?.ToString();
                 if (string.IsNullOrEmpty(sessionId) || string.IsNullOrEmpty(content)) return new { error = "sessionId 和 content 必填" };
-                var type = Enum.TryParse<ChatMessageType>(args.GetValueOrDefault("messageType")?.ToString(), ignoreCase: true, out var msgType) ? msgType : ChatMessageType.Text;
                 var request = new SendChatMessageRequest
                 {
                     SessionId = sessionId,
                     Content = content
                 };
-                var chatService = _serviceProvider.GetRequiredService<IChatService>();
-                var message = await chatService.SendMessageAsync(request);
+                var message = await sessionService.SendMessageAsync(request, null);
                 return new { message.Id, message.SessionId, message.Content, message.CreatedAt, message.SenderId };
             });
 
@@ -119,11 +127,12 @@ public class ChatAiMcpToolHandler : McpToolHandlerBase
             }, ["sessionId", "lastMessageId"]),
             async (args, uid) =>
             {
+                using var scope = _scopeFactory.CreateScope();
+                var sessionService = scope.ServiceProvider.GetRequiredService<IChatSessionService>();
                 var sessionId = args.GetValueOrDefault("sessionId")?.ToString();
                 var lastMessageId = args.GetValueOrDefault("lastMessageId")?.ToString();
                 if (string.IsNullOrEmpty(sessionId) || string.IsNullOrEmpty(lastMessageId)) return new { error = "sessionId 和 lastMessageId 必填" };
-                var chatService = _serviceProvider.GetRequiredService<IChatService>();
-                await chatService.MarkSessionReadAsync(sessionId, lastMessageId);
+                await sessionService.MarkSessionReadAsync(sessionId, lastMessageId);
                 return new { message = "已标记为已读" };
             });
 
@@ -135,11 +144,12 @@ public class ChatAiMcpToolHandler : McpToolHandlerBase
             }, ["sessionId", "messageId"]),
             async (args, uid) =>
             {
+                using var scope = _scopeFactory.CreateScope();
+                var sessionService = scope.ServiceProvider.GetRequiredService<IChatSessionService>();
                 var sessionId = args.GetValueOrDefault("sessionId")?.ToString();
                 var messageId = args.GetValueOrDefault("messageId")?.ToString();
                 if (string.IsNullOrEmpty(sessionId) || string.IsNullOrEmpty(messageId)) return new { error = "sessionId 和 messageId 必填" };
-                var chatService = _serviceProvider.GetRequiredService<IChatService>();
-                await chatService.DeleteMessageAsync(sessionId, messageId);
+                await sessionService.DeleteMessageAsync(sessionId, messageId);
                 return new { message = "消息已删除" };
             });
 

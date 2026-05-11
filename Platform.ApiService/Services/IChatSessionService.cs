@@ -75,4 +75,14 @@ public interface IChatSessionService
     /// 删除指定消息（软删除）
     /// </summary>
     Task DeleteMessageAsync(string sessionId, string messageId);
+
+    /// <summary>
+    /// 获取会话中的消息数量
+    /// </summary>
+    Task<int> GetMessageCountAsync(string sessionId);
+
+    /// <summary>
+    /// 更新会话标题并广播
+    /// </summary>
+    Task UpdateSessionTitleAsync(string sessionId, string title);
 }

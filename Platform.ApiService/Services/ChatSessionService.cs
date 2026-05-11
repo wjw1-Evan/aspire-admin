@@ -301,4 +301,39 @@ public class ChatSessionService : IChatSessionService
 
         return message;
     }
+
+    public async Task<int> GetMessageCountAsync(string sessionId)
+    {
+        return await _context.Set<ChatMessage>()
+            .CountAsync(m => m.SessionId == sessionId && !m.IsRecalled && m.IsDeleted != true);
+    }
+
+    public async Task UpdateSessionTitleAsync(string sessionId, string title)
+    {
+        var session = await _context.Set<ChatSession>().FirstOrDefaultAsync(x => x.Id == sessionId);
+        if (session == null) return;
+
+        session.TopicTags ??= new List<string>();
+        if (session.TopicTags.Count > 0 && (session.TopicTags[0] == "assistant" || session.TopicTags[0] == "direct"))
+        {
+            session.TopicTags[0] = title;
+        }
+        else if (session.TopicTags.Count == 0)
+        {
+            session.TopicTags.Add(title);
+        }
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("【标题调试】更新会话标题 | 会话={SessionId} | 标题={Title}", sessionId, title);
+
+        try
+        {
+            await _broadcaster.BroadcastSessionUpdatedAsync(
+                session.Participants,
+                new ChatSessionRealtimePayload { Session = session, BroadcastAtUtc = DateTime.UtcNow });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "【标题调试】广播标题更新失败 | 会话={SessionId}", sessionId);
+        }
+    }
 }

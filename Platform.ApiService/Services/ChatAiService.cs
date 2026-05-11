@@ -514,8 +514,9 @@ public class ChatAiService : IChatAiService
     /// <summary>
     /// 使用 LLM 自动生成对话标题（含重试机制，适用于 fire-and-forget 场景）
     /// </summary>
-    private async Task GenerateConversationTitleAsync(string sessionId)
+    public async Task GenerateConversationTitleAsync(string sessionId)
     {
+        _logger.LogInformation("【标题调试】开始生成对话标题 | 会话={SessionId}", sessionId);
         int maxRetries = 3;
         for (int attempt = 1; attempt <= maxRetries; attempt++)
         {
@@ -527,7 +528,12 @@ public class ChatAiService : IChatAiService
                     .Take(6)
                     .ToListAsync(CancellationToken.None);
 
-                if (messages.Count < 2) return;
+                _logger.LogInformation("【标题调试】查询到消息数 | 会话={SessionId} | 数量={Count}", sessionId, messages.Count);
+                if (messages.Count < 2)
+                {
+                    _logger.LogInformation("【标题调试】消息不足2条，跳过标题生成 | 会话={SessionId}", sessionId);
+                    return;
+                }
 
                 var conversationPreview = new StringBuilder();
                 foreach (var m in messages)
@@ -537,6 +543,7 @@ public class ChatAiService : IChatAiService
                     conversationPreview.AppendLine($"{role}: {content}");
                 }
 
+                _logger.LogInformation("【标题调试】调用 OpenAI 生成标题 | 会话={SessionId} | 参考消息数={Count}", sessionId, messages.Count);
                 var systemPrompt = "你是一个对话标题生成器。根据以下对话内容，生成一个简短的中文标题（不超过15个字），概括对话主题。只输出标题本身，不要加引号和额外说明。";
                 var titleMessages = new List<Microsoft.Extensions.AI.ChatMessage>
                 {
@@ -552,13 +559,21 @@ public class ChatAiService : IChatAiService
                 }, CancellationToken.None);
 
                 var title = response?.Text?.Trim().Trim('"', '\'', '「', '」').Trim();
-                if (string.IsNullOrWhiteSpace(title) || title.Length > 50) return;
+                _logger.LogInformation("【标题调试】OpenAI 返回标题 | 会话={SessionId} | 原始标题={RawTitle}", sessionId, title);
+                if (string.IsNullOrWhiteSpace(title) || title.Length > 50)
+                {
+                    _logger.LogWarning("【标题调试】标题无效或过长，跳过保存 | 会话={SessionId} | 标题={Title}", sessionId, title);
+                    return;
+                }
 
                 var session = await _context.Set<ChatSession>().FirstOrDefaultAsync(s => s.Id == sessionId);
-                if (session == null) return;
+                if (session == null)
+                {
+                    _logger.LogWarning("【标题调试】会话不存在，无法保存标题 | 会话={SessionId}", sessionId);
+                    return;
+                }
 
                 session.TopicTags ??= new List<string>();
-                // 替换默认标签（assistant/direct）为真实标题，或追加到空列表
                 if (session.TopicTags.Count > 0 && (session.TopicTags[0] == "assistant" || session.TopicTags[0] == "direct"))
                 {
                     session.TopicTags[0] = title;
@@ -568,33 +583,34 @@ public class ChatAiService : IChatAiService
                     session.TopicTags.Add(title);
                 }
                 await _context.SaveChangesAsync();
-                _logger.LogInformation("自动生成对话标题成功 | 会话={SessionId} | 标题={Title}", sessionId, title);
+                _logger.LogInformation("【标题调试】自动生成对话标题成功 | 会话={SessionId} | 标题={Title}", sessionId, title);
 
-                // 广播标题更新到前端，使会话列表实时刷新
                 try
                 {
                     await _broadcaster.BroadcastSessionUpdatedAsync(
                         session.Participants,
                         new ChatSessionRealtimePayload { Session = session, BroadcastAtUtc = DateTime.UtcNow });
+                    _logger.LogInformation("【标题调试】广播标题更新成功 | 会话={SessionId}", sessionId);
                 }
                 catch (Exception broadcastEx)
                 {
-                    _logger.LogWarning(broadcastEx, "广播标题更新失败 | 会话={SessionId}", sessionId);
+                    _logger.LogWarning(broadcastEx, "【标题调试】广播标题更新失败 | 会话={SessionId}", sessionId);
                 }
 
-                return; // 成功则退出
+                return;
             }
             catch (Exception ex) when (attempt < maxRetries)
             {
-                _logger.LogWarning(ex, "自动生成对话标题失败(第{Attempt}/{MaxRetries}次)，即将重试 | 会话={SessionId}", attempt, maxRetries, sessionId);
+                _logger.LogWarning(ex, "【标题调试】自动生成对话标题失败(第{Attempt}/{MaxRetries}次)，即将重试 | 会话={SessionId}", attempt, maxRetries, sessionId);
                 await Task.Delay(TimeSpan.FromSeconds(1) * attempt, CancellationToken.None);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "自动生成对话标题失败(已重试{MaxRetries}次) | 会话={SessionId}", maxRetries, sessionId);
+                _logger.LogWarning(ex, "【标题调试】自动生成对话标题失败(已重试{MaxRetries}次) | 会话={SessionId}", maxRetries, sessionId);
             }
         }
 
+        _logger.LogInformation("【标题调试】进入回退标题逻辑 | 会话={SessionId}", sessionId);
         try
         {
             var fallbackMessages = await _context.Set<ChatMessage>()
@@ -604,15 +620,31 @@ public class ChatAiService : IChatAiService
                 .ToListAsync(CancellationToken.None);
 
             var firstUserMsg = fallbackMessages.FirstOrDefault(m => m.SenderId != AiAssistantConstants.AssistantUserId);
-            if (firstUserMsg?.Content == null) return;
+            if (firstUserMsg?.Content == null)
+            {
+                _logger.LogWarning("【标题调试】未找到用户消息，无法设置回退标题 | 会话={SessionId}", sessionId);
+                return;
+            }
 
             var fallbackTitle = firstUserMsg.Content.Trim();
-            if (string.IsNullOrWhiteSpace(fallbackTitle)) return;
+            if (string.IsNullOrWhiteSpace(fallbackTitle))
+            {
+                _logger.LogWarning("【标题调试】用户消息内容为空，无法设置回退标题 | 会话={SessionId}", sessionId);
+                return;
+            }
             if (fallbackTitle.Length > 50) fallbackTitle = fallbackTitle[..50] + "...";
 
             var fallbackSession = await _context.Set<ChatSession>().FirstOrDefaultAsync(s => s.Id == sessionId);
-            if (fallbackSession == null) return;
-            if (fallbackSession.TopicTags?.Any(t => t != "assistant" && t != "direct") == true) return;
+            if (fallbackSession == null)
+            {
+                _logger.LogWarning("【标题调试】会话不存在，无法设置回退标题 | 会话={SessionId}", sessionId);
+                return;
+            }
+            if (fallbackSession.TopicTags?.Any(t => t != "assistant" && t != "direct") == true)
+            {
+                _logger.LogInformation("【标题调试】已有真实标题，跳过回退 | 会话={SessionId}", sessionId);
+                return;
+            }
 
             fallbackSession.TopicTags ??= new List<string>();
             if (fallbackSession.TopicTags.Count > 0 && (fallbackSession.TopicTags[0] == "assistant" || fallbackSession.TopicTags[0] == "direct"))
@@ -624,7 +656,7 @@ public class ChatAiService : IChatAiService
                 fallbackSession.TopicTags.Add(fallbackTitle);
             }
             await _context.SaveChangesAsync();
-            _logger.LogInformation("使用用户消息作为回退标题 | 会话={SessionId} | 标题={Title}", sessionId, fallbackTitle);
+            _logger.LogInformation("【标题调试】使用用户消息作为回退标题 | 会话={SessionId} | 标题={Title}", sessionId, fallbackTitle);
 
             await _broadcaster.BroadcastSessionUpdatedAsync(
                 fallbackSession.Participants,
@@ -632,7 +664,7 @@ public class ChatAiService : IChatAiService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "设置回退标题失败 | 会话={SessionId}", sessionId);
+            _logger.LogWarning(ex, "【标题调试】设置回退标题失败 | 会话={SessionId}", sessionId);
         }
     }
 

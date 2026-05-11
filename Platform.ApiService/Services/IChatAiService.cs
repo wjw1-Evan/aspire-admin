@@ -40,4 +40,10 @@ public interface IChatAiService
     /// <param name="triggerMessage">触发消息</param>
     /// <returns>是否跳过</returns>
     bool ShouldSkipAutomaticAssistantReply(ChatMessage triggerMessage);
+
+    /// <summary>
+    /// 根据对话内容自动生成会话标题（含重试与回退机制）
+    /// </summary>
+    /// <param name="sessionId">会话ID</param>
+    Task GenerateConversationTitleAsync(string sessionId);
 }

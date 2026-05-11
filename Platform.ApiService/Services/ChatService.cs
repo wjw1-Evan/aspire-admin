@@ -58,13 +58,48 @@ public class ChatService : IChatService
 
         var session = await _sessionService.EnsureSessionAccessibleAsync(request.SessionId);
 
-// 触发小科异步回复
+        var messageCount = await _sessionService.GetMessageCountAsync(session.Id);
+        _logger.LogInformation("【标题调试】发送消息后消息数 | 会话={SessionId} | 计数={Count}", session.Id, messageCount);
+
+        if (messageCount == 1)
+        {
+            var title = userMessage.Content?.Trim();
+            if (!string.IsNullOrWhiteSpace(title))
+            {
+                if (title.Length > 50) title = title[..50] + "...";
+                _logger.LogInformation("【标题调试】第一条消息，使用内容作为标题 | 会话={SessionId} | 标题={Title}", session.Id, title);
+                await _sessionService.UpdateSessionTitleAsync(session.Id, title);
+            }
+        }
+        else if (messageCount == 2)
+        {
+            _logger.LogInformation("【标题调试】第二条消息，触发 AI 总结标题 | 会话={SessionId}", session.Id);
+            var (companyId, userId) = (session.CompanyId, userMessage.SenderId);
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await using var scope = _scopeFactory.CreateAsyncScope();
+                    var tenantSetter = scope.ServiceProvider.GetRequiredService<ITenantContextSetter>();
+                    tenantSetter.SetContext(companyId, userId);
+
+                    var aiService = scope.ServiceProvider.GetRequiredService<IChatAiService>();
+                    _logger.LogInformation("【标题调试】开始 AI 总结标题 | 会话={SessionId}", session.Id);
+                    await aiService.GenerateConversationTitleAsync(session.Id);
+                    _logger.LogInformation("【标题调试】AI 总结标题完成 | 会话={SessionId}", session.Id);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "【标题调试】AI 总结标题失败 | 会话={SessionId}", session.Id);
+                }
+            });
+        }
+
         if (session.Participants.Contains(AiAssistantConstants.AssistantUserId) && userMessage.Type == ChatMessageType.Text)
         {
             var (companyId, userId) = (session.CompanyId, userMessage.SenderId);
             _logger.LogInformation("【小科】准备触发异步回复 | 会话={SessionId} | 消息={MessageId}", session.Id, userMessage.Id);
 
-            // 使用链接令牌，确保应用关闭时任务被取消
             using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
             var linkedToken = cts.Token;
 

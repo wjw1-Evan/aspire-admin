@@ -9,12 +9,12 @@ namespace Platform.ApiService.Services;
 public class ChatHistoryService : IChatHistoryService
 {
     private readonly DbContext _context;
-    private readonly IChatService _chatService;
+    private readonly IChatSessionService _sessionService;
 
-    public ChatHistoryService(DbContext context, IChatService chatService)
+    public ChatHistoryService(DbContext context, IChatSessionService sessionService)
     {
         _context = context;
-        _chatService = chatService;
+        _sessionService = sessionService;
     }
 
     public async Task<System.Linq.Dynamic.Core.PagedResult<ChatHistoryListItemDto>> GetChatHistoryAsync(Platform.ServiceDefaults.Models.ProTableRequest request)
@@ -67,7 +67,7 @@ public class ChatHistoryService : IChatHistoryService
             Limit = 1000
         };
 
-        var (messages, _, _) = await _chatService.GetMessagesAsync(sessionId, messageRequest);
+        var (messages, _, _) = await _sessionService.GetMessagesAsync(sessionId, messageRequest);
 
         return new ChatHistoryDetailResponse
         {

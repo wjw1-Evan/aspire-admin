@@ -17,6 +17,7 @@ public class UserRegistrationTests : IAsyncLifetime
     public async Task InitializeAsync()
     {
         var builder = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Platform_AppHost>();
+        builder.Configuration["DOTNET_ENVIRONMENT"] = "Testing";
         _app = await builder.BuildAsync();
         await _app.StartAsync();
 

@@ -125,6 +125,24 @@ const AiAssistant: React.FC<AiAssistantProps> = ({ defaultOpen }) => {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [streamingMessages, setStreamingMessages] = useState<Record<string, string>>({});
 
+  // 监听 SessionUpdated 事件（会话信息更新，如 AI 标题生成完成）
+  useEffect(() => {
+    const unsub = sse.on<any>('SessionUpdated', (data) => {
+      if (!data?.session) return;
+      const updatedSession = data.session as ChatSession;
+
+      setSessions((prev) => prev.map((s) =>
+        s.id === updatedSession.id ? { ...s, ...updatedSession } : s,
+      ));
+
+      setSession((prev) =>
+        prev?.id === updatedSession.id ? { ...prev, ...updatedSession } : prev,
+      );
+    });
+
+    return () => unsub();
+  }, [sse]);
+
   // 监听 chat-response 事件（AI 回复）
   useEffect(() => {
     if (!session?.id || !open) return;

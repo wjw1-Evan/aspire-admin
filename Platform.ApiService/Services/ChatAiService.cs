@@ -569,6 +569,19 @@ public class ChatAiService : IChatAiService
                 }
                 await _context.SaveChangesAsync();
                 _logger.LogInformation("自动生成对话标题成功 | 会话={SessionId} | 标题={Title}", sessionId, title);
+
+                // 广播标题更新到前端，使会话列表实时刷新
+                try
+                {
+                    await _broadcaster.BroadcastSessionUpdatedAsync(
+                        session.Participants,
+                        new ChatSessionRealtimePayload { Session = session, BroadcastAtUtc = DateTime.UtcNow });
+                }
+                catch (Exception broadcastEx)
+                {
+                    _logger.LogWarning(broadcastEx, "广播标题更新失败 | 会话={SessionId}", sessionId);
+                }
+
                 return; // 成功则退出
             }
             catch (Exception ex) when (attempt < maxRetries)

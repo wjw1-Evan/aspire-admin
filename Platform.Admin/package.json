@@ -57,7 +57,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/sm-crypto": "^0.3.4",
-    "@umijs/max": "^4.6.51",
+    "@umijs/max": "^4.6.53",
     "cross-env": "^10.1.0",
     "typescript": "^6.0.3",
     "umi-presets-pro": "^2.0.3"

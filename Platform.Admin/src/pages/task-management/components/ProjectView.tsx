@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { Badge, Tag, Space, App, Button, Progress, Input } from 'antd';
-import { useIntl } from '@umijs/max';
+import { useIntl, useSearchParams } from '@umijs/max';
 import dayjs from 'dayjs';
 import {
   PlusOutlined,
@@ -13,6 +13,7 @@ import {
 import {
   deleteProject,
   getProjectList,
+  getProjectById,
   getProjectStatistics,
   type ProjectDto,
   type ProjectStatistics,
@@ -35,6 +36,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   const intl = useIntl();
   const { confirm } = useModal();
   const { message } = App.useApp();
+  const [searchParams] = useSearchParams();
   const [formVisible, setFormVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
   const [editingProject, setEditingProject] = useState<ProjectDto | null>(null);
@@ -57,6 +59,18 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   useEffect(() => {
     fetchStatistics();
   }, [fetchStatistics]);
+
+  useEffect(() => {
+    const projectId = searchParams.get('projectId');
+    if (projectId) {
+      getProjectById(projectId).then(response => {
+        if (response.success && response.data) {
+          setViewingProject(response.data);
+          setDetailVisible(true);
+        }
+      });
+    }
+  }, []);
 
   useImperativeHandle(ref, () => ({
     reload: () => {

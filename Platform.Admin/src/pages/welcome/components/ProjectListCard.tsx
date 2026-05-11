@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { Card, Space, Button, Tag, Empty, theme, Typography, Progress, Tooltip } from 'antd';
+import { Card, Space, Tag, Empty, theme, Typography, Progress, Tooltip } from 'antd';
 import { FolderOutlined } from '@ant-design/icons';
 import { useAccess, useNavigate, useIntl } from '@umijs/max';
 import { ProTable, ProColumns } from '@ant-design/pro-table';
@@ -101,7 +101,12 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
             width: '35%',
             render: (_: ReactNode, record: ProjectDto) => (
                 <Tooltip title={record.description}>
-                    <Text ellipsis strong>{record.name}</Text>
+                    <a
+                        onClick={() => navigate(`/project-management/project?projectId=${record.id}`)}
+                        style={{ cursor: 'pointer' }}
+                    >
+                        <Text ellipsis strong>{record.name}</Text>
+                    </a>
                 </Tooltip>
             ),
         },
@@ -172,19 +177,7 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
                     style={{ marginTop: '12px' }}
                 />
             )}
-            {projects.length > 0 && (
-                <div style={{ marginTop: '12px', textAlign: 'center' }}>
-                    <Button
-                        type="link"
-                        size="small"
-                        onClick={() => {
-                            navigate('/project-management/project');
-                        }}
-                    >
-                        {intl.formatMessage({ id: 'pages.welcome.projectList.viewAll' })}
-                    </Button>
-                </div>
-            )}
+
         </Card>
     );
 };

@@ -46,20 +46,18 @@ public class DatabaseContainerTests : IAsyncLifetime
     public void MongoResource_ShouldExist()
     {
         Assert.NotNull(_builder);
-        var environment = _builder.Configuration["DOTNET_ENVIRONMENT"] ?? "Development";
-        var expectedName = $"mongo-{environment}";
 
         bool found = false;
         foreach (var resource in _builder.Resources)
         {
-            if (resource.Name == expectedName)
+            if (resource.Name == "mongo")
             {
                 found = true;
                 break;
             }
         }
 
-        Assert.True(found, $"未找到数据库资源: {expectedName}");
+        Assert.True(found, "未找到数据库资源: mongo");
     }
 
     /// <summary>

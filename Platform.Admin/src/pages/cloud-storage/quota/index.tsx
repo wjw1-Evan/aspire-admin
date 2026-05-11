@@ -180,7 +180,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                             toolBarRender={() => [
                               <Input.Search
                                 key="search"
-                                placeholder="搜索..."
+                                placeholder={intl.formatMessage({ id: 'pages.common.search' })}
                                 allowClear
                                 value={searchText}
                                 onChange={(e) => setSearchText(e.target.value)}

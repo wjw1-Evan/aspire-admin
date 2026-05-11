@@ -175,7 +175,7 @@ const FormDefinitionManagement: React.FC = () => {
                 }}
                 columns={columns}
                 toolBarRender={() => [
-                    <Input.Search key="search" placeholder={intl.formatMessage({ id: 'pages.forms.search.placeholder' })} allowClear value={state.search}
+                    <Input.Search key="search" placeholder={intl.formatMessage({ id: 'pages.common.search' })} allowClear value={state.search}
                         onChange={(e) => set({ search: e.target.value })}
                         onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
                         style={{ width: 260, marginRight: 8 }} />,

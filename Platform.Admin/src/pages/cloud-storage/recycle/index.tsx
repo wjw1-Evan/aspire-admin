@@ -115,7 +115,7 @@ const CloudStorageRecyclePage: React.FC = () => {
                 toolBarRender={() => [
                     <Input.Search
                         key="search"
-                        placeholder={intl.formatMessage({ id: 'pages.cloud-storage.recycle.searchPlaceholder' })}
+                        placeholder={intl.formatMessage({ id: 'pages.common.search' })}
                         allowClear
                         value={searchText}
                         onChange={(e) => setSearchText(e.target.value)}

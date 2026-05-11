@@ -141,7 +141,7 @@ const UserLog: React.FC = () => {
         toolBarRender={() => [
           <Input.Search
             key="search"
-            placeholder="搜索..."
+            placeholder={intl.formatMessage({ id: 'pages.common.search' })}
             allowClear
             value={state.search}
             onChange={(e) => set({ search: e.target.value })}

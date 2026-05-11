@@ -108,7 +108,7 @@ const GatewayManagement = React.forwardRef<GatewayManagementRef, any>((props, re
         toolBarRender={() => [
           <Input.Search
             key="search"
-            placeholder={intl.formatMessage({ id: 'pages.iotPlatform.search.placeholder' })}
+            placeholder={intl.formatMessage({ id: 'pages.common.search' })}
             allowClear
             value={state.search}
             onChange={(e) => set({ search: e.target.value })}

@@ -145,7 +145,7 @@ const ContractManagement: React.FC = () => {
                 toolBarRender={() => [
                     <Input.Search
                         key="search"
-                        placeholder={intl.formatMessage({ id: 'common.search' })}
+                        placeholder={intl.formatMessage({ id: 'pages.common.search' })}
                         allowClear
                         style={{ width: 260, marginRight: 8 }}
                         value={searchParams.search}

@@ -137,7 +137,7 @@ const KnowledgeBaseManagement: React.FC = () => {
         toolBarRender={() => [
            <Input.Search
              key="search"
-             placeholder={intl.formatMessage({ id: 'pages.workflow.knowledgeBase.search.placeholder' })}
+             placeholder={intl.formatMessage({ id: 'pages.common.search' })}
              allowClear
              value={search}
              onChange={(e) => setSearch(e.target.value)}

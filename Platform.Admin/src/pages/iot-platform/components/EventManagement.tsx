@@ -87,7 +87,7 @@ const EventManagement = React.forwardRef<EventManagementRef, any>((props, ref) =
         toolBarRender={() => [
           <Input.Search
             key="search"
-            placeholder={intl.formatMessage({ id: 'pages.iotPlatform.searchPlaceholder' })}
+            placeholder={intl.formatMessage({ id: 'pages.common.search' })}
             allowClear
             value={state.search}
             onChange={(e) => set({ search: e.target.value })}

@@ -84,7 +84,7 @@ const WorkflowManagement: React.FC = () => {
         toolBarRender={() => [
           <Input.Search
             key="search"
-            placeholder="搜索..."
+            placeholder={intl.formatMessage({ id: 'pages.common.search' })}
             allowClear
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
@@ -95,7 +95,7 @@ const WorkflowManagement: React.FC = () => {
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { setEditingWorkflow(null); setPreviewMode(false); setDesignerVisible(true); }}>{intl.formatMessage({ id: 'pages.workflow.create' })}</Button>,
         ]}
       />
-      <Drawer title={editingWorkflow ? intl.formatMessage({ id: 'pages.workflow.action.edit' }) : intl.formatMessage({ id: 'pages.workflow.create.title' })} width="100%" open={designerVisible}
+      <Drawer title={editingWorkflow ? intl.formatMessage({ id: 'pages.workflow.action.edit' }) : intl.formatMessage({ id: 'pages.workflow.create.title' })} size="large" open={designerVisible}
         onClose={() => { setDesignerVisible(false); setEditingWorkflow(null); setPreviewMode(false); }}>
         <WorkflowDesignerModal workflow={editingWorkflow} readOnly={previewMode} onSuccess={() => { setDesignerVisible(false); setEditingWorkflow(null); actionRef.current?.reload(); }} onCancel={() => { setDesignerVisible(false); setEditingWorkflow(null); }} />
       </Drawer>

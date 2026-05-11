@@ -212,7 +212,7 @@ const WorkflowMonitor: React.FC = () => {
         toolBarRender={() => [
            <Input.Search
              key="search"
-             placeholder={intl.formatMessage({ id: 'pages.workflow.monitor.search.placeholder' })}
+             placeholder={intl.formatMessage({ id: 'pages.common.search' })}
              allowClear
              value={search}
              onChange={(e) => setSearch(e.target.value)}

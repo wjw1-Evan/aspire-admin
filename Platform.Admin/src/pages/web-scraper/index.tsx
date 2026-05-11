@@ -390,7 +390,7 @@ const WebScraper: React.FC = () => {
         toolBarRender={() => [
           <Input.Search
             key="search"
-            placeholder={intl.formatMessage({ id: 'pages.webScraper.search.placeholder' })}
+            placeholder={intl.formatMessage({ id: 'pages.common.search' })}
             allowClear
             value={search}
             onChange={(e) => setSearch(e.target.value)}

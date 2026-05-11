@@ -127,7 +127,7 @@ const DataPointManagement = React.forwardRef<DataPointManagementRef, any>((props
         toolBarRender={() => [
           <Input.Search
             key="search"
-            placeholder={intl.formatMessage({ id: 'pages.iotPlatform.searchPlaceholder' })}
+            placeholder={intl.formatMessage({ id: 'pages.common.search' })}
             allowClear
             value={state.search}
             onChange={(e) => set({ search: e.target.value })}

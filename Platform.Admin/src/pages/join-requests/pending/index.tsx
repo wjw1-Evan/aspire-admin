@@ -183,7 +183,7 @@ const PendingJoinRequests: React.FC = () => {
         toolBarRender={() => [
           <Input.Search
             key="search"
-            placeholder={intl.formatMessage({ id: 'pages.search.placeholder' })}
+            placeholder={intl.formatMessage({ id: 'pages.common.search' })}
             style={{ width: 260, marginRight: 8 }}
             allowClear
             value={state.search}

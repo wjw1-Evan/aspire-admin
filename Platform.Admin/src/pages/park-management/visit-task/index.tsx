@@ -101,7 +101,7 @@ const VisitTaskPage: React.FC = () => {
                 toolBarRender={() => [
                     <Input.Search
                         key="search"
-                        placeholder={intl.formatMessage({ id: 'pages.park.visitTask.searchPlaceholder' })}
+                        placeholder={intl.formatMessage({ id: 'pages.common.search' })}
                         allowClear
                         value={state.search}
                         onChange={(e) => set({ search: e.target.value })}

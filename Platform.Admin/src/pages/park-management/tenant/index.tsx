@@ -126,7 +126,7 @@ const TenantManagement: React.FC = () => {
                 toolBarRender={() => [
                     <Input.Search
                         key="search"
-                        placeholder={intl.formatMessage({ id: 'pages.parkManagement.tenant.search.placeholder' })}
+                        placeholder={intl.formatMessage({ id: 'pages.common.search' })}
                         allowClear
                         value={state.search}
                         onChange={(e) => set({ search: e.target.value })}

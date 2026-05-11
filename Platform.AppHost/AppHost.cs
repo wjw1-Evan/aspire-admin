@@ -92,8 +92,6 @@ var yarp = builder.AddYarp("apigateway")
         endpoint.Port = builder.Environment.IsEnvironment("Testing") ? 15001 : 15000;
         endpoint.TargetHost = "0.0.0.0";
     })
-    //  .WithHostPort(15000)
-    // .WithEnvironment("ASPNETCORE_URLS", "http://0.0.0.0:15000")
     .WithStaticFiles()
     .PublishWithStaticFiles(adminbuilder)
     .WithConfiguration(config =>
@@ -109,9 +107,7 @@ var yarp = builder.AddYarp("apigateway")
         {
             config.AddRoute($"/{service.Key}/{{**catch-all}}", service.Value).WithMaxRequestBodySize(-1).WithTransformPathRouteValues("/{**catch-all}");
         }
-
     });
-
 
 // 配置 Scalar API 文档
 // 使用 .NET 10 原生 OpenAPI 支持

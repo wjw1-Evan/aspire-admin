@@ -75,6 +75,20 @@ const ChatHistoryManagement: React.FC = () => {
 
   const columns: ProColumns<ChatHistoryListItem>[] = [
     {
+      title: intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.table.title' }),
+      dataIndex: ['topicTags', '0'],
+      key: 'topicTags',
+      width: 200,
+      ellipsis: true,
+      render: (dom: any, record: ChatHistoryListItem) => {
+        const tag = record.topicTags?.[0];
+        if (tag && tag !== 'assistant' && tag !== 'direct') {
+          return <span style={{ fontWeight: 500 }}>{tag}</span>;
+        }
+        return <span style={{ color: '#999' }}>{record.sessionId}</span>;
+      },
+    },
+    {
       title: intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.table.sessionId' }),
       dataIndex: 'sessionId',
       key: 'sessionId',

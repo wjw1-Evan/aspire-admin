@@ -905,6 +905,11 @@ export default {
   'components.aiAssistant.send': '发送',
   'components.aiAssistant.recording': '正在录音，请说话...',
   'components.aiAssistant.voiceInput': '语音输入',
+  'components.aiAssistant.empty': '开始与小科对话吧',
+  'components.aiAssistant.loadingHistory': '正在加载历史消息...',
+  'components.aiAssistant.newConversation': '新建对话',
+  'components.aiAssistant.conversation': '对话',
+  'components.aiAssistant.createSessionFailed': '创建新对话失败，请重试',
 
   // MyJoinRequestsTable
   'pages.company.myRequests.action.cancel': '撤销申请',

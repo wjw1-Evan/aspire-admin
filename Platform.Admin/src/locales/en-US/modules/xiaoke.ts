@@ -31,6 +31,7 @@ export default {
   'pages.xiaokeManagement.chatHistory.table.messageCount': 'Message Count',
   'pages.xiaokeManagement.chatHistory.table.participants': 'Participants',
   'pages.xiaokeManagement.chatHistory.table.sessionId': 'Session ID',
+  'pages.xiaokeManagement.chatHistory.table.title': 'Conversation Title',
   'pages.xiaokeManagement.chatHistory.table.userId': 'User ID',
   'pages.xiaokeManagement.chatHistory.title': 'Chat History Management',
   'pages.xiaokeManagement.config.createConfig': 'Create Config',

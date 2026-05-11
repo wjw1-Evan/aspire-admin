@@ -142,6 +142,36 @@ export async function getOrCreateAssistantSession(): Promise<ChatSession | null>
 }
 
 /**
+ * 创建新的小科会话（每次调用都创建一个全新的空会话）
+ */
+export async function createNewAssistantSession(): Promise<ChatSession | null> {
+  try {
+    const response = await request<ApiResponse<ChatSession>>('/apiservice/api/chat/sessions/assistant/new', {
+      method: 'POST',
+    });
+    return response.success && response.data ? response.data : null;
+  } catch (error) {
+    console.error('创建小科会话失败:', error);
+    return null;
+  }
+}
+
+/**
+ * 根据ID获取会话
+ */
+export async function getSession(sessionId: string): Promise<ChatSession | null> {
+  try {
+    const response = await request<ApiResponse<ChatSession>>(`/apiservice/api/chat/sessions/${encodeURIComponent(sessionId)}`, {
+      method: 'GET',
+    });
+    return response.success && response.data ? response.data : null;
+  } catch (error) {
+    console.error('获取会话失败:', error);
+    return null;
+  }
+}
+
+/**
  * 发送消息（通过 SSE 连接接收 AI 回复）
  * @param messageRequest 消息请求
  * @returns 发送的消息

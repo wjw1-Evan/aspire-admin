@@ -44,6 +44,7 @@ export interface ChatHistoryListItem {
   lastMessageAt?: string;
   messageCount: number;
   createdAt: string;
+  topicTags?: string[];
 }
 
 export interface ChatMessage {

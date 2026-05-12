@@ -20,7 +20,7 @@ import HelpModal from '../HelpModal';
 import { ThemeSettingsDrawer } from './ThemeSettingsDrawer';
 import { JoinCompanyModal } from '../JoinCompanyModal';
 import { CreateCompanyModal } from '../CreateCompanyModal';
-import headerStyles from './index.less';
+import { useHeaderStyles } from './styles';
 
 export type GlobalHeaderRightProps = {
   menu?: boolean;
@@ -37,6 +37,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
   menu,
   children,
 }) => {
+  const { styles } = useHeaderStyles();
   const { initialState, setInitialState } = useModel('@@initialState');
   const { currentUser } = initialState || {};
   const intl = useIntl();
@@ -156,7 +157,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
 
   if (!currentUser?.username && !currentUser?.displayName) {
     return (
-      <span className={headerStyles.headerActionButton}>
+      <span className={styles.headerActionButton}>
         <Spin size="small" />
       </span>
     );
@@ -261,7 +262,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
           items: menuItems,
         }}
       >
-        <span className={headerStyles.headerActionButton}>
+        <span className={styles.headerActionButton}>
           {children}
         </span>
       </HeaderDropdown>

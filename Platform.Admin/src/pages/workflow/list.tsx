@@ -1,8 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
 import { Button, Space, Tag, App, Input, Drawer } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ApiOutlined, SearchOutlined } from '@ant-design/icons';
-import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { getWorkflowList, deleteWorkflow, type WorkflowDefinition } from '@/services/workflow/api';
 import WorkflowDesignerModal from './components/WorkflowDesignerModal';
 import { useIntl } from '@umijs/max';
@@ -104,3 +103,4 @@ const WorkflowManagement: React.FC = () => {
 };
 
 export default WorkflowManagement;
+

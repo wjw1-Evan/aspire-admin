@@ -1,14 +1,9 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import type { ProColumns } from '@ant-design/pro-table';
-import { PageContainer, ProDescriptions, ProCard } from '@ant-design/pro-components';
-import { useIntl } from '@umijs/max';
-import { request } from '@umijs/max';
-import { Button, Tag, Space, Grid, App, Modal, Spin, Input, Popconfirm } from 'antd';
-import { Drawer } from 'antd';
+import { useIntl, request } from '@umijs/max';
+import { Button, Tag, Space, Grid, App, Modal, Spin, Input, Popconfirm, Drawer } from 'antd';
 const { useBreakpoint } = Grid;
-import { ProTable, ActionType } from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-components';
-import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons';
+import { PageContainer, ProDescriptions, ProCard, ProTable, ActionType, ModalForm, ProFormText, ProFormSelect, ProFormTextArea, ProColumns } from '@ant-design/pro-components';
+import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult } from '@/types';
 

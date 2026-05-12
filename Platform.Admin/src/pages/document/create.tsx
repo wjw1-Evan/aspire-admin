@@ -1,11 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer, ProCard, ProForm, ProFormSelect } from '@ant-design/pro-components';
 import { Button, Upload } from 'antd';
-import { ProCard } from '@ant-design/pro-components';
-import {
-  ProForm,
-  ProFormSelect,
-} from '@ant-design/pro-form';
 import { useMessage } from '@/hooks/useMessage';
 import { SaveOutlined, UploadOutlined } from '@ant-design/icons';
 import { useNavigate, useIntl } from '@umijs/max';
@@ -109,3 +104,4 @@ const CreateDocument: React.FC = () => {
 };
 
 export default CreateDocument;
+

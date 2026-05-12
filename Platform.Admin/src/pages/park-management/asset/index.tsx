@@ -1,13 +1,10 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import { PageContainer, ProCard } from '@ant-design/pro-components';
+import { PageContainer, ProCard, ProTable, ProColumns, ActionType, ModalForm, ProFormText, ProFormSelect, ProFormDatePicker, ProDescriptions } from '@ant-design/pro-components';
 import { useIntl, request } from '@umijs/max';
 import { Tag, Space, Row, Col, Button, Input, Popconfirm, Typography, Upload, DatePicker, Tabs, App } from 'antd';
 import { Drawer } from 'antd';
 import type { UploadFile } from 'antd';
-import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormSelect, ProFormDatePicker } from '@ant-design/pro-form';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, HomeOutlined, BankOutlined, AreaChartOutlined, SyncOutlined, ReloadOutlined, UploadOutlined, ArrowUpOutlined, ArrowDownOutlined, SearchOutlined } from '@ant-design/icons';
-import { ProDescriptions } from '@ant-design/pro-components';
 import { ApiResponse, PagedResult } from '@/types';
 import dayjs from 'dayjs';
 import { getErrorMessage } from '@/utils/getErrorMessage';
@@ -354,3 +351,4 @@ const AssetManagement: React.FC = () => {
 };
 
 export default AssetManagement;
+

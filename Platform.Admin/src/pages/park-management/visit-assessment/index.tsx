@@ -1,10 +1,8 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { PageContainer, ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-components';
+import { PageContainer, ModalForm, ProFormText, ProFormTextArea, ProDescriptions, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
 import { useIntl, request } from '@umijs/max';
 import { Space, Button, Tag, Rate, App, Divider, Typography, Input } from 'antd';
 import { Drawer } from 'antd';
-import { ProDescriptions } from '@ant-design/pro-components';
-import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { StarFilled, FileSearchOutlined, StarOutlined, SearchOutlined, ReloadOutlined, TeamOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult } from '@/types';
@@ -133,3 +131,4 @@ const VisitAssessmentList: React.FC = () => {
 };
 
 export default VisitAssessmentList;
+

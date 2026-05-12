@@ -1,4 +1,4 @@
-import { ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-form';
+import { ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import Settings from '../../../../config/defaultSettings';
 import { updateCurrentCompany } from '@/services/company';

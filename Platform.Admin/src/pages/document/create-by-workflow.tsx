@@ -1,20 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer, ProCard, ProForm, ProFormSelect, ProFormText, ProFormTextArea, ProFormDigit, ProFormDatePicker, ProFormDateTimePicker, ProFormRadio, ProFormCheckbox, ProFormSwitch, ProFormItem } from '@ant-design/pro-components';
 import { Space, Upload, Button } from 'antd';
-import { ProCard } from '@ant-design/pro-components';
-import {
-  ProForm,
-  ProFormSelect,
-  ProFormText,
-  ProFormTextArea,
-  ProFormDigit,
-  ProFormDatePicker,
-  ProFormDateTimePicker,
-  ProFormRadio,
-  ProFormCheckbox,
-  ProFormSwitch,
-  ProFormItem,
-} from '@ant-design/pro-form';
 import { useMessage } from '@/hooks/useMessage';
 import { PlayCircleOutlined, UploadOutlined } from '@ant-design/icons';
 import { useIntl, useNavigate, useLocation } from '@umijs/max';
@@ -318,3 +304,4 @@ const CreateAndStartByWorkflow: React.FC = () => {
 };
 
 export default CreateAndStartByWorkflow;
+

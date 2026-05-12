@@ -1,15 +1,12 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer, ProTable, ProColumns, ProDescriptions, ModalForm, ProFormText, ProFormDatePicker } from '@ant-design/pro-components';
 import { request } from '@umijs/max';
 import { App, Tag, Typography, Empty, Rate, Button, Space, Input, Row, Col, Popconfirm } from 'antd';
 import { Drawer } from 'antd';
-import { ProTable, ProColumns } from '@ant-design/pro-table';
-import { ProDescriptions } from '@ant-design/pro-components';
-import { ModalForm, ProFormText, ProFormDatePicker } from '@ant-design/pro-form';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, UserOutlined, WarningOutlined, ReloadOutlined, CalendarOutlined, CustomerServiceOutlined, FileTextOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult } from '@/types';
-import { getIntl } from '@umijs/max';
+import { useIntl } from '@umijs/max';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
 interface ParkTenant { id: string; tenantName: string; contactPerson?: string; phone?: string; email?: string; industry?: string; businessLicense?: string; address?: string; notes?: string; entryDate?: string; status: string; unitCount: number; activeContracts: number; createdAt?: string; updatedAt?: string; }
@@ -33,7 +30,7 @@ const api = {
 
 const TenantManagement: React.FC = () => {
     const { message } = App.useApp();
-    const intl = getIntl();
+    const intl = useIntl();
     const actionRef = useRef<any>(null);
     const [state, setState] = useState({ statistics: null as TenantStatistics | null, formVisible: false, editingTenant: null as ParkTenant | null, detailVisible: false, viewingTenant: null as ParkTenant | null, detailLoading: false, search: '' });
     const [detailData, setDetailData] = useState({ contracts: [] as LeaseContract[], serviceRequests: [] as ServiceRequest[], payments: [] as (LeasePaymentRecord & { contractNumber?: string })[], loading: false });
@@ -178,3 +175,4 @@ const TenantManagement: React.FC = () => {
 };
 
 export default TenantManagement;
+

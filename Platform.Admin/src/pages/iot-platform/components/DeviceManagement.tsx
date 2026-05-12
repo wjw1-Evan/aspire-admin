@@ -1,11 +1,8 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useIntl } from '@umijs/max';
-import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormSelect, ProFormDigit, ProFormTextArea } from '@ant-design/pro-components';
+import { type ProColumns, ActionType, ProTable, ModalForm, ProFormText, ProFormSelect, ProFormDigit, ProFormTextArea, ProForm, ProCard, ProDescriptions } from '@ant-design/pro-components';
 import { Button, Col, Grid, Input, Row, Space, Tag, Tabs, Alert, Modal, Popconfirm } from 'antd';
-import { ProForm } from '@ant-design/pro-components';
 import { Drawer } from 'antd';
-import { ProCard, ProDescriptions } from '@ant-design/pro-components';
 import { PlusOutlined, EditOutlined, DeleteOutlined, DesktopOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, KeyOutlined, BranchesOutlined, SendOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { iotService, IoTDevice, IoTGateway, DeviceStatistics, GenerateApiKeyResult } from '@/services/iotService';
@@ -264,3 +261,4 @@ const DeviceManagement = React.forwardRef<DeviceManagementRef, any>((props, ref)
 
 DeviceManagement.displayName = 'DeviceManagement';
 export default DeviceManagement;
+

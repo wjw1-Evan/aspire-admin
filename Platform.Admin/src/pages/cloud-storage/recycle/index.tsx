@@ -1,8 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
 import { Button, Space, Modal, Form, Input, Select, App, Popconfirm, Tag } from 'antd';
 import { DeleteOutlined, ClearOutlined, SearchOutlined, UndoOutlined } from '@ant-design/icons';
-import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -145,3 +144,4 @@ const CloudStorageRecyclePage: React.FC = () => {
 };
 
 export default CloudStorageRecyclePage;
+

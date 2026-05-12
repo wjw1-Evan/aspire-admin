@@ -2,9 +2,7 @@ import React, { useRef, useState, useCallback } from 'react';
 import { Button, Space, Modal, Tag, App, Input, Popconfirm } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, BookOutlined, FolderOpenOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import { useIntl, history } from '@umijs/max';
-import { PageContainer, ProCard } from '@ant-design/pro-components';
-import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormTextArea, ProFormSwitch } from '@ant-design/pro-components';
+import { PageContainer, ProCard, ProTable, ProColumns, ActionType, ModalForm, ProFormText, ProFormTextArea, ProFormSwitch } from '@ant-design/pro-components';
 import * as kbService from '@/services/workflow/knowledge-base';
 import type { KnowledgeBase } from '@/services/workflow/knowledge-base';
 import { getErrorMessage } from '@/utils/getErrorMessage';
@@ -185,3 +183,4 @@ const KnowledgeBaseManagement: React.FC = () => {
 };
 
 export default KnowledgeBaseManagement;
+

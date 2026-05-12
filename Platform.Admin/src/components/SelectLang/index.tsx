@@ -2,7 +2,54 @@ import React from 'react';
 import HeaderDropdown from '@/components/HeaderDropdown';
 import type { MenuProps } from 'antd';
 import { setLocale, getLocale } from '@umijs/max';
-import styles from './index.less';
+import { createStyles } from 'antd-style';
+
+const useStyles = createStyles(({ css }) => ({
+  headerActionButton: css`
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    margin: 0 4px;
+    cursor: pointer;
+    border-radius: 50%;
+    font-size: 20px;
+    color: #333;
+    transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+    line-height: 1;
+    background: #ffffff;
+    border: 1px solid #e8e8e8;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+
+    &:hover {
+      background: #fafafa;
+      border-color: #1890ff;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+      transform: translateY(-2px) scale(1.08);
+
+      .flagWrapper {
+        transform: scale(1.15) rotate(5deg);
+      }
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+  `,
+  flagWrapper: css`
+    font-size: 20px;
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Segoe UI Symbol", "Android Emoji", EmojiSymbols, sans-serif !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    overflow: hidden;
+    transition: transform 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+  `,
+}));
 
 // 支持的语言列表 (18种语言)
 const locales = [
@@ -27,6 +74,7 @@ const locales = [
 ];
 
 const SelectLang: React.FC = () => {
+    const { styles } = useStyles();
     const currentLocale = getLocale();
 
     const handleMenuClick: MenuProps['onClick'] = ({ key }) => {

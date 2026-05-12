@@ -11,7 +11,6 @@ import {
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
-import styles from './index.less';
 
 dayjs.extend(relativeTime);
 dayjs.locale('zh-cn');
@@ -57,7 +56,7 @@ export default function NoticeItem({
 
   return (
     <div
-      className={`${styles.noticeItem} ${!item.read ? styles.unread : ''}`}
+      className={!item.read ? 'unread' : ''}
       onClick={handleClick}
       style={{
         display: 'flex',
@@ -81,20 +80,20 @@ export default function NoticeItem({
           />
         </div>
         <Flex vertical gap={4} style={{ flex: 1, minWidth: 0 }}>
-          <div className={styles.noticeTitle}>
+          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
             <span>{item.title}</span>
             {!item.read && <Badge status="processing" />}
           </div>
-          <div className={styles.noticeDescription}>
+          <div>
             {item.description && (
               <Text type="secondary">{item.description}</Text>
             )}
-            <Text type="secondary" className={styles.noticeTime}>
+            <Text type="secondary" style={{ fontSize: 12, color: '#999' }}>
               {dayjs(item.datetime).fromNow()}
             </Text>
           </div>
           {item.extra && (
-            <div className={styles.noticeExtra}>
+            <div>
               {item.status && <Tag color="blue">{item.status}</Tag>}
               {item.extra}
             </div>

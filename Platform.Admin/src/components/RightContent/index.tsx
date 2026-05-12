@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import HelpModal from '../HelpModal';
-import styles from './index.less';
+import { useHeaderStyles } from './styles';
 
 export type SiderTheme = 'light' | 'dark';
 
 export const Question: React.FC = () => {
+  const { styles } = useHeaderStyles();
   const [helpModalOpen, setHelpModalOpen] = useState(false);
 
   return (

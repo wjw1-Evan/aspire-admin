@@ -1,9 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useIntl } from '@umijs/max';
-import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
-import { ModalForm, ProFormTextArea } from '@ant-design/pro-components';
+import { type ProColumns, ActionType, ProTable, ModalForm, ProFormTextArea, ProForm } from '@ant-design/pro-components';
 import { Button, Grid, Input, Space, Tag } from 'antd';
-import { ProForm } from '@ant-design/pro-components';
 import { CheckOutlined, AlertOutlined, CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { iotService, IoTDeviceEvent, IoTDevice } from '@/services/iotService';
@@ -118,3 +116,4 @@ const EventManagement = React.forwardRef<EventManagementRef, any>((props, ref) =
 
 EventManagement.displayName = 'EventManagement';
 export default EventManagement;
+

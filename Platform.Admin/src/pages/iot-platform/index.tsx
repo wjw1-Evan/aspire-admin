@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer, ProCard } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
 import { Row, Col, Button, Space, Spin, Tag, Grid } from 'antd';
-import { ProCard } from '@ant-design/pro-components';
 import { CloudServerOutlined, DatabaseOutlined, AlertOutlined, DesktopOutlined, ReloadOutlined, WifiOutlined } from '@ant-design/icons';
 import { ApiResponse } from '@/types';
 
@@ -136,3 +135,4 @@ const IoTPlatform: React.FC = () => {
 };
 
 export default IoTPlatform;
+

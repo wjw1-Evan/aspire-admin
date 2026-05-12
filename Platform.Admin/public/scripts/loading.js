@@ -37,7 +37,15 @@
   document.head.appendChild(style);
 
   loadingDiv.appendChild(spinner);
-  document.body.appendChild(loadingDiv);
+
+  // 如果 document.body 还不存在，等待 DOMContentLoaded
+  if (document.body) {
+    document.body.appendChild(loadingDiv);
+  } else {
+    document.addEventListener('DOMContentLoaded', function() {
+      document.body.appendChild(loadingDiv);
+    });
+  }
 
   // 当页面加载完成后移除加载指示器
   if (document.readyState === 'complete') {

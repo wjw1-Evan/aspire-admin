@@ -4,7 +4,7 @@ import { Space, Typography, Spin, Result, Input, Button, Tag } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { request } from '@umijs/max';
 import { ApiResponse } from '@/types';
-import { getIntl } from '@umijs/max';
+import { useIntl } from '@umijs/max';
 import { useMessage } from '@/hooks/useMessage';
 
 const { Title, Text } = Typography;
@@ -51,7 +51,7 @@ const formatFileSize = (bytes?: number) => {
 };
 
 const SharePage: React.FC = () => {
-    const intl = getIntl();
+    const intl = useIntl();
     const message = useMessage();
     const params = useParams();
     const token = params?.token as string | undefined;

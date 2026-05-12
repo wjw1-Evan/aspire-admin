@@ -16,7 +16,7 @@ const Settings: LayoutSettings = {
   fixSiderbar: true,
   colorWeak: false,
   title: '通用管理平台',
-  pwa: true,
+
   logo: '/logo.svg',
   iconfontUrl: '',
   token: {

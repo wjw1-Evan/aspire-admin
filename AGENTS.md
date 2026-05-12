@@ -100,7 +100,7 @@
 本项目是一个基于 **.NET 10 (后端) + React 19 (前端 Admin) + Expo 54 (移动 App) + 微信原生 (小程序 MiniApp)** 的企业级多租户闭环管理系统。
 
 - **后端**：`.NET 10` + `Aspire` 微服务编排 + `MongoDB`
-- **前端后台**：`React 19.2.5` + `Ant Design 6.3.5` + `UmiJS 4.6.42`
+- **前端后台**：`React 19.2.6` + `Ant Design 6.3.7` + `UmiJS 4.6.42`（Ant Design Pro V6 模式）
 - **移动端应用**：`Expo 54.0.31` + `React Native 0.83.1`
 - **微信小程序**：`Platform.MiniApp` 微信原生开发
 - **数据库**：MongoDB.EntityFrameworkCore + MongoDB.Driver

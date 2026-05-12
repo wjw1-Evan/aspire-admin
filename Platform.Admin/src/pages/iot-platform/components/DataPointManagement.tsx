@@ -1,11 +1,8 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useIntl } from '@umijs/max';
-import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormSelect, ProFormDigit, ProFormSwitch, ProFormTextArea } from '@ant-design/pro-components';
+import { type ProColumns, ActionType, ProTable, ModalForm, ProFormText, ProFormSelect, ProFormDigit, ProFormSwitch, ProFormTextArea, ProForm, ProCard, ProDescriptions } from '@ant-design/pro-components';
 import { Button, Col, Grid, Input, Row, Space, Tag, Popconfirm } from 'antd';
-import { ProForm } from '@ant-design/pro-components';
 import { Drawer } from 'antd';
-import { ProCard, ProDescriptions } from '@ant-design/pro-components';
 import { PlusOutlined, EditOutlined, DeleteOutlined, DatabaseOutlined, CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { iotService, IoTDataPoint, IoTDevice } from '@/services/iotService';
@@ -221,3 +218,4 @@ const DataPointManagement = React.forwardRef<DataPointManagementRef, any>((props
 
 DataPointManagement.displayName = 'DataPointManagement';
 export default DataPointManagement;
+

@@ -4,7 +4,7 @@ import { Space, Typography, Button, Spin, Result, Card, Row, Col, Empty, Grid } 
 import { ArrowLeftOutlined, ReloadOutlined, DashboardOutlined } from '@ant-design/icons';
 import { PageContainer, ProCard } from '@ant-design/pro-components';
 import { request } from '@umijs/max';
-import { getIntl } from '@umijs/max';
+import { useIntl } from '@umijs/max';
 import type { ApiResponse } from '@/types';
 import { useMessage } from '@/hooks/useMessage';
 
@@ -51,7 +51,7 @@ const api = {
 };
 
 const DashboardViewPage: React.FC = () => {
-  const intl = getIntl();
+  const intl = useIntl();
   const message = useMessage();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();

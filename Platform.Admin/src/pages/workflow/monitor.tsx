@@ -1,9 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer, ProCard, ProTable, ProColumns } from '@ant-design/pro-components';
 import { Tag, Space, Button, Modal, Input, Form, InputNumber, Switch, Select, Checkbox } from 'antd';
-import { ProCard } from '@ant-design/pro-components';
 import { EyeOutlined, MonitorOutlined, HistoryOutlined, FormOutlined, SearchOutlined } from '@ant-design/icons';
-import { ProTable, ProColumns } from '@ant-design/pro-table';
 import {
   getWorkflowInstances, getWorkflowInstance, getApprovalHistory, getWorkflowDetail,
   type WorkflowInstance, WorkflowStatus, type WorkflowGraph, ApprovalAction,
@@ -262,3 +260,4 @@ const WorkflowMonitor: React.FC = () => {
 };
 
 export default WorkflowMonitor;
+

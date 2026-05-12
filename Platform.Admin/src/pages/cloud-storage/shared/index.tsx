@@ -1,9 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer, ProTable, ProColumns, ActionType, ModalForm, ProFormText, ProFormSelect, ProFormDatePicker, ProFormDigit, ProFormSwitch } from '@ant-design/pro-components';
 import { Button, Space, Tag, App, Modal, Input, Popconfirm } from 'antd';
 import { ShareAltOutlined, EditOutlined, DeleteOutlined, CopyOutlined, LockOutlined, UnlockOutlined, SearchOutlined } from '@ant-design/icons';
-import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormSelect, ProFormDatePicker, ProFormDigit, ProFormSwitch } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import { request } from '@umijs/max';
@@ -186,3 +184,4 @@ const CloudStorageSharedPage: React.FC = () => {
 };
 
 export default CloudStorageSharedPage;
+

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useIntl } from '@umijs/max';
 import { Tag, Spin, Row, Col } from 'antd';
-import { ModalForm, ProFormText, ProFormTextArea, ProFormSelect, ProFormDatePicker, ProFormDigit } from '@ant-design/pro-form';
+import { ModalForm, ProFormText, ProFormTextArea, ProFormSelect, ProFormDatePicker, ProFormDigit } from '@ant-design/pro-components';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { createTask, updateTask, TaskPriority, getTaskTree, type TaskDto, type CreateTaskRequest, type UpdateTaskRequest } from '@/services/task/api';

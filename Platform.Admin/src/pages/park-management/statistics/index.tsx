@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Row, Col, Statistic, Spin, Tabs, Typography, Progress, Tag, Empty, Button, Space, Modal } from 'antd';
-import { ProTable, ProCard } from '@ant-design/pro-components';
+import { ProTable, ProCard, PageContainer } from '@ant-design/pro-components';
 import { useIntl, request } from '@umijs/max';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import { marked } from 'marked';
 import { BankOutlined, TeamOutlined, FileTextOutlined, CustomerServiceOutlined, ArrowUpOutlined, ArrowDownOutlined, ReloadOutlined, FundProjectionScreenOutlined, UserSwitchOutlined, StarOutlined, CheckCircleOutlined, ClockCircleOutlined, SyncOutlined, WarningOutlined, RobotOutlined } from '@ant-design/icons';
-import { PageContainer } from '@ant-design/pro-components';
 import StatisticsPeriodSelector from '@/components/StatisticsPeriodSelector';
 import { ApiResponse } from '@/types';
 
@@ -292,3 +291,4 @@ const StatisticsPage: React.FC = () => {
 };
 
 export default StatisticsPage;
+

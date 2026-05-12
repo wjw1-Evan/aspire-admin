@@ -1,8 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { request, getIntl } from '@umijs/max';
+import { request, useIntl } from '@umijs/max';
 import { Tag, Space, Button, Popconfirm, Modal, Switch, Input } from 'antd';
-import { PageContainer, ProTable } from '@ant-design/pro-components';
-import type { ProColumns, ActionType } from '@ant-design/pro-components';
+import { PageContainer, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
 import { PlusOutlined, PlayCircleOutlined, DeleteOutlined, EyeOutlined, PauseCircleOutlined, ApartmentOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult } from '@/types';
@@ -132,7 +131,7 @@ const explainCron = (cron: string, intl: any): string => {
 };
 
 const WebScraper: React.FC = () => {
-const intl = getIntl();
+const intl = useIntl();
 const message = useMessage();
   const actionRef = useRef<ActionType | undefined>(undefined);
   const [formVisible, setFormVisible] = useState(false);

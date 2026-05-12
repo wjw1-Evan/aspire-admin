@@ -1,8 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { request, useIntl } from '@umijs/max';
 import { Tag, Space, Button, Input, Timeline, Card, Row, Col, Descriptions, Modal, Progress, Statistic } from 'antd';
-import { PageContainer, ProTable } from '@ant-design/pro-components';
-import type { ProColumns, ActionType } from '@ant-design/pro-components';
+import { PageContainer, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
 import { PlayCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, WarningOutlined, HistoryOutlined, FileTextOutlined, ScheduleOutlined } from '@ant-design/icons';
 import { ApiResponse, PagedResult } from '@/types';
 

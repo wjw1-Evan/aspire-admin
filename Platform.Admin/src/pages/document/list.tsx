@@ -1,10 +1,9 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useIntl } from '@umijs/max';
-import { PageContainer, ProDescriptions, ProFormSelect, ProFormText, ProFormTextArea, ModalForm } from '@ant-design/pro-components';
+import { PageContainer, ProDescriptions, ProFormSelect, ProFormText, ProFormTextArea, ModalForm, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
 import { Space, Tag, Button, App, Input, Popconfirm, Form, Modal } from 'antd';
 import { Drawer } from 'antd';
 import { FileTextOutlined, PlusOutlined, EyeOutlined, SendOutlined, DeleteOutlined, EditOutlined, FileProtectOutlined } from '@ant-design/icons';
-import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import dayjs from 'dayjs';
 import { request } from '@umijs/max';
 import { ApiResponse, PagedResult } from '@/types';
@@ -358,3 +357,4 @@ const DocumentEditDrawer: React.FC<{ id: string; visible: boolean; onClose: () =
 };
 
 export default DocumentManagement;
+

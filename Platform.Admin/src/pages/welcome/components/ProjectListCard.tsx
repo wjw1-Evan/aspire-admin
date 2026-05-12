@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { Card, Space, Tag, Empty, theme, Typography, Progress, Tooltip } from 'antd';
 import { FolderOutlined } from '@ant-design/icons';
 import { useAccess, useNavigate, useIntl } from '@umijs/max';
-import { ProTable, ProColumns } from '@ant-design/pro-table';
+import { ProTable, ProColumns } from '@ant-design/pro-components';
 import { getProjectList, ProjectStatus, ProjectPriority } from '@/services/task/project';
 import type { ProjectDto } from '@/services/task/project';
 

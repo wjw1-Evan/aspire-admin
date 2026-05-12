@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import { cancelJoinRequest, getMyJoinRequests } from '@/services/company';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { UndoOutlined, TeamOutlined } from '@ant-design/icons';
-import { ProTable, ProColumns } from '@ant-design/pro-table';
+import { ProTable, ProColumns } from '@ant-design/pro-components';
 import type { JoinRequestDetail } from '@/types';
 
 const MyJoinRequestsTable: React.FC = () => {

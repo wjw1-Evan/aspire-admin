@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer, ProDescriptions } from '@ant-design/pro-components';
 import { Card, Spin, Row, Col, Tag, Space, Button } from 'antd';
-import { ProDescriptions } from '@ant-design/pro-components';
 import {
   EditOutlined,
   UserOutlined,
@@ -200,3 +199,4 @@ export default function CompanySettings() {
     </PageContainer>
   );
 }
+

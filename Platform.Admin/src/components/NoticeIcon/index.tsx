@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { useNavigate, getIntl } from '@umijs/max';
+import { useNavigate, useIntl } from '@umijs/max';
 import { Badge, Button, Space, Empty, Spin, Tag, Typography } from 'antd';
 import { BellOutlined, CheckCircleOutlined, InfoCircleOutlined, WarningOutlined, CloseCircleOutlined, DeleteOutlined, LoadingOutlined } from '@ant-design/icons';
 import HeaderDropdown from '@/components/HeaderDropdown';
@@ -7,8 +7,8 @@ import { useSseConnection } from '@/hooks/useSseConnection';
 import { NotificationCategory, NotificationLevel, NotificationStatus, markAsRead, markAsUnread, markAllAsRead, getNotifications, AppNotification } from '@/services/notification/api';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import styles from './index.less';
-import headerStyles from '@/components/RightContent/index.less';
+import { useNoticeStyles } from './styles';
+import { useHeaderStyles } from '@/components/RightContent/styles';
 
 dayjs.extend(relativeTime);
 
@@ -26,7 +26,9 @@ const LevelIcon: React.FC<{ level: NotificationLevel }> = ({ level }) => {
 const PAGE_SIZE = 20;
 
 const NoticeIcon: React.FC = () => {
-  const intl = getIntl();
+  const { styles: noticeStyles } = useNoticeStyles();
+  const { styles: headerBtnStyles } = useHeaderStyles();
+  const intl = useIntl();
   const navigate = useNavigate();
   const [popoverOpen, setPopoverOpen] = useState(false);
   const sseResult = useSseConnection({ enableNotifications: true });
@@ -123,8 +125,8 @@ const NoticeIcon: React.FC = () => {
   };
 
   const notificationList = (
-    <div className={styles.notificationPanel}>
-      <div className={styles.notificationHeader}>
+    <div className={noticeStyles.notificationPanel}>
+      <div className={noticeStyles.notificationHeader}>
         <Text strong style={{ fontSize: 16 }}>{intl.formatMessage({ id: 'pages.unifiedNotificationCenter.title' })}</Text>
         <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
           {unreadCount > 0 && (
@@ -149,15 +151,15 @@ const NoticeIcon: React.FC = () => {
             )}
          </div>
        </div>
-       <div className={styles.notificationStats}>
+       <div className={noticeStyles.notificationStats}>
          <span style={{ color: '#1677ff' }}>{intl.formatMessage({ id: 'pages.unifiedNotificationCenter.unreadCount' }, { count: unreadCount })}</span>
          <span style={{ color: '#52c41a' }}>{intl.formatMessage({ id: 'pages.unifiedNotificationCenter.readCount' }, { count: total - unreadCount })}</span>
         <span>{intl.formatMessage({ id: 'pages.unifiedNotificationCenter.totalCount' }, { count: total })}</span>
       </div>
       
-      <div className={styles.notificationList} ref={listRef} onScroll={handleScroll}>
+      <div className={noticeStyles.notificationList} ref={listRef} onScroll={handleScroll}>
         {loading && notifications.length === 0 ? (
-          <div className={styles.emptyState}>
+          <div className={noticeStyles.emptyState}>
             <Spin indicator={<LoadingOutlined spin />} />
           </div>
         ) : notifications.length > 0 ? (
@@ -165,7 +167,7 @@ const NoticeIcon: React.FC = () => {
             {notifications.map((item) => (
                 <div 
                   key={item.id}
-                  className={styles.notificationItem}
+                  className={noticeStyles.notificationItem}
                   style={{ opacity: item.status === 'Read' || item.status === 'read' ? 0.6 : 1 }}
                   onClick={(e) => {
                     if (item.actionUrl) {
@@ -177,18 +179,18 @@ const NoticeIcon: React.FC = () => {
                     }
                   }}
                 >
-                  <div className={`${styles.levelIndicator} ${styles[item.level.toLowerCase()]}`} />
+                  <div className={`${noticeStyles.levelIndicator} ${noticeStyles[item.level.toLowerCase() as keyof typeof noticeStyles]}`} />
                   <div style={{ marginTop: 4 }}>
                     <LevelIcon level={item.level} />
                   </div>
-                  <div className={styles.notificationContent}>
-                    <div className={styles.notificationTitle}>
+                  <div className={noticeStyles.notificationContent}>
+                    <div className={noticeStyles.notificationTitle}>
                       {item.title}
                       <span style={{ float: 'right', fontWeight: 'normal', fontSize: 10, color: '#999' }}>
                         {dayjs(item.createdAt).fromNow()}
                       </span>
                     </div>
-                    <div className={styles.notificationDesc}>{item.content}</div>
+                    <div className={noticeStyles.notificationDesc}>{item.content}</div>
 <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Tag color={item.status === 'Unread' || item.status === 'unread' ? 'blue' : 'default'}>{item.category}</Tag>
                       {item.status === 'Read' || item.status === 'read' ? (
@@ -206,7 +208,7 @@ const NoticeIcon: React.FC = () => {
             </div>
           </>
         ) : (
-          <div className={styles.emptyState}>
+          <div className={noticeStyles.emptyState}>
             <Empty description={intl.formatMessage({ id: 'pages.unifiedNotificationCenter.noNewNotifications' })} />
           </div>
         )}
@@ -224,7 +226,7 @@ const NoticeIcon: React.FC = () => {
       onOpenChange={setPopoverOpen}
       placement="bottomRight"
     >
-      <span className={headerStyles.headerActionButton}>
+      <span className={headerBtnStyles.headerActionButton}>
         <Badge 
           count={badgeCount} 
           overflowCount={99} 

@@ -19,7 +19,7 @@ import {
 } from '@/services/xiaoke/api';
 import ChatHistoryDetail from './ChatHistoryDetail';
 import dayjs from 'dayjs';
-import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
+import { ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
 
 
 const ChatHistoryManagement: React.FC = () => {

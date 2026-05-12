@@ -1,12 +1,9 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import { PageContainer, ProCard } from '@ant-design/pro-components';
+import { PageContainer, ProCard, ProTable, ProColumns, ActionType, ModalForm, ProFormText, ProFormSelect, ProFormDatePicker, ProFormDigit, ProFormTextArea, ProDescriptions } from '@ant-design/pro-components';
 import { useIntl, request } from '@umijs/max';
 import { Form, Input, Button, App, Space, Row, Col, Tag, Typography, Tabs, Popconfirm, Flex, Progress } from 'antd';
 import { Drawer } from 'antd';
-import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormSelect, ProFormDatePicker, ProFormDigit, ProFormTextArea } from '@ant-design/pro-form';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SwapOutlined, TeamOutlined, ProjectOutlined, PhoneOutlined, SearchOutlined } from '@ant-design/icons';
-import { ProDescriptions } from '@ant-design/pro-components';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult } from '@/types';
 import { getErrorMessage } from '@/utils/getErrorMessage';

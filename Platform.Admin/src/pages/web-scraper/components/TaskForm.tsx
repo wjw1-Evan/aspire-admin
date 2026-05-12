@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Modal, Form, InputNumber, Switch, Row, Col } from 'antd';
 import { ModalForm, ProFormText, ProFormTextArea, ProFormSelect, ProFormDigit } from '@ant-design/pro-components';
-import { request, getIntl } from '@umijs/max';
+import { request, useIntl } from '@umijs/max';
 import { ApiResponse } from '@/types';
 import { useMessage } from '@/hooks/useMessage';
 
@@ -46,7 +46,7 @@ const api = {
 };
 
 const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onCancel, onSuccess }) => {
-  const intl = getIntl();
+  const intl = useIntl();
   const message = useMessage();
   const [form] = Form.useForm();
 

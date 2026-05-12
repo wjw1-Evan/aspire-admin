@@ -1,6 +1,6 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { Row, Col, Statistic, Spin, Typography, Progress, Tag, Empty, Button, Space, Modal } from 'antd';
-import { ProCard } from '@ant-design/pro-components';
+import { ProCard, PageContainer } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
@@ -16,7 +16,6 @@ import {
     RobotOutlined,
     ReloadOutlined
 } from '@ant-design/icons';
-import { PageContainer } from '@ant-design/pro-components';
 import StatisticsPeriodSelector from '@/components/StatisticsPeriodSelector';
 import * as projectStatisticsService from '@/services/project/statistics';
 import { ProjectDashboardStatistics } from '@/services/project/statistics';

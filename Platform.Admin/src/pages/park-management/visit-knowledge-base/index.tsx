@@ -1,12 +1,9 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer, ProTable, ProColumns, ActionType, ModalForm, ProFormText, ProFormTextArea, ProFormSelect, ProFormSwitch, ProForm, ProDescriptions } from '@ant-design/pro-components';
 import { useIntl, request } from '@umijs/max';
 import { Tag, Space, Button, Input, App, Typography, Empty, Popconfirm, Spin } from 'antd';
 import { Drawer } from 'antd';
-import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormTextArea, ProFormSelect, ProFormSwitch, ProForm } from '@ant-design/pro-form';
 import { PlusOutlined, ReloadOutlined, QuestionCircleOutlined, StarOutlined, StarFilled, EditOutlined, DeleteOutlined, EyeOutlined, SearchOutlined, BookOutlined, RobotOutlined } from '@ant-design/icons';
-import { ProDescriptions } from '@ant-design/pro-components';
 import { marked } from 'marked';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult } from '@/types';
@@ -129,3 +126,4 @@ const VisitKnowledgeBase: React.FC = () => {
 };
 
 export default VisitKnowledgeBase;
+

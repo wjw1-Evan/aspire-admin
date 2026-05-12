@@ -10,9 +10,7 @@ import {
   SearchOutlined,
 } from '@ant-design/icons';
 import { useIntl, useParams, history } from '@umijs/max';
-import { PageContainer, ProCard, ProDescriptions } from '@ant-design/pro-components';
-import { ProTable, ActionType, ProColumns } from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormTextArea, ProFormDigit } from '@ant-design/pro-components';
+import { PageContainer, ProCard, ProDescriptions, ProTable, ActionType, ProColumns, ModalForm, ProFormText, ProFormTextArea, ProFormDigit } from '@ant-design/pro-components';
 import * as kbService from '@/services/workflow/knowledge-base';
 import type { KnowledgeDocument } from '@/services/workflow/knowledge-base';
 import { getErrorMessage } from '@/utils/getErrorMessage';
@@ -339,3 +337,4 @@ const KnowledgeBaseDocuments: React.FC = () => {
 };
 
 export default KnowledgeBaseDocuments;
+

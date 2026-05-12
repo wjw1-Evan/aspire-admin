@@ -7,13 +7,91 @@ import type { ApiResponse } from '@/types';
 import type { UserCompanyItem, SwitchCompanyResult } from '@/types';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { CreateCompanyModal } from '../CreateCompanyModal';
-import styles from './index.less';
+import { createStyles } from 'antd-style';
+
+const useStyles = createStyles(({ css }) => ({
+  companySwitcher: css`
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 8px;
+    margin: 0 4px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 18px;
+    color: inherit;
+    transition: all 0.3s;
+    line-height: 1;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.06);
+    }
+
+    &:active {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+  `,
+  icon: css`
+    margin-right: 8px;
+    font-size: 16px;
+  `,
+  companyName: css`
+    font-size: 14px;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  `,
+  companyItem: css`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+    min-width: 250px;
+  `,
+  companyInfo: css`
+    flex: 1;
+  `,
+  personalBadge: css`
+    margin-left: 8px;
+    padding: 0 6px;
+    font-size: 12px;
+    background: #e6f7ff;
+    color: #1890ff;
+    border-radius: 2px;
+  `,
+  adminBadge: css`
+    margin-left: 8px;
+    padding: 0 6px;
+    font-size: 12px;
+    background: #fff7e6;
+    color: #fa8c16;
+    border-radius: 2px;
+  `,
+  companyRoles: css`
+    font-size: 12px;
+    color: #666;
+  `,
+  checkIcon: css`
+    margin-left: 12px;
+    color: #52c41a;
+    font-size: 16px;
+  `,
+  joinCompany: css`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #1890ff;
+    font-weight: 500;
+  `,
+}));
 
 /**
  * v3.1: 企业切换器组件
  * 显示在 Header 右侧，允许用户在多个企业间切换
  */
 export const CompanySwitcher: React.FC = () => {
+  const { styles } = useStyles();
   const intl = useIntl();
   const { initialState, setInitialState } = useModel('@@initialState');
   const { message } = AntApp.useApp();

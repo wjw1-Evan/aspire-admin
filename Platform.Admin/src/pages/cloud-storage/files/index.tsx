@@ -3,15 +3,12 @@
  */
 
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer, ProDescriptions, ProCard, ProTable, ProColumns, ActionType, ModalForm, ProFormText, ProFormDatePicker, ProFormSelect, ProFormDigit } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
 import { App, Button, Tag, Space, Breadcrumb, Dropdown, Image, Input, Modal, Popconfirm, Card, Upload, Progress } from 'antd';
 import { Drawer } from 'antd';
 import type { UploadFile, UploadProps } from 'antd';
-import { ProDescriptions, ProCard } from '@ant-design/pro-components';
-import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormDatePicker, ProFormSelect, ProFormDigit } from '@ant-design/pro-form';
 import { tokenUtils } from '@/utils/token';
 import { EditOutlined, DeleteOutlined, CloudOutlined, FolderOutlined, FileOutlined, DownloadOutlined, ShareAltOutlined, UploadOutlined, FolderAddOutlined, MoreOutlined, EyeOutlined, SearchOutlined, InboxOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -381,3 +378,4 @@ const CloudStorageFilesPage: React.FC = () => {
 };
 
 export default CloudStorageFilesPage;
+

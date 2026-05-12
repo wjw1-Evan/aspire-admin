@@ -1,4 +1,4 @@
-# 前端开发规范（Admin）
+# 前端开发规范（Admin）— Ant Design Pro V6
 
 > **开发标准参考**：`src/pages/password-book/index.tsx` 是所有列表页面的开发标准。
 
@@ -6,23 +6,58 @@
 
 ## 🧭 目录
 
-- [7.1 路由与菜单](#71-路由与菜单)
-- [7.2 API 端点规范](#72-api-端点规范)
-- [7.3 类型安全](#73-类型安全)
-- [7.4 统一 API 响应类型](#74-统一-api-响应类型)
-- [7.5 列表页面关键结构](#75-列表页面关键结构)
-- [7.6 表单处理规范](#76-表单处理规范)
-- [7.7 错误处理规范](#77-错误处理规范)
-- [7.8 国际化 (i18n)](#78-国际化-i18n)
-- [7.9 统一开发标准](#79-统一开发标准)
-- [7.10 已重构页面清单](#710-已重构页面清单)
-- [7.11 认证与 Token 管理](#711-认证与-token-管理)
-- [7.12 SSE 连接管理](#712-sse-连接管理)
-- [7.13 用户体验设计要点（新增）](#713-用户体验设计要点新增)
+- [7.1 技术栈总览](#71-技术栈总览)
+- [7.2 路由与菜单](#72-路由与菜单)
+- [7.3 API 端点规范](#73-api-端点规范)
+- [7.4 类型安全](#74-类型安全)
+- [7.5 统一 API 响应类型](#75-统一-api-响应类型)
+- [7.6 数据请求（React Query）](#76-数据请求react-query)
+- [7.7 列表页面关键结构](#77-列表页面关键结构)
+- [7.8 表单处理规范](#78-表单处理规范)
+- [7.9 错误处理规范](#79-错误处理规范)
+- [7.10 国际化 (i18n)](#710-国际化-i18n)
+- [7.11 样式体系（Tailwind + antd-style）](#711-样式体系tailwind--antd-style)
+- [7.12 权限管理](#712-权限管理)
+- [7.13 认证与 Token 管理](#713-认证与-token-管理)
+- [7.14 SSE 连接管理](#714-sse-连接管理)
+- [7.15 用户体验设计要点](#715-用户体验设计要点)
+- [7.16 统一开发标准](#716-统一开发标准)
+- [7.17 已重构页面清单](#717-已重构页面清单)
 
 ---
 
-## 7.1 路由与菜单
+## 7.1 技术栈总览
+
+| 层 | 技术 | 版本 |
+|----|------|------|
+| **框架** | Umi Max | `^4.6.53` |
+| **UI 库** | Ant Design | `^6.3.7` |
+| **Pro 组件** | `@ant-design/pro-components` | `^3.1.12` |
+| **图标** | `@ant-design/icons` | `^6.2.2` |
+| **AI 组件** | `@ant-design/x` | `^2.7.0` |
+| **数据请求** | `@tanstack/react-query` | `^5.100.10` |
+| **样式** | Tailwind CSS (`^4.3.0`) + antd-style (`^4.1.0`) | |
+| **日期** | dayjs (`^1.11.20`) | 已替换 moment |
+| **代码检查** | Biome (`^2.4.15`) | 替代 ESLint + Prettier |
+| **构建引擎** | utoopack（Turbopack + Rust） | |
+| **React** | React 19 | 支持并发模式 |
+
+### 导入路径规范
+
+所有 Umi Max 相关 API 统一从 `@umijs/max` 导入：
+
+```typescript
+// ✅ 正确
+import { useIntl, request, useModel, useAccess, getLocale, history } from '@umijs/max';
+
+// ❌ 错误
+import { useIntl } from 'umi';
+import { request } from 'umi';
+```
+
+--- 
+
+## 7.2 路由与菜单
 
 ### 菜单数据初始化
 
@@ -39,9 +74,9 @@
 5. 创建前端页面组件
 6. 重启 `Platform.DataInitializer` 服务
 
-### 路由配置规范
+### 路由配置规范（V6 模式）
 
-**[强制]** 所有业务页面路由必须配置在 `config/routes.ts` 中：
+**[强制]** 所有业务页面路由配置在 `config/routes.ts` 中，支持以下 ProLayout 路由属性：
 
 ```typescript
 {
@@ -53,9 +88,36 @@
 }
 ```
 
+| 路由属性 | 类型 | 说明 |
+|---------|------|------|
+| `flatMenu` | boolean | 设为 true 时该项在菜单中隐藏，子项上提显示 |
+| `hideChildrenInMenu` | boolean | 隐藏子菜单项 |
+| `hideInMenu` | boolean | 隐藏自身和子菜单 |
+| `hideInBreadcrumb` | boolean | 在面包屑中隐藏 |
+| `access` | string | 权限控制，与 `src/access.ts` 配合 |
+| `headerRender` | false | 不显示顶部栏 |
+| `footerRender` | false | 不显示页脚 |
+| `menuRender` | false | 不显示菜单 |
+| `menuHeaderRender` | false | 不显示菜单标题和 logo |
+| `name` | string | 自动映射为 `menu.{name}` i18n 键 |
+
+### 数据库菜单与路由映射
+
+后端返回的菜单树通过 `app.tsx` 的 `menuDataRender` 转换为 ProLayout 格式：
+
+```typescript
+// app.tsx 中的关键模式
+menuDataRender: () => {
+  const menus = initialState?.currentUser?.menus;
+  if (!menus) return [];
+  const orderedMenus = sortMenusByConfig(menus, menuConfig);
+  return convertMenuTreeToProLayout(orderedMenus);
+}
+```
+
 ---
 
-## 7.2 API 端点规范
+## 7.3 API 端点规范
 
 ### 后端路由约定
 
@@ -82,7 +144,7 @@ const api = {
 
 ---
 
-## 7.3 类型安全
+## 7.4 类型安全
 
 **[强制]** 禁止使用 `any` 类型，定义具体接口：
 
@@ -95,7 +157,7 @@ interface TaskFormValues {
 
 ---
 
-## 7.4 统一 API 响应类型
+## 7.5 统一 API 响应类型
 
 所有 API 相关类型统一定义在 `@/types/api-response.ts`：
 
@@ -119,33 +181,100 @@ export interface PagedResult<T> {
 
 ---
 
-## 7.5 列表页面关键结构
+## 7.6 数据请求（React Query）
+
+Ant Design Pro V6 使用 `@tanstack/react-query` 替代传统的 `useRequest` 模式。推荐两种方式并存：
+
+### 方式一：ProTable 内置数据流（推荐用于列表页）
+
+ProTable 内置数据请求，通过 `request` prop 直调，不需要专门使用 useQuery：
+
+```typescript
+<ProTable
+  request={async (params, sort, filter) => {
+    const res = await api.list({ ...params, search, sort, filter });
+    return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+  }}
+/>
+```
+
+### 方式二：React Query 用于非列表数据（统计、下拉选项等）
+
+```typescript
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+// 查询
+const { data: stats, isLoading } = useQuery({
+  queryKey: ['passwordBook', 'statistics'],
+  queryFn: () => api.statistics(),
+  select: (res) => res.data,
+});
+
+// 变更（创建/更新/删除）
+const queryClient = useQueryClient();
+const deleteMutation = useMutation({
+  mutationFn: (id: string) => api.delete(id),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['passwordBook'] });
+    message.success('删除成功');
+  },
+});
+```
+
+### 方式三：传统 useState + useEffect（简单场景保留使用）
+
+```typescript
+const [data, setData] = useState<Stats | null>(null);
+const [loading, setLoading] = useState(true);
+
+useEffect(() => {
+  setLoading(true);
+  api.statistics()
+    .then(r => { if (r.success && r.data) setData(r.data); })
+    .finally(() => setLoading(false));
+}, []);
+```
+
+---
+
+## 7.7 列表页面关键结构
 
 完整代码参考 `src/pages/password-book/index.tsx`：
 
 ```typescript
-// 状态管理
+// 状态管理（局部状态）
 const [state, setState] = useState({
   formVisible: false,
   editingEntry: null as Entry | null,
 });
 const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
-// 列表请求
-request={async (params: any, sort: any, filter: any) => {
-  const res = await api.list({ ...params, search: state.search, sort, filter });
-  return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
-}}
+// 响应式布局
+const screens = useBreakpoint();
+const isMobile = !screens.md;
+
+// 列表请求（ProTable 内置）
+<ProTable
+  request={async (params: any, sort: any, filter: any) => {
+    const res = await api.list({ ...params, search: state.search, sort, filter });
+    return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+  }}
+/>
 
 // 列定义
 const columns: ProColumns<Entry>[] = [
   { title: '名称', dataIndex: 'name', sorter: true },
   {
     title: '操作',
+    valueType: 'option',
+    fixed: 'right',
+    width: 180,
     render: (_, r) => (
-      <Space>
-        <Button onClick={() => set({ viewingId: r.id, detailVisible: true })}>查看</Button>
-        <Button onClick={() => set({ editingEntry: r, formVisible: true })}>编辑</Button>
+      <Space size={4}>
+        <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingEntry: r, formVisible: true })}>编辑</Button>
+        <Popconfirm title="确认删除？" onConfirm={handleDelete}>
+          <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
+        </Popconfirm>
       </Space>
     ),
   },
@@ -154,9 +283,9 @@ const columns: ProColumns<Entry>[] = [
 
 ---
 
-## 7.6 表单处理规范
+## 7.8 表单处理规范
 
-使用 `@ant-design/pro-components` 的 `ModalForm` 组件：
+使用 `@ant-design/pro-components` 的 `ModalForm` 组件（ProComponents v3）：
 
 ```typescript
 <ModalForm
@@ -166,6 +295,8 @@ const columns: ProColumns<Entry>[] = [
   onOpenChange={(open) => { if (!open) set({ formVisible: false, editingEntry: null }); }}
   initialValues={state.editingEntry || undefined}
   onFinish={handleFinish}
+  autoFocusFirstInput
+  width={600}
 >
   <ProFormText name="name" label="名称" rules={[{ required: true }]} />
 </ModalForm>
@@ -174,13 +305,13 @@ const columns: ProColumns<Entry>[] = [
 ### 表单用户体验要点
 
 - **失焦校验**：用户离开字段时即时校验，不打断输入流
-- **提交 loading**：提交按钮自动进入 loading 状态，防止重复提交
+- **提交 loading**：`ModalForm` 提交按钮自动进入 loading 状态，防止重复提交
 - **保留上下文**：表单验证失败时，保留已填内容不丢失
 - **智能默认值**：常用字段预填合理默认值，减少输入
 
 ---
 
-## 7.7 错误处理规范
+## 7.9 错误处理规范
 
 **[强制]** 前端显示错误信息时，必须优先使用 `errorCode` 进行 i18n 翻译：
 
@@ -197,16 +328,18 @@ message.error(getErrorMessage(response, 'pages.xxx.operationFailed'));
 | 表单提交失败 | 保留表单内容，定位到错误字段 | 清空表单让用户重新填 |
 | Token 过期 | 自动刷新 Token 并重试请求 | 直接跳转登录页丢失当前操作 |
 | 请求超时 | 提示"请求超时，请检查网络" | 没有任何反馈（页面卡死） |
+| Chunk 加载失败 | 显示重试提示（V6 内置自动重试） | 白屏 |
 
 ---
 
-## 7.8 国际化 (i18n)
+## 7.10 国际化 (i18n)
 
-- **[强制]** 所有新页面必须使用 `intl.formatMessage` 替代硬编码中文文本
+- **[强制]** 所有新页面必须使用 `useIntl` 替代硬编码中文文本
+- **[强制]** 使用 `@umijs/max` 的 `useIntl` Hook 而非 `getIntl()`
 - 支持 18 种语言：zh-CN, zh-TW, en-US, ja-JP, ko-KR 等
 
 ```typescript
-const intl = getIntl();
+const intl = useIntl();
 intl.formatMessage({ id: 'pages.xxx.title' })
 ```
 
@@ -221,54 +354,81 @@ intl.formatMessage({ id: 'pages.xxx.title' })
 
 ---
 
-## 7.9 统一开发标准
+## 7.11 样式体系（Tailwind + antd-style）
 
-> **开发标准参考**：`src/templates/StandardPageTemplate.tsx`
+Ant Design Pro V6 使用**三件套**样式体系，按优先级排列：
 
-### 十大统一标准
+| 方案 | 用途 | 示例 |
+|------|------|------|
+| **Tailwind CSS v4** | 布局、间距、排版原子样式 | `className="flex items-center gap-2"` |
+| **antd-style v4** | 消费 Ant Design Token 的动态样式 | `const { styles, cx } = useStyles();` |
+| **CSS Modules** | 组件级样式隔离 | `import styles from './index.module.css';` |
 
-| 标准项 | 说明 |
-|--------|------|
-| **1. 状态管理** | 使用 `useState` + `useCallback` 模式 |
-| **2. 表单组件** | 统一使用 `ModalForm` |
-| **3. 国际化** | 所有文本使用 `intl.formatMessage` |
-| **4. 统计信息** | 页面顶部显示统计卡片 |
-| **5. 详情显示** | 使用 `Drawer` + `ProDescriptions` |
-| **6. 列操作** | 统一使用 `Space` + `Button` + `Popconfirm` |
-| **7. 布局样式** | 使用 `ProCard` 包裹 |
-| **8. API 调用** | 统一使用 `request` + `ApiResponse` 类型 |
-| **9. 代码组织** | 按顺序：导入 → 类型 → API → 组件 |
-| **10. 错误处理** | 使用 `getErrorMessage` 工具函数 |
+```tsx
+// Tailwind 布局示例
+<div className="flex items-center justify-between p-4">
+  <span className="text-lg font-semibold">标题</span>
+  <Space>
+    <Button type="primary">新建</Button>
+  </Space>
+</div>
 
----
-
-## 7.10 已重构页面清单
-
-| 页面 | 路径 | 完成项 |
-|------|------|--------|
-| 密码本 | `src/pages/password-book/index.tsx` | ✅ 国际化、移动端适配、统计信息 |
-| 任务管理 | `src/pages/task-management/index.tsx` | ✅ ModalForm、国际化 |
-| IoT 平台 | `src/pages/iot-platform/index.tsx` | ✅ 国际化、移动端适配 |
-| 用户管理 | `src/pages/user-management/index.tsx` | ✅ 统一状态管理、国际化 |
-| 工作流表单 | `src/pages/workflow/forms/index.tsx` | ✅ ModalForm、国际化 |
-| 项目管理 | `src/pages/project-management/index.tsx` | ✅ 国际化、统计信息 |
-| 云存储文件 | `src/pages/cloud-storage/files/index.tsx` | ✅ 国际化 |
-| 园区租户 | `src/pages/park-management/tenant/index.tsx` | ✅ 国际化 |
-| 组织架构 | `src/pages/organization/index.tsx` | ✅ 国际化 |
-| 网页抓取 | `src/pages/web-scraper/index.tsx` | ✅ 国际化 |
-| 分享页面 | `src/pages/share/index.tsx` | ✅ 国际化 |
+// antd-style 动态主题样式
+import { createStyles } from 'antd-style';
+const useStyles = createStyles(({ token }) => ({
+  card: {
+    background: token.colorBgContainer,
+    borderRadius: token.borderRadiusLG,
+    padding: token.paddingLG,
+  },
+}));
+const { styles } = useStyles();
+<div className={styles.card}>内容</div>
+```
 
 ---
 
-## 7.11 认证与 Token 管理
+## 7.12 权限管理
+
+### Access 模式
+
+使用 `@umijs/max` 的 `useAccess` Hook + `src/access.ts` 定义：
+
+```typescript
+// src/access.ts
+export default function access(initialState) {
+  const { currentUser } = initialState ?? {};
+  return {
+    adminAccess: currentUser?.access === 'admin',
+    canAdmin: currentUser?.roles?.includes('管理员') ?? false,
+    canAccessMenu: (menuId: string) => { /* ... */ },
+    canAccessPath: (path: string) => { /* ... */ },
+    hasRole: (roleName: string) => currentUser?.roles?.includes(roleName) ?? false,
+  };
+}
+
+// 页面中使用
+import { useAccess } from '@umijs/max';
+const access = useAccess();
+if (access.canAdmin) { /* 显示管理功能 */ }
+```
+
+### 菜单权限
+
+后端返回的菜单树通过 `menuDataRender` 过滤 `hideInMenu` 项，用户仅能看到有权限的菜单。
+
+---
+
+## 7.13 认证与 Token 管理
 
 - **Token 存储**：`localStorage`，键名 `auth_token`、`refresh_token`
 - **自动刷新**：`src/utils/tokenRefreshManager.ts`，401 时自动刷新并重试
 - **密码加密**：登录密码使用国密 SM2 非对称加密传输
+- **Token 过期处理**：`app.tsx` 的 `request.responseInterceptors` 中统一处理
 
 ---
 
-## 7.12 SSE 连接管理
+## 7.14 SSE 连接管理
 
 - **核心 Hook**：`src/hooks/useSseConnection.ts`
 - **连接端点**：`/apiservice/api/stream/sse?token=<jwt>`
@@ -276,14 +436,14 @@ intl.formatMessage({ id: 'pages.xxx.title' })
 
 ---
 
-## 7.13 用户体验设计要点（新增）
+## 7.15 用户体验设计要点
 
 ### 页面状态设计原则
 
 每个页面必须覆盖以下 5 种状态：
 
 ```tsx
-// 1. 加载状态
+// 1. 加载状态（可使用顶层 loading.tsx 骨架屏）
 if (loading) return <Skeleton active />;
 
 // 2. 空状态
@@ -301,16 +461,12 @@ return <ProTable dataSource={data} />;
 
 ### 移动端适配要点
 
-所有列表页面必须考虑移动端显示：
-
 | 事项 | 说明 |
 |------|------|
-| **响应式列数** | 窄屏时自动隐藏非关键列 |
+| **响应式列数** | 窄屏时自动隐藏非关键列，使用 `responsive` 属性 |
 | **触摸友好** | 按钮最小 44px，点击反馈明显 |
 | **安全区域** | 适配刘海屏、底部 Home Indicator |
-| **横向滚动** | 表格内容过多时允许横向滚动 |
-
-> 参考 `src/pages/password-book/index.tsx` 中的 `responsive` 列配置。
+| **横向滚动** | 表格 `scroll={{ x: 'max-content' }}` 允许横向滚动 |
 
 ### 操作反馈设计
 
@@ -321,45 +477,66 @@ return <ProTable dataSource={data} />;
 | 操作成功 | `message.success` + 关闭弹窗 | 接口返回时 |
 | 操作失败 | 定位到错误字段 + 提示 | 接口返回时 |
 | 删除确认 | `Popconfirm` 弹窗 | 点击删除时 |
-| 长时间操作 | 进度条 + 百分比显示 | 超过 3s 时 |
+| 网络断开 | V6 内置状态提示横幅 | 检测到离线时 |
 
-### 常见前端用户体验反模式
+### 关键检查清单
 
-```tsx
-// ❌ 反模式 1：没有 loading 状态
-const [data, setData] = useState([]);
-useEffect(() => { fetchData().then(setData); }, []);
-// 页面会先白屏，等数据加载完才突然出现
-
-// ✅ 正确：始终有 loading
-const [loading, setLoading] = useState(true);
-useEffect(() => {
-  setLoading(true);
-  fetchData().then(setData).finally(() => setLoading(false));
-}, []);
-
-// ❌ 反模式 2：错误静默处理
-try { await submit();
-} catch (e) {} // 用户点了提交毫无反应
-
-// ✅ 正确：错误一定有反馈
-try { await submit();
-} catch (e) { message.error(getErrorMessage(e)); }
-
-// ❌ 反模式 3：表单提交成功后清空所有内容
-// 用户需要全部重新填写
-
-// ✅ 正确：保留一些上下文，或者提示用户下一步可以做什么
-```
-
-### 关键用户体验检查清单
-
-开发每个页面时，问自己：
-
-- [ ] **加载中** — 用户看到的是 Skeleton 还是白屏？
-- [ ] **空状态** — 没数据时是空表格还是友好的引导？
+- [ ] **加载中** — 看到 Skeleton 还是白屏？
+- [ ] **空状态** — 空表格还是友好引导？
 - [ ] **出错时** — 用户知道怎么恢复吗？
-- [ ] **移动端** — 手机上看布局会乱吗？
-- [ ] **操作后** — 用户知道操作成功了吗？下一步去哪？
-- [ ] **键盘可操作** — 能 Tab 切换字段、Enter 提交吗？
-- [ ] **加载超时** — 超过 3 秒的请求有进度提示吗？
+- [ ] **移动端** — 手机布局不乱？
+- [ ] **操作后** — 知道操作成功了吗？下一步去哪？
+- [ ] **键盘可操作** — Tab 切换、Enter 提交？
+- [ ] **加载超时** — 3s+ 请求有进度提示？
+
+---
+
+## 7.16 统一开发标准
+
+> **开发标准参考**：`src/templates/StandardPageTemplate.tsx`
+
+### 十大统一标准
+
+| # | 标准项 | 说明 |
+|---|--------|------|
+| **1** | **状态管理** | `useState` + `useCallback` 局部状态模式 |
+| **2** | **表单组件** | 统一使用 `ModalForm`（ProComponents v3） |
+| **3** | **国际化** | 所有文本使用 `useIntl` Hook |
+| **4** | **统计信息** | 页面顶部显示统计卡片或 Tags |
+| **5** | **详情显示** | 使用 `Drawer` + `ProDescriptions` |
+| **6** | **列操作** | 统一 `Space size={4}` + `Button` + `Popconfirm` |
+| **7** | **布局样式** | Tailwind 布局 + `PageContainer` 包裹 |
+| **8** | **API 调用** | 统一 `request` + `ApiResponse` 类型，推荐 `@tanstack/react-query` |
+| **9** | **代码组织** | 按序：导入 → 类型 → API → 组件 |
+| **10** | **错误处理** | 使用 `getErrorMessage` 工具函数 |
+
+### 导入路径映射速查
+
+| 功能 | V6 导入路径 |
+|------|------------|
+| React | `import React from 'react'` |
+| Umi 运行时 | `import { request, useIntl, useModel, useAccess, history } from '@umijs/max'` |
+| Ant Design | `import { Button, Space, Tag, Popconfirm, App } from 'antd'` |
+| Pro 组件 | `import { ProTable, ModalForm, ProFormText, ProDescriptions, PageContainer } from '@ant-design/pro-components'` |
+| 图标 | `import { EditOutlined, DeleteOutlined } from '@ant-design/icons'` |
+| React Query | `import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'` |
+| dayjs | `import dayjs from 'dayjs'` |
+| 响应式 | `const screens = Grid.useBreakpoint()` |
+
+---
+
+## 7.17 已重构页面清单
+
+| 页面 | 路径 | 完成项 |
+|------|------|--------|
+| 密码本 | `src/pages/password-book/index.tsx` | ✅ 国际化、移动端适配、统计信息、V6 模式 |
+| 任务管理 | `src/pages/task-management/index.tsx` | ✅ ModalForm、国际化 |
+| IoT 平台 | `src/pages/iot-platform/index.tsx` | ✅ 国际化、移动端适配 |
+| 用户管理 | `src/pages/user-management/index.tsx` | ✅ 统一状态管理、国际化 |
+| 工作流表单 | `src/pages/workflow/forms/index.tsx` | ✅ ModalForm、国际化 |
+| 项目管理 | `src/pages/project-management/index.tsx` | ✅ 国际化、统计信息 |
+| 云存储文件 | `src/pages/cloud-storage/files/index.tsx` | ✅ 国际化 |
+| 园区租户 | `src/pages/park-management/tenant/index.tsx` | ✅ 国际化 |
+| 组织架构 | `src/pages/organization/index.tsx` | ✅ 国际化 |
+| 网页抓取 | `src/pages/web-scraper/index.tsx` | ✅ 国际化 |
+| 分享页面 | `src/pages/share/index.tsx` | ✅ 国际化 |

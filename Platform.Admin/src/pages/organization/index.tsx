@@ -1,9 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer, ProCard, ProDescriptions, ProFormText, ProFormDigit, ModalForm, ProForm } from '@ant-design/pro-components';
 import { request } from '@umijs/max';
 import { Card, Button, Col, Empty, Form, Input, Modal, Popconfirm, Row, Select, Space, Spin, Tag, Tree, TreeSelect, Typography, theme } from 'antd';
-import { ProCard, ProDescriptions } from '@ant-design/pro-components';
-import { ProFormText, ProFormDigit, ModalForm, ProForm } from '@ant-design/pro-form';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import { ApartmentOutlined, DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined, UserOutlined, SearchOutlined } from '@ant-design/icons';
 import type { DataNode } from 'antd/es/tree';
@@ -11,7 +9,7 @@ import type { TreeSelectProps } from 'antd/es/tree-select';
 import { useMessage } from '@/hooks/useMessage';
 import dayjs from 'dayjs';
 import { ApiResponse } from '@/types';
-import { getIntl } from '@umijs/max';
+import { useIntl } from '@umijs/max';
 
 const { Text } = Typography;
 const { Search } = Input;
@@ -77,7 +75,7 @@ const collectDescendantIds = (node?: OrgNode): Set<string> => {
 
 // ==================== AssignUserModal ====================
 const AssignUserModal: React.FC<{ open: boolean; orgId?: string; onCancel: () => void; onSubmit: (values: any) => Promise<void> }> = ({ open, orgId, onCancel, onSubmit }) => {
-  const intl = getIntl();
+  const intl = useIntl();
   const [form] = Form.useForm();
   const [users, setUsers] = useState<AvailableUser[]>([]);
   const [loading, setLoading] = useState(false);
@@ -112,7 +110,7 @@ const AssignUserModal: React.FC<{ open: boolean; orgId?: string; onCancel: () =>
 // ==================== Main ====================
 const OrganizationPage: React.FC = () => {
   const message = useMessage();
-  const intl = getIntl();
+  const intl = useIntl();
   const { styles } = useCommonStyles();
   const [state, setState] = useState({
     tree: [] as OrgNode[], loading: false, searchValue: '', selectedId: undefined as string | undefined,
@@ -312,3 +310,4 @@ const OrganizationPage: React.FC = () => {
 };
 
 export default OrganizationPage;
+

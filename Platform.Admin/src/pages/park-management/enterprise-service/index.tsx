@@ -1,12 +1,9 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { PageContainer, ProCard } from '@ant-design/pro-components';
+import { PageContainer, ProCard, ProTable, ProColumns, ActionType, ModalForm, ProFormText, ProFormSelect, ProFormTextArea, ProDescriptions } from '@ant-design/pro-components';
 import { useIntl, useSearchParams, history, request } from '@umijs/max';
 import { Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, Tabs, Popconfirm, Rate, Switch, Avatar, Empty, Flex, Card } from 'antd';
 import { Drawer } from 'antd';
-import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-form';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, AppstoreOutlined, FormOutlined, CheckCircleOutlined, ClockCircleOutlined, StarOutlined, ReloadOutlined, SettingOutlined, SearchOutlined } from '@ant-design/icons';
-import { ProDescriptions } from '@ant-design/pro-components';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult } from '@/types';
 
@@ -163,3 +160,4 @@ const EnterpriseService: React.FC = () => {
 };
 
 export default EnterpriseService;
+

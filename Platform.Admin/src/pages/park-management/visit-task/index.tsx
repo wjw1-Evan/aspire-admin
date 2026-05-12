@@ -1,11 +1,8 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer, ProDescriptions, ProTable, ProColumns, ActionType, ModalForm, ProFormText, ProFormSelect, ProFormDateTimePicker } from '@ant-design/pro-components';
 import { useIntl, request } from '@umijs/max';
 import { Tag, Space, Row, Col, Button, Popconfirm, Typography, AutoComplete, Input, Divider, Form, App } from 'antd';
 import { Drawer } from 'antd';
-import { ProDescriptions } from '@ant-design/pro-components';
-import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormSelect, ProFormDateTimePicker } from '@ant-design/pro-form';
 import { PlusOutlined, UserOutlined, CheckCircleOutlined, SyncOutlined, CloseCircleOutlined, EditOutlined, DeleteOutlined, EyeOutlined, SearchOutlined, TeamOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult } from '@/types';
@@ -180,3 +177,4 @@ const VisitTaskPage: React.FC = () => {
 };
 
 export default VisitTaskPage;
+

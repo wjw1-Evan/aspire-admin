@@ -1,12 +1,9 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer, ProDescriptions, ProTable, ProColumns, ActionType, ModalForm, ProFormText, ProFormTextArea, ProFormSwitch, ProForm } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
 import { Tag, Space, Button, Input, Popconfirm, Switch, Tree, Spin, Divider } from 'antd';
 import { Drawer } from 'antd';
-import { ProDescriptions } from '@ant-design/pro-components';
-import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormTextArea, ProFormSwitch, ProForm } from '@ant-design/pro-form';
 import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined, SafetyOutlined } from '@ant-design/icons';
 import { ApiResponse, PagedResult } from '@/types';
 import dayjs from 'dayjs';
@@ -172,3 +169,4 @@ const RoleManagement: React.FC = () => {
 };
 
 export default RoleManagement;
+

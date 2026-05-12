@@ -1,11 +1,9 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import type { ProColumns } from '@ant-design/pro-table';
-import { PageContainer, ProDescriptions, ProCard } from '@ant-design/pro-components';
+import { ProColumns, PageContainer, ProDescriptions, ProCard, ProTable, ActionType } from '@ant-design/pro-components';
 import { useIntl, useLocation, useModel } from '@umijs/max';
 import { request } from '@umijs/max';
 import { Button, Tag, Space, Grid, App, Spin, Timeline, Empty, Progress, Input, Popconfirm } from 'antd';
 import { Drawer } from 'antd';
-import { ProTable, ActionType } from '@ant-design/pro-table';
 import { PlusOutlined, EditOutlined, DeleteOutlined, PlayCircleOutlined, SearchOutlined, ProjectOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult } from '@/types';
@@ -276,3 +274,4 @@ const TaskManagement: React.FC = () => {
 };
 
 export default TaskManagement;
+

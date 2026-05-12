@@ -1,9 +1,8 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useIntl } from '@umijs/max';
-import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
+import { type ProColumns, ActionType, ProTable, ProCard, ProDescriptions } from '@ant-design/pro-components';
 import { Button, Grid, Input, Space, Tag, Typography } from 'antd';
 import { Drawer } from 'antd';
-import { ProCard, ProDescriptions } from '@ant-design/pro-components';
 import { ReloadOutlined, SearchOutlined, DatabaseOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { iotService, IoTDataRecord } from '@/services/iotService';
@@ -118,3 +117,4 @@ const DataCenter = React.forwardRef<DataCenterRef, any>((props, ref) => {
 
 DataCenter.displayName = 'DataCenter';
 export default DataCenter;
+

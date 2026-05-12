@@ -19,7 +19,7 @@ import {
 } from '@/services/xiaoke/api';
 import ConfigForm from './ConfigForm';
 import dayjs from 'dayjs';
-import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
+import { ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
 
 
 const ConfigManagement: React.FC = () => {

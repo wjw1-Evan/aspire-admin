@@ -34,21 +34,25 @@ public static class QueryableExtensions
         var sortOrder = "desc";
 
         if (!string.IsNullOrWhiteSpace(request?.Sort))
-        {
-            try
             {
-                var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(request.Sort);
-                if (dict?.Count > 0)
+                try
                 {
-                    var first = dict.First();
-                    sortBy = first.Key;
-                    sortOrder = first.Value == "ascend" ? "asc" : "desc";
+                    var dict = JsonSerializer.Deserialize<Dictionary<string, string?>>(request.Sort);
+                    if (dict?.Count > 0)
+                    {
+                        var sorted = dict.Where(x => !string.IsNullOrEmpty(x.Value)).ToList();
+                        if (sorted.Count > 0)
+                        {
+                            var first = sorted.First();
+                            sortBy = first.Key;
+                            sortOrder = first.Value == "ascend" ? "asc" : "desc";
+                        }
+                    }
+                }
+                catch
+                {
                 }
             }
-            catch
-            {
-            }
-        }
 
         query = query.OrderBy(sortOrder == "desc" ? $"{sortBy} descending" : sortBy);
 

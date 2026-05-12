@@ -689,19 +689,23 @@ public class StorageQuotaService : IStorageQuotaService
         var sortField = "UsedSpace";
         var sortOrder = "desc";
         if (!string.IsNullOrWhiteSpace(request.Sort))
-        {
-            try
             {
-                var sortDict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(request.Sort);
-                if (sortDict?.Count > 0)
+                try
                 {
-                    var first = sortDict.First();
-                    sortField = first.Key;
-                    sortOrder = first.Value == "ascend" ? "asc" : "desc";
+                    var sortDict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string?>>(request.Sort);
+                    if (sortDict?.Count > 0)
+                    {
+                        var sorted = sortDict.Where(x => !string.IsNullOrEmpty(x.Value)).ToList();
+                        if (sorted.Count > 0)
+                        {
+                            var first = sorted.First();
+                            sortField = first.Key;
+                            sortOrder = first.Value == "ascend" ? "asc" : "desc";
+                        }
+                    }
                 }
+                catch { }
             }
-            catch { }
-        }
 
         var sortedItems = sortField?.ToLowerInvariant() switch
         {

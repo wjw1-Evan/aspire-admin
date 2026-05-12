@@ -96,16 +96,17 @@ var yarp = builder.AddYarp("apigateway")
     .PublishWithStaticFiles(adminbuilder)
     .WithConfiguration(config =>
     {
-        if (!builder.ExecutionContext.IsPublishMode)
-        {
-            config.AddRoute(adminbuilder);
-        }
-
         // 微服务路由配置 - 统一通过/{service}路径访问
         // 使用通配符{**catch-all}捕获所有子路径
+        // 注意：特定路由必须先于通配路由注册，否则 API 请求会被 SPA 通配路由截获
         foreach (var service in services)
         {
             config.AddRoute($"/{service.Key}/{{**catch-all}}", service.Value).WithMaxRequestBodySize(-1).WithTransformPathRouteValues("/{**catch-all}");
+        }
+
+        if (!builder.ExecutionContext.IsPublishMode)
+        {
+            config.AddRoute(adminbuilder);
         }
     });
 

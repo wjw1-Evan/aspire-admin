@@ -29,6 +29,7 @@ public interface ITaskService
     /// 查询任务列表
     /// </summary>
     /// <param name="request">查询请求</param>
+    /// <param name="rootOnly">是否仅查询根任务</param>
     /// <returns>任务列表</returns>
     Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> QueryTasksAsync(Platform.ServiceDefaults.Models.ProTableRequest request, bool rootOnly = false);
 

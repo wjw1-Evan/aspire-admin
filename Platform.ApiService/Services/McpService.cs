@@ -105,8 +105,7 @@ public class McpService : IMcpService
     /// <summary>
     /// 检测并根据用户消息内容自动调用匹配的工具
     /// </summary>
-    /// <param name="session">当前会话</param>
-    /// <param name="userMessage">用户消息</param>
+    /// <param name="userMessageContent">用户消息内容</param>
     /// <param name="currentUserId">当前用户ID</param>
     /// <param name="cancellationToken">取消令牌</param>
     /// <returns>工具执行结果摘要，若无匹配则返回 null</returns>

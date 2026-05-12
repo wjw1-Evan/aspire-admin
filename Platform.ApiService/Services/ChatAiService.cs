@@ -163,7 +163,7 @@ public class ChatAiService : IChatAiService
             var systemPrompt = await GetEffectiveSystemPrompt(triggerMessage.SenderId, xiaokeConfig);
 
             var conversationTask = BuildAssistantConversationMessagesAsync(session, triggerMessage, cancellationToken);
-            var mcpTask = _mcpService.DetectAndCallMcpToolsAsync(triggerMessage.Content, triggerMessage.SenderId, cancellationToken);
+            var mcpTask = _mcpService.DetectAndCallMcpToolsAsync(triggerMessage.Content ?? string.Empty, triggerMessage.SenderId, cancellationToken);
             await Task.WhenAll(conversationTask, mcpTask);
 
             var conversationMessages = await conversationTask;

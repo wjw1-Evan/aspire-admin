@@ -1,17 +1,19 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from '@umijs/max';
 import { request, useIntl } from '@umijs/max';
-import { Table, Tag, Space, Button, Modal, Descriptions, message, Typography, Alert, Popconfirm, Tooltip } from 'antd';
+import { Table, Tag, Space, Button, Modal, Descriptions, Typography, Alert, Popconfirm, Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { HistoryOutlined, RollbackOutlined, DeleteOutlined, SwapOutlined, InfoCircleOutlined, PlusOutlined, BarChartOutlined } from '@ant-design/icons';
 import type { ApiResponse, PagedResult } from '@/types';
 import type { DashboardVersion, DashboardVersionComparison, DashboardVersionStatistics } from '@/services/dashboard-version/api';
 import api from '@/services/dashboard-version/api';
+import { useMessage } from '@/hooks/useMessage';
 
 const { Text, Paragraph } = Typography;
 
 const DashboardVersionPage: React.FC = () => {
   const intl = useIntl();
+  const message = useMessage();
   const navigate = useNavigate();
   const { dashboardId } = useParams<{ dashboardId: string }>();
 

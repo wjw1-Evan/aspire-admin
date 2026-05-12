@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, history } from '@umijs/max';
-import { Space, Typography, Button, message, Spin, Result, Card, Row, Col, Empty, Grid } from 'antd';
+import { Space, Typography, Button, Spin, Result, Card, Row, Col, Empty, Grid } from 'antd';
 import { PlusOutlined, SaveOutlined, ArrowLeftOutlined, SettingOutlined, DashboardOutlined } from '@ant-design/icons';
 import { PageContainer, ModalForm, ProFormText, ProFormSelect, ProFormTextArea, ProCard } from '@ant-design/pro-components';
 import { request } from '@umijs/max';
 import { getIntl } from '@umijs/max';
 import type { ApiResponse } from '@/types';
+import { useMessage } from '@/hooks/useMessage';
 
 const { useBreakpoint } = Grid;
 const { Title } = Typography;
@@ -47,6 +48,7 @@ const api = {
 
 const DashboardEditPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
   const intl = getIntl();
+  const message = useMessage();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const screens = useBreakpoint();

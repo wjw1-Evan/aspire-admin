@@ -1032,7 +1032,7 @@ const CardConfigForm: React.FC<CardConfigFormProps> = ({ open, onOpenChange, edi
           },
 {
             key: 'style',
-            label: intl.formatMessage({ id: 'pages.dashboard.card.style' }),
+            label: intl.formatMessage({ id: 'pages.dashboard.styleConfig' }),
             children: (
               <div style={{ maxHeight: 400, overflow: 'auto', padding: '8px 0' }}>
                 <CommonStylePanel style={styleConfig} onChange={setStyleConfig} />
@@ -1041,7 +1041,7 @@ const CardConfigForm: React.FC<CardConfigFormProps> = ({ open, onOpenChange, edi
           },
           {
             key: 'datasource',
-            label: intl.formatMessage({ id: 'pages.dashboard.card.dataSource' }),
+            label: intl.formatMessage({ id: 'pages.dashboard.dataSource' }),
             children: (
               <div style={{ maxHeight: 400, overflow: 'auto', padding: '8px 0' }}>
                 <DataSourcePanel dataSource={dataSource} onChange={setDataSource} />

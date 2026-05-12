@@ -4,13 +4,14 @@
  */
 import React, { useState, useCallback, useEffect } from 'react';
 import { GridLayout as RGL, useContainerWidth } from 'react-grid-layout';
-import { Button, Space, message, Tooltip, Popconfirm, Spin, Empty, Typography } from 'antd';
+import { Button, Space, Tooltip, Popconfirm, Spin, Empty, Typography } from 'antd';
 import { useIntl } from '@umijs/max';
 import {
   PlusOutlined, SaveOutlined, DeleteOutlined,
   EditOutlined, FullscreenOutlined, CopyOutlined,
 } from '@ant-design/icons';
 import { request } from '@umijs/max';
+import { useMessage } from '@/hooks/useMessage';
 import CardRenderer from './CardRenderer';
 import CardConfigForm from './CardConfigForm';
 import type { DashboardCardDto, DashboardDto, LayoutItem } from './types';
@@ -63,6 +64,7 @@ interface DashboardDesignerProps {
 
 const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPreview, onClose }) => {
   const intl = useIntl();
+  const message = useMessage();
   const [dashboard, setDashboard] = useState<DashboardDto | null>(null);
   const [cards, setCards] = useState<DashboardCardDto[]>([]);
   const [loading, setLoading] = useState(true);

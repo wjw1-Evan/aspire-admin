@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { request, useIntl } from '@umijs/max';
-import { Tag, Space, Button, Popconfirm, Grid, message, Input } from 'antd';
+import { Tag, Space, Button, Popconfirm, Grid, Input } from 'antd';
 import { Drawer } from 'antd';
 import { PageContainer, ProCard, ModalForm, ProDescriptions, ProTable, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
@@ -8,6 +8,7 @@ import { PlusOutlined, CopyOutlined, ShareAltOutlined, DeleteOutlined, EditOutli
 import dayjs from 'dayjs';
 import type { ApiResponse, PagedResult } from '@/types';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import { useMessage } from '@/hooks/useMessage';
 import DashboardDesigner from './components/DashboardDesigner';
 import DashboardPreview from './components/DashboardPreview';
 
@@ -47,6 +48,7 @@ const api = {
 
 const DashboardListPage: React.FC = () => {
   const intl = useIntl();
+  const message = useMessage();
   const actionRef = useRef<ActionType | undefined>(undefined);
   const screens = useBreakpoint();
   const isMobile = !screens.md;
@@ -171,7 +173,7 @@ const DashboardListPage: React.FC = () => {
     {
       title: intl.formatMessage({ id: 'pages.dashboard.createdAt' }),
       dataIndex: 'createdAt', key: 'createdAt', sorter: true, valueType: 'dateTime', search: false,
-      render: (dom) => dom ? dayjs(dom as string).format('YYYY-MM-DD HH:mm') : '-',
+      render: (_, record) => record.createdAt ? dayjs(record.createdAt).format('YYYY-MM-DD HH:mm') : '-',
     },
     {
       title: intl.formatMessage({ id: 'pages.dashboard.action' }),
@@ -286,7 +288,7 @@ const DashboardListPage: React.FC = () => {
             layoutType: state.editingDashboard.layoutType,
             theme: state.editingDashboard.theme,
             isPublic: state.editingDashboard.isPublic ? 'true' : 'false',
-          } : undefined}
+          } : { layoutType: 'grid', theme: 'dark', isPublic: 'false' }}
           onFinish={handleFinish}
           autoFocusFirstInput
           width={600}
@@ -298,18 +300,18 @@ const DashboardListPage: React.FC = () => {
               { label: intl.formatMessage({ id: 'pages.dashboard.layoutGrid' }), value: 'grid' },
               { label: intl.formatMessage({ id: 'pages.dashboard.layoutWaterfall' }), value: 'waterfall' },
               { label: intl.formatMessage({ id: 'pages.dashboard.layoutFree' }), value: 'free' },
-            ]} initialValue="grid" />
+            ]} />
           <ProFormSelect name="theme" label={intl.formatMessage({ id: 'pages.dashboard.theme' })}
             options={[
               { label: intl.formatMessage({ id: 'pages.dashboard.themeLight' }), value: 'light' },
               { label: intl.formatMessage({ id: 'pages.dashboard.themeDark' }), value: 'dark' },
               { label: intl.formatMessage({ id: 'pages.dashboard.themeCustom' }), value: 'custom' },
-            ]} initialValue="dark" />
+            ]} />
           <ProFormSelect name="isPublic" label={intl.formatMessage({ id: 'pages.dashboard.visibility' })}
             options={[
               { label: intl.formatMessage({ id: 'pages.dashboard.private' }), value: 'false' },
               { label: intl.formatMessage({ id: 'pages.dashboard.public' }), value: 'true' },
-            ]} initialValue="false" />
+            ]} />
         </ModalForm>
 
         {/* 详情抽屉 */}
@@ -385,10 +387,12 @@ const DetailContent: React.FC<{ id: string; isMobile: boolean }> = ({ id, isMobi
 
   if (loading || !dashboard) return null;
 
+  const column = isMobile ? 1 : 2;
+
   return (
-    <ProDescriptions column={isMobile ? 1 : 2} bordered size="small">
-      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.name' })} span={2}><strong>{dashboard.name}</strong></ProDescriptions.Item>
-      {dashboard.description && <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.description' })} span={2}><div style={{ whiteSpace: 'pre-wrap' }}>{dashboard.description}</div></ProDescriptions.Item>}
+    <ProDescriptions column={column} bordered size="small">
+      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.name' })} span={isMobile ? undefined : 2}><strong>{dashboard.name}</strong></ProDescriptions.Item>
+      {dashboard.description && <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.description' })} span={isMobile ? undefined : 2}><div style={{ whiteSpace: 'pre-wrap' }}>{dashboard.description}</div></ProDescriptions.Item>}
       <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.layoutType' })}>
         {intl.formatMessage({ id: `pages.dashboard.layout${dashboard.layoutType.charAt(0).toUpperCase() + dashboard.layoutType.slice(1)}` })}
       </ProDescriptions.Item>
@@ -406,7 +410,7 @@ const DetailContent: React.FC<{ id: string; isMobile: boolean }> = ({ id, isMobi
       {dashboard.updatedAt && <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.updatedAt' })}>
         {dayjs(dashboard.updatedAt).format('YYYY-MM-DD HH:mm')}
       </ProDescriptions.Item>}
-      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.totalCards' })} span={2}>
+      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.totalCards' })} span={isMobile || dashboard.updatedAt ? undefined : 2}>
         {dashboard.cards?.length || 0} {intl.formatMessage({ id: 'pages.dashboard.totalCards' })}
       </ProDescriptions.Item>
     </ProDescriptions>

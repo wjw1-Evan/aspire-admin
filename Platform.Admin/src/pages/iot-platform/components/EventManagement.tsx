@@ -2,11 +2,12 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useIntl } from '@umijs/max';
 import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
 import { ModalForm, ProFormTextArea } from '@ant-design/pro-components';
-import { Button, Grid, Input, Space, Tag, message } from 'antd';
+import { Button, Grid, Input, Space, Tag } from 'antd';
 import { ProForm } from '@ant-design/pro-components';
 import { CheckOutlined, AlertOutlined, CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { iotService, IoTDeviceEvent, IoTDevice } from '@/services/iotService';
+import { useMessage } from '@/hooks/useMessage';
 
 const { useBreakpoint } = Grid;
 
@@ -16,6 +17,7 @@ const LEVEL_MAP: Record<string, { color: string; label: string }> = { Info: { co
 
 const EventManagement = React.forwardRef<EventManagementRef, any>((props, ref) => {
   const intl = useIntl();
+  const message = useMessage();
   const screens = useBreakpoint();
   const isMobile = !screens.md;
   const actionRef = useRef<ActionType | undefined>(undefined);

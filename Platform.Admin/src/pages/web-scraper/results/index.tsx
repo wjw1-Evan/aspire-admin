@@ -1,10 +1,11 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { request, useIntl } from '@umijs/max';
-import { Tag, Space, Button, Modal, message, Input, Descriptions, Card, Row, Col, Tabs } from 'antd';
+import { Tag, Space, Button, Modal, Input, Descriptions, Card, Row, Col, Tabs } from 'antd';
 import { PageContainer, ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { EyeOutlined, FileTextOutlined, PictureOutlined, LinkOutlined, DatabaseOutlined } from '@ant-design/icons';
 import { ApiResponse, PagedResult } from '@/types';
+import { useMessage } from '@/hooks/useMessage';
 
 interface WebScrapingResult {
   id: string;
@@ -45,6 +46,7 @@ interface ResultStatistics {
 }
 
 const WebScraperResults: React.FC = () => {
+  const message = useMessage();
   const actionRef = useRef<ActionType | undefined>(undefined);
   const [detailVisible, setDetailVisible] = useState(false);
   const [currentResult, setCurrentResult] = useState<WebScrapingResult | null>(null);

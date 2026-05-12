@@ -4,7 +4,7 @@ import { Tag, Space, Button, Popconfirm, Grid, Input } from 'antd';
 import { Drawer } from 'antd';
 import { PageContainer, ProCard, ModalForm, ProDescriptions, ProTable, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
-import { PlusOutlined, CopyOutlined, ShareAltOutlined, DeleteOutlined, EditOutlined, EyeOutlined, DashboardOutlined, SearchOutlined, FullscreenOutlined, HistoryOutlined } from '@ant-design/icons';
+import { PlusOutlined, CopyOutlined, ShareAltOutlined, DeleteOutlined, EditOutlined, DashboardOutlined, SearchOutlined, FullscreenOutlined, HistoryOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import type { ApiResponse, PagedResult } from '@/types';
 import { getErrorMessage } from '@/utils/getErrorMessage';
@@ -143,7 +143,7 @@ const DashboardListPage: React.FC = () => {
       dataIndex: 'name', key: 'name', sorter: true,
       render: (text, record) => (
         <Space>
-          <span>{text}</span>
+          <a onClick={() => handleView(record.id)}>{text}</a>
           {record.isPublic && <Tag color="blue">{intl.formatMessage({ id: 'pages.dashboard.public' })}</Tag>}
         </Space>
       ),
@@ -180,9 +180,6 @@ const DashboardListPage: React.FC = () => {
       key: 'action', valueType: 'option', fixed: 'right', width: isMobile ? 120 : 320,
       render: (_, r) => (
         <Space size={4} wrap>
-          <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => handleView(r.id)}>
-            {intl.formatMessage({ id: 'pages.dashboard.view' })}
-          </Button>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(r.id)}>
             {intl.formatMessage({ id: 'pages.dashboard.edit' })}
           </Button>

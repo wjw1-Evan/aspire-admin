@@ -1,13 +1,14 @@
 import { PageContainer } from '@ant-design/pro-components';
 import { useModel, useAccess } from '@umijs/max';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { theme, Row, Col, message as antMessage } from 'antd';
+import { theme, Row, Col } from 'antd';
 import { getUserStatistics } from '@/services/ant-design-pro/api';
 import { getTaskStatistics, getMyTodoTasks } from '@/services/task/api';
 import { getCurrentCompany } from '@/services/company';
 import { getDocumentStatistics } from '@/services/document/api';
 import { getTodoInstances } from '@/services/workflow/api';
 import { saveWelcomeLayout, getWelcomeLayout } from '@/services/welcome/layout';
+import { useMessage } from '@/hooks/useMessage';
 import type { CardLayoutConfig } from '@/services/welcome/layout';
 
 import {
@@ -127,7 +128,7 @@ const Welcome: React.FC = () => {
   const { token } = theme.useToken();
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser as any;
-  const [messageApi, contextHolder] = antMessage.useMessage();
+  const messageApi = useMessage();
 
   const [statistics, setStatistics] = useState<any>(null);
   const [taskStatistics, setTaskStatistics] = useState<import('@/services/task/api').TaskStatistics | null>(null);
@@ -379,7 +380,6 @@ const Welcome: React.FC = () => {
     <PageContainer
       style={{ background: 'transparent', paddingBlock: 8 }}
     >
-      {contextHolder}
       <style>{`
         .ant-breadcrumb,
         .ant-page-header-breadcrumb,

@@ -6,7 +6,7 @@ import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { createTask, updateTask, TaskPriority, getTaskTree, type TaskDto, type CreateTaskRequest, type UpdateTaskRequest } from '@/services/task/api';
 import { getUserList, type AppUser } from '@/services/user/api';
-import { message } from 'antd';
+import { useMessage } from '@/hooks/useMessage';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
 interface TaskFormProps {
@@ -26,6 +26,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
   open = false, task, projects = [], onClose, onSuccess, onCancel, projectId, parentTaskId,
 }) => {
   const intl = useIntl();
+  const message = useMessage();
   const [loading, setLoading] = React.useState(false);
   const [users, setUsers] = React.useState<AppUser[]>([]);
   const [usersLoading, setUsersLoading] = React.useState(false);

@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { Button, Upload, message } from 'antd';
+import { Button, Upload } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import {
   ProForm,

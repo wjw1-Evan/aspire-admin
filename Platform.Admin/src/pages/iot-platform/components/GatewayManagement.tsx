@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useIntl } from '@umijs/max';
 import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect } from '@ant-design/pro-components';
-import { Button, Col, Form, Grid, Input, Row, Space, Tag, message, Popconfirm } from 'antd';
+import { Button, Col, Form, Grid, Input, Row, Space, Tag, Popconfirm } from 'antd';
 import { ProForm } from '@ant-design/pro-components';
 import { Drawer } from 'antd';
 import { ProCard, ProDescriptions } from '@ant-design/pro-components';
@@ -10,6 +10,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, CloudServerOutlined, CheckC
 import dayjs from 'dayjs';
 import { iotService, IoTGateway, GatewayStatistics, IoTDeviceStatus } from '@/services/iotService';
 import { useModal } from '@/hooks/useModal';
+import { useMessage } from '@/hooks/useMessage';
 
 const { useBreakpoint } = Grid;
 
@@ -22,6 +23,7 @@ const httpMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'PULL'];
 const GatewayManagement = React.forwardRef<GatewayManagementRef, any>((props, ref) => {
   const intl = useIntl();
   const { confirm } = useModal();
+  const message = useMessage();
   const screens = useBreakpoint();
   const isMobile = !screens.md;
   const actionRef = useRef<ActionType | undefined>(undefined);

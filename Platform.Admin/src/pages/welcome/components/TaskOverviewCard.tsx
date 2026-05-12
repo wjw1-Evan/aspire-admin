@@ -1,12 +1,13 @@
 import * as API from '@/types';
 import React, { useState } from 'react';
-import { Row, Col, Space, Alert, Typography, Tag, theme, Checkbox, message } from 'antd';
+import { Row, Col, Space, Alert, Typography, Tag, theme, Checkbox } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { BarChartOutlined, ClockCircleOutlined, RocketOutlined, CheckCircleOutlined, CloseCircleOutlined, SafetyOutlined, MenuOutlined } from '@ant-design/icons';
 import { useIntl, history } from '@umijs/max';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import StatCard from './StatCard';
 import { completeTask } from '@/services/task/api';
+import { useMessage } from '@/hooks/useMessage';
 import type { TaskStatistics, TaskDto } from '@/services/task/api';
 
 
@@ -22,6 +23,7 @@ interface TaskOverviewCardProps {
 
 const TaskOverviewCard: React.FC<TaskOverviewCardProps> = ({ taskStatistics, todoTasks, loading, currentUser, onTaskComplete }) => {
     const intl = useIntl();
+    const message = useMessage();
     const { token } = theme.useToken();
     const { styles } = useCommonStyles();
     const [completingTaskIds, setCompletingTaskIds] = useState<Set<string>>(new Set());

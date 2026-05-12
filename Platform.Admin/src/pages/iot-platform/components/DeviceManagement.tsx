@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useIntl } from '@umijs/max';
 import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormDigit, ProFormTextArea } from '@ant-design/pro-components';
-import { Button, Col, Grid, Input, Row, Space, Tag, Tabs, message, Alert, Modal, Popconfirm } from 'antd';
+import { Button, Col, Grid, Input, Row, Space, Tag, Tabs, Alert, Modal, Popconfirm } from 'antd';
 import { ProForm } from '@ant-design/pro-components';
 import { Drawer } from 'antd';
 import { ProCard, ProDescriptions } from '@ant-design/pro-components';
@@ -10,6 +10,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, DesktopOutlined, CheckCircl
 import dayjs from 'dayjs';
 import { iotService, IoTDevice, IoTGateway, DeviceStatistics, GenerateApiKeyResult } from '@/services/iotService';
 import { useModal } from '@/hooks/useModal';
+import { useMessage } from '@/hooks/useMessage';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import DeviceTwinPanel from './DeviceTwinPanel';
 import CommandCenterPanel from './CommandCenterPanel';
@@ -32,6 +33,7 @@ const statusConfig: Record<string, { color: string; label: string }> = { Online:
 const DeviceManagement = React.forwardRef<DeviceManagementRef, any>((props, ref) => {
   const intl = useIntl();
   const { confirm } = useModal();
+  const message = useMessage();
   const screens = useBreakpoint();
   const isMobile = !screens.md;
   const actionRef = useRef<ActionType | undefined>(undefined);

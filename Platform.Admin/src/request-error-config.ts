@@ -30,7 +30,7 @@ export const errorConfig: RequestConfig = {
       const isLoginRequest = error.config?.url?.includes('/apiservice/api/auth/login');
       const isAuthError = error.response?.status === 401;
 
-      if (isLoginRequest && error.name === 'BizError') return;
+      if (isLoginRequest) return;
 
       if (isAuthError) {
         tokenUtils.clearAllTokens();

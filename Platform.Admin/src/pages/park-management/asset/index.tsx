@@ -186,7 +186,6 @@ const AssetManagement: React.FC = () => {
         { title: intl.formatMessage({ id: 'pages.park.asset.building.status' }), dataIndex: 'status', sorter: true, width: 100, render: (_, record) => renderBuildingStatus(record.status) },
         { title: intl.formatMessage({ id: 'common.action' }), valueType: 'option', fixed: 'right', width: 180, render: (_, record) => (
             <Space size={4}>
-                <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => handleViewBuilding(record.id)}>{intl.formatMessage({ id: 'common.view' })}</Button>
                 <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { setBuilding({ editingBuilding: record, modalVisible: true }); setForm({ attachments: mapAttachments(record.attachments) }); }}>{intl.formatMessage({ id: 'common.edit' })}</Button>
                 <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete' })} onConfirm={() => handleDeleteBuilding(record.id)}>
                     <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete' })}</Button>
@@ -226,7 +225,6 @@ const AssetManagement: React.FC = () => {
         { title: intl.formatMessage({ id: 'pages.park.asset.unit.status' }), dataIndex: 'status', sorter: true, width: 100, render: (_, record) => renderUnitStatus(record.status) },
         { title: intl.formatMessage({ id: 'common.action' }), valueType: 'option', fixed: 'right', width: 180, render: (_, record) => (
             <Space size={4}>
-                <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => handleViewUnit(record.id)}>{intl.formatMessage({ id: 'common.view' })}</Button>
                 <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { setUnit({ editingUnit: record, modalVisible: true }); setForm({ attachments: mapAttachments(record.attachments) }); }}>{intl.formatMessage({ id: 'common.edit' })}</Button>
                 <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete' })} onConfirm={() => handleDeleteUnit(record.id)}>
                     <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete' })}</Button>

@@ -99,7 +99,6 @@ const ContractManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'common.action' }), valueType: 'option', fixed: 'right', width: 180, render: (_, record) => (
                 <Space size={4}>
-                    <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => handleViewContract(record.id)}>{intl.formatMessage({ id: 'common.view' })}</Button>
                     <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { set({ isEdit: true, currentContract: record, contractModalVisible: true, fileList: (record.attachments || []).map(id => ({ uid: id, name: `附件-${id.substring(0, 8)}`, status: 'done', url: `/apiservice/api/cloud-storage/files/${id}/download` })) }); }}>{intl.formatMessage({ id: 'common.edit' })}</Button>
                     <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete' })} onConfirm={async () => { await api.delete(record.id); actionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }}>
                         <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete' })}</Button>

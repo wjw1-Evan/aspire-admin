@@ -66,7 +66,6 @@ const TenantManagement: React.FC = () => {
         { title: intl.formatMessage({ id: 'pages.parkManagement.tenant.table.status' }), dataIndex: 'status', sorter: true, width: 100, render: (_: any, record) => { const opt = tenantStatusOptions.find(o => o.value === record.status); return <Tag color={opt?.color || 'default'}>{opt?.label || record.status}</Tag>; } },
         { title: intl.formatMessage({ id: 'pages.table.action' }), valueType: 'option', fixed: 'right', width: 180, render: (_, record) => (
             <Space size={4}>
-                <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => handleViewTenant(record.id)}>{intl.formatMessage({ id: 'pages.table.view' })}</Button>
                 <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingTenant: record, formVisible: true })}>{intl.formatMessage({ id: 'pages.table.edit' })}</Button>
                 <Popconfirm title={intl.formatMessage({ id: 'pages.parkManagement.tenant.modal.confirmDelete' }, { name: record.tenantName })} onConfirm={() => handleDeleteTenant(record.id)}>
                     <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.table.delete' })}</Button>

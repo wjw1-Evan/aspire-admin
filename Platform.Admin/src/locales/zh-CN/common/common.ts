@@ -155,7 +155,7 @@ export default {
   'pages.status.pending': '待审核',
   'pages.status.pendingActivation': '待激活',
   'pages.status.rejected': '已拒绝',
-  'pages.table.action': '操作类型',
+  'pages.table.action': '操作',
   'pages.table.actionTime': '操作时间',
   'pages.table.actions': '操作',
   'pages.table.activated': '已启用',

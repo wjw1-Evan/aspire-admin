@@ -71,7 +71,7 @@ const PasswordBook: React.FC = () => {
   };
 
   const columns: ProColumns<Entry>[] = [
-    { title: intl.formatMessage({ id: 'pages.passwordBook.table.platform' }), dataIndex: 'platform', key: 'platform', sorter: true },
+    { title: intl.formatMessage({ id: 'pages.passwordBook.table.platform' }), dataIndex: 'platform', key: 'platform', sorter: true, render: (_, record) => <a onClick={() => handleView(record.id)}>{record.platform}</a> },
     { title: intl.formatMessage({ id: 'pages.passwordBook.table.account' }), dataIndex: 'account', key: 'account', sorter: true },
     { title: intl.formatMessage({ id: 'pages.passwordBook.table.url' }), dataIndex: 'url', key: 'url', sorter: true, render: (dom) => dom ? <a href={dom as string} target="_blank">{dom}</a> : '-' },
     { title: intl.formatMessage({ id: 'pages.passwordBook.table.category' }), dataIndex: 'category', key: 'category', sorter: true, render: (dom) => dom ? <Tag color="blue">{dom as string}</Tag> : '-' },
@@ -80,7 +80,6 @@ const PasswordBook: React.FC = () => {
     {
       title: intl.formatMessage({ id: 'pages.table.action' }), key: 'action', valueType: 'option', fixed: 'right', width: 180, render: (_, r) => (
         <Space size={4}>
-          <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => handleView(r.id)}>{intl.formatMessage({ id: 'pages.action.view' })}</Button>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={async () => {
             const res = await api.get(r.id);
             if (res.success && res.data) {

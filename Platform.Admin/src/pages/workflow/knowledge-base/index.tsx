@@ -51,11 +51,13 @@ const KnowledgeBaseManagement: React.FC = () => {
       dataIndex: 'name',
       key: 'name',
       sorter: true,
-      render: (dom: any) => (
-        <Space>
-          <BookOutlined style={{ color: '#1890ff' }} />
-          <span style={{ fontWeight: 500 }}>{dom}</span>
-        </Space>
+      render: (dom: any, record: KnowledgeBase) => (
+        <a onClick={() => history.push(`/workflow/knowledge-base/documents/${record.id}`)}>
+          <Space>
+            <BookOutlined style={{ color: '#1890ff' }} />
+            <span style={{ fontWeight: 500 }}>{dom}</span>
+          </Space>
+        </a>
       ),
     },
     {

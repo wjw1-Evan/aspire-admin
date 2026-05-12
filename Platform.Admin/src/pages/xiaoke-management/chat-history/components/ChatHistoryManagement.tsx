@@ -82,14 +82,10 @@ const ChatHistoryManagement: React.FC = () => {
       ellipsis: true,
       render: (dom: any, record: ChatHistoryListItem) => {
         const tag = record.topicTags?.[0];
-        if (tag && tag !== 'assistant' && tag !== 'direct') {
-          return <span style={{ fontWeight: 500 }}>{tag}</span>;
-        }
-        return (
-          <span style={{ color: '#999' }}>
-            {intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.table.defaultTitle' })}
-          </span>
-        );
+        const content = tag && tag !== 'assistant' && tag !== 'direct'
+          ? <span style={{ fontWeight: 500 }}>{tag}</span>
+          : <span style={{ color: '#999' }}>{intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.table.defaultTitle' })}</span>;
+        return <a onClick={() => handleViewDetail(record)}>{content}</a>;
       },
     },
     {
@@ -155,14 +151,6 @@ const ChatHistoryManagement: React.FC = () => {
       fixed: 'right',
       render: (_: any, record: ChatHistoryListItem) => (
         <Space>
-          <Button
-            type="link"
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => handleViewDetail(record)}
-          >
-            {intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.table.action.view' })}
-          </Button>
           <Button
             type="link"
             size="small"

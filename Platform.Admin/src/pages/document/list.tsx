@@ -69,7 +69,6 @@ const [state, setState] = useState({
       title: intl.formatMessage({ id: 'pages.document.table.action' }), valueType: 'option', fixed: 'right', width: 220,
       render: (_: any, r: Document) => (
         <Space size={4}>
-          <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => set({ viewingId: r.id, detailVisible: true })}>{intl.formatMessage({ id: 'pages.document.view' })}</Button>
           {r.status === DocumentStatus.Draft && (
             <>
               <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editVisible: true, editingId: r.id! })}>{intl.formatMessage({ id: 'pages.document.action.edit' })}</Button>

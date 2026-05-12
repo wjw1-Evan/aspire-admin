@@ -151,7 +151,7 @@ export default {
   'pages.status.pending': 'Pending',
   'pages.status.pendingActivation': 'Pending Activation',
   'pages.status.rejected': 'Rejected',
-  'pages.table.action': 'Action Type',
+  'pages.table.action': 'Actions',
   'pages.table.actionTime': 'Action Time',
   'pages.table.actions': 'Actions',
   'pages.table.activated': 'Activated',

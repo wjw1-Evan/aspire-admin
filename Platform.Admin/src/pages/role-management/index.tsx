@@ -48,6 +48,7 @@ const RoleManagement: React.FC = () => {
     menuTree: [] as TreeNode[],
     checkedKeys: [] as string[],
     expandedKeys: [] as string[],
+    autoExpandParent: true,
     menuLoading: false,
     deleteReason: '',
   });
@@ -108,7 +109,7 @@ const RoleManagement: React.FC = () => {
             onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
             style={{ width: 260, marginRight: 8 }}
           />,
-          <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { set({ editingRole: null, formVisible: true }); setFormState(p => ({ ...p, checkedKeys: [], expandedKeys: [] })); }}>{intl.formatMessage({ id: 'pages.button.addRole' })}</Button>,
+          <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { set({ editingRole: null, formVisible: true }); setFormState(p => ({ ...p, checkedKeys: [], expandedKeys: [], autoExpandParent: true })); }}>{intl.formatMessage({ id: 'pages.button.addRole' })}</Button>,
         ]}
       />
 
@@ -124,8 +125,9 @@ const RoleManagement: React.FC = () => {
             ]).then(([menuRes, roleMenuRes]) => {
               if (menuRes.success && menuRes.data) {
                 const treeData = convertToTreeData(menuRes.data);
+                const allKeys = getAllKeys(treeData);
                 const roleMenus = roleMenuRes.success ? roleMenuRes.data || [] : [];
-                setFormState(p => ({ ...p, menuTree: treeData, checkedKeys: roleMenus, menuLoading: false }));
+                setFormState(p => ({ ...p, menuTree: treeData, checkedKeys: roleMenus, expandedKeys: allKeys, autoExpandParent: true, menuLoading: false }));
               } else {
                 setFormState(p => ({ ...p, menuLoading: false }));
               }
@@ -151,7 +153,7 @@ const RoleManagement: React.FC = () => {
             {formState.checkedKeys.length === getAllKeys(formState.menuTree).length ? intl.formatMessage({ id: 'pages.roleForm.deselectAll' }) : intl.formatMessage({ id: 'pages.roleForm.selectAll' })}
           </Button>
         </div>
-        {formState.menuLoading ? <div style={{ textAlign: 'center', padding: '40px 0' }}><Spin /></div> : <Tree checkable checkStrictly defaultExpandAll treeData={formState.menuTree} checkedKeys={formState.checkedKeys} expandedKeys={formState.expandedKeys} onExpand={(keys) => setFormState(p => ({ ...p, expandedKeys: keys.map(String) }))} onCheck={(checked) => setFormState(p => ({ ...p, checkedKeys: Array.isArray(checked) ? checked as string[] : (checked as { checked: string[] }).checked }))} />}
+        {formState.menuLoading ? <div style={{ textAlign: 'center', padding: '40px 0' }}><Spin /></div> : <Tree checkable treeData={formState.menuTree} checkedKeys={formState.checkedKeys} expandedKeys={formState.expandedKeys} autoExpandParent={formState.autoExpandParent} onExpand={(keys) => setFormState(p => ({ ...p, expandedKeys: keys.map(String), autoExpandParent: false }))} onCheck={(checkedKeysValue) => setFormState(p => ({ ...p, checkedKeys: checkedKeysValue as React.Key[] as string[] }))} />}
         <div style={{ marginTop: 16 }}><Switch checked={formState.checkedKeys.length > 0} disabled /> <span style={{ marginLeft: 8 }}>{intl.formatMessage({ id: 'pages.roleForm.menuCount' }, { count: formState.checkedKeys.length })}</span></div>
       </ModalForm>
 

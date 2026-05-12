@@ -60,19 +60,13 @@ export default defineConfig({
     appConfig: {},
     configProvider: {
       variant: 'filled',
-      theme: {
-        token: {
-          fontFamily: 'AlibabaSans, sans-serif',
-        },
-      },
+      theme: {},
     },
   },
   request: {},
   reactQuery: {},
   access: {},
-  headScripts: [
-    { src: join(PUBLIC_PATH, 'scripts/loading.js'), async: true },
-  ],
+  headScripts: [{ src: join(PUBLIC_PATH, 'scripts/loading.js'), async: true }],
   plugins: ['@umijs/request-record'],
   utoopack: {},
   requestRecord: {},

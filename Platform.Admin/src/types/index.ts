@@ -223,11 +223,10 @@ export interface LayoutSettings {
   pwa?: boolean;
   logo?: string;
   iconfontUrl?: string;
-  token?: Record<string, any>;
+  token?: Record<string, unknown>;
   headerHeight?: number;
   splitMenus?: boolean;
   footerRender?: boolean | (() => React.ReactNode);
-  rightContentRender?: boolean | ((props: any) => React.ReactNode);
 }
 
 export interface ChangePasswordResult {

@@ -1,29 +1,20 @@
 import { UserOutlined } from '@ant-design/icons';
 import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
-import type { LayoutSettings } from '@/types';
-import type { CurrentUser, MenuTreeNode } from '@/types';
-import { history, request as requestClient, Link } from '@umijs/max';
-import React, { useEffect, useRef, useMemo } from 'react';
+import { history, Link, request as requestClient } from '@umijs/max';
 import { App, Space } from 'antd';
-import { setAppInstance } from '@/utils/antdAppInstance';
-import {
-  AvatarDropdown,
-  AvatarName,
-  CompanySwitcher,
-  Footer,
-  NoticeIcon,
-  SelectLang,
-  Question,
-} from '@/components';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { AvatarDropdown, AvatarName, CompanySwitcher, Footer, NoticeIcon, Question, SelectLang } from '@/components';
 import { currentUser as queryCurrentUser } from '@/services/ant-design-pro/api';
 import { getUserMenus } from '@/services/menu/api';
 import { getMyPermissions } from '@/services/permission';
+import type { CurrentUser, LayoutSettings, MenuTreeNode } from '@/types';
+import { setAppInstance } from '@/utils/antdAppInstance';
 import { getUserAvatar } from '@/utils/avatar';
+import { getIconFromMap } from '@/utils/iconMap';
 import { tokenUtils } from '@/utils/token';
 import TokenRefreshManager from '@/utils/tokenRefreshManager';
 import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './request-error-config';
-import { getIconFromMap } from '@/utils/iconMap';
 
 // 🚀 核心优化：全量 Layout 系统中剥离大型组件（AiAssistant 是真正的 React 组件，可以使用 lazy）
 const AiAssistant = React.lazy(() => import('@/components/AiAssistant'));
@@ -34,26 +25,61 @@ const loginPath = '/user/login';
 
 // 浏览器语言到支持语言的映射表
 const LOCALE_ALIAS_MAP: Record<string, string> = {
-  'en': 'en-US', 'en-GB': 'en-US', 'en-AU': 'en-US', 'en-CA': 'en-US',
-  'zh': 'zh-CN', 'zh-Hans': 'zh-CN', 'zh-Hans-CN': 'zh-CN',
-  'zh-HK': 'zh-TW', 'zh-MO': 'zh-TW', 'zh-Hant': 'zh-TW',
-  'fr': 'fr-FR', 'fr-CA': 'fr-FR', 'fr-BE': 'fr-FR', 'fr-CH': 'fr-FR',
-  'de': 'de-DE', 'de-AT': 'de-DE', 'de-CH': 'de-DE',
-  'es': 'es-ES', 'es-MX': 'es-ES', 'es-AR': 'es-ES',
-  'pt': 'pt-BR', 'pt-PT': 'pt-BR',
-  'ru': 'ru-RU',
-  'ja': 'ja-JP',
-  'ko': 'ko-KR',
-  'it': 'it-IT', 'it-CH': 'it-IT',
-  'th': 'th-TH',
-  'vi': 'vi-VN',
-  'tr': 'tr-TR',
-  'ar': 'ar-EG',
-  'bn': 'bn-BD',
-  'fa': 'fa-IR',
-  'id': 'id-ID',
+  en: 'en-US',
+  'en-GB': 'en-US',
+  'en-AU': 'en-US',
+  'en-CA': 'en-US',
+  zh: 'zh-CN',
+  'zh-Hans': 'zh-CN',
+  'zh-Hans-CN': 'zh-CN',
+  'zh-HK': 'zh-TW',
+  'zh-MO': 'zh-TW',
+  'zh-Hant': 'zh-TW',
+  fr: 'fr-FR',
+  'fr-CA': 'fr-FR',
+  'fr-BE': 'fr-FR',
+  'fr-CH': 'fr-FR',
+  de: 'de-DE',
+  'de-AT': 'de-DE',
+  'de-CH': 'de-DE',
+  es: 'es-ES',
+  'es-MX': 'es-ES',
+  'es-AR': 'es-ES',
+  pt: 'pt-BR',
+  'pt-PT': 'pt-BR',
+  ru: 'ru-RU',
+  ja: 'ja-JP',
+  ko: 'ko-KR',
+  it: 'it-IT',
+  'it-CH': 'it-IT',
+  th: 'th-TH',
+  vi: 'vi-VN',
+  tr: 'tr-TR',
+  ar: 'ar-EG',
+  bn: 'bn-BD',
+  fa: 'fa-IR',
+  id: 'id-ID',
 };
-const SUPPORTED_LOCALES = ['ar-EG', 'bn-BD', 'de-DE', 'en-US', 'es-ES', 'fa-IR', 'fr-FR', 'id-ID', 'it-IT', 'ja-JP', 'ko-KR', 'pt-BR', 'ru-RU', 'th-TH', 'tr-TR', 'vi-VN', 'zh-CN', 'zh-TW'];
+const SUPPORTED_LOCALES = [
+  'ar-EG',
+  'bn-BD',
+  'de-DE',
+  'en-US',
+  'es-ES',
+  'fa-IR',
+  'fr-FR',
+  'id-ID',
+  'it-IT',
+  'ja-JP',
+  'ko-KR',
+  'pt-BR',
+  'ru-RU',
+  'th-TH',
+  'tr-TR',
+  'vi-VN',
+  'zh-CN',
+  'zh-TW',
+];
 
 /**
  * 将浏览器语言映射到最接近的支持语言
@@ -83,7 +109,6 @@ export const locale = {
   },
 };
 
-
 /**
  * @see https://umijs.org/docs/api/runtime-config#getinitialstate
  * */
@@ -95,7 +120,7 @@ export async function getInitialState(): Promise<{
 }> {
   // 从 localStorage 读取主题设置
   const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-  const initialTheme = savedTheme === 'dark' ? 'realDark' : (savedTheme || 'light');
+  const initialTheme = savedTheme === 'dark' ? 'realDark' : savedTheme || 'light';
 
   const fetchUserInfo = async () => {
     // 检查是否有 token
@@ -124,7 +149,7 @@ export async function getInitialState(): Promise<{
       const userInfo = msg.data;
 
       // 检查用户是否有效
-      if (!userInfo || (userInfo as any).isLogin === false) {
+      if (!userInfo || userInfo.isLogin === false) {
         tokenUtils.clearAllTokens();
         return undefined;
       }
@@ -132,18 +157,18 @@ export async function getInitialState(): Promise<{
       // 2. 并行获取菜单和权限
       try {
         const [menuResponse, permissionsResponse] = await Promise.allSettled([
-          getUserMenus({ skipErrorHandler: true } as any),
+          getUserMenus({ skipErrorHandler: true }),
           getMyPermissions(),
         ]);
 
         if (menuResponse.status === 'fulfilled' && menuResponse.value.success) {
-          (userInfo as any).menus = menuResponse.value.data;
+          userInfo.menus = menuResponse.value.data;
         }
 
         if (permissionsResponse.status === 'fulfilled') {
           const { success, data } = permissionsResponse.value;
           if (success && data) {
-            (userInfo as any).permissions = data.allPermissionCodes || [];
+            userInfo.permissions = data.allPermissionCodes || [];
           }
         }
       } catch (parallelError) {
@@ -213,6 +238,7 @@ function getIconComponent(iconName?: string): React.ReactNode {
  * 将后端返回的菜单树转换为 ProLayout 要求的格式
  * ⚡ 优化：引入 depth 参数。只有第一层级设置 icon，防止一二级图标渲染冲突。
  */
+// biome-ignore lint/suspicious/noExplicitAny: required for ProLayout menu data structure
 function convertMenuTreeToProLayout(menus: MenuTreeNode[], depth = 1): any[] {
   return menus
     .filter((menu) => !menu.hideInMenu)
@@ -229,13 +255,25 @@ function convertMenuTreeToProLayout(menus: MenuTreeNode[], depth = 1): any[] {
       } else if (menu.path.startsWith('/xiaoke-management/') || menu.name.startsWith('xiaoke-management-')) {
         const shortName = menu.name.replace(/^xiaoke-management-/, '');
         localeKey = `menu.xiaoke-management.${shortName}`;
-      } else if (menu.path.startsWith('/workflow/') || menu.name.startsWith('workflow-') || menu.name.startsWith('workflow:')) {
+      } else if (
+        menu.path.startsWith('/workflow/') ||
+        menu.name.startsWith('workflow-') ||
+        menu.name.startsWith('workflow:')
+      ) {
         const shortName = menu.name.replace(/^workflow[-:]/, '');
         localeKey = `menu.workflow.${shortName}`;
-      } else if (menu.path.startsWith('/document/') || menu.name.startsWith('document-') || menu.name.startsWith('document:')) {
+      } else if (
+        menu.path.startsWith('/document/') ||
+        menu.name.startsWith('document-') ||
+        menu.name.startsWith('document:')
+      ) {
         const shortName = menu.name.replace(/^document[-:]/, '');
         localeKey = `menu.document.${shortName}`;
-      } else if (menu.path.startsWith('/cloud-storage/') || menu.name.startsWith('cloud-storage-') || menu.name.startsWith('cloud-storage:')) {
+      } else if (
+        menu.path.startsWith('/cloud-storage/') ||
+        menu.name.startsWith('cloud-storage-') ||
+        menu.name.startsWith('cloud-storage:')
+      ) {
         const shortName = menu.name.replace(/^cloud-storage[-:]/, '');
         localeKey = `menu.cloud-storage.${shortName}`;
       } else if (menu.path === '/welcome') {
@@ -251,6 +289,7 @@ function convertMenuTreeToProLayout(menus: MenuTreeNode[], depth = 1): any[] {
       }
 
       const iconComponent = getIconComponent(menu.icon);
+      // biome-ignore lint/suspicious/noExplicitAny: ProLayout menu item type
       const menuItem: any = {
         name: menu.name,
         path: menu.path,
@@ -269,7 +308,7 @@ function convertMenuTreeToProLayout(menus: MenuTreeNode[], depth = 1): any[] {
       }
 
       if (menu.children && menu.children.length > 0) {
-        menuItem.routes = convertMenuTreeToProLayout(menu.children as any, depth + 1);
+        menuItem.routes = convertMenuTreeToProLayout(menu.children!, depth + 1);
       }
 
       return menuItem;
@@ -283,20 +322,21 @@ function convertMenuTreeToProLayout(menus: MenuTreeNode[], depth = 1): any[] {
     });
 }
 
-
-const LocationReporter = ({ currentUser, location }: { currentUser: any, location: any }) => {
+const LocationReporter = ({ currentUser, location }: { currentUser: CurrentUser | undefined; location: Location }) => {
   const hasStartedRef = useRef(false);
 
   useEffect(() => {
     const shouldReportPages = ['/welcome'];
-    const shouldReport = shouldReportPages.some(page => location.pathname === page || location.pathname.startsWith(page));
+    const shouldReport = shouldReportPages.some(
+      (page) => location.pathname === page || location.pathname.startsWith(page),
+    );
 
     if (currentUser && shouldReport && !hasStartedRef.current) {
       hasStartedRef.current = true;
       const timer = setTimeout(async () => {
         // 动态加载 LocationService 实例
         const { default: service } = await import('@/services/social/locationService');
-        service.startPeriodicReporting(true).catch(() => { });
+        service.startPeriodicReporting(true).catch(() => {});
       }, 1000);
       return () => clearTimeout(timer);
     } else if ((!shouldReport || !currentUser) && hasStartedRef.current) {
@@ -311,7 +351,7 @@ const LocationReporter = ({ currentUser, location }: { currentUser: any, locatio
   return null;
 };
 
-const AppWrapper = ({ children, currentUser }: { children: React.ReactNode, currentUser: any }) => {
+const AppWrapper = ({ children, currentUser }: { children: React.ReactNode; currentUser: CurrentUser | undefined }) => {
   const app = App.useApp();
   useEffect(() => {
     setAppInstance(app);
@@ -329,15 +369,10 @@ const AppWrapper = ({ children, currentUser }: { children: React.ReactNode, curr
 };
 
 // ProLayout 支持的api https://procomponents.ant.design/components/layout
-export const layout: RunTimeLayoutConfig = ({
-  initialState,
-  setInitialState,
-}) => {
+export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) => {
   return {
     actionsRender: () => {
-      const actions = [
-        <SelectLang key="SelectLang" />,
-      ];
+      const actions = [<SelectLang key="SelectLang" />];
       if (initialState?.currentUser) {
         actions.push(<NoticeIcon key="NoticeIcon" />);
       }
@@ -351,14 +386,14 @@ export const layout: RunTimeLayoutConfig = ({
         margin: 0,
         padding: 0,
       },
-      render: (_: any, avatarChildren: React.ReactNode) => {
+      render: (_: unknown, avatarChildren: React.ReactNode) => {
         return <AvatarDropdown menu>{avatarChildren}</AvatarDropdown>;
       },
     },
     waterMarkProps: {
       content: '',
     },
-    footerRender: () => <Footer /> as any,
+    footerRender: () => <Footer />,
     onPageChange: () => {
       const { location } = history;
       const whiteList = [loginPath, '/user/register', '/user/register-result'];
@@ -390,10 +425,7 @@ export const layout: RunTimeLayoutConfig = ({
       }
     },
     menuDataRender: () => {
-      if (
-        initialState?.currentUser?.menus &&
-        initialState.currentUser.menus.length > 0
-      ) {
+      if (initialState?.currentUser?.menus && initialState.currentUser.menus.length > 0) {
         const desiredOrder = [
           '/welcome',
           '/project-management',
@@ -415,22 +447,15 @@ export const layout: RunTimeLayoutConfig = ({
             if (prefix === '/cloud-storage') {
               return menu.path === '/cloud-storage' || menu.path.startsWith('/cloud-storage/');
             }
-            return (
-              menu.path === prefix || menu.path.startsWith(`${prefix}/`)
-            );
+            return menu.path === prefix || menu.path.startsWith(`${prefix}/`);
           });
 
-          return index === -1
-            ? desiredOrder.length +
-            initialState.currentUser!.menus!.indexOf(menu)
-            : index;
+          return index === -1 ? desiredOrder.length + initialState.currentUser!.menus!.indexOf(menu) : index;
         };
 
-        const sortedMenus = [...initialState.currentUser.menus].sort(
-          (a, b) => getMenuOrder(a as any) - getMenuOrder(b as any),
-        );
+        const sortedMenus = [...initialState.currentUser.menus].sort((a, b) => getMenuOrder(a) - getMenuOrder(b));
 
-        return convertMenuTreeToProLayout(sortedMenus as any);
+        return convertMenuTreeToProLayout(sortedMenus);
       }
       return [];
     },
@@ -455,7 +480,13 @@ export const layout: RunTimeLayoutConfig = ({
       },
     ],
     links: [],
-    headerTitleRender: (logo: React.ReactNode, _: any, props: any) => {
+    pageContainerProps: {
+      breadcrumbRender: false,
+      header: {
+        title: undefined,
+      },
+    },
+    headerTitleRender: (logo: React.ReactNode, _: unknown, props: { collapsed?: boolean }) => {
       const systemName =
         initialState?.currentUser?.currentCompanyDisplayName ||
         initialState?.currentUser?.currentCompanyName ||
@@ -463,17 +494,14 @@ export const layout: RunTimeLayoutConfig = ({
       const companyName = initialState?.currentUser?.currentCompanyName;
 
       if (props?.collapsed) {
-        return (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {logo}
-          </div>
-        );
+        return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{logo}</div>;
       }
 
       const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
       return (
-        <div
+        <button
+          type="button"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -481,6 +509,8 @@ export const layout: RunTimeLayoutConfig = ({
             padding: '4px 0',
             lineHeight: 1,
             maxWidth: isMobile ? '160px' : 'none',
+            border: 'none',
+            background: 'none',
           }}
           onClick={() => history.push('/')}
         >
@@ -520,7 +550,7 @@ export const layout: RunTimeLayoutConfig = ({
               </span>
             )}
           </div>
-        </div>
+        </button>
       );
     },
     menuHeaderRender: false,
@@ -540,12 +570,15 @@ export const layout: RunTimeLayoutConfig = ({
     // 🔧 自定义菜单项渲染：确保点击跳转正常
     menuItemRender: (item: any, dom: React.ReactNode) => {
       // 构造菜单内容（如果是二级菜单则补全图标）
-      const renderDom = (!item.icon && item.rawIcon) ? (
-        <Space size={8}>
-          {item.rawIcon}
-          {dom}
-        </Space>
-      ) : dom;
+      const renderDom =
+        !item.icon && item.rawIcon ? (
+          <Space size={8}>
+            {item.rawIcon}
+            {dom}
+          </Space>
+        ) : (
+          dom
+        );
 
       // 如果有路径且不是外部链接，包裹 Link 组件实现跳转
       if (item.path && !item.isExternal) {
@@ -554,13 +587,7 @@ export const layout: RunTimeLayoutConfig = ({
       return renderDom;
     },
 
-
-
-
-
     childrenRender: (children: React.ReactNode) => {
-
-
       return (
         <App>
           <AppWrapper currentUser={initialState?.currentUser}>{children}</AppWrapper>
@@ -569,15 +596,15 @@ export const layout: RunTimeLayoutConfig = ({
     },
 
     ...(initialState?.settings
-      ? {
-        ...initialState.settings,
-        navTheme:
-          initialState.settings.navTheme === 'dark'
-            ? ('realDark' as const)
-            : initialState.settings.navTheme === 'light' || initialState.settings.navTheme === 'realDark'
-              ? initialState.settings.navTheme
-              : undefined,
-      } as Partial<Omit<LayoutSettings, 'navTheme'> & { navTheme?: 'light' | 'realDark' }>
+      ? ({
+          ...initialState.settings,
+          navTheme:
+            initialState.settings.navTheme === 'dark'
+              ? ('realDark' as const)
+              : initialState.settings.navTheme === 'light' || initialState.settings.navTheme === 'realDark'
+                ? initialState.settings.navTheme
+                : undefined,
+        } as Partial<Omit<LayoutSettings, 'navTheme'> & { navTheme?: 'light' | 'realDark' }>)
       : {}),
     onCollapse: (collapsed: boolean) => {
       setInitialState((preInitialState: any) => ({
@@ -604,7 +631,10 @@ export const layout: RunTimeLayoutConfig = ({
         }
       }
     },
-    title: initialState?.currentUser?.currentCompanyDisplayName || initialState?.currentUser?.currentCompanyName || defaultSettings.title,
+    title:
+      initialState?.currentUser?.currentCompanyDisplayName ||
+      initialState?.currentUser?.currentCompanyName ||
+      defaultSettings.title,
     logo: initialState?.currentUser?.currentCompanyLogo ? (
       <img src={initialState.currentUser.currentCompanyLogo} alt="logo" />
     ) : (
@@ -634,10 +664,7 @@ function handleCurrentUserResponse(response: any): any {
 async function handle401Error(error: any): Promise<any> {
   const is401Error = error.response?.status === 401;
 
-  const messageText =
-    error?.response?.data?.message ||
-    error?.response?.data?.errorCode ||
-    error?.message;
+  const messageText = error?.response?.data?.message || error?.response?.data?.errorCode || error?.message;
   const is403AuthError =
     error.response?.status === 403 &&
     (messageText?.includes('未找到用户') ||
@@ -658,9 +685,7 @@ async function handle401Error(error: any): Promise<any> {
 
   const originalAuthHeader = error.config?.headers?.Authorization;
   const currentToken = tokenUtils.getToken();
-  const originalToken = typeof originalAuthHeader === 'string'
-    ? originalAuthHeader.replace('Bearer ', '')
-    : null;
+  const originalToken = typeof originalAuthHeader === 'string' ? originalAuthHeader.replace('Bearer ', '') : null;
   if (currentToken && originalToken && currentToken !== originalToken) {
     return TokenRefreshManager.retryRequest(error.config, currentToken);
   }
@@ -673,10 +698,7 @@ async function handle401Error(error: any): Promise<any> {
 }
 
 export const request: RequestConfig = {
-  baseURL:
-    process.env.NODE_ENV === 'development'
-      ? ''
-      : process.env.REACT_APP_API_BASE_URL || '',
+  baseURL: process.env.NODE_ENV === 'development' ? '' : process.env.REACT_APP_API_BASE_URL || '',
 
   requestInterceptors: [
     (config: any) => {

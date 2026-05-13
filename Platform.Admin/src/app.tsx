@@ -7,7 +7,7 @@ import { AvatarDropdown, AvatarName, CompanySwitcher, Footer, NoticeIcon, Questi
 import { currentUser as queryCurrentUser } from '@/services/ant-design-pro/api';
 import { getUserMenus } from '@/services/menu/api';
 import { getMyPermissions } from '@/services/permission';
-import type { CurrentUser, LayoutSettings, MenuTreeNode } from '@/types';
+import type { ApiResponse, CurrentUser, LayoutSettings, MenuTreeNode } from '@/types';
 import { setAppInstance } from '@/utils/antdAppInstance';
 import { getUserAvatar } from '@/utils/avatar';
 import { getIconFromMap } from '@/utils/iconMap';
@@ -146,40 +146,45 @@ export async function getInitialState(): Promise<{
       }
     }
 
-    try {
-      // 1. 先尝试获取基础用户信息
-      const msg = await queryCurrentUser();
+try {
+       // 关键优化：用户信息、菜单、权限三个请求完全并行，无依赖关系
+       const [userResult, menuResult, permResult] = await Promise.allSettled([
+         queryCurrentUser(),
+         getUserMenus({ skipErrorHandler: true }),
+         getMyPermissions(),
+       ] as const);
 
-      const userInfo = msg.data;
+       // 用户信息请求失败
+       if (userResult.status !== 'fulfilled' || !(userResult.value?.success)) {
+         tokenUtils.clearAllTokens();
+         return undefined;
+       }
 
-      // 检查用户是否有效
-      if (!userInfo || userInfo.isLogin === false) {
-        tokenUtils.clearAllTokens();
-        return undefined;
-      }
+       const userInfo = userResult.value.data;
 
-      // 2. 并行获取菜单和权限
-      try {
-        const [menuResponse, permissionsResponse] = await Promise.allSettled([
-          getUserMenus({ skipErrorHandler: true }),
-          getMyPermissions(),
-        ]);
+       // 检查用户是否有效
+       if (!userInfo || userInfo.isLogin === false) {
+         tokenUtils.clearAllTokens();
+         return undefined;
+       }
 
-        if (menuResponse.status === 'fulfilled' && menuResponse.value.success) {
-          userInfo.menus = menuResponse.value.data;
-        }
-
-        if (permissionsResponse.status === 'fulfilled') {
-          const { success, data } = permissionsResponse.value;
-          if (success && data) {
-            userInfo.permissions = data.allPermissionCodes || [];
+// 处理菜单
+        if (menuResult.status === 'fulfilled' && menuResult.value?.success) {
+          const menuData = (menuResult.value as ApiResponse<MenuTreeNode[]>)?.data;
+          if (Array.isArray(menuData)) {
+            userInfo.menus = menuData;
           }
         }
-      } catch (parallelError) {
-        console.warn('Failed to fetch menus or permissions in parallel:', parallelError);
-      }
 
-      return userInfo;
+       // 处理权限
+       if (permResult.status === 'fulfilled' && permResult.value?.success) {
+         const permData = (permResult.value as ApiResponse<{ allPermissionCodes: string[] }>)?.data;
+         if (permData) {
+           userInfo.permissions = permData.allPermissionCodes || [];
+         }
+       }
+
+       return userInfo;
     } catch (_error) {
       tokenUtils.clearAllTokens();
       return undefined;

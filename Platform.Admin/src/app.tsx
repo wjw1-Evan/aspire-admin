@@ -489,7 +489,8 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
       },
     ],
     links: [],
-pageContainerProps: {
+pageTitleRender: false,
+     pageContainerProps: {
        breadcrumbRender: false,
        header: {
          title: undefined,

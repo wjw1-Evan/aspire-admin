@@ -131,7 +131,7 @@ const MyActivity: React.FC = () => {
   );
 
   return (
-    <PageContainer title={false}>
+    <PageContainer>
       <ProTable
         actionRef={actionRef}
         headerTitle={

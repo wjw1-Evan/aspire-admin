@@ -223,7 +223,7 @@ const EnterpriseService: React.FC = () => {
       dataIndex: 'rating',
       sorter: true,
       width: 120,
-      render: (rating) => (rating ? <Rate disabled defaultValue={rating as number} style={{ fontSize: 12 }} /> : '-'),
+      render: (rating) => (rating ? <Rate disabled value={rating as number} style={{ fontSize: 12 }} /> : '-'),
     },
     {
       title: intl.formatMessage({ id: 'pages.park.service.request.createdAt' }),

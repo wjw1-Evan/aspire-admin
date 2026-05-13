@@ -144,6 +144,18 @@ public class UserService : IUserService
     {
         _validationService.ValidateUsername(request.Username);
 
+        var rawPassword = _encryptionService.TryDecryptPassword(request.Password);
+        if (string.IsNullOrEmpty(rawPassword) || rawPassword.Length < 6 || rawPassword.Length > 100)
+        {
+            throw new ArgumentException("密码长度必须在6-100个字符之间");
+        }
+
+        if (!string.IsNullOrEmpty(request.Email))
+        {
+            _validationService.ValidateEmail(request.Email);
+            await _uniquenessChecker.EnsureEmailUniqueAsync(request.Email);
+        }
+
         var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new AuthenticationException(ErrorCode.UserNotAuthenticated);
         var companyId = _tenantContext.GetCurrentCompanyId();
 
@@ -191,11 +203,43 @@ public class UserService : IUserService
             {
                 existingUser.CurrentCompanyId = companyId;
             }
+            if (!string.IsNullOrEmpty(request.Name)) existingUser.Name = request.Name;
+            if (!string.IsNullOrEmpty(request.Email)) existingUser.Email = request.Email;
+            if (!string.IsNullOrEmpty(request.PhoneNumber)) existingUser.PhoneNumber = request.PhoneNumber;
             await _context.SaveChangesAsync();
             return existingUser;
         }
 
-        throw new InvalidOperationException("用户不存在，请先在系统中注册该用户。");
+        var user = new User
+        {
+            Username = request.Username.Trim(),
+            PasswordHash = _passwordHasher.HashPassword(rawPassword),
+            Name = request.Name?.Trim(),
+            Email = string.IsNullOrEmpty(request.Email) ? null : request.Email.Trim(),
+            PhoneNumber = request.PhoneNumber?.Trim(),
+            IsActive = request.IsActive
+        };
+
+        await _context.Set<User>().AddAsync(user);
+        await _context.SaveChangesAsync();
+
+        var newUserCompany = new UserCompany
+        {
+            UserId = user.Id!,
+            CompanyId = companyId,
+            RoleIds = roleIds,
+            IsAdmin = false,
+            Status = SystemConstants.UserStatus.Active
+        };
+        await _context.Set<UserCompany>().AddAsync(newUserCompany);
+
+        if (string.IsNullOrEmpty(user.CurrentCompanyId))
+        {
+            user.CurrentCompanyId = companyId;
+        }
+
+        await _context.SaveChangesAsync();
+        return user;
     }
 
     /// <inheritdoc/>

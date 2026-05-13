@@ -54,6 +54,18 @@ public class CreateUserManagementRequest
     public string Username { get; set; } = string.Empty;
 
     /// <summary>
+    /// 密码（加密后的密码，由前端RSA加密）
+    /// </summary>
+    [Required(ErrorMessage = ErrorCode.ValidationPasswordRequired)]
+    [StringLength(2000, MinimumLength = 1, ErrorMessage = ErrorCode.ValidationPasswordTooLong)]
+    public string Password { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 显示名称
+    /// </summary>
+    public string? Name { get; set; }
+
+    /// <summary>
     /// 邮箱地址（可选）
     /// </summary>
     [EmailAddress(ErrorMessage = ErrorCode.ValidationEmailInvalid)]

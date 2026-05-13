@@ -12,7 +12,7 @@
     "prestart": "npm run clean",
     "analyze": "cross-env ANALYZE=1 max build",
     "build": "max build",
-    "dev": "npm run start:dev",
+    "dev": "while true; do npm run start:dev; done",
     "lint": "npm run biome:lint; npm run tsc",
     "biome:lint": "biome lint",
     "biome": "biome check --write",

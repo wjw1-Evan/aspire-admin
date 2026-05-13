@@ -127,6 +127,10 @@ const Welcome: React.FC = () => {
 
   const access = useAccess();
   const canAccessApproval = access.canAccessPath('/document/approval');
+  const canAccessTask = access.canAccessPath('/project-management');
+  const canAccessProject = access.canAccessPath('/project-management');
+  const canAccessIoT = access.canAccessPath('/iot-platform');
+  const canAdmin = access.canAdmin;
 
   const [leftCards, setLeftCards] = useState<string[]>(['task-overview', 'project-list', 'statistics-overview']);
   const [rightCards, setRightCards] = useState<string[]>(['approval-overview', 'iot-events']);
@@ -268,18 +272,29 @@ const Welcome: React.FC = () => {
         if (isSavingLayout) return;
         setIsSavingLayout(true);
         try {
+          const getCardVisibility = (cardId: string): boolean => {
+            switch (cardId) {
+              case 'task-overview': return canAccessTask;
+              case 'project-list': return canAccessProject;
+              case 'statistics-overview': return canAdmin;
+              case 'approval-overview': return canAccessApproval;
+              case 'iot-events': return canAccessIoT;
+              default: return true;
+            }
+          };
+
           const layouts: CardLayoutConfig[] = [
             ...newLeftCards.map((cardId, index) => ({
               cardId,
               order: index,
               column: 'left' as const,
-              visible: true,
+              visible: getCardVisibility(cardId),
             })),
             ...newRightCards.map((cardId, index) => ({
               cardId,
               order: index,
               column: 'right' as const,
-              visible: cardId === 'approval-overview' ? canAccessApproval : true,
+              visible: getCardVisibility(cardId),
             })),
           ];
 
@@ -295,7 +310,7 @@ const Welcome: React.FC = () => {
         }
       })();
     },
-    [leftCards, rightCards, isSavingLayout, canAccessApproval, messageApi],
+    [leftCards, rightCards, isSavingLayout, canAccessTask, canAccessProject, canAdmin, canAccessApproval, canAccessIoT, messageApi],
   );
 
   const handleDragStart = useCallback((event: any) => {
@@ -321,17 +336,17 @@ const Welcome: React.FC = () => {
     const cardComponent = (() => {
       switch (cardId) {
         case 'task-overview':
-          return <TaskOverviewCard {...cardProps} />;
+          return canAccessTask ? <TaskOverviewCard {...cardProps} /> : null;
         case 'project-list':
           return <ProjectListCard loading={loading} />;
         case 'statistics-overview':
-          return <StatisticsOverview {...cardProps} />;
+          return canAdmin ? <StatisticsOverview {...cardProps} /> : null;
         case 'approval-overview':
           return canAccessApproval ? (
             <ApprovalOverviewCard statistics={docStatistics} pendingDocuments={pendingDocs} loading={loading} />
           ) : null;
         case 'iot-events':
-          return <IoTEventAlertsCard loading={loading} />;
+          return canAccessIoT ? <IoTEventAlertsCard loading={loading} /> : null;
         default:
           return null;
       }
@@ -344,14 +359,22 @@ const Welcome: React.FC = () => {
     );
   };
 
-  const filteredRightCards = useMemo(() => {
-    return rightCards.filter((id) => {
-      if (id === 'approval-overview' && !canAccessApproval) {
-        return false;
-      }
+  const filteredLeftCards = useMemo(() => {
+    return leftCards.filter((id) => {
+      if (id === 'task-overview' && !canAccessTask) return false;
+      if (id === 'project-list' && !canAccessProject) return false;
+      if (id === 'statistics-overview' && !canAdmin) return false;
       return true;
     });
-  }, [rightCards, canAccessApproval]);
+  }, [leftCards, canAccessTask, canAccessProject, canAdmin]);
+
+  const filteredRightCards = useMemo(() => {
+    return rightCards.filter((id) => {
+      if (id === 'approval-overview' && !canAccessApproval) return false;
+      if (id === 'iot-events' && !canAccessIoT) return false;
+      return true;
+    });
+  }, [rightCards, canAccessApproval, canAccessIoT]);
 
   return (
     <PageContainer style={{ background: 'transparent', paddingBlock: 8 }}>
@@ -386,11 +409,11 @@ const Welcome: React.FC = () => {
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
-            <SortableContext items={[...leftCards, ...filteredRightCards]} strategy={verticalListSortingStrategy}>
+            <SortableContext items={[...filteredLeftCards, ...filteredRightCards]} strategy={verticalListSortingStrategy}>
               <Row gutter={[16, 16]}>
                 <Col xs={24} lg={12}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                    {leftCards.map((cardId) => renderCard(cardId))}
+                    {filteredLeftCards.map((cardId) => renderCard(cardId))}
                   </div>
                 </Col>
                 <Col xs={24} lg={12}>

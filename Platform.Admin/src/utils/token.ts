@@ -136,5 +136,4 @@ export const tokenUtils = {
     }
     return Date.now() >= expiresAt - TOKEN_EXPIRY_BUFFER;
   },
-
 };

@@ -52,7 +52,8 @@ export default {
   'pages.project.members.role.member': 'Member',
   'pages.project.members.role.viewer': 'Viewer',
   'pages.project.members.title': 'Project Members',
-  'pages.project.message.confirmDelete': 'After deletion, the project will be marked as deleted. This operation cannot be undone.',
+  'pages.project.message.confirmDelete':
+    'After deletion, the project will be marked as deleted. This operation cannot be undone.',
   'pages.project.message.deleteFailed': 'Failed to delete',
   'pages.project.message.deleteSuccess': 'Deleted successfully',
   'pages.project.modal.deleteProject': 'Confirm Delete Project',
@@ -114,4 +115,3 @@ export default {
   'pages.project.statistics.generatingReport': 'AI is analyzing project data and generating professional report...',
   'pages.project.statistics.generateFailed': 'Failed to generate report, please try again later.',
 };
-

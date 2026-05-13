@@ -1,47 +1,44 @@
-import { DocumentStatus } from '@/services/document/api';
-import { WorkflowStatus, ApprovalAction } from '@/services/workflow/api';
+import { ApprovalAction } from '@/services/workflow/api';
 
 export type StatusMeta = { color: string; text: string };
 
 export const documentStatusMap: Record<string, StatusMeta> = {
-    draft: { color: 'default', text: 'pages.document.status.draft' },
-    approving: { color: 'processing', text: 'pages.document.status.approving' },
-    approved: { color: 'success', text: 'pages.document.status.approved' },
-    rejected: { color: 'error', text: 'pages.document.status.rejected' },
-    archived: { color: 'default', text: 'pages.document.status.archived' },
+  draft: { color: 'default', text: 'pages.document.status.draft' },
+  approving: { color: 'processing', text: 'pages.document.status.approving' },
+  approved: { color: 'success', text: 'pages.document.status.approved' },
+  rejected: { color: 'error', text: 'pages.document.status.rejected' },
+  archived: { color: 'default', text: 'pages.document.status.archived' },
 };
 
 export const workflowStatusMap: Record<string, StatusMeta> = {
-    running: { color: 'processing', text: 'pages.workflow.monitor.status.running' },
-    completed: { color: 'success', text: 'pages.workflow.monitor.status.completed' },
-    cancelled: { color: 'default', text: 'pages.workflow.monitor.status.cancelled' },
-    rejected: { color: 'error', text: 'pages.workflow.monitor.status.rejected' },
+  running: { color: 'processing', text: 'pages.workflow.monitor.status.running' },
+  completed: { color: 'success', text: 'pages.workflow.monitor.status.completed' },
+  cancelled: { color: 'default', text: 'pages.workflow.monitor.status.cancelled' },
+  rejected: { color: 'error', text: 'pages.workflow.monitor.status.rejected' },
 };
 
 export const approvalActionMap: Record<string, StatusMeta> = {
-    [ApprovalAction.Approve]: { color: 'success', text: 'pages.workflow.monitor.history.action.approve' },
-    [ApprovalAction.Reject]: { color: 'error', text: 'pages.workflow.monitor.history.action.reject' },
-    [ApprovalAction.Return]: { color: 'warning', text: 'pages.workflow.monitor.history.action.return' },
-    [ApprovalAction.Delegate]: { color: 'purple', text: 'pages.workflow.monitor.history.action.delegate' },
-    [ApprovalAction.AutoSystem]: { color: 'cyan', text: 'pages.workflow.monitor.history.action.auto' },
+  [ApprovalAction.Approve]: { color: 'success', text: 'pages.workflow.monitor.history.action.approve' },
+  [ApprovalAction.Reject]: { color: 'error', text: 'pages.workflow.monitor.history.action.reject' },
+  [ApprovalAction.Return]: { color: 'warning', text: 'pages.workflow.monitor.history.action.return' },
+  [ApprovalAction.Delegate]: { color: 'purple', text: 'pages.workflow.monitor.history.action.delegate' },
+  [ApprovalAction.AutoSystem]: { color: 'cyan', text: 'pages.workflow.monitor.history.action.auto' },
 };
 
 export const getStatusMeta = (
-    intl: any,
-    status: string | number | null | undefined,
-    map: Record<string, StatusMeta>,
-    fallback: StatusMeta = { color: 'default', text: 'status.unknown' }
+  intl: any,
+  status: string | number | null | undefined,
+  map: Record<string, StatusMeta>,
+  fallback: StatusMeta = { color: 'default', text: 'status.unknown' },
 ): StatusMeta => {
-    const key = String(status ?? '').toLowerCase();
-    const meta = map[key];
-    if (!meta) {
-        const text = intl?.formatMessage
-            ? intl.formatMessage({ id: fallback.text })
-            : fallback.text;
-        return { ...fallback, text };
-    }
-    return {
-        color: meta.color,
-        text: intl?.formatMessage ? intl.formatMessage({ id: meta.text }) : meta.text,
-    };
+  const key = String(status ?? '').toLowerCase();
+  const meta = map[key];
+  if (!meta) {
+    const text = intl?.formatMessage ? intl.formatMessage({ id: fallback.text }) : fallback.text;
+    return { ...fallback, text };
+  }
+  return {
+    color: meta.color,
+    text: intl?.formatMessage ? intl.formatMessage({ id: meta.text }) : meta.text,
+  };
 };

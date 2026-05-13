@@ -2,16 +2,17 @@
  * 卡片配置表单
  * 根据卡片类型提供不同的配置表单项
  */
-import React, { useMemo, useState } from 'react';
+
+import { ModalForm, ProFormText } from '@ant-design/pro-components/es/form';
 import { useIntl } from '@umijs/max';
-import { ModalForm, ProFormText, ProFormSelect, ProFormDigit, ProFormTextArea, ProFormSwitch, ProFormGroup } from '@ant-design/pro-components/es/form';
-import { Form, Tabs, Divider, Space, Button, Input, InputNumber, Select, ColorPicker, Typography } from 'antd';
 import type { GetProps } from 'antd';
+import { Button, ColorPicker, Divider, Form, Input, InputNumber, Select, Tabs, Typography } from 'antd';
+import React, { useMemo, useState } from 'react';
 
 type DividerOrientation = GetProps<typeof Divider>['orientation'];
-import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
-import type { DashboardCardDto, StyleConfig, CardType } from './types';
-import { CARD_TYPE_GROUPS } from './types';
+
+import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import type { DashboardCardDto, StyleConfig } from './types';
 
 const { Text } = Typography;
 
@@ -27,28 +28,36 @@ interface CardConfigFormProps {
 /** 解析 styleConfig */
 const parseStyle = (config: string): StyleConfig => {
   if (!config) return {};
-  try { return JSON.parse(config); } catch { return {}; }
+  try {
+    return JSON.parse(config);
+  } catch {
+    return {};
+  }
 };
 
 /** 解析 dataSource */
 const parseDataSource = (config: string): DataSourceConfig => {
   if (!config) return { static: true };
-  try { return JSON.parse(config); } catch { return { static: true }; }
+  try {
+    return JSON.parse(config);
+  } catch {
+    return { static: true };
+  }
 };
 
 /** 数据源配置 */
 interface DataSourceConfig {
-module?: string;
-      apiPath?: string;
-      dataField?: string;
-      aggregation?: string;
-      groupBy?: string;
-      timeRange?: string;
-      filters?: Record<string, unknown>;
-      static?: boolean;
-      staticData?: unknown;
-      refreshInterval?: number;
-    }
+  module?: string;
+  apiPath?: string;
+  dataField?: string;
+  aggregation?: string;
+  groupBy?: string;
+  timeRange?: string;
+  filters?: Record<string, unknown>;
+  static?: boolean;
+  staticData?: unknown;
+  refreshInterval?: number;
+}
 
 /** 数据源配置面板 */
 const DataSourcePanel: React.FC<{
@@ -59,41 +68,52 @@ const DataSourcePanel: React.FC<{
   const update = (key: string, value: unknown) => onChange({ ...dataSource, [key]: value });
 
   /** 可用的数据模块选项 */
-  const MODULE_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.static' }), value: 'static' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.task' }), value: 'task' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.user' }), value: 'user' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.storage' }), value: 'storage' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.park' }), value: 'park' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.workflow' }), value: 'workflow' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.iot' }), value: 'iot' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.visit' }), value: 'visit' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.document' }), value: 'document' },
-  ], [intl]);
+  const MODULE_OPTIONS = useMemo(
+    () => [
+      { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.static' }), value: 'static' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.task' }), value: 'task' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.user' }), value: 'user' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.storage' }), value: 'storage' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.park' }), value: 'park' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.workflow' }), value: 'workflow' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.iot' }), value: 'iot' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.visit' }), value: 'visit' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.dataModule.document' }), value: 'document' },
+    ],
+    [intl],
+  );
 
   /** 聚合方式选项 */
-  const AGGREGATION_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.count' }), value: 'count' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.avg' }), value: 'avg' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.max' }), value: 'max' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.min' }), value: 'min' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.sum' }), value: 'sum' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.latest' }), value: 'latest' },
-  ], [intl]);
+  const AGGREGATION_OPTIONS = useMemo(
+    () => [
+      { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.count' }), value: 'count' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.avg' }), value: 'avg' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.max' }), value: 'max' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.min' }), value: 'min' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.sum' }), value: 'sum' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.aggregation.latest' }), value: 'latest' },
+    ],
+    [intl],
+  );
 
   /** 时间范围选项 */
-  const TIME_RANGE_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.timeRange.today' }), value: 'today' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.timeRange.week' }), value: 'week' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.timeRange.month' }), value: 'month' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.timeRange.year' }), value: 'year' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.timeRange.all' }), value: 'all' },
-  ], [intl]);
+  const TIME_RANGE_OPTIONS = useMemo(
+    () => [
+      { label: intl.formatMessage({ id: 'pages.dashboard.timeRange.today' }), value: 'today' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.timeRange.week' }), value: 'week' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.timeRange.month' }), value: 'month' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.timeRange.year' }), value: 'year' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.timeRange.all' }), value: 'all' },
+    ],
+    [intl],
+  );
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>数据来源</Text>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          数据来源
+        </Text>
         <Select
           value={dataSource.module || 'static'}
           onChange={(v) => {
@@ -111,7 +131,9 @@ const DataSourcePanel: React.FC<{
       {dataSource.module && dataSource.module !== 'static' && (
         <>
           <div>
-            <Text type="secondary" style={{ fontSize: 12 }}>API 路径</Text>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              API 路径
+            </Text>
             <Input
               value={dataSource.apiPath || ''}
               onChange={(e) => update('apiPath', e.target.value)}
@@ -120,7 +142,9 @@ const DataSourcePanel: React.FC<{
           </div>
 
           <div>
-            <Text type="secondary" style={{ fontSize: 12 }}>数据字段（用于显示的字段名）</Text>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              数据字段（用于显示的字段名）
+            </Text>
             <Input
               value={dataSource.dataField || ''}
               onChange={(e) => update('dataField', e.target.value)}
@@ -129,7 +153,9 @@ const DataSourcePanel: React.FC<{
           </div>
 
           <div>
-            <Text type="secondary" style={{ fontSize: 12 }}>聚合方式</Text>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              聚合方式
+            </Text>
             <Select
               value={dataSource.aggregation || 'count'}
               onChange={(v) => update('aggregation', v)}
@@ -139,7 +165,9 @@ const DataSourcePanel: React.FC<{
           </div>
 
           <div>
-            <Text type="secondary" style={{ fontSize: 12 }}>时间范围</Text>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              时间范围
+            </Text>
             <Select
               value={dataSource.timeRange || 'today'}
               onChange={(v) => update('timeRange', v)}
@@ -149,13 +177,17 @@ const DataSourcePanel: React.FC<{
           </div>
 
           <div>
-            <Text type="secondary" style={{ fontSize: 12 }}>过滤条件（JSON）</Text>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              过滤条件（JSON）
+            </Text>
             <Input.TextArea
               value={dataSource.filters ? JSON.stringify(dataSource.filters) : ''}
               onChange={(e) => {
                 try {
                   update('filters', JSON.parse(e.target.value || '{}'));
-                } catch { /* ignore */ }
+                } catch {
+                  /* ignore */
+                }
               }}
               placeholder='{"status": "active"}'
               rows={2}
@@ -167,7 +199,9 @@ const DataSourcePanel: React.FC<{
 
       {dataSource.module === 'static' && (
         <div>
-          <Text type="secondary" style={{ fontSize: 12 }}>静态数值</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            静态数值
+          </Text>
           <InputNumber
             value={typeof dataSource.staticData === 'number' ? dataSource.staticData : 0}
             onChange={(v) => update('staticData', v || 0)}
@@ -178,7 +212,9 @@ const DataSourcePanel: React.FC<{
 
       <Divider style={{ margin: '8px 0', fontSize: 12 }} />
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>{intl.formatMessage({ id: 'pages.dashboard.cardConfig.refreshInterval' })}</Text>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          {intl.formatMessage({ id: 'pages.dashboard.cardConfig.refreshInterval' })}
+        </Text>
         <InputNumber
           value={dataSource.refreshInterval || 300}
           onChange={(v) => update('refreshInterval', v || 300)}
@@ -193,108 +229,241 @@ const DataSourcePanel: React.FC<{
 };
 
 /** 通用样式面板 */
-const CommonStylePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => void }> = ({ style, onChange }) => {
+const CommonStylePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => void }> = ({
+  style,
+  onChange,
+}) => {
   const intl = useIntl();
   const update = (key: string, value: unknown) => onChange({ ...style, [key]: value });
 
   /** 布尔值选项 */
-  const BOOLEAN_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.boolean.yes' }), value: 'true' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.boolean.no' }), value: 'false' },
-  ], [intl]);
+  const BOOLEAN_OPTIONS = useMemo(
+    () => [
+      { label: intl.formatMessage({ id: 'pages.dashboard.boolean.yes' }), value: 'true' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.boolean.no' }), value: 'false' },
+    ],
+    [intl],
+  );
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>标题颜色</Text>
-        <div><ColorPicker value={style.titleColor || '#e0e6f1'} onChange={(_, hex) => update('titleColor', hex)} size="small" /></div>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          标题颜色
+        </Text>
+        <div>
+          <ColorPicker
+            value={style.titleColor || '#e0e6f1'}
+            onChange={(_, hex) => update('titleColor', hex)}
+            size="small"
+          />
+        </div>
       </div>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>标题字号</Text>
-        <InputNumber value={style.titleFontSize || 14} onChange={(v) => update('titleFontSize', v)} size="small" min={10} max={32} style={{ width: '100%' }} />
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          标题字号
+        </Text>
+        <InputNumber
+          value={style.titleFontSize || 14}
+          onChange={(v) => update('titleFontSize', v)}
+          size="small"
+          min={10}
+          max={32}
+          style={{ width: '100%' }}
+        />
       </div>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>背景色</Text>
-        <div><ColorPicker value={style.backgroundColor || 'rgba(14,30,60,0.6)'} onChange={(_, hex) => update('backgroundColor', hex)} size="small" /></div>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          背景色
+        </Text>
+        <div>
+          <ColorPicker
+            value={style.backgroundColor || 'rgba(14,30,60,0.6)'}
+            onChange={(_, hex) => update('backgroundColor', hex)}
+            size="small"
+          />
+        </div>
       </div>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>边框圆角</Text>
-        <InputNumber value={style.borderRadius ?? 8} onChange={(v) => update('borderRadius', v)} size="small" min={0} max={24} style={{ width: '100%' }} />
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          边框圆角
+        </Text>
+        <InputNumber
+          value={style.borderRadius ?? 8}
+          onChange={(v) => update('borderRadius', v)}
+          size="small"
+          min={0}
+          max={24}
+          style={{ width: '100%' }}
+        />
       </div>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>内边距</Text>
-        <InputNumber value={style.padding ?? 12} onChange={(v) => update('padding', v)} size="small" min={0} max={32} style={{ width: '100%' }} />
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          内边距
+        </Text>
+        <InputNumber
+          value={style.padding ?? 12}
+          onChange={(v) => update('padding', v)}
+          size="small"
+          min={0}
+          max={32}
+          style={{ width: '100%' }}
+        />
       </div>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>显示标题</Text>
-        <Select value={style.showTitle !== false ? 'true' : 'false'} onChange={(v) => update('showTitle', v === 'true')} size="small" style={{ width: '100%' }}
-          options={BOOLEAN_OPTIONS} />
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          显示标题
+        </Text>
+        <Select
+          value={style.showTitle !== false ? 'true' : 'false'}
+          onChange={(v) => update('showTitle', v === 'true')}
+          size="small"
+          style={{ width: '100%' }}
+          options={BOOLEAN_OPTIONS}
+        />
       </div>
     </div>
   );
 };
 
 /** 统计卡片配置 */
-const StatisticStylePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => void }> = ({ style, onChange }) => {
+const StatisticStylePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => void }> = ({
+  style,
+  onChange,
+}) => {
   const intl = useIntl();
   const update = (key: string, value: unknown) => onChange({ ...style, [key]: value });
 
   /** 图标选项 */
-  const ICON_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.thunder' }), value: 'thunder' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.monitor' }), value: 'monitor' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.bulb' }), value: 'bulb' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.bank' }), value: 'bank' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.setting' }), value: 'setting' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.sound' }), value: 'sound' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.car' }), value: 'car' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.video' }), value: 'video' },
-  ], [intl]);
+  const ICON_OPTIONS = useMemo(
+    () => [
+      { label: intl.formatMessage({ id: 'pages.dashboard.icon.thunder' }), value: 'thunder' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.icon.monitor' }), value: 'monitor' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.icon.bulb' }), value: 'bulb' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.icon.bank' }), value: 'bank' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.icon.setting' }), value: 'setting' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.icon.sound' }), value: 'sound' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.icon.car' }), value: 'car' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.icon.video' }), value: 'video' },
+    ],
+    [intl],
+  );
 
   /** 趋势选项 */
-  const TREND_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.trend.none' }), value: 'none' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.trend.up' }), value: 'up' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.trend.down' }), value: 'down' },
-  ], [intl]);
+  const TREND_OPTIONS = useMemo(
+    () => [
+      { label: intl.formatMessage({ id: 'pages.dashboard.trend.none' }), value: 'none' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.trend.up' }), value: 'up' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.trend.down' }), value: 'down' },
+    ],
+    [intl],
+  );
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>数值</Text>
-        <Input value={style.centerValue || ''} onChange={(e) => update('centerValue', e.target.value)} size="small" placeholder="如: 1,234" />
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          数值
+        </Text>
+        <Input
+          value={style.centerValue || ''}
+          onChange={(e) => update('centerValue', e.target.value)}
+          size="small"
+          placeholder="如: 1,234"
+        />
       </div>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>数值颜色</Text>
-        <div><ColorPicker value={style.valueColor || '#00d4ff'} onChange={(_, hex) => update('valueColor', hex)} size="small" /></div>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          数值颜色
+        </Text>
+        <div>
+          <ColorPicker
+            value={style.valueColor || '#00d4ff'}
+            onChange={(_, hex) => update('valueColor', hex)}
+            size="small"
+          />
+        </div>
       </div>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>数值字号</Text>
-        <InputNumber value={style.valueSize || 36} onChange={(v) => update('valueSize', v)} size="small" min={14} max={72} style={{ width: '100%' }} />
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          数值字号
+        </Text>
+        <InputNumber
+          value={style.valueSize || 36}
+          onChange={(v) => update('valueSize', v)}
+          size="small"
+          min={14}
+          max={72}
+          style={{ width: '100%' }}
+        />
       </div>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>前缀</Text>
-        <Input value={style.prefix || ''} onChange={(e) => update('prefix', e.target.value)} size="small" placeholder="如: ¥" />
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          前缀
+        </Text>
+        <Input
+          value={style.prefix || ''}
+          onChange={(e) => update('prefix', e.target.value)}
+          size="small"
+          placeholder="如: ¥"
+        />
       </div>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>后缀</Text>
-        <Input value={style.suffix || ''} onChange={(e) => update('suffix', e.target.value)} size="small" placeholder="如: kW、%" />
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          后缀
+        </Text>
+        <Input
+          value={style.suffix || ''}
+          onChange={(e) => update('suffix', e.target.value)}
+          size="small"
+          placeholder="如: kW、%"
+        />
       </div>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>图标</Text>
-        <Select value={style.icon || undefined} onChange={(v) => update('icon', v)} size="small" style={{ width: '100%' }} allowClear placeholder={intl.formatMessage({ id: 'pages.dashboard.iconPlaceholder' })}
-          options={ICON_OPTIONS} />
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          图标
+        </Text>
+        <Select
+          value={style.icon || undefined}
+          onChange={(v) => update('icon', v)}
+          size="small"
+          style={{ width: '100%' }}
+          allowClear
+          placeholder={intl.formatMessage({ id: 'pages.dashboard.iconPlaceholder' })}
+          options={ICON_OPTIONS}
+        />
       </div>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>趋势</Text>
-        <Select value={style.trend || 'none'} onChange={(v) => update('trend', v)} size="small" style={{ width: '100%' }}
-          options={TREND_OPTIONS} />
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          趋势
+        </Text>
+        <Select
+          value={style.trend || 'none'}
+          onChange={(v) => update('trend', v)}
+          size="small"
+          style={{ width: '100%' }}
+          options={TREND_OPTIONS}
+        />
       </div>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>趋势值</Text>
-        <Input value={style.trendValue || ''} onChange={(e) => update('trendValue', e.target.value)} size="small" placeholder="如: 12.5%" />
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          趋势值
+        </Text>
+        <Input
+          value={style.trendValue || ''}
+          onChange={(e) => update('trendValue', e.target.value)}
+          size="small"
+          placeholder="如: 12.5%"
+        />
       </div>
       <div style={{ gridColumn: '1 / -1' }}>
-        <Text type="secondary" style={{ fontSize: 12 }}>描述</Text>
-        <Input value={style.description || ''} onChange={(e) => update('description', e.target.value)} size="small" placeholder="副标题描述" />
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          描述
+        </Text>
+        <Input
+          value={style.description || ''}
+          onChange={(e) => update('description', e.target.value)}
+          size="small"
+          placeholder="副标题描述"
+        />
       </div>
     </div>
   );
@@ -306,37 +475,79 @@ const GaugeStylePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig)
   const update = (key: string, value: unknown) => onChange({ ...style, [key]: value });
 
   /** 仪表盘样式选项 */
-  const GAUGE_STYLE_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.gaugeStyle.default' }), value: 'default' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.gaugeStyle.simple' }), value: 'simple' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.gaugeStyle.temperature' }), value: 'temperature' },
-  ], [intl]);
+  const GAUGE_STYLE_OPTIONS = useMemo(
+    () => [
+      { label: intl.formatMessage({ id: 'pages.dashboard.gaugeStyle.default' }), value: 'default' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.gaugeStyle.simple' }), value: 'simple' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.gaugeStyle.temperature' }), value: 'temperature' },
+    ],
+    [intl],
+  );
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>当前值</Text>
-        <InputNumber value={parseFloat(style.centerValue || '50')} onChange={(v) => update('centerValue', String(v))} size="small" style={{ width: '100%' }} />
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          当前值
+        </Text>
+        <InputNumber
+          value={parseFloat(style.centerValue || '50')}
+          onChange={(v) => update('centerValue', String(v))}
+          size="small"
+          style={{ width: '100%' }}
+        />
       </div>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>单位</Text>
-        <Input value={style.unit || ''} onChange={(e) => update('unit', e.target.value)} size="small" placeholder="如: ℃、kW" />
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          单位
+        </Text>
+        <Input
+          value={style.unit || ''}
+          onChange={(e) => update('unit', e.target.value)}
+          size="small"
+          placeholder="如: ℃、kW"
+        />
       </div>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>最小值</Text>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          最小值
+        </Text>
         <InputNumber value={style.min ?? 0} onChange={(v) => update('min', v)} size="small" style={{ width: '100%' }} />
       </div>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>最大值</Text>
-        <InputNumber value={style.max ?? 100} onChange={(v) => update('max', v)} size="small" style={{ width: '100%' }} />
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          最大值
+        </Text>
+        <InputNumber
+          value={style.max ?? 100}
+          onChange={(v) => update('max', v)}
+          size="small"
+          style={{ width: '100%' }}
+        />
       </div>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>刻度数</Text>
-        <InputNumber value={style.splitNumber ?? 5} onChange={(v) => update('splitNumber', v)} size="small" min={2} max={20} style={{ width: '100%' }} />
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          刻度数
+        </Text>
+        <InputNumber
+          value={style.splitNumber ?? 5}
+          onChange={(v) => update('splitNumber', v)}
+          size="small"
+          min={2}
+          max={20}
+          style={{ width: '100%' }}
+        />
       </div>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>样式</Text>
-        <Select value={style.gaugeStyle || 'default'} onChange={(v) => update('gaugeStyle', v)} size="small" style={{ width: '100%' }}
-          options={GAUGE_STYLE_OPTIONS} />
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          样式
+        </Text>
+        <Select
+          value={style.gaugeStyle || 'default'}
+          onChange={(v) => update('gaugeStyle', v)}
+          size="small"
+          style={{ width: '100%' }}
+          options={GAUGE_STYLE_OPTIONS}
+        />
       </div>
     </div>
   );
@@ -349,7 +560,13 @@ const SeriesDataPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig)
   const seriesData = style.seriesData || [];
 
   const updateXAxis = (val: string) => {
-    onChange({ ...style, xAxisData: val.split(',').map((s: string) => s.trim()).filter(Boolean) });
+    onChange({
+      ...style,
+      xAxisData: val
+        .split(',')
+        .map((s: string) => s.trim())
+        .filter(Boolean),
+    });
   };
 
   const addSeries = () => {
@@ -372,62 +589,107 @@ const SeriesDataPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig)
   };
 
   /** 布尔值选项 */
-  const BOOLEAN_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.boolean.yes' }), value: 'true' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.boolean.no' }), value: 'false' },
-  ], [intl]);
+  const BOOLEAN_OPTIONS = useMemo(
+    () => [
+      { label: intl.formatMessage({ id: 'pages.dashboard.boolean.yes' }), value: 'true' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.boolean.no' }), value: 'false' },
+    ],
+    [intl],
+  );
 
   return (
     <div>
       <div style={{ marginBottom: 12 }}>
-        <Text type="secondary" style={{ fontSize: 12 }}>X轴标签（逗号分隔）</Text>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          X轴标签（逗号分隔）
+        </Text>
         <Input.TextArea
           value={xAxisData.join(', ')}
           onChange={(e) => updateXAxis(e.target.value)}
-          size="small" rows={2}
+          size="small"
+          rows={2}
           placeholder="周一, 周二, 周三, 周四, 周五"
         />
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', marginBottom: 12 }}>
         <div>
-          <Text type="secondary" style={{ fontSize: 12 }}>显示图例</Text>
-          <Select value={style.showLegend !== false ? 'true' : 'false'} onChange={(v) => onChange({ ...style, showLegend: v === 'true' })} size="small" style={{ width: '100%' }}
-            options={BOOLEAN_OPTIONS} />
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            显示图例
+          </Text>
+          <Select
+            value={style.showLegend !== false ? 'true' : 'false'}
+            onChange={(v) => onChange({ ...style, showLegend: v === 'true' })}
+            size="small"
+            style={{ width: '100%' }}
+            options={BOOLEAN_OPTIONS}
+          />
         </div>
         <div>
-          <Text type="secondary" style={{ fontSize: 12 }}>平滑曲线</Text>
-          <Select value={style.smooth !== false ? 'true' : 'false'} onChange={(v) => onChange({ ...style, smooth: v === 'true' })} size="small" style={{ width: '100%' }}
-            options={BOOLEAN_OPTIONS} />
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            平滑曲线
+          </Text>
+          <Select
+            value={style.smooth !== false ? 'true' : 'false'}
+            onChange={(v) => onChange({ ...style, smooth: v === 'true' })}
+            size="small"
+            style={{ width: '100%' }}
+            options={BOOLEAN_OPTIONS}
+          />
         </div>
       </div>
-      <Divider orientation={'left' as DividerOrientation} style={{ margin: '8px 0', fontSize: 12 }}>数据系列</Divider>
+      <Divider orientation={'left' as DividerOrientation} style={{ margin: '8px 0', fontSize: 12 }}>
+        数据系列
+      </Divider>
       {seriesData.map((s: { name: string; data: number[]; color?: string }, idx: number) => (
         <div key={idx} style={{ marginBottom: 12, padding: 8, background: 'rgba(0,0,0,0.02)', borderRadius: 6 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-            <Text strong style={{ fontSize: 12 }}>系列 {idx + 1}</Text>
+            <Text strong style={{ fontSize: 12 }}>
+              系列 {idx + 1}
+            </Text>
             <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => removeSeries(idx)} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px' }}>
             <div>
-              <Text type="secondary" style={{ fontSize: 11 }}>名称</Text>
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                名称
+              </Text>
               <Input value={s.name} onChange={(e) => updateSeries(idx, 'name', e.target.value)} size="small" />
             </div>
             <div>
-              <Text type="secondary" style={{ fontSize: 11 }}>颜色</Text>
-              <div><ColorPicker value={s.color || '#00d4ff'} onChange={(_, hex) => updateSeries(idx, 'color', hex)} size="small" /></div>
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                颜色
+              </Text>
+              <div>
+                <ColorPicker
+                  value={s.color || '#00d4ff'}
+                  onChange={(_, hex) => updateSeries(idx, 'color', hex)}
+                  size="small"
+                />
+              </div>
             </div>
           </div>
           <div style={{ marginTop: 4 }}>
-            <Text type="secondary" style={{ fontSize: 11 }}>数据（逗号分隔）</Text>
+            <Text type="secondary" style={{ fontSize: 11 }}>
+              数据（逗号分隔）
+            </Text>
             <Input
               value={s.data.join(', ')}
-              onChange={(e) => updateSeries(idx, 'data', e.target.value.split(',').map((v: string) => parseFloat(v.trim()) || 0))}
-              size="small" placeholder="10, 20, 30, 40, 50"
+              onChange={(e) =>
+                updateSeries(
+                  idx,
+                  'data',
+                  e.target.value.split(',').map((v: string) => parseFloat(v.trim()) || 0),
+                )
+              }
+              size="small"
+              placeholder="10, 20, 30, 40, 50"
             />
           </div>
         </div>
       ))}
-      <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={addSeries} block>添加数据系列</Button>
+      <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={addSeries} block>
+        添加数据系列
+      </Button>
     </div>
   );
 };
@@ -456,32 +718,75 @@ const PieDataPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) =>
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', marginBottom: 12 }}>
         <div>
-          <Text type="secondary" style={{ fontSize: 12 }}>内半径</Text>
-          <Input value={style.innerRadius || '55%'} onChange={(e) => onChange({ ...style, innerRadius: e.target.value })} size="small" placeholder="55%" />
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            内半径
+          </Text>
+          <Input
+            value={style.innerRadius || '55%'}
+            onChange={(e) => onChange({ ...style, innerRadius: e.target.value })}
+            size="small"
+            placeholder="55%"
+          />
         </div>
         <div>
-          <Text type="secondary" style={{ fontSize: 12 }}>外半径</Text>
-          <Input value={style.outerRadius || '75%'} onChange={(e) => onChange({ ...style, outerRadius: e.target.value })} size="small" placeholder="75%" />
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            外半径
+          </Text>
+          <Input
+            value={style.outerRadius || '75%'}
+            onChange={(e) => onChange({ ...style, outerRadius: e.target.value })}
+            size="small"
+            placeholder="75%"
+          />
         </div>
         <div>
-          <Text type="secondary" style={{ fontSize: 12 }}>中心文本</Text>
-          <Input value={style.centerText || ''} onChange={(e) => onChange({ ...style, centerText: e.target.value })} size="small" placeholder="如: 总计" />
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            中心文本
+          </Text>
+          <Input
+            value={style.centerText || ''}
+            onChange={(e) => onChange({ ...style, centerText: e.target.value })}
+            size="small"
+            placeholder="如: 总计"
+          />
         </div>
         <div>
-          <Text type="secondary" style={{ fontSize: 12 }}>中心数值</Text>
-          <Input value={style.centerValue || ''} onChange={(e) => onChange({ ...style, centerValue: e.target.value })} size="small" placeholder="如: 1,234" />
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            中心数值
+          </Text>
+          <Input
+            value={style.centerValue || ''}
+            onChange={(e) => onChange({ ...style, centerValue: e.target.value })}
+            size="small"
+            placeholder="如: 1,234"
+          />
         </div>
       </div>
-      <Divider orientation={'left' as DividerOrientation} style={{ margin: '8px 0', fontSize: 12 }}>数据项</Divider>
+      <Divider orientation={'left' as DividerOrientation} style={{ margin: '8px 0', fontSize: 12 }}>
+        数据项
+      </Divider>
       {pieData.map((d: { name: string; value: number; color?: string }, idx: number) => (
         <div key={idx} style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' }}>
-          <Input value={d.name} onChange={(e) => updateItem(idx, 'name', e.target.value)} size="small" style={{ width: 80 }} placeholder="名称" />
-          <InputNumber value={d.value} onChange={(v) => updateItem(idx, 'value', v)} size="small" style={{ width: 70 }} />
+          <Input
+            value={d.name}
+            onChange={(e) => updateItem(idx, 'name', e.target.value)}
+            size="small"
+            style={{ width: 80 }}
+            placeholder="名称"
+          />
+          <InputNumber
+            value={d.value}
+            onChange={(v) => updateItem(idx, 'value', v)}
+            size="small"
+            style={{ width: 70 }}
+          />
           <ColorPicker value={d.color || '#00d4ff'} onChange={(_, hex) => updateItem(idx, 'color', hex)} size="small" />
           <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => removeItem(idx)} />
         </div>
       ))}
-      <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={addItem} block>添加数据项</Button>
+      <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={addItem} block>
+        添加数据项
+      </Button>
     </div>
   );
 };
@@ -492,7 +797,10 @@ const StatusGridPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig)
   const items = style.items || [];
 
   const addItem = () => {
-    onChange({ ...style, items: [...items, { name: `项目${items.length + 1}`, status: 'normal' as const, statusText: '', data: {} }] });
+    onChange({
+      ...style,
+      items: [...items, { name: `项目${items.length + 1}`, status: 'normal' as const, statusText: '', data: {} }],
+    });
   };
 
   const removeItem = (idx: number) => {
@@ -517,80 +825,136 @@ const StatusGridPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig)
   };
 
   /** 状态选项 */
-  const STATUS_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.status.normal' }), value: 'normal' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.status.busy' }), value: 'busy' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.status.urgent' }), value: 'urgent' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.status.offline' }), value: 'offline' },
-  ], [intl]);
+  const STATUS_OPTIONS = useMemo(
+    () => [
+      { label: intl.formatMessage({ id: 'pages.dashboard.status.normal' }), value: 'normal' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.status.busy' }), value: 'busy' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.status.urgent' }), value: 'urgent' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.status.offline' }), value: 'offline' },
+    ],
+    [intl],
+  );
 
   return (
     <div>
       <div style={{ marginBottom: 12 }}>
-        <Text type="secondary" style={{ fontSize: 12 }}>列数</Text>
-        <InputNumber value={style.columns || 2} onChange={(v) => onChange({ ...style, columns: v as number })} size="small" min={1} max={6} style={{ width: '100%' }} />
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          列数
+        </Text>
+        <InputNumber
+          value={style.columns || 2}
+          onChange={(v) => onChange({ ...style, columns: v as number })}
+          size="small"
+          min={1}
+          max={6}
+          style={{ width: '100%' }}
+        />
       </div>
-      <Divider orientation={'left' as DividerOrientation} style={{ margin: '8px 0', fontSize: 12 }}>状态项</Divider>
-      {items.map((item: { name: string; status: string; statusText?: string; data?: Record<string, string | number> }, idx: number) => (
-        <div key={idx} style={{ marginBottom: 10, padding: 8, background: 'rgba(0,0,0,0.02)', borderRadius: 6 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-            <Text strong style={{ fontSize: 12 }}>项目 {idx + 1}</Text>
-            <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => removeItem(idx)} />
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px' }}>
-            <div>
-              <Text type="secondary" style={{ fontSize: 11 }}>名称</Text>
-              <Input value={item.name} onChange={(e) => updateItem(idx, 'name', e.target.value)} size="small" />
+      <Divider orientation={'left' as DividerOrientation} style={{ margin: '8px 0', fontSize: 12 }}>
+        状态项
+      </Divider>
+      {items.map(
+        (
+          item: { name: string; status: string; statusText?: string; data?: Record<string, string | number> },
+          idx: number,
+        ) => (
+          <div key={idx} style={{ marginBottom: 10, padding: 8, background: 'rgba(0,0,0,0.02)', borderRadius: 6 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+              <Text strong style={{ fontSize: 12 }}>
+                项目 {idx + 1}
+              </Text>
+              <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => removeItem(idx)} />
             </div>
-            <div>
-              <Text type="secondary" style={{ fontSize: 11 }}>状态</Text>
-              <Select value={item.status} onChange={(v) => updateItem(idx, 'status', v)} size="small" style={{ width: '100%' }}
-                options={STATUS_OPTIONS} />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px' }}>
+              <div>
+                <Text type="secondary" style={{ fontSize: 11 }}>
+                  名称
+                </Text>
+                <Input value={item.name} onChange={(e) => updateItem(idx, 'name', e.target.value)} size="small" />
+              </div>
+              <div>
+                <Text type="secondary" style={{ fontSize: 11 }}>
+                  状态
+                </Text>
+                <Select
+                  value={item.status}
+                  onChange={(v) => updateItem(idx, 'status', v)}
+                  size="small"
+                  style={{ width: '100%' }}
+                  options={STATUS_OPTIONS}
+                />
+              </div>
+            </div>
+            <div style={{ marginTop: 4 }}>
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                附加数据（JSON对象）
+              </Text>
+              <Input.TextArea
+                defaultValue={JSON.stringify(item.data || {}, null, 0)}
+                onBlur={(e) => updateItemData(idx, e.target.value)}
+                size="small"
+                rows={1}
+                placeholder='{"在院人数": 45, "床位使用率": "87%"}'
+              />
             </div>
           </div>
-          <div style={{ marginTop: 4 }}>
-            <Text type="secondary" style={{ fontSize: 11 }}>附加数据（JSON对象）</Text>
-            <Input.TextArea
-              defaultValue={JSON.stringify(item.data || {}, null, 0)}
-              onBlur={(e) => updateItemData(idx, e.target.value)}
-              size="small" rows={1}
-              placeholder='{"在院人数": 45, "床位使用率": "87%"}'
-            />
-          </div>
-        </div>
-      ))}
-      <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={addItem} block>添加状态项</Button>
+        ),
+      )}
+      <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={addItem} block>
+        添加状态项
+      </Button>
     </div>
   );
 };
 
 /** 功能模块配置 */
-const FunctionModulePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => void }> = ({ style, onChange }) => {
+const FunctionModulePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => void }> = ({
+  style,
+  onChange,
+}) => {
   const intl = useIntl();
   const modules = style.modules || [];
 
   /** 图标选项 */
-  const ICON_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.thunder' }), value: 'thunder' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.monitor' }), value: 'monitor' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.bulb' }), value: 'bulb' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.bank' }), value: 'bank' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.setting' }), value: 'setting' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.sound' }), value: 'sound' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.car' }), value: 'car' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.video' }), value: 'video' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.icon.idcard' }), value: 'idcard' },
-  ], [intl]);
+  const ICON_OPTIONS = useMemo(
+    () => [
+      { label: intl.formatMessage({ id: 'pages.dashboard.icon.thunder' }), value: 'thunder' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.icon.monitor' }), value: 'monitor' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.icon.bulb' }), value: 'bulb' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.icon.bank' }), value: 'bank' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.icon.setting' }), value: 'setting' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.icon.sound' }), value: 'sound' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.icon.car' }), value: 'car' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.icon.video' }), value: 'video' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.icon.idcard' }), value: 'idcard' },
+    ],
+    [intl],
+  );
 
   /** 状态选项 */
-  const STATUS_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.status.online' }), value: 'online' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.status.warning' }), value: 'warning' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.status.offline' }), value: 'offline' },
-  ], [intl]);
+  const STATUS_OPTIONS = useMemo(
+    () => [
+      { label: intl.formatMessage({ id: 'pages.dashboard.status.online' }), value: 'online' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.status.warning' }), value: 'warning' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.status.offline' }), value: 'offline' },
+    ],
+    [intl],
+  );
 
   const addModule = () => {
-    onChange({ ...style, modules: [...modules, { name: `模块${modules.length + 1}`, icon: 'setting', status: 'online' as const, statusText: '', description: '' }] });
+    onChange({
+      ...style,
+      modules: [
+        ...modules,
+        {
+          name: `模块${modules.length + 1}`,
+          icon: 'setting',
+          status: 'online' as const,
+          statusText: '',
+          description: '',
+        },
+      ],
+    });
   };
 
   const removeModule = (idx: number) => {
@@ -608,39 +972,82 @@ const FunctionModulePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleCon
   return (
     <div>
       <div style={{ marginBottom: 12 }}>
-        <Text type="secondary" style={{ fontSize: 12 }}>列数</Text>
-        <InputNumber value={style.columns || 2} onChange={(v) => onChange({ ...style, columns: v as number })} size="small" min={1} max={6} style={{ width: '100%' }} />
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          列数
+        </Text>
+        <InputNumber
+          value={style.columns || 2}
+          onChange={(v) => onChange({ ...style, columns: v as number })}
+          size="small"
+          min={1}
+          max={6}
+          style={{ width: '100%' }}
+        />
       </div>
-      <Divider orientation={'left' as DividerOrientation} style={{ margin: '8px 0', fontSize: 12 }}>模块列表</Divider>
-      {modules.map((mod: { name: string; icon?: string; status: string; statusText?: string; description?: string }, idx: number) => (
-        <div key={idx} style={{ marginBottom: 8, padding: 8, background: 'rgba(0,0,0,0.02)', borderRadius: 6 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-            <Text strong style={{ fontSize: 12 }}>模块 {idx + 1}</Text>
-            <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => removeModule(idx)} />
+      <Divider orientation={'left' as DividerOrientation} style={{ margin: '8px 0', fontSize: 12 }}>
+        模块列表
+      </Divider>
+      {modules.map(
+        (
+          mod: { name: string; icon?: string; status: string; statusText?: string; description?: string },
+          idx: number,
+        ) => (
+          <div key={idx} style={{ marginBottom: 8, padding: 8, background: 'rgba(0,0,0,0.02)', borderRadius: 6 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+              <Text strong style={{ fontSize: 12 }}>
+                模块 {idx + 1}
+              </Text>
+              <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => removeModule(idx)} />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 8px' }}>
+              <div>
+                <Text type="secondary" style={{ fontSize: 11 }}>
+                  名称
+                </Text>
+                <Input value={mod.name} onChange={(e) => updateModule(idx, 'name', e.target.value)} size="small" />
+              </div>
+              <div>
+                <Text type="secondary" style={{ fontSize: 11 }}>
+                  状态
+                </Text>
+                <Select
+                  value={mod.status}
+                  onChange={(v) => updateModule(idx, 'status', v)}
+                  size="small"
+                  style={{ width: '100%' }}
+                  options={STATUS_OPTIONS}
+                />
+              </div>
+              <div>
+                <Text type="secondary" style={{ fontSize: 11 }}>
+                  图标
+                </Text>
+                <Select
+                  value={mod.icon || undefined}
+                  onChange={(v) => updateModule(idx, 'icon', v)}
+                  size="small"
+                  style={{ width: '100%' }}
+                  allowClear
+                  options={ICON_OPTIONS}
+                />
+              </div>
+              <div>
+                <Text type="secondary" style={{ fontSize: 11 }}>
+                  描述
+                </Text>
+                <Input
+                  value={mod.description || ''}
+                  onChange={(e) => updateModule(idx, 'description', e.target.value)}
+                  size="small"
+                />
+              </div>
+            </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 8px' }}>
-            <div>
-              <Text type="secondary" style={{ fontSize: 11 }}>名称</Text>
-              <Input value={mod.name} onChange={(e) => updateModule(idx, 'name', e.target.value)} size="small" />
-            </div>
-            <div>
-              <Text type="secondary" style={{ fontSize: 11 }}>状态</Text>
-              <Select value={mod.status} onChange={(v) => updateModule(idx, 'status', v)} size="small" style={{ width: '100%' }}
-                options={STATUS_OPTIONS} />
-            </div>
-            <div>
-              <Text type="secondary" style={{ fontSize: 11 }}>图标</Text>
-              <Select value={mod.icon || undefined} onChange={(v) => updateModule(idx, 'icon', v)} size="small" style={{ width: '100%' }} allowClear
-                options={ICON_OPTIONS} />
-            </div>
-            <div>
-              <Text type="secondary" style={{ fontSize: 11 }}>描述</Text>
-              <Input value={mod.description || ''} onChange={(e) => updateModule(idx, 'description', e.target.value)} size="small" />
-            </div>
-          </div>
-        </div>
-      ))}
-      <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={addModule} block>添加模块</Button>
+        ),
+      )}
+      <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={addModule} block>
+        添加模块
+      </Button>
     </div>
   );
 };
@@ -651,12 +1058,15 @@ const AlertListPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) 
   const alerts = style.alerts || [];
 
   /** 告警级别选项 */
-  const ALERT_LEVEL_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.alertLevel.info' }), value: 'info' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.alertLevel.warning' }), value: 'warning' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.alertLevel.error' }), value: 'error' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.alertLevel.critical' }), value: 'critical' },
-  ], [intl]);
+  const ALERT_LEVEL_OPTIONS = useMemo(
+    () => [
+      { label: intl.formatMessage({ id: 'pages.dashboard.alertLevel.info' }), value: 'info' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.alertLevel.warning' }), value: 'warning' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.alertLevel.error' }), value: 'error' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.alertLevel.critical' }), value: 'critical' },
+    ],
+    [intl],
+  );
 
   const addAlert = () => {
     const now = new Date();
@@ -680,14 +1090,32 @@ const AlertListPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) 
     <div>
       {alerts.map((alert: { time: string; level: string; message: string }, idx: number) => (
         <div key={idx} style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'center' }}>
-          <Input value={alert.time} onChange={(e) => updateAlert(idx, 'time', e.target.value)} size="small" style={{ width: 65 }} placeholder="HH:MM" />
-          <Select value={alert.level} onChange={(v) => updateAlert(idx, 'level', v)} size="small" style={{ width: 80 }}
-            options={ALERT_LEVEL_OPTIONS} />
-          <Input value={alert.message} onChange={(e) => updateAlert(idx, 'message', e.target.value)} size="small" style={{ flex: 1 }} />
+          <Input
+            value={alert.time}
+            onChange={(e) => updateAlert(idx, 'time', e.target.value)}
+            size="small"
+            style={{ width: 65 }}
+            placeholder="HH:MM"
+          />
+          <Select
+            value={alert.level}
+            onChange={(v) => updateAlert(idx, 'level', v)}
+            size="small"
+            style={{ width: 80 }}
+            options={ALERT_LEVEL_OPTIONS}
+          />
+          <Input
+            value={alert.message}
+            onChange={(e) => updateAlert(idx, 'message', e.target.value)}
+            size="small"
+            style={{ flex: 1 }}
+          />
           <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => removeAlert(idx)} />
         </div>
       ))}
-      <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={addAlert} block>添加告警</Button>
+      <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={addAlert} block>
+        添加告警
+      </Button>
     </div>
   );
 };
@@ -698,19 +1126,31 @@ const HeaderPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => 
   const update = (key: string, value: unknown) => onChange({ ...style, [key]: value });
 
   /** 对齐方式选项 */
-  const ALIGNMENT_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.alignment.left' }), value: 'left' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.alignment.center' }), value: 'center' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.alignment.right' }), value: 'right' },
-  ], [intl]);
+  const ALIGNMENT_OPTIONS = useMemo(
+    () => [
+      { label: intl.formatMessage({ id: 'pages.dashboard.alignment.left' }), value: 'left' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.alignment.center' }), value: 'center' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.alignment.right' }), value: 'right' },
+    ],
+    [intl],
+  );
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
       <div style={{ gridColumn: '1 / -1' }}>
-        <Text type="secondary" style={{ fontSize: 12 }}>标题文本</Text>
-        <Input value={style.headerTitle || ''} onChange={(e) => update('headerTitle', e.target.value)} size="small" placeholder="医院智慧管理平台" />
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          标题文本
+        </Text>
+        <Input
+          value={style.headerTitle || ''}
+          onChange={(e) => update('headerTitle', e.target.value)}
+          size="small"
+          placeholder="医院智慧管理平台"
+        />
       </div>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>居中方式</Text>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          居中方式
+        </Text>
         <Select
           value={style.textAlign || 'center'}
           onChange={(v) => update('textAlign', v)}
@@ -720,12 +1160,25 @@ const HeaderPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => 
         />
       </div>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>字号</Text>
-        <InputNumber value={style.fontSize || 22} onChange={(v) => update('fontSize', v)} size="small" min={14} max={48} style={{ width: '100%' }} />
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          字号
+        </Text>
+        <InputNumber
+          value={style.fontSize || 22}
+          onChange={(v) => update('fontSize', v)}
+          size="small"
+          min={14}
+          max={48}
+          style={{ width: '100%' }}
+        />
       </div>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>文字颜色</Text>
-        <div><ColorPicker value={style.textColor || '#fff'} onChange={(_, hex) => update('textColor', hex)} size="small" /></div>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          文字颜色
+        </Text>
+        <div>
+          <ColorPicker value={style.textColor || '#fff'} onChange={(_, hex) => update('textColor', hex)} size="small" />
+        </div>
       </div>
     </div>
   );
@@ -737,15 +1190,34 @@ const ProgressPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) =
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>进度值 (%)</Text>
-        <InputNumber value={style.progress ?? 0} onChange={(v) => update('progress', v)} size="small" min={0} max={100} style={{ width: '100%' }} />
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          进度值 (%)
+        </Text>
+        <InputNumber
+          value={style.progress ?? 0}
+          onChange={(v) => update('progress', v)}
+          size="small"
+          min={0}
+          max={100}
+          style={{ width: '100%' }}
+        />
       </div>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>进度条颜色</Text>
-        <div><ColorPicker value={style.progressColor || '#00d4ff'} onChange={(_, hex) => update('progressColor', hex)} size="small" /></div>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          进度条颜色
+        </Text>
+        <div>
+          <ColorPicker
+            value={style.progressColor || '#00d4ff'}
+            onChange={(_, hex) => update('progressColor', hex)}
+            size="small"
+          />
+        </div>
       </div>
       <div style={{ gridColumn: '1 / -1' }}>
-        <Text type="secondary" style={{ fontSize: 12 }}>描述</Text>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          描述
+        </Text>
         <Input value={style.description || ''} onChange={(e) => update('description', e.target.value)} size="small" />
       </div>
     </div>
@@ -758,26 +1230,47 @@ const TextPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => vo
   const update = (key: string, value: unknown) => onChange({ ...style, [key]: value });
 
   /** 对齐方式选项 */
-  const ALIGNMENT_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.alignment.left' }), value: 'left' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.alignment.center' }), value: 'center' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.alignment.right' }), value: 'right' },
-  ], [intl]);
+  const ALIGNMENT_OPTIONS = useMemo(
+    () => [
+      { label: intl.formatMessage({ id: 'pages.dashboard.alignment.left' }), value: 'left' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.alignment.center' }), value: 'center' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.alignment.right' }), value: 'right' },
+    ],
+    [intl],
+  );
   return (
     <div>
       <div style={{ marginBottom: 8 }}>
-        <Text type="secondary" style={{ fontSize: 12 }}>内容</Text>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          内容
+        </Text>
         <Input.TextArea value={style.content || ''} onChange={(e) => update('content', e.target.value)} rows={4} />
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
         <div>
-          <Text type="secondary" style={{ fontSize: 12 }}>字号</Text>
-          <InputNumber value={style.fontSize || 14} onChange={(v) => update('fontSize', v)} size="small" min={10} max={32} style={{ width: '100%' }} />
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            字号
+          </Text>
+          <InputNumber
+            value={style.fontSize || 14}
+            onChange={(v) => update('fontSize', v)}
+            size="small"
+            min={10}
+            max={32}
+            style={{ width: '100%' }}
+          />
         </div>
         <div>
-          <Text type="secondary" style={{ fontSize: 12 }}>对齐</Text>
-          <Select value={style.textAlign || 'left'} onChange={(v) => update('textAlign', v)} size="small" style={{ width: '100%' }}
-            options={ALIGNMENT_OPTIONS} />
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            对齐
+          </Text>
+          <Select
+            value={style.textAlign || 'left'}
+            onChange={(v) => update('textAlign', v)}
+            size="small"
+            style={{ width: '100%' }}
+            options={ALIGNMENT_OPTIONS}
+          />
         </div>
       </div>
     </div>
@@ -788,24 +1281,41 @@ const TextPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => vo
 const ImagePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => void }> = ({ style, onChange }) => {
   const intl = useIntl();
   const update = (key: string, value: unknown) => onChange({ ...style, [key]: value });
-  
+
   /** 图片填充模式选项 */
-  const IMAGE_FIT_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.imageFit.cover' }), value: 'cover' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.imageFit.contain' }), value: 'contain' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.imageFit.fill' }), value: 'fill' },
-  ], [intl]);
-  
+  const IMAGE_FIT_OPTIONS = useMemo(
+    () => [
+      { label: intl.formatMessage({ id: 'pages.dashboard.imageFit.cover' }), value: 'cover' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.imageFit.contain' }), value: 'contain' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.imageFit.fill' }), value: 'fill' },
+    ],
+    [intl],
+  );
+
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
       <div style={{ gridColumn: '1 / -1' }}>
-        <Text type="secondary" style={{ fontSize: 12 }}>图片地址</Text>
-        <Input value={style.imageUrl || ''} onChange={(e) => update('imageUrl', e.target.value)} size="small" placeholder="https://..." />
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          图片地址
+        </Text>
+        <Input
+          value={style.imageUrl || ''}
+          onChange={(e) => update('imageUrl', e.target.value)}
+          size="small"
+          placeholder="https://..."
+        />
       </div>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>填充模式</Text>
-        <Select value={style.imageFit || 'cover'} onChange={(v) => update('imageFit', v)} size="small" style={{ width: '100%' }}
-          options={IMAGE_FIT_OPTIONS} />
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          填充模式
+        </Text>
+        <Select
+          value={style.imageFit || 'cover'}
+          onChange={(v) => update('imageFit', v)}
+          size="small"
+          style={{ width: '100%' }}
+          options={IMAGE_FIT_OPTIONS}
+        />
       </div>
     </div>
   );
@@ -835,14 +1345,35 @@ const StatusBarPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) 
     <div>
       {statusItems.map((item: { icon?: string; text: string; color?: string }, idx: number) => (
         <div key={idx} style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'center' }}>
-          <Select value={item.icon || 'success'} onChange={(v) => updateItem(idx, 'icon', v)} size="small" style={{ width: 80 }}
-            options={[{ label: '成功', value: 'success' }, { label: '警告', value: 'warning' }, { label: '错误', value: 'error' }, { label: '信息', value: 'info' }]} />
-          <Input value={item.text} onChange={(e) => updateItem(idx, 'text', e.target.value)} size="small" style={{ flex: 1 }} />
-          <ColorPicker value={item.color || '#52c41a'} onChange={(_, hex) => updateItem(idx, 'color', hex)} size="small" />
+          <Select
+            value={item.icon || 'success'}
+            onChange={(v) => updateItem(idx, 'icon', v)}
+            size="small"
+            style={{ width: 80 }}
+            options={[
+              { label: '成功', value: 'success' },
+              { label: '警告', value: 'warning' },
+              { label: '错误', value: 'error' },
+              { label: '信息', value: 'info' },
+            ]}
+          />
+          <Input
+            value={item.text}
+            onChange={(e) => updateItem(idx, 'text', e.target.value)}
+            size="small"
+            style={{ flex: 1 }}
+          />
+          <ColorPicker
+            value={item.color || '#52c41a'}
+            onChange={(_, hex) => updateItem(idx, 'color', hex)}
+            size="small"
+          />
           <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => removeItem(idx)} />
         </div>
       ))}
-      <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={addItem} block>添加状态项</Button>
+      <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={addItem} block>
+        添加状态项
+      </Button>
     </div>
   );
 };
@@ -852,11 +1383,23 @@ const RadarPanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => v
   return (
     <div>
       <div style={{ marginBottom: 12 }}>
-        <Text type="secondary" style={{ fontSize: 12 }}>维度名称（逗号分隔）</Text>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          维度名称（逗号分隔）
+        </Text>
         <Input.TextArea
           value={(style.legendData || []).join(', ')}
-          onChange={(e) => onChange({ ...style, legendData: e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean) })}
-          size="small" rows={2} placeholder="技术, 管理, 创新, 效率, 质量"
+          onChange={(e) =>
+            onChange({
+              ...style,
+              legendData: e.target.value
+                .split(',')
+                .map((s: string) => s.trim())
+                .filter(Boolean),
+            })
+          }
+          size="small"
+          rows={2}
+          placeholder="技术, 管理, 创新, 效率, 质量"
         />
       </div>
       <SeriesDataPanel style={style} onChange={onChange} />
@@ -869,20 +1412,38 @@ const TablePanel: React.FC<{ style: StyleConfig; onChange: (s: StyleConfig) => v
   return (
     <div>
       <div style={{ marginBottom: 12 }}>
-        <Text type="secondary" style={{ fontSize: 12 }}>列定义（JSON数组）</Text>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          列定义（JSON数组）
+        </Text>
         <Input.TextArea
           defaultValue={JSON.stringify(style.tableColumns || [], null, 2)}
-          onBlur={(e) => { try { onChange({ ...style, tableColumns: JSON.parse(e.target.value) }); } catch { /* ignore */ } }}
-          rows={3} style={{ fontSize: 12, fontFamily: 'monospace' }}
+          onBlur={(e) => {
+            try {
+              onChange({ ...style, tableColumns: JSON.parse(e.target.value) });
+            } catch {
+              /* ignore */
+            }
+          }}
+          rows={3}
+          style={{ fontSize: 12, fontFamily: 'monospace' }}
           placeholder='[{"title":"名称","dataIndex":"name"},{"title":"数值","dataIndex":"value"}]'
         />
       </div>
       <div>
-        <Text type="secondary" style={{ fontSize: 12 }}>数据（JSON数组）</Text>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          数据（JSON数组）
+        </Text>
         <Input.TextArea
           defaultValue={JSON.stringify(style.tableData || [], null, 2)}
-          onBlur={(e) => { try { onChange({ ...style, tableData: JSON.parse(e.target.value) }); } catch { /* ignore */ } }}
-          rows={4} style={{ fontSize: 12, fontFamily: 'monospace' }}
+          onBlur={(e) => {
+            try {
+              onChange({ ...style, tableData: JSON.parse(e.target.value) });
+            } catch {
+              /* ignore */
+            }
+          }}
+          rows={4}
+          style={{ fontSize: 12, fontFamily: 'monospace' }}
           placeholder='[{"name":"项目A","value":100},{"name":"项目B","value":200}]'
         />
       </div>
@@ -901,29 +1462,44 @@ const CardConfigForm: React.FC<CardConfigFormProps> = ({ open, onOpenChange, edi
   const [dataSource, setDataSource] = useState<DataSourceConfig>(initialDataSource);
 
   /** 卡片类型选项 */
-  const CARD_TYPE_OPTIONS = useMemo(() => [
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardTypeGroup.basic' }), value: '_group_basic', disabled: true },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.statistic' }), value: 'statistic' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.text' }), value: 'text' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.image' }), value: 'image' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.header' }), value: 'header' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.clock' }), value: 'clock' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.statusBar' }), value: 'statusBar' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardTypeGroup.chart' }), value: '_group_chart', disabled: true },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.gauge' }), value: 'gauge' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.ring' }), value: 'ring' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.lineChart' }), value: 'lineChart' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.barChart' }), value: 'barChart' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.areaChart' }), value: 'areaChart' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.pieChart' }), value: 'pieChart' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.radarChart' }), value: 'radarChart' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardTypeGroup.complex' }), value: '_group_complex', disabled: true },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.statusGrid' }), value: 'statusGrid' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.functionModule' }), value: 'functionModule' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.alertList' }), value: 'alertList' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.progressBar' }), value: 'progressBar' },
-    { label: intl.formatMessage({ id: 'pages.dashboard.cardType.table' }), value: 'table' },
-  ], [intl]);
+  const CARD_TYPE_OPTIONS = useMemo(
+    () => [
+      {
+        label: intl.formatMessage({ id: 'pages.dashboard.cardTypeGroup.basic' }),
+        value: '_group_basic',
+        disabled: true,
+      },
+      { label: intl.formatMessage({ id: 'pages.dashboard.cardType.statistic' }), value: 'statistic' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.cardType.text' }), value: 'text' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.cardType.image' }), value: 'image' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.cardType.header' }), value: 'header' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.cardType.clock' }), value: 'clock' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.cardType.statusBar' }), value: 'statusBar' },
+      {
+        label: intl.formatMessage({ id: 'pages.dashboard.cardTypeGroup.chart' }),
+        value: '_group_chart',
+        disabled: true,
+      },
+      { label: intl.formatMessage({ id: 'pages.dashboard.cardType.gauge' }), value: 'gauge' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.cardType.ring' }), value: 'ring' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.cardType.lineChart' }), value: 'lineChart' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.cardType.barChart' }), value: 'barChart' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.cardType.areaChart' }), value: 'areaChart' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.cardType.pieChart' }), value: 'pieChart' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.cardType.radarChart' }), value: 'radarChart' },
+      {
+        label: intl.formatMessage({ id: 'pages.dashboard.cardTypeGroup.complex' }),
+        value: '_group_complex',
+        disabled: true,
+      },
+      { label: intl.formatMessage({ id: 'pages.dashboard.cardType.statusGrid' }), value: 'statusGrid' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.cardType.functionModule' }), value: 'functionModule' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.cardType.alertList' }), value: 'alertList' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.cardType.progressBar' }), value: 'progressBar' },
+      { label: intl.formatMessage({ id: 'pages.dashboard.cardType.table' }), value: 'table' },
+    ],
+    [intl],
+  );
 
   // 当 editingCard 变化时重新初始化
   React.useEffect(() => {
@@ -997,7 +1573,12 @@ const CardConfigForm: React.FC<CardConfigFormProps> = ({ open, onOpenChange, edi
       }}
       modalProps={{ destroyOnHidden: true }}
     >
-      <ProFormText name="title" label={intl.formatMessage({ id: 'pages.dashboard.card.title' })} placeholder={intl.formatMessage({ id: 'pages.dashboard.card.titlePlaceholder' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.dashboard.card.titleRequired' }) }]} />
+      <ProFormText
+        name="title"
+        label={intl.formatMessage({ id: 'pages.dashboard.card.title' })}
+        placeholder={intl.formatMessage({ id: 'pages.dashboard.card.titlePlaceholder' })}
+        rules={[{ required: true, message: intl.formatMessage({ id: 'pages.dashboard.card.titleRequired' }) }]}
+      />
 
       <Form.Item label="卡片类型" required>
         <Select
@@ -1018,7 +1599,7 @@ const CardConfigForm: React.FC<CardConfigFormProps> = ({ open, onOpenChange, edi
         defaultActiveKey="type"
         size="small"
         items={[
-            {
+          {
             key: 'type',
             label: intl.formatMessage({ id: 'pages.dashboard.cardType' }),
             children: (
@@ -1027,7 +1608,7 @@ const CardConfigForm: React.FC<CardConfigFormProps> = ({ open, onOpenChange, edi
               </div>
             ),
           },
-{
+          {
             key: 'style',
             label: intl.formatMessage({ id: 'pages.dashboard.styleConfig' }),
             children: (
@@ -1052,7 +1633,13 @@ const CardConfigForm: React.FC<CardConfigFormProps> = ({ open, onOpenChange, edi
               <div style={{ padding: '8px 0' }}>
                 <Input.TextArea
                   defaultValue={JSON.stringify(styleConfig, null, 2)}
-                  onBlur={(e) => { try { setStyleConfig(JSON.parse(e.target.value)); } catch { /* ignore */ } }}
+                  onBlur={(e) => {
+                    try {
+                      setStyleConfig(JSON.parse(e.target.value));
+                    } catch {
+                      /* ignore */
+                    }
+                  }}
                   rows={12}
                   style={{ fontSize: 12, fontFamily: 'monospace' }}
                   placeholder={intl.formatMessage({ id: 'pages.dashboard.card.jsonPlaceholder' })}

@@ -1,12 +1,11 @@
-import React, { useRef, useState, useCallback } from 'react';
+import { CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ProTable, ProColumns, ActionType } from '@ant-design/pro-components/es/table';
+import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useIntl, useModel } from '@umijs/max';
-import { Button, Space, App, Modal, Input } from 'antd';
-import { CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { App, Button, Input, Space } from 'antd';
 import dayjs from 'dayjs';
-import { ApiResponse } from '@/types';
-import { getJoinRequests, approveJoinRequest, rejectJoinRequest } from '@/services/company';
+import React, { useCallback, useRef, useState } from 'react';
+import { approveJoinRequest, getJoinRequests, rejectJoinRequest } from '@/services/company';
 
 const { TextArea } = Input;
 
@@ -23,12 +22,9 @@ interface JoinRequestDetail {
 
 // ==================== API ====================
 const api = {
-  list: (companyId: string, params: any) =>
-    getJoinRequests(companyId, 'pending'),
-  approve: (id: string) =>
-    approveJoinRequest(id),
-  reject: (id: string, data: { rejectReason: string }) =>
-    rejectJoinRequest(id, data),
+  list: (companyId: string, _params: any) => getJoinRequests(companyId, 'pending'),
+  approve: (id: string) => approveJoinRequest(id),
+  reject: (id: string, data: { rejectReason: string }) => rejectJoinRequest(id, data),
 };
 
 // ==================== Main ====================
@@ -40,7 +36,7 @@ const PendingJoinRequests: React.FC = () => {
   const [state, setState] = useState({
     search: '',
   });
-  const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
+  const set = useCallback((partial: Partial<typeof state>) => setState((prev) => ({ ...prev, ...partial })), []);
 
   const columns: ProColumns<JoinRequestDetail>[] = [
     {
@@ -50,7 +46,9 @@ const PendingJoinRequests: React.FC = () => {
       sorter: true,
       render: (_, record: JoinRequestDetail) => (
         <div>
-          <div><strong>{record.username}</strong></div>
+          <div>
+            <strong>{record.username}</strong>
+          </div>
           {record.userEmail && <div style={{ fontSize: 12, color: '#999' }}>{record.userEmail}</div>}
         </div>
       ),
@@ -61,14 +59,18 @@ const PendingJoinRequests: React.FC = () => {
       key: 'reason',
       sorter: true,
       ellipsis: true,
-      render: (text) => (text as React.ReactNode) || <span style={{ color: '#999' }}>{intl.formatMessage({ id: 'pages.table.noReason' })}</span>,
+      render: (text) =>
+        (text as React.ReactNode) || (
+          <span style={{ color: '#999' }}>{intl.formatMessage({ id: 'pages.table.noReason' })}</span>
+        ),
     },
     {
       title: intl.formatMessage({ id: 'pages.table.applyTime' }),
       dataIndex: 'createdAt',
       key: 'createdAt',
       sorter: true,
-      render: (_, record: JoinRequestDetail) => record.createdAt ? dayjs(record.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-',
+      render: (_, record: JoinRequestDetail) =>
+        record.createdAt ? dayjs(record.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-',
     },
     {
       title: intl.formatMessage({ id: 'pages.table.status' }),
@@ -103,7 +105,10 @@ const PendingJoinRequests: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.modal.confirmApprove' }, { username: record.username }),
       content: (
         <div>
-          <p>{intl.formatMessage({ id: 'pages.modal.applyReasonPrefix' })}{record.reason || intl.formatMessage({ id: 'pages.table.noReason' })}</p>
+          <p>
+            {intl.formatMessage({ id: 'pages.modal.applyReasonPrefix' })}
+            {record.reason || intl.formatMessage({ id: 'pages.table.noReason' })}
+          </p>
           <p>{intl.formatMessage({ id: 'pages.modal.approveWarning' })}</p>
         </div>
       ),
@@ -131,7 +136,9 @@ const PendingJoinRequests: React.FC = () => {
           <TextArea
             rows={4}
             placeholder={intl.formatMessage({ id: 'pages.modal.rejectReasonPlaceholder' })}
-            onChange={(e) => { rejectReason = e.target.value; }}
+            onChange={(e) => {
+              rejectReason = e.target.value;
+            }}
           />
         </div>
       ),
@@ -162,15 +169,14 @@ const PendingJoinRequests: React.FC = () => {
         request={async (params: any, sort: any, filter: any) => {
           const companyId = initialState?.currentUser?.currentCompanyId || '';
           if (!companyId) return { data: [], total: 0, success: true };
-          let keyword = state.search;
+          const keyword = state.search;
           const res = await api.list(companyId, { ...params, search: keyword, sort, filter });
           if (res.success && res.data) {
             let filteredData = res.data;
             if (keyword) {
               const kw = keyword.toLowerCase();
-              filteredData = res.data.filter(item =>
-                (item.username && item.username.toLowerCase().includes(kw)) ||
-                (item.reason && item.reason.toLowerCase().includes(kw))
+              filteredData = res.data.filter(
+                (item) => item.username?.toLowerCase().includes(kw) || item.reason?.toLowerCase().includes(kw),
               );
             }
             return { data: filteredData, total: filteredData.length, success: true };
@@ -188,7 +194,10 @@ const PendingJoinRequests: React.FC = () => {
             allowClear
             value={state.search}
             onChange={(e) => set({ search: e.target.value })}
-            onSearch={(v) => { set({ search: v }); actionRef.current!.reload(); }}
+            onSearch={(v) => {
+              set({ search: v });
+              actionRef.current!.reload();
+            }}
           />,
         ]}
       />

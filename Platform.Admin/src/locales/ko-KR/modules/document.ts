@@ -63,7 +63,8 @@ export default {
   'pages.document.create.message.createSuccess': 'Created successfully',
   'pages.document.create.message.uploadFailed': 'Attachment upload failed',
   'pages.document.create.next': 'Next',
-  'pages.document.create.nextStep.tip': 'Please select a workflow. In the next step, you will fill out the workflow custom form in the modal and create/start the process.',
+  'pages.document.create.nextStep.tip':
+    'Please select a workflow. In the next step, you will fill out the workflow custom form in the modal and create/start the process.',
   'pages.document.create.title': 'Create Document',
   'pages.document.createByWorkflow.submit': 'Create and Start',
   'pages.document.createByWorkflow.title': 'Create and Start by Workflow Form',

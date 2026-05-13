@@ -91,10 +91,12 @@ export default {
   'pages.webScraper.descriptionPlaceholder': 'شرح وظیفه را وارد کنید (اختیاری)',
   'pages.webScraper.titleSelector': 'انتخاب‌گر عنوان',
   'pages.webScraper.titleSelectorPlaceholder': 'انتخاب‌گر CSS، مثل: h1.title',
-  'pages.webScraper.titleSelectorTooltip': 'انتخاب‌گر CSS برای استخراج عنوان صفحه، برای استفاده از تگ <title> خالی بگذارید',
+  'pages.webScraper.titleSelectorTooltip':
+    'انتخاب‌گر CSS برای استخراج عنوان صفحه، برای استفاده از تگ <title> خالی بگذارید',
   'pages.webScraper.contentSelector': 'انتخاب‌گر محتوا',
   'pages.webScraper.contentSelectorPlaceholder': 'انتخاب‌گر CSS، مثل: article.content',
-  'pages.webScraper.contentSelectorTooltip': 'انتخاب‌گر CSS برای استخراج محتوای صفحه، برای استفاده از تگ <body> خالی بگذارید',
+  'pages.webScraper.contentSelectorTooltip':
+    'انتخاب‌گر CSS برای استخراج محتوای صفحه، برای استفاده از تگ <body> خالی بگذارید',
   'pages.webScraper.crawlDepth': 'عمق خزش',
   'pages.webScraper.maxPagesPerLevel': 'حداکثر صفحات در هر سطح',
   'pages.webScraper.crawlMode': 'حالت خزش',
@@ -104,7 +106,8 @@ export default {
   'pages.webScraper.deduplicate': 'حذف تکراری URLها',
   'pages.webScraper.scheduleCron': 'عبارت زمان‌بندی',
   'pages.webScraper.scheduleCronPlaceholder': '0 */10 * * * *',
-  'pages.webScraper.scheduleCronTooltip': '<p>مثال‌های رایج:</p><ul><li>هر 10 دقیقه: <code>*/10 * * * *</code></li><li>هر ساعت: <code>0 * * * *</code></li><li>هر روز نیمه‌شب: <code>0 0 * * *</code></li><li>هر دوشنبه: <code>0 0 * * 1</code></li></ul>',
+  'pages.webScraper.scheduleCronTooltip':
+    '<p>مثال‌های رایج:</p><ul><li>هر 10 دقیقه: <code>*/10 * * * *</code></li><li>هر ساعت: <code>0 * * * *</code></li><li>هر روز نیمه‌شب: <code>0 0 * * *</code></li><li>هر دوشنبه: <code>0 0 * * 1</code></li></ul>',
   'pages.webScraper.mode.single': 'فقط صفحه فعلی',
   'pages.webScraper.mode.depth': 'عمق‌اولویت',
   'pages.webScraper.mode.breadth': 'پهنا‌اولویت',

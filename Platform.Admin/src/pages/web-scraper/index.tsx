@@ -1,14 +1,21 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { request, useIntl } from '@umijs/max';
-import { Tag, Space, Button, Popconfirm, Modal, Switch, Input } from 'antd';
+import {
+  ApartmentOutlined,
+  DeleteOutlined,
+  EyeOutlined,
+  PauseCircleOutlined,
+  PlayCircleOutlined,
+  PlusOutlined,
+} from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ProTable, ProColumns, ActionType } from '@ant-design/pro-components/es/table';
-import { PlusOutlined, PlayCircleOutlined, DeleteOutlined, EyeOutlined, PauseCircleOutlined, ApartmentOutlined } from '@ant-design/icons';
+import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
+import { request, useIntl } from '@umijs/max';
+import { Button, Input, Popconfirm, Space, Switch, Tag } from 'antd';
 import dayjs from 'dayjs';
-import { ApiResponse, PagedResult } from '@/types';
-import TaskForm from './components/TaskForm';
-import ResultPreview from './components/ResultPreview';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useMessage } from '@/hooks/useMessage';
+import { ApiResponse, PagedResult } from '@/types';
+import ResultPreview from './components/ResultPreview';
+import TaskForm from './components/TaskForm';
 
 interface WebScrapingTask {
   id: string;
@@ -17,7 +24,17 @@ interface WebScrapingTask {
   description?: string;
   crawlDepth: number;
   maxPagesPerLevel: number;
-  lastStatus: 'idle' | 'running' | 'success' | 'failed' | 'partialSuccess' | 'Idle' | 'Running' | 'Success' | 'Failed' | 'PartialSuccess';
+  lastStatus:
+    | 'idle'
+    | 'running'
+    | 'success'
+    | 'failed'
+    | 'partialSuccess'
+    | 'Idle'
+    | 'Running'
+    | 'Success'
+    | 'Failed'
+    | 'PartialSuccess';
   lastRunAt?: string;
   lastDuration?: number;
   lastError?: string;
@@ -75,22 +92,17 @@ interface TaskStatistics {
 const api = {
   list: (params: any) =>
     request<ApiResponse<PagedResult<WebScrapingTask>>>('/apiservice/api/web-scraper/tasks', { params }),
-  get: (id: string) =>
-    request<ApiResponse<WebScrapingTask>>(`/apiservice/api/web-scraper/tasks/${id}`),
-  delete: (id: string) =>
-    request<ApiResponse<void>>(`/apiservice/api/web-scraper/tasks/${id}`, { method: 'DELETE' }),
+  get: (id: string) => request<ApiResponse<WebScrapingTask>>(`/apiservice/api/web-scraper/tasks/${id}`),
+  delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/web-scraper/tasks/${id}`, { method: 'DELETE' }),
   create: (data: Partial<WebScrapingTask>) =>
     request<ApiResponse<WebScrapingTask>>('/apiservice/api/web-scraper/tasks', { method: 'POST', data }),
   update: (id: string, data: Partial<WebScrapingTask>) =>
     request<ApiResponse<WebScrapingTask>>(`/apiservice/api/web-scraper/tasks/${id}`, { method: 'PUT', data }),
   toggle: (id: string) =>
     request<ApiResponse<WebScrapingTask>>(`/apiservice/api/web-scraper/tasks/${id}/toggle`, { method: 'POST' }),
-  execute: (id: string) =>
-    request<ApiResponse<any>>(`/apiservice/api/web-scraper/execute/${id}`, { method: 'POST' }),
-  stop: (id: string) =>
-    request<ApiResponse<void>>(`/apiservice/api/web-scraper/tasks/${id}/stop`, { method: 'POST' }),
-  statistics: () =>
-    request<ApiResponse<TaskStatistics>>('/apiservice/api/web-scraper/tasks/statistics'),
+  execute: (id: string) => request<ApiResponse<any>>(`/apiservice/api/web-scraper/execute/${id}`, { method: 'POST' }),
+  stop: (id: string) => request<ApiResponse<void>>(`/apiservice/api/web-scraper/tasks/${id}/stop`, { method: 'POST' }),
+  statistics: () => request<ApiResponse<TaskStatistics>>('/apiservice/api/web-scraper/tasks/statistics'),
 };
 
 const statusColors: Record<string, string> = {
@@ -127,78 +139,109 @@ const explainCron = (cron: string, intl: any): string => {
   if (min === '0' && hour === '*') return intl.formatMessage({ id: 'pages.webScraper.cron.hourly' });
   if (min === '0' && hour === '0' && day === '*') return intl.formatMessage({ id: 'pages.webScraper.cron.daily' });
   if (week === '1' && min === '0' && hour === '0') return intl.formatMessage({ id: 'pages.webScraper.cron.weekly' });
-  if (day === '1' && month === '*' && min === '0' && hour === '0') return intl.formatMessage({ id: 'pages.webScraper.cron.monthly' });
+  if (day === '1' && month === '*' && min === '0' && hour === '0')
+    return intl.formatMessage({ id: 'pages.webScraper.cron.monthly' });
   return `${hour}:${min.padStart(2, '0')} ${intl.formatMessage({ id: 'pages.webScraper.cron.execute' })}`;
 };
 
 const WebScraper: React.FC = () => {
-const intl = useIntl();
-const message = useMessage();
+  const intl = useIntl();
+  const message = useMessage();
   const actionRef = useRef<ActionType | undefined>(undefined);
   const [formVisible, setFormVisible] = useState(false);
   const [editingTask, setEditingTask] = useState<WebScrapingTask | null>(null);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewData, setPreviewData] = useState<CrawlResult | null | undefined>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, _setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [statistics, setStatistics] = useState<TaskStatistics | null>(null);
 
   const loadStatistics = useCallback(() => {
-    api.statistics().then(r => {
+    api.statistics().then((r) => {
       if (r.success && r.data) setStatistics(r.data);
     });
   }, []);
 
-  useEffect(() => { loadStatistics(); }, [loadStatistics]);
+  useEffect(() => {
+    loadStatistics();
+  }, [loadStatistics]);
 
   const handleEdit = useCallback((record: WebScrapingTask) => {
     setEditingTask(record);
     setFormVisible(true);
   }, []);
 
-  const handleDelete = useCallback(async (id: string) => {
-    await api.delete(id);
-    actionRef.current?.reload();
-    loadStatistics();
-    message.success(intl.formatMessage({ id: 'pages.message.deleteSuccess' }));
-  }, [intl, loadStatistics]);
-
-  const handleToggle = useCallback(async (record: WebScrapingTask) => {
-    await api.toggle(record.id);
-    actionRef.current?.reload();
-    loadStatistics();
-    message.success(record.isEnabled ? intl.formatMessage({ id: 'pages.webScraper.message.disabled' }) : intl.formatMessage({ id: 'pages.webScraper.message.enabled' }));
-  }, [intl, loadStatistics]);
-
-  const handleExecute = useCallback(async (record: WebScrapingTask) => {
-    try {
-      const res = await api.execute(record.id);
-      message.success(res.data?.message || intl.formatMessage({ id: 'pages.webScraper.message.started' }));
+  const handleDelete = useCallback(
+    async (id: string) => {
+      await api.delete(id);
       actionRef.current?.reload();
       loadStatistics();
-    } catch (err: any) {
-      message.error(err?.response?.data?.message || err?.message || intl.formatMessage({ id: 'pages.webScraper.message.executeFailed' }));
-    }
-  }, [intl, loadStatistics]);
+      message.success(intl.formatMessage({ id: 'pages.message.deleteSuccess' }));
+    },
+    [intl, loadStatistics, message.success],
+  );
 
-  const handleStop = useCallback(async (record: WebScrapingTask) => {
-    try {
-      await api.stop(record.id);
-      message.success(intl.formatMessage({ id: 'pages.webScraper.message.stopped' }));
+  const handleToggle = useCallback(
+    async (record: WebScrapingTask) => {
+      await api.toggle(record.id);
       actionRef.current?.reload();
       loadStatistics();
-    } catch (err: any) {
-      message.error(err?.response?.data?.message || err?.message || intl.formatMessage({ id: 'pages.webScraper.message.stopFailed' }));
-    }
-  }, [intl, loadStatistics]);
+      message.success(
+        record.isEnabled
+          ? intl.formatMessage({ id: 'pages.webScraper.message.disabled' })
+          : intl.formatMessage({ id: 'pages.webScraper.message.enabled' }),
+      );
+    },
+    [intl, loadStatistics, message.success],
+  );
+
+  const handleExecute = useCallback(
+    async (record: WebScrapingTask) => {
+      try {
+        const res = await api.execute(record.id);
+        message.success(res.data?.message || intl.formatMessage({ id: 'pages.webScraper.message.started' }));
+        actionRef.current?.reload();
+        loadStatistics();
+      } catch (err: any) {
+        message.error(
+          err?.response?.data?.message ||
+            err?.message ||
+            intl.formatMessage({ id: 'pages.webScraper.message.executeFailed' }),
+        );
+      }
+    },
+    [intl, loadStatistics, message.success, message.error],
+  );
+
+  const handleStop = useCallback(
+    async (record: WebScrapingTask) => {
+      try {
+        await api.stop(record.id);
+        message.success(intl.formatMessage({ id: 'pages.webScraper.message.stopped' }));
+        actionRef.current?.reload();
+        loadStatistics();
+      } catch (err: any) {
+        message.error(
+          err?.response?.data?.message ||
+            err?.message ||
+            intl.formatMessage({ id: 'pages.webScraper.message.stopFailed' }),
+        );
+      }
+    },
+    [intl, loadStatistics, message.success, message.error],
+  );
 
   const handleFormSuccess = useCallback(() => {
     setFormVisible(false);
     setEditingTask(null);
     actionRef.current?.reload();
     loadStatistics();
-    message.success(editingTask ? intl.formatMessage({ id: 'pages.message.updateSuccess' }) : intl.formatMessage({ id: 'pages.message.createSuccess' }));
-  }, [editingTask, intl, loadStatistics]);
+    message.success(
+      editingTask
+        ? intl.formatMessage({ id: 'pages.message.updateSuccess' })
+        : intl.formatMessage({ id: 'pages.message.createSuccess' }),
+    );
+  }, [editingTask, intl, loadStatistics, message.success]);
 
   const columns: ProColumns<WebScrapingTask>[] = [
     {
@@ -206,9 +249,7 @@ const message = useMessage();
       dataIndex: 'name',
       key: 'name',
       sorter: true,
-      render: (dom, record) => (
-        <a onClick={() => handleEdit(record)}>{dom}</a>
-      ),
+      render: (dom, record) => <a onClick={() => handleEdit(record)}>{dom}</a>,
     },
     {
       title: intl.formatMessage({ id: 'pages.webScraper.table.targetUrl' }),
@@ -245,7 +286,11 @@ const message = useMessage();
       sorter: true,
       render: (dom, record) => {
         if (record.enableFilter && (dom as number) > 0) {
-          return <Tag color="green">{dom} {intl.formatMessage({ id: 'pages.webScraper.unit.page' })}</Tag>;
+          return (
+            <Tag color="green">
+              {dom} {intl.formatMessage({ id: 'pages.webScraper.unit.page' })}
+            </Tag>
+          );
         }
         return '-';
       },
@@ -268,9 +313,9 @@ const message = useMessage();
       key: 'mode',
       render: (dom) => {
         const modeMap: Record<string, string> = {
-          'singlepage': intl.formatMessage({ id: 'pages.webScraper.mode.singlePage' }),
-          'depthfirst': intl.formatMessage({ id: 'pages.webScraper.mode.depthFirst' }),
-          'breadthfirst': intl.formatMessage({ id: 'pages.webScraper.mode.breadthFirst' }),
+          singlepage: intl.formatMessage({ id: 'pages.webScraper.mode.singlePage' }),
+          depthfirst: intl.formatMessage({ id: 'pages.webScraper.mode.depthFirst' }),
+          breadthfirst: intl.formatMessage({ id: 'pages.webScraper.mode.breadthFirst' }),
         };
         return modeMap[dom?.toString().toLowerCase() as string] || dom || '-';
       },
@@ -279,34 +324,35 @@ const message = useMessage();
       title: intl.formatMessage({ id: 'pages.webScraper.table.schedule' }),
       dataIndex: 'scheduleCron',
       key: 'scheduleCron',
-      render: (dom) => dom ? (
-        <Space>
-          <Tag color="orange">{dom as string}</Tag>
-          <span style={{ color: '#999', fontSize: 12 }}>({explainCron(dom as string, intl)})</span>
-        </Space>
-      ) : '-',
+      render: (dom) =>
+        dom ? (
+          <Space>
+            <Tag color="orange">{dom as string}</Tag>
+            <span style={{ color: '#999', fontSize: 12 }}>({explainCron(dom as string, intl)})</span>
+          </Space>
+        ) : (
+          '-'
+        ),
     },
     {
       title: intl.formatMessage({ id: 'pages.webScraper.table.lastRun' }),
       dataIndex: 'lastRunAt',
       key: 'lastRunAt',
       sorter: true,
-      render: (dom) => dom ? dayjs(String(dom)).format('YYYY-MM-DD HH:mm:ss') : '-',
+      render: (dom) => (dom ? dayjs(String(dom)).format('YYYY-MM-DD HH:mm:ss') : '-'),
     },
     {
       title: intl.formatMessage({ id: 'pages.webScraper.table.duration' }),
       dataIndex: 'lastDuration',
       key: 'lastDuration',
       sorter: true,
-      render: (dom) => dom ? `${Math.round((dom as number) / 1000)}s` : '-',
+      render: (dom) => (dom ? `${Math.round((dom as number) / 1000)}s` : '-'),
     },
     {
       title: intl.formatMessage({ id: 'pages.webScraper.table.enabled' }),
       dataIndex: 'isEnabled',
       key: 'isEnabled',
-      render: (dom, record) => (
-        <Switch checked={dom as boolean} onChange={() => handleToggle(record)} />
-      ),
+      render: (dom, record) => <Switch checked={dom as boolean} onChange={() => handleToggle(record)} />,
     },
     {
       title: intl.formatMessage({ id: 'pages.webScraper.table.action' }),
@@ -340,12 +386,7 @@ const message = useMessage();
                 {intl.formatMessage({ id: 'pages.webScraper.action.execute' })}
               </Button>
             )}
-            <Button
-              type="link"
-              size="small"
-              icon={<EyeOutlined />}
-              onClick={() => handleEdit(record)}
-            >
+            <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleEdit(record)}>
               {intl.formatMessage({ id: 'pages.table.edit' })}
             </Button>
             <Popconfirm
@@ -368,13 +409,27 @@ const message = useMessage();
       <ProTable<WebScrapingTask>
         headerTitle={
           <Space size={24}>
-            <Space><ApartmentOutlined />{intl.formatMessage({ id: 'pages.webScraper.title' })}</Space>
+            <Space>
+              <ApartmentOutlined />
+              {intl.formatMessage({ id: 'pages.webScraper.title' })}
+            </Space>
             <Space size={12}>
-              <Tag color="blue">{intl.formatMessage({ id: 'pages.webScraper.statistics.totalTasks' })} {statistics?.totalTasks || 0}</Tag>
-              <Tag color="processing">{intl.formatMessage({ id: 'pages.webScraper.statistics.runningTasks' })} {statistics?.runningTasks || 0}</Tag>
-              <Tag color="success">{intl.formatMessage({ id: 'pages.webScraper.statistics.successTasks' })} {statistics?.successTasks || 0}</Tag>
-              <Tag color="error">{intl.formatMessage({ id: 'pages.webScraper.statistics.failedTasks' })} {statistics?.failedTasks || 0}</Tag>
-              <Tag color="purple">{intl.formatMessage({ id: 'pages.webScraper.statistics.totalPagesCrawled' })} {statistics?.totalPagesCrawled || 0}</Tag>
+              <Tag color="blue">
+                {intl.formatMessage({ id: 'pages.webScraper.statistics.totalTasks' })} {statistics?.totalTasks || 0}
+              </Tag>
+              <Tag color="processing">
+                {intl.formatMessage({ id: 'pages.webScraper.statistics.runningTasks' })} {statistics?.runningTasks || 0}
+              </Tag>
+              <Tag color="success">
+                {intl.formatMessage({ id: 'pages.webScraper.statistics.successTasks' })} {statistics?.successTasks || 0}
+              </Tag>
+              <Tag color="error">
+                {intl.formatMessage({ id: 'pages.webScraper.statistics.failedTasks' })} {statistics?.failedTasks || 0}
+              </Tag>
+              <Tag color="purple">
+                {intl.formatMessage({ id: 'pages.webScraper.statistics.totalPagesCrawled' })}{' '}
+                {statistics?.totalPagesCrawled || 0}
+              </Tag>
             </Space>
           </Space>
         }
@@ -396,7 +451,10 @@ const message = useMessage();
             allowClear
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            onSearch={(value) => { setSearch(value); actionRef.current?.reload(); }}
+            onSearch={(value) => {
+              setSearch(value);
+              actionRef.current?.reload();
+            }}
             style={{ width: 260, marginRight: 8 }}
           />,
           <Button

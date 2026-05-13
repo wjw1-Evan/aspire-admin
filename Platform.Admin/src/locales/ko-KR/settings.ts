@@ -34,8 +34,7 @@ export default {
   'app.settings.security.email': '비상용 이메일',
   'app.settings.security.email-description': '바인딩된 이메일',
   'app.settings.security.mfa': 'MFA 장치',
-  'app.settings.security.mfa-description':
-    '바인딩된 MFA 장치가 없습니다. 바인딩 후 2차 인증을 진행할 수 있습니다.',
+  'app.settings.security.mfa-description': '바인딩된 MFA 장치가 없습니다. 바인딩 후 2차 인증을 진행할 수 있습니다.',
   'app.settings.security.modify': '수정',
   'app.settings.security.set': '설정',
   'app.settings.security.bind': '바인딩',
@@ -44,18 +43,14 @@ export default {
   'app.settings.binding.alipay': '알리페이 바인딩',
   'app.settings.binding.alipay-description': '현재 바인딩된 알리페이 계정이 없습니다',
   'app.settings.binding.dingding': '딩톡 바인딩',
-  'app.settings.binding.dingding-description':
-    '현재 바인딩된 딩톡 계정이 없습니다',
+  'app.settings.binding.dingding-description': '현재 바인딩된 딩톡 계정이 없습니다',
   'app.settings.binding.bind': '바인딩',
   'app.settings.notification.password': '계정 비밀번호',
-  'app.settings.notification.password-description':
-    '다른 사용자의 메시지는 사이트 내 서신 형태로 통제됩니다',
+  'app.settings.notification.password-description': '다른 사용자의 메시지는 사이트 내 서신 형태로 통제됩니다',
   'app.settings.notification.messages': '시스템 메시지',
-  'app.settings.notification.messages-description':
-    '시스템 메시지는 사이트 내 서신 형태로 통지됩니다',
+  'app.settings.notification.messages-description': '시스템 메시지는 사이트 내 서신 형태로 통지됩니다',
   'app.settings.notification.todo': '할 일 알림',
-  'app.settings.notification.todo-description':
-    '할 일 목록은 사이트 내 서신 형태로 통지됩니다',
+  'app.settings.notification.todo-description': '할 일 목록은 사이트 내 서신 형태로 통지됩니다',
   'app.settings.open': '열기',
   'app.settings.close': '닫기',
 };

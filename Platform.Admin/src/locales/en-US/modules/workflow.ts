@@ -86,7 +86,7 @@ export default {
   'pages.workflow.designer.approverType.role': 'Role',
   'pages.workflow.designer.approverType.user': 'User',
   'pages.workflow.designer.ccRules': 'CC Rules',
-  'pages.workflow.designer.conditionExample': 'Example: {business.amount} > 5000 && {form.reason} != \'\'',
+  'pages.workflow.designer.conditionExample': "Example: {business.amount} > 5000 && {form.reason} != ''",
   'pages.workflow.designer.conditionExpression': 'Condition Expression',
   'pages.workflow.designer.conditionExpressionPlaceholder': 'Enter condition expression, e.g.: amount > 10000',
   'pages.workflow.designer.conditionJumpTarget': 'Jump to Node',
@@ -115,7 +115,8 @@ export default {
   'pages.workflow.designer.variables.business': 'Business Variables',
   'pages.workflow.designer.variables.form': 'Form Variables',
   'pages.workflow.designer.variables.placeholder': 'Select variable to insert into expression',
-  'pages.workflow.export.description': 'Exported workflow data will include complete process definitions, graph structures, and configuration information',
+  'pages.workflow.export.description':
+    'Exported workflow data will include complete process definitions, graph structures, and configuration information',
   'pages.workflow.export.download': 'Download',
   'pages.workflow.export.failed': 'Export failed',
   'pages.workflow.export.filteredResults': 'Export current filtered results',
@@ -260,7 +261,8 @@ export default {
   'pages.workflow.knowledgeBase.category': 'Category',
   'pages.workflow.knowledgeBase.createdAt': 'Created At',
   'pages.workflow.knowledgeBase.deleteConfirm': 'Are you sure to delete this knowledge base?',
-  'pages.workflow.knowledgeBase.deleteContent': 'After deletion, this knowledge base cannot be used for content retrieval in workflows.',
+  'pages.workflow.knowledgeBase.deleteContent':
+    'After deletion, this knowledge base cannot be used for content retrieval in workflows.',
   'pages.workflow.knowledgeBase.description': 'Knowledge Base Description',
   'pages.workflow.knowledgeBase.edit': 'Edit',
   'pages.workflow.knowledgeBase.itemCount': 'Item Count',
@@ -344,7 +346,8 @@ export default {
   'pages.workflow.form.createTime': 'Created At',
   'pages.workflow.form.createdBy': 'Created By',
   'pages.workflow.sidebar.deleteConfirmTitle': 'Confirm Delete Workflow',
-  'pages.workflow.sidebar.deleteConfirmContent': 'Are you sure you want to delete workflow "{name}"? This action cannot be undone.',
+  'pages.workflow.sidebar.deleteConfirmContent':
+    'Are you sure you want to delete workflow "{name}"? This action cannot be undone.',
   'pages.workflow.knowledgeBase.createSuccess': 'Created successfully',
   'pages.workflow.knowledgeBase.form.name': 'Name',
   'pages.workflow.knowledgeBase.form.namePlaceholder': 'Please enter knowledge base name',

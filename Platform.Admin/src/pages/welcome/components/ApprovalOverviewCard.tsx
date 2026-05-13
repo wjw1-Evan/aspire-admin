@@ -1,18 +1,18 @@
-import React from 'react';
-import { Row, Col, Space, Alert, Typography, Tag, theme, Button } from 'antd';
-import { ProCard } from '@ant-design/pro-components/es/card';
 import {
   CheckCircleOutlined,
   ClockCircleOutlined,
-  FileTextOutlined,
   CloseCircleOutlined,
-  EyeOutlined
+  EyeOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
-import { useIntl, history } from '@umijs/max';
-import useCommonStyles from '@/hooks/useCommonStyles';
-import StatCard from './StatCard';
-import type { DocumentStatistics } from '@/services/document/api';
+import { ProCard } from '@ant-design/pro-components/es/card';
+import { history, useIntl } from '@umijs/max';
+import { Alert, Button, Col, Row, Space, Tag, Typography, theme } from 'antd';
 import dayjs from 'dayjs';
+import React from 'react';
+import useCommonStyles from '@/hooks/useCommonStyles';
+import type { DocumentStatistics } from '@/services/document/api';
+import StatCard from './StatCard';
 
 const { Text } = Typography;
 
@@ -24,7 +24,15 @@ interface TodoItem {
   startedAt?: string;
   definitionName: string;
   currentStatus: number;
-  document?: { id: string; title: string; status: number; documentType: string; category: string; createdAt: string; createdBy: string };
+  document?: {
+    id: string;
+    title: string;
+    status: number;
+    documentType: string;
+    category: string;
+    createdAt: string;
+    createdBy: string;
+  };
 }
 
 interface ApprovalOverviewCardProps {
@@ -33,11 +41,7 @@ interface ApprovalOverviewCardProps {
   readonly loading: boolean;
 }
 
-const ApprovalOverviewCard: React.FC<ApprovalOverviewCardProps> = ({
-  statistics,
-  pendingDocuments,
-  loading
-}) => {
+const ApprovalOverviewCard: React.FC<ApprovalOverviewCardProps> = ({ statistics, pendingDocuments, loading }) => {
   const intl = useIntl();
   const { token } = theme.useToken();
   const { styles } = useCommonStyles();
@@ -106,11 +110,7 @@ const ApprovalOverviewCard: React.FC<ApprovalOverviewCardProps> = ({
           <span>{intl.formatMessage({ id: 'pages.document.approval.tab.pending' })}</span>
         </Space>
         {pendingDocuments.length === 0 ? (
-          <Alert
-            type="info"
-            title={intl.formatMessage({ id: 'pages.welcome.myTodoTasks.empty' })}
-            showIcon
-          />
+          <Alert type="info" title={intl.formatMessage({ id: 'pages.welcome.myTodoTasks.empty' })} showIcon />
         ) : (
           <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
             {pendingDocuments.slice(0, 5).map((item) => (
@@ -122,7 +122,7 @@ const ApprovalOverviewCard: React.FC<ApprovalOverviewCardProps> = ({
                   cursor: 'pointer',
                   display: 'flex',
                   justifyContent: 'space-between',
-                  alignItems: 'center'
+                  alignItems: 'center',
                 }}
                 onClick={() => history.push('/document/approval')}
               >

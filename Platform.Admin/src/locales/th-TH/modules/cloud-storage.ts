@@ -6,20 +6,22 @@ export default {
   'pages.cloud-storage.recycle.message.deleteFailed': 'ลบล้มเหลว',
   'pages.cloud-storage.recycle.message.emptySuccess': 'ล้างสำเร็จ ลบแล้ว {count} ไฟล์',
   'pages.cloud-storage.recycle.message.emptyFailed': 'ล้างล้มเหลว',
-  
+
   // ข้อความจัดการการแชร์
   'pages.cloud-storage.share.message.updateSuccess': 'อัปเดตสำเร็จ',
   'pages.cloud-storage.share.message.linkCopied': 'คัดลอกลิงก์แชร์แล้ว',
-  
+
   // ข้อความจัดการโควตา
   'pages.cloud-storage.quota.message.updateSuccess': 'อัปเดตโควตาสำเร็จ',
   'pages.cloud-storage.quota.message.createSuccess': 'สร้างโควตาสำเร็จ',
   'pages.cloud-storage.recycle.title': 'Recycle Bin',
   'pages.cloud-storage.recycle.confirmDelete': 'Confirm Permanent Delete',
-  'pages.cloud-storage.recycle.confirmDeleteContent': 'Are you sure you want to permanently delete "{name}"? This action cannot be undone.',
+  'pages.cloud-storage.recycle.confirmDeleteContent':
+    'Are you sure you want to permanently delete "{name}"? This action cannot be undone.',
   'pages.cloud-storage.recycle.confirmDeleteOk': 'Delete',
   'pages.cloud-storage.recycle.confirmEmpty': 'Confirm Empty Recycle Bin',
-  'pages.cloud-storage.recycle.confirmEmptyContent': 'Are you sure you want to empty the entire recycle bin? This will permanently delete all files and cannot be undone!',
+  'pages.cloud-storage.recycle.confirmEmptyContent':
+    'Are you sure you want to empty the entire recycle bin? This will permanently delete all files and cannot be undone!',
   'pages.cloud-storage.recycle.confirmEmptyOk': 'Empty',
   'pages.cloud-storage.recycle.searchPlaceholder': 'Search...',
   'pages.cloud-storage.recycle.tagTotal': 'Total {count}',

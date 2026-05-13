@@ -1,30 +1,22 @@
-import React, { useRef, useState, useEffect, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
-import { Badge, Tag, Space, App, Button, Progress, Input } from 'antd';
+import { DeleteOutlined, EditOutlined, PlusOutlined, ProjectOutlined, SearchOutlined } from '@ant-design/icons';
+import { ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useIntl, useSearchParams } from '@umijs/max';
+import { App, Badge, Button, Input, Progress, Space, Tag } from 'antd';
 import dayjs from 'dayjs';
-import {
-  PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  ProjectOutlined,
-  SearchOutlined,
-  ReloadOutlined,
-} from '@ant-design/icons';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { useModal } from '@/hooks/useModal';
 import {
   deleteProject,
-  getProjectList,
   getProjectById,
+  getProjectList,
   getProjectStatistics,
   type ProjectDto,
+  ProjectPriority,
   type ProjectStatistics,
   ProjectStatus,
-  ProjectPriority,
 } from '@/services/task/project';
-import type { ApiResponse } from '@/types';
-import ProjectForm from './ProjectForm';
 import ProjectDetail from './ProjectDetail';
-import { useModal } from '@/hooks/useModal';
-import { ProTable, ProColumns } from '@ant-design/pro-components/es/table';
+import ProjectForm from './ProjectForm';
 
 export interface ProjectViewRef {
   reload: () => void;
@@ -32,7 +24,7 @@ export interface ProjectViewRef {
   handleCreate: () => void;
 }
 
-const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
+const ProjectView = forwardRef<ProjectViewRef>((_props, ref) => {
   const intl = useIntl();
   const { confirm } = useModal();
   const { message } = App.useApp();
@@ -63,46 +55,53 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   useEffect(() => {
     const projectId = searchParams.get('projectId');
     if (projectId) {
-      getProjectById(projectId).then(response => {
+      getProjectById(projectId).then((response) => {
         if (response.success && response.data) {
           setViewingProject(response.data);
           setDetailVisible(true);
         }
       });
     }
-  }, []);
+  }, [searchParams.get]);
 
-  useImperativeHandle(ref, () => ({
-    reload: () => {
-      tableActionRef.current?.reload();
-    },
-    refreshStatistics: () => {
-      fetchStatistics();
-    },
-    handleCreate: () => {
-      setEditingProject(null);
-      setFormVisible(true);
-    },
-  }), [fetchStatistics]);
-
-  const handleDelete = useCallback(async (projectId: string) => {
-    confirm({
-      title: intl.formatMessage({ id: 'pages.project.modal.deleteProject' }),
-      content: intl.formatMessage({ id: 'pages.project.message.confirmDelete' }),
-      okText: intl.formatMessage({ id: 'pages.button.delete' }),
-      cancelText: intl.formatMessage({ id: 'pages.table.cancel' }),
-      okButtonProps: { danger: true },
-      onOk: async () => {
-        try {
-          await deleteProject(projectId);
-          message.success(intl.formatMessage({ id: 'pages.project.message.deleteSuccess' }));
-          fetchStatistics();
-        } catch (error) {
-          message.error(intl.formatMessage({ id: 'pages.project.message.deleteFailed' }));
-        }
+  useImperativeHandle(
+    ref,
+    () => ({
+      reload: () => {
+        tableActionRef.current?.reload();
       },
-    });
-  }, [intl, message, confirm, fetchStatistics]);
+      refreshStatistics: () => {
+        fetchStatistics();
+      },
+      handleCreate: () => {
+        setEditingProject(null);
+        setFormVisible(true);
+      },
+    }),
+    [fetchStatistics],
+  );
+
+  const handleDelete = useCallback(
+    async (projectId: string) => {
+      confirm({
+        title: intl.formatMessage({ id: 'pages.project.modal.deleteProject' }),
+        content: intl.formatMessage({ id: 'pages.project.message.confirmDelete' }),
+        okText: intl.formatMessage({ id: 'pages.button.delete' }),
+        cancelText: intl.formatMessage({ id: 'pages.table.cancel' }),
+        okButtonProps: { danger: true },
+        onOk: async () => {
+          try {
+            await deleteProject(projectId);
+            message.success(intl.formatMessage({ id: 'pages.project.message.deleteSuccess' }));
+            fetchStatistics();
+          } catch (_error) {
+            message.error(intl.formatMessage({ id: 'pages.project.message.deleteFailed' }));
+          }
+        },
+      });
+    },
+    [intl, message, confirm, fetchStatistics],
+  );
 
   const formatDate = useCallback((date: string | null | undefined): string => {
     if (!date) return '-';
@@ -142,147 +141,181 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
     setViewingProject(null);
   }, []);
 
-  const columns: ProColumns<ProjectDto>[] = useMemo(() => [
-    {
-      title: intl.formatMessage({ id: 'pages.project.table.name' }),
-      dataIndex: 'name',
-      key: 'name',
-      sorter: true,
-      render: (dom: any, record: ProjectDto) => (
-        <Space>
-          <ProjectOutlined />
-          <a
-            onClick={() => handleViewProject(record)}
-            style={{ cursor: 'pointer' }}
-          >
-            {dom}
-          </a>
-        </Space>
-      ),
-    },
-    {
-      title: intl.formatMessage({ id: 'pages.project.table.status' }),
-      dataIndex: 'status',
-      key: 'status',
-      sorter: true,
-      render: (_: any, record: ProjectDto) => {
-        const statusMap: Record<number, { color: string; text: string }> = {
-          [ProjectStatus.Planning]: { color: 'default', text: intl.formatMessage({ id: 'pages.project.status.planning' }) },
-          [ProjectStatus.InProgress]: { color: 'processing', text: intl.formatMessage({ id: 'pages.project.status.inProgress' }) },
-          [ProjectStatus.OnHold]: { color: 'warning', text: intl.formatMessage({ id: 'pages.project.status.onHold' }) },
-          [ProjectStatus.Completed]: { color: 'success', text: intl.formatMessage({ id: 'pages.project.status.completed' }) },
-          [ProjectStatus.Cancelled]: { color: 'error', text: intl.formatMessage({ id: 'pages.project.status.cancelled' }) },
-        };
-        const statusInfo = statusMap[record.status] || { color: 'default', text: intl.formatMessage({ id: 'pages.table.unknown' }) };
-        return <Badge status={statusInfo.color as any} text={statusInfo.text} />;
+  const columns: ProColumns<ProjectDto>[] = useMemo(
+    () => [
+      {
+        title: intl.formatMessage({ id: 'pages.project.table.name' }),
+        dataIndex: 'name',
+        key: 'name',
+        sorter: true,
+        render: (dom: any, record: ProjectDto) => (
+          <Space>
+            <ProjectOutlined />
+            <a onClick={() => handleViewProject(record)} style={{ cursor: 'pointer' }}>
+              {dom}
+            </a>
+          </Space>
+        ),
       },
-    },
-    {
-      title: intl.formatMessage({ id: 'pages.project.table.progress' }),
-      dataIndex: 'progress',
-      key: 'progress',
-      sorter: true,
-      render: (dom: any) => <Progress percent={dom} size="small" />,
-    },
-    {
-      title: intl.formatMessage({ id: 'pages.project.table.priority' }),
-      dataIndex: 'priority',
-      key: 'priority',
-      sorter: true,
-      render: (_: any, record: ProjectDto) => {
-        const priorityMap: Record<number, { color: string; text: string }> = {
-          [ProjectPriority.Low]: { color: 'default', text: intl.formatMessage({ id: 'pages.project.priority.low' }) },
-          [ProjectPriority.Medium]: { color: 'blue', text: intl.formatMessage({ id: 'pages.project.priority.medium' }) },
-          [ProjectPriority.High]: { color: 'red', text: intl.formatMessage({ id: 'pages.project.priority.high' }) },
-        };
-        const priorityInfo = priorityMap[record.priority] || { color: 'default', text: intl.formatMessage({ id: 'pages.table.unknown' }) };
-        return <Tag color={priorityInfo.color}>{priorityInfo.text}</Tag>;
+      {
+        title: intl.formatMessage({ id: 'pages.project.table.status' }),
+        dataIndex: 'status',
+        key: 'status',
+        sorter: true,
+        render: (_: any, record: ProjectDto) => {
+          const statusMap: Record<number, { color: string; text: string }> = {
+            [ProjectStatus.Planning]: {
+              color: 'default',
+              text: intl.formatMessage({ id: 'pages.project.status.planning' }),
+            },
+            [ProjectStatus.InProgress]: {
+              color: 'processing',
+              text: intl.formatMessage({ id: 'pages.project.status.inProgress' }),
+            },
+            [ProjectStatus.OnHold]: {
+              color: 'warning',
+              text: intl.formatMessage({ id: 'pages.project.status.onHold' }),
+            },
+            [ProjectStatus.Completed]: {
+              color: 'success',
+              text: intl.formatMessage({ id: 'pages.project.status.completed' }),
+            },
+            [ProjectStatus.Cancelled]: {
+              color: 'error',
+              text: intl.formatMessage({ id: 'pages.project.status.cancelled' }),
+            },
+          };
+          const statusInfo = statusMap[record.status] || {
+            color: 'default',
+            text: intl.formatMessage({ id: 'pages.table.unknown' }),
+          };
+          return <Badge status={statusInfo.color as any} text={statusInfo.text} />;
+        },
       },
-    },
-    {
-      title: intl.formatMessage({ id: 'pages.project.table.members' }),
-      dataIndex: 'projectMembers',
-      key: 'projectMembers',
-      sorter: true,
-      render: (dom: any, record: ProjectDto) => {
-        if (record.projectMembers && record.projectMembers.length > 0) {
-          return record.projectMembers.map((m) => m.userName || m.userId).join(', ');
-        }
-        return '-';
+      {
+        title: intl.formatMessage({ id: 'pages.project.table.progress' }),
+        dataIndex: 'progress',
+        key: 'progress',
+        sorter: true,
+        render: (dom: any) => <Progress percent={dom} size="small" />,
       },
-    },
-    {
-      title: intl.formatMessage({ id: 'pages.project.table.createdBy' }),
-      dataIndex: 'createdByName',
-      key: 'createdByName',
-      sorter: true,
-      render: (dom: any) => dom || '-',
-    },
-    {
-      title: intl.formatMessage({ id: 'pages.project.table.startDate' }),
-      dataIndex: 'startDate',
-      key: 'startDate',
-      sorter: true,
-      render: (_: any, record: ProjectDto) => formatDate(record.startDate),
-    },
-    {
-      title: intl.formatMessage({ id: 'pages.project.table.endDate' }),
-      dataIndex: 'endDate',
-      key: 'endDate',
-      sorter: true,
-      render: (_: any, record: ProjectDto) => formatDate(record.endDate),
-    },
-    {
-      title: intl.formatMessage({ id: 'pages.project.table.createdAt' }),
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      sorter: true,
-      render: (_: any, record: ProjectDto) => record.createdAt ? dayjs(record.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-',
-    },
-    {
-      title: intl.formatMessage({ id: 'pages.table.action' }),
-      key: 'action',
-      fixed: 'right',
-      width: 150,
-      render: (_: any, record: ProjectDto) => (
-        <Space>
-          {record.canEdit && (
-            <Button
-              type="link"
-              size="small"
-              icon={<EditOutlined />}
-              onClick={() => handleEditProject(record)}
-            >
-              {intl.formatMessage({ id: 'pages.table.edit' })}
-            </Button>
-          )}
-          {record.canDelete && (
-            <Button
-              type="link"
-              size="small"
-              danger
-              icon={<DeleteOutlined />}
-              onClick={() => record.id && handleDelete(record.id)}
-            >
-              {intl.formatMessage({ id: 'pages.button.delete' })}
-            </Button>
-          )}
-        </Space>
-      ),
-    },
-  ], [intl, handleViewProject, handleEditProject, handleDelete, formatDate]);
+      {
+        title: intl.formatMessage({ id: 'pages.project.table.priority' }),
+        dataIndex: 'priority',
+        key: 'priority',
+        sorter: true,
+        render: (_: any, record: ProjectDto) => {
+          const priorityMap: Record<number, { color: string; text: string }> = {
+            [ProjectPriority.Low]: { color: 'default', text: intl.formatMessage({ id: 'pages.project.priority.low' }) },
+            [ProjectPriority.Medium]: {
+              color: 'blue',
+              text: intl.formatMessage({ id: 'pages.project.priority.medium' }),
+            },
+            [ProjectPriority.High]: { color: 'red', text: intl.formatMessage({ id: 'pages.project.priority.high' }) },
+          };
+          const priorityInfo = priorityMap[record.priority] || {
+            color: 'default',
+            text: intl.formatMessage({ id: 'pages.table.unknown' }),
+          };
+          return <Tag color={priorityInfo.color}>{priorityInfo.text}</Tag>;
+        },
+      },
+      {
+        title: intl.formatMessage({ id: 'pages.project.table.members' }),
+        dataIndex: 'projectMembers',
+        key: 'projectMembers',
+        sorter: true,
+        render: (_dom: any, record: ProjectDto) => {
+          if (record.projectMembers && record.projectMembers.length > 0) {
+            return record.projectMembers.map((m) => m.userName || m.userId).join(', ');
+          }
+          return '-';
+        },
+      },
+      {
+        title: intl.formatMessage({ id: 'pages.project.table.createdBy' }),
+        dataIndex: 'createdByName',
+        key: 'createdByName',
+        sorter: true,
+        render: (dom: any) => dom || '-',
+      },
+      {
+        title: intl.formatMessage({ id: 'pages.project.table.startDate' }),
+        dataIndex: 'startDate',
+        key: 'startDate',
+        sorter: true,
+        render: (_: any, record: ProjectDto) => formatDate(record.startDate),
+      },
+      {
+        title: intl.formatMessage({ id: 'pages.project.table.endDate' }),
+        dataIndex: 'endDate',
+        key: 'endDate',
+        sorter: true,
+        render: (_: any, record: ProjectDto) => formatDate(record.endDate),
+      },
+      {
+        title: intl.formatMessage({ id: 'pages.project.table.createdAt' }),
+        dataIndex: 'createdAt',
+        key: 'createdAt',
+        sorter: true,
+        render: (_: any, record: ProjectDto) =>
+          record.createdAt ? dayjs(record.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-',
+      },
+      {
+        title: intl.formatMessage({ id: 'pages.table.action' }),
+        key: 'action',
+        fixed: 'right',
+        width: 150,
+        render: (_: any, record: ProjectDto) => (
+          <Space>
+            {record.canEdit && (
+              <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEditProject(record)}>
+                {intl.formatMessage({ id: 'pages.table.edit' })}
+              </Button>
+            )}
+            {record.canDelete && (
+              <Button
+                type="link"
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+                onClick={() => record.id && handleDelete(record.id)}
+              >
+                {intl.formatMessage({ id: 'pages.button.delete' })}
+              </Button>
+            )}
+          </Space>
+        ),
+      },
+    ],
+    [intl, handleViewProject, handleEditProject, handleDelete, formatDate],
+  );
 
   return (
     <div>
       <ProTable<ProjectDto>
         headerTitle={
           <Space size={24}>
-            <Space><ProjectOutlined />{intl.formatMessage({ id: 'pages.project.title' })}</Space>
+            <Space>
+              <ProjectOutlined />
+              {intl.formatMessage({ id: 'pages.project.title' })}
+            </Space>
             <Space size={12}>
-              <Tag color="blue">{intl.formatMessage({ id: 'pages.project.statistics.totalProjects' })} {statistics?.totalProjects || 0}</Tag>
-              <Tag color="green">{intl.formatMessage({ id: 'pages.project.statistics.inProgressProjects' })} {statistics?.inProgressProjects || 0}</Tag>
-              <Tag color="cyan">{intl.formatMessage({ id: 'pages.project.statistics.completedProjects' })} {statistics?.completedProjects || 0}</Tag>
-              <Tag color="red">{intl.formatMessage({ id: 'pages.project.statistics.delayedProjects' })} {statistics?.delayedProjects || 0}</Tag>
+              <Tag color="blue">
+                {intl.formatMessage({ id: 'pages.project.statistics.totalProjects' })} {statistics?.totalProjects || 0}
+              </Tag>
+              <Tag color="green">
+                {intl.formatMessage({ id: 'pages.project.statistics.inProgressProjects' })}{' '}
+                {statistics?.inProgressProjects || 0}
+              </Tag>
+              <Tag color="cyan">
+                {intl.formatMessage({ id: 'pages.project.statistics.completedProjects' })}{' '}
+                {statistics?.completedProjects || 0}
+              </Tag>
+              <Tag color="red">
+                {intl.formatMessage({ id: 'pages.project.statistics.delayedProjects' })}{' '}
+                {statistics?.delayedProjects || 0}
+              </Tag>
             </Space>
           </Space>
         }
@@ -305,11 +338,22 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
             allowClear
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            onSearch={(value) => { setSearchText(value); tableActionRef.current?.reload(); }}
+            onSearch={(value) => {
+              setSearchText(value);
+              tableActionRef.current?.reload();
+            }}
             style={{ width: 260, marginRight: 8 }}
             prefix={<SearchOutlined />}
           />,
-          <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { setEditingProject(null); setFormVisible(true); }}>
+          <Button
+            key="create"
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              setEditingProject(null);
+              setFormVisible(true);
+            }}
+          >
             {intl.formatMessage({ id: 'pages.project.createProject' })}
           </Button>,
         ]}
@@ -324,12 +368,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
         />
       )}
 
-      {detailVisible && viewingProject && (
-        <ProjectDetail
-          project={viewingProject}
-          onClose={handleCloseDetail}
-        />
-      )}
+      {detailVisible && viewingProject && <ProjectDetail project={viewingProject} onClose={handleCloseDetail} />}
     </div>
   );
 });

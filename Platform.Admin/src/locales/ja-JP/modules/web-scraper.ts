@@ -103,7 +103,8 @@ export default {
   'pages.webScraper.deduplicate': 'URL重複削除',
   'pages.webScraper.scheduleCron': 'スケジュール式',
   'pages.webScraper.scheduleCronPlaceholder': '0 */10 * * * *',
-  'pages.webScraper.scheduleCronTooltip': '<p>よく使われる例:</p><ul><li>10分ごと: <code>*/10 * * * *</code></li><li>毎時: <code>0 * * * *</code></li><li>毎日深夜: <code>0 0 * * *</code></li><li>毎週月曜: <code>0 0 * * 1</code></li></ul>',
+  'pages.webScraper.scheduleCronTooltip':
+    '<p>よく使われる例:</p><ul><li>10分ごと: <code>*/10 * * * *</code></li><li>毎時: <code>0 * * * *</code></li><li>毎日深夜: <code>0 0 * * *</code></li><li>毎週月曜: <code>0 0 * * 1</code></li></ul>',
   'pages.webScraper.mode.single': '現在のページのみ',
   'pages.webScraper.mode.depth': '深さ優先',
   'pages.webScraper.mode.breadth': '幅優先',

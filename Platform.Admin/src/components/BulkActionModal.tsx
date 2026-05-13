@@ -1,7 +1,7 @@
-import React from 'react';
-import { Modal, Input, Typography, Alert } from 'antd';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
+import { Alert, Input, Modal, Typography } from 'antd';
+import React from 'react';
 import { useModalState } from '../hooks/useModalState';
 
 const { TextArea } = Input;
@@ -98,15 +98,14 @@ const BulkActionModal: React.FC<BulkActionModalProps> = ({
   const okText = config.okText;
   const isDanger = config.danger;
   const defaultDescription = config.description;
-  const defaultReasonPlaceholder = reasonPlaceholder || intl.formatMessage({ id: 'pages.bulkAction.reasonPlaceholder' });
+  const defaultReasonPlaceholder =
+    reasonPlaceholder || intl.formatMessage({ id: 'pages.bulkAction.reasonPlaceholder' });
 
   return (
     <Modal
       title={
         <span>
-          <ExclamationCircleOutlined
-            style={{ color: isDanger ? '#ff4d4f' : '#faad14', marginRight: 8 }}
-          />
+          <ExclamationCircleOutlined style={{ color: isDanger ? '#ff4d4f' : '#faad14', marginRight: 8 }} />
           {title}
         </span>
       }

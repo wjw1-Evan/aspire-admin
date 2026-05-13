@@ -5,8 +5,7 @@ export default {
   'component.globalHeader.search.example3': '검색 예시 3',
   'component.globalHeader.help': '도움말',
   'component.globalHeader.notification': '알림',
-  'component.globalHeader.notification.empty':
-    '모든 알림을 확인했습니다.',
+  'component.globalHeader.notification.empty': '모든 알림을 확인했습니다.',
   'component.globalHeader.message': '메시지',
   'component.globalHeader.message.empty': '모든 메시지를 확인했습니다.',
   'component.globalHeader.event': '이벤트',

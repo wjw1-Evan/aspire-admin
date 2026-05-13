@@ -35,10 +35,7 @@ export async function getUserPermissions(userId: string) {
  * @param userId 用户ID
  * @param permissions 权限数据
  */
-export async function assignUserPermissions(
-  userId: string,
-  permissions: UserPermissions,
-) {
+export async function assignUserPermissions(userId: string, permissions: UserPermissions) {
   return request<ApiResponse<boolean>>(`/apiservice/api/users/${userId}/custom-permissions`, {
     method: 'POST',
     data: permissions,

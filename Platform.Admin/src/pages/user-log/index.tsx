@@ -1,15 +1,13 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ProTable, ProColumns, ActionType } from '@ant-design/pro-components/es/table';
-import { useIntl } from '@umijs/max';
-import { request } from '@umijs/max';
-import { Tag, Space, Input } from 'antd';
 import { FileTextOutlined, SearchOutlined } from '@ant-design/icons';
-import { ApiResponse, PagedResult } from '@/types';
+import { PageContainer } from '@ant-design/pro-components/es/layout';
+import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
+import { request, useIntl } from '@umijs/max';
+import { Input, Space, Tag } from 'antd';
 import dayjs from 'dayjs';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ApiResponse, PagedResult } from '@/types';
 import { getActionTagColor, getActionText, getMethodColor, getStatusBadge } from '@/utils/activityLog';
 import LogDetailDrawer from './components/LogDetailDrawer';
-
 
 // ==================== Types ====================
 interface UserActivityLog {
@@ -46,17 +44,13 @@ interface LogStats {
   avgDuration: number;
 }
 
-
 // ==================== API ====================
 const api = {
   list: (params: any) =>
     request<ApiResponse<PagedResult<UserActivityLog>>>('/apiservice/api/users/activity-logs', { params }),
-  statistics: () =>
-    request<ApiResponse<ActivityLogStatistics>>('/apiservice/api/users/activity-logs/statistics'),
-  getById: (id: string) =>
-    request<ApiResponse<UserActivityLog>>(`/apiservice/api/users/activity-logs/${id}`),
+  statistics: () => request<ApiResponse<ActivityLogStatistics>>('/apiservice/api/users/activity-logs/statistics'),
+  getById: (id: string) => request<ApiResponse<UserActivityLog>>(`/apiservice/api/users/activity-logs/${id}`),
 };
-
 
 // ==================== Main ====================
 const UserLog: React.FC = () => {
@@ -68,10 +62,10 @@ const UserLog: React.FC = () => {
     selectedLog: null as UserActivityLog | null,
     search: '',
   });
-  const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
+  const set = useCallback((partial: Partial<typeof state>) => setState((prev) => ({ ...prev, ...partial })), []);
 
   useEffect(() => {
-    api.statistics().then(r => {
+    api.statistics().then((r) => {
       if (r.success && r.data) {
         set({
           statistics: {
@@ -80,29 +74,80 @@ const UserLog: React.FC = () => {
             error: r.data.errorCount || 0,
             actions: r.data.actionTypes?.length || 0,
             avgDuration: Math.round(r.data.avgDuration || 0),
-          }
+          },
         });
       }
     });
-  }, []);
+  }, [set]);
 
   const columns: ProColumns<UserActivityLog>[] = [
-    { title: intl.formatMessage({ id: 'pages.table.user' }), dataIndex: 'username', key: 'username', ellipsis: true, sorter: true, render: (dom: any, r) => <a onClick={() => set({ selectedLog: r, detailDrawerOpen: true })}>{dom}</a> },
-    { title: intl.formatMessage({ id: 'pages.table.action' }), dataIndex: 'action', key: 'action', sorter: true, render: (_: any, r: UserActivityLog) => <Tag color={getActionTagColor(r.action)}>{getActionText(r.action)}</Tag> },
-    { title: intl.formatMessage({ id: 'pages.table.httpMethod' }), dataIndex: 'httpMethod', key: 'httpMethod', sorter: true, render: (_: any, r: UserActivityLog) => r.httpMethod ? <Tag color={getMethodColor(r.httpMethod)}>{r.httpMethod}</Tag> : '-' },
-    { title: intl.formatMessage({ id: 'pages.table.statusCode' }), dataIndex: 'statusCode', key: 'statusCode', sorter: true, render: (_: any, r: UserActivityLog) => getStatusBadge(r.statusCode) },
-    { title: intl.formatMessage({ id: 'pages.table.fullUrl' }), dataIndex: 'fullUrl', key: 'fullUrl', ellipsis: true, sorter: true, render: (_: any, r: UserActivityLog) => r.fullUrl ? <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{r.fullUrl}</span> : '-' },
     {
-      title: intl.formatMessage({ id: 'pages.table.duration' }), dataIndex: 'duration', key: 'duration', sorter: true, render: (_: any, r: UserActivityLog) => {
+      title: intl.formatMessage({ id: 'pages.table.user' }),
+      dataIndex: 'username',
+      key: 'username',
+      ellipsis: true,
+      sorter: true,
+      render: (dom: any, r) => <a onClick={() => set({ selectedLog: r, detailDrawerOpen: true })}>{dom}</a>,
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.table.action' }),
+      dataIndex: 'action',
+      key: 'action',
+      sorter: true,
+      render: (_: any, r: UserActivityLog) => <Tag color={getActionTagColor(r.action)}>{getActionText(r.action)}</Tag>,
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.table.httpMethod' }),
+      dataIndex: 'httpMethod',
+      key: 'httpMethod',
+      sorter: true,
+      render: (_: any, r: UserActivityLog) =>
+        r.httpMethod ? <Tag color={getMethodColor(r.httpMethod)}>{r.httpMethod}</Tag> : '-',
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.table.statusCode' }),
+      dataIndex: 'statusCode',
+      key: 'statusCode',
+      sorter: true,
+      render: (_: any, r: UserActivityLog) => getStatusBadge(r.statusCode),
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.table.fullUrl' }),
+      dataIndex: 'fullUrl',
+      key: 'fullUrl',
+      ellipsis: true,
+      sorter: true,
+      render: (_: any, r: UserActivityLog) =>
+        r.fullUrl ? <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{r.fullUrl}</span> : '-',
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.table.duration' }),
+      dataIndex: 'duration',
+      key: 'duration',
+      sorter: true,
+      render: (_: any, r: UserActivityLog) => {
         if (r.duration === undefined || r.duration === null) return '-';
         let color = 'green';
         if (r.duration > 1000) color = 'orange';
         if (r.duration > 3000) color = 'red';
         return <span style={{ color }}>{r.duration}ms</span>;
-      }
+      },
     },
-    { title: intl.formatMessage({ id: 'pages.table.ipAddress' }), dataIndex: 'ipAddress', key: 'ipAddress', ellipsis: true, sorter: true },
-    { title: intl.formatMessage({ id: 'pages.table.actionTime' }), dataIndex: 'createdAt', key: 'createdAt', sorter: true, defaultSortOrder: 'descend', render: (_: any, r: UserActivityLog) => r.createdAt ? dayjs(r.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-' },
+    {
+      title: intl.formatMessage({ id: 'pages.table.ipAddress' }),
+      dataIndex: 'ipAddress',
+      key: 'ipAddress',
+      ellipsis: true,
+      sorter: true,
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.table.actionTime' }),
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      sorter: true,
+      defaultSortOrder: 'descend',
+      render: (_: any, r: UserActivityLog) => (r.createdAt ? dayjs(r.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'),
+    },
   ];
 
   return (
@@ -111,19 +156,32 @@ const UserLog: React.FC = () => {
         actionRef={actionRef}
         headerTitle={
           <Space size={24}>
-            <Space><FileTextOutlined />{intl.formatMessage({ id: 'pages.userLog.title' })}</Space>
+            <Space>
+              <FileTextOutlined />
+              {intl.formatMessage({ id: 'pages.userLog.title' })}
+            </Space>
             <Space size={12}>
-              <Tag color="blue">{intl.formatMessage({ id: 'pages.userLog.totalRecords' })} {state.statistics?.total || 0}</Tag>
-              <Tag color="green">{intl.formatMessage({ id: 'pages.userLog.success' })} {state.statistics?.success || 0}</Tag>
-              <Tag color="red">{intl.formatMessage({ id: 'pages.userLog.error' })} {state.statistics?.error || 0}</Tag>
-              <Tag color="orange">{intl.formatMessage({ id: 'pages.userLog.actionTypes' })} {state.statistics?.actions || 0}</Tag>
-              <Tag color="purple">{intl.formatMessage({ id: 'pages.userLog.avgDuration' })} {state.statistics?.avgDuration || 0}ms</Tag>
+              <Tag color="blue">
+                {intl.formatMessage({ id: 'pages.userLog.totalRecords' })} {state.statistics?.total || 0}
+              </Tag>
+              <Tag color="green">
+                {intl.formatMessage({ id: 'pages.userLog.success' })} {state.statistics?.success || 0}
+              </Tag>
+              <Tag color="red">
+                {intl.formatMessage({ id: 'pages.userLog.error' })} {state.statistics?.error || 0}
+              </Tag>
+              <Tag color="orange">
+                {intl.formatMessage({ id: 'pages.userLog.actionTypes' })} {state.statistics?.actions || 0}
+              </Tag>
+              <Tag color="purple">
+                {intl.formatMessage({ id: 'pages.userLog.avgDuration' })} {state.statistics?.avgDuration || 0}ms
+              </Tag>
             </Space>
           </Space>
         }
         request={async (params: any, sort: any, filter: any) => {
           const res = await api.list({ ...params, search: state.search, sort, filter });
-          api.statistics().then(r => {
+          api.statistics().then((r) => {
             if (r.success && r.data) {
               set({
                 statistics: {
@@ -132,12 +190,16 @@ const UserLog: React.FC = () => {
                   error: r.data.errorCount || 0,
                   actions: r.data.actionTypes?.length || 0,
                   avgDuration: Math.round(r.data.avgDuration || 0),
-                }
+                },
               });
             }
           });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
-        }} columns={columns} rowKey="id" search={false} scroll={{ x: 'max-content' }}
+        }}
+        columns={columns}
+        rowKey="id"
+        search={false}
+        scroll={{ x: 'max-content' }}
         toolBarRender={() => [
           <Input.Search
             key="search"
@@ -145,7 +207,10 @@ const UserLog: React.FC = () => {
             allowClear
             value={state.search}
             onChange={(e) => set({ search: e.target.value })}
-            onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+            onSearch={(value) => {
+              set({ search: value });
+              actionRef.current?.reload();
+            }}
             style={{ width: 260, marginRight: 8 }}
             prefix={<SearchOutlined />}
           />,
@@ -164,4 +229,3 @@ const UserLog: React.FC = () => {
 };
 
 export default UserLog;
-

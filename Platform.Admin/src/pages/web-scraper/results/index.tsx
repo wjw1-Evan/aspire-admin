@@ -1,11 +1,11 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { request, useIntl } from '@umijs/max';
-import { Tag, Space, Button, Modal, Input, Descriptions, Card, Row, Col, Tabs } from 'antd';
+import { DatabaseOutlined, EyeOutlined, FileTextOutlined, LinkOutlined, PictureOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ProTable, ProColumns, ActionType } from '@ant-design/pro-components/es/table';
-import { EyeOutlined, FileTextOutlined, PictureOutlined, LinkOutlined, DatabaseOutlined } from '@ant-design/icons';
-import { ApiResponse, PagedResult } from '@/types';
+import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
+import { request, useIntl } from '@umijs/max';
+import { Button, Card, Col, Descriptions, Input, Modal, Row, Space, Tabs, Tag } from 'antd';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useMessage } from '@/hooks/useMessage';
+import { ApiResponse, PagedResult } from '@/types';
 
 interface WebScrapingResult {
   id: string;
@@ -46,13 +46,13 @@ interface ResultStatistics {
 }
 
 const WebScraperResults: React.FC = () => {
-  const message = useMessage();
+  const _message = useMessage();
   const actionRef = useRef<ActionType | undefined>(undefined);
   const [detailVisible, setDetailVisible] = useState(false);
   const [currentResult, setCurrentResult] = useState<WebScrapingResult | null>(null);
   const [search, setSearch] = useState('');
-  const [taskId, setTaskId] = useState<string | undefined>();
-  const [tasks, setTasks] = useState<TaskOption[]>([]);
+  const [taskId, _setTaskId] = useState<string | undefined>();
+  const [_tasks, setTasks] = useState<TaskOption[]>([]);
   const [activeTab, setActiveTab] = useState('content');
   const [statistics, setStatistics] = useState<ResultStatistics | null>(null);
   const intl = useIntl();
@@ -60,14 +60,12 @@ const WebScraperResults: React.FC = () => {
   const api = {
     list: (params: any) =>
       request<ApiResponse<PagedResult<WebScrapingResult>>>('/apiservice/api/web-scraper/results', { params }),
-    get: (id: string) =>
-      request<ApiResponse<WebScrapingResult>>(`/apiservice/api/web-scraper/results/${id}`),
+    get: (id: string) => request<ApiResponse<WebScrapingResult>>(`/apiservice/api/web-scraper/results/${id}`),
     getTasks: () =>
       request<ApiResponse<PagedResult<{ id: string; name: string }>>>('/apiservice/api/web-scraper/tasks', {
         params: { page: 1, pageSize: 100 },
       }),
-    statistics: () =>
-      request<ApiResponse<ResultStatistics>>('/apiservice/api/web-scraper/results/statistics'),
+    statistics: () => request<ApiResponse<ResultStatistics>>('/apiservice/api/web-scraper/results/statistics'),
   };
 
   const loadTasks = useCallback(async () => {
@@ -75,24 +73,30 @@ const WebScraperResults: React.FC = () => {
     if (res.success && res.data?.queryable) {
       setTasks(res.data.queryable.map((t) => ({ id: t.id, name: t.name })));
     }
-  }, []);
+  }, [api.getTasks]);
 
   const loadStatistics = useCallback(() => {
-    api.statistics().then(r => {
+    api.statistics().then((r) => {
       if (r.success && r.data) setStatistics(r.data);
     });
-  }, []);
+  }, [api.statistics]);
 
-  useEffect(() => { loadTasks(); loadStatistics(); }, [loadTasks, loadStatistics]);
+  useEffect(() => {
+    loadTasks();
+    loadStatistics();
+  }, [loadTasks, loadStatistics]);
 
-  const handleViewDetail = useCallback(async (record: WebScrapingResult) => {
-    const res = await api.get(record.id);
-    if (res.success && res.data) {
-      setCurrentResult(res.data);
-      setDetailVisible(true);
-      setActiveTab('content');
-    }
-  }, []);
+  const handleViewDetail = useCallback(
+    async (record: WebScrapingResult) => {
+      const res = await api.get(record.id);
+      if (res.success && res.data) {
+        setCurrentResult(res.data);
+        setDetailVisible(true);
+        setActiveTab('content');
+      }
+    },
+    [api.get],
+  );
 
   const columns: ProColumns<WebScrapingResult>[] = [
     {
@@ -106,7 +110,12 @@ const WebScraperResults: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.webScraper.results.table.level' }),
       dataIndex: 'level',
       sorter: true,
-      render: (level) => <Tag>{intl.formatMessage({ id: 'pages.webScraper.unit.level' })}{level}</Tag>,
+      render: (level) => (
+        <Tag>
+          {intl.formatMessage({ id: 'pages.webScraper.unit.level' })}
+          {level}
+        </Tag>
+      ),
     },
     {
       title: intl.formatMessage({ id: 'pages.webScraper.results.table.url' }),
@@ -130,20 +139,27 @@ const WebScraperResults: React.FC = () => {
       dataIndex: 'success',
       sorter: true,
       render: (success) => (
-        <Tag color={success ? 'success' : 'error'}>{success ? intl.formatMessage({ id: 'pages.webScraper.results.status.success' }) : intl.formatMessage({ id: 'pages.webScraper.results.status.failed' })}</Tag>
+        <Tag color={success ? 'success' : 'error'}>
+          {success
+            ? intl.formatMessage({ id: 'pages.webScraper.results.status.success' })
+            : intl.formatMessage({ id: 'pages.webScraper.results.status.failed' })}
+        </Tag>
       ),
     },
     {
       title: intl.formatMessage({ id: 'pages.webScraper.results.table.match' }),
       dataIndex: 'isMatched',
       sorter: true,
-      render: (_: any, record: WebScrapingResult) => (
+      render: (_: any, record: WebScrapingResult) =>
         record.isFiltered ? (
           <Tag color={record.isMatched ? 'green' : 'default'}>
-            {record.isMatched ? `${intl.formatMessage({ id: 'pages.webScraper.results.match.matched' })} ${record.relevanceScore || 0}%` : intl.formatMessage({ id: 'pages.webScraper.results.match.unmatched' })}
+            {record.isMatched
+              ? `${intl.formatMessage({ id: 'pages.webScraper.results.match.matched' })} ${record.relevanceScore || 0}%`
+              : intl.formatMessage({ id: 'pages.webScraper.results.match.unmatched' })}
           </Tag>
-        ) : '-'
-      ),
+        ) : (
+          '-'
+        ),
     },
     {
       title: intl.formatMessage({ id: 'pages.webScraper.results.table.contentLength' }),
@@ -166,7 +182,8 @@ const WebScraperResults: React.FC = () => {
       dataIndex: 'createdAt',
       sorter: true,
       valueType: 'dateTime',
-      render: (_: any, record: WebScrapingResult) => record.createdAt ? new Date(record.createdAt).toLocaleString() : '-',
+      render: (_: any, record: WebScrapingResult) =>
+        record.createdAt ? new Date(record.createdAt).toLocaleString() : '-',
     },
     {
       title: intl.formatMessage({ id: 'pages.webScraper.results.table.action' }),
@@ -174,23 +191,29 @@ const WebScraperResults: React.FC = () => {
       fixed: 'right',
       width: 100,
       render: (_, record) => (
-        <Button
-          type="link"
-          size="small"
-          icon={<EyeOutlined />}
-          onClick={() => handleViewDetail(record)}
-        >
+        <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleViewDetail(record)}>
           {intl.formatMessage({ id: 'pages.webScraper.action.view' })}
         </Button>
       ),
     },
   ];
 
-  const detailColumns = [
+  const _detailColumns = [
     { title: intl.formatMessage({ id: 'pages.webScraper.results.detail.title' }), dataIndex: 'title' },
     { title: intl.formatMessage({ id: 'pages.webScraper.results.detail.url' }), dataIndex: 'url' },
-    { title: intl.formatMessage({ id: 'pages.webScraper.results.detail.status' }), dataIndex: 'success', render: (v: boolean) => v ? intl.formatMessage({ id: 'pages.webScraper.results.status.success' }) : intl.formatMessage({ id: 'pages.webScraper.results.status.failed' }) },
-    { title: intl.formatMessage({ id: 'pages.webScraper.results.detail.contentLength' }), dataIndex: 'contentLength', render: (v: number) => `${(v / 1024).toFixed(2)} KB` },
+    {
+      title: intl.formatMessage({ id: 'pages.webScraper.results.detail.status' }),
+      dataIndex: 'success',
+      render: (v: boolean) =>
+        v
+          ? intl.formatMessage({ id: 'pages.webScraper.results.status.success' })
+          : intl.formatMessage({ id: 'pages.webScraper.results.status.failed' }),
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.webScraper.results.detail.contentLength' }),
+      dataIndex: 'contentLength',
+      render: (v: number) => `${(v / 1024).toFixed(2)} KB`,
+    },
     { title: intl.formatMessage({ id: 'pages.webScraper.results.detail.imageCount' }), dataIndex: 'imageCount' },
     { title: intl.formatMessage({ id: 'pages.webScraper.results.detail.linkCount' }), dataIndex: 'linkCount' },
   ];
@@ -200,12 +223,26 @@ const WebScraperResults: React.FC = () => {
       <ProTable<WebScrapingResult>
         headerTitle={
           <Space size={24}>
-            <Space><DatabaseOutlined />{intl.formatMessage({ id: 'pages.webScraper.results.title' })}</Space>
+            <Space>
+              <DatabaseOutlined />
+              {intl.formatMessage({ id: 'pages.webScraper.results.title' })}
+            </Space>
             <Space size={12}>
-              <Tag color="blue">{intl.formatMessage({ id: 'pages.webScraper.statistics.totalResults' })} {statistics?.totalResults || 0}</Tag>
-              <Tag color="success">{intl.formatMessage({ id: 'pages.webScraper.statistics.successResults' })} {statistics?.successResults || 0}</Tag>
-              <Tag color="error">{intl.formatMessage({ id: 'pages.webScraper.statistics.failedResults' })} {statistics?.failedResults || 0}</Tag>
-              <Tag color="purple">{intl.formatMessage({ id: 'pages.webScraper.statistics.matchedResults' })} {statistics?.matchedResults || 0}</Tag>
+              <Tag color="blue">
+                {intl.formatMessage({ id: 'pages.webScraper.statistics.totalResults' })} {statistics?.totalResults || 0}
+              </Tag>
+              <Tag color="success">
+                {intl.formatMessage({ id: 'pages.webScraper.statistics.successResults' })}{' '}
+                {statistics?.successResults || 0}
+              </Tag>
+              <Tag color="error">
+                {intl.formatMessage({ id: 'pages.webScraper.statistics.failedResults' })}{' '}
+                {statistics?.failedResults || 0}
+              </Tag>
+              <Tag color="purple">
+                {intl.formatMessage({ id: 'pages.webScraper.statistics.matchedResults' })}{' '}
+                {statistics?.matchedResults || 0}
+              </Tag>
             </Space>
           </Space>
         }
@@ -227,7 +264,10 @@ const WebScraperResults: React.FC = () => {
             allowClear
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            onSearch={(value) => { setSearch(value); actionRef.current?.reload(); }}
+            onSearch={(value) => {
+              setSearch(value);
+              actionRef.current?.reload();
+            }}
             style={{ width: 260, marginRight: 8 }}
           />,
         ]}
@@ -248,16 +288,22 @@ const WebScraperResults: React.FC = () => {
         {currentResult && (
           <>
             <Descriptions bordered column={2} style={{ marginBottom: 16 }}>
-              <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.results.detail.taskName' })}>{currentResult.taskName}</Descriptions.Item>
+              <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.results.detail.taskName' })}>
+                {currentResult.taskName}
+              </Descriptions.Item>
               <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.results.detail.url' })}>
                 <a href={currentResult.url} target="_blank" rel="noopener noreferrer">
                   {currentResult.url}
                 </a>
               </Descriptions.Item>
-              <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.results.detail.title' })}>{currentResult.title || '-'}</Descriptions.Item>
+              <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.results.detail.title' })}>
+                {currentResult.title || '-'}
+              </Descriptions.Item>
               <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.results.detail.status' })}>
                 <Tag color={currentResult.success ? 'success' : 'error'}>
-                  {currentResult.success ? intl.formatMessage({ id: 'pages.webScraper.results.status.success' }) : intl.formatMessage({ id: 'pages.webScraper.results.status.failed' })}
+                  {currentResult.success
+                    ? intl.formatMessage({ id: 'pages.webScraper.results.status.success' })
+                    : intl.formatMessage({ id: 'pages.webScraper.results.status.failed' })}
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.results.detail.contentLength' })}>
@@ -269,22 +315,42 @@ const WebScraperResults: React.FC = () => {
             </Descriptions>
 
             {currentResult.error && (
-              <Card title={intl.formatMessage({ id: 'pages.webScraper.results.detail.errorInfo' })} size="small" style={{ marginBottom: 16 }}>
+              <Card
+                title={intl.formatMessage({ id: 'pages.webScraper.results.detail.errorInfo' })}
+                size="small"
+                style={{ marginBottom: 16 }}
+              >
                 <Tag color="error">{currentResult.error}</Tag>
               </Card>
             )}
 
             {currentResult.isFiltered && (
-              <Card title={intl.formatMessage({ id: 'pages.webScraper.results.detail.aiFilterResult' })} size="small" style={{ marginBottom: 16 }}>
+              <Card
+                title={intl.formatMessage({ id: 'pages.webScraper.results.detail.aiFilterResult' })}
+                size="small"
+                style={{ marginBottom: 16 }}
+              >
                 <Space direction="vertical">
                   <Space>
                     <Tag color={currentResult.isMatched ? 'green' : 'default'}>
-                      {currentResult.isMatched ? intl.formatMessage({ id: 'pages.webScraper.results.match.matched' }) : intl.formatMessage({ id: 'pages.webScraper.results.match.unmatched' })}
+                      {currentResult.isMatched
+                        ? intl.formatMessage({ id: 'pages.webScraper.results.match.matched' })
+                        : intl.formatMessage({ id: 'pages.webScraper.results.match.unmatched' })}
                     </Tag>
-                    <span>{intl.formatMessage({ id: 'pages.webScraper.results.detail.relevanceLabel' }, { score: currentResult.relevanceScore ?? 0 })}</span>
+                    <span>
+                      {intl.formatMessage(
+                        { id: 'pages.webScraper.results.detail.relevanceLabel' },
+                        { score: currentResult.relevanceScore ?? 0 },
+                      )}
+                    </span>
                   </Space>
                   {currentResult.matchReason && (
-                    <span style={{ color: '#666' }}>{intl.formatMessage({ id: 'pages.webScraper.results.detail.reasonLabel' }, { reason: currentResult.matchReason })}</span>
+                    <span style={{ color: '#666' }}>
+                      {intl.formatMessage(
+                        { id: 'pages.webScraper.results.detail.reasonLabel' },
+                        { reason: currentResult.matchReason },
+                      )}
+                    </span>
                   )}
                 </Space>
               </Card>
@@ -313,16 +379,23 @@ const WebScraperResults: React.FC = () => {
                   key: 'images',
                   label: (
                     <span>
-                      <PictureOutlined /> {intl.formatMessage({ id: 'pages.webScraper.results.tabs.images' })} ({currentResult.images?.length || 0})
+                      <PictureOutlined /> {intl.formatMessage({ id: 'pages.webScraper.results.tabs.images' })} (
+                      {currentResult.images?.length || 0})
                     </span>
                   ),
                   children: (
                     <Row gutter={[8, 8]}>
                       {currentResult.images?.map((img, idx) => (
                         <Col span={8} key={idx}>
-                          <Card size="small" cover={<img src={img} alt="" style={{ height: 120, objectFit: 'cover' }} />}>
+                          <Card
+                            size="small"
+                            cover={<img src={img} alt="" style={{ height: 120, objectFit: 'cover' }} />}
+                          >
                             <Card.Meta
-                              title={intl.formatMessage({ id: 'pages.webScraper.results.tabs.imageIndex' }, { index: idx + 1 })}
+                              title={intl.formatMessage(
+                                { id: 'pages.webScraper.results.tabs.imageIndex' },
+                                { index: idx + 1 },
+                              )}
                               description={
                                 <a href={img} target="_blank" rel="noopener noreferrer">
                                   {intl.formatMessage({ id: 'pages.webScraper.results.viewOriginal' })}
@@ -334,7 +407,9 @@ const WebScraperResults: React.FC = () => {
                       ))}
                       {(!currentResult.images || currentResult.images.length === 0) && (
                         <Col span={24}>
-                          <div style={{ textAlign: 'center', color: '#999' }}>{intl.formatMessage({ id: 'pages.webScraper.results.noImages' })}</div>
+                          <div style={{ textAlign: 'center', color: '#999' }}>
+                            {intl.formatMessage({ id: 'pages.webScraper.results.noImages' })}
+                          </div>
                         </Col>
                       )}
                     </Row>
@@ -344,7 +419,8 @@ const WebScraperResults: React.FC = () => {
                   key: 'links',
                   label: (
                     <span>
-                      <LinkOutlined /> {intl.formatMessage({ id: 'pages.webScraper.results.tabs.links' })} ({currentResult.links?.length || 0})
+                      <LinkOutlined /> {intl.formatMessage({ id: 'pages.webScraper.results.tabs.links' })} (
+                      {currentResult.links?.length || 0})
                     </span>
                   ),
                   children: (
@@ -357,7 +433,9 @@ const WebScraperResults: React.FC = () => {
                         </div>
                       ))}
                       {(!currentResult.links || currentResult.links.length === 0) && (
-                        <div style={{ textAlign: 'center', color: '#999' }}>{intl.formatMessage({ id: 'pages.webScraper.results.noLinks' })}</div>
+                        <div style={{ textAlign: 'center', color: '#999' }}>
+                          {intl.formatMessage({ id: 'pages.webScraper.results.noLinks' })}
+                        </div>
                       )}
                     </div>
                   ),

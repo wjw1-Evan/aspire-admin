@@ -1,8 +1,7 @@
-import React, { useCallback } from 'react';
-import { Form, Input, Button, Space, Card } from 'antd';
-import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
+import { ReloadOutlined, SearchOutlined } from '@ant-design/icons';
+import { Button, Card, Form, Input, Space } from 'antd';
 import { createStyles } from 'antd-style';
-
+import React, { useCallback } from 'react';
 
 const useStyles = createStyles(({ token, css }) => ({
   searchCard: {
@@ -58,13 +57,16 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const { styles } = useStyles();
   const [form] = Form.useForm();
 
-  const handleSearch = useCallback((values: { search?: string }) => {
-    onSearch?.({
-      ...initialParams,
-      page: 1,
-      search: values.search || '',
-    });
-  }, [onSearch, initialParams]);
+  const handleSearch = useCallback(
+    (values: { search?: string }) => {
+      onSearch?.({
+        ...initialParams,
+        page: 1,
+        search: values.search || '',
+      });
+    },
+    [onSearch, initialParams],
+  );
 
   const handleReset = useCallback(() => {
     form.resetFields();
@@ -93,7 +95,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
             onPressEnter={() => form.submit()}
           />
         </Form.Item>
-        
+
         <Form.Item className={styles.formItem}>
           <Space>
             {showSearchButton && (

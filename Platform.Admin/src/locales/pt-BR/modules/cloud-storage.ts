@@ -6,20 +6,22 @@ export default {
   'pages.cloud-storage.recycle.message.deleteFailed': 'Falha ao excluir',
   'pages.cloud-storage.recycle.message.emptySuccess': 'Esvaziamento bem-sucedido, excluídos {count} arquivos',
   'pages.cloud-storage.recycle.message.emptyFailed': 'Falha ao esvaziar',
-  
+
   // Share management messages
   'pages.cloud-storage.share.message.updateSuccess': 'Atualização bem-sucedida',
   'pages.cloud-storage.share.message.linkCopied': 'Link de compartilhamento copiado',
-  
+
   // Quota management messages
   'pages.cloud-storage.quota.message.updateSuccess': 'Cota atualizada com sucesso',
   'pages.cloud-storage.quota.message.createSuccess': 'Cota criada com sucesso',
   'pages.cloud-storage.recycle.title': 'Recycle Bin',
   'pages.cloud-storage.recycle.confirmDelete': 'Confirm Permanent Delete',
-  'pages.cloud-storage.recycle.confirmDeleteContent': 'Are you sure you want to permanently delete "{name}"? This action cannot be undone.',
+  'pages.cloud-storage.recycle.confirmDeleteContent':
+    'Are you sure you want to permanently delete "{name}"? This action cannot be undone.',
   'pages.cloud-storage.recycle.confirmDeleteOk': 'Delete',
   'pages.cloud-storage.recycle.confirmEmpty': 'Confirm Empty Recycle Bin',
-  'pages.cloud-storage.recycle.confirmEmptyContent': 'Are you sure you want to empty the entire recycle bin? This will permanently delete all files and cannot be undone!',
+  'pages.cloud-storage.recycle.confirmEmptyContent':
+    'Are you sure you want to empty the entire recycle bin? This will permanently delete all files and cannot be undone!',
   'pages.cloud-storage.recycle.confirmEmptyOk': 'Empty',
   'pages.cloud-storage.recycle.searchPlaceholder': 'Search...',
   'pages.cloud-storage.recycle.tagTotal': 'Total {count}',

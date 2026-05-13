@@ -133,7 +133,8 @@ export default {
   'pages.userManagement.message.deactivated': 'User deactivated',
   'pages.userManagement.message.activated': 'User activated',
   'pages.userManagement.message.confirmRemove': 'Confirm Remove',
-  'pages.userManagement.message.confirmRemoveUser': 'Are you sure you want to remove this user from the current company?',
+  'pages.userManagement.message.confirmRemoveUser':
+    'Are you sure you want to remove this user from the current company?',
   'pages.userManagement.message.confirmRemoveUserWithName': 'Remove user "{name}"?',
   'pages.userManagement.action.confirmRemove': 'Confirm Remove',
   'pages.userManagement.action.remove': 'Remove',

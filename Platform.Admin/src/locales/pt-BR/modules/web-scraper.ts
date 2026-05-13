@@ -27,10 +27,12 @@ export default {
   'pages.web-scraper.descriptionPlaceholder': 'Insira a descrição da tarefa (opcional)',
   'pages.web-scraper.titleSelector': 'Seletor de título',
   'pages.web-scraper.titleSelectorPlaceholder': 'Seletor CSS, ex. h1.title',
-  'pages.web-scraper.titleSelectorTooltip': 'Seletor CSS para extrair título da página, deixe vazio para usar a tag <title>',
+  'pages.web-scraper.titleSelectorTooltip':
+    'Seletor CSS para extrair título da página, deixe vazio para usar a tag <title>',
   'pages.web-scraper.contentSelector': 'Seletor de conteúdo',
   'pages.web-scraper.contentSelectorPlaceholder': 'Seletor CSS, ex. article.content',
-  'pages.web-scraper.contentSelectorTooltip': 'Seletor CSS para extrair conteúdo da página, deixe vazio para usar a tag <body>',
+  'pages.web-scraper.contentSelectorTooltip':
+    'Seletor CSS para extrair conteúdo da página, deixe vazio para usar a tag <body>',
   'pages.web-scraper.crawlDepth': 'Profundidade de rastejamento',
   'pages.web-scraper.maxPagesPerLevel': 'Máx páginas por nível',
   'pages.web-scraper.crawlMode': 'Modo de rastejamento',
@@ -40,7 +42,8 @@ export default {
   'pages.web-scraper.deduplicate': 'Deduplicar URLs',
   'pages.web-scraper.scheduleCron': 'Expressão de agendamento',
   'pages.web-scraper.scheduleCronPlaceholder': '0 */10 * * * *',
-  'pages.web-scraper.scheduleCronTooltip': '<p>Exemplos comuns:</p><ul><li>A cada 10 minutos: <code>*/10 * * * *</code></li><li>A cada hora: <code>0 * * * *</code></li><li>A cada dia à meia-noite: <code>0 0 * * *</code></li><li>A cada segunda-feira: <code>0 0 * * 1</code></li></ul>',
+  'pages.web-scraper.scheduleCronTooltip':
+    '<p>Exemplos comuns:</p><ul><li>A cada 10 minutos: <code>*/10 * * * *</code></li><li>A cada hora: <code>0 * * * *</code></li><li>A cada dia à meia-noite: <code>0 0 * * *</code></li><li>A cada segunda-feira: <code>0 0 * * 1</code></li></ul>',
   'pages.web-scraper.mode.single': 'Apenas página atual',
   'pages.web-scraper.mode.depth': 'Primeiro em profundidade',
   'pages.web-scraper.mode.breadth': 'Primeiro em largura',

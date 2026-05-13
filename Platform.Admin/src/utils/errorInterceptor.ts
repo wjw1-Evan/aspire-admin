@@ -4,8 +4,8 @@
  * errorCode 优先翻译，message 作为 fallback
  */
 
-import { getMessage, getNotification } from './antdAppInstance';
 import { getIntl, getLocale } from '@umijs/max';
+import { getMessage, getNotification } from './antdAppInstance';
 import { reportError } from './monitor';
 
 // 将提示操作调度到渲染阶段之外，避免 React 18 并发模式警告
@@ -26,7 +26,7 @@ const translateMessage = (msg: string, errorCode?: string): string => {
       if (translated && translated !== errorCode) {
         return translated;
       }
-    } catch (e) {
+    } catch (_e) {
       // 翻译失败，使用原消息
     }
   }
@@ -54,11 +54,11 @@ export enum ErrorSeverity {
 
 // 错误显示方式
 export enum ErrorDisplayType {
-  SILENT = 'SILENT',           // 静默处理，不显示
-  MESSAGE = 'MESSAGE',         // 显示消息提示
+  SILENT = 'SILENT', // 静默处理，不显示
+  MESSAGE = 'MESSAGE', // 显示消息提示
   NOTIFICATION = 'NOTIFICATION', // 显示通知
-  MODAL = 'MODAL',            // 显示模态框
-  REDIRECT = 'REDIRECT',       // 重定向
+  MODAL = 'MODAL', // 显示模态框
+  REDIRECT = 'REDIRECT', // 重定向
 }
 
 // 错误信息接口
@@ -321,7 +321,7 @@ class UnifiedErrorInterceptor {
     return '未知错误';
   }
 
-/**
+  /**
    * 提取所有验证错误消息
    * 优先级: errors (字段错误) -> errorCode -> message
    * 有 errorCode 时只翻译 errorCode，不再显示 message
@@ -460,12 +460,13 @@ class UnifiedErrorInterceptor {
       case ErrorDisplayType.MESSAGE:
         runAfterRender(() => msgApi.error(errorInfo.message));
         break;
-      case ErrorDisplayType.NOTIFICATION:
+      case ErrorDisplayType.NOTIFICATION: {
         // 错误显示优先级：errors > errorCode > message
         // - 如果有 errors，显示 "验证错误" 标题
         // - 否则如果有 errorCode，显示 errorCode 标题
         // - 否则显示 "错误" 标题
-        const hasValidationErrors = originalError?.response?.data?.errors && Object.keys(originalError.response.data.errors).length > 0;
+        const hasValidationErrors =
+          originalError?.response?.data?.errors && Object.keys(originalError.response.data.errors).length > 0;
         const hasErrorCode = errorInfo.errorCode;
         let title = '错误';
         if (hasValidationErrors) {
@@ -482,6 +483,7 @@ class UnifiedErrorInterceptor {
           }),
         );
         break;
+      }
       case ErrorDisplayType.MODAL:
         runAfterRender(() => msgApi.error(errorInfo.message));
         break;
@@ -498,13 +500,13 @@ class UnifiedErrorInterceptor {
   displayValidationErrors(error: any, displayType: ErrorDisplayType = ErrorDisplayType.MESSAGE) {
     const message = getMessage();
     const notification = getNotification();
-    
+
     // 检查 message 和 notification 是否可用
     if (!message?.error || !notification?.error) {
       console.error('Message/Notification API not available in displayValidationErrors');
       return;
     }
-    
+
     const errors = this.extractValidationErrors(error);
 
     if (errors.length === 0) {

@@ -1,4 +1,3 @@
-
 import { createStyles } from 'antd-style';
 
 /**
@@ -55,7 +54,7 @@ const useCommonStyles = createStyles(({ token, css }) => {
     statusTag: css`
       padding: 0 8px;
       border-radius: ${token.borderRadiusSM}px;
-    `
+    `,
   };
 });
 

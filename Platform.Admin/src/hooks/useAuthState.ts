@@ -78,7 +78,6 @@ export function useAuthState() {
     }
   }, [fetchUserInfo, initialState, setInitialState, clearUser]);
 
-
   // 权限检查方法
   const permissionMethods = useMemo(
     () => ({

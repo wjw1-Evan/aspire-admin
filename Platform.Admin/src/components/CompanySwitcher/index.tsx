@@ -1,13 +1,12 @@
 import { BankOutlined, CheckOutlined, PlusOutlined } from '@ant-design/icons';
-import { Dropdown, Spin, App as AntApp } from 'antd';
+import { request, useIntl, useModel } from '@umijs/max';
 import type { MenuProps } from 'antd';
-import React, { useState, useEffect } from 'react';
-import { request, useModel, useIntl } from '@umijs/max';
-import type { ApiResponse } from '@/types';
-import type { UserCompanyItem, SwitchCompanyResult } from '@/types';
+import { App as AntApp, Dropdown, Spin } from 'antd';
+import { createStyles } from 'antd-style';
+import React, { useEffect, useState } from 'react';
+import type { ApiResponse, SwitchCompanyResult, UserCompanyItem } from '@/types';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { CreateCompanyModal } from '../CreateCompanyModal';
-import { createStyles } from 'antd-style';
 
 const useStyles = createStyles(({ css }) => ({
   companySwitcher: css`
@@ -100,23 +99,15 @@ export const CompanySwitcher: React.FC = () => {
   const [switching, setSwitching] = useState(false);
   const [createCompanyModalOpen, setCreateCompanyModalOpen] = useState(false);
 
-  // 加载用户的企业列表
-  useEffect(() => {
-    loadCompanies();
-  }, []);
-
   const loadCompanies = async () => {
     setLoading(true);
     try {
-      const response = await request<ApiResponse<UserCompanyItem[]>>(
-        '/apiservice/api/company/my-companies',
-        {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
+      const response = await request<ApiResponse<UserCompanyItem[]>>('/apiservice/api/company/my-companies', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
-      );
+      });
 
       if (response.success && response.data) {
         setCompanies(response.data);
@@ -131,6 +122,11 @@ export const CompanySwitcher: React.FC = () => {
     }
   };
 
+  // 加载用户的企业列表
+  useEffect(() => {
+    loadCompanies();
+  }, [loadCompanies]);
+
   const handleSwitch = async (targetCompanyId: string) => {
     // 如果是当前企业，不执行切换
     const currentCompany = companies.find((c) => c.isCurrent);
@@ -140,19 +136,16 @@ export const CompanySwitcher: React.FC = () => {
 
     setSwitching(true);
     try {
-      const response = await request<ApiResponse<SwitchCompanyResult>>(
-        '/apiservice/api/company/switch',
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json',
-          },
-          data: {
-            targetCompanyId,
-          },
+      const response = await request<ApiResponse<SwitchCompanyResult>>('/apiservice/api/company/switch', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
         },
-      );
+        data: {
+          targetCompanyId,
+        },
+      });
 
       if (response.success && response.data) {
         message.success(intl.formatMessage({ id: 'pages.company.switchSuccess' }, { name: response.data.companyName }));
@@ -205,7 +198,8 @@ export const CompanySwitcher: React.FC = () => {
               )}
             </div>
             <div className={styles.companyRoles}>
-              {(company.roleNames || []).join(intl.formatMessage({ id: 'pages.company.roleSeparator' })) || intl.formatMessage({ id: 'pages.company.noRole' })}
+              {(company.roleNames || []).join(intl.formatMessage({ id: 'pages.company.roleSeparator' })) ||
+                intl.formatMessage({ id: 'pages.company.noRole' })}
             </div>
           </div>
           {company.isCurrent && <CheckOutlined className={styles.checkIcon} />}
@@ -246,21 +240,13 @@ export const CompanySwitcher: React.FC = () => {
 
   return (
     <>
-      <Dropdown
-        menu={{ items: menuItems }}
-        trigger={['hover']}
-        placement="bottomRight"
-        disabled={switching}
-      >
+      <Dropdown menu={{ items: menuItems }} trigger={['hover']} placement="bottomRight" disabled={switching}>
         <div className={styles.companySwitcher}>
           <BankOutlined className={styles.icon} />
-          <span className={styles.companyName}>
-            {currentCompany.companyName}
-          </span>
+          <span className={styles.companyName}>{currentCompany.companyName}</span>
           {switching && <Spin size="small" style={{ marginLeft: 8 }} />}
         </div>
       </Dropdown>
-
 
       <CreateCompanyModal
         open={createCompanyModalOpen}

@@ -1,8 +1,8 @@
-import React, { useRef } from 'react';
+import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { useIntl } from '@umijs/max';
-import { ProjectOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
-import { Space, Button } from 'antd';
+import { Button, Space } from 'antd';
+import React, { useRef } from 'react';
 import ProjectView, { type ProjectViewRef } from '../task-management/components/ProjectView';
 
 const ProjectManagement: React.FC = () => {
@@ -10,7 +10,8 @@ const ProjectManagement: React.FC = () => {
   const projectViewRef = useRef<ProjectViewRef>(null);
 
   return (
-    <PageContainer extra={
+    <PageContainer
+      extra={
         <Space>
           <Button
             key="refresh"

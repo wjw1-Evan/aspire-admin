@@ -5,11 +5,11 @@ import type { ApiResponse, PagedResult } from '@/types';
  * 公文状态枚举
  */
 export enum DocumentStatus {
-  Draft = 0,        // 草稿
-  Approving = 1,    // 审批中
-  Approved = 2,     // 已通过
-  Rejected = 3,     // 已拒绝
-  Archived = 4      // 已归档
+  Draft = 0, // 草稿
+  Approving = 1, // 审批中
+  Approved = 2, // 已通过
+  Rejected = 3, // 已拒绝
+  Archived = 4, // 已归档
 }
 
 /**
@@ -135,7 +135,9 @@ export async function getDocumentList(params: DocumentQueryParams): Promise<ApiR
 /**
  * 获取公文详情
  */
-export async function getDocumentDetail(id: string): Promise<ApiResponse<Document & { workflowInstance?: any; workflowDefinition?: any; approvalHistory?: any[] }>> {
+export async function getDocumentDetail(
+  id: string,
+): Promise<ApiResponse<Document & { workflowInstance?: any; workflowDefinition?: any; approvalHistory?: any[] }>> {
   return request(`/apiservice/api/documents/${id}`, {
     method: 'GET',
   });
@@ -144,7 +146,9 @@ export async function getDocumentDetail(id: string): Promise<ApiResponse<Documen
 /**
  * 从文档实例中获取文档创建表单（使用实例快照）
  */
-export async function getDocumentInstanceForm(id: string): Promise<ApiResponse<{ form: any | null; dataScopeKey?: string; initialValues?: Record<string, any> }>> {
+export async function getDocumentInstanceForm(
+  id: string,
+): Promise<ApiResponse<{ form: any | null; dataScopeKey?: string; initialValues?: Record<string, any> }>> {
   return request(`/apiservice/api/documents/${id}/instance-form`, {
     method: 'GET',
   });

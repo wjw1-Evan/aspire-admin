@@ -1,13 +1,39 @@
 import { request } from '@umijs/max';
 import type { ApiResponse, PagedResult } from '@/types';
 
-export interface UserActivityLog { id: string; userId?: string; username?: string; createdBy?: string; queryString?: string; action: string; description: string; ipAddress?: string; userAgent?: string; httpMethod?: string; path?: string; statusCode?: number; duration?: number; requestBody?: string; responseBody?: string; createdAt: string; }
-export interface GetUserActivityLogsParams { search?: string; page?: number; pageSize?: number; action?: string; httpMethod?: string; statusCode?: number; ipAddress?: string; startDate?: string; endDate?: string; sortBy?: string; sortOrder?: 'asc' | 'desc'; }
+export interface UserActivityLog {
+  id: string;
+  userId?: string;
+  username?: string;
+  createdBy?: string;
+  queryString?: string;
+  action: string;
+  description: string;
+  ipAddress?: string;
+  userAgent?: string;
+  httpMethod?: string;
+  path?: string;
+  statusCode?: number;
+  duration?: number;
+  requestBody?: string;
+  responseBody?: string;
+  createdAt: string;
+}
+export interface GetUserActivityLogsParams {
+  search?: string;
+  page?: number;
+  pageSize?: number;
+  action?: string;
+  httpMethod?: string;
+  statusCode?: number;
+  ipAddress?: string;
+  startDate?: string;
+  endDate?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
 
-export async function getUserActivityLogs(
-  params?: GetUserActivityLogsParams,
-  options?: Record<string, any>,
-) {
+export async function getUserActivityLogs(params?: GetUserActivityLogsParams, options?: Record<string, any>) {
   return request<ApiResponse<PagedResult<UserActivityLog>>>('/apiservice/api/users/activity-logs', {
     method: 'GET',
     params,
@@ -26,10 +52,7 @@ export interface ActivityLogStatistics {
   }>;
 }
 
-export async function getActivityLogStatistics(
-  params?: GetUserActivityLogsParams,
-  options?: Record<string, any>,
-) {
+export async function getActivityLogStatistics(params?: GetUserActivityLogsParams, options?: Record<string, any>) {
   return request<ApiResponse<ActivityLogStatistics>>('/apiservice/api/users/activity-logs/statistics', {
     method: 'GET',
     params,
@@ -53,10 +76,7 @@ export interface ActivityLogWithSummary {
 /**
  * 获取指定活动日志详情（管理员端）
  */
-export async function getActivityLogById(
-  logId: string,
-  options?: Record<string, any>,
-) {
+export async function getActivityLogById(logId: string, options?: Record<string, any>) {
   return request<ApiResponse<UserActivityLog>>(`/apiservice/api/users/activity-logs/${logId}`, {
     method: 'GET',
     ...(options || {}),
@@ -93,10 +113,7 @@ export async function getCurrentUserActivityLogs(
  * 获取当前用户的活动日志详情（根据日志ID）
  * ✅ 返回完整的日志数据，包括 ResponseBody 等所有字段
  */
-export async function getCurrentUserActivityLogById(
-  logId: string,
-  options?: Record<string, any>,
-) {
+export async function getCurrentUserActivityLogById(logId: string, options?: Record<string, any>) {
   return request<ApiResponse<UserActivityLog>>(`/apiservice/api/users/me/activity-logs/${logId}`, {
     method: 'GET',
     ...(options || {}),

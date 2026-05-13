@@ -103,7 +103,8 @@ export default {
   'pages.webScraper.deduplicate': 'Deduplicate URLs',
   'pages.webScraper.scheduleCron': 'Schedule expression',
   'pages.webScraper.scheduleCronPlaceholder': '0 */10 * * * *',
-  'pages.webScraper.scheduleCronTooltip': '<p>Common examples:</p><ul><li>Every 10 minutes: <code>*/10 * * * *</code></li><li>Hourly: <code>0 * * * *</code></li><li>Daily at midnight: <code>0 0 * * *</code></li><li>Every Monday: <code>0 0 * * 1</code></li></ul>',
+  'pages.webScraper.scheduleCronTooltip':
+    '<p>Common examples:</p><ul><li>Every 10 minutes: <code>*/10 * * * *</code></li><li>Hourly: <code>0 * * * *</code></li><li>Daily at midnight: <code>0 0 * * *</code></li><li>Every Monday: <code>0 0 * * 1</code></li></ul>',
   'pages.webScraper.mode.single': 'Current page only',
   'pages.webScraper.mode.depth': 'Depth-first',
   'pages.webScraper.mode.breadth': 'Breadth-first',

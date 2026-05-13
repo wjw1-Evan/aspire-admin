@@ -65,7 +65,8 @@ export default {
   'pages.welcome.systemResources.diskDrive': 'ドライブ: {name} ({type})',
   'pages.welcome.systemResources.cpuCores': 'コア数: {count}',
   'pages.welcome.systemResources.unavailable': 'システムリソースデータが無効です',
-  'pages.welcome.systemResources.unavailableDesc': 'システムリソース情報を取得できません。バックエンドサービスが正常に実行されているか確認してください。',
+  'pages.welcome.systemResources.unavailableDesc':
+    'システムリソース情報を取得できません。バックエンドサービスが正常に実行されているか確認してください。',
   'pages.welcome.systemDetails': 'システム詳細',
   'pages.welcome.systemDetails.machineName': 'マシン名:',
   'pages.welcome.systemDetails.processorCount': 'CPUコア:',

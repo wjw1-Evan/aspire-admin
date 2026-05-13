@@ -1,18 +1,18 @@
-import React, { useState, useCallback } from 'react';
+import { SaveOutlined, UploadOutlined } from '@ant-design/icons';
 import { ProCard } from '@ant-design/pro-components/es/card';
 import { ProForm, ProFormSelect } from '@ant-design/pro-components/es/form';
 import { PageContainer } from '@ant-design/pro-components/es/layout';
+import { useIntl, useNavigate } from '@umijs/max';
 import { Button, Upload } from 'antd';
+import React, { useState } from 'react';
 import { useMessage } from '@/hooks/useMessage';
-import { SaveOutlined, UploadOutlined } from '@ant-design/icons';
-import { useNavigate, useIntl } from '@umijs/max';
 import { getWorkflowList } from '@/services/workflow/api';
 
 const CreateDocument: React.FC = () => {
   const intl = useIntl();
   const message = useMessage();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [_loading, setLoading] = useState(false);
 
   return (
     <PageContainer>
@@ -77,8 +77,7 @@ const CreateDocument: React.FC = () => {
             }}
             fieldProps={{
               showSearch: true,
-              filterOption: (input, option) =>
-                (option?.label as string)?.toLowerCase().includes(input.toLowerCase()),
+              filterOption: (input, option) => (option?.label as string)?.toLowerCase().includes(input.toLowerCase()),
             }}
           />
 
@@ -87,23 +86,16 @@ const CreateDocument: React.FC = () => {
             label={intl.formatMessage({ id: 'pages.document.create.form.attachments' })}
             extra={intl.formatMessage({ id: 'pages.document.create.form.uploadDescription' })}
           >
-            <Upload
-              name="files"
-              multiple
-              maxCount={10}
-              action="/apiservice/api/upload"
-              listType="text"
-            >
+            <Upload name="files" multiple maxCount={10} action="/apiservice/api/upload" listType="text">
               <Button icon={<UploadOutlined />}>
                 {intl.formatMessage({ id: 'pages.document.create.form.uploadButton' })}
               </Button>
             </Upload>
           </ProForm.Item>
-          </ProForm>
-        </ProCard>
+        </ProForm>
+      </ProCard>
     </PageContainer>
   );
 };
 
 export default CreateDocument;
-

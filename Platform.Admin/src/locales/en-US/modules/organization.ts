@@ -24,7 +24,8 @@ export default {
   'pages.organization.message.deleteSuccess': 'Deleted successfully',
   'pages.organization.message.updateSuccess': 'Updated successfully',
   'pages.organization.modal.createTitle': 'Create Organization Node',
-  'pages.organization.modal.deleteContent': 'Cannot be recovered after deletion. Please confirm that all child nodes have been deleted.',
+  'pages.organization.modal.deleteContent':
+    'Cannot be recovered after deletion. Please confirm that all child nodes have been deleted.',
   'pages.organization.modal.deleteTitle': 'Confirm to delete this node?',
   'pages.organization.modal.updateTitle': 'Edit Organization Node',
   'pages.organization.placeholder.code': 'Please enter code',

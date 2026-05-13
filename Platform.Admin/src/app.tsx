@@ -1,9 +1,9 @@
 import { UserOutlined } from '@ant-design/icons';
 import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
-import { history, Link, request as requestClient } from '@umijs/max';
+import { history, Link } from '@umijs/max';
 import { App, Space } from 'antd';
-import React, { useEffect, useMemo, useRef } from 'react';
-import { AvatarDropdown, AvatarName, CompanySwitcher, Footer, NoticeIcon, Question, SelectLang } from '@/components';
+import React, { useEffect, useRef } from 'react';
+import { AvatarDropdown, AvatarName, Footer, NoticeIcon, SelectLang } from '@/components';
 import { currentUser as queryCurrentUser } from '@/services/ant-design-pro/api';
 import { getUserMenus } from '@/services/menu/api';
 import { getMyPermissions } from '@/services/permission';
@@ -11,11 +11,11 @@ import type { ApiResponse, CurrentUser, LayoutSettings, MenuTreeNode } from '@/t
 import { setAppInstance } from '@/utils/antdAppInstance';
 import { getUserAvatar } from '@/utils/avatar';
 import { getIconFromMap } from '@/utils/iconMap';
+import { initMonitor } from '@/utils/monitor';
 import { tokenUtils } from '@/utils/token';
 import TokenRefreshManager from '@/utils/tokenRefreshManager';
 import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './request-error-config';
-import { initMonitor } from '@/utils/monitor';
 
 // 初始化性能监控（Web Vitals）
 initMonitor();
@@ -146,45 +146,45 @@ export async function getInitialState(): Promise<{
       }
     }
 
-try {
-       // 关键优化：用户信息、菜单、权限三个请求完全并行，无依赖关系
-       const [userResult, menuResult, permResult] = await Promise.allSettled([
-         queryCurrentUser(),
-         getUserMenus({ skipErrorHandler: true }),
-         getMyPermissions(),
-       ] as const);
+    try {
+      // 关键优化：用户信息、菜单、权限三个请求完全并行，无依赖关系
+      const [userResult, menuResult, permResult] = await Promise.allSettled([
+        queryCurrentUser(),
+        getUserMenus({ skipErrorHandler: true }),
+        getMyPermissions(),
+      ] as const);
 
-       // 用户信息请求失败
-       if (userResult.status !== 'fulfilled' || !(userResult.value?.success)) {
-         tokenUtils.clearAllTokens();
-         return undefined;
-       }
+      // 用户信息请求失败
+      if (userResult.status !== 'fulfilled' || !userResult.value?.success) {
+        tokenUtils.clearAllTokens();
+        return undefined;
+      }
 
-       const userInfo = userResult.value.data;
+      const userInfo = userResult.value.data;
 
-       // 检查用户是否有效
-       if (!userInfo || userInfo.isLogin === false) {
-         tokenUtils.clearAllTokens();
-         return undefined;
-       }
+      // 检查用户是否有效
+      if (!userInfo || userInfo.isLogin === false) {
+        tokenUtils.clearAllTokens();
+        return undefined;
+      }
 
-// 处理菜单
-        if (menuResult.status === 'fulfilled' && menuResult.value?.success) {
-          const menuData = (menuResult.value as ApiResponse<MenuTreeNode[]>)?.data;
-          if (Array.isArray(menuData)) {
-            userInfo.menus = menuData;
-          }
+      // 处理菜单
+      if (menuResult.status === 'fulfilled' && menuResult.value?.success) {
+        const menuData = (menuResult.value as ApiResponse<MenuTreeNode[]>)?.data;
+        if (Array.isArray(menuData)) {
+          userInfo.menus = menuData;
         }
+      }
 
-       // 处理权限
-       if (permResult.status === 'fulfilled' && permResult.value?.success) {
-         const permData = (permResult.value as ApiResponse<{ allPermissionCodes: string[] }>)?.data;
-         if (permData) {
-           userInfo.permissions = permData.allPermissionCodes || [];
-         }
-       }
+      // 处理权限
+      if (permResult.status === 'fulfilled' && permResult.value?.success) {
+        const permData = (permResult.value as ApiResponse<{ allPermissionCodes: string[] }>)?.data;
+        if (permData) {
+          userInfo.permissions = permData.allPermissionCodes || [];
+        }
+      }
 
-       return userInfo;
+      return userInfo;
     } catch (_error) {
       tokenUtils.clearAllTokens();
       return undefined;
@@ -331,7 +331,7 @@ function convertMenuTreeToProLayout(menus: MenuTreeNode[], depth = 1): any[] {
     });
 }
 
-const LocationReporter = ({ currentUser, location }: { currentUser: CurrentUser | undefined; location: Location }) => {
+const LocationReporter = ({ currentUser, location }: { currentUser: CurrentUser | undefined; location: { pathname: string } }) => {
   const hasStartedRef = useRef(false);
 
   useEffect(() => {
@@ -492,7 +492,7 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
 pageContainerProps: {
        breadcrumbRender: false,
        header: {
-         title: '',
+         title: undefined,
        },
      },
     headerTitleRender: (logo: React.ReactNode, _: unknown, props: { collapsed?: boolean }) => {
@@ -716,7 +716,7 @@ export const request: RequestConfig = {
       }
       const token = tokenUtils.getToken();
       if (process.env.NODE_ENV === 'development' && config.url?.includes('current-user')) {
-        console.log('[RequestInterceptor] Adding token:', token?.substring(0, 20) + '...');
+        console.log('[RequestInterceptor] Adding token:', `${token?.substring(0, 20)}...`);
       }
       if (token) {
         config.headers = {

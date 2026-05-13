@@ -1,20 +1,28 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import { AlertOutlined, CheckOutlined, SearchOutlined } from '@ant-design/icons';
+import { ModalForm, ProForm, ProFormTextArea } from '@ant-design/pro-components/es/form';
+import { ActionType, type ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useIntl } from '@umijs/max';
-import { ModalForm, ProFormTextArea, ProForm } from '@ant-design/pro-components/es/form';
-import { ActionType, ProTable, type ProColumns } from '@ant-design/pro-components/es/table';
 import { Button, Grid, Input, Space, Tag } from 'antd';
-import { CheckOutlined, AlertOutlined, CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { iotService, IoTDeviceEvent, IoTDevice } from '@/services/iotService';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useMessage } from '@/hooks/useMessage';
+import { IoTDevice, IoTDeviceEvent, iotService } from '@/services/iotService';
 
 const { useBreakpoint } = Grid;
 
-export interface EventManagementRef { reload: () => void; refreshStats: () => void; }
+export interface EventManagementRef {
+  reload: () => void;
+  refreshStats: () => void;
+}
 
-const LEVEL_MAP: Record<string, { color: string; label: string }> = { Info: { color: 'blue', label: '信息' }, Warning: { color: 'orange', label: '警告' }, Error: { color: 'red', label: '错误' }, Critical: { color: 'red', label: '严重' } };
+const LEVEL_MAP: Record<string, { color: string; label: string }> = {
+  Info: { color: 'blue', label: '信息' },
+  Warning: { color: 'orange', label: '警告' },
+  Error: { color: 'red', label: '错误' },
+  Critical: { color: 'red', label: '严重' },
+};
 
-const EventManagement = React.forwardRef<EventManagementRef, any>((props, ref) => {
+const EventManagement = React.forwardRef<EventManagementRef, any>((_props, _ref) => {
   const intl = useIntl();
   const message = useMessage();
   const screens = useBreakpoint();
@@ -29,61 +37,133 @@ const EventManagement = React.forwardRef<EventManagementRef, any>((props, ref) =
     formVisible: false,
     search: '',
   });
-  const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
+  const set = useCallback((partial: Partial<typeof state>) => setState((prev) => ({ ...prev, ...partial })), []);
 
   const fetchStatistics = useCallback(async () => {
     try {
       const response = await iotService.getUnhandledEventCount();
-      if (response.success && response.data) set({ statistics: { total: 0, unhandled: response.data.count || 0, handled: 0, critical: 0 } });
+      if (response.success && response.data)
+        set({ statistics: { total: 0, unhandled: response.data.count || 0, handled: 0, critical: 0 } });
     } catch {}
-  }, []);
+  }, [set]);
 
   const loadDevices = useCallback(async () => {
     try {
       const response = await iotService.getDevices({});
       if (response.success && response.data) set({ devices: response.data.queryable || [] });
     } catch {}
-  }, []);
+  }, [set]);
 
-  useEffect(() => { loadDevices(); fetchStatistics(); }, [loadDevices, fetchStatistics]);
+  useEffect(() => {
+    loadDevices();
+    fetchStatistics();
+  }, [loadDevices, fetchStatistics]);
 
   const columns: ProColumns<IoTDeviceEvent>[] = [
-    { title: intl.formatMessage({ id: 'pages.iotPlatform.event.device' }), dataIndex: 'deviceId', sorter: true, render: (dom) => state.devices.find(d => d.deviceId === dom)?.title || dom },
+    {
+      title: intl.formatMessage({ id: 'pages.iotPlatform.event.device' }),
+      dataIndex: 'deviceId',
+      sorter: true,
+      render: (dom) => state.devices.find((d) => d.deviceId === dom)?.title || dom,
+    },
     { title: intl.formatMessage({ id: 'pages.iotPlatform.event.eventType' }), dataIndex: 'eventType', sorter: true },
-    { title: intl.formatMessage({ id: 'pages.iotPlatform.event.level' }), dataIndex: 'level', sorter: true, render: (dom) => { const config = LEVEL_MAP[dom as string] || { color: 'default', label: dom as string }; return <Tag color={config.color}>{config.label}</Tag>; } },
-    { title: intl.formatMessage({ id: 'pages.iotPlatform.event.description' }), dataIndex: 'description', sorter: true, ellipsis: true },
-    { title: intl.formatMessage({ id: 'pages.iotPlatform.event.occurredAt' }), dataIndex: 'occurredAt', sorter: true, render: (dom) => dom ? dayjs(dom as string).format('YYYY-MM-DD HH:mm:ss') : '-' },
-    { title: intl.formatMessage({ id: 'pages.iotPlatform.event.status' }), dataIndex: 'isHandled', sorter: true, render: (dom) => <Tag color={dom ? 'green' : 'red'}>{dom ? intl.formatMessage({ id: 'pages.iotPlatform.event.handled' }) : intl.formatMessage({ id: 'pages.iotPlatform.event.unhandled' })}</Tag> },
-    { title: intl.formatMessage({ id: 'pages.iotPlatform.table.action' }), valueType: 'option', fixed: 'right', width: 180, render: (_, record) => !record.isHandled ? (
-      <Button type="link" size="small" icon={<CheckOutlined />} onClick={() => set({ editingEvent: record, formVisible: true })}>{intl.formatMessage({ id: 'pages.iotPlatform.event.handle' })}</Button>
-    ) : null },
+    {
+      title: intl.formatMessage({ id: 'pages.iotPlatform.event.level' }),
+      dataIndex: 'level',
+      sorter: true,
+      render: (dom) => {
+        const config = LEVEL_MAP[dom as string] || { color: 'default', label: dom as string };
+        return <Tag color={config.color}>{config.label}</Tag>;
+      },
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.iotPlatform.event.description' }),
+      dataIndex: 'description',
+      sorter: true,
+      ellipsis: true,
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.iotPlatform.event.occurredAt' }),
+      dataIndex: 'occurredAt',
+      sorter: true,
+      render: (dom) => (dom ? dayjs(dom as string).format('YYYY-MM-DD HH:mm:ss') : '-'),
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.iotPlatform.event.status' }),
+      dataIndex: 'isHandled',
+      sorter: true,
+      render: (dom) => (
+        <Tag color={dom ? 'green' : 'red'}>
+          {dom
+            ? intl.formatMessage({ id: 'pages.iotPlatform.event.handled' })
+            : intl.formatMessage({ id: 'pages.iotPlatform.event.unhandled' })}
+        </Tag>
+      ),
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.iotPlatform.table.action' }),
+      valueType: 'option',
+      fixed: 'right',
+      width: 180,
+      render: (_, record) =>
+        !record.isHandled ? (
+          <Button
+            type="link"
+            size="small"
+            icon={<CheckOutlined />}
+            onClick={() => set({ editingEvent: record, formVisible: true })}
+          >
+            {intl.formatMessage({ id: 'pages.iotPlatform.event.handle' })}
+          </Button>
+        ) : null,
+    },
   ];
 
-  const handleSubmit = useCallback(async (values: any) => {
-    if (!state.editingEvent) return;
-    const res = await iotService.handleEvent(state.editingEvent.id, values.remarks || '');
-    if (res.success) message.success(intl.formatMessage({ id: 'pages.iotPlatform.event.message.handled' }));
-    set({ formVisible: false, editingEvent: null });
-    actionRef.current?.reload();
-    fetchStatistics();
-  }, [state.editingEvent, fetchStatistics]);
+  const handleSubmit = useCallback(
+    async (values: any) => {
+      if (!state.editingEvent) return;
+      const res = await iotService.handleEvent(state.editingEvent.id, values.remarks || '');
+      if (res.success) message.success(intl.formatMessage({ id: 'pages.iotPlatform.event.message.handled' }));
+      set({ formVisible: false, editingEvent: null });
+      actionRef.current?.reload();
+      fetchStatistics();
+    },
+    [state.editingEvent, fetchStatistics, set, message.success, intl.formatMessage],
+  );
 
   return (
     <>
-      <ProTable actionRef={actionRef} headerTitle={
-        <Space size={24}>
-          <Space><AlertOutlined />{intl.formatMessage({ id: 'pages.iotPlatform.event.tabTitle' })}</Space>
-          <Space size={12}>
-            <Tag color="blue">{intl.formatMessage({ id: 'pages.iotPlatform.statistics.total' })} {state.statistics?.total || 0}</Tag>
-            <Tag color="red">{intl.formatMessage({ id: 'pages.iotPlatform.event.unhandled' })} {state.statistics?.unhandled || 0}</Tag>
-            <Tag color="green">{intl.formatMessage({ id: 'pages.iotPlatform.event.handled' })} {state.statistics?.handled || 0}</Tag>
-            <Tag color="orange">{intl.formatMessage({ id: 'pages.iotPlatform.event.critical' })} {state.statistics?.critical || 0}</Tag>
+      <ProTable
+        actionRef={actionRef}
+        headerTitle={
+          <Space size={24}>
+            <Space>
+              <AlertOutlined />
+              {intl.formatMessage({ id: 'pages.iotPlatform.event.tabTitle' })}
+            </Space>
+            <Space size={12}>
+              <Tag color="blue">
+                {intl.formatMessage({ id: 'pages.iotPlatform.statistics.total' })} {state.statistics?.total || 0}
+              </Tag>
+              <Tag color="red">
+                {intl.formatMessage({ id: 'pages.iotPlatform.event.unhandled' })} {state.statistics?.unhandled || 0}
+              </Tag>
+              <Tag color="green">
+                {intl.formatMessage({ id: 'pages.iotPlatform.event.handled' })} {state.statistics?.handled || 0}
+              </Tag>
+              <Tag color="orange">
+                {intl.formatMessage({ id: 'pages.iotPlatform.event.critical' })} {state.statistics?.critical || 0}
+              </Tag>
+            </Space>
           </Space>
-        </Space>
-      } request={async (params: any, sort: any, filter: any) => {
-        const res = await iotService.queryEvents({ ...params, search: state.search, sort, filter });
-        return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
-      }} columns={columns} rowKey="id" search={false}
+        }
+        request={async (params: any, sort: any, filter: any) => {
+          const res = await iotService.queryEvents({ ...params, search: state.search, sort, filter });
+          return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+        }}
+        columns={columns}
+        rowKey="id"
+        search={false}
         scroll={{ x: 'max-content' }}
         toolBarRender={() => [
           <Input.Search
@@ -92,24 +172,55 @@ const EventManagement = React.forwardRef<EventManagementRef, any>((props, ref) =
             allowClear
             value={state.search}
             onChange={(e) => set({ search: e.target.value })}
-            onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+            onSearch={(value) => {
+              set({ search: value });
+              actionRef.current?.reload();
+            }}
             style={{ width: 260, marginRight: 8 }}
             prefix={<SearchOutlined />}
           />,
         ]}
       />
 
-      <ModalForm key={state.editingEvent?.id || 'handle'} title={intl.formatMessage({ id: 'pages.iotPlatform.event.handle' })} open={state.formVisible} onOpenChange={(open) => { if (!open) set({ formVisible: false, editingEvent: null }); }}
-        form={form} onFinish={handleSubmit} width={isMobile ? '100%' : 600}
+      <ModalForm
+        key={state.editingEvent?.id || 'handle'}
+        title={intl.formatMessage({ id: 'pages.iotPlatform.event.handle' })}
+        open={state.formVisible}
+        onOpenChange={(open) => {
+          if (!open) set({ formVisible: false, editingEvent: null });
+        }}
+        form={form}
+        onFinish={handleSubmit}
+        width={isMobile ? '100%' : 600}
       >
         {state.editingEvent && (
           <>
-            <div style={{ marginBottom: 16 }}><div style={{ color: '#666', marginBottom: 4 }}>{intl.formatMessage({ id: 'pages.iotPlatform.event.eventType' })}</div><div style={{ fontSize: 14 }}>{state.editingEvent.eventType}</div></div>
-            <div style={{ marginBottom: 16 }}><div style={{ color: '#666', marginBottom: 4 }}>{intl.formatMessage({ id: 'pages.iotPlatform.event.description' })}</div><div style={{ fontSize: 14 }}>{state.editingEvent.description}</div></div>
-            <div style={{ marginBottom: 16 }}><div style={{ color: '#666', marginBottom: 4 }}>{intl.formatMessage({ id: 'pages.iotPlatform.event.occurredAt' })}</div><div style={{ fontSize: 14 }}>{dayjs(state.editingEvent.occurredAt).format('YYYY-MM-DD HH:mm:ss')}</div></div>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ color: '#666', marginBottom: 4 }}>
+                {intl.formatMessage({ id: 'pages.iotPlatform.event.eventType' })}
+              </div>
+              <div style={{ fontSize: 14 }}>{state.editingEvent.eventType}</div>
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ color: '#666', marginBottom: 4 }}>
+                {intl.formatMessage({ id: 'pages.iotPlatform.event.description' })}
+              </div>
+              <div style={{ fontSize: 14 }}>{state.editingEvent.description}</div>
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ color: '#666', marginBottom: 4 }}>
+                {intl.formatMessage({ id: 'pages.iotPlatform.event.occurredAt' })}
+              </div>
+              <div style={{ fontSize: 14 }}>{dayjs(state.editingEvent.occurredAt).format('YYYY-MM-DD HH:mm:ss')}</div>
+            </div>
           </>
         )}
-        <ProFormTextArea name="remarks" label={intl.formatMessage({ id: 'pages.iotPlatform.event.remarks' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.iotPlatform.event.remarksRequired' }) }]} placeholder={intl.formatMessage({ id: 'pages.iotPlatform.event.remarksPlaceholder' })} />
+        <ProFormTextArea
+          name="remarks"
+          label={intl.formatMessage({ id: 'pages.iotPlatform.event.remarks' })}
+          rules={[{ required: true, message: intl.formatMessage({ id: 'pages.iotPlatform.event.remarksRequired' }) }]}
+          placeholder={intl.formatMessage({ id: 'pages.iotPlatform.event.remarksPlaceholder' })}
+        />
       </ModalForm>
     </>
   );
@@ -117,4 +228,3 @@ const EventManagement = React.forwardRef<EventManagementRef, any>((props, ref) =
 
 EventManagement.displayName = 'EventManagement';
 export default EventManagement;
-

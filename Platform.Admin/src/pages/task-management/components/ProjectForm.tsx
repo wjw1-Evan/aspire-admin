@@ -1,19 +1,25 @@
-import React, { useEffect, useState } from 'react';
-import { useIntl } from '@umijs/max';
-import { ModalForm, ProFormText, ProFormTextArea, ProFormSelect, ProFormDatePicker, ProFormDigit } from '@ant-design/pro-components/es/form';
-import type { Dayjs } from 'dayjs';
-import type { AppUser } from '@/services/user/api';
 import {
-  createProject,
-  updateProject,
-  type ProjectDto,
-  type CreateProjectRequest,
-  type UpdateProjectRequest,
-  ProjectStatus,
-  ProjectPriority,
-} from '@/services/task/project';
-import { getUserList } from '@/services/user/api';
+  ModalForm,
+  ProFormDatePicker,
+  ProFormDigit,
+  ProFormSelect,
+  ProFormText,
+  ProFormTextArea,
+} from '@ant-design/pro-components/es/form';
+import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
+import React, { useEffect, useState } from 'react';
+import {
+  type CreateProjectRequest,
+  createProject,
+  type ProjectDto,
+  ProjectPriority,
+  ProjectStatus,
+  type UpdateProjectRequest,
+  updateProject,
+} from '@/services/task/project';
+import type { AppUser } from '@/services/user/api';
+import { getUserList } from '@/services/user/api';
 
 interface ProjectFormProps {
   open?: boolean;
@@ -25,20 +31,22 @@ interface ProjectFormProps {
 const ProjectForm: React.FC<ProjectFormProps> = ({ open, project, onSuccess, onCancel }) => {
   const intl = useIntl();
   const isEditing = !!project;
-  const [users, setUsers] = useState<AppUser[]>([]);
+  const [_users, setUsers] = useState<AppUser[]>([]);
   const [userOptions, setUserOptions] = useState<{ label: string; value: string }[]>([]);
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const response = await getUserList({});
-        if (response.success && response.data && response.data.queryable) {
+        if (response.success && response.data?.queryable) {
           const userList = response.data.queryable;
           setUsers(userList);
-          setUserOptions(userList.map((user: AppUser) => ({
-            label: user.name || user.username || '',
-            value: user.id
-          })));
+          setUserOptions(
+            userList.map((user: AppUser) => ({
+              label: user.name || user.username || '',
+              value: user.id,
+            })),
+          );
         }
       } catch (error) {
         console.error('获取用户列表失败:', error);
@@ -55,8 +63,16 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ open, project, onSuccess, onC
         name: values.name,
         description: values.description,
         status: values.status ?? ProjectStatus.Planning,
-        startDate: values.startDate ? (dayjs.isDayjs(values.startDate) ? values.startDate.format('YYYY-MM-DD') : values.startDate) : undefined,
-        endDate: values.endDate ? (dayjs.isDayjs(values.endDate) ? values.endDate.format('YYYY-MM-DD') : values.endDate) : undefined,
+        startDate: values.startDate
+          ? dayjs.isDayjs(values.startDate)
+            ? values.startDate.format('YYYY-MM-DD')
+            : values.startDate
+          : undefined,
+        endDate: values.endDate
+          ? dayjs.isDayjs(values.endDate)
+            ? values.endDate.format('YYYY-MM-DD')
+            : values.endDate
+          : undefined,
         memberIds: values.memberIds,
         budget: values.budget,
         priority: values.priority ?? ProjectPriority.Medium,
@@ -83,25 +99,33 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ open, project, onSuccess, onC
     }
   };
 
-  const initialValues = project ? {
-    name: project.name,
-    description: project.description,
-    status: project.status,
-    startDate: project.startDate ? dayjs(project.startDate) : undefined,
-    endDate: project.endDate ? dayjs(project.endDate) : undefined,
-    memberIds: project.memberIds,
-    budget: project.budget,
-    priority: project.priority,
-  } : {
-    status: ProjectStatus.Planning,
-    priority: ProjectPriority.Medium,
-  };
+  const initialValues = project
+    ? {
+        name: project.name,
+        description: project.description,
+        status: project.status,
+        startDate: project.startDate ? dayjs(project.startDate) : undefined,
+        endDate: project.endDate ? dayjs(project.endDate) : undefined,
+        memberIds: project.memberIds,
+        budget: project.budget,
+        priority: project.priority,
+      }
+    : {
+        status: ProjectStatus.Planning,
+        priority: ProjectPriority.Medium,
+      };
 
   return (
     <ModalForm
-      title={isEditing ? intl.formatMessage({ id: 'pages.task.project.editTitle' }) : intl.formatMessage({ id: 'pages.task.project.createTitle' })}
+      title={
+        isEditing
+          ? intl.formatMessage({ id: 'pages.task.project.editTitle' })
+          : intl.formatMessage({ id: 'pages.task.project.createTitle' })
+      }
       open={open}
-      onOpenChange={(isOpen) => { if (!isOpen) onCancel(); }}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) onCancel();
+      }}
       onFinish={handleSubmit}
       initialValues={initialValues}
       autoFocusFirstInput
@@ -148,7 +172,11 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ open, project, onSuccess, onC
         label={intl.formatMessage({ id: 'pages.task.project.members' })}
         placeholder={intl.formatMessage({ id: 'pages.task.project.selectMembers' })}
         options={userOptions}
-        fieldProps={{ allowClear: true, mode: 'multiple', placeholder: intl.formatMessage({ id: 'pages.task.project.selectMembers' }) }}
+        fieldProps={{
+          allowClear: true,
+          mode: 'multiple',
+          placeholder: intl.formatMessage({ id: 'pages.task.project.selectMembers' }),
+        }}
       />
 
       <ProFormDatePicker

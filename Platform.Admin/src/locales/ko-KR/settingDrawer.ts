@@ -29,10 +29,8 @@ export default {
   'app.setting.othersettings': '기타 설정',
   'app.setting.weakmode': '색약 모드',
   'app.setting.copy': '설정 복사',
-  'app.setting.copyinfo':
-    '복사 성공. config/defaultSettings.js의 기본 설정을 교체해 주세요.',
-  'app.setting.production.hint':
-    '설정 패널은 개발 환경에서만 표시됩니다. 직접 수정해 주세요.',
+  'app.setting.copyinfo': '복사 성공. config/defaultSettings.js의 기본 설정을 교체해 주세요.',
+  'app.setting.production.hint': '설정 패널은 개발 환경에서만 표시됩니다. 직접 수정해 주세요.',
   'app.setting.themeChangeHint': '테마가 변경되었습니다. 새 테마를 적용하려면 페이지를 새로 고침하세요.',
   'app.setting.themeChangeSuccess': '테마가 성공적으로 변경되었습니다',
 };

@@ -1,13 +1,10 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate, history } from '@umijs/max';
-import { Space, Typography, Button, Spin, Result, Card, Row, Col, Empty, Grid } from 'antd';
-import { ArrowLeftOutlined, ReloadOutlined, DashboardOutlined } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
+import { ArrowLeftOutlined, ReloadOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { request } from '@umijs/max';
-import { useIntl } from '@umijs/max';
-import type { ApiResponse } from '@/types';
+import { history, request, useIntl, useNavigate, useParams } from '@umijs/max';
+import { Button, Card, Col, Empty, Grid, Result, Row, Space, Spin, Typography } from 'antd';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useMessage } from '@/hooks/useMessage';
+import type { ApiResponse } from '@/types';
 
 const { useBreakpoint } = Grid;
 const { Title } = Typography;
@@ -47,30 +44,26 @@ interface CardDataResponse {
 
 const api = {
   get: (id: string) => request<ApiResponse<Dashboard>>(`/apiservice/api/dashboard/${id}`),
-  getCardData: (cardId: string) => request<ApiResponse<CardDataResponse>>(`/apiservice/api/dashboard/cards/${cardId}/data`),
-  refreshCardData: (cardId: string) => request<ApiResponse<CardDataResponse>>(`/apiservice/api/dashboard/cards/${cardId}/refresh`, { method: 'POST' }),
+  getCardData: (cardId: string) =>
+    request<ApiResponse<CardDataResponse>>(`/apiservice/api/dashboard/cards/${cardId}/data`),
+  refreshCardData: (cardId: string) =>
+    request<ApiResponse<CardDataResponse>>(`/apiservice/api/dashboard/cards/${cardId}/refresh`, { method: 'POST' }),
 };
 
 const DashboardViewPage: React.FC = () => {
   const intl = useIntl();
   const message = useMessage();
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const screens = useBreakpoint();
-  const isMobile = !screens.md;
+  const _isMobile = !screens.md;
 
   const [state, setState] = useState({
     loading: true,
     dashboard: null as Dashboard | null,
     cardDataMap: new Map<string, CardDataResponse>(),
   });
-  const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
-
-  useEffect(() => {
-    if (id) {
-      loadDashboard();
-    }
-  }, [id]);
+  const set = useCallback((partial: Partial<typeof state>) => setState((prev) => ({ ...prev, ...partial })), []);
 
   const loadDashboard = async () => {
     if (!id) return;
@@ -89,6 +82,12 @@ const DashboardViewPage: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (id) {
+      loadDashboard();
+    }
+  }, [id, loadDashboard]);
+
   const loadAllCardsData = async (cards: DashboardCard[]) => {
     for (const card of cards) {
       await loadCardData(card.id);
@@ -99,7 +98,7 @@ const DashboardViewPage: React.FC = () => {
     try {
       const res = await api.getCardData(cardId);
       if (res.success && res.data) {
-        setState(prev => ({
+        setState((prev) => ({
           ...prev,
           cardDataMap: new Map(prev.cardDataMap).set(cardId, res.data!),
         }));
@@ -113,13 +112,13 @@ const DashboardViewPage: React.FC = () => {
     try {
       const res = await api.refreshCardData(cardId);
       if (res.success && res.data) {
-        setState(prev => ({
+        setState((prev) => ({
           ...prev,
           cardDataMap: new Map(prev.cardDataMap).set(cardId, res.data!),
         }));
         message.success(intl.formatMessage({ id: 'pages.dashboard.refreshSuccess' }));
       }
-    } catch (error) {
+    } catch (_error) {
       message.error(intl.formatMessage({ id: 'pages.dashboard.refreshFailed' }));
     }
   };
@@ -139,21 +138,26 @@ const DashboardViewPage: React.FC = () => {
         key={card.id}
         title={card.title}
         extra={
-          <Button
-            type="link"
-            size="small"
-            icon={<ReloadOutlined />}
-            onClick={() => handleRefresh(card.id)}
-          >
+          <Button type="link" size="small" icon={<ReloadOutlined />} onClick={() => handleRefresh(card.id)}>
             {intl.formatMessage({ id: 'pages.dashboard.refresh' })}
           </Button>
         }
         style={{ height: '100%' }}
       >
-        <div style={{ height: card.height * 100 - 60, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div
+          style={{ height: card.height * 100 - 60, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
           {cardData ? (
             <div style={{ width: '100%', textAlign: 'center' }}>
-              <pre style={{ textAlign: 'left', maxHeight: '100%', overflow: 'auto', fontSize: '12px', fontFamily: 'monospace' }}>
+              <pre
+                style={{
+                  textAlign: 'left',
+                  maxHeight: '100%',
+                  overflow: 'auto',
+                  fontSize: '12px',
+                  fontFamily: 'monospace',
+                }}
+              >
                 {JSON.stringify(cardData.data, null, 2)}
               </pre>
             </div>
@@ -203,18 +207,13 @@ const DashboardViewPage: React.FC = () => {
             {state.dashboard.name}
           </Title>
         </Space>
-        <Button
-          icon={<ReloadOutlined />}
-          onClick={handleRefreshAll}
-        >
+        <Button icon={<ReloadOutlined />} onClick={handleRefreshAll}>
           {intl.formatMessage({ id: 'pages.dashboard.refreshAll' })}
         </Button>
       </div>
 
       {state.dashboard.description && (
-        <div style={{ marginBottom: 16, color: '#666' }}>
-          {state.dashboard.description}
-        </div>
+        <div style={{ marginBottom: 16, color: '#666' }}>{state.dashboard.description}</div>
       )}
 
       {state.dashboard.cards.length === 0 ? (
@@ -224,7 +223,7 @@ const DashboardViewPage: React.FC = () => {
         />
       ) : (
         <Row gutter={[16, 16]}>
-          {state.dashboard.cards.map(card => (
+          {state.dashboard.cards.map((card) => (
             <Col key={card.id} xs={24} sm={12} md={8} lg={6}>
               {renderCard(card)}
             </Col>

@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { Button, Modal, Form, Input, App } from 'antd';
 import { useIntl } from '@umijs/max';
+import { App, Form, Input, Modal } from 'antd';
+import React, { useState } from 'react';
 import { FormDesigner } from '@/pages/workflow/forms/FormDesigner';
-import { createForm, updateForm } from '@/services/form/api';
-import type { FormDefinition as ApiFormDefinition } from '@/services/form/api';
 import type { FormDefinition } from '@/pages/workflow/forms/types';
+import type { FormDefinition as ApiFormDefinition } from '@/services/form/api';
+import { createForm, updateForm } from '@/services/form/api';
 
 interface FormDesignerDialogProps {
   visible: boolean;
@@ -16,11 +16,16 @@ interface FormDesignerDialogProps {
 const FormDesignerDialog: React.FC<FormDesignerDialogProps> = ({ visible, editingForm, onClose, onSuccess }) => {
   const intl = useIntl();
   const { message } = App.useApp();
-  const [saving, setSaving] = useState(false);
+  const [_saving, setSaving] = useState(false);
   const [name, setName] = useState(editingForm?.name || '');
-  const [designerForm, setDesignerForm] = useState<FormDefinition>(editingForm || {
-    name: '', version: 1, isActive: true, fields: [],
-  });
+  const [designerForm, setDesignerForm] = useState<FormDefinition>(
+    editingForm || {
+      name: '',
+      version: 1,
+      isActive: true,
+      fields: [],
+    },
+  );
   const [showNameInput, setShowNameInput] = useState(!editingForm);
 
   React.useEffect(() => {
@@ -82,7 +87,7 @@ const FormDesignerDialog: React.FC<FormDesignerDialogProps> = ({ visible, editin
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
-                setDesignerForm(prev => ({ ...prev, name: e.target.value }));
+                setDesignerForm((prev) => ({ ...prev, name: e.target.value }));
               }}
             />
           </Form.Item>
@@ -92,7 +97,9 @@ const FormDesignerDialog: React.FC<FormDesignerDialogProps> = ({ visible, editin
         <FormDesigner
           key={editingForm?.id || 'new'}
           form={designerForm}
-          onSave={(form) => { handleDesignerSave(form); }}
+          onSave={(form) => {
+            handleDesignerSave(form);
+          }}
           intl={intl}
         />
       </div>

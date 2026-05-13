@@ -61,7 +61,7 @@ export interface SystemResources {
     objectCount?: number;
     status: string;
   };
-timestamp: string;
+  timestamp: string;
 }
 
 /**
@@ -72,4 +72,3 @@ export async function getSystemStatus(): Promise<ApiResponse<SystemStatus>> {
     method: 'GET',
   });
 }
-

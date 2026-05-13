@@ -1,26 +1,14 @@
-import React, { useEffect, useRef, useState, useCallback, forwardRef } from 'react';
+import { DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined, SettingOutlined } from '@ant-design/icons';
+import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useIntl } from '@umijs/max';
-import { Button, Tag, Space, Form, Input } from 'antd';
-import {
-  EditOutlined,
-  DeleteOutlined,
-  SettingOutlined,
-  PlusOutlined,
-  SearchOutlined,
-} from '@ant-design/icons';
+import { Button, Input, Space, Tag } from 'antd';
+import dayjs from 'dayjs';
+import React, { useCallback, useRef, useState } from 'react';
 import { useMessage } from '@/hooks/useMessage';
 import { useModal } from '@/hooks/useModal';
+import { deleteXiaokeConfig, getXiaokeConfigs, setDefaultXiaokeConfig, type XiaokeConfig } from '@/services/xiaoke/api';
 import { getErrorMessage } from '@/utils/getErrorMessage';
-import {
-  getXiaokeConfigs,
-  deleteXiaokeConfig,
-  setDefaultXiaokeConfig,
-  type XiaokeConfig,
-} from '@/services/xiaoke/api';
 import ConfigForm from './ConfigForm';
-import dayjs from 'dayjs';
-import { ProTable, ProColumns, ActionType } from '@ant-design/pro-components/es/table';
-
 
 const ConfigManagement: React.FC = () => {
   const intl = useIntl();
@@ -41,42 +29,52 @@ const ConfigManagement: React.FC = () => {
     setFormVisible(true);
   }, []);
 
-  const handleDelete = useCallback((record: XiaokeConfig) => {
-    confirm({
-      title: intl.formatMessage({ id: 'pages.xiaokeManagement.config.modal.confirmDelete' }),
-      content: intl.formatMessage(
-        { id: 'pages.xiaokeManagement.config.modal.confirmDeleteContent' },
-        { name: record.name },
-      ),
-      onOk: async () => {
-        try {
-          const response = await deleteXiaokeConfig(record.id);
-          if (response.success) {
-            message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.deleteSuccess' }));
-            actionRef.current?.reload();
-          } else {
-            message.error(getErrorMessage(response, 'pages.xiaokeManagement.config.message.deleteFailed'));
+  const handleDelete = useCallback(
+    (record: XiaokeConfig) => {
+      confirm({
+        title: intl.formatMessage({ id: 'pages.xiaokeManagement.config.modal.confirmDelete' }),
+        content: intl.formatMessage(
+          { id: 'pages.xiaokeManagement.config.modal.confirmDeleteContent' },
+          { name: record.name },
+        ),
+        onOk: async () => {
+          try {
+            const response = await deleteXiaokeConfig(record.id);
+            if (response.success) {
+              message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.deleteSuccess' }));
+              actionRef.current?.reload();
+            } else {
+              message.error(getErrorMessage(response, 'pages.xiaokeManagement.config.message.deleteFailed'));
+            }
+          } catch (error: any) {
+            message.error(
+              error.message || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.deleteFailed' }),
+            );
           }
-        } catch (error: any) {
-          message.error(error.message || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.deleteFailed' }));
-        }
-      },
-    });
-  }, [intl, message, confirm]);
+        },
+      });
+    },
+    [intl, message, confirm],
+  );
 
-  const handleSetDefault = useCallback(async (record: XiaokeConfig) => {
-    try {
-      const response = await setDefaultXiaokeConfig(record.id);
-      if (response.success) {
-        message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.setDefaultSuccess' }));
-        actionRef.current?.reload();
-      } else {
-        message.error(getErrorMessage(response, 'pages.xiaokeManagement.config.message.setDefaultFailed'));
+  const handleSetDefault = useCallback(
+    async (record: XiaokeConfig) => {
+      try {
+        const response = await setDefaultXiaokeConfig(record.id);
+        if (response.success) {
+          message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.setDefaultSuccess' }));
+          actionRef.current?.reload();
+        } else {
+          message.error(getErrorMessage(response, 'pages.xiaokeManagement.config.message.setDefaultFailed'));
+        }
+      } catch (error: any) {
+        message.error(
+          error.message || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.setDefaultFailed' }),
+        );
       }
-    } catch (error: any) {
-      message.error(error.message || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.setDefaultFailed' }));
-    }
-  }, [intl, message]);
+    },
+    [intl, message],
+  );
 
   const handleFormSuccess = useCallback(() => {
     setFormVisible(false);
@@ -126,7 +124,7 @@ const ConfigManagement: React.FC = () => {
       key: 'isEnabled',
       width: 100,
       sorter: true,
-      render: (dom: any, record: XiaokeConfig) => (
+      render: (_dom: any, record: XiaokeConfig) => (
         <Tag color={record.isEnabled ? 'success' : 'default'}>
           {record.isEnabled
             ? intl.formatMessage({ id: 'pages.xiaokeManagement.config.status.enabled' })
@@ -140,7 +138,7 @@ const ConfigManagement: React.FC = () => {
       key: 'isDefault',
       width: 100,
       sorter: true,
-      render: (dom: any, record: XiaokeConfig) => (
+      render: (_dom: any, record: XiaokeConfig) => (
         <Tag color={record.isDefault ? 'blue' : 'default'}>
           {record.isDefault
             ? intl.formatMessage({ id: 'pages.xiaokeManagement.config.isDefault.yes' })
@@ -163,31 +161,15 @@ const ConfigManagement: React.FC = () => {
       fixed: 'right',
       render: (_: any, record: XiaokeConfig) => (
         <Space>
-          <Button
-            type="link"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-          >
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
             {intl.formatMessage({ id: 'pages.xiaokeManagement.config.table.action.edit' })}
           </Button>
           {!record.isDefault && (
-            <Button
-              type="link"
-              size="small"
-              icon={<SettingOutlined />}
-              onClick={() => handleSetDefault(record)}
-            >
+            <Button type="link" size="small" icon={<SettingOutlined />} onClick={() => handleSetDefault(record)}>
               {intl.formatMessage({ id: 'pages.xiaokeManagement.config.setDefault' })}
             </Button>
           )}
-          <Button
-            type="link"
-            size="small"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record)}
-          >
+          <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)}>
             {intl.formatMessage({ id: 'pages.xiaokeManagement.config.table.action.delete' })}
           </Button>
         </Space>
@@ -200,7 +182,10 @@ const ConfigManagement: React.FC = () => {
       <ProTable<XiaokeConfig>
         headerTitle={
           <Space size={24}>
-            <Space><SettingOutlined />{intl.formatMessage({ id: 'pages.xiaokeManagement.config.title' })}</Space>
+            <Space>
+              <SettingOutlined />
+              {intl.formatMessage({ id: 'pages.xiaokeManagement.config.title' })}
+            </Space>
           </Space>
         }
         actionRef={actionRef}
@@ -222,7 +207,10 @@ const ConfigManagement: React.FC = () => {
             allowClear
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            onSearch={(value) => { setSearchText(value); actionRef.current?.reload(); }}
+            onSearch={(value) => {
+              setSearchText(value);
+              actionRef.current?.reload();
+            }}
             style={{ width: 260, marginRight: 8 }}
             prefix={<SearchOutlined />}
           />,
@@ -235,7 +223,9 @@ const ConfigManagement: React.FC = () => {
       <ConfigForm
         config={editingConfig}
         open={formVisible}
-        onOpenChange={(open) => { if (!open) handleCloseForm(); }}
+        onOpenChange={(open) => {
+          if (!open) handleCloseForm();
+        }}
         onSuccess={handleFormSuccess}
       />
     </>

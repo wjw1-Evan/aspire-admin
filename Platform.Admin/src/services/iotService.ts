@@ -308,14 +308,12 @@ export const iotService = {
     return request<ApiResponse<PagedResult<IoTGateway>>>(url, { method: 'GET' });
   },
 
-  getGateway: (id: string) =>
-    request<ApiResponse<IoTGateway>>(`${API_PREFIX}/gateways/${id}`, { method: 'GET' }),
+  getGateway: (id: string) => request<ApiResponse<IoTGateway>>(`${API_PREFIX}/gateways/${id}`, { method: 'GET' }),
 
   updateGateway: (id: string, data: UpdateGatewayRequest) =>
     request<ApiResponse<IoTGateway>>(`${API_PREFIX}/gateways/${id}`, { method: 'PUT', data }),
 
-  deleteGateway: (id: string) =>
-    request<ApiResponse<void>>(`${API_PREFIX}/gateways/${id}`, { method: 'DELETE' }),
+  deleteGateway: (id: string) => request<ApiResponse<void>>(`${API_PREFIX}/gateways/${id}`, { method: 'DELETE' }),
 
   getGatewayStatistics: (gatewayId: string) =>
     request<ApiResponse<GatewayStatistics>>(`${API_PREFIX}/gateways/${gatewayId}/statistics`, { method: 'GET' }),
@@ -335,14 +333,12 @@ export const iotService = {
     return request<ApiResponse<PagedResult<IoTDevice>>>(url, { method: 'GET' });
   },
 
-  getDevice: (id: string) =>
-    request<ApiResponse<IoTDevice>>(`${API_PREFIX}/devices/${id}`, { method: 'GET' }),
+  getDevice: (id: string) => request<ApiResponse<IoTDevice>>(`${API_PREFIX}/devices/${id}`, { method: 'GET' }),
 
   updateDevice: (id: string, data: UpdateDeviceRequest) =>
     request<ApiResponse<IoTDevice>>(`${API_PREFIX}/devices/${id}`, { method: 'PUT', data }),
 
-  deleteDevice: (id: string) =>
-    request<ApiResponse<void>>(`${API_PREFIX}/devices/${id}`, { method: 'DELETE' }),
+  deleteDevice: (id: string) => request<ApiResponse<void>>(`${API_PREFIX}/devices/${id}`, { method: 'DELETE' }),
 
   /** 批量删除设备（传入 id 数组） */
   batchDeleteDevices: (ids: string[]) =>
@@ -405,14 +401,12 @@ export const iotService = {
     return request<ApiResponse<PagedResult<IoTDataPoint>>>(url, { method: 'GET' });
   },
 
-  getDataPoint: (id: string) =>
-    request<ApiResponse<IoTDataPoint>>(`${API_PREFIX}/datapoints/${id}`, { method: 'GET' }),
+  getDataPoint: (id: string) => request<ApiResponse<IoTDataPoint>>(`${API_PREFIX}/datapoints/${id}`, { method: 'GET' }),
 
   updateDataPoint: (id: string, data: UpdateDataPointRequest) =>
     request<ApiResponse<IoTDataPoint>>(`${API_PREFIX}/datapoints/${id}`, { method: 'PUT', data }),
 
-  deleteDataPoint: (id: string) =>
-    request<ApiResponse<void>>(`${API_PREFIX}/datapoints/${id}`, { method: 'DELETE' }),
+  deleteDataPoint: (id: string) => request<ApiResponse<void>>(`${API_PREFIX}/datapoints/${id}`, { method: 'DELETE' }),
 
   // ── Data Records ──────────────────────────────────────────────
   reportData: (data: ReportDataRequest) =>
@@ -438,7 +432,7 @@ export const iotService = {
   getDataStatistics: (dataPointId: string, startTime: string, endTime: string) =>
     request<ApiResponse<DataStatistics>>(
       `${API_PREFIX}/data/statistics/${dataPointId}?startTime=${startTime}&endTime=${endTime}`,
-      { method: 'GET' }
+      { method: 'GET' },
     ),
 
   // ── Events ────────────────────────────────────────────────────

@@ -1,10 +1,10 @@
-import React from 'react';
-import { Modal, Form, Input } from 'antd';
-import { useMessage } from '@/hooks/useMessage';
 import { useIntl } from '@umijs/max';
+import { Form, Input, Modal } from 'antd';
+import React from 'react';
+import { useMessage } from '@/hooks/useMessage';
 import { createCompany } from '@/services/company';
-import { getErrorMessage } from '@/utils/getErrorMessage';
 import type { CreateCompanyRequest } from '@/types';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 interface CreateCompanyModalProps {
   open: boolean;
@@ -15,11 +15,7 @@ interface CreateCompanyModalProps {
 /**
  * 新建企业模态框组件
  */
-export const CreateCompanyModal: React.FC<CreateCompanyModalProps> = ({
-  open,
-  onClose,
-  onSuccess,
-}) => {
+export const CreateCompanyModal: React.FC<CreateCompanyModalProps> = ({ open, onClose, onSuccess }) => {
   const intl = useIntl();
   const message = useMessage();
 
@@ -56,18 +52,14 @@ export const CreateCompanyModal: React.FC<CreateCompanyModalProps> = ({
           const values = await form.validateFields();
           await handleSubmit(values);
           form.resetFields();
-        } catch (error) {
+        } catch (_error) {
           // 表单验证失败，不关闭 Modal
         }
       }}
       width={600}
       destroyOnHidden
     >
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={handleSubmit}
-      >
+      <Form form={form} layout="vertical" onFinish={handleSubmit}>
         <Form.Item
           name="name"
           label={intl.formatMessage({ id: 'pages.company.nameLabel' })}
@@ -76,10 +68,7 @@ export const CreateCompanyModal: React.FC<CreateCompanyModalProps> = ({
             { min: 2, max: 100, message: intl.formatMessage({ id: 'pages.company.nameLength' }) },
           ]}
         >
-          <Input
-            placeholder={intl.formatMessage({ id: 'pages.company.namePlaceholder' })}
-            maxLength={100}
-          />
+          <Input placeholder={intl.formatMessage({ id: 'pages.company.namePlaceholder' })} maxLength={100} />
         </Form.Item>
 
         <Form.Item
@@ -99,13 +88,9 @@ export const CreateCompanyModal: React.FC<CreateCompanyModalProps> = ({
           label={intl.formatMessage({ id: 'pages.company.industryLabel' })}
           rules={[{ max: 50, message: intl.formatMessage({ id: 'pages.company.industryMaxLength' }) }]}
         >
-          <Input
-            placeholder={intl.formatMessage({ id: 'pages.company.industryPlaceholder' })}
-            maxLength={50}
-          />
+          <Input placeholder={intl.formatMessage({ id: 'pages.company.industryPlaceholder' })} maxLength={50} />
         </Form.Item>
       </Form>
     </Modal>
   );
 };
-

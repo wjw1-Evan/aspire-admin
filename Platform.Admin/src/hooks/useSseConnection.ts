@@ -4,17 +4,17 @@
  * 支持 localStorage 持久化连接状态
  */
 
-import { useEffect, useRef, useCallback, useState } from 'react';
-import { tokenUtils } from '@/utils/token';
-import { getApiBaseUrl } from '@/utils/request';
 import { notification } from 'antd';
-import { NotificationStatistics, AppNotification } from '@/services/notification/api';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppNotification, NotificationStatistics } from '@/services/notification/api';
+import { getApiBaseUrl } from '@/utils/request';
+import { tokenUtils } from '@/utils/token';
 
 // 全局单例 EventSource（所有组件共享）
 let globalEventSource: EventSource | null = null;
 let globalConnectionId: string | null = null;
 let globalIsConnected = false;
-let globalEventHandlers: Map<string, Set<(data: any) => void>> = new Map();
+const globalEventHandlers: Map<string, Set<(data: any) => void>> = new Map();
 let globalAutoConnectAttempted = false;
 
 // 全局状态（供所有 hook 实例共享）
@@ -22,8 +22,6 @@ const globalNotificationState: NotificationState = {
   unreadCount: 0,
   statistics: { System: 0, Work: 0, Social: 0, Security: 0, UnreadTotal: 0, Total: 0 },
 };
-
-
 
 interface UseSseConnectionOptions {
   onConnected?: () => void;
@@ -54,16 +52,8 @@ interface UseSseConnectionReturn {
  * @param options 连接选项
  * @returns 连接管理接口
  */
-export function useSseConnection(
-  options: UseSseConnectionOptions
-): UseSseConnectionReturn {
-  const {
-    onConnected,
-    onDisconnected,
-    onError,
-    autoConnect = true,
-    enableNotifications = false,
-  } = options;
+export function useSseConnection(options: UseSseConnectionOptions): UseSseConnectionReturn {
+  const { onConnected, onDisconnected, onError, autoConnect = true, enableNotifications = false } = options;
 
   const [isConnected, setIsConnected] = useState(globalIsConnected);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -170,7 +160,7 @@ export function useSseConnection(
             setConnectionId(data.connectionId);
             globalConnectionId = data.connectionId;
           }
-        } catch (e) {
+        } catch (_e) {
           onConnected?.();
         }
       });
@@ -208,7 +198,7 @@ export function useSseConnection(
           if (data?.connectionId) {
             setConnectionId(data.connectionId);
           }
-        } catch (e) { }
+        } catch (_e) {}
       });
 
       eventSource.addEventListener('notification', (event: MessageEvent) => {
@@ -240,9 +230,10 @@ export function useSseConnection(
             Object.assign(globalNotificationState, newState);
             setNotificationState(() => newState);
           }
-        } catch (e) { console.error('[SSE] stats 解析失败:', e); }
+        } catch (e) {
+          console.error('[SSE] stats 解析失败:', e);
+        }
       });
-
 
       // 监听 ping 事件（服务器每 15 秒发送，保持连接活跃）
       eventSource.addEventListener('ping', () => {
@@ -250,7 +241,7 @@ export function useSseConnection(
       });
 
       // 连接错误
-      eventSource.onerror = (error) => {
+      eventSource.onerror = (_error) => {
         // 静默处理，仅在需要调试时启用
         // console.error('[SSE] onerror, readyState:', eventSource.readyState);
         if (statusCheckTimer) clearTimeout(statusCheckTimer);
@@ -288,9 +279,9 @@ export function useSseConnection(
         'agent_update',
         'agent_track',
         'agent_complete',
-        'agent_failed'
+        'agent_failed',
       ];
-      eventNames.forEach(eventName => {
+      eventNames.forEach((eventName) => {
         eventSource.addEventListener(eventName, (event: MessageEvent) => {
           const handlers = eventHandlersRef.current.get(eventName);
           if (handlers) {
@@ -299,11 +290,11 @@ export function useSseConnection(
               handlers.forEach((handler) => {
                 try {
                   handler(data);
-                } catch (e) {
+                } catch (_e) {
                   // 忽略处理器错误
                 }
               });
-            } catch (e) {
+            } catch (_e) {
               // 忽略解析错误
             }
           }
@@ -314,9 +305,10 @@ export function useSseConnection(
       eventSource.onmessage = (event: MessageEvent) => {
         try {
           const data = event.data ? JSON.parse(event.data) : null;
-          const handlers = (data?.type && eventHandlersRef.current.get(data.type)) || eventHandlersRef.current.get('message');
+          const handlers =
+            (data?.type && eventHandlersRef.current.get(data.type)) || eventHandlersRef.current.get('message');
           handlers?.forEach((handler: (data: any) => void) => handler(data));
-        } catch (e) { }
+        } catch (_e) {}
       };
     } catch (error) {
       setIsConnecting(false);
@@ -354,7 +346,7 @@ export function useSseConnection(
   }, [onDisconnected]);
 
   // 监听事件，返回清理函数
-  const on = useCallback(<T = any,>(eventName: string, handler: (data: T) => void) => {
+  const on = useCallback(<T = any>(eventName: string, handler: (data: T) => void) => {
     if (!eventHandlersRef.current.has(eventName)) {
       eventHandlersRef.current.set(eventName, new Set());
     }
@@ -398,7 +390,7 @@ export function useSseConnection(
       };
     }
 
-    return () => { }; // Return empty cleanup function when autoConnect is false
+    return () => {}; // Return empty cleanup function when autoConnect is false
   }, [autoConnect, connect]);
 
   // 组件卸载时清理

@@ -1,10 +1,9 @@
-import React from 'react';
-import { Avatar, Tag, Space } from 'antd';
-import { Drawer } from 'antd';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
 import { UserOutlined } from '@ant-design/icons';
-import dayjs from 'dayjs';
+import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
 import { useIntl } from '@umijs/max';
+import { Avatar, Drawer, Space, Tag } from 'antd';
+import dayjs from 'dayjs';
+import React from 'react';
 import type { ChatHistoryDetailResponse } from '@/services/xiaoke/api';
 
 interface ChatHistoryDetailProps {
@@ -13,11 +12,7 @@ interface ChatHistoryDetailProps {
   onClose: () => void;
 }
 
-const ChatHistoryDetail: React.FC<ChatHistoryDetailProps> = ({
-  open,
-  detail,
-  onClose,
-}) => {
+const ChatHistoryDetail: React.FC<ChatHistoryDetailProps> = ({ open, detail, onClose }) => {
   const intl = useIntl();
   if (!detail) return null;
 
@@ -41,29 +36,29 @@ const ChatHistoryDetail: React.FC<ChatHistoryDetailProps> = ({
           {session.id}
         </ProDescriptions.Item>
         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.detail.topicTags' })}>
-          {session.topicTags && session.topicTags.length > 0
-            ? session.topicTags.join(' / ')
-            : '-'}
+          {session.topicTags && session.topicTags.length > 0 ? session.topicTags.join(' / ') : '-'}
         </ProDescriptions.Item>
-        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.detail.participants' })}>
+        <ProDescriptions.Item
+          label={intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.detail.participants' })}
+        >
           <Space>
             {session.participants.map((participantId) => (
-              <Tag key={participantId}>
-                {session.participantNames[participantId] || participantId}
-              </Tag>
+              <Tag key={participantId}>{session.participantNames[participantId] || participantId}</Tag>
             ))}
           </Space>
         </ProDescriptions.Item>
-        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.detail.messageCount' })}>
+        <ProDescriptions.Item
+          label={intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.detail.messageCount' })}
+        >
           {messages.length}
         </ProDescriptions.Item>
         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.detail.createdAt' })}>
           {dayjs(session.createdAt).format('YYYY-MM-DD HH:mm:ss')}
         </ProDescriptions.Item>
-        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.detail.lastMessageAt' })}>
-          {session.lastMessageAt
-            ? dayjs(session.lastMessageAt).format('YYYY-MM-DD HH:mm:ss')
-            : '-'}
+        <ProDescriptions.Item
+          label={intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.detail.lastMessageAt' })}
+        >
+          {session.lastMessageAt ? dayjs(session.lastMessageAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
         </ProDescriptions.Item>
       </ProDescriptions>
 

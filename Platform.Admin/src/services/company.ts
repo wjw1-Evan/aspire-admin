@@ -33,10 +33,7 @@ export async function getCurrentCompany(options?: { [key: string]: any }) {
 }
 
 /** 更新当前企业信息 PUT /apiservice/api/company/current */
-export async function updateCurrentCompany(
-  body: API.UpdateCompanyRequest,
-  options?: { [key: string]: any }
-) {
+export async function updateCurrentCompany(body: API.UpdateCompanyRequest, options?: { [key: string]: any }) {
   return request<ApiResponse<boolean>>('/apiservice/api/company/current', {
     method: 'PUT',
     headers: {
@@ -61,7 +58,7 @@ export async function checkCompanyCode(code: string) {
     `/apiservice/api/company/check-code?code=${encodeURIComponent(code)}`,
     {
       method: 'GET',
-    }
+    },
   );
 }
 
@@ -71,7 +68,7 @@ export async function searchCompanies(keyword: string) {
     `/apiservice/api/company/search?keyword=${encodeURIComponent(keyword)}`,
     {
       method: 'GET',
-    }
+    },
   );
 }
 
@@ -94,56 +91,36 @@ export async function switchCompany(targetCompanyId: string) {
 
 /** v3.1: 获取企业成员列表 GET /apiservice/api/company/{companyId}/members */
 export async function getCompanyMembers(companyId: string) {
-  return request<ApiResponse<API.CompanyMemberItem[]>>(
-    `/apiservice/api/company/${companyId}/members`,
-    {
-      method: 'GET',
-    }
-  );
+  return request<ApiResponse<API.CompanyMemberItem[]>>(`/apiservice/api/company/${companyId}/members`, {
+    method: 'GET',
+  });
 }
 
 /** v3.1: 更新成员角色 PUT /apiservice/api/company/{companyId}/members/{userId}/roles */
-export async function updateMemberRoles(
-  companyId: string,
-  userId: string,
-  roleIds: string[]
-) {
-  return request<ApiResponse<boolean>>(
-    `/apiservice/api/company/${companyId}/members/${userId}/roles`,
-    {
-      method: 'PUT',
-      data: {
-        roleIds,
-      },
-    }
-  );
+export async function updateMemberRoles(companyId: string, userId: string, roleIds: string[]) {
+  return request<ApiResponse<boolean>>(`/apiservice/api/company/${companyId}/members/${userId}/roles`, {
+    method: 'PUT',
+    data: {
+      roleIds,
+    },
+  });
 }
 
 /** v3.1: 设置成员管理员权限 PUT /apiservice/api/company/{companyId}/members/{userId}/admin */
-export async function setMemberAdmin(
-  companyId: string,
-  userId: string,
-  isAdmin: boolean
-) {
-  return request<ApiResponse<boolean>>(
-    `/apiservice/api/company/${companyId}/members/${userId}/admin`,
-    {
-      method: 'PUT',
-      data: {
-        isAdmin,
-      },
-    }
-  );
+export async function setMemberAdmin(companyId: string, userId: string, isAdmin: boolean) {
+  return request<ApiResponse<boolean>>(`/apiservice/api/company/${companyId}/members/${userId}/admin`, {
+    method: 'PUT',
+    data: {
+      isAdmin,
+    },
+  });
 }
 
 /** v3.1: 移除企业成员 DELETE /apiservice/api/company/{companyId}/members/{userId} */
 export async function removeMember(companyId: string, userId: string) {
-  return request<ApiResponse<boolean>>(
-    `/apiservice/api/company/${companyId}/members/${userId}`,
-    {
-      method: 'DELETE',
-    }
-  );
+  return request<ApiResponse<boolean>>(`/apiservice/api/company/${companyId}/members/${userId}`, {
+    method: 'DELETE',
+  });
 }
 
 /** v3.1: 退出企业 DELETE /apiservice/api/company/{companyId}/leave */
@@ -200,4 +177,3 @@ export async function cancelJoinRequest(id: string) {
     method: 'POST',
   });
 }
-

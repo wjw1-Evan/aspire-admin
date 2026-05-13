@@ -19,7 +19,8 @@ export default {
   'pages.xiaokeManagement.chatHistory.message.deleteSuccess': '删除成功',
   'pages.xiaokeManagement.chatHistory.message.getDetailFailed': '获取详情失败',
   'pages.xiaokeManagement.chatHistory.modal.confirmDelete': '确认删除',
-  'pages.xiaokeManagement.chatHistory.modal.confirmDeleteContent': '确定要删除会话"{sessionId}"吗？此操作将删除该会话的所有消息。',
+  'pages.xiaokeManagement.chatHistory.modal.confirmDeleteContent':
+    '确定要删除会话"{sessionId}"吗？此操作将删除该会话的所有消息。',
   'pages.xiaokeManagement.chatHistory.refresh': '刷新',
   'pages.xiaokeManagement.chatHistory.table.action': '操作',
   'pages.xiaokeManagement.chatHistory.table.action.delete': '删除',

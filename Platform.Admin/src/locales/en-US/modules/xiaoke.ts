@@ -19,7 +19,8 @@ export default {
   'pages.xiaokeManagement.chatHistory.message.deleteSuccess': 'Deleted successfully',
   'pages.xiaokeManagement.chatHistory.message.getDetailFailed': 'Get detail failed',
   'pages.xiaokeManagement.chatHistory.modal.confirmDelete': 'Confirm Delete',
-  'pages.xiaokeManagement.chatHistory.modal.confirmDeleteContent': 'Are you sure you want to delete session "{sessionId}"? This will delete all messages in this session.',
+  'pages.xiaokeManagement.chatHistory.modal.confirmDeleteContent':
+    'Are you sure you want to delete session "{sessionId}"? This will delete all messages in this session.',
   'pages.xiaokeManagement.chatHistory.refresh': 'Refresh',
   'pages.xiaokeManagement.chatHistory.table.action': 'Actions',
   'pages.xiaokeManagement.chatHistory.table.action.delete': 'Delete',
@@ -59,7 +60,8 @@ export default {
   'pages.xiaokeManagement.config.form.systemPrompt': 'System Prompt',
   'pages.xiaokeManagement.config.form.systemPromptPlaceholder': 'Please enter system prompt (optional)',
   'pages.xiaokeManagement.config.form.temperature': 'Temperature (0-2)',
-  'pages.xiaokeManagement.config.form.temperatureTooltip': 'Controls the randomness of output, higher values are more random',
+  'pages.xiaokeManagement.config.form.temperatureTooltip':
+    'Controls the randomness of output, higher values are more random',
   'pages.xiaokeManagement.config.form.topP': 'Top-p Sampling (0-1)',
   'pages.xiaokeManagement.config.form.topPTooltip': 'Controls the diversity of output, higher values are more diverse',
   'pages.xiaokeManagement.config.isDefault.no': 'No',

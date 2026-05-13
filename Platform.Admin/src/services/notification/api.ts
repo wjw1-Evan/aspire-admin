@@ -27,7 +27,7 @@ export enum NotificationLevel {
 export enum NotificationStatus {
   Unread = 0,
   Read = 1,
-  Archived = 2
+  Archived = 2,
 }
 
 /**

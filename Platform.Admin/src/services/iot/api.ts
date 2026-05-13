@@ -7,40 +7,40 @@ export type IoTDeviceStatus = 'Online' | 'Offline' | 'Fault' | 'Maintenance';
 export type IoTDeviceType = 'Sensor' | 'Actuator' | 'Gateway' | 'Other';
 
 export interface IoTDeviceEvent {
-    id: string;
-    deviceId: string;
-    eventType: string;
-    level: string;
-    description?: string;
-    eventData?: Record<string, any>;
-    occurredAt: string;
-    isHandled: boolean;
-    handledRemarks?: string;
-    createdAt: string;
+  id: string;
+  deviceId: string;
+  eventType: string;
+  level: string;
+  description?: string;
+  eventData?: Record<string, any>;
+  occurredAt: string;
+  isHandled: boolean;
+  handledRemarks?: string;
+  createdAt: string;
 }
 
 export type IoTEventQueryResponse = PagedResult<IoTDeviceEvent>;
 
 export const queryIoTEvents = (params: any) =>
-    request<ApiResponse<IoTEventQueryResponse>>(`${API_PREFIX}/events/query`, {
-        method: 'GET',
-        params: params,
-    });
+  request<ApiResponse<IoTEventQueryResponse>>(`${API_PREFIX}/events/query`, {
+    method: 'GET',
+    params: params,
+  });
 
 /**
  * 获取未处理事件数量
  */
 export const getUnhandledEventCount = (deviceId?: string) => {
-    let url = `${API_PREFIX}/events/unhandled-count`;
-    if (deviceId) url += `?deviceId=${deviceId}`;
-    return request<ApiResponse<{ count: number }>>(url, { method: 'GET' });
+  let url = `${API_PREFIX}/events/unhandled-count`;
+  if (deviceId) url += `?deviceId=${deviceId}`;
+  return request<ApiResponse<{ count: number }>>(url, { method: 'GET' });
 };
 
 /**
  * 处理事件
  */
 export const handleIoTEvent = (eventId: string, remarks: string) =>
-    request<ApiResponse<boolean>>(`${API_PREFIX}/events/${eventId}/handle`, {
-        method: 'POST',
-        data: { remarks },
-    });
+  request<ApiResponse<boolean>>(`${API_PREFIX}/events/${eventId}/handle`, {
+    method: 'POST',
+    data: { remarks },
+  });

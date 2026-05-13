@@ -1,24 +1,23 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { Button, Space, Tag, App, Popconfirm, Grid, Input } from 'antd';
-import { Drawer } from 'antd';
 import {
-  PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
   ArrowLeftOutlined,
+  DeleteOutlined,
+  EditOutlined,
   FileTextOutlined,
+  PlusOutlined,
   SearchOutlined,
 } from '@ant-design/icons';
-import { useIntl, useParams, history } from '@umijs/max';
 import { ProCard } from '@ant-design/pro-components/es/card';
 import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import { ModalForm, ProFormText, ProFormTextArea, ProFormDigit } from '@ant-design/pro-components/es/form';
+import { ModalForm, ProFormDigit, ProFormText, ProFormTextArea } from '@ant-design/pro-components/es/form';
 import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components/es/table';
-import * as kbService from '@/services/workflow/knowledge-base';
-import type { KnowledgeDocument } from '@/services/workflow/knowledge-base';
-import { getErrorMessage } from '@/utils/getErrorMessage';
+import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
+import { history, useIntl, useParams } from '@umijs/max';
+import { App, Button, Drawer, Grid, Input, Popconfirm, Space, Tag } from 'antd';
 import dayjs from 'dayjs';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import type { KnowledgeDocument } from '@/services/workflow/knowledge-base';
+import * as kbService from '@/services/workflow/knowledge-base';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 const { useBreakpoint } = Grid;
 
@@ -39,10 +38,7 @@ const KnowledgeBaseDocuments: React.FC = () => {
     detailLoading: false,
     kbInfo: null as { name: string; itemCount: number } | null,
   });
-  const set = useCallback(
-    (partial: Partial<typeof state>) => setState((prev) => ({ ...prev, ...partial })),
-    [],
-  );
+  const set = useCallback((partial: Partial<typeof state>) => setState((prev) => ({ ...prev, ...partial })), []);
 
   useEffect(() => {
     if (knowledgeBaseId) {
@@ -224,7 +220,12 @@ const KnowledgeBaseDocuments: React.FC = () => {
         rowKey="id"
         search={false}
         request={async (params: any, sort: any, filter: any) => {
-          const res = await kbService.getKnowledgeDocuments(knowledgeBaseId!, { ...params, search: keyword, sort, filter });
+          const res = await kbService.getKnowledgeDocuments(knowledgeBaseId!, {
+            ...params,
+            search: keyword,
+            sort,
+            filter,
+          });
           if (res.success && res.data) {
             return { data: res.data.queryable || [], total: res.data.rowCount || 0, success: true };
           }
@@ -239,11 +240,19 @@ const KnowledgeBaseDocuments: React.FC = () => {
             allowClear
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
-            onSearch={(value) => { setKeyword(value); actionRef.current?.reload(); }}
+            onSearch={(value) => {
+              setKeyword(value);
+              actionRef.current?.reload();
+            }}
             style={{ width: 260, marginRight: 8 }}
             prefix={<SearchOutlined />}
           />,
-          <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingDoc: null, formVisible: true })}>
+          <Button
+            key="create"
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => set({ editingDoc: null, formVisible: true })}
+          >
             {intl.formatMessage({ id: 'pages.workflow.knowledgeBase.document.create' })}
           </Button>,
         ]}
@@ -268,13 +277,17 @@ const KnowledgeBaseDocuments: React.FC = () => {
         <ProFormText
           name="title"
           label={intl.formatMessage({ id: 'pages.workflow.knowledge.form.title' })}
-          rules={[{ required: true, message: intl.formatMessage({ id: 'pages.workflow.knowledge.form.titleRequired' }) }]}
+          rules={[
+            { required: true, message: intl.formatMessage({ id: 'pages.workflow.knowledge.form.titleRequired' }) },
+          ]}
           placeholder={intl.formatMessage({ id: 'pages.workflow.knowledge.form.titlePlaceholder' })}
         />
         <ProFormTextArea
           name="content"
           label={intl.formatMessage({ id: 'pages.workflow.knowledge.form.content' })}
-          rules={[{ required: true, message: intl.formatMessage({ id: 'pages.workflow.knowledge.form.contentRequired' }) }]}
+          rules={[
+            { required: true, message: intl.formatMessage({ id: 'pages.workflow.knowledge.form.contentRequired' }) },
+          ]}
           placeholder={intl.formatMessage({ id: 'pages.workflow.knowledge.form.contentPlaceholder' })}
           fieldProps={{ rows: 6 }}
         />
@@ -301,28 +314,17 @@ const KnowledgeBaseDocuments: React.FC = () => {
       >
         {state.viewingDoc ? (
           <ProDescriptions column={isMobile ? 1 : 2} bordered size="small">
-            <ProDescriptions.Item
-              label={intl.formatMessage({ id: 'pages.workflow.knowledge.form.title' })}
-              span={2}
-            >
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.workflow.knowledge.form.title' })} span={2}>
               <Space>
                 <FileTextOutlined style={{ color: '#1890ff' }} />
                 <strong>{state.viewingDoc.title}</strong>
               </Space>
             </ProDescriptions.Item>
-            <ProDescriptions.Item
-              label={intl.formatMessage({ id: 'pages.workflow.knowledge.summary' })}
-              span={2}
-            >
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.workflow.knowledge.summary' })} span={2}>
               {state.viewingDoc.summary || '-'}
             </ProDescriptions.Item>
-            <ProDescriptions.Item
-              label={intl.formatMessage({ id: 'pages.workflow.knowledge.form.content' })}
-              span={2}
-            >
-              <div style={{ whiteSpace: 'pre-wrap', maxHeight: 400, overflow: 'auto' }}>
-                {state.viewingDoc.content}
-              </div>
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.workflow.knowledge.form.content' })} span={2}>
+              <div style={{ whiteSpace: 'pre-wrap', maxHeight: 400, overflow: 'auto' }}>{state.viewingDoc.content}</div>
             </ProDescriptions.Item>
             <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.workflow.knowledge.sortOrder' })}>
               {state.viewingDoc.sortOrder}
@@ -341,4 +343,3 @@ const KnowledgeBaseDocuments: React.FC = () => {
 };
 
 export default KnowledgeBaseDocuments;
-

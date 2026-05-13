@@ -1,46 +1,35 @@
-import { useEffect, useState } from 'react';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { Card, Spin, Row, Col, Tag, Space, Button } from 'antd';
 import {
+  BarChartOutlined,
   EditOutlined,
-  UserOutlined,
-  TeamOutlined,
+  InfoCircleOutlined,
   MenuOutlined,
   SafetyOutlined,
-  ClockCircleOutlined,
-  SettingOutlined,
-  BarChartOutlined,
-  InfoCircleOutlined,
+  TeamOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
+import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
+import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { useIntl, useModel } from '@umijs/max';
-import { getCurrentCompany, getCompanyStatistics } from '@/services/company';
-import EditCompanyModal from './components/EditCompanyModal';
-import type { Company, CompanyStatistics } from '@/types';
-import { StatCard } from '@/components';
+import { Button, Card, Col, Row, Spin, Tag } from 'antd';
 import dayjs from 'dayjs';
+import { useEffect, useState } from 'react';
+import { StatCard } from '@/components';
+import { getCompanyStatistics, getCurrentCompany } from '@/services/company';
+import type { Company, CompanyStatistics } from '@/types';
+import EditCompanyModal from './components/EditCompanyModal';
 
 export default function CompanySettings() {
   const intl = useIntl();
   const [company, setCompany] = useState<Company | null>(null);
-  const [statistics, setStatistics] = useState<CompanyStatistics | null>(
-    null,
-  );
+  const [statistics, setStatistics] = useState<CompanyStatistics | null>(null);
   const [loading, setLoading] = useState(true);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const { initialState, setInitialState } = useModel('@@initialState');
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [companyRes, statsRes] = await Promise.all([
-        getCurrentCompany(),
-        getCompanyStatistics(),
-      ]);
+      const [companyRes, statsRes] = await Promise.all([getCurrentCompany(), getCompanyStatistics()]);
 
       if (companyRes.success && companyRes.data) {
         setCompany(companyRes.data);
@@ -54,6 +43,10 @@ export default function CompanySettings() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleEditSuccess = async () => {
     setEditModalVisible(false);
@@ -98,16 +91,20 @@ export default function CompanySettings() {
     );
   }
 
-
   return (
     <PageContainer>
       {/* 企业统计：使用 StatCard 统一风格 */}
       {statistics && (
         <Card
-          title={<><BarChartOutlined style={{ marginRight: 8 }} />{intl.formatMessage({ id: 'pages.companySettings.statistics' })}</>}
+          title={
+            <>
+              <BarChartOutlined style={{ marginRight: 8 }} />
+              {intl.formatMessage({ id: 'pages.companySettings.statistics' })}
+            </>
+          }
           style={{ marginBottom: 16, borderRadius: 12 }}
         >
-<Row gutter={[12, 12]}>
+          <Row gutter={[12, 12]}>
             <Col xs={12} md={6} lg={4}>
               <StatCard
                 title={intl.formatMessage({ id: 'pages.companySettings.statistics.totalUsers' })}
@@ -154,14 +151,14 @@ export default function CompanySettings() {
 
       {/* 企业详细信息 */}
       <Card
-        title={<><InfoCircleOutlined style={{ marginRight: 8 }} />{intl.formatMessage({ id: 'pages.companySettings.details' })}</>}
+        title={
+          <>
+            <InfoCircleOutlined style={{ marginRight: 8 }} />
+            {intl.formatMessage({ id: 'pages.companySettings.details' })}
+          </>
+        }
         extra={
-          <Button
-            type="primary"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => setEditModalVisible(true)}
-          >
+          <Button type="primary" size="small" icon={<EditOutlined />} onClick={() => setEditModalVisible(true)}>
             {intl.formatMessage({ id: 'pages.companySettings.editCompany' })}
           </Button>
         }
@@ -169,23 +166,43 @@ export default function CompanySettings() {
         style={{ marginBottom: 16 }}
       >
         {company && (
-          <ProDescriptions
-            column={{ xs: 1, sm: 2, md: 2, lg: 2 }}
-            bordered
-            size="small"
-            styles={{ content: {} }}
-          >
-            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.name' })}>{company.name}</ProDescriptions.Item>
-            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.code' })}><Tag color="blue">{company.code}</Tag></ProDescriptions.Item>
-            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.displayName' })}>{company.displayName || '-'}</ProDescriptions.Item>
-            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.industry' })}>{company.industry || '-'}</ProDescriptions.Item>
-            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.contactName' })}>{company.contactName || '-'}</ProDescriptions.Item>
-            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.contactEmail' })}>{company.contactEmail || '-'}</ProDescriptions.Item>
-            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.contactPhone' })}>{company.contactPhone || '-'}</ProDescriptions.Item>
-            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.edit.logoLabel' })}>{company.logo ? <img src={company.logo} alt="logo" style={{ maxHeight: 32 }} /> : '-'}</ProDescriptions.Item>
-            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.description' })} span={1}>{company.description || '-'}</ProDescriptions.Item>
-            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.createdAt' })}>{company.createdAt ? dayjs(company.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
-            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.updatedAt' })}>{company.updatedAt ? dayjs(company.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+          <ProDescriptions column={{ xs: 1, sm: 2, md: 2, lg: 2 }} bordered size="small" styles={{ content: {} }}>
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.name' })}>
+              {company.name}
+            </ProDescriptions.Item>
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.code' })}>
+              <Tag color="blue">{company.code}</Tag>
+            </ProDescriptions.Item>
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.displayName' })}>
+              {company.displayName || '-'}
+            </ProDescriptions.Item>
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.industry' })}>
+              {company.industry || '-'}
+            </ProDescriptions.Item>
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.contactName' })}>
+              {company.contactName || '-'}
+            </ProDescriptions.Item>
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.contactEmail' })}>
+              {company.contactEmail || '-'}
+            </ProDescriptions.Item>
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.contactPhone' })}>
+              {company.contactPhone || '-'}
+            </ProDescriptions.Item>
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.edit.logoLabel' })}>
+              {company.logo ? <img src={company.logo} alt="logo" style={{ maxHeight: 32 }} /> : '-'}
+            </ProDescriptions.Item>
+            <ProDescriptions.Item
+              label={intl.formatMessage({ id: 'pages.companySettings.details.description' })}
+              span={1}
+            >
+              {company.description || '-'}
+            </ProDescriptions.Item>
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.createdAt' })}>
+              {company.createdAt ? dayjs(company.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
+            </ProDescriptions.Item>
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.updatedAt' })}>
+              {company.updatedAt ? dayjs(company.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
+            </ProDescriptions.Item>
           </ProDescriptions>
         )}
       </Card>
@@ -200,4 +217,3 @@ export default function CompanySettings() {
     </PageContainer>
   );
 }
-

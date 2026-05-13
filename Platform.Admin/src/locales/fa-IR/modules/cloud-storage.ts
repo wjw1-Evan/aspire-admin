@@ -6,20 +6,22 @@ export default {
   'pages.cloud-storage.recycle.message.deleteFailed': 'حذف ناموفق بود',
   'pages.cloud-storage.recycle.message.emptySuccess': 'خالی کردن موفقیت‌آمیز بود، {count} فایل حذف شد',
   'pages.cloud-storage.recycle.message.emptyFailed': 'خالی کردن ناموفق بود',
-  
+
   // پیام‌های مدیریت اشتراک‌گذاری
   'pages.cloud-storage.share.message.updateSuccess': 'به‌روزرسانی موفقیت‌آمیز بود',
   'pages.cloud-storage.share.message.linkCopied': 'پیوند اشتراک‌گذاری کپی شد',
-  
+
   // پیام‌های مدیریت سهمیه
   'pages.cloud-storage.quota.message.updateSuccess': 'سهمیه با موفقیت به‌روزرسانی شد',
   'pages.cloud-storage.quota.message.createSuccess': 'سهمیه با موفقیت ایجاد شد',
   'pages.cloud-storage.recycle.title': 'Recycle Bin',
   'pages.cloud-storage.recycle.confirmDelete': 'Confirm Permanent Delete',
-  'pages.cloud-storage.recycle.confirmDeleteContent': 'Are you sure you want to permanently delete "{name}"? This action cannot be undone.',
+  'pages.cloud-storage.recycle.confirmDeleteContent':
+    'Are you sure you want to permanently delete "{name}"? This action cannot be undone.',
   'pages.cloud-storage.recycle.confirmDeleteOk': 'Delete',
   'pages.cloud-storage.recycle.confirmEmpty': 'Confirm Empty Recycle Bin',
-  'pages.cloud-storage.recycle.confirmEmptyContent': 'Are you sure you want to empty the entire recycle bin? This will permanently delete all files and cannot be undone!',
+  'pages.cloud-storage.recycle.confirmEmptyContent':
+    'Are you sure you want to empty the entire recycle bin? This will permanently delete all files and cannot be undone!',
   'pages.cloud-storage.recycle.confirmEmptyOk': 'Empty',
   'pages.cloud-storage.recycle.searchPlaceholder': 'Search...',
   'pages.cloud-storage.recycle.tagTotal': 'Total {count}',

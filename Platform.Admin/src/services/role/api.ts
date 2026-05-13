@@ -1,12 +1,40 @@
 import { request } from '@umijs/max';
 import type { ApiResponse, PagedResult } from '@/types';
 
-export interface Role { id?: string; name: string; description?: string; menuIds: string[]; isActive: boolean; createdAt?: string; updatedAt?: string; }
-export interface RoleWithStats extends Role { userCount?: number; menuCount?: number; }
-export interface RoleStatistics { totalRoles: number; activeRoles: number; totalUsers: number; totalMenus: number; }
-export interface CreateRoleRequest { name: string; description?: string; menuIds: string[]; isActive: boolean; }
-export interface UpdateRoleRequest { name?: string; description?: string; menuIds?: string[]; isActive?: boolean; }
-export interface AssignMenusToRoleRequest { menuIds: string[]; }
+export interface Role {
+  id?: string;
+  name: string;
+  description?: string;
+  menuIds: string[];
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+export interface RoleWithStats extends Role {
+  userCount?: number;
+  menuCount?: number;
+}
+export interface RoleStatistics {
+  totalRoles: number;
+  activeRoles: number;
+  totalUsers: number;
+  totalMenus: number;
+}
+export interface CreateRoleRequest {
+  name: string;
+  description?: string;
+  menuIds: string[];
+  isActive: boolean;
+}
+export interface UpdateRoleRequest {
+  name?: string;
+  description?: string;
+  menuIds?: string[];
+  isActive?: boolean;
+}
+export interface AssignMenusToRoleRequest {
+  menuIds: string[];
+}
 
 /**
  * 获取所有角色
@@ -62,11 +90,7 @@ export async function createRole(data: CreateRoleRequest, options?: Record<strin
 /**
  * 更新角色
  */
-export async function updateRole(
-  id: string,
-  data: UpdateRoleRequest,
-  options?: Record<string, any>,
-) {
+export async function updateRole(id: string, data: UpdateRoleRequest, options?: Record<string, any>) {
   return request<ApiResponse<boolean>>(`/apiservice/api/role/${id}`, {
     method: 'PUT',
     data,
@@ -88,11 +112,7 @@ export async function deleteRole(id: string, reason?: string, options?: Record<s
 /**
  * 为角色分配菜单权限
  */
-export async function assignMenusToRole(
-  id: string,
-  data: AssignMenusToRoleRequest,
-  options?: Record<string, any>,
-) {
+export async function assignMenusToRole(id: string, data: AssignMenusToRoleRequest, options?: Record<string, any>) {
   return request<ApiResponse<boolean>>(`/apiservice/api/role/${id}/menus`, {
     method: 'POST',
     data,
@@ -109,4 +129,3 @@ export async function getRoleMenus(id: string, options?: Record<string, any>) {
     ...(options || {}),
   });
 }
-

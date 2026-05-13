@@ -163,12 +163,9 @@ export async function getChatHistory(params: any) {
  * 获取会话详情和消息
  */
 export async function getChatHistoryDetail(sessionId: string) {
-  return request<ApiResponse<ChatHistoryDetailResponse>>(
-    `/apiservice/api/xiaoke/chat-history/${sessionId}`,
-    {
-      method: 'GET',
-    },
-  );
+  return request<ApiResponse<ChatHistoryDetailResponse>>(`/apiservice/api/xiaoke/chat-history/${sessionId}`, {
+    method: 'GET',
+  });
 }
 
 /**

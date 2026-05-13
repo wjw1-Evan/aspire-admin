@@ -489,7 +489,8 @@ export default {
   'pages.park.visitKnowledgeBase.noAnswer': 'No analysis yet',
   'pages.park.visitKnowledgeBase.questionAnswer': 'Questions and Answers',
   'pages.park.visitKnowledgeBase.questionContent': 'Question Content',
-  'pages.park.visitKnowledgeBase.questionContentPlaceholder': 'Please enter questions that may be encountered during visit',
+  'pages.park.visitKnowledgeBase.questionContentPlaceholder':
+    'Please enter questions that may be encountered during visit',
   'pages.park.visitKnowledgeBase.questionContentRequired': 'Please enter question content',
   'pages.park.visitTask.tabTitle': 'Visit Task',
   'pages.park.visitTask.addTask': 'Add Task',

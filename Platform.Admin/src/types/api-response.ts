@@ -64,5 +64,3 @@ export interface PagedResult<T> {
   /** 总页数 */
   pageCount: number;
 }
-
-

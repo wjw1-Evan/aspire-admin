@@ -1,14 +1,13 @@
-import * as API from '@/types';
 import { LockOutlined, MailOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
-import { FormattedMessage, Link, useIntl, history } from '@umijs/max';
-import { App, Button, Form, Input, Space, Steps } from 'antd';
 import { ProCard } from '@ant-design/pro-components/es/card';
+import { FormattedMessage, history, Link, useIntl } from '@umijs/max';
+import { App, Button, Form, Input, Space, Steps } from 'antd';
 import { createStyles } from 'antd-style';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Footer, SelectLang } from '@/components';
-import { sendResetCode, resetPassword } from '@/services/ant-design-pro/api';
+import { resetPassword, sendResetCode } from '@/services/ant-design-pro/api';
+import * as API from '@/types';
 import { PasswordEncryption } from '@/utils/encryption';
-import Settings from '../../../../config/defaultSettings';
 
 const useStyles = createStyles(({ token }) => {
   return {
@@ -51,10 +50,10 @@ const ForgotPasswordContainer: React.FC = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
-  
+
   const [formEmail] = Form.useForm();
   const [formReset] = Form.useForm();
-  
+
   const { styles } = useStyles();
   const { message } = App.useApp();
   const intl = useIntl();
@@ -91,10 +90,13 @@ const ForgotPasswordContainer: React.FC = () => {
           Object.entries(validationErrors).map(([field, msgs]) => ({
             name: field as any,
             errors: Array.isArray(msgs) ? [msgs[0] as string] : [msgs as string],
-          }))
+          })),
         );
       } else {
-        const errorMsg = error?.response?.data?.message || error?.message || intl.formatMessage({ id: 'pages.forgotPassword.sendCodeError' });
+        const errorMsg =
+          error?.response?.data?.message ||
+          error?.message ||
+          intl.formatMessage({ id: 'pages.forgotPassword.sendCodeError' });
         message.error(errorMsg);
       }
     } finally {
@@ -149,10 +151,13 @@ const ForgotPasswordContainer: React.FC = () => {
           Object.entries(validationErrors).map(([field, msgs]) => ({
             name: field as any,
             errors: Array.isArray(msgs) ? [msgs[0] as string] : [msgs as string],
-          }))
+          })),
         );
       } else {
-        const errorMsg = error?.response?.data?.message || error?.message || intl.formatMessage({ id: 'pages.forgotPassword.resetError' });
+        const errorMsg =
+          error?.response?.data?.message ||
+          error?.message ||
+          intl.formatMessage({ id: 'pages.forgotPassword.resetError' });
         message.error(errorMsg);
       }
     } finally {
@@ -186,11 +191,7 @@ const ForgotPasswordContainer: React.FC = () => {
             />
 
             {currentStep === 0 && (
-              <Form
-                form={formEmail}
-                layout="vertical"
-                onFinish={handleSendCode}
-              >
+              <Form form={formEmail} layout="vertical" onFinish={handleSendCode}>
                 <Form.Item
                   name="email"
                   rules={[
@@ -213,11 +214,7 @@ const ForgotPasswordContainer: React.FC = () => {
             )}
 
             {currentStep === 1 && (
-              <Form
-                form={formReset}
-                layout="vertical"
-                onFinish={handleResetPassword}
-              >
+              <Form form={formReset} layout="vertical" onFinish={handleResetPassword}>
                 <Form.Item
                   name="code"
                   rules={[{ required: true, message: <FormattedMessage id="pages.forgotPassword.codeRequired" /> }]}
@@ -229,9 +226,9 @@ const ForgotPasswordContainer: React.FC = () => {
                       placeholder={intl.formatMessage({ id: 'pages.forgotPassword.codePlaceholder' })}
                       maxLength={6}
                     />
-                    <Button 
-                      size="middle" 
-                      onClick={handleResendCode} 
+                    <Button
+                      size="middle"
+                      onClick={handleResendCode}
                       disabled={countdown > 0}
                       style={{ width: '120px' }}
                     >
@@ -262,7 +259,9 @@ const ForgotPasswordContainer: React.FC = () => {
                         if (!value || getFieldValue('newPassword') === value) {
                           return Promise.resolve();
                         }
-                        return Promise.reject(new Error(intl.formatMessage({ id: 'pages.forgotPassword.passwordMismatch' })));
+                        return Promise.reject(
+                          new Error(intl.formatMessage({ id: 'pages.forgotPassword.passwordMismatch' })),
+                        );
                       },
                     }),
                   ]}
@@ -283,7 +282,17 @@ const ForgotPasswordContainer: React.FC = () => {
 
             {currentStep === 2 && (
               <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                <div style={{ fontSize: 16, color: '#52c41a', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <div
+                  style={{
+                    fontSize: 16,
+                    color: '#52c41a',
+                    marginBottom: 24,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                  }}
+                >
                   <SafetyCertificateOutlined style={{ fontSize: 24 }} />
                   <span>
                     <FormattedMessage id="pages.forgotPassword.successTitle" />

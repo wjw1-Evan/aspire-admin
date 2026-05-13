@@ -1,13 +1,6 @@
 import component from './ar-EG/component';
 import globalHeader from './ar-EG/globalHeader';
 import menu from './ar-EG/menu';
-import pages from './ar-EG/pages';
-import pwa from './ar-EG/pwa';
-import settingDrawer from './ar-EG/settingDrawer';
-import settings from './ar-EG/settings';
-import request from './ar-EG/request';
-import welcome from './ar-EG/welcome';
-
 import auth from './ar-EG/modules/auth';
 import cloudStorage from './ar-EG/modules/cloud-storage';
 import company from './ar-EG/modules/company';
@@ -26,24 +19,29 @@ import user from './ar-EG/modules/user';
 import webScraper from './ar-EG/modules/web-scraper';
 import workflow from './ar-EG/modules/workflow';
 import xiaoke from './ar-EG/modules/xiaoke';
+import pages from './ar-EG/pages';
+import pwa from './ar-EG/pwa';
+import request from './ar-EG/request';
+import settingDrawer from './ar-EG/settingDrawer';
+import settings from './ar-EG/settings';
+import welcome from './ar-EG/welcome';
 
 export default {
-    'navBar.lang': 'اللغات',
-    'layout.user.link.help': 'مساعدة',
-    'layout.user.link.privacy': 'الخصوصية',
-    'layout.user.link.terms': 'الشروط',
-    'app.preview.down.block': 'تحميل هذه الصفحة إلى مشروعك المحلي',
-    'app.welcome.link.fetch-blocks': 'الحصول على جميع الكتل',
-    'app.welcome.link.block-list':
-        'بناء صفحات قياسية بسرعة بناءً على تطوير `block`',
-    ...globalHeader,
-    ...menu,
-    ...settingDrawer,
-    ...settings,
-    ...pwa,
-    ...component,
-    ...request,
-    ...pages,
+  'navBar.lang': 'اللغات',
+  'layout.user.link.help': 'مساعدة',
+  'layout.user.link.privacy': 'الخصوصية',
+  'layout.user.link.terms': 'الشروط',
+  'app.preview.down.block': 'تحميل هذه الصفحة إلى مشروعك المحلي',
+  'app.welcome.link.fetch-blocks': 'الحصول على جميع الكتل',
+  'app.welcome.link.block-list': 'بناء صفحات قياسية بسرعة بناءً على تطوير `block`',
+  ...globalHeader,
+  ...menu,
+  ...settingDrawer,
+  ...settings,
+  ...pwa,
+  ...component,
+  ...request,
+  ...pages,
   ...welcome,
 
   ...auth,

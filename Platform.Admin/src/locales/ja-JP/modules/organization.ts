@@ -24,7 +24,8 @@ export default {
   'pages.organization.message.deleteSuccess': 'Deleted successfully',
   'pages.organization.message.updateSuccess': 'Updated successfully',
   'pages.organization.modal.createTitle': 'Create Organization Node',
-  'pages.organization.modal.deleteContent': 'This action cannot be undone. Please make sure all child nodes are removed.',
+  'pages.organization.modal.deleteContent':
+    'This action cannot be undone. Please make sure all child nodes are removed.',
   'pages.organization.modal.deleteTitle': 'Confirm delete this node?',
   'pages.organization.modal.updateTitle': 'Edit Organization Node',
   'pages.organization.placeholder.code': 'Please enter a code',

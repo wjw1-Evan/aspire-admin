@@ -1,4 +1,4 @@
-import { onLCP, onCLS, onFCP, onTTFB, onINP } from 'web-vitals';
+import { onCLS, onFCP, onINP, onLCP, onTTFB } from 'web-vitals';
 
 export interface WebVitalMetric {
   name: string;

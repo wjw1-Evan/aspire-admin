@@ -1,13 +1,23 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { useParams, useNavigate } from '@umijs/max';
-import { request, useIntl } from '@umijs/max';
-import { Table, Tag, Space, Button, Modal, Descriptions, Typography, Alert, Popconfirm, Tooltip } from 'antd';
+import {
+  BarChartOutlined,
+  DeleteOutlined,
+  HistoryOutlined,
+  InfoCircleOutlined,
+  PlusOutlined,
+  RollbackOutlined,
+  SwapOutlined,
+} from '@ant-design/icons';
+import { useIntl, useNavigate, useParams } from '@umijs/max';
+import { Alert, Button, Descriptions, Modal, Popconfirm, Space, Table, Tag, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { HistoryOutlined, RollbackOutlined, DeleteOutlined, SwapOutlined, InfoCircleOutlined, PlusOutlined, BarChartOutlined } from '@ant-design/icons';
-import type { ApiResponse, PagedResult } from '@/types';
-import type { DashboardVersion, DashboardVersionComparison, DashboardVersionStatistics } from '@/services/dashboard-version/api';
-import api from '@/services/dashboard-version/api';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useMessage } from '@/hooks/useMessage';
+import type {
+  DashboardVersion,
+  DashboardVersionComparison,
+  DashboardVersionStatistics,
+} from '@/services/dashboard-version/api';
+import api from '@/services/dashboard-version/api';
 
 const { Text, Paragraph } = Typography;
 
@@ -33,25 +43,28 @@ const DashboardVersionPage: React.FC = () => {
   const [compareLoading, setCompareLoading] = useState(false);
 
   // 加载版本列表
-  const loadVersions = useCallback(async (page = 1, pageSize = 10) => {
-    if (!dashboardId) return;
-    setLoading(true);
-    try {
-      const res = await api.list(dashboardId, { current: page, pageSize });
-      if (res.success && res.data) {
-        setVersions(res.data.queryable || []);
-        setPagination({
-          current: res.data.currentPage,
-          pageSize: res.data.pageSize,
-          total: res.data.rowCount,
-        });
+  const loadVersions = useCallback(
+    async (page = 1, pageSize = 10) => {
+      if (!dashboardId) return;
+      setLoading(true);
+      try {
+        const res = await api.list(dashboardId, { current: page, pageSize });
+        if (res.success && res.data) {
+          setVersions(res.data.queryable || []);
+          setPagination({
+            current: res.data.currentPage,
+            pageSize: res.data.pageSize,
+            total: res.data.rowCount,
+          });
+        }
+      } catch (_error) {
+        message.error(intl.formatMessage({ id: 'pages.dashboard.version.loadFailed' }));
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      message.error(intl.formatMessage({ id: 'pages.dashboard.version.loadFailed' }));
-    } finally {
-      setLoading(false);
-    }
-  }, [dashboardId]);
+    },
+    [dashboardId, message.error, intl.formatMessage],
+  );
 
   // 加载统计信息
   const loadStatistics = useCallback(async () => {
@@ -84,7 +97,9 @@ const DashboardVersionPage: React.FC = () => {
         loadStatistics();
       }
     } catch (error: any) {
-      message.error(error?.response?.data?.message || intl.formatMessage({ id: 'pages.dashboard.version.createFailed' }));
+      message.error(
+        error?.response?.data?.message || intl.formatMessage({ id: 'pages.dashboard.version.createFailed' }),
+      );
     }
   };
 
@@ -98,7 +113,9 @@ const DashboardVersionPage: React.FC = () => {
         loadVersions();
       }
     } catch (error: any) {
-      message.error(error?.response?.data?.message || intl.formatMessage({ id: 'pages.dashboard.version.restoreFailed' }));
+      message.error(
+        error?.response?.data?.message || intl.formatMessage({ id: 'pages.dashboard.version.restoreFailed' }),
+      );
     }
   };
 
@@ -112,7 +129,9 @@ const DashboardVersionPage: React.FC = () => {
         loadStatistics();
       }
     } catch (error: any) {
-      message.error(error?.response?.data?.message || intl.formatMessage({ id: 'pages.dashboard.version.deleteFailed' }));
+      message.error(
+        error?.response?.data?.message || intl.formatMessage({ id: 'pages.dashboard.version.deleteFailed' }),
+      );
     }
   };
 
@@ -124,7 +143,7 @@ const DashboardVersionPage: React.FC = () => {
         setViewingVersion(res.data);
         setDetailVisible(true);
       }
-    } catch (error) {
+    } catch (_error) {
       message.error(intl.formatMessage({ id: 'pages.dashboard.version.loadFailed' }));
     }
   };
@@ -144,7 +163,9 @@ const DashboardVersionPage: React.FC = () => {
         setCompareVisible(true);
       }
     } catch (error: any) {
-      message.error(error?.response?.data?.message || intl.formatMessage({ id: 'pages.dashboard.version.compareFailed' }));
+      message.error(
+        error?.response?.data?.message || intl.formatMessage({ id: 'pages.dashboard.version.compareFailed' }),
+      );
     } finally {
       setCompareLoading(false);
     }
@@ -210,7 +231,7 @@ const DashboardVersionPage: React.FC = () => {
       key: 'createdAt',
       width: 180,
       sorter: true,
-      render: (text) => text ? new Date(text).toLocaleString() : '-',
+      render: (text) => (text ? new Date(text).toLocaleString() : '-'),
     },
     {
       title: intl.formatMessage({ id: 'pages.dashboard.version.action' }),
@@ -219,12 +240,7 @@ const DashboardVersionPage: React.FC = () => {
       fixed: 'right',
       render: (_, record) => (
         <Space size={4}>
-          <Button
-            type="link"
-            size="small"
-            icon={<InfoCircleOutlined />}
-            onClick={() => handleViewDetail(record.id)}
-          >
+          <Button type="link" size="small" icon={<InfoCircleOutlined />} onClick={() => handleViewDetail(record.id)}>
             {intl.formatMessage({ id: 'pages.dashboard.version.view' })}
           </Button>
           {!record.isCurrentVersion && (
@@ -264,11 +280,7 @@ const DashboardVersionPage: React.FC = () => {
           </span>
         </Space>
         <Space>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={handleCreateVersion}
-          >
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleCreateVersion}>
             {intl.formatMessage({ id: 'pages.dashboard.version.create' })}
           </Button>
           <Button
@@ -290,10 +302,12 @@ const DashboardVersionPage: React.FC = () => {
           message={
             <Space size={24}>
               <span>
-                <BarChartOutlined /> {intl.formatMessage({ id: 'pages.dashboard.version.totalVersions' })}: <Text strong>{statistics.totalVersions}</Text>
+                <BarChartOutlined /> {intl.formatMessage({ id: 'pages.dashboard.version.totalVersions' })}:{' '}
+                <Text strong>{statistics.totalVersions}</Text>
               </span>
               <span>
-                {intl.formatMessage({ id: 'pages.dashboard.version.currentVersion' })}: <Text strong>{statistics.currentVersionNumber}</Text>
+                {intl.formatMessage({ id: 'pages.dashboard.version.currentVersion' })}:{' '}
+                <Text strong>{statistics.currentVersionNumber}</Text>
               </span>
             </Space>
           }
@@ -324,7 +338,10 @@ const DashboardVersionPage: React.FC = () => {
       <Modal
         title={intl.formatMessage({ id: 'pages.dashboard.version.detail' })}
         open={detailVisible}
-        onCancel={() => { setDetailVisible(false); setViewingVersion(null); }}
+        onCancel={() => {
+          setDetailVisible(false);
+          setViewingVersion(null);
+        }}
         footer={null}
         width={700}
       >
@@ -357,10 +374,7 @@ const DashboardVersionPage: React.FC = () => {
               {viewingVersion.createdAt ? new Date(viewingVersion.createdAt).toLocaleString() : '-'}
             </Descriptions.Item>
             <Descriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.version.cardsSnapshot' })} span={2}>
-              <Paragraph
-                ellipsis={{ rows: 6, expandable: true }}
-                style={{ maxHeight: 200, overflow: 'auto' }}
-              >
+              <Paragraph ellipsis={{ rows: 6, expandable: true }} style={{ maxHeight: 200, overflow: 'auto' }}>
                 <pre style={{ margin: 0, fontSize: 12 }}>{viewingVersion.cardsSnapshot}</pre>
               </Paragraph>
             </Descriptions.Item>
@@ -372,7 +386,10 @@ const DashboardVersionPage: React.FC = () => {
       <Modal
         title={intl.formatMessage({ id: 'pages.dashboard.version.compareResult' })}
         open={compareVisible}
-        onCancel={() => { setCompareVisible(false); setCompareResult(null); }}
+        onCancel={() => {
+          setCompareVisible(false);
+          setCompareResult(null);
+        }}
         footer={null}
         width={900}
       >
@@ -389,7 +406,10 @@ const DashboardVersionPage: React.FC = () => {
             />
             <div style={{ display: 'flex', gap: 16 }}>
               <div style={{ flex: 1 }}>
-                <h4>{intl.formatMessage({ id: 'pages.dashboard.version.version1' })}: #{compareResult.version1?.versionNumber}</h4>
+                <h4>
+                  {intl.formatMessage({ id: 'pages.dashboard.version.version1' })}: #
+                  {compareResult.version1?.versionNumber}
+                </h4>
                 <Descriptions bordered column={1} size="small">
                   <Descriptions.Item label="Name">{compareResult.version1?.name}</Descriptions.Item>
                   <Descriptions.Item label="Layout">{compareResult.version1?.layoutType}</Descriptions.Item>
@@ -397,7 +417,10 @@ const DashboardVersionPage: React.FC = () => {
                 </Descriptions>
               </div>
               <div style={{ flex: 1 }}>
-                <h4>{intl.formatMessage({ id: 'pages.dashboard.version.version2' })}: #{compareResult.version2?.versionNumber}</h4>
+                <h4>
+                  {intl.formatMessage({ id: 'pages.dashboard.version.version2' })}: #
+                  {compareResult.version2?.versionNumber}
+                </h4>
                 <Descriptions bordered column={1} size="small">
                   <Descriptions.Item label="Name">{compareResult.version2?.name}</Descriptions.Item>
                   <Descriptions.Item label="Layout">{compareResult.version2?.layoutType}</Descriptions.Item>

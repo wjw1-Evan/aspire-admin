@@ -103,7 +103,8 @@ export default {
   'pages.webScraper.deduplicate': 'URL去重',
   'pages.webScraper.scheduleCron': '定时表达式',
   'pages.webScraper.scheduleCronPlaceholder': '0 */10 * * * *',
-  'pages.webScraper.scheduleCronTooltip': '<p>常用示例：</p><ul><li>每10分钟：<code>*/10 * * * *</code></li><li>每小时：<code>0 * * * *</code></li><li>每天凌晨：<code>0 0 * * *</code></li><li>每周一：<code>0 0 * * 1</code></li></ul>',
+  'pages.webScraper.scheduleCronTooltip':
+    '<p>常用示例：</p><ul><li>每10分钟：<code>*/10 * * * *</code></li><li>每小时：<code>0 * * * *</code></li><li>每天凌晨：<code>0 0 * * *</code></li><li>每周一：<code>0 0 * * 1</code></li></ul>',
   'pages.webScraper.mode.single': '仅当前页',
   'pages.webScraper.mode.depth': '深度优先',
   'pages.webScraper.mode.breadth': '广度优先',

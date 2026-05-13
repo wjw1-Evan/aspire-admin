@@ -29,13 +29,11 @@ export default {
   'app.settings.security.phone': 'সুরক্ষা ফোন',
   'app.settings.security.phone-description': 'আবদ্ধ ফোন',
   'app.settings.security.question': 'নিরাপত্তা প্রশ্ন',
-  'app.settings.security.question-description':
-    'সুরক্ষা প্রশ্ন সেট করা নেই, এবং সুরক্ষা নীতি কার্যকরভাবে অ্যাকাউন্ট সুরক্ষা রক্ষা করতে পারে',
+  'app.settings.security.question-description': 'সুরক্ষা প্রশ্ন সেট করা নেই, এবং সুরক্ষা নীতি কার্যকরভাবে অ্যাকাউন্ট সুরক্ষা রক্ষা করতে পারে',
   'app.settings.security.email': 'ব্যাকআপ ইমেইল',
   'app.settings.security.email-description': 'বাউন্ড ইমেইল',
   'app.settings.security.mfa': 'MFA ডিভাইস',
-  'app.settings.security.mfa-description':
-    "আনবাউন্ড এমএফএ ডিভাইস, বাঁধাইয়ের পরে, দু'বার নিশ্চিত করা যায়",
+  'app.settings.security.mfa-description': "আনবাউন্ড এমএফএ ডিভাইস, বাঁধাইয়ের পরে, দু'বার নিশ্চিত করা যায়",
   'app.settings.security.modify': 'পরিবর্তন করুন',
   'app.settings.security.set': 'সেট',
   'app.settings.security.bind': 'বাঁধাই',
@@ -47,14 +45,11 @@ export default {
   'app.settings.binding.dingding-description': 'বর্তমানে আনবাউন্ড ডিঙ্গটাল অ্যাকাউন্ট',
   'app.settings.binding.bind': 'বাঁধাই',
   'app.settings.notification.password': 'অ্যাকাউন্টের পাসওয়ার্ড',
-  'app.settings.notification.password-description':
-    'অন্যান্য ব্যবহারকারীর বার্তাগুলি স্টেশন চিঠি আকারে জানানো হবে',
+  'app.settings.notification.password-description': 'অন্যান্য ব্যবহারকারীর বার্তাগুলি স্টেশন চিঠি আকারে জানানো হবে',
   'app.settings.notification.messages': 'সিস্টেম বার্তা',
-  'app.settings.notification.messages-description':
-    'সিস্টেম বার্তাগুলি স্টেশন চিঠির আকারে জানানো হবে',
+  'app.settings.notification.messages-description': 'সিস্টেম বার্তাগুলি স্টেশন চিঠির আকারে জানানো হবে',
   'app.settings.notification.todo': 'করণীয় বিজ্ঞপ্তি',
-  'app.settings.notification.todo-description':
-    'করণীয় তালিকাটি স্টেশন থেকে চিঠি আকারে জানানো হবে',
+  'app.settings.notification.todo-description': 'করণীয় তালিকাটি স্টেশন থেকে চিঠি আকারে জানানো হবে',
   'app.settings.open': 'খোলা',
   'app.settings.close': 'বন্ধ',
 };

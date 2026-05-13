@@ -1,181 +1,796 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined, UserOutlined } from '@ant-design/icons';
 import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import { ModalForm, ProFormText, ProFormDatePicker } from '@ant-design/pro-components/es/form';
+import { ModalForm, ProFormDatePicker, ProFormText } from '@ant-design/pro-components/es/form';
 import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ProTable, ProColumns } from '@ant-design/pro-components/es/table';
-import { request } from '@umijs/max';
-import { App, Tag, Typography, Empty, Rate, Button, Space, Input, Row, Col, Popconfirm } from 'antd';
-import { Drawer } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, UserOutlined, WarningOutlined, ReloadOutlined, CalendarOutlined, CustomerServiceOutlined, FileTextOutlined, SearchOutlined } from '@ant-design/icons';
+import { ProColumns, ProTable } from '@ant-design/pro-components/es/table';
+import { request, useIntl } from '@umijs/max';
+import { App, Button, Col, Drawer, Empty, Input, Popconfirm, Rate, Row, Space, Tag, Typography } from 'antd';
 import dayjs from 'dayjs';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiResponse, PagedResult } from '@/types';
-import { useIntl } from '@umijs/max';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
-interface ParkTenant { id: string; tenantName: string; contactPerson?: string; phone?: string; email?: string; industry?: string; businessLicense?: string; address?: string; notes?: string; entryDate?: string; status: string; unitCount: number; activeContracts: number; createdAt?: string; updatedAt?: string; }
-interface LeaseContract { id: string; contractNumber: string; tenantId: string; tenantName?: string; unitIds: string[]; startDate: string; endDate: string; monthlyRent: number; totalAmount?: number; status: string; createdAt?: string; }
-interface TenantStatistics { totalTenants: number; activeTenants: number; totalContracts: number; activeContracts: number; expiringContracts: number; totalMonthlyRent: number; }
-interface ServiceRequest { id: string; tenantId: string; title: string; categoryName?: string; status: string; rating?: number; createdAt: string; }
-interface LeasePaymentRecord { id: string; contractId: string; paymentType: string; amount: number; paymentDate: string; paymentMethod?: string; notes?: string; }
-interface TenantFormData { tenantName: string; contactPerson?: string; phone?: string; email?: string; industry?: string; businessLicense?: string; address?: string; notes?: string; entryDate?: string; }
+interface ParkTenant {
+  id: string;
+  tenantName: string;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  industry?: string;
+  businessLicense?: string;
+  address?: string;
+  notes?: string;
+  entryDate?: string;
+  status: string;
+  unitCount: number;
+  activeContracts: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+interface LeaseContract {
+  id: string;
+  contractNumber: string;
+  tenantId: string;
+  tenantName?: string;
+  unitIds: string[];
+  startDate: string;
+  endDate: string;
+  monthlyRent: number;
+  totalAmount?: number;
+  status: string;
+  createdAt?: string;
+}
+interface TenantStatistics {
+  totalTenants: number;
+  activeTenants: number;
+  totalContracts: number;
+  activeContracts: number;
+  expiringContracts: number;
+  totalMonthlyRent: number;
+}
+interface ServiceRequest {
+  id: string;
+  tenantId: string;
+  title: string;
+  categoryName?: string;
+  status: string;
+  rating?: number;
+  createdAt: string;
+}
+interface LeasePaymentRecord {
+  id: string;
+  contractId: string;
+  paymentType: string;
+  amount: number;
+  paymentDate: string;
+  paymentMethod?: string;
+  notes?: string;
+}
+interface TenantFormData {
+  tenantName: string;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  industry?: string;
+  businessLicense?: string;
+  address?: string;
+  notes?: string;
+  entryDate?: string;
+}
 
 const api = {
-    list: (params: any) => request<ApiResponse<PagedResult<ParkTenant>>>('/apiservice/api/park/tenants/list', { params }),
-    get: (id: string) => request<ApiResponse<ParkTenant>>(`/apiservice/api/park/tenants/${id}`),
-    create: (data: TenantFormData) => request<ApiResponse<ParkTenant>>('/apiservice/api/park/tenants', { method: 'POST', data }),
-    update: (id: string, data: TenantFormData) => request<ApiResponse<ParkTenant>>(`/apiservice/api/park/tenants/${id}`, { method: 'PUT', data }),
-    delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/park/tenants/${id}`, { method: 'DELETE' }),
-    statistics: () => request<ApiResponse<TenantStatistics>>('/apiservice/api/park/tenant/statistics'),
-    getContracts: (params: { page?: number; pageSize?: number; tenantId?: string }) => request<ApiResponse<PagedResult<LeaseContract>>>('/apiservice/api/park/contracts/list', { params }),
-    getServiceRequests: (params: { page?: number; pageSize?: number; tenantId?: string }) => request<ApiResponse<PagedResult<ServiceRequest>>>('/apiservice/api/park/services/requests/list', { params }),
-    getPaymentRecords: (contractId: string) => request<ApiResponse<LeasePaymentRecord[]>>(`/apiservice/api/park/contracts/${contractId}/payments`),
+  list: (params: any) => request<ApiResponse<PagedResult<ParkTenant>>>('/apiservice/api/park/tenants/list', { params }),
+  get: (id: string) => request<ApiResponse<ParkTenant>>(`/apiservice/api/park/tenants/${id}`),
+  create: (data: TenantFormData) =>
+    request<ApiResponse<ParkTenant>>('/apiservice/api/park/tenants', { method: 'POST', data }),
+  update: (id: string, data: TenantFormData) =>
+    request<ApiResponse<ParkTenant>>(`/apiservice/api/park/tenants/${id}`, { method: 'PUT', data }),
+  delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/park/tenants/${id}`, { method: 'DELETE' }),
+  statistics: () => request<ApiResponse<TenantStatistics>>('/apiservice/api/park/tenant/statistics'),
+  getContracts: (params: { page?: number; pageSize?: number; tenantId?: string }) =>
+    request<ApiResponse<PagedResult<LeaseContract>>>('/apiservice/api/park/contracts/list', { params }),
+  getServiceRequests: (params: { page?: number; pageSize?: number; tenantId?: string }) =>
+    request<ApiResponse<PagedResult<ServiceRequest>>>('/apiservice/api/park/services/requests/list', { params }),
+  getPaymentRecords: (contractId: string) =>
+    request<ApiResponse<LeasePaymentRecord[]>>(`/apiservice/api/park/contracts/${contractId}/payments`),
 };
 
 const TenantManagement: React.FC = () => {
-    const { message } = App.useApp();
-    const intl = useIntl();
-    const actionRef = useRef<any>(null);
-    const [state, setState] = useState({ statistics: null as TenantStatistics | null, formVisible: false, editingTenant: null as ParkTenant | null, detailVisible: false, viewingTenant: null as ParkTenant | null, detailLoading: false, search: '' });
-    const [detailData, setDetailData] = useState({ contracts: [] as LeaseContract[], serviceRequests: [] as ServiceRequest[], payments: [] as (LeasePaymentRecord & { contractNumber?: string })[], loading: false });
-    const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
-    const setDetail = (partial: Partial<typeof detailData>) => setDetailData(prev => ({ ...prev, ...partial }));
+  const { message } = App.useApp();
+  const intl = useIntl();
+  const actionRef = useRef<any>(null);
+  const [state, setState] = useState({
+    statistics: null as TenantStatistics | null,
+    formVisible: false,
+    editingTenant: null as ParkTenant | null,
+    detailVisible: false,
+    viewingTenant: null as ParkTenant | null,
+    detailLoading: false,
+    search: '',
+  });
+  const [detailData, setDetailData] = useState({
+    contracts: [] as LeaseContract[],
+    serviceRequests: [] as ServiceRequest[],
+    payments: [] as (LeasePaymentRecord & { contractNumber?: string })[],
+    loading: false,
+  });
+  const set = useCallback((partial: Partial<typeof state>) => setState((prev) => ({ ...prev, ...partial })), []);
+  const setDetail = (partial: Partial<typeof detailData>) => setDetailData((prev) => ({ ...prev, ...partial }));
 
-    const tenantStatusOptions = [
-        { label: intl.formatMessage({ id: 'pages.parkManagement.tenant.status.active' }), value: 'Active', color: 'green' },
-        { label: intl.formatMessage({ id: 'pages.parkManagement.tenant.status.expiring' }), value: 'Expiring', color: 'orange' },
-        { label: intl.formatMessage({ id: 'pages.parkManagement.tenant.status.moved' }), value: 'Moved', color: 'default' }
-    ];
-    const contractStatusOptions = [
-        { label: intl.formatMessage({ id: 'pages.parkManagement.tenant.contractStatus.active' }), value: 'Active', color: 'green' },
-        { label: intl.formatMessage({ id: 'pages.parkManagement.tenant.contractStatus.pending' }), value: 'Pending', color: 'blue' },
-        { label: intl.formatMessage({ id: 'pages.parkManagement.tenant.contractStatus.expired' }), value: 'Expired', color: 'default' },
-        { label: intl.formatMessage({ id: 'pages.parkManagement.tenant.contractStatus.renewed' }), value: 'Renewed', color: 'cyan' },
-        { label: intl.formatMessage({ id: 'pages.parkManagement.tenant.contractStatus.terminated' }), value: 'Terminated', color: 'red' }
-    ];
+  const tenantStatusOptions = [
+    { label: intl.formatMessage({ id: 'pages.parkManagement.tenant.status.active' }), value: 'Active', color: 'green' },
+    {
+      label: intl.formatMessage({ id: 'pages.parkManagement.tenant.status.expiring' }),
+      value: 'Expiring',
+      color: 'orange',
+    },
+    { label: intl.formatMessage({ id: 'pages.parkManagement.tenant.status.moved' }), value: 'Moved', color: 'default' },
+  ];
+  const contractStatusOptions = [
+    {
+      label: intl.formatMessage({ id: 'pages.parkManagement.tenant.contractStatus.active' }),
+      value: 'Active',
+      color: 'green',
+    },
+    {
+      label: intl.formatMessage({ id: 'pages.parkManagement.tenant.contractStatus.pending' }),
+      value: 'Pending',
+      color: 'blue',
+    },
+    {
+      label: intl.formatMessage({ id: 'pages.parkManagement.tenant.contractStatus.expired' }),
+      value: 'Expired',
+      color: 'default',
+    },
+    {
+      label: intl.formatMessage({ id: 'pages.parkManagement.tenant.contractStatus.renewed' }),
+      value: 'Renewed',
+      color: 'cyan',
+    },
+    {
+      label: intl.formatMessage({ id: 'pages.parkManagement.tenant.contractStatus.terminated' }),
+      value: 'Terminated',
+      color: 'red',
+    },
+  ];
 
-    const loadStatistics = useCallback(() => { api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }, []);
-    useEffect(() => { loadStatistics(); }, [loadStatistics]);
+  const loadStatistics = useCallback(() => {
+    api.statistics().then((r) => {
+      if (r.success && r.data) set({ statistics: r.data });
+    });
+  }, [set]);
+  useEffect(() => {
+    loadStatistics();
+  }, [loadStatistics]);
 
-    const columns: ProColumns<ParkTenant>[] = [
-        { title: intl.formatMessage({ id: 'pages.parkManagement.tenant.table.tenantName' }), dataIndex: 'tenantName', sorter: true, width: 180, render: (_, record) => <Space><UserOutlined style={{ color: '#1890ff' }} /><a onClick={() => handleViewTenant(record.id)}>{record.tenantName}</a></Space> },
-        { title: intl.formatMessage({ id: 'pages.parkManagement.tenant.table.contactPerson' }), dataIndex: 'contactPerson', sorter: true, width: 120, render: (text, record) => <div><Typography.Text>{text || '-'}</Typography.Text>{record.phone && <Typography.Text type="secondary" style={{ fontSize: 12 }}>{record.phone}</Typography.Text>}</div> },
-        { title: intl.formatMessage({ id: 'pages.parkManagement.tenant.table.industry' }), dataIndex: 'industry', sorter: true, width: 100, render: (text) => text || '-' },
-        { title: intl.formatMessage({ id: 'pages.parkManagement.tenant.table.entryDate' }), dataIndex: 'entryDate', sorter: true, width: 110, render: (date) => date ? dayjs(date as string).format('YYYY-MM-DD') : '-' },
-        { title: intl.formatMessage({ id: 'pages.parkManagement.tenant.table.unitCount' }), dataIndex: 'unitCount', sorter: true, width: 80, align: 'center' },
-        { title: intl.formatMessage({ id: 'pages.parkManagement.tenant.table.activeContracts' }), dataIndex: 'activeContracts', sorter: true, width: 80, align: 'center', render: (count) => { const c = (count as number) || 0; return <Tag color={c > 0 ? '#52c41a' : '#d9d9d9'}>{c}</Tag>; } },
-        { title: intl.formatMessage({ id: 'pages.parkManagement.tenant.table.status' }), dataIndex: 'status', sorter: true, width: 100, render: (_: any, record) => { const opt = tenantStatusOptions.find(o => o.value === record.status); return <Tag color={opt?.color || 'default'}>{opt?.label || record.status}</Tag>; } },
-        { title: intl.formatMessage({ id: 'pages.table.action' }), valueType: 'option', fixed: 'right', width: 180, render: (_, record) => (
-            <Space size={4}>
-                <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingTenant: record, formVisible: true })}>{intl.formatMessage({ id: 'pages.table.edit' })}</Button>
-                <Popconfirm title={intl.formatMessage({ id: 'pages.parkManagement.tenant.modal.confirmDelete' }, { name: record.tenantName })} onConfirm={() => handleDeleteTenant(record.id)}>
-                    <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.table.delete' })}</Button>
-                </Popconfirm>
+  const columns: ProColumns<ParkTenant>[] = [
+    {
+      title: intl.formatMessage({ id: 'pages.parkManagement.tenant.table.tenantName' }),
+      dataIndex: 'tenantName',
+      sorter: true,
+      width: 180,
+      render: (_, record) => (
+        <Space>
+          <UserOutlined style={{ color: '#1890ff' }} />
+          <a onClick={() => handleViewTenant(record.id)}>{record.tenantName}</a>
+        </Space>
+      ),
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.parkManagement.tenant.table.contactPerson' }),
+      dataIndex: 'contactPerson',
+      sorter: true,
+      width: 120,
+      render: (text, record) => (
+        <div>
+          <Typography.Text>{text || '-'}</Typography.Text>
+          {record.phone && (
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+              {record.phone}
+            </Typography.Text>
+          )}
+        </div>
+      ),
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.parkManagement.tenant.table.industry' }),
+      dataIndex: 'industry',
+      sorter: true,
+      width: 100,
+      render: (text) => text || '-',
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.parkManagement.tenant.table.entryDate' }),
+      dataIndex: 'entryDate',
+      sorter: true,
+      width: 110,
+      render: (date) => (date ? dayjs(date as string).format('YYYY-MM-DD') : '-'),
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.parkManagement.tenant.table.unitCount' }),
+      dataIndex: 'unitCount',
+      sorter: true,
+      width: 80,
+      align: 'center',
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.parkManagement.tenant.table.activeContracts' }),
+      dataIndex: 'activeContracts',
+      sorter: true,
+      width: 80,
+      align: 'center',
+      render: (count) => {
+        const c = (count as number) || 0;
+        return <Tag color={c > 0 ? '#52c41a' : '#d9d9d9'}>{c}</Tag>;
+      },
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.parkManagement.tenant.table.status' }),
+      dataIndex: 'status',
+      sorter: true,
+      width: 100,
+      render: (_: any, record) => {
+        const opt = tenantStatusOptions.find((o) => o.value === record.status);
+        return <Tag color={opt?.color || 'default'}>{opt?.label || record.status}</Tag>;
+      },
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.table.action' }),
+      valueType: 'option',
+      fixed: 'right',
+      width: 180,
+      render: (_, record) => (
+        <Space size={4}>
+          <Button
+            type="link"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => set({ editingTenant: record, formVisible: true })}
+          >
+            {intl.formatMessage({ id: 'pages.table.edit' })}
+          </Button>
+          <Popconfirm
+            title={intl.formatMessage(
+              { id: 'pages.parkManagement.tenant.modal.confirmDelete' },
+              { name: record.tenantName },
+            )}
+            onConfirm={() => handleDeleteTenant(record.id)}
+          >
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+              {intl.formatMessage({ id: 'pages.table.delete' })}
+            </Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
+  const handleViewTenant = async (id: string) => {
+    set({ viewingTenant: null, detailVisible: true, detailLoading: true });
+    setDetail({ loading: true, contracts: [], serviceRequests: [], payments: [] });
+    try {
+      const tenantRes = await api.get(id);
+      if (tenantRes.success && tenantRes.data) {
+        set({ viewingTenant: tenantRes.data });
+        const [serviceRes, contractRes] = await Promise.all([
+          api.getServiceRequests({ page: 1, tenantId: id }),
+          api.getContracts({ page: 1, tenantId: id }),
+        ]);
+        if (serviceRes.success && serviceRes.data) setDetail({ serviceRequests: serviceRes.data.queryable });
+        if (contractRes.success && contractRes.data) {
+          setDetail({ contracts: contractRes.data.queryable });
+          const allPayments: (LeasePaymentRecord & { contractNumber?: string })[] = [];
+          for (const contract of contractRes.data.queryable) {
+            const paymentRes = await api.getPaymentRecords(contract.id);
+            if (paymentRes.success && paymentRes.data)
+              allPayments.push(...paymentRes.data.map((p) => ({ ...p, contractNumber: contract.contractNumber })));
+          }
+          setDetail({ payments: allPayments });
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load tenant details:', error);
+    } finally {
+      set({ detailLoading: false });
+      setDetail({ loading: false });
+    }
+  };
+
+  const handleDeleteTenant = async (id: string) => {
+    const res = await api.delete(id);
+    if (res.success) {
+      message.success(intl.formatMessage({ id: 'pages.message.deleteSuccess' }));
+      actionRef.current?.reload();
+      loadStatistics();
+    } else {
+      message.error(intl.formatMessage({ id: 'pages.message.deleteFailed' }));
+    }
+  };
+
+  return (
+    <PageContainer>
+      <ProTable
+        actionRef={actionRef}
+        headerTitle={
+          <Space size={24}>
+            <Space>
+              <UserOutlined />
+              {intl.formatMessage({ id: 'pages.parkManagement.tenant.title' })}
             </Space>
-        )},
-    ];
+            <Space size={12}>
+              <Tag color="blue">
+                {intl.formatMessage({ id: 'pages.parkManagement.tenant.statistics.totalTenants' })}{' '}
+                {state.statistics?.totalTenants || 0}
+              </Tag>
+              <Tag color="green">
+                {intl.formatMessage({ id: 'pages.parkManagement.tenant.statistics.activeTenants' })}{' '}
+                {state.statistics?.activeTenants || 0}
+              </Tag>
+              <Tag color="cyan">
+                {intl.formatMessage({ id: 'pages.parkManagement.tenant.statistics.totalContracts' })}{' '}
+                {state.statistics?.totalContracts || 0}
+              </Tag>
+              <Tag color="orange">
+                {intl.formatMessage({ id: 'pages.parkManagement.tenant.statistics.expiringContracts' })}{' '}
+                {state.statistics?.expiringContracts || 0}
+              </Tag>
+              <Tag color="purple">
+                {intl.formatMessage({ id: 'pages.parkManagement.tenant.statistics.totalMonthlyRent' })} ¥
+                {state.statistics?.totalMonthlyRent?.toLocaleString() || 0}
+              </Tag>
+            </Space>
+          </Space>
+        }
+        request={async (params: any, sort: any, filter: any) => {
+          const res = await api.list({ ...params, search: state.search, sort, filter });
+          return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+        }}
+        columns={columns}
+        rowKey="id"
+        search={false}
+        scroll={{ x: 'max-content' }}
+        toolBarRender={() => [
+          <Input.Search
+            key="search"
+            placeholder={intl.formatMessage({ id: 'pages.common.search' })}
+            allowClear
+            value={state.search}
+            onChange={(e) => set({ search: e.target.value })}
+            onSearch={(value) => {
+              set({ search: value });
+              actionRef.current?.reload();
+            }}
+            style={{ width: 260, marginRight: 8 }}
+            prefix={<SearchOutlined />}
+          />,
+          <Button
+            key="add"
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => set({ editingTenant: null, formVisible: true })}
+          >
+            {intl.formatMessage({ id: 'pages.parkManagement.tenant.button.addTenant' })}
+          </Button>,
+        ]}
+      />
 
-    const handleViewTenant = async (id: string) => {
-        set({ viewingTenant: null, detailVisible: true, detailLoading: true }); setDetail({ loading: true, contracts: [], serviceRequests: [], payments: [] });
-        try {
-            const tenantRes = await api.get(id);
-            if (tenantRes.success && tenantRes.data) {
-                set({ viewingTenant: tenantRes.data });
-                const [serviceRes, contractRes] = await Promise.all([api.getServiceRequests({ page: 1, tenantId: id }), api.getContracts({ page: 1, tenantId: id })]);
-                if (serviceRes.success && serviceRes.data) setDetail({ serviceRequests: serviceRes.data.queryable });
-                if (contractRes.success && contractRes.data) {
-                    setDetail({ contracts: contractRes.data.queryable });
-                    const allPayments: (LeasePaymentRecord & { contractNumber?: string })[] = [];
-                    for (const contract of contractRes.data.queryable) { const paymentRes = await api.getPaymentRecords(contract.id); if (paymentRes.success && paymentRes.data) allPayments.push(...paymentRes.data.map(p => ({ ...p, contractNumber: contract.contractNumber }))); }
-                    setDetail({ payments: allPayments });
-                }
-            }
-        } catch (error) { console.error('Failed to load tenant details:', error); }
-        finally { set({ detailLoading: false }); setDetail({ loading: false }); }
-    };
-
-    const handleDeleteTenant = async (id: string) => {
-        const res = await api.delete(id);
-        if (res.success) {
-            message.success(intl.formatMessage({ id: 'pages.message.deleteSuccess' }));
+      <ModalForm
+        key={state.editingTenant?.id || 'create'}
+        title={
+          state.editingTenant
+            ? intl.formatMessage({ id: 'pages.parkManagement.tenant.modal.editTitle' })
+            : intl.formatMessage({ id: 'pages.parkManagement.tenant.modal.createTitle' })
+        }
+        open={state.formVisible}
+        onOpenChange={(open) => {
+          if (!open) set({ formVisible: false, editingTenant: null });
+        }}
+        initialValues={
+          state.editingTenant
+            ? {
+                tenantName: state.editingTenant.tenantName,
+                contactPerson: state.editingTenant.contactPerson,
+                phone: state.editingTenant.phone,
+                email: state.editingTenant.email,
+                industry: state.editingTenant.industry,
+                businessLicense: state.editingTenant.businessLicense,
+                address: state.editingTenant.address,
+                notes: state.editingTenant.notes,
+                entryDate: state.editingTenant.entryDate ? dayjs(state.editingTenant.entryDate) : undefined,
+              }
+            : undefined
+        }
+        onFinish={async (values) => {
+          const entryDateVal = values.entryDate?.toISOString ? values.entryDate.toISOString() : values.entryDate;
+          const data = { ...values, entryDate: entryDateVal } as any;
+          const res = state.editingTenant ? await api.update(state.editingTenant.id, data) : await api.create(data);
+          if (res.success) {
+            message.success(
+              state.editingTenant
+                ? intl.formatMessage({ id: 'pages.message.updateSuccess' })
+                : intl.formatMessage({ id: 'pages.message.createSuccess' }),
+            );
+            set({ formVisible: false, editingTenant: null });
             actionRef.current?.reload();
             loadStatistics();
-        } else {
-            message.error(intl.formatMessage({ id: 'pages.message.deleteFailed' }));
-        }
-    };
-
-    return (
-        <PageContainer>
-            <ProTable actionRef={actionRef} headerTitle={
-              <Space size={24}>
-                <Space><UserOutlined />{intl.formatMessage({ id: 'pages.parkManagement.tenant.title' })}</Space>
-                <Space size={12}>
-                  <Tag color="blue">{intl.formatMessage({ id: 'pages.parkManagement.tenant.statistics.totalTenants' })} {state.statistics?.totalTenants || 0}</Tag>
-                  <Tag color="green">{intl.formatMessage({ id: 'pages.parkManagement.tenant.statistics.activeTenants' })} {state.statistics?.activeTenants || 0}</Tag>
-                  <Tag color="cyan">{intl.formatMessage({ id: 'pages.parkManagement.tenant.statistics.totalContracts' })} {state.statistics?.totalContracts || 0}</Tag>
-                  <Tag color="orange">{intl.formatMessage({ id: 'pages.parkManagement.tenant.statistics.expiringContracts' })} {state.statistics?.expiringContracts || 0}</Tag>
-                  <Tag color="purple">{intl.formatMessage({ id: 'pages.parkManagement.tenant.statistics.totalMonthlyRent' })} ¥{state.statistics?.totalMonthlyRent?.toLocaleString() || 0}</Tag>
-                </Space>
-              </Space>
-            } request={async (params: any, sort: any, filter: any) => {
-                const res = await api.list({ ...params, search: state.search, sort, filter });
-                return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
-            }} columns={columns} rowKey="id" search={false}
-                scroll={{ x: 'max-content' }}
-                toolBarRender={() => [
-                    <Input.Search
-                        key="search"
-                        placeholder={intl.formatMessage({ id: 'pages.common.search' })}
-                        allowClear
-                        value={state.search}
-                        onChange={(e) => set({ search: e.target.value })}
-                        onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
-                        style={{ width: 260, marginRight: 8 }}
-                        prefix={<SearchOutlined />}
-                    />,
-                    <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingTenant: null, formVisible: true })}>{intl.formatMessage({ id: 'pages.parkManagement.tenant.button.addTenant' })}</Button>
-                ]}
+          } else {
+            message.error(getErrorMessage(res, 'pages.message.operationFailed'));
+            return false;
+          }
+          return res.success;
+        }}
+        autoFocusFirstInput
+        width={640}
+      >
+        <Row gutter={16}>
+          <Col span={12}>
+            <ProFormText
+              name="tenantName"
+              label={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.tenantName' })}
+              placeholder={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.tenantNamePlaceholder' })}
+              rules={[
+                {
+                  required: true,
+                  message: intl.formatMessage({ id: 'pages.parkManagement.tenant.form.tenantNameRequired' }),
+                },
+              ]}
             />
+          </Col>
+          <Col span={12}>
+            <ProFormText
+              name="industry"
+              label={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.industry' })}
+              placeholder={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.industryPlaceholder' })}
+            />
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col span={8}>
+            <ProFormText
+              name="contactPerson"
+              label={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.contactPerson' })}
+              placeholder={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.contactPersonPlaceholder' })}
+            />
+          </Col>
+          <Col span={8}>
+            <ProFormText
+              name="phone"
+              label={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.phone' })}
+              placeholder={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.phonePlaceholder' })}
+            />
+          </Col>
+          <Col span={8}>
+            <ProFormText
+              name="email"
+              label={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.email' })}
+              placeholder={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.emailPlaceholder' })}
+            />
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col span={12}>
+            <ProFormText
+              name="businessLicense"
+              label={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.businessLicense' })}
+              placeholder={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.businessLicensePlaceholder' })}
+            />
+          </Col>
+          <Col span={12}>
+            <ProFormDatePicker
+              name="entryDate"
+              label={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.entryDate' })}
+              style={{ width: '100%' }}
+            />
+          </Col>
+        </Row>
+        <ProFormText
+          name="address"
+          label={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.address' })}
+          placeholder={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.addressPlaceholder' })}
+        />
+        <ProFormText
+          name="notes"
+          label={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.notes' })}
+          placeholder={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.notesPlaceholder' })}
+        />
+      </ModalForm>
 
-            <ModalForm key={state.editingTenant?.id || 'create'} title={state.editingTenant ? intl.formatMessage({ id: 'pages.parkManagement.tenant.modal.editTitle' }) : intl.formatMessage({ id: 'pages.parkManagement.tenant.modal.createTitle' })} open={state.formVisible}
-                onOpenChange={(open) => { if (!open) set({ formVisible: false, editingTenant: null }); }}
-                initialValues={state.editingTenant ? { tenantName: state.editingTenant.tenantName, contactPerson: state.editingTenant.contactPerson, phone: state.editingTenant.phone, email: state.editingTenant.email, industry: state.editingTenant.industry, businessLicense: state.editingTenant.businessLicense, address: state.editingTenant.address, notes: state.editingTenant.notes, entryDate: state.editingTenant.entryDate ? dayjs(state.editingTenant.entryDate) : undefined } : undefined}
-                onFinish={async (values) => { const entryDateVal = values.entryDate?.toISOString ? values.entryDate.toISOString() : values.entryDate; const data = { ...values, entryDate: entryDateVal } as any; const res = state.editingTenant ? await api.update(state.editingTenant.id, data) : await api.create(data); if (res.success) { message.success(state.editingTenant ? intl.formatMessage({ id: 'pages.message.updateSuccess' }) : intl.formatMessage({ id: 'pages.message.createSuccess' })); set({ formVisible: false, editingTenant: null }); actionRef.current?.reload(); loadStatistics(); } else { message.error(getErrorMessage(res, 'pages.message.operationFailed')); return false; } return res.success; }} autoFocusFirstInput width={640}>
-                <Row gutter={16}><Col span={12}><ProFormText name="tenantName" label={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.tenantName' })} placeholder={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.tenantNamePlaceholder' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.parkManagement.tenant.form.tenantNameRequired' }) }]} /></Col><Col span={12}><ProFormText name="industry" label={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.industry' })} placeholder={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.industryPlaceholder' })} /></Col></Row>
-                <Row gutter={16}><Col span={8}><ProFormText name="contactPerson" label={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.contactPerson' })} placeholder={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.contactPersonPlaceholder' })} /></Col><Col span={8}><ProFormText name="phone" label={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.phone' })} placeholder={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.phonePlaceholder' })} /></Col><Col span={8}><ProFormText name="email" label={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.email' })} placeholder={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.emailPlaceholder' })} /></Col></Row>
-                <Row gutter={16}><Col span={12}><ProFormText name="businessLicense" label={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.businessLicense' })} placeholder={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.businessLicensePlaceholder' })} /></Col><Col span={12}><ProFormDatePicker name="entryDate" label={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.entryDate' })} style={{ width: '100%' }} /></Col></Row>
-                <ProFormText name="address" label={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.address' })} placeholder={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.addressPlaceholder' })} />
-                <ProFormText name="notes" label={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.notes' })} placeholder={intl.formatMessage({ id: 'pages.parkManagement.tenant.form.notesPlaceholder' })} />
-            </ModalForm>
+      <Drawer
+        title={
+          state.viewingTenant?.tenantName || intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.title' })
+        }
+        open={state.detailVisible}
+        onClose={() => {
+          set({ detailVisible: false, viewingTenant: null });
+        }}
+        size="large"
+        loading={state.detailLoading}
+      >
+        {state.viewingTenant && (
+          <div>
+            <Typography.Text strong style={{ fontSize: 16, marginBottom: 12, display: 'block' }}>
+              {intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.basicInfo' })}
+            </Typography.Text>
+            <ProDescriptions column={2} bordered size="small" style={{ marginBottom: 24 }}>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.tenantName' })}>
+                {state.viewingTenant.tenantName}
+              </ProDescriptions.Item>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.industry' })}>
+                {state.viewingTenant.industry || '-'}
+              </ProDescriptions.Item>
+              <ProDescriptions.Item
+                label={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.contactPerson' })}
+              >
+                {state.viewingTenant.contactPerson || '-'}
+              </ProDescriptions.Item>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.phone' })}>
+                {state.viewingTenant.phone || '-'}
+              </ProDescriptions.Item>
+              <ProDescriptions.Item
+                label={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.email' })}
+                span={2}
+              >
+                {state.viewingTenant.email || '-'}
+              </ProDescriptions.Item>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.entryDate' })}>
+                {state.viewingTenant.entryDate ? dayjs(state.viewingTenant.entryDate).format('YYYY-MM-DD') : '-'}
+              </ProDescriptions.Item>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.status' })}>
+                <Tag color={tenantStatusOptions.find((o) => o.value === state.viewingTenant?.status)?.color}>
+                  {tenantStatusOptions.find((o) => o.value === state.viewingTenant?.status)?.label ||
+                    state.viewingTenant?.status}
+                </Tag>
+              </ProDescriptions.Item>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.unitCount' })}>
+                {state.viewingTenant.unitCount}
+                {intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.unit' })}
+              </ProDescriptions.Item>
+              <ProDescriptions.Item
+                label={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.activeContracts' })}
+              >
+                {state.viewingTenant.activeContracts}
+                {intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.contract' })}
+              </ProDescriptions.Item>
+            </ProDescriptions>
 
-            <Drawer title={state.viewingTenant?.tenantName || intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.title' })} open={state.detailVisible} onClose={() => { set({ detailVisible: false, viewingTenant: null }); }} size="large" loading={state.detailLoading}>
-                {state.viewingTenant && <div>
-                    <Typography.Text strong style={{ fontSize: 16, marginBottom: 12, display: 'block' }}>{intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.basicInfo' })}</Typography.Text>
-                    <ProDescriptions column={2} bordered size="small" style={{ marginBottom: 24 }}>
-                        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.tenantName' })}>{state.viewingTenant.tenantName}</ProDescriptions.Item>
-                        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.industry' })}>{state.viewingTenant.industry || '-'}</ProDescriptions.Item>
-                        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.contactPerson' })}>{state.viewingTenant.contactPerson || '-'}</ProDescriptions.Item>
-                        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.phone' })}>{state.viewingTenant.phone || '-'}</ProDescriptions.Item>
-                        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.email' })} span={2}>{state.viewingTenant.email || '-'}</ProDescriptions.Item>
-                        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.entryDate' })}>{state.viewingTenant.entryDate ? dayjs(state.viewingTenant.entryDate).format('YYYY-MM-DD') : '-'}</ProDescriptions.Item>
-                        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.status' })}><Tag color={tenantStatusOptions.find(o => o.value === state.viewingTenant?.status)?.color}>{tenantStatusOptions.find(o => o.value === state.viewingTenant?.status)?.label || state.viewingTenant?.status}</Tag></ProDescriptions.Item>
-                        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.unitCount' })}>{state.viewingTenant.unitCount}{intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.unit' })}</ProDescriptions.Item>
-                        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.activeContracts' })}>{state.viewingTenant.activeContracts}{intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.contract' })}</ProDescriptions.Item>
-                    </ProDescriptions>
+            <Typography.Text strong style={{ fontSize: 16, marginBottom: 12, display: 'block' }}>
+              {intl.formatMessage(
+                { id: 'pages.parkManagement.tenant.detail.contracts' },
+                { count: detailData.contracts.length },
+              )}
+            </Typography.Text>
+            {detailData.contracts.length > 0 ? (
+              <ProTable
+                size="small"
+                dataSource={detailData.contracts}
+                rowKey="id"
+                search={false}
+                pagination={false}
+                options={false}
+                toolBarRender={false}
+                style={{ marginBottom: 24 }}
+                columns={[
+                  {
+                    title: intl.formatMessage({ id: 'pages.parkManagement.tenant.contractTable.contractNumber' }),
+                    dataIndex: 'contractNumber',
+                    width: 120,
+                  },
+                  {
+                    title: intl.formatMessage({ id: 'pages.parkManagement.tenant.contractTable.monthlyRent' }),
+                    dataIndex: 'monthlyRent',
+                    width: 100,
+                    render: (_: any, r: LeaseContract) => `¥${(r.monthlyRent as number)?.toLocaleString()}`,
+                  },
+                  {
+                    title: intl.formatMessage({ id: 'pages.parkManagement.tenant.contractTable.totalAmount' }),
+                    dataIndex: 'totalAmount',
+                    width: 100,
+                    render: (_: any, r: LeaseContract) =>
+                      r.totalAmount ? `¥${(r.totalAmount as number)?.toLocaleString()}` : '-',
+                  },
+                  {
+                    title: intl.formatMessage({ id: 'pages.parkManagement.tenant.contractTable.dateRange' }),
+                    key: 'dates',
+                    width: 180,
+                    render: (_: any, r: LeaseContract) =>
+                      `${dayjs(r.startDate).format('YYYY-MM-DD')} ~ ${dayjs(r.endDate).format('YYYY-MM-DD')}`,
+                  },
+                  {
+                    title: intl.formatMessage({ id: 'pages.parkManagement.tenant.contractTable.status' }),
+                    dataIndex: 'status',
+                    width: 80,
+                    render: (_: any, r: LeaseContract) => {
+                      const s = r.status as string;
+                      return (
+                        <Tag color={contractStatusOptions.find((o) => o.value === s)?.color}>
+                          {contractStatusOptions.find((o) => o.value === s)?.label || s}
+                        </Tag>
+                      );
+                    },
+                  },
+                ]}
+              />
+            ) : (
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.noData' })}
+              />
+            )}
 
-                    <Typography.Text strong style={{ fontSize: 16, marginBottom: 12, display: 'block' }}>{intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.contracts' }, { count: detailData.contracts.length })}</Typography.Text>
-                    {detailData.contracts.length > 0 ? <ProTable size="small" dataSource={detailData.contracts} rowKey="id" search={false} pagination={false} options={false} toolBarRender={false} style={{ marginBottom: 24 }} columns={[{ title: intl.formatMessage({ id: 'pages.parkManagement.tenant.contractTable.contractNumber' }), dataIndex: 'contractNumber', width: 120 }, { title: intl.formatMessage({ id: 'pages.parkManagement.tenant.contractTable.monthlyRent' }), dataIndex: 'monthlyRent', width: 100, render: (_: any, r: LeaseContract) => `¥${(r.monthlyRent as number)?.toLocaleString()}` }, { title: intl.formatMessage({ id: 'pages.parkManagement.tenant.contractTable.totalAmount' }), dataIndex: 'totalAmount', width: 100, render: (_: any, r: LeaseContract) => r.totalAmount ? `¥${(r.totalAmount as number)?.toLocaleString()}` : '-' }, { title: intl.formatMessage({ id: 'pages.parkManagement.tenant.contractTable.dateRange' }), key: 'dates', width: 180, render: (_: any, r: LeaseContract) => `${dayjs(r.startDate).format('YYYY-MM-DD')} ~ ${dayjs(r.endDate).format('YYYY-MM-DD')}` }, { title: intl.formatMessage({ id: 'pages.parkManagement.tenant.contractTable.status' }), dataIndex: 'status', width: 80, render: (_: any, r: LeaseContract) => { const s = r.status as string; return <Tag color={contractStatusOptions.find(o => o.value === s)?.color}>{contractStatusOptions.find(o => o.value === s)?.label || s}</Tag>; } }]} /> : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.noData' })} />}
+            <Typography.Text strong style={{ fontSize: 16, marginBottom: 12, display: 'block' }}>
+              {intl.formatMessage(
+                { id: 'pages.parkManagement.tenant.detail.serviceRequests' },
+                { count: detailData.serviceRequests.length },
+              )}
+            </Typography.Text>
+            {detailData.serviceRequests.length > 0 ? (
+              <ProTable
+                size="small"
+                dataSource={detailData.serviceRequests}
+                rowKey="id"
+                search={false}
+                pagination={false}
+                options={false}
+                toolBarRender={false}
+                style={{ marginBottom: 24 }}
+                columns={[
+                  {
+                    title: intl.formatMessage({ id: 'pages.parkManagement.tenant.serviceRequestTable.title' }),
+                    dataIndex: 'title',
+                    ellipsis: true,
+                  },
+                  {
+                    title: intl.formatMessage({ id: 'pages.parkManagement.tenant.serviceRequestTable.category' }),
+                    dataIndex: 'categoryName',
+                    width: 80,
+                  },
+                  {
+                    title: intl.formatMessage({ id: 'pages.parkManagement.tenant.serviceRequestTable.status' }),
+                    dataIndex: 'status',
+                    width: 80,
+                    render: (_: any, r: ServiceRequest) => {
+                      const s = r.status as string;
+                      const statusMap: Record<string, { label: string; color: string }> = {
+                        Pending: {
+                          label: intl.formatMessage({ id: 'pages.parkManagement.tenant.serviceRequestStatus.pending' }),
+                          color: 'orange',
+                        },
+                        Processing: {
+                          label: intl.formatMessage({
+                            id: 'pages.parkManagement.tenant.serviceRequestStatus.processing',
+                          }),
+                          color: 'processing',
+                        },
+                        Completed: {
+                          label: intl.formatMessage({
+                            id: 'pages.parkManagement.tenant.serviceRequestStatus.completed',
+                          }),
+                          color: 'green',
+                        },
+                        Cancelled: {
+                          label: intl.formatMessage({
+                            id: 'pages.parkManagement.tenant.serviceRequestStatus.cancelled',
+                          }),
+                          color: 'default',
+                        },
+                      };
+                      return <Tag color={statusMap[s]?.color}>{statusMap[s]?.label || s}</Tag>;
+                    },
+                  },
+                  {
+                    title: intl.formatMessage({ id: 'pages.parkManagement.tenant.serviceRequestTable.rating' }),
+                    dataIndex: 'rating',
+                    width: 100,
+                    render: (_: any, r: ServiceRequest) =>
+                      r.rating ? <Rate disabled value={r.rating} style={{ fontSize: 12 }} /> : '-',
+                  },
+                  {
+                    title: intl.formatMessage({ id: 'pages.parkManagement.tenant.serviceRequestTable.createdAt' }),
+                    dataIndex: 'createdAt',
+                    width: 100,
+                    render: (_: any, r: ServiceRequest) => dayjs(r.createdAt).format('MM-DD HH:mm'),
+                  },
+                ]}
+              />
+            ) : (
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.noServiceRequests' })}
+              />
+            )}
 
-                    <Typography.Text strong style={{ fontSize: 16, marginBottom: 12, display: 'block' }}>{intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.serviceRequests' }, { count: detailData.serviceRequests.length })}</Typography.Text>
-                    {detailData.serviceRequests.length > 0 ? <ProTable size="small" dataSource={detailData.serviceRequests} rowKey="id" search={false} pagination={false} options={false} toolBarRender={false} style={{ marginBottom: 24 }} columns={[{ title: intl.formatMessage({ id: 'pages.parkManagement.tenant.serviceRequestTable.title' }), dataIndex: 'title', ellipsis: true }, { title: intl.formatMessage({ id: 'pages.parkManagement.tenant.serviceRequestTable.category' }), dataIndex: 'categoryName', width: 80 }, { title: intl.formatMessage({ id: 'pages.parkManagement.tenant.serviceRequestTable.status' }), dataIndex: 'status', width: 80, render: (_: any, r: ServiceRequest) => { const s = r.status as string; const statusMap: Record<string, { label: string; color: string }> = { Pending: { label: intl.formatMessage({ id: 'pages.parkManagement.tenant.serviceRequestStatus.pending' }), color: 'orange' }, Processing: { label: intl.formatMessage({ id: 'pages.parkManagement.tenant.serviceRequestStatus.processing' }), color: 'processing' }, Completed: { label: intl.formatMessage({ id: 'pages.parkManagement.tenant.serviceRequestStatus.completed' }), color: 'green' }, Cancelled: { label: intl.formatMessage({ id: 'pages.parkManagement.tenant.serviceRequestStatus.cancelled' }), color: 'default' } }; return <Tag color={statusMap[s]?.color}>{statusMap[s]?.label || s}</Tag>; } }, { title: intl.formatMessage({ id: 'pages.parkManagement.tenant.serviceRequestTable.rating' }), dataIndex: 'rating', width: 100, render: (_: any, r: ServiceRequest) => r.rating ? <Rate disabled value={r.rating} style={{ fontSize: 12 }} /> : '-' }, { title: intl.formatMessage({ id: 'pages.parkManagement.tenant.serviceRequestTable.createdAt' }), dataIndex: 'createdAt', width: 100, render: (_: any, r: ServiceRequest) => dayjs(r.createdAt).format('MM-DD HH:mm') }]} /> : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.noServiceRequests' })} />}
-
-                    <Typography.Text strong style={{ fontSize: 16, marginBottom: 12, display: 'block' }}>{intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.payments' }, { count: detailData.payments.length })}</Typography.Text>
-                    {detailData.payments.length > 0 ? <ProTable size="small" dataSource={detailData.payments} rowKey="id" search={false} pagination={false} options={false} toolBarRender={false} columns={[{ title: intl.formatMessage({ id: 'pages.parkManagement.tenant.paymentTable.contract' }), dataIndex: 'contractNumber', width: 100 }, { title: intl.formatMessage({ id: 'pages.parkManagement.tenant.paymentTable.type' }), dataIndex: 'paymentType', width: 80, render: (_: any, r: LeasePaymentRecord & { contractNumber?: string }) => { const t = r.paymentType as string; const typeMap: Record<string, { label: string; color: string }> = { Rent: { label: intl.formatMessage({ id: 'pages.parkManagement.tenant.paymentType.rent' }), color: 'blue' }, PropertyFee: { label: intl.formatMessage({ id: 'pages.parkManagement.tenant.paymentType.propertyFee' }), color: 'orange' }, Deposit: { label: intl.formatMessage({ id: 'pages.parkManagement.tenant.paymentType.deposit' }), color: 'purple' }, Other: { label: intl.formatMessage({ id: 'pages.parkManagement.tenant.paymentType.other' }), color: 'default' } }; return <Tag color={typeMap[t]?.color || 'default'}>{typeMap[t]?.label || t || intl.formatMessage({ id: 'pages.parkManagement.tenant.paymentType.rent' })}</Tag>; } }, { title: intl.formatMessage({ id: 'pages.parkManagement.tenant.paymentTable.amount' }), dataIndex: 'amount', width: 100, render: (_: any, r: LeasePaymentRecord & { contractNumber?: string }) => <Typography.Text type="success">¥{(r.amount as number)?.toLocaleString()}</Typography.Text> }, { title: intl.formatMessage({ id: 'pages.parkManagement.tenant.paymentTable.paymentDate' }), dataIndex: 'paymentDate', width: 100, render: (_: any, r: LeasePaymentRecord & { contractNumber?: string }) => dayjs(r.paymentDate).format('YYYY-MM-DD') }, { title: intl.formatMessage({ id: 'pages.parkManagement.tenant.paymentTable.paymentMethod' }), dataIndex: 'paymentMethod', width: 80 }, { title: intl.formatMessage({ id: 'pages.parkManagement.tenant.paymentTable.notes' }), dataIndex: 'notes', ellipsis: true }]} /> : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.noPayments' })} />}
-                </div>}
-            </Drawer>
-        </PageContainer>
-    );
+            <Typography.Text strong style={{ fontSize: 16, marginBottom: 12, display: 'block' }}>
+              {intl.formatMessage(
+                { id: 'pages.parkManagement.tenant.detail.payments' },
+                { count: detailData.payments.length },
+              )}
+            </Typography.Text>
+            {detailData.payments.length > 0 ? (
+              <ProTable
+                size="small"
+                dataSource={detailData.payments}
+                rowKey="id"
+                search={false}
+                pagination={false}
+                options={false}
+                toolBarRender={false}
+                columns={[
+                  {
+                    title: intl.formatMessage({ id: 'pages.parkManagement.tenant.paymentTable.contract' }),
+                    dataIndex: 'contractNumber',
+                    width: 100,
+                  },
+                  {
+                    title: intl.formatMessage({ id: 'pages.parkManagement.tenant.paymentTable.type' }),
+                    dataIndex: 'paymentType',
+                    width: 80,
+                    render: (_: any, r: LeasePaymentRecord & { contractNumber?: string }) => {
+                      const t = r.paymentType as string;
+                      const typeMap: Record<string, { label: string; color: string }> = {
+                        Rent: {
+                          label: intl.formatMessage({ id: 'pages.parkManagement.tenant.paymentType.rent' }),
+                          color: 'blue',
+                        },
+                        PropertyFee: {
+                          label: intl.formatMessage({ id: 'pages.parkManagement.tenant.paymentType.propertyFee' }),
+                          color: 'orange',
+                        },
+                        Deposit: {
+                          label: intl.formatMessage({ id: 'pages.parkManagement.tenant.paymentType.deposit' }),
+                          color: 'purple',
+                        },
+                        Other: {
+                          label: intl.formatMessage({ id: 'pages.parkManagement.tenant.paymentType.other' }),
+                          color: 'default',
+                        },
+                      };
+                      return (
+                        <Tag color={typeMap[t]?.color || 'default'}>
+                          {typeMap[t]?.label ||
+                            t ||
+                            intl.formatMessage({ id: 'pages.parkManagement.tenant.paymentType.rent' })}
+                        </Tag>
+                      );
+                    },
+                  },
+                  {
+                    title: intl.formatMessage({ id: 'pages.parkManagement.tenant.paymentTable.amount' }),
+                    dataIndex: 'amount',
+                    width: 100,
+                    render: (_: any, r: LeasePaymentRecord & { contractNumber?: string }) => (
+                      <Typography.Text type="success">¥{(r.amount as number)?.toLocaleString()}</Typography.Text>
+                    ),
+                  },
+                  {
+                    title: intl.formatMessage({ id: 'pages.parkManagement.tenant.paymentTable.paymentDate' }),
+                    dataIndex: 'paymentDate',
+                    width: 100,
+                    render: (_: any, r: LeasePaymentRecord & { contractNumber?: string }) =>
+                      dayjs(r.paymentDate).format('YYYY-MM-DD'),
+                  },
+                  {
+                    title: intl.formatMessage({ id: 'pages.parkManagement.tenant.paymentTable.paymentMethod' }),
+                    dataIndex: 'paymentMethod',
+                    width: 80,
+                  },
+                  {
+                    title: intl.formatMessage({ id: 'pages.parkManagement.tenant.paymentTable.notes' }),
+                    dataIndex: 'notes',
+                    ellipsis: true,
+                  },
+                ]}
+              />
+            ) : (
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.noPayments' })}
+              />
+            )}
+          </div>
+        )}
+      </Drawer>
+    </PageContainer>
+  );
 };
 
 export default TenantManagement;
-

@@ -34,30 +34,24 @@ export default {
   'app.settings.security.email': 'バックアップメール',
   'app.settings.security.email-description': 'バインドされたメール',
   'app.settings.security.mfa': '多要素認証デバイス',
-  'app.settings.security.mfa-description':
-    'バインドされていない多要素認証デバイスは、バインド後、2回確認できます',
+  'app.settings.security.mfa-description': 'バインドされていない多要素認証デバイスは、バインド後、2回確認できます',
   'app.settings.security.modify': '変更する',
   'app.settings.security.set': 'セットする',
   'app.settings.security.bind': 'バインド',
   'app.settings.binding.taobao': 'タオバオをバインドする',
-  'app.settings.binding.taobao-description':
-    '現在バインドされていないタオバオアカウント',
+  'app.settings.binding.taobao-description': '現在バインドされていないタオバオアカウント',
   'app.settings.binding.alipay': 'アリペイをバインドする',
-  'app.settings.binding.alipay-description':
-    '現在バインドされていないアリペイアカウント',
+  'app.settings.binding.alipay-description': '現在バインドされていないアリペイアカウント',
   'app.settings.binding.dingding': 'ディントークをバインドする',
-  'app.settings.binding.dingding-description':
-    '現在バインドされていないディントークアカウント',
+  'app.settings.binding.dingding-description': '現在バインドされていないディントークアカウント',
   'app.settings.binding.bind': 'バインド',
   'app.settings.notification.password': 'アカウントパスワード',
   'app.settings.notification.password-description':
     '他のユーザーからのメッセージは、ステーションレターの形式で通知されます',
   'app.settings.notification.messages': 'システムメッセージ',
-  'app.settings.notification.messages-description':
-    'システムメッセージは、ステーションレターの形式で通知されます',
+  'app.settings.notification.messages-description': 'システムメッセージは、ステーションレターの形式で通知されます',
   'app.settings.notification.todo': 'To Do（用事) 通知',
-  'app.settings.notification.todo-description':
-    'To Doタスクは、内部レターの形式で通知されます',
+  'app.settings.notification.todo-description': 'To Doタスクは、内部レターの形式で通知されます',
   'app.settings.open': '開く',
   'app.settings.close': '閉じる',
 };

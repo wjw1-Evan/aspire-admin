@@ -40,7 +40,8 @@ export default {
   'pages.web-scraper.deduplicate': 'URL去重',
   'pages.web-scraper.scheduleCron': '定時表達式',
   'pages.web-scraper.scheduleCronPlaceholder': '0 */10 * * * *',
-  'pages.web-scraper.scheduleCronTooltip': '<p>常用範例：</p><ul><li>每10分鐘：<code>*/10 * * * *</code></li><li>每小時：<code>0 * * * *</code></li><li>每天凌晨：<code>0 0 * * *</code></li><li>每週一：<code>0 0 * * 1</code></li></ul>',
+  'pages.web-scraper.scheduleCronTooltip':
+    '<p>常用範例：</p><ul><li>每10分鐘：<code>*/10 * * * *</code></li><li>每小時：<code>0 * * * *</code></li><li>每天凌晨：<code>0 0 * * *</code></li><li>每週一：<code>0 0 * * 1</code></li></ul>',
   'pages.web-scraper.mode.single': '僅當前頁',
   'pages.web-scraper.mode.depth': '深度優先',
   'pages.web-scraper.mode.breadth': '廣度優先',

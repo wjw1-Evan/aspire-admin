@@ -2,14 +2,15 @@
  * 看板大屏预览
  * 全屏展示看板，支持深色主题、自动刷新
  */
-import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { GridLayout as ResponsiveGridLayout, useContainerWidth } from 'react-grid-layout';
-import { Button, Spin, Empty, Typography, Tooltip } from 'antd';
-import { FullscreenExitOutlined, FullscreenOutlined, EditOutlined } from '@ant-design/icons';
+
+import { EditOutlined, FullscreenExitOutlined, FullscreenOutlined } from '@ant-design/icons';
 import { request } from '@umijs/max';
+import { Button, Empty, Spin, Tooltip, Typography } from 'antd';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { GridLayout as ResponsiveGridLayout, useContainerWidth } from 'react-grid-layout';
+import type { ApiResponse } from '@/types';
 import CardRenderer from './CardRenderer';
 import type { DashboardCardDto, DashboardDto, LayoutItem } from './types';
-import type { ApiResponse } from '@/types';
 
 import 'react-grid-layout/css/styles.css';
 
@@ -27,7 +28,13 @@ interface DashboardPreviewProps {
   onClose?: () => void;
 }
 
-const DashboardPreview: React.FC<DashboardPreviewProps> = ({ dashboardId, layouts: previewLayouts, standalone = false, onEdit, onClose }) => {
+const DashboardPreview: React.FC<DashboardPreviewProps> = ({
+  dashboardId,
+  layouts: previewLayouts,
+  standalone = false,
+  onEdit,
+  onClose,
+}) => {
   const [dashboard, setDashboard] = useState<DashboardDto | null>(null);
   const [cards, setCards] = useState<DashboardCardDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,7 +59,7 @@ const DashboardPreview: React.FC<DashboardPreviewProps> = ({ dashboardId, layout
 
   /** 自动刷新（找最小的 refreshInterval） */
   useEffect(() => {
-    const intervals = cards.filter(c => c.refreshInterval > 0).map(c => c.refreshInterval);
+    const intervals = cards.filter((c) => c.refreshInterval > 0).map((c) => c.refreshInterval);
     if (intervals.length === 0) return;
     const minInterval = Math.min(...intervals) * 1000;
     const timer = setInterval(loadDashboard, Math.max(minInterval, 30000)); // 最少30秒
@@ -81,24 +88,34 @@ const DashboardPreview: React.FC<DashboardPreviewProps> = ({ dashboardId, layout
   /** 从卡片数据生成布局 */
   const layouts = React.useMemo(() => {
     // 如果有传递的预览布局（设计模式未保存的变更），使用它
-    if (previewLayouts && previewLayouts.lg) {
+    if (previewLayouts?.lg) {
       return previewLayouts;
     }
     // 否则从卡片数据生成布局
-    const lg = cards.map((c): LayoutItem => ({
-      i: c.id,
-      x: c.positionX || 0,
-      y: c.positionY || 0,
-      w: c.width || 4,
-      h: c.height || 1,
-      static: true, // 预览模式不可拖拽
-    }));
+    const lg = cards.map(
+      (c): LayoutItem => ({
+        i: c.id,
+        x: c.positionX || 0,
+        y: c.positionY || 0,
+        w: c.width || 4,
+        h: c.height || 1,
+        static: true, // 预览模式不可拖拽
+      }),
+    );
     return { lg };
   }, [previewLayouts, cards]);
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', background: '#0a1628' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100%',
+          background: '#0a1628',
+        }}
+      >
         <Spin size="large" />
       </div>
     );
@@ -120,14 +137,21 @@ const DashboardPreview: React.FC<DashboardPreviewProps> = ({ dashboardId, layout
     >
       {/* 浮动操作栏 */}
       {!standalone && (
-        <div style={{
-          position: 'fixed', top: 16, right: 16, zIndex: 1000,
-          display: 'flex', gap: 8,
-        }}>
+        <div
+          style={{
+            position: 'fixed',
+            top: 16,
+            right: 16,
+            zIndex: 1000,
+            display: 'flex',
+            gap: 8,
+          }}
+        >
           {onEdit && (
             <Tooltip title="设计模式">
               <Button
-                shape="circle" icon={<EditOutlined />}
+                shape="circle"
+                icon={<EditOutlined />}
                 onClick={onEdit}
                 style={{ background: 'rgba(0,0,0,0.5)', border: 'none', color: '#fff' }}
               />
@@ -154,7 +178,7 @@ const DashboardPreview: React.FC<DashboardPreviewProps> = ({ dashboardId, layout
         </div>
       ) : (
         <div ref={gridContainerRef} style={{ width: '100%' }}>
-<ResponsiveGridLayout
+          <ResponsiveGridLayout
             className="dashboard-preview-grid"
             width={gridWidth > 0 ? gridWidth : window.innerWidth}
             layout={layouts.lg || []}

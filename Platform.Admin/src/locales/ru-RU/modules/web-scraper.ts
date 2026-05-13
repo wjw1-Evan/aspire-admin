@@ -90,10 +90,12 @@ export default {
   'pages.webScraper.descriptionPlaceholder': 'Введите описание задачи (необязательно)',
   'pages.webScraper.titleSelector': 'Селектор заголовка',
   'pages.webScraper.titleSelectorPlaceholder': 'CSS селектор, например: h1.title',
-  'pages.webScraper.titleSelectorTooltip': 'CSS селектор для извлечения заголовка страницы, оставьте пустым для использования тега <title>',
+  'pages.webScraper.titleSelectorTooltip':
+    'CSS селектор для извлечения заголовка страницы, оставьте пустым для использования тега <title>',
   'pages.webScraper.contentSelector': 'Селектор содержимого',
   'pages.webScraper.contentSelectorPlaceholder': 'CSS селектор, например: article.content',
-  'pages.webScraper.contentSelectorTooltip': 'CSS селектор для извлечения содержимого страницы, оставьте пустым для использования тега <body>',
+  'pages.webScraper.contentSelectorTooltip':
+    'CSS селектор для извлечения содержимого страницы, оставьте пустым для использования тега <body>',
   'pages.webScraper.crawlDepth': 'Глубина обхода',
   'pages.webScraper.maxPagesPerLevel': 'Макс. страниц на уровень',
   'pages.webScraper.crawlMode': 'Режим обхода',
@@ -103,7 +105,8 @@ export default {
   'pages.webScraper.deduplicate': 'Удалять дубликаты URL',
   'pages.webScraper.scheduleCron': 'Выражение расписания',
   'pages.webScraper.scheduleCronPlaceholder': '0 */10 * * * *',
-  'pages.webScraper.scheduleCronTooltip': '<p>Примеры:</p><ul><li>Каждые 10 минут: <code>*/10 * * * *</code></li><li>Каждый час: <code>0 * * * *</code></li><li>Каждый день в полночь: <code>0 0 * * *</code></li><li>Каждый понедельник: <code>0 0 * * 1</code></li></ul>',
+  'pages.webScraper.scheduleCronTooltip':
+    '<p>Примеры:</p><ul><li>Каждые 10 минут: <code>*/10 * * * *</code></li><li>Каждый час: <code>0 * * * *</code></li><li>Каждый день в полночь: <code>0 0 * * *</code></li><li>Каждый понедельник: <code>0 0 * * 1</code></li></ul>',
   'pages.webScraper.mode.single': 'Только текущая страница',
   'pages.webScraper.mode.depth': 'В глубину',
   'pages.webScraper.mode.breadth': 'В ширину',

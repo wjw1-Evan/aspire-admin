@@ -107,7 +107,8 @@ export default {
   'pages.register.email.required': 'Silakan masukkan alamat email!',
   'pages.register.info.item1': '✅ Buat perusahaan pribadi secara otomatis (Anda adalah admin)',
   'pages.register.info.item2': '✅ Konfigurasi izin dan menu default',
-  'pages.register.info.item3': '✅ Anda dapat mengundang anggota atau mengajukan untuk bergabung dengan perusahaan lain',
+  'pages.register.info.item3':
+    '✅ Anda dapat mengundang anggota atau mengajukan untuk bergabung dengan perusahaan lain',
   'pages.register.info.title': '💡 Setelah pendaftaran, sistem akan:',
   'pages.register.login': 'Sudah punya akun? Login sekarang',
   'pages.register.password.min': 'Kata sandi minimal 6 karakter',

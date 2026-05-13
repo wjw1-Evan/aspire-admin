@@ -6,20 +6,22 @@ export default {
   'pages.cloud-storage.recycle.message.deleteFailed': 'Löschen fehlgeschlagen',
   'pages.cloud-storage.recycle.message.emptySuccess': 'Erfolgreich geleert, {count} Dateien gelöscht',
   'pages.cloud-storage.recycle.message.emptyFailed': 'Leeren fehlgeschlagen',
-  
+
   // 分享管理消息
   'pages.cloud-storage.share.message.updateSuccess': 'Aktualisierung erfolgreich',
   'pages.cloud-storage.share.message.linkCopied': 'Freigabelink kopiert',
-  
+
   // 配额管理消息
   'pages.cloud-storage.quota.message.updateSuccess': 'Kontingent aktualisiert',
   'pages.cloud-storage.quota.message.createSuccess': 'Kontingent erstellt',
   'pages.cloud-storage.recycle.title': 'Recycle Bin',
   'pages.cloud-storage.recycle.confirmDelete': 'Confirm Permanent Delete',
-  'pages.cloud-storage.recycle.confirmDeleteContent': 'Are you sure you want to permanently delete "{name}"? This action cannot be undone.',
+  'pages.cloud-storage.recycle.confirmDeleteContent':
+    'Are you sure you want to permanently delete "{name}"? This action cannot be undone.',
   'pages.cloud-storage.recycle.confirmDeleteOk': 'Delete',
   'pages.cloud-storage.recycle.confirmEmpty': 'Confirm Empty Recycle Bin',
-  'pages.cloud-storage.recycle.confirmEmptyContent': 'Are you sure you want to empty the entire recycle bin? This will permanently delete all files and cannot be undone!',
+  'pages.cloud-storage.recycle.confirmEmptyContent':
+    'Are you sure you want to empty the entire recycle bin? This will permanently delete all files and cannot be undone!',
   'pages.cloud-storage.recycle.confirmEmptyOk': 'Empty',
   'pages.cloud-storage.recycle.searchPlaceholder': 'Search...',
   'pages.cloud-storage.recycle.tagTotal': 'Total {count}',

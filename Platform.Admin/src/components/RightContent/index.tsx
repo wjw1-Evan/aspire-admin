@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
 import { QuestionCircleOutlined } from '@ant-design/icons';
+import React, { useState } from 'react';
 import HelpModal from '../HelpModal';
 import { useHeaderStyles } from './styles';
 
@@ -11,10 +11,7 @@ export const Question: React.FC = () => {
 
   return (
     <>
-      <span
-        onClick={() => setHelpModalOpen(true)}
-        className={styles.headerActionButton}
-      >
+      <span onClick={() => setHelpModalOpen(true)} className={styles.headerActionButton}>
         <QuestionCircleOutlined />
       </span>
 

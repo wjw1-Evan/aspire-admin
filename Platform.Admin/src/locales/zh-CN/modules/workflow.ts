@@ -124,7 +124,7 @@ export default {
   'pages.workflow.designer.cancel': '取消',
   'pages.workflow.designer.close': '关闭',
   'pages.workflow.designer.ccRules': '抄送规则',
-  'pages.workflow.designer.conditionExample': '示例：{business.amount} > 5000 && {form.reason} != \'\'',
+  'pages.workflow.designer.conditionExample': "示例：{business.amount} > 5000 && {form.reason} != ''",
   'pages.workflow.designer.conditionExpression': '条件表达式',
   'pages.workflow.designer.conditionExpressionPlaceholder': '请输入条件表达式，如：amount > 10000',
   'pages.workflow.designer.conditionJumpTarget': '跳至节点',

@@ -5,6 +5,6 @@ import { App } from 'antd';
  * 替代 Modal.confirm 等静态方法，避免无法消费动态主题的警告
  */
 export const useModal = () => {
-    const { modal } = App.useApp();
-    return modal;
+  const { modal } = App.useApp();
+  return modal;
 };

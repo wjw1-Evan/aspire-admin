@@ -3,7 +3,7 @@ import { tokenUtils } from './token';
 
 let isRedirecting = false;
 
-export function redirectToLogin(reason?: string): void {
+export function redirectToLogin(_reason?: string): void {
   if (isRedirecting) return;
 
   const currentPath = history.location.pathname;

@@ -63,7 +63,8 @@ export default {
   'pages.welcome.systemResources.diskDrive': 'Drive: {name} ({type})',
   'pages.welcome.systemResources.cpuCores': 'Cores: {count}',
   'pages.welcome.systemResources.unavailable': 'Dữ liệu tài nguyên hệ thống không khả dụng',
-  'pages.welcome.systemResources.unavailableDesc': 'Không thể lấy thông tin tài nguyên hệ thống, vui lòng kiểm tra xem dịch vụ backend có hoạt động bình thường không.',
+  'pages.welcome.systemResources.unavailableDesc':
+    'Không thể lấy thông tin tài nguyên hệ thống, vui lòng kiểm tra xem dịch vụ backend có hoạt động bình thường không.',
   'pages.welcome.systemDetails': 'Chi tiết hệ thống',
   'pages.welcome.systemDetails.machineName': 'Tên máy:',
   'pages.welcome.systemDetails.processorCount': 'Số lõi CPU:',

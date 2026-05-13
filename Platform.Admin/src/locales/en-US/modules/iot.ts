@@ -68,10 +68,12 @@ export default {
   'pages.iotPlatform.device.retentionDaysAddon': 'days (0=permanent)',
   'pages.iotPlatform.device.apiKeyModalTitle': 'Device API Key Generated',
   'pages.iotPlatform.device.apiKeyWarning': 'Important Notice',
-  'pages.iotPlatform.device.apiKeyWarningDesc': 'This key will only be displayed once. Please copy and save it securely now.',
+  'pages.iotPlatform.device.apiKeyWarningDesc':
+    'This key will only be displayed once. Please copy and save it securely now.',
   'pages.iotPlatform.device.apiKeyCopied': 'Copied, close',
   'pages.iotPlatform.device.batchDeleteConfirm': 'Batch Delete Devices',
-  'pages.iotPlatform.device.batchDeleteContent': 'Are you sure you want to delete {count} selected devices? This action cannot be undone.',
+  'pages.iotPlatform.device.batchDeleteContent':
+    'Are you sure you want to delete {count} selected devices? This action cannot be undone.',
   'pages.iotPlatform.device.batchDelete': 'Batch Delete',
   'pages.iotPlatform.device.cancelSelection': 'Cancel Selection',
   'pages.iotPlatform.device.selectedCount': 'Selected',
@@ -262,7 +264,8 @@ export default {
   'pages.iotPlatform.deviceTwin.desiredPropertiesUpdated': 'Desired properties updated (version {version})',
   'pages.iotPlatform.deviceTwin.refresh': 'Refresh',
   'pages.iotPlatform.deviceTwin.save': 'Save',
-  'pages.iotPlatform.deviceTwin.desiredInfo': 'Desired Properties are configured by management side, read and executed when device connects; Reported Properties are reported by device, reflecting actual device status.',
+  'pages.iotPlatform.deviceTwin.desiredInfo':
+    'Desired Properties are configured by management side, read and executed when device connects; Reported Properties are reported by device, reflecting actual device status.',
   'pages.iotPlatform.deviceTwin.desiredVersion': 'Version {version}',
   'pages.iotPlatform.deviceTwin.lastUpdate': 'Last Update',
   'pages.iotPlatform.deviceTwin.readonly': 'Read Only',

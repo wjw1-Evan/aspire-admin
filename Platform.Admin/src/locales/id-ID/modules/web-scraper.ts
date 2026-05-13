@@ -27,10 +27,12 @@ export default {
   'pages.web-scraper.descriptionPlaceholder': 'Masukkan deskripsi tugas (opsional)',
   'pages.web-scraper.titleSelector': 'Pemilih judul',
   'pages.web-scraper.titleSelectorPlaceholder': 'Pemilih CSS, mis. h1.title',
-  'pages.web-scraper.titleSelectorTooltip': 'Pemilih CSS untuk mengekstrak judul halaman, biarkan kosong untuk menggunakan tag <title>',
+  'pages.web-scraper.titleSelectorTooltip':
+    'Pemilih CSS untuk mengekstrak judul halaman, biarkan kosong untuk menggunakan tag <title>',
   'pages.web-scraper.contentSelector': 'Pemilih konten',
   'pages.web-scraper.contentSelectorPlaceholder': 'Pemilih CSS, mis. article.content',
-  'pages.web-scraper.contentSelectorTooltip': 'Pemilih CSS untuk mengekstrak konten halaman, biarkan kosong untuk menggunakan tag <body>',
+  'pages.web-scraper.contentSelectorTooltip':
+    'Pemilih CSS untuk mengekstrak konten halaman, biarkan kosong untuk menggunakan tag <body>',
   'pages.web-scraper.crawlDepth': 'Kedalaman merayap',
   'pages.web-scraper.maxPagesPerLevel': 'Maks halaman per level',
   'pages.web-scraper.crawlMode': 'Mode merayap',
@@ -40,7 +42,8 @@ export default {
   'pages.web-scraper.deduplicate': 'Hapus duplikat URL',
   'pages.web-scraper.scheduleCron': 'Ekspresi jadwal',
   'pages.web-scraper.scheduleCronPlaceholder': '0 */10 * * * *',
-  'pages.web-scraper.scheduleCronTooltip': '<p>Contoh umum:</p><ul><li>Setiap 10 menit: <code>*/10 * * * *</code></li><li>Setiap jam: <code>0 * * * *</code></li><li>Setiap hari tengah malam: <code>0 0 * * *</code></li><li>Setiap Senin: <code>0 0 * * 1</code></li></ul>',
+  'pages.web-scraper.scheduleCronTooltip':
+    '<p>Contoh umum:</p><ul><li>Setiap 10 menit: <code>*/10 * * * *</code></li><li>Setiap jam: <code>0 * * * *</code></li><li>Setiap hari tengah malam: <code>0 0 * * *</code></li><li>Setiap Senin: <code>0 0 * * 1</code></li></ul>',
   'pages.web-scraper.mode.single': 'Hanya halaman saat ini',
   'pages.web-scraper.mode.depth': 'Kedalaman-pertama',
   'pages.web-scraper.mode.breadth': 'Lebar-pertama',

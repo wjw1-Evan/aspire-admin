@@ -1,13 +1,6 @@
 import component from './tr-TR/component';
 import globalHeader from './tr-TR/globalHeader';
 import menu from './tr-TR/menu';
-import pages from './tr-TR/pages';
-import pwa from './tr-TR/pwa';
-import settingDrawer from './tr-TR/settingDrawer';
-import settings from './tr-TR/settings';
-import request from './tr-TR/request';
-import welcome from './tr-TR/welcome';
-
 import auth from './tr-TR/modules/auth';
 import cloudStorage from './tr-TR/modules/cloud-storage';
 import company from './tr-TR/modules/company';
@@ -26,24 +19,29 @@ import user from './tr-TR/modules/user';
 import webScraper from './tr-TR/modules/web-scraper';
 import workflow from './tr-TR/modules/workflow';
 import xiaoke from './tr-TR/modules/xiaoke';
+import pages from './tr-TR/pages';
+import pwa from './tr-TR/pwa';
+import request from './tr-TR/request';
+import settingDrawer from './tr-TR/settingDrawer';
+import settings from './tr-TR/settings';
+import welcome from './tr-TR/welcome';
 
 export default {
-    'navBar.lang': 'Diller',
-    'layout.user.link.help': 'Yardım',
-    'layout.user.link.privacy': 'Gizlilik',
-    'layout.user.link.terms': 'Şartlar',
-    'app.preview.down.block': 'Bu sayfayı yerel projenize indirin',
-    'app.welcome.link.fetch-blocks': 'Tüm blokları al',
-    'app.welcome.link.block-list':
-        '`block` geliştirmesine dayalı olarak hızlıca standart sayfalar oluşturun',
-    ...globalHeader,
-    ...menu,
-    ...settingDrawer,
-    ...settings,
-    ...pwa,
-    ...component,
-    ...request,
-    ...pages,
+  'navBar.lang': 'Diller',
+  'layout.user.link.help': 'Yardım',
+  'layout.user.link.privacy': 'Gizlilik',
+  'layout.user.link.terms': 'Şartlar',
+  'app.preview.down.block': 'Bu sayfayı yerel projenize indirin',
+  'app.welcome.link.fetch-blocks': 'Tüm blokları al',
+  'app.welcome.link.block-list': '`block` geliştirmesine dayalı olarak hızlıca standart sayfalar oluşturun',
+  ...globalHeader,
+  ...menu,
+  ...settingDrawer,
+  ...settings,
+  ...pwa,
+  ...component,
+  ...request,
+  ...pages,
   ...welcome,
 
   ...auth,

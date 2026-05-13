@@ -2,20 +2,24 @@
  * 看板设计器
  * 基于 react-grid-layout 的可视化拖拽看板设计器
  */
-import React, { useState, useCallback, useEffect } from 'react';
-import { GridLayout as RGL, useContainerWidth } from 'react-grid-layout';
-import { Button, Space, Tooltip, Popconfirm, Spin, Empty, Typography } from 'antd';
-import { useIntl } from '@umijs/max';
+
 import {
-  PlusOutlined, SaveOutlined, DeleteOutlined,
-  EditOutlined, FullscreenOutlined, CopyOutlined,
+  CopyOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  FullscreenOutlined,
+  PlusOutlined,
+  SaveOutlined,
 } from '@ant-design/icons';
-import { request } from '@umijs/max';
+import { request, useIntl } from '@umijs/max';
+import { Button, Empty, Popconfirm, Space, Spin, Tooltip, Typography } from 'antd';
+import React, { useCallback, useEffect, useState } from 'react';
+import { GridLayout as RGL, useContainerWidth } from 'react-grid-layout';
 import { useMessage } from '@/hooks/useMessage';
-import CardRenderer from './CardRenderer';
-import CardConfigForm from './CardConfigForm';
-import type { DashboardCardDto, DashboardDto, LayoutItem } from './types';
 import type { ApiResponse } from '@/types';
+import CardConfigForm from './CardConfigForm';
+import CardRenderer from './CardRenderer';
+import type { DashboardCardDto, DashboardDto, LayoutItem } from './types';
 
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
@@ -47,13 +51,28 @@ const DEFAULT_CARD_SIZE: Record<string, { w: number; h: number }> = {
 /** API */
 const api = {
   getDashboard: (id: string) => request<ApiResponse<DashboardDto>>(`/apiservice/api/dashboard/${id}`),
-  addCard: (id: string, data: Record<string, unknown>) => request<ApiResponse<DashboardCardDto>>(`/apiservice/api/dashboard/${id}/cards`, { method: 'POST', data }),
+  addCard: (id: string, data: Record<string, unknown>) =>
+    request<ApiResponse<DashboardCardDto>>(`/apiservice/api/dashboard/${id}/cards`, { method: 'POST', data }),
   updateCard: (cardId: string, data: Record<string, unknown>) =>
     request<ApiResponse<DashboardCardDto>>(`/apiservice/api/dashboard/cards/${cardId}`, { method: 'PUT', data }),
   deleteCard: (cardId: string) =>
     request<ApiResponse<void>>(`/apiservice/api/dashboard/cards/${cardId}`, { method: 'DELETE' }),
-  reorderCards: (dashboardId: string, positions: Array<{ cardId: string; positionX: number; positionY: number; width: number; height: number }>) =>
-    request<ApiResponse<void>>(`/apiservice/api/dashboard/${dashboardId}/cards/reorder`, { method: 'POST', data: { cards: positions.map(p => ({ id: p.cardId, positionX: p.positionX, positionY: p.positionY, width: p.width, height: p.height })) } }),
+  reorderCards: (
+    dashboardId: string,
+    positions: Array<{ cardId: string; positionX: number; positionY: number; width: number; height: number }>,
+  ) =>
+    request<ApiResponse<void>>(`/apiservice/api/dashboard/${dashboardId}/cards/reorder`, {
+      method: 'POST',
+      data: {
+        cards: positions.map((p) => ({
+          id: p.cardId,
+          positionX: p.positionX,
+          positionY: p.positionY,
+          width: p.width,
+          height: p.height,
+        })),
+      },
+    }),
 };
 
 interface DashboardDesignerProps {
@@ -86,13 +105,15 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
       setDashboard(res.data);
       setCards(res.data.cards || []);
       // 从卡片数据生成布局
-      const lg = (res.data.cards || []).map((c: DashboardCardDto): LayoutItem => ({
-        i: c.id,
-        x: c.positionX || 0,
-        y: c.positionY || 0,
-        w: c.width || 4,
-        h: c.height || 1,
-      }));
+      const lg = (res.data.cards || []).map(
+        (c: DashboardCardDto): LayoutItem => ({
+          i: c.id,
+          x: c.positionX || 0,
+          y: c.positionY || 0,
+          w: c.width || 4,
+          h: c.height || 1,
+        }),
+      );
       setLayouts({ lg });
     }
     setLoading(false);
@@ -127,84 +148,97 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
       message.error(intl.formatMessage({ id: 'pages.dashboard.deleteFailed' }));
     }
     setSaving(false);
-  }, [dashboardId, layouts]);
+  }, [dashboardId, layouts, message.error, message.success, intl.formatMessage]);
 
   /** 添加/编辑卡片 */
-  const handleCardFinish = useCallback(async (values: { title: string; cardType: string; styleConfig: string; dataSource: string }) => {
-    if (editingCard) {
-      // 更新
-      const res = await api.updateCard(editingCard.id, {
-        title: values.title,
-        cardType: values.cardType,
-        styleConfig: values.styleConfig,
-        dataSource: values.dataSource,
-      });
-      if (res.success) {
-        message.success(intl.formatMessage({ id: 'pages.dashboard.updateCardSuccess' }));
-        setCardFormOpen(false);
-        setEditingCard(null);
-        await loadDashboard();
-        return true;
+  const handleCardFinish = useCallback(
+    async (values: { title: string; cardType: string; styleConfig: string; dataSource: string }) => {
+      if (editingCard) {
+        // 更新
+        const res = await api.updateCard(editingCard.id, {
+          title: values.title,
+          cardType: values.cardType,
+          styleConfig: values.styleConfig,
+          dataSource: values.dataSource,
+        });
+        if (res.success) {
+          message.success(intl.formatMessage({ id: 'pages.dashboard.updateCardSuccess' }));
+          setCardFormOpen(false);
+          setEditingCard(null);
+          await loadDashboard();
+          return true;
+        }
+        message.error(intl.formatMessage({ id: 'pages.dashboard.updateCardFailed' }));
+        return false;
+      } else {
+        // 添加
+        const defaultSize = DEFAULT_CARD_SIZE[values.cardType] || { w: 4, h: 4 };
+        const res = await api.addCard(dashboardId, {
+          title: values.title,
+          cardType: values.cardType,
+          styleConfig: values.styleConfig,
+          dataSource: values.dataSource,
+          positionX: 0,
+          positionY: 0,
+          width: defaultSize.w,
+          height: defaultSize.h,
+        });
+        if (res.success) {
+          message.success(intl.formatMessage({ id: 'pages.dashboard.addCardSuccess' }));
+          setCardFormOpen(false);
+          await loadDashboard();
+          return true;
+        }
+        message.error(intl.formatMessage({ id: 'pages.dashboard.addCardFailed' }));
+        return false;
       }
-      message.error(intl.formatMessage({ id: 'pages.dashboard.updateCardFailed' }));
-      return false;
-    } else {
-      // 添加
-      const defaultSize = DEFAULT_CARD_SIZE[values.cardType] || { w: 4, h: 4 };
-      const res = await api.addCard(dashboardId, {
-        title: values.title,
-        cardType: values.cardType,
-        styleConfig: values.styleConfig,
-        dataSource: values.dataSource,
-        positionX: 0,
-        positionY: 0,
-        width: defaultSize.w,
-         height: defaultSize.h,
-      });
-      if (res.success) {
-        message.success(intl.formatMessage({ id: 'pages.dashboard.addCardSuccess' }));
-        setCardFormOpen(false);
-        await loadDashboard();
-        return true;
-      }
-      message.error(intl.formatMessage({ id: 'pages.dashboard.addCardFailed' }));
-      return false;
-    }
-  }, [dashboardId, editingCard, loadDashboard]);
+    },
+    [dashboardId, editingCard, loadDashboard, message.error, message.success, intl.formatMessage],
+  );
 
   /** 删除卡片 */
-  const handleDeleteCard = useCallback(async (cardId: string) => {
-    const res = await api.deleteCard(cardId);
-    if (res.success) {
-      message.success(intl.formatMessage({ id: 'pages.dashboard.deleteCardSuccess' }));
-      setSelectedCardId(null);
-      await loadDashboard();
-    } else {
-      message.error(intl.formatMessage({ id: 'pages.dashboard.deleteCardFailed' }));
-    }
-  }, [loadDashboard]);
+  const handleDeleteCard = useCallback(
+    async (cardId: string) => {
+      const res = await api.deleteCard(cardId);
+      if (res.success) {
+        message.success(intl.formatMessage({ id: 'pages.dashboard.deleteCardSuccess' }));
+        setSelectedCardId(null);
+        await loadDashboard();
+      } else {
+        message.error(intl.formatMessage({ id: 'pages.dashboard.deleteCardFailed' }));
+      }
+    },
+    [loadDashboard, message.success, message.error, intl.formatMessage],
+  );
 
   /** 复制卡片 */
-  const handleCopyCard = useCallback(async (card: DashboardCardDto) => {
-    const defaultSize = DEFAULT_CARD_SIZE[card.cardType] || { w: 4, h: 4 };
-    const res = await api.addCard(dashboardId, {
-      title: `${card.title} (副本)`,
-      cardType: card.cardType,
-      styleConfig: card.styleConfig,
-      dataSource: card.dataSource,
-      positionX: 0,
-      positionY: 0,
-      width: card.width || defaultSize.w,
-      height: card.height || defaultSize.h,
-    });
-    if (res.success) {
-      message.success(intl.formatMessage({ id: 'pages.dashboard.copySuccess' }));
-      await loadDashboard();
-    }
-  }, [dashboardId, loadDashboard]);
+  const handleCopyCard = useCallback(
+    async (card: DashboardCardDto) => {
+      const defaultSize = DEFAULT_CARD_SIZE[card.cardType] || { w: 4, h: 4 };
+      const res = await api.addCard(dashboardId, {
+        title: `${card.title} (副本)`,
+        cardType: card.cardType,
+        styleConfig: card.styleConfig,
+        dataSource: card.dataSource,
+        positionX: 0,
+        positionY: 0,
+        width: card.width || defaultSize.w,
+        height: card.height || defaultSize.h,
+      });
+      if (res.success) {
+        message.success(intl.formatMessage({ id: 'pages.dashboard.copySuccess' }));
+        await loadDashboard();
+      }
+    },
+    [dashboardId, loadDashboard, message.success, intl.formatMessage],
+  );
 
   if (loading) {
-    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}><Spin size="large" /></div>;
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+        <Spin size="large" />
+      </div>
+    );
   }
 
   if (!dashboard) {
@@ -214,16 +248,36 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
   return (
     <div style={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* 工具栏 */}
-      <div style={{
-        padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        borderBottom: '1px solid rgba(0,0,0,0.06)', background: '#fafafa', flexShrink: 0,
-      }}>
+      <div
+        style={{
+          padding: '10px 16px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderBottom: '1px solid rgba(0,0,0,0.06)',
+          background: '#fafafa',
+          flexShrink: 0,
+        }}
+      >
         <Space>
-          <Text strong style={{ fontSize: 16 }}>{dashboard.name}</Text>
-          {hasChanges && <Text type="warning" style={{ fontSize: 12 }}>（有未保存的布局变更）</Text>}
+          <Text strong style={{ fontSize: 16 }}>
+            {dashboard.name}
+          </Text>
+          {hasChanges && (
+            <Text type="warning" style={{ fontSize: 12 }}>
+              （有未保存的布局变更）
+            </Text>
+          )}
         </Space>
         <Space>
-          <Button icon={<PlusOutlined />} type="primary" onClick={() => { setEditingCard(null); setCardFormOpen(true); }}>
+          <Button
+            icon={<PlusOutlined />}
+            type="primary"
+            onClick={() => {
+              setEditingCard(null);
+              setCardFormOpen(true);
+            }}
+          >
             添加卡片
           </Button>
           <Button icon={<SaveOutlined />} onClick={handleSave} loading={saving} disabled={!hasChanges}>
@@ -238,11 +292,16 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
       </div>
 
       {/* 设计画布 */}
-      <div style={{
-        flex: 1, width: '100%', overflow: 'auto', padding: 16,
-        background: 'linear-gradient(135deg, #0a1628 0%, #0d2137 50%, #0a1628 100%)',
-        minHeight: 500,
-      }}>
+      <div
+        style={{
+          flex: 1,
+          width: '100%',
+          overflow: 'auto',
+          padding: 16,
+          background: 'linear-gradient(135deg, #0a1628 0%, #0d2137 50%, #0a1628 100%)',
+          minHeight: 500,
+        }}
+      >
         {cards.length === 0 ? (
           <div style={{ textAlign: 'center', paddingTop: 100 }}>
             <Empty
@@ -252,7 +311,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
           </div>
         ) : (
           <div ref={containerRef} style={{ width: '100%' }}>
-<RGL
+            <RGL
               className="dashboard-designer-grid"
               width={containerWidth > 0 ? containerWidth : window.innerWidth}
               layout={layouts.lg || []}
@@ -285,25 +344,52 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
                   <div
                     className="card-toolbar"
                     style={{
-                      position: 'absolute', top: 4, right: 4, display: 'none',
-                      background: 'rgba(0,0,0,0.7)', borderRadius: 6, padding: '2px 4px',
+                      position: 'absolute',
+                      top: 4,
+                      right: 4,
+                      display: 'none',
+                      background: 'rgba(0,0,0,0.7)',
+                      borderRadius: 6,
+                      padding: '2px 4px',
                       zIndex: 10,
                     }}
                   >
                     <Space size={2}>
                       <Tooltip title="编辑">
-                        <Button type="text" size="small" icon={<EditOutlined style={{ color: '#fff', fontSize: 13 }} />}
-                          onClick={(e) => { e.stopPropagation(); setEditingCard(card); setCardFormOpen(true); }} />
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<EditOutlined style={{ color: '#fff', fontSize: 13 }} />}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingCard(card);
+                            setCardFormOpen(true);
+                          }}
+                        />
                       </Tooltip>
                       <Tooltip title="复制">
-                        <Button type="text" size="small" icon={<CopyOutlined style={{ color: '#fff', fontSize: 13 }} />}
-                          onClick={(e) => { e.stopPropagation(); handleCopyCard(card); }} />
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<CopyOutlined style={{ color: '#fff', fontSize: 13 }} />}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCopyCard(card);
+                          }}
+                        />
                       </Tooltip>
-                      <Popconfirm title={intl.formatMessage({ id: 'pages.dashboard.DashboardDesigner.confirm.deleteCard' })} onConfirm={() => handleDeleteCard(card.id)}
-                        onPopupClick={(e) => e.stopPropagation()}>
+                      <Popconfirm
+                        title={intl.formatMessage({ id: 'pages.dashboard.DashboardDesigner.confirm.deleteCard' })}
+                        onConfirm={() => handleDeleteCard(card.id)}
+                        onPopupClick={(e) => e.stopPropagation()}
+                      >
                         <Tooltip title="删除">
-                          <Button type="text" size="small" icon={<DeleteOutlined style={{ color: '#ff4d4f', fontSize: 13 }} />}
-                            onClick={(e) => e.stopPropagation()} />
+                          <Button
+                            type="text"
+                            size="small"
+                            icon={<DeleteOutlined style={{ color: '#ff4d4f', fontSize: 13 }} />}
+                            onClick={(e) => e.stopPropagation()}
+                          />
                         </Tooltip>
                       </Popconfirm>
                     </Space>
@@ -318,7 +404,14 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
       {/* 卡片配置表单 */}
       <CardConfigForm
         open={cardFormOpen}
-        onOpenChange={(open) => { if (!open) { setCardFormOpen(false); setEditingCard(null); } else { setCardFormOpen(true); } }}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCardFormOpen(false);
+            setEditingCard(null);
+          } else {
+            setCardFormOpen(true);
+          }
+        }}
         editingCard={editingCard}
         onFinish={handleCardFinish}
       />

@@ -30,7 +30,8 @@ export default {
   'pages.web-scraper.titleSelectorTooltip': 'Bộ chọn CSS để trích xuất tiêu đề trang, để trống để sử dụng thẻ <title>',
   'pages.web-scraper.contentSelector': 'Bộ chọn nội dung',
   'pages.web-scraper.contentSelectorPlaceholder': 'Bộ chọn CSS, ví dụ: article.content',
-  'pages.web-scraper.contentSelectorTooltip': 'Bộ chọn CSS để trích xuất nội dung trang, để trống để sử dụng thẻ <body>',
+  'pages.web-scraper.contentSelectorTooltip':
+    'Bộ chọn CSS để trích xuất nội dung trang, để trống để sử dụng thẻ <body>',
   'pages.web-scraper.crawlDepth': 'Độ sâu thu thập',
   'pages.web-scraper.maxPagesPerLevel': 'Tối đa trang mỗi cấp',
   'pages.web-scraper.crawlMode': 'Chế độ thu thập',
@@ -40,7 +41,8 @@ export default {
   'pages.web-scraper.deduplicate': 'Loại bỏ trùng lặp URL',
   'pages.web-scraper.scheduleCron': 'Biểu thức lịch trình',
   'pages.web-scraper.scheduleCronPlaceholder': '0 */10 * * * *',
-  'pages.web-scraper.scheduleCronTooltip': '<p>Ví dụ phổ biến:</p><ul><li>Mỗi 10 phút: <code>*/10 * * * *</code></li><li>Mỗi giờ: <code>0 * * * *</code></li><li>Mỗi ngày lúc nửa đêm: <code>0 0 * * *</code></li><li>Mỗi thứ Hai: <code>0 0 * * 1</code></li></ul>',
+  'pages.web-scraper.scheduleCronTooltip':
+    '<p>Ví dụ phổ biến:</p><ul><li>Mỗi 10 phút: <code>*/10 * * * *</code></li><li>Mỗi giờ: <code>0 * * * *</code></li><li>Mỗi ngày lúc nửa đêm: <code>0 0 * * *</code></li><li>Mỗi thứ Hai: <code>0 0 * * 1</code></li></ul>',
   'pages.web-scraper.mode.single': 'Chỉ trang hiện tại',
   'pages.web-scraper.mode.depth': 'Ưu tiên độ sâu',
   'pages.web-scraper.mode.breadth': 'Ưu tiên độ rộng',

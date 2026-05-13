@@ -127,7 +127,7 @@ export default {
   'pages.taskManagement.table.progress': 'Progress',
   'pages.taskManagement.table.projectName': 'Project',
   'pages.taskManagement.table.remarks': 'Remarks',
-'pages.taskManagement.table.status': 'Status',
+  'pages.taskManagement.table.status': 'Status',
   'pages.taskManagement.table.type': 'Type',
   'pages.taskManagement.tags': 'Tags',
   'pages.taskManagement.table.tags': 'Tags',
@@ -159,7 +159,8 @@ export default {
   'pages.taskManagement.execution.mode.progress': 'Update Progress',
   'pages.taskManagement.execution.mode.complete': 'Complete Task',
   'pages.taskManagement.execution.updateProgress': 'Update Progress',
-  'pages.taskManagement.execution.updateProgressDesc': "Update task execution progress, task status will change to 'In Progress'",
+  'pages.taskManagement.execution.updateProgressDesc':
+    "Update task execution progress, task status will change to 'In Progress'",
   'pages.taskManagement.execution.completionPercentageLabel': 'Completion Percentage',
   'pages.taskManagement.execution.completionPercentageRequired': 'Please set completion percentage',
   'pages.taskManagement.execution.messageLabel': 'Execution Message',

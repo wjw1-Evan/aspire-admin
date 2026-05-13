@@ -1,6 +1,6 @@
 import { request as requestClient } from '@umijs/max';
-import { tokenUtils } from './token';
 import { refreshToken as refreshTokenApi } from '@/services/ant-design-pro/api';
+import { tokenUtils } from './token';
 
 interface TokenRefreshResult {
   success: boolean;
@@ -22,18 +22,18 @@ class TokenRefreshManager {
   private static currentRefreshingToken: string | null = null;
 
   static async refresh(refreshToken: string): Promise<TokenRefreshResult | null> {
-    if (this.refreshPromise) {
-      return this.refreshPromise;
+    if (TokenRefreshManager.refreshPromise) {
+      return TokenRefreshManager.refreshPromise;
     }
 
-    this.currentRefreshingToken = refreshToken;
-    this.refreshPromise = this.doRefresh(refreshToken);
+    TokenRefreshManager.currentRefreshingToken = refreshToken;
+    TokenRefreshManager.refreshPromise = TokenRefreshManager.doRefresh(refreshToken);
 
     try {
-      return await this.refreshPromise;
+      return await TokenRefreshManager.refreshPromise;
     } finally {
-      this.refreshPromise = null;
-      this.currentRefreshingToken = null;
+      TokenRefreshManager.refreshPromise = null;
+      TokenRefreshManager.currentRefreshingToken = null;
     }
   }
 
@@ -48,9 +48,7 @@ class TokenRefreshManager {
       const data = refreshResponse.data as RefreshApiData;
 
       if (data.status === 'ok' && data.token && data.refreshToken) {
-        const expiresAt = data.expiresAt
-          ? new Date(data.expiresAt).getTime()
-          : undefined;
+        const expiresAt = data.expiresAt ? new Date(data.expiresAt).getTime() : undefined;
 
         tokenUtils.setTokens(data.token, data.refreshToken, expiresAt);
 
@@ -79,7 +77,7 @@ class TokenRefreshManager {
   }
 
   static isRefreshing(): boolean {
-    return this.refreshPromise !== null;
+    return TokenRefreshManager.refreshPromise !== null;
   }
 }
 

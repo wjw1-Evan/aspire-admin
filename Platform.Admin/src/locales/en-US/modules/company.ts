@@ -104,7 +104,8 @@ export default {
   'pages.company.join.submitSuccess': 'Request submitted, please wait for company admin review',
   'pages.company.join.submitFailed': 'Failed to submit request',
   'pages.company.join.confirmLeave': 'Confirm leave company',
-  'pages.company.join.leaveContent': 'Are you sure you want to leave "{companyName}"? You will lose access to this company.',
+  'pages.company.join.leaveContent':
+    'Are you sure you want to leave "{companyName}"? You will lose access to this company.',
   'pages.company.join.leaveSuccess': 'Successfully left the company',
   'pages.company.join.requestIdError': 'Invalid request ID, please refresh and try again',
   'pages.company.join.cancelSuccess': 'Request cancelled',

@@ -1,6 +1,6 @@
 import { CheckCircleOutlined } from '@ant-design/icons';
-import { Result, Button } from 'antd';
 import { FormattedMessage, history, useIntl } from '@umijs/max';
+import { Button, Result } from 'antd';
 import { createStyles } from 'antd-style';
 import React from 'react';
 
@@ -11,8 +11,7 @@ const useStyles = createStyles(() => {
       flexDirection: 'column',
       height: '100vh',
       overflow: 'auto',
-      backgroundImage:
-        "url('https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/V-_oS6r-i7wAAAAAAAAAAAAAFl94AQBr')",
+      backgroundImage: "url('https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/V-_oS6r-i7wAAAAAAAAAAAAAFl94AQBr')",
       backgroundSize: '100% 100%',
     },
     content: {
@@ -36,10 +35,10 @@ const RegisterResult: React.FC = () => {
           icon={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
           title={intl.formatMessage({
             id: 'pages.register.result.title',
-                      })}
+          })}
           subTitle={intl.formatMessage({
             id: 'pages.register.result.subtitle',
-                      })}
+          })}
           extra={[
             <Button
               type="primary"
@@ -48,10 +47,7 @@ const RegisterResult: React.FC = () => {
                 history.push('/user/login');
               }}
             >
-              <FormattedMessage
-                id="pages.register.result.login"
-               
-              />
+              <FormattedMessage id="pages.register.result.login" />
             </Button>,
             <Button
               key="home"
@@ -59,10 +55,7 @@ const RegisterResult: React.FC = () => {
                 history.push('/');
               }}
             >
-              <FormattedMessage
-                id="pages.register.result.home"
-               
-              />
+              <FormattedMessage id="pages.register.result.home" />
             </Button>,
           ]}
         />

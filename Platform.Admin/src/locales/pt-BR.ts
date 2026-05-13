@@ -1,12 +1,6 @@
 import component from './pt-BR/component';
 import globalHeader from './pt-BR/globalHeader';
 import menu from './pt-BR/menu';
-import pages from './pt-BR/pages';
-import pwa from './pt-BR/pwa';
-import settingDrawer from './pt-BR/settingDrawer';
-import settings from './pt-BR/settings';
-import welcome from './pt-BR/welcome';
-
 import auth from './pt-BR/modules/auth';
 import cloudStorage from './pt-BR/modules/cloud-storage';
 import company from './pt-BR/modules/company';
@@ -25,6 +19,11 @@ import user from './pt-BR/modules/user';
 import webScraper from './pt-BR/modules/web-scraper';
 import workflow from './pt-BR/modules/workflow';
 import xiaoke from './pt-BR/modules/xiaoke';
+import pages from './pt-BR/pages';
+import pwa from './pt-BR/pwa';
+import settingDrawer from './pt-BR/settingDrawer';
+import settings from './pt-BR/settings';
+import welcome from './pt-BR/welcome';
 
 export default {
   'navBar.lang': 'Idiomas',

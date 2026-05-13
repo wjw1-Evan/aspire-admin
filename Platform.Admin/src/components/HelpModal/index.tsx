@@ -1,25 +1,23 @@
 import {
+  ApartmentOutlined,
   ApiOutlined,
+  BuildOutlined,
   CodeOutlined,
   QuestionCircleOutlined,
   RocketOutlined,
   ToolOutlined,
-  BuildOutlined,
-  ApartmentOutlined,
-  BranchesOutlined,
-  CheckSquareOutlined,
 } from '@ant-design/icons';
+import { useIntl } from '@umijs/max';
 import { Modal, Space, Tabs } from 'antd';
 import React from 'react';
-import { useIntl } from '@umijs/max';
 
 import {
-  QuickStartContent,
-  VersionHistoryContent,
-  FeaturesContent,
   ArchitectureContent,
-  TechStackContent,
   DevelopmentContent,
+  FeaturesContent,
+  QuickStartContent,
+  TechStackContent,
+  VersionHistoryContent,
 } from './tabs';
 
 interface HelpModalProps {
@@ -102,11 +100,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
       style={{ top: 40 }}
       destroyOnHidden
     >
-      <Tabs
-        defaultActiveKey="quick-start"
-        items={tabItems}
-        style={{ marginTop: 16 }}
-      />
+      <Tabs defaultActiveKey="quick-start" items={tabItems} style={{ marginTop: 16 }} />
     </Modal>
   );
 };

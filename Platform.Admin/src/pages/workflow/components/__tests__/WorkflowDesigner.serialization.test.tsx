@@ -1,23 +1,24 @@
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { ConfigProvider } from 'antd';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { IntlProvider } from '@umijs/max';
-import WorkflowDesigner from '../WorkflowDesigner';
+import { ConfigProvider } from 'antd';
 import { WorkflowGraph } from '@/services/workflow/api';
+import WorkflowDesigner from '../WorkflowDesigner';
 
 // Mock matchMedia that Ant Design requires
-window.matchMedia = window.matchMedia || function() {
-    return {
-        matches: false,
-        addListener: function() {},
-        removeListener: function() {}
-    };
-};
+window.matchMedia =
+  window.matchMedia ||
+  (() => ({
+    matches: false,
+    addListener: () => {},
+    removeListener: () => {},
+  }));
 
 // Mock ResizeObserver for ReactFlow
 global.ResizeObserver = class ResizeObserver {
   cb: any;
-  constructor(cb: any) { this.cb = cb; }
+  constructor(cb: any) {
+    this.cb = cb;
+  }
   observe() {}
   unobserve() {}
   disconnect() {}
@@ -27,7 +28,7 @@ describe('WorkflowDesigner - API Payload Payload Formatting', () => {
   it('should format react flow nodes/edges to the strict backend-compatible WorkflowGraph structure on save', async () => {
     const handleSaveMock = jest.fn();
 
-    // A mock graph mimicking what a backend would initially provide 
+    // A mock graph mimicking what a backend would initially provide
     // And containing the exact fields that had mapping issues previously
     const testInitialGraph: WorkflowGraph = {
       nodes: [
@@ -37,7 +38,7 @@ describe('WorkflowDesigner - API Payload Payload Formatting', () => {
           data: {
             nodeType: 'start',
             label: 'Start Node',
-            config: {}
+            config: {},
           },
           position: { x: 100, y: 100 },
         },
@@ -47,10 +48,10 @@ describe('WorkflowDesigner - API Payload Payload Formatting', () => {
           data: {
             nodeType: 'approval',
             label: 'Approval Node',
-            config: { approval: { allowTransfer: true } }
+            config: { approval: { allowTransfer: true } },
           },
           position: { x: 300, y: 100 },
-        }
+        },
       ],
       edges: [
         {
@@ -59,29 +60,24 @@ describe('WorkflowDesigner - API Payload Payload Formatting', () => {
           target: 'mock-approval',
           label: 'Go',
           data: {
-            condition: 'Amt > 100'
-          }
-        }
+            condition: 'Amt > 100',
+          },
+        },
       ],
     };
 
     render(
       <ConfigProvider>
-        <IntlProvider locale="zh-CN" messages={{ "pages.workflow.designer.save": "保存" }}>
-          <WorkflowDesigner
-            open={true}
-            graph={testInitialGraph}
-            onSave={handleSaveMock}
-            onClose={jest.fn()}
-          />
+        <IntlProvider locale="zh-CN" messages={{ 'pages.workflow.designer.save': '保存' }}>
+          <WorkflowDesigner open={true} graph={testInitialGraph} onSave={handleSaveMock} onClose={jest.fn()} />
         </IntlProvider>
-      </ConfigProvider>
+      </ConfigProvider>,
     );
 
     // Wait for the UI and flow to render
     await waitFor(() => {
-        // Find the '保存' button
-        expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument();
+      // Find the '保存' button
+      expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument();
     });
 
     // Fire the save action
@@ -89,28 +85,28 @@ describe('WorkflowDesigner - API Payload Payload Formatting', () => {
 
     // Assert the shape of the payload returned to the onSave callback!
     await waitFor(() => {
-        expect(handleSaveMock).toHaveBeenCalledTimes(1);
+      expect(handleSaveMock).toHaveBeenCalledTimes(1);
     });
 
     const savedPayload: WorkflowGraph = handleSaveMock.mock.calls[0][0];
 
     // 1. Verify Node payload structure (No root fields leaking, wrapped correctly in 'data')
     expect(savedPayload.nodes).toHaveLength(2);
-    
-    const startNode = savedPayload.nodes.find(n => n.id === 'mock-start');
-    const approvalNode = savedPayload.nodes.find(n => n.id === 'mock-approval');
+
+    const startNode = savedPayload.nodes.find((n) => n.id === 'mock-start');
+    const approvalNode = savedPayload.nodes.find((n) => n.id === 'mock-approval');
 
     expect(startNode).toBeDefined();
     // Validate that flat property access is undefined/forbidden!
     expect((startNode as any).nodeType).toBeUndefined();
     expect((startNode as any).label).toBeUndefined();
     expect((startNode as any).config).toBeUndefined();
-    
+
     // Validate exact structure expected by Backend System.Text.Json / Bson Serialization
     expect(startNode?.data).toMatchObject({
-        nodeType: 'start',
-        label: 'Start Node',
-        config: {}
+      nodeType: 'start',
+      label: 'Start Node',
+      config: {},
     });
 
     expect(approvalNode?.data?.config).toBeDefined();
@@ -119,13 +115,13 @@ describe('WorkflowDesigner - API Payload Payload Formatting', () => {
     // 2. Verify Edge payload structure (No root 'condition')
     expect(savedPayload.edges).toHaveLength(1);
     const edge = savedPayload.edges[0];
-    
+
     // Explicitly verify the old bug is patched!
     expect((edge as any).condition).toBeUndefined();
-    
+
     // Validate structure is inside 'data' wrapper
     expect(edge.data).toMatchObject({
-        condition: 'Amt > 100'
+      condition: 'Amt > 100',
     });
   });
 });

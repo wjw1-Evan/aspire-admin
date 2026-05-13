@@ -1,29 +1,18 @@
-import * as API from '@/types';
-import {
-  LockOutlined,
-  UserOutlined,
-} from '@ant-design/icons';
-import {
-  FormattedMessage,
-  Link,
-  useIntl,
-  useModel,
-  history,
-  getIntl,
-} from '@umijs/max';
-import { SelectLang } from '@/components';
-import { Alert, App, Form, Space } from 'antd';
+import { LockOutlined, UserOutlined } from '@ant-design/icons';
 import { ProCard } from '@ant-design/pro-components/es/card';
 import { ProForm, ProFormText } from '@ant-design/pro-components/es/form';
+import { FormattedMessage, getIntl, history, Link, useIntl, useModel } from '@umijs/max';
+import { Alert, App, Form } from 'antd';
 import { createStyles } from 'antd-style';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { flushSync } from 'react-dom';
-import { Footer } from '@/components';
-import { login } from '@/services/ant-design-pro/api';
-import { tokenUtils } from '@/utils/token';
-import { PasswordEncryption } from '@/utils/encryption';
-import Settings from '../../../../config/defaultSettings';
+import { Footer, SelectLang } from '@/components';
 import { LOGIN_KNOWN_ERRORS } from '@/constants/errorCodes';
+import { login } from '@/services/ant-design-pro/api';
+import * as API from '@/types';
+import { PasswordEncryption } from '@/utils/encryption';
+import { tokenUtils } from '@/utils/token';
+import Settings from '../../../../config/defaultSettings';
 
 const useStyles = createStyles(({ token }) => {
   return {
@@ -88,9 +77,7 @@ const LoginMessage: React.FC<{
           border: '1px solid rgba(255, 77, 79, 0.2)',
           backdropFilter: 'blur(10px)',
         }}
-        message={
-          <span style={{ color: '#ff4d4f', fontWeight: 500 }}>{content}</span>
-        }
+        message={<span style={{ color: '#ff4d4f', fontWeight: 500 }}>{content}</span>}
         type="error"
         showIcon
       />
@@ -136,9 +123,7 @@ const Login: React.FC = () => {
     try {
       tokenUtils.clearAllTokens();
 
-      const encryptedPassword = values.password
-        ? await PasswordEncryption.encrypt(values.password)
-        : undefined;
+      const encryptedPassword = values.password ? await PasswordEncryption.encrypt(values.password) : undefined;
 
       const loginData = {
         ...values,
@@ -153,9 +138,7 @@ const Login: React.FC = () => {
 
         // 保存 token 和刷新token到本地存储
         if (msg.token && msg.refreshToken) {
-          const expiresAt = msg.expiresAt
-            ? new Date(msg.expiresAt).getTime()
-            : undefined;
+          const expiresAt = msg.expiresAt ? new Date(msg.expiresAt).getTime() : undefined;
           tokenUtils.setTokens(msg.token, msg.refreshToken, expiresAt);
         } else if (msg.token) {
           // 兼容旧版本，只保存token
@@ -164,7 +147,7 @@ const Login: React.FC = () => {
 
         const defaultLoginSuccessMessage = intl.formatMessage({
           id: 'pages.login.success',
-                  });
+        });
         message.success(defaultLoginSuccessMessage);
 
         try {
@@ -201,7 +184,7 @@ const Login: React.FC = () => {
         console.log('[login] response.errors:', response.errors);
         const fieldErrors = Object.entries(response.errors).map(([field, msgs]) => {
           const errMsg = Array.isArray(msgs) ? msgs[0] : msgs;
-          const translatedErr = intl.formatMessage({ id: errMsg as string});
+          const translatedErr = intl.formatMessage({ id: errMsg as string });
           console.log('[login] field error:', field, translatedErr);
           return { name: field as any, errors: [translatedErr] };
         });
@@ -225,7 +208,7 @@ const Login: React.FC = () => {
       if (response?.errors) {
         const fieldErrors = Object.entries(response.errors).map(([field, msgs]) => {
           const errMsg = Array.isArray(msgs) ? msgs[0] : msgs;
-          const translatedErr = intl.formatMessage({ id: errMsg as string});
+          const translatedErr = intl.formatMessage({ id: errMsg as string });
           return { name: field as any, errors: [translatedErr] };
         });
         form.setFields(fieldErrors);
@@ -254,11 +237,10 @@ const Login: React.FC = () => {
   };
   const { status, type: loginType } = userLoginState;
 
-  const pageTitle = intl.formatMessage({
-    id: 'menu.login',
-      }) + (Settings.title ? ` - ${Settings.title}` : '');
-
-
+  const pageTitle =
+    intl.formatMessage({
+      id: 'menu.login',
+    }) + (Settings.title ? ` - ${Settings.title}` : '');
 
   return (
     <>
@@ -270,13 +252,11 @@ const Login: React.FC = () => {
             <ProCard className={styles.card}>
               <div style={{ textAlign: 'center', marginBottom: 24 }}>
                 <img alt="logo" src="/logo.svg" style={{ width: 64, height: 64, marginBottom: 16 }} />
-                <div style={{ fontSize: 28, fontWeight: 600, color: '#1a1a1a', marginBottom: 8 }}>
-                  {Settings.title}
-                </div>
+                <div style={{ fontSize: 28, fontWeight: 600, color: '#1a1a1a', marginBottom: 8 }}>{Settings.title}</div>
                 <div style={{ fontSize: 14, color: '#666', marginBottom: 32 }}>
                   {intl.formatMessage({
                     id: 'pages.login.subTitle',
-                                      })}
+                  })}
                 </div>
               </div>
               <ProForm
@@ -292,7 +272,7 @@ const Login: React.FC = () => {
                   <LoginMessage
                     content={intl.formatMessage({
                       id: 'pages.login.accountLogin.errorMessage',
-                                          })}
+                    })}
                   />
                 )}
                 {type === 'account' && (
@@ -301,7 +281,7 @@ const Login: React.FC = () => {
                       name="username"
                       placeholder={intl.formatMessage({
                         id: 'pages.login.username.placeholder',
-                                              })}
+                      })}
                       fieldProps={{ prefix: <UserOutlined /> }}
                       rules={[{ required: true, message: intl.formatMessage({ id: 'pages.login.username.required' }) }]}
                     />
@@ -309,7 +289,7 @@ const Login: React.FC = () => {
                       name="password"
                       placeholder={intl.formatMessage({
                         id: 'pages.login.password.placeholder',
-                                              })}
+                      })}
                       fieldProps={{ prefix: <LockOutlined />, type: 'password' }}
                       rules={[{ required: true, message: intl.formatMessage({ id: 'pages.login.password.required' }) }]}
                     />

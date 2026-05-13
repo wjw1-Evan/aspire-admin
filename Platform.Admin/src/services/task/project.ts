@@ -5,29 +5,29 @@ import type { ApiResponse, PagedResult } from '@/types';
  * 项目状态枚举
  */
 export enum ProjectStatus {
-  Planning = 0,      // 规划中
-  InProgress = 1,   // 进行中
-  OnHold = 2,       // 暂停
-  Completed = 3,    // 已完成
-  Cancelled = 4     // 已取消
+  Planning = 0, // 规划中
+  InProgress = 1, // 进行中
+  OnHold = 2, // 暂停
+  Completed = 3, // 已完成
+  Cancelled = 4, // 已取消
 }
 
 /**
  * 项目优先级枚举
  */
 export enum ProjectPriority {
-  Low = 0,      // 低
-  Medium = 1,   // 中
-  High = 2      // 高
+  Low = 0, // 低
+  Medium = 1, // 中
+  High = 2, // 高
 }
 
 /**
  * 项目成员角色枚举
  */
 export enum ProjectMemberRole {
-  Manager = 0,  // 项目经理
-  Member = 1,    // 成员
-  Viewer = 2     // 查看者
+  Manager = 0, // 项目经理
+  Member = 1, // 成员
+  Viewer = 2, // 查看者
 }
 
 /**
@@ -54,8 +54,6 @@ export interface ProjectDto {
   canEdit?: boolean;
   canDelete?: boolean;
 }
-
-
 
 /**
  * 创建项目请求

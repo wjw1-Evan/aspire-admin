@@ -1,13 +1,6 @@
 import component from './en-US/component';
 import globalHeader from './en-US/globalHeader';
 import menu from './en-US/menu';
-import pages from './en-US/pages';
-import pwa from './en-US/pwa';
-import settingDrawer from './en-US/settingDrawer';
-import settings from './en-US/settings';
-import request from './en-US/request';
-import welcome from './en-US/welcome';
-
 import auth from './en-US/modules/auth';
 import cloudStorage from './en-US/modules/cloud-storage';
 import company from './en-US/modules/company';
@@ -26,6 +19,12 @@ import user from './en-US/modules/user';
 import webScraper from './en-US/modules/web-scraper';
 import workflow from './en-US/modules/workflow';
 import xiaoke from './en-US/modules/xiaoke';
+import pages from './en-US/pages';
+import pwa from './en-US/pwa';
+import request from './en-US/request';
+import settingDrawer from './en-US/settingDrawer';
+import settings from './en-US/settings';
+import welcome from './en-US/welcome';
 
 export default {
   'navBar.lang': 'Languages',
@@ -34,8 +33,7 @@ export default {
   'layout.user.link.terms': 'Terms',
   'app.preview.down.block': 'Download this page to your local project',
   'app.welcome.link.fetch-blocks': 'Get all block',
-  'app.welcome.link.block-list':
-    'Quickly build standard, pages based on `block` development',
+  'app.welcome.link.block-list': 'Quickly build standard, pages based on `block` development',
   ...globalHeader,
   ...menu,
   ...settingDrawer,

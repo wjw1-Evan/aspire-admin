@@ -1,18 +1,6 @@
+import { ApartmentOutlined, CheckOutlined, HistoryOutlined, PlayCircleOutlined, StopOutlined } from '@ant-design/icons';
 import React from 'react';
-import {
-  NodeProps,
-  EdgeProps,
-  Position,
-  getBezierPath,
-  Handle,
-} from 'reactflow';
-import {
-  PlayCircleOutlined,
-  StopOutlined,
-  CheckOutlined,
-  ApartmentOutlined,
-  HistoryOutlined,
-} from '@ant-design/icons';
+import { EdgeProps, getBezierPath, Handle, NodeProps, Position } from 'reactflow';
 
 // 节点基础配置（不含国际化文本）
 export const NODE_CONFIGS = {
@@ -93,9 +81,7 @@ export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
       const branches = data.config?.condition?.branches || [];
       const hasDefaultNode = !!data.config?.condition?.defaultNodeId;
       const handleCount = Math.max(branches.length, 1);
-      const handles: React.ReactNode[] = [
-        <Handle key="target" type="target" position={Position.Top} />,
-      ];
+      const handles: React.ReactNode[] = [<Handle key="target" type="target" position={Position.Top} />];
 
       for (let i = 0; i < handleCount; i++) {
         const branch = branches[i];
@@ -136,23 +122,26 @@ export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
   return (
     <div
       className={`elsa-node-wrapper ${selected ? 'workflow-node-selected' : ''}`}
-      style={{
-        '--node-accent-color': config.color,
-        borderColor: selected ? config.color : 'rgba(226, 232, 240, 0.8)',
-      } as React.CSSProperties}
+      style={
+        {
+          '--node-accent-color': config.color,
+          borderColor: selected ? config.color : 'rgba(226, 232, 240, 0.8)',
+        } as React.CSSProperties
+      }
     >
       {renderHandles()}
       <div className="elsa-node-header">
-        <div className="elsa-node-icon" style={{
-          background: config.backgroundColor,
-          color: config.color,
-          borderColor: `rgba(${parseInt(config.color.slice(1, 3), 16)}, ${parseInt(config.color.slice(3, 5), 16)}, ${parseInt(config.color.slice(5, 7), 16)}, 0.1)`,
-        }}>
+        <div
+          className="elsa-node-icon"
+          style={{
+            background: config.backgroundColor,
+            color: config.color,
+            borderColor: `rgba(${parseInt(config.color.slice(1, 3), 16)}, ${parseInt(config.color.slice(3, 5), 16)}, ${parseInt(config.color.slice(5, 7), 16)}, 0.1)`,
+          }}
+        >
           {config.icon}
         </div>
-        <div className="elsa-node-title">
-          {data.label || NODE_TYPE_LABELS[nodeType] || nodeType}
-        </div>
+        <div className="elsa-node-title">{data.label || NODE_TYPE_LABELS[nodeType] || nodeType}</div>
       </div>
       <div className="elsa-node-body">{renderBody()}</div>
       <div className="elsa-node-footer">
@@ -164,10 +153,24 @@ export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
 };
 
 export const ConditionEdge: React.FC<EdgeProps> = ({
-  id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, label, selected,
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  sourcePosition,
+  targetPosition,
+  data,
+  label,
+  selected,
 }) => {
   const [edgePath, labelX, labelY] = getBezierPath({
-    sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition,
+    sourceX,
+    sourceY,
+    sourcePosition,
+    targetX,
+    targetY,
+    targetPosition,
   });
 
   return (
@@ -183,10 +186,17 @@ export const ConditionEdge: React.FC<EdgeProps> = ({
       />
       {label && (
         <foreignObject x={labelX - 50} y={labelY - 10} width={100} height={20}>
-          <div style={{
-            textAlign: 'center', fontSize: 12, color: '#64748b',
-            background: '#fff', padding: '2px 6px', borderRadius: 4, border: '1px solid #e2e8f0',
-          }}>
+          <div
+            style={{
+              textAlign: 'center',
+              fontSize: 12,
+              color: '#64748b',
+              background: '#fff',
+              padding: '2px 6px',
+              borderRadius: 4,
+              border: '1px solid #e2e8f0',
+            }}
+          >
             {label}
           </div>
         </foreignObject>

@@ -262,7 +262,8 @@ export default {
   'pages.iotPlatform.deviceTwin.desiredPropertiesUpdated': '期望属性已更新 (版本 {version})',
   'pages.iotPlatform.deviceTwin.refresh': '刷新',
   'pages.iotPlatform.deviceTwin.save': '保存',
-  'pages.iotPlatform.deviceTwin.desiredInfo': 'Desired Properties 由管理端配置，设备连接后读取并执行；Reported Properties 由设备上报，反映设备实际状态。',
+  'pages.iotPlatform.deviceTwin.desiredInfo':
+    'Desired Properties 由管理端配置，设备连接后读取并执行；Reported Properties 由设备上报，反映设备实际状态。',
   'pages.iotPlatform.deviceTwin.desiredVersion': '版本 {version}',
   'pages.iotPlatform.deviceTwin.lastUpdate': '最后更新',
   'pages.iotPlatform.deviceTwin.readonly': '只读',

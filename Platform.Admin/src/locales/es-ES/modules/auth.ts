@@ -57,7 +57,8 @@ export default {
   'pages.forgotPassword.passwordRequired': '¡Por favor ingrese la nueva contraseña!',
   'pages.forgotPassword.resendCode': 'Reenviar',
   'pages.forgotPassword.resetFailed': 'Error al restablecer la contraseña, el código es incorrecto o ha expirado',
-  'pages.forgotPassword.resetSuccess': 'Contraseña restablecida exitosamente, por favor inicie sesión con su nueva contraseña',
+  'pages.forgotPassword.resetSuccess':
+    'Contraseña restablecida exitosamente, por favor inicie sesión con su nueva contraseña',
   'pages.forgotPassword.sendCodeFailed': 'Error al enviar el código, por favor verifique si el correo es correcto',
   'pages.forgotPassword.sendCodeError': 'Error al obtener el código de verificación',
   'pages.forgotPassword.sendCodeSuccess': 'Código de verificación enviado a su correo',
@@ -74,7 +75,8 @@ export default {
   'pages.login.error.CAPTCHA_REQUIRED': 'Por favor ingrese CAPTCHA de imagen',
   'pages.login.error.ACCOUNT_DISABLED': 'La cuenta ha sido deshabilitada',
   'pages.login.error.ACCOUNT_LOCKED': 'La cuenta ha sido bloqueada',
-  'pages.login.error.CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN': 'Por seguridad, se requiere CAPTCHA para inicios de sesión posteriores',
+  'pages.login.error.CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN':
+    'Por seguridad, se requiere CAPTCHA para inicios de sesión posteriores',
   'pages.login.error.INVALID_CREDENTIALS': 'Nombre de usuario o contraseña inválidos',
   'pages.login.error.LOGIN_FAILED': 'Inicio de sesión fallido',
   'pages.login.error.PASSWORD_EXPIRED': 'La contraseña ha expirado',

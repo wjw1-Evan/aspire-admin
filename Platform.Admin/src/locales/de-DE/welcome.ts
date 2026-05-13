@@ -63,7 +63,8 @@ export default {
   'pages.welcome.systemResources.diskDrive': 'Drive: {name} ({type})',
   'pages.welcome.systemResources.cpuCores': 'Cores: {count}',
   'pages.welcome.systemResources.unavailable': 'System resource data unavailable',
-  'pages.welcome.systemResources.unavailableDesc': 'Unable to retrieve system resource information, please check if the backend service is running properly.',
+  'pages.welcome.systemResources.unavailableDesc':
+    'Unable to retrieve system resource information, please check if the backend service is running properly.',
   'pages.welcome.systemDetails': 'System Details',
   'pages.welcome.systemDetails.machineName': 'Machine Name:',
   'pages.welcome.systemDetails.processorCount': 'CPU Cores:',

@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from 'react';
-import { useSseConnection, NotificationState } from './useSseConnection';
+import { NotificationState, useSseConnection } from './useSseConnection';
 
 interface GlobalSseContextValue {
   isConnected: boolean;
@@ -19,11 +19,7 @@ export const GlobalSseProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     onError: (err) => console.warn('[GlobalSSE] 异常:', err),
   });
 
-  return (
-    <GlobalSseContext.Provider value={sse}>
-      {children}
-    </GlobalSseContext.Provider>
-  );
+  return <GlobalSseContext.Provider value={sse}>{children}</GlobalSseContext.Provider>;
 };
 
 export function useGlobalSse() {

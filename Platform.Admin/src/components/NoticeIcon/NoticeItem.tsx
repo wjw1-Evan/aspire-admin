@@ -1,15 +1,9 @@
-import React from 'react';
-import { Avatar, Tag, Typography, Badge, Button, Tooltip, Flex, Space } from 'antd';
-import { getUserAvatar } from '@/utils/avatar';
-import {
-  NotificationOutlined,
-  MessageOutlined,
-  CalendarOutlined,
-  EyeOutlined,
-  CheckOutlined,
-} from '@ant-design/icons';
+import { CalendarOutlined, CheckOutlined, EyeOutlined, MessageOutlined, NotificationOutlined } from '@ant-design/icons';
+import { Avatar, Badge, Button, Flex, Tag, Tooltip, Typography } from 'antd';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import React from 'react';
+import { getUserAvatar } from '@/utils/avatar';
 import 'dayjs/locale/zh-cn';
 
 dayjs.extend(relativeTime);
@@ -30,12 +24,7 @@ interface NoticeItemProps {
   readonly onMarkAsUnread?: (item: any) => void;
 }
 
-export default function NoticeItem({
-  item,
-  onClick,
-  onMarkAsRead,
-  onMarkAsUnread,
-}: NoticeItemProps) {
+export default function NoticeItem({ item, onClick, onMarkAsRead, onMarkAsUnread }: NoticeItemProps) {
   const handleClick = (e: React.MouseEvent) => {
     // 如果点击的是按钮，不触发整个 item 的 onClick
     if ((e.target as HTMLElement).closest('.ant-btn')) {
@@ -74,20 +63,17 @@ export default function NoticeItem({
     >
       <Flex gap={12} align="flex-start" style={{ flex: 1, minWidth: 0 }}>
         <div style={{ flexShrink: 0 }}>
-          <Avatar 
-            src={getUserAvatar(item.avatar)} 
-            icon={typeIcons[item.type as keyof typeof typeIcons]}
-          />
+          <Avatar src={getUserAvatar(item.avatar)} icon={typeIcons[item.type as keyof typeof typeIcons]} />
         </div>
         <Flex vertical gap={4} style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div
+            style={{ fontWeight: 600, fontSize: 14, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}
+          >
             <span>{item.title}</span>
             {!item.read && <Badge status="processing" />}
           </div>
           <div>
-            {item.description && (
-              <Text type="secondary">{item.description}</Text>
-            )}
+            {item.description && <Text type="secondary">{item.description}</Text>}
             <Text type="secondary" style={{ fontSize: 12, color: '#999' }}>
               {dayjs(item.datetime).fromNow()}
             </Text>
@@ -103,21 +89,11 @@ export default function NoticeItem({
       <div style={{ flexShrink: 0, marginLeft: 8 }}>
         {item.read ? (
           <Tooltip title="标记为未读">
-            <Button
-              type="text"
-              size="small"
-              icon={<EyeOutlined />}
-              onClick={handleMarkAsUnread}
-            />
+            <Button type="text" size="small" icon={<EyeOutlined />} onClick={handleMarkAsUnread} />
           </Tooltip>
         ) : (
           <Tooltip title="标记为已读">
-            <Button
-              type="text"
-              size="small"
-              icon={<CheckOutlined />}
-              onClick={handleMarkAsRead}
-            />
+            <Button type="text" size="small" icon={<CheckOutlined />} onClick={handleMarkAsRead} />
           </Tooltip>
         )}
       </div>

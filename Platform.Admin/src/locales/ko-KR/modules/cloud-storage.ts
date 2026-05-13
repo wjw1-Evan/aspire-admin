@@ -6,20 +6,22 @@ export default {
   'pages.cloud-storage.recycle.message.deleteFailed': '삭제 실패',
   'pages.cloud-storage.recycle.message.emptySuccess': '비우기 성공, {count}개 파일 삭제됨',
   'pages.cloud-storage.recycle.message.emptyFailed': '비우기 실패',
-  
+
   // 分享管理消息
   'pages.cloud-storage.share.message.updateSuccess': '업데이트 성공',
   'pages.cloud-storage.share.message.linkCopied': '공유 링크가 복사됨',
-  
+
   // 配额管理消息
   'pages.cloud-storage.quota.message.updateSuccess': '할당량 업데이트 성공',
   'pages.cloud-storage.quota.message.createSuccess': '할당량 생성 성공',
   'pages.cloud-storage.recycle.title': 'Recycle Bin',
   'pages.cloud-storage.recycle.confirmDelete': 'Confirm Permanent Delete',
-  'pages.cloud-storage.recycle.confirmDeleteContent': 'Are you sure you want to permanently delete "{name}"? This action cannot be undone.',
+  'pages.cloud-storage.recycle.confirmDeleteContent':
+    'Are you sure you want to permanently delete "{name}"? This action cannot be undone.',
   'pages.cloud-storage.recycle.confirmDeleteOk': 'Delete',
   'pages.cloud-storage.recycle.confirmEmpty': 'Confirm Empty Recycle Bin',
-  'pages.cloud-storage.recycle.confirmEmptyContent': 'Are you sure you want to empty the entire recycle bin? This will permanently delete all files and cannot be undone!',
+  'pages.cloud-storage.recycle.confirmEmptyContent':
+    'Are you sure you want to empty the entire recycle bin? This will permanently delete all files and cannot be undone!',
   'pages.cloud-storage.recycle.confirmEmptyOk': 'Empty',
   'pages.cloud-storage.recycle.searchPlaceholder': 'Search...',
   'pages.cloud-storage.recycle.tagTotal': 'Total {count}',

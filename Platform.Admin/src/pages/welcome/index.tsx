@@ -1,44 +1,43 @@
+import { DragOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { useModel, useAccess } from '@umijs/max';
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { theme, Row, Col } from 'antd';
-import { getUserStatistics } from '@/services/ant-design-pro/api';
-import { getTaskStatistics, getMyTodoTasks } from '@/services/task/api';
-import { getCurrentCompany } from '@/services/company';
-import { getDocumentStatistics } from '@/services/document/api';
-import { getTodoInstances } from '@/services/workflow/api';
-import { saveWelcomeLayout, getWelcomeLayout } from '@/services/welcome/layout';
-import { useMessage } from '@/hooks/useMessage';
-import type { CardLayoutConfig } from '@/services/welcome/layout';
-
 import {
-  DndContext,
   closestCenter,
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
-  DragEndEvent,
-  DragOverlay,
 } from '@dnd-kit/core';
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
+  useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useSortable } from '@dnd-kit/sortable';
-import { DragOutlined } from '@ant-design/icons';
+import { useAccess, useModel } from '@umijs/max';
+import { Col, Row, theme } from 'antd';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMessage } from '@/hooks/useMessage';
+import { getUserStatistics } from '@/services/ant-design-pro/api';
+import { getCurrentCompany } from '@/services/company';
+import { getDocumentStatistics } from '@/services/document/api';
+import { getMyTodoTasks, getTaskStatistics } from '@/services/task/api';
+import type { CardLayoutConfig } from '@/services/welcome/layout';
+import { getWelcomeLayout, saveWelcomeLayout } from '@/services/welcome/layout';
+import { getTodoInstances } from '@/services/workflow/api';
 
 import {
-  WelcomeHeader,
-  QuickActionsPanel,
-  TaskOverviewCard,
-  StatisticsOverview,
   ApprovalOverviewCard,
   IoTEventAlertsCard,
-  ProjectListCard
+  ProjectListCard,
+  QuickActionsPanel,
+  StatisticsOverview,
+  TaskOverviewCard,
+  WelcomeHeader,
 } from './components';
 
 interface SortableCardProps {
@@ -47,15 +46,7 @@ interface SortableCardProps {
 }
 
 const SortableCard: React.FC<SortableCardProps> = ({ id, children }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-    isOver,
-  } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging, isOver } = useSortable({
     id,
   });
 
@@ -68,12 +59,7 @@ const SortableCard: React.FC<SortableCardProps> = ({ id, children }) => {
   };
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="sortable-card-wrapper"
-      data-card-id={id}
-    >
+    <div ref={setNodeRef} style={style} className="sortable-card-wrapper" data-card-id={id}>
       {/* 拖动按钮 - 位于卡片右上角，与标题对齐 */}
       <div
         style={{
@@ -155,7 +141,7 @@ const Welcome: React.FC = () => {
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const fetchStatistics = useCallback(async () => {
@@ -165,7 +151,7 @@ const Welcome: React.FC = () => {
         getUserStatistics(),
         getCurrentCompany(),
         getTaskStatistics(),
-        getMyTodoTasks()
+        getMyTodoTasks(),
       ]);
 
       if (statsRes?.data) setStatistics(statsRes.data);
@@ -176,7 +162,7 @@ const Welcome: React.FC = () => {
       try {
         const [docStatsRes, pendingDocsRes] = await Promise.all([
           getDocumentStatistics(),
-          getTodoInstances({ page: 1, pageSize: 5 })
+          getTodoInstances({ page: 1, pageSize: 5 }),
         ]);
 
         if (docStatsRes?.success && docStatsRes.data) setDocStatistics(docStatsRes.data);
@@ -236,86 +222,81 @@ const Welcome: React.FC = () => {
     loadWelcomeLayout();
   }, []);
 
-  const handleDragEnd = useCallback((event: DragEndEvent) => {
-    const { active, over } = event;
-    setActiveId(null);
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      setActiveId(null);
 
-    if (!over || active.id === over.id) return;
+      if (!over || active.id === over.id) return;
 
-    const activeId = active.id as string;
-    const overId = over.id as string;
+      const activeId = active.id as string;
+      const overId = over.id as string;
 
-    const activeInLeft = leftCards.includes(activeId);
-    const overInLeft = leftCards.includes(overId);
+      const activeInLeft = leftCards.includes(activeId);
+      const overInLeft = leftCards.includes(overId);
 
-    let newLeftCards = leftCards;
-    let newRightCards = rightCards;
+      let newLeftCards = leftCards;
+      let newRightCards = rightCards;
 
-    if (activeInLeft === overInLeft) {
-      if (activeInLeft) {
-        const oldIndex = leftCards.indexOf(activeId);
-        const newIndex = leftCards.indexOf(overId);
-        newLeftCards = arrayMove(leftCards, oldIndex, newIndex);
+      if (activeInLeft === overInLeft) {
+        if (activeInLeft) {
+          const oldIndex = leftCards.indexOf(activeId);
+          const newIndex = leftCards.indexOf(overId);
+          newLeftCards = arrayMove(leftCards, oldIndex, newIndex);
+        } else {
+          const oldIndex = rightCards.indexOf(activeId);
+          const newIndex = rightCards.indexOf(overId);
+          newRightCards = arrayMove(rightCards, oldIndex, newIndex);
+        }
       } else {
-        const oldIndex = rightCards.indexOf(activeId);
-        const newIndex = rightCards.indexOf(overId);
-        newRightCards = arrayMove(rightCards, oldIndex, newIndex);
+        if (activeInLeft) {
+          const newIndex = rightCards.indexOf(overId);
+          newLeftCards = leftCards.filter((id) => id !== activeId);
+          newRightCards = [...rightCards.slice(0, newIndex), activeId, ...rightCards.slice(newIndex)];
+        } else {
+          const newIndex = leftCards.indexOf(overId);
+          newRightCards = rightCards.filter((id) => id !== activeId);
+          newLeftCards = [...leftCards.slice(0, newIndex), activeId, ...leftCards.slice(newIndex)];
+        }
       }
-    } else {
-      if (activeInLeft) {
-        const newIndex = rightCards.indexOf(overId);
-        newLeftCards = leftCards.filter(id => id !== activeId);
-        newRightCards = [
-          ...rightCards.slice(0, newIndex),
-          activeId,
-          ...rightCards.slice(newIndex),
-        ];
-      } else {
-        const newIndex = leftCards.indexOf(overId);
-        newRightCards = rightCards.filter(id => id !== activeId);
-        newLeftCards = [
-          ...leftCards.slice(0, newIndex),
-          activeId,
-          ...leftCards.slice(newIndex),
-        ];
-      }
-    }
 
-    setLeftCards(newLeftCards);
-    setRightCards(newRightCards);
+      setLeftCards(newLeftCards);
+      setRightCards(newRightCards);
 
-    // 保存布局到后端
-    (async () => {
-      if (isSavingLayout) return;
-      setIsSavingLayout(true);
-      try {
-        const layouts: CardLayoutConfig[] = [
-          ...newLeftCards.map((cardId, index) => ({
-            cardId,
-            order: index,
-            column: 'left' as const,
-            visible: true,
-          })),
-          ...newRightCards.map((cardId, index) => ({
-            cardId,
-            order: index,
-            column: 'right' as const,
-            visible: cardId === 'approval-overview' ? canAccessApproval : true,
-          })),
-        ];
+      // 保存布局到后端
+      (async () => {
+        if (isSavingLayout) return;
+        setIsSavingLayout(true);
+        try {
+          const layouts: CardLayoutConfig[] = [
+            ...newLeftCards.map((cardId, index) => ({
+              cardId,
+              order: index,
+              column: 'left' as const,
+              visible: true,
+            })),
+            ...newRightCards.map((cardId, index) => ({
+              cardId,
+              order: index,
+              column: 'right' as const,
+              visible: cardId === 'approval-overview' ? canAccessApproval : true,
+            })),
+          ];
 
-        await saveWelcomeLayout({
-          layouts,
-          updatedAt: new Date().toISOString(),
-        });
-        messageApi.success('布局已保存');
-      } catch (error) {
-        console.warn('保存布局失败:', error);
-      } finally {
-        setIsSavingLayout(false);
-      }
-    })();
-  }, [leftCards, rightCards, isSavingLayout, canAccessApproval, messageApi]);
+          await saveWelcomeLayout({
+            layouts,
+            updatedAt: new Date().toISOString(),
+          });
+          messageApi.success('布局已保存');
+        } catch (error) {
+          console.warn('保存布局失败:', error);
+        } finally {
+          setIsSavingLayout(false);
+        }
+      })();
+    },
+    [leftCards, rightCards, isSavingLayout, canAccessApproval, messageApi],
+  );
 
   const handleDragStart = useCallback((event: any) => {
     setActiveId(event.active.id);
@@ -347,11 +328,7 @@ const Welcome: React.FC = () => {
           return <StatisticsOverview {...cardProps} />;
         case 'approval-overview':
           return canAccessApproval ? (
-            <ApprovalOverviewCard
-              statistics={docStatistics}
-              pendingDocuments={pendingDocs}
-              loading={loading}
-            />
+            <ApprovalOverviewCard statistics={docStatistics} pendingDocuments={pendingDocs} loading={loading} />
           ) : null;
         case 'iot-events':
           return <IoTEventAlertsCard loading={loading} />;
@@ -368,7 +345,7 @@ const Welcome: React.FC = () => {
   };
 
   const filteredRightCards = useMemo(() => {
-    return rightCards.filter(id => {
+    return rightCards.filter((id) => {
       if (id === 'approval-overview' && !canAccessApproval) {
         return false;
       }
@@ -377,9 +354,7 @@ const Welcome: React.FC = () => {
   }, [rightCards, canAccessApproval]);
 
   return (
-    <PageContainer
-      style={{ background: 'transparent', paddingBlock: 8 }}
-    >
+    <PageContainer style={{ background: 'transparent', paddingBlock: 8 }}>
       <style>{`
         .ant-breadcrumb,
         .ant-page-header-breadcrumb,
@@ -400,14 +375,9 @@ const Welcome: React.FC = () => {
         }
       `}</style>
       <div>
-        <WelcomeHeader
-          currentUser={currentUser}
-          companyInfo={companyInfo}
-        />
+        <WelcomeHeader currentUser={currentUser} companyInfo={companyInfo} />
 
-        <QuickActionsPanel
-          currentUser={currentUser}
-        />
+        <QuickActionsPanel currentUser={currentUser} />
 
         <div style={{ marginTop: '12px' }}>
           <DndContext
@@ -416,34 +386,33 @@ const Welcome: React.FC = () => {
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
-            <SortableContext
-              items={[...leftCards, ...filteredRightCards]}
-              strategy={verticalListSortingStrategy}
-            >
+            <SortableContext items={[...leftCards, ...filteredRightCards]} strategy={verticalListSortingStrategy}>
               <Row gutter={[16, 16]}>
                 <Col xs={24} lg={12}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                    {leftCards.map(cardId => renderCard(cardId))}
+                    {leftCards.map((cardId) => renderCard(cardId))}
                   </div>
                 </Col>
                 <Col xs={24} lg={12}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                    {filteredRightCards.map(cardId => renderCard(cardId))}
+                    {filteredRightCards.map((cardId) => renderCard(cardId))}
                   </div>
                 </Col>
               </Row>
             </SortableContext>
             <DragOverlay>
               {activeId ? (
-                <div style={{
-                  opacity: 0.7,
-                  backgroundColor: '#fff',
-                  borderRadius: '8px',
-                  boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
-                  padding: '16px',
-                  minHeight: '100px',
-                  minWidth: '300px',
-                }}>
+                <div
+                  style={{
+                    opacity: 0.7,
+                    backgroundColor: '#fff',
+                    borderRadius: '8px',
+                    boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
+                    padding: '16px',
+                    minHeight: '100px',
+                    minWidth: '300px',
+                  }}
+                >
                   拖动中...
                 </div>
               ) : null}

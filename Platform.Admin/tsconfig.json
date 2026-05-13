@@ -20,5 +20,13 @@
     }
   },
   "include": ["./**/*.d.ts", "./**/*.ts", "./**/*.tsx"],
-  "exclude": ["node_modules", "dist", "src/.umi", "src/.umi-production", "**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/.umi",
+    "src/.umi-production",
+    "**/__tests__/**",
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ]
 }

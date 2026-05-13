@@ -27,16 +27,14 @@ function isNodeEnvironment(): boolean {
  * 保存缺失的翻译到语言包（Node 环境）
  * 由 CLI 或构建脚本调用
  */
-export async function saveMissingTranslations(
-  missingTranslations: TranslationItem[]
-): Promise<void> {
+export async function saveMissingTranslations(missingTranslations: TranslationItem[]): Promise<void> {
   if (!isNodeEnvironment()) {
     console.warn('[i18n] saveMissingTranslations can only run in Node environment');
     return;
   }
 
-  const fs = require('fs');
-  const path = require('path');
+  const fs = require('node:fs');
+  const path = require('node:path');
 
   const LOCALES_DIR = path.join(__dirname, '../../locales');
 
@@ -123,9 +121,7 @@ export async function runSaveTranslationsCLI(): Promise<void> {
     return;
   }
 
-  await saveMissingTranslations([
-    { id: key, text: value, locale },
-  ]);
+  await saveMissingTranslations([{ id: key, text: value, locale }]);
 }
 
 export default {

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Button, Input, Switch } from 'antd';
-import { InfoCircleOutlined, SaveOutlined } from '@ant-design/icons';
+import { InfoCircleOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
+import { Button, Input, Switch } from 'antd';
+import React, { useState } from 'react';
 import { useMessage } from '@/hooks/useMessage';
 import { createWorkflow, type WorkflowGraph } from '@/services/workflow/api';
 import WorkflowDesigner from './WorkflowDesigner';
@@ -14,7 +14,7 @@ interface WorkflowCreateFormProps {
 const WorkflowCreateForm: React.FC<WorkflowCreateFormProps> = ({ onSuccess, onCancel }) => {
   const intl = useIntl();
   const message = useMessage();
-  const [loading, setLoading] = useState(false);
+  const [_loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({ name: '', category: '', description: '', isActive: true });
 
   const handleSave = async (workflowGraph: WorkflowGraph) => {
@@ -23,7 +23,7 @@ const WorkflowCreateForm: React.FC<WorkflowCreateFormProps> = ({ onSuccess, onCa
         message.error(intl.formatMessage({ id: 'pages.workflow.create.form.nameRequired' }));
         return;
       }
-      if (!workflowGraph || !workflowGraph.nodes || workflowGraph.nodes.length === 0) {
+      if (!workflowGraph?.nodes || workflowGraph.nodes.length === 0) {
         message.error(intl.formatMessage({ id: 'pages.workflow.create.message.designFirst' }));
         return;
       }
@@ -50,9 +50,18 @@ const WorkflowCreateForm: React.FC<WorkflowCreateFormProps> = ({ onSuccess, onCa
     }
   };
 
-return (
+  return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', background: '#fafafa', display: 'flex', alignItems: 'center', gap: 16 }}>
+      <div
+        style={{
+          padding: '12px 16px',
+          borderBottom: '1px solid #f0f0f0',
+          background: '#fafafa',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+        }}
+      >
         <InfoCircleOutlined style={{ color: '#1890ff', fontSize: 18 }} />
         <Input
           placeholder={intl.formatMessage({ id: 'pages.workflow.create.form.namePlaceholder' })}
@@ -66,9 +75,13 @@ return (
           checked={formData.isActive}
           onChange={(v) => setFormData({ ...formData, isActive: v })}
         />
-        <span style={{ color: '#8c8c8c', fontSize: 13, marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span
+          style={{ color: '#8c8c8c', fontSize: 13, marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}
+        >
           {!formData.name && <span style={{ color: '#ff4d4f', fontSize: 12 }}>请填写流程名称</span>}
-          <Button size="small" onClick={onCancel}>退出</Button>
+          <Button size="small" onClick={onCancel}>
+            退出
+          </Button>
         </span>
       </div>
       <div style={{ flex: 1, minHeight: 0 }}>

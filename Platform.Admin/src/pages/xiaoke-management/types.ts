@@ -2,11 +2,11 @@
 // 从API服务中重新导出类型，方便页面组件使用
 
 export type {
-  XiaokeConfig,
-  CreateXiaokeConfigRequest,
-  UpdateXiaokeConfigRequest,
+  ChatHistoryDetailResponse,
   ChatHistoryListItem,
   ChatMessage,
   ChatSession,
-  ChatHistoryDetailResponse,
+  CreateXiaokeConfigRequest,
+  UpdateXiaokeConfigRequest,
+  XiaokeConfig,
 } from '@/services/xiaoke/api';

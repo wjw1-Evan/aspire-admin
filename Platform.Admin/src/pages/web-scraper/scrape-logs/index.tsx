@@ -1,9 +1,17 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { request, useIntl } from '@umijs/max';
-import { Tag, Space, Button, Input, Timeline, Card, Row, Col, Descriptions, Modal, Progress, Statistic } from 'antd';
+import {
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  FileTextOutlined,
+  HistoryOutlined,
+  PlayCircleOutlined,
+  ScheduleOutlined,
+  WarningOutlined,
+} from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ProTable, ProColumns, ActionType } from '@ant-design/pro-components/es/table';
-import { PlayCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, WarningOutlined, HistoryOutlined, FileTextOutlined, ScheduleOutlined } from '@ant-design/icons';
+import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
+import { request, useIntl } from '@umijs/max';
+import { Button, Card, Col, Input, Modal, Progress, Row, Space, Statistic, Tag, Timeline } from 'antd';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiResponse, PagedResult } from '@/types';
 
 interface WebScrapingLog {
@@ -40,8 +48,8 @@ interface LogStatistics {
 const WebScraperLogs: React.FC = () => {
   const actionRef = useRef<ActionType | undefined>(undefined);
   const [search, setSearch] = useState('');
-  const [taskId, setTaskId] = useState<string | undefined>();
-  const [tasks, setTasks] = useState<TaskOption[]>([]);
+  const [taskId, _setTaskId] = useState<string | undefined>();
+  const [_tasks, setTasks] = useState<TaskOption[]>([]);
   const [detailVisible, setDetailVisible] = useState(false);
   const [currentLog, setCurrentLog] = useState<WebScrapingLog | null>(null);
   const [statistics, setStatistics] = useState<LogStatistics | null>(null);
@@ -50,14 +58,12 @@ const WebScraperLogs: React.FC = () => {
   const api = {
     list: (params: any) =>
       request<ApiResponse<PagedResult<WebScrapingLog>>>('/apiservice/api/web-scraper/logs', { params }),
-    get: (id: string) =>
-      request<ApiResponse<WebScrapingLog>>(`/apiservice/api/web-scraper/logs/${id}`),
+    get: (id: string) => request<ApiResponse<WebScrapingLog>>(`/apiservice/api/web-scraper/logs/${id}`),
     getTasks: () =>
       request<ApiResponse<PagedResult<{ id: string; name: string }>>>('/apiservice/api/web-scraper/tasks', {
         params: { page: 1, pageSize: 100 },
       }),
-    statistics: () =>
-      request<ApiResponse<LogStatistics>>('/apiservice/api/web-scraper/logs/statistics'),
+    statistics: () => request<ApiResponse<LogStatistics>>('/apiservice/api/web-scraper/logs/statistics'),
   };
 
   const loadTasks = useCallback(async () => {
@@ -65,23 +71,29 @@ const WebScraperLogs: React.FC = () => {
     if (res.success && res.data?.queryable) {
       setTasks(res.data.queryable.map((t) => ({ id: t.id, name: t.name })));
     }
-  }, []);
+  }, [api.getTasks]);
 
   const loadStatistics = useCallback(() => {
-    api.statistics().then(r => {
+    api.statistics().then((r) => {
       if (r.success && r.data) setStatistics(r.data);
     });
-  }, []);
+  }, [api.statistics]);
 
-  useEffect(() => { loadTasks(); loadStatistics(); }, [loadTasks, loadStatistics]);
+  useEffect(() => {
+    loadTasks();
+    loadStatistics();
+  }, [loadTasks, loadStatistics]);
 
-  const handleViewDetail = useCallback(async (record: WebScrapingLog) => {
-    const res = await api.get(record.id);
-    if (res.success && res.data) {
-      setCurrentLog(res.data);
-      setDetailVisible(true);
-    }
-  }, []);
+  const handleViewDetail = useCallback(
+    async (record: WebScrapingLog) => {
+      const res = await api.get(record.id);
+      if (res.success && res.data) {
+        setCurrentLog(res.data);
+        setDetailVisible(true);
+      }
+    },
+    [api.get],
+  );
 
   const formatDuration = (ms: number) => {
     if (ms < 1000) return `${ms}ms`;
@@ -100,7 +112,7 @@ const WebScraperLogs: React.FC = () => {
     return statusTextMap[status] || status;
   };
 
-  const getStatusIcon = (status: string, intl: any) => {
+  const getStatusIcon = (status: string, _intl: any) => {
     const statusConfig: Record<string, { icon: React.ReactNode; color: string }> = {
       Idle: { icon: <HistoryOutlined />, color: 'default' },
       Running: { icon: <PlayCircleOutlined spin />, color: 'processing' },
@@ -114,7 +126,11 @@ const WebScraperLogs: React.FC = () => {
   const renderStatusTag = (status: string, intl: any) => {
     const config = getStatusIcon(status, intl);
     const text = getStatusText(status, intl);
-    return <Tag icon={config.icon} color={config.color}>{text}</Tag>;
+    return (
+      <Tag icon={config.icon} color={config.color}>
+        {text}
+      </Tag>
+    );
   };
 
   const columns: ProColumns<WebScrapingLog>[] = [
@@ -136,7 +152,8 @@ const WebScraperLogs: React.FC = () => {
       dataIndex: 'startTime',
       sorter: true,
       valueType: 'dateTime',
-      render: (_: any, record: WebScrapingLog) => record.startTime ? new Date(record.startTime).toLocaleString() : '-',
+      render: (_: any, record: WebScrapingLog) =>
+        record.startTime ? new Date(record.startTime).toLocaleString() : '-',
     },
     {
       title: intl.formatMessage({ id: 'pages.webScraper.logs.table.duration' }),
@@ -148,7 +165,7 @@ const WebScraperLogs: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.webScraper.logs.table.progress' }),
       dataIndex: 'pagesCrawled',
       sorter: true,
-      render: (pages, record) => {
+      render: (_pages, record) => {
         const total = record.successCount + record.failedCount;
         const successRate = total > 0 ? (record.successCount / total) * 100 : 0;
         return (
@@ -169,8 +186,14 @@ const WebScraperLogs: React.FC = () => {
       sorter: true,
       render: (_, record) => (
         <Space>
-          <Tag color="success">{intl.formatMessage({ id: 'pages.webScraper.logs.successPages' }, { count: record.successCount })}</Tag>
-          {record.failedCount > 0 && <Tag color="error">{intl.formatMessage({ id: 'pages.webScraper.logs.failedPages' }, { count: record.failedCount })}</Tag>}
+          <Tag color="success">
+            {intl.formatMessage({ id: 'pages.webScraper.logs.successPages' }, { count: record.successCount })}
+          </Tag>
+          {record.failedCount > 0 && (
+            <Tag color="error">
+              {intl.formatMessage({ id: 'pages.webScraper.logs.failedPages' }, { count: record.failedCount })}
+            </Tag>
+          )}
         </Space>
       ),
     },
@@ -180,12 +203,7 @@ const WebScraperLogs: React.FC = () => {
       fixed: 'right',
       width: 100,
       render: (_, record) => (
-        <Button
-          type="link"
-          size="small"
-          icon={<FileTextOutlined />}
-          onClick={() => handleViewDetail(record)}
-        >
+        <Button type="link" size="small" icon={<FileTextOutlined />} onClick={() => handleViewDetail(record)}>
           {intl.formatMessage({ id: 'pages.webScraper.action.detail' })}
         </Button>
       ),
@@ -197,12 +215,24 @@ const WebScraperLogs: React.FC = () => {
       <ProTable<WebScrapingLog>
         headerTitle={
           <Space size={24}>
-            <Space><ScheduleOutlined />{intl.formatMessage({ id: 'pages.webScraper.logs.title' })}</Space>
+            <Space>
+              <ScheduleOutlined />
+              {intl.formatMessage({ id: 'pages.webScraper.logs.title' })}
+            </Space>
             <Space size={12}>
-              <Tag color="blue">{intl.formatMessage({ id: 'pages.webScraper.statistics.totalLogs' })} {statistics?.totalLogs || 0}</Tag>
-              <Tag color="success">{intl.formatMessage({ id: 'pages.webScraper.statistics.successLogs' })} {statistics?.successLogs || 0}</Tag>
-              <Tag color="error">{intl.formatMessage({ id: 'pages.webScraper.statistics.failedLogs' })} {statistics?.failedLogs || 0}</Tag>
-              <Tag color="warning">{intl.formatMessage({ id: 'pages.webScraper.statistics.partialSuccessLogs' })} {statistics?.partialSuccessLogs || 0}</Tag>
+              <Tag color="blue">
+                {intl.formatMessage({ id: 'pages.webScraper.statistics.totalLogs' })} {statistics?.totalLogs || 0}
+              </Tag>
+              <Tag color="success">
+                {intl.formatMessage({ id: 'pages.webScraper.statistics.successLogs' })} {statistics?.successLogs || 0}
+              </Tag>
+              <Tag color="error">
+                {intl.formatMessage({ id: 'pages.webScraper.statistics.failedLogs' })} {statistics?.failedLogs || 0}
+              </Tag>
+              <Tag color="warning">
+                {intl.formatMessage({ id: 'pages.webScraper.statistics.partialSuccessLogs' })}{' '}
+                {statistics?.partialSuccessLogs || 0}
+              </Tag>
             </Space>
           </Space>
         }
@@ -224,7 +254,10 @@ const WebScraperLogs: React.FC = () => {
             allowClear
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            onSearch={(value) => { setSearch(value); actionRef.current?.reload(); }}
+            onSearch={(value) => {
+              setSearch(value);
+              actionRef.current?.reload();
+            }}
             style={{ width: 260, marginRight: 8 }}
           />,
         ]}
@@ -269,10 +302,16 @@ const WebScraperLogs: React.FC = () => {
 
             <Row gutter={16} style={{ marginBottom: 16 }}>
               <Col span={8}>
-                <Statistic title={intl.formatMessage({ id: 'pages.webScraper.logs.detail.startTime' })} value={currentLog.startTime ? new Date(currentLog.startTime).toLocaleString() : '-'} />
+                <Statistic
+                  title={intl.formatMessage({ id: 'pages.webScraper.logs.detail.startTime' })}
+                  value={currentLog.startTime ? new Date(currentLog.startTime).toLocaleString() : '-'}
+                />
               </Col>
               <Col span={8}>
-                <Statistic title={intl.formatMessage({ id: 'pages.webScraper.logs.detail.endTime' })} value={currentLog.endTime ? new Date(currentLog.endTime).toLocaleString() : '-'} />
+                <Statistic
+                  title={intl.formatMessage({ id: 'pages.webScraper.logs.detail.endTime' })}
+                  value={currentLog.endTime ? new Date(currentLog.endTime).toLocaleString() : '-'}
+                />
               </Col>
               <Col span={8}>
                 <Statistic
@@ -282,7 +321,11 @@ const WebScraperLogs: React.FC = () => {
               </Col>
             </Row>
 
-            <Card title={intl.formatMessage({ id: 'pages.webScraper.logs.detail.scrapeStats' })} size="small" style={{ marginBottom: 16 }}>
+            <Card
+              title={intl.formatMessage({ id: 'pages.webScraper.logs.detail.scrapeStats' })}
+              size="small"
+              style={{ marginBottom: 16 }}
+            >
               <Row gutter={16}>
                 <Col span={8}>
                   <Statistic
@@ -303,9 +346,11 @@ const WebScraperLogs: React.FC = () => {
                 <Col span={8}>
                   <Statistic
                     title={intl.formatMessage({ id: 'pages.webScraper.logs.detail.successRate' })}
-                    value={currentLog.pagesCrawled > 0
-                      ? ((currentLog.successCount / currentLog.pagesCrawled) * 100).toFixed(1)
-                      : 0}
+                    value={
+                      currentLog.pagesCrawled > 0
+                        ? ((currentLog.successCount / currentLog.pagesCrawled) * 100).toFixed(1)
+                        : 0
+                    }
                     suffix="%"
                   />
                 </Col>
@@ -313,7 +358,11 @@ const WebScraperLogs: React.FC = () => {
             </Card>
 
             {currentLog.errorMessage && (
-              <Card title={intl.formatMessage({ id: 'pages.webScraper.logs.detail.errorInfo' })} size="small" style={{ marginBottom: 16 }}>
+              <Card
+                title={intl.formatMessage({ id: 'pages.webScraper.logs.detail.errorInfo' })}
+                size="small"
+                style={{ marginBottom: 16 }}
+              >
                 <Tag color="error">{currentLog.errorMessage}</Tag>
               </Card>
             )}
@@ -325,12 +374,24 @@ const WebScraperLogs: React.FC = () => {
                   children: `${intl.formatMessage({ id: 'pages.webScraper.logs.timeline.startScrape' })}: ${currentLog.startTime ? new Date(currentLog.startTime).toLocaleString() : '-'}`,
                 },
                 {
-                  color: currentLog.status === 'Success' || currentLog.status === 'PartialSuccess' ? 'green' : currentLog.status === 'Failed' ? 'red' : 'gray',
+                  color:
+                    currentLog.status === 'Success' || currentLog.status === 'PartialSuccess'
+                      ? 'green'
+                      : currentLog.status === 'Failed'
+                        ? 'red'
+                        : 'gray',
                   children: `${intl.formatMessage({ id: 'pages.webScraper.logs.timeline.scrapeComplete' })}: ${currentLog.endTime ? new Date(currentLog.endTime).toLocaleString() : '-'}`,
                 },
                 {
                   color: 'gray',
-                  children: intl.formatMessage({ id: 'pages.webScraper.logs.timeline.scrapeSummary' }, { total: currentLog.pagesCrawled, success: currentLog.successCount, failed: currentLog.failedCount }),
+                  children: intl.formatMessage(
+                    { id: 'pages.webScraper.logs.timeline.scrapeSummary' },
+                    {
+                      total: currentLog.pagesCrawled,
+                      success: currentLog.successCount,
+                      failed: currentLog.failedCount,
+                    },
+                  ),
                 },
               ]}
             />

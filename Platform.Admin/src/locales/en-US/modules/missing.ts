@@ -184,7 +184,8 @@ export default {
   'pages.welcome.stats.totalOrganizations': 'Total Organizations',
   'pages.welcome.systemResources': 'System Resources',
   'pages.welcome.systemResources.unavailable': 'System monitoring unavailable',
-  'pages.welcome.systemResources.unavailableDesc': 'Unable to get system resource info, please check if the service is running',
+  'pages.welcome.systemResources.unavailableDesc':
+    'Unable to get system resource info, please check if the service is running',
   'pages.welcome.systemResources.memoryUsage': 'Memory Usage',
   'pages.welcome.systemResources.systemMemory': 'System Memory',
   'pages.welcome.systemResources.processMemory': 'Process Memory',

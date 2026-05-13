@@ -6,11 +6,11 @@ export default {
   'pages.cloud-storage.recycle.message.deleteFailed': '删除失败',
   'pages.cloud-storage.recycle.message.emptySuccess': '清空成功，删除了 {count} 个文件',
   'pages.cloud-storage.recycle.message.emptyFailed': '清空失败',
-  
+
   // 分享管理消息
   'pages.cloud-storage.share.message.updateSuccess': '更新成功',
   'pages.cloud-storage.share.message.linkCopied': '分享链接已复制',
-  
+
   // 配额管理消息
   'pages.cloud-storage.quota.message.updateSuccess': '更新配额成功',
   'pages.cloud-storage.quota.message.createSuccess': '新增配额成功',
@@ -43,7 +43,7 @@ export default {
   'pages.cloud-storage.recycle.fileName': '文件名',
   'pages.cloud-storage.recycle.fileNamePlaceholder': '请输入文件名',
 
-// recycle/index.tsx
+  // recycle/index.tsx
   'pages.cloud-storage.recycle.tagTotal': '总数 {count}',
   'pages.cloud-storage.recycle.tagExpiring': '即将过期 {count}',
   'pages.cloud-storage.recycle.tagRestorable': '可恢复 {count}',

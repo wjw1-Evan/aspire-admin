@@ -33,7 +33,7 @@
     "lineWidth": 120
   },
   "javascript": {
-  "formatter": {
+    "formatter": {
       "quoteStyle": "single",
       "semicolons": "always"
     }

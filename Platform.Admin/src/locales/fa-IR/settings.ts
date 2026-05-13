@@ -15,8 +15,7 @@ export default {
   'app.settings.basic.country': 'کشور / منطقه',
   'app.settings.basic.country-message': 'لطفاً کشور خود را وارد کنید!',
   'app.settings.basic.geographic': 'استان یا شهر',
-  'app.settings.basic.geographic-message':
-    'لطفاً اطلاعات جغرافیایی خود را وارد کنید!',
+  'app.settings.basic.geographic-message': 'لطفاً اطلاعات جغرافیایی خود را وارد کنید!',
   'app.settings.basic.address': 'آدرس خیابان',
   'app.settings.basic.address-message': 'لطفا آدرس خود را وارد کنید!',
   'app.settings.basic.phone': 'شماره تلفن',
@@ -35,30 +34,23 @@ export default {
   'app.settings.security.email': 'ایمیل پشتیبان',
   'app.settings.security.email-description': 'ایمیل مقید',
   'app.settings.security.mfa': 'دستگاه MFA',
-  'app.settings.security.mfa-description':
-    'دستگاه MFA بسته نشده ، پس از اتصال ، می تواند دو بار تأیید شود',
+  'app.settings.security.mfa-description': 'دستگاه MFA بسته نشده ، پس از اتصال ، می تواند دو بار تأیید شود',
   'app.settings.security.modify': 'تغییر',
   'app.settings.security.set': 'تنظیم',
   'app.settings.security.bind': 'بستن',
   'app.settings.binding.taobao': 'اتصال Taobao',
-  'app.settings.binding.taobao-description':
-    'حساب Taobao در حال حاضر بسته نشده است',
+  'app.settings.binding.taobao-description': 'حساب Taobao در حال حاضر بسته نشده است',
   'app.settings.binding.alipay': 'اتصال Alipay',
-  'app.settings.binding.alipay-description':
-    'حساب Alipay در حال حاضر بسته نشده است',
+  'app.settings.binding.alipay-description': 'حساب Alipay در حال حاضر بسته نشده است',
   'app.settings.binding.dingding': 'اتصال DingTalk',
-  'app.settings.binding.dingding-description':
-    'حساب DingTalk در حال حاضر محدود نشده است',
+  'app.settings.binding.dingding-description': 'حساب DingTalk در حال حاضر محدود نشده است',
   'app.settings.binding.bind': 'بستن',
   'app.settings.notification.password': 'رمز عبور حساب کاربری',
-  'app.settings.notification.password-description':
-    'پیام های سایر کاربران در قالب یک نامه ایستگاهی اعلام خواهد شد',
+  'app.settings.notification.password-description': 'پیام های سایر کاربران در قالب یک نامه ایستگاهی اعلام خواهد شد',
   'app.settings.notification.messages': 'پیام های سیستم',
-  'app.settings.notification.messages-description':
-    'پیام های سیستم به صورت نامه ایستگاه مطلع می شوند',
+  'app.settings.notification.messages-description': 'پیام های سیستم به صورت نامه ایستگاه مطلع می شوند',
   'app.settings.notification.todo': 'اعلان کارها',
-  'app.settings.notification.todo-description':
-    'لیست کارها به صورت نامه ای از ایستگاه اطلاع داده می شود',
+  'app.settings.notification.todo-description': 'لیست کارها به صورت نامه ای از ایستگاه اطلاع داده می شود',
   'app.settings.open': 'باز کن',
   'app.settings.close': 'بستن',
 };

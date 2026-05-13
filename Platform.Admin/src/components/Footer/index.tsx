@@ -1,6 +1,5 @@
-import { GithubOutlined } from '@ant-design/icons';
-import React from 'react';
 import { Layout } from 'antd';
+import React from 'react';
 
 const { Footer: AntFooter } = Layout;
 
@@ -13,7 +12,6 @@ const Footer: React.FC = () => {
         padding: '16px 50px',
       }}
     >
-
       <div>Powered by Evan</div>
     </AntFooter>
   );

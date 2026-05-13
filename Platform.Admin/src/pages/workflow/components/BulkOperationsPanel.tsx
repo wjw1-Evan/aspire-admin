@@ -1,13 +1,13 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Modal, Select, Button, Space, Tag, Progress, List, Typography, Input, App } from 'antd';
 import { useIntl } from '@umijs/max';
+import { App, Button, Input, List, Modal, Progress, Select, Space, Tag, Typography } from 'antd';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  createBulkOperation,
-  executeBulkOperation,
-  cancelBulkOperation,
-  getBulkOperation,
   type BulkOperation,
   type BulkOperationType,
+  cancelBulkOperation,
+  createBulkOperation,
+  executeBulkOperation,
+  getBulkOperation,
 } from '@/services/workflow/api';
 
 const { Text } = Typography;
@@ -40,7 +40,7 @@ const BulkOperationsPanel: React.FC<BulkOperationsPanelProps> = ({
   selectedWorkflows,
   onSuccess,
 }) => {
-  const intl = useIntl();
+  const _intl = useIntl();
   const { message } = App.useApp();
   const [operationType, setOperationType] = useState<BulkOperationType>('Activate');
   const [categoryName, setCategoryName] = useState('');
@@ -57,34 +57,41 @@ const BulkOperationsPanel: React.FC<BulkOperationsPanelProps> = ({
     };
   }, []);
 
-  const startPolling = useCallback((operationId: string) => {
-    if (pollingRef.current) {
-      clearInterval(pollingRef.current);
-    }
-    pollingRef.current = setInterval(async () => {
-      try {
-        const response = await getBulkOperation(operationId);
-        if (response.success && response.data) {
-          setCurrentOperation(response.data);
-          if (response.data.status === 'Completed' || response.data.status === 'Failed' || response.data.status === 'Cancelled') {
-            if (pollingRef.current) {
-              clearInterval(pollingRef.current);
-              pollingRef.current = null;
-            }
-            if (response.data.status === 'Completed') {
-              message.success('批量操作已完成');
-              onSuccess();
+  const startPolling = useCallback(
+    (operationId: string) => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+      }
+      pollingRef.current = setInterval(async () => {
+        try {
+          const response = await getBulkOperation(operationId);
+          if (response.success && response.data) {
+            setCurrentOperation(response.data);
+            if (
+              response.data.status === 'Completed' ||
+              response.data.status === 'Failed' ||
+              response.data.status === 'Cancelled'
+            ) {
+              if (pollingRef.current) {
+                clearInterval(pollingRef.current);
+                pollingRef.current = null;
+              }
+              if (response.data.status === 'Completed') {
+                message.success('批量操作已完成');
+                onSuccess();
+              }
             }
           }
+        } catch {
+          if (pollingRef.current) {
+            clearInterval(pollingRef.current);
+            pollingRef.current = null;
+          }
         }
-      } catch {
-        if (pollingRef.current) {
-          clearInterval(pollingRef.current);
-          pollingRef.current = null;
-        }
-      }
-    }, 2000);
-  }, [message, onSuccess]);
+      }, 2000);
+    },
+    [message, onSuccess],
+  );
 
   const handleExecute = useCallback(async () => {
     if (selectedWorkflowIds.length === 0) return;
@@ -143,25 +150,24 @@ const BulkOperationsPanel: React.FC<BulkOperationsPanelProps> = ({
   }, [onClose]);
 
   const isExecuting = currentOperation?.status === 'InProgress' || currentOperation?.status === 'Pending';
-  const isDone = currentOperation?.status === 'Completed' || currentOperation?.status === 'Failed' || currentOperation?.status === 'Cancelled';
-  const progressPercent = currentOperation && currentOperation.totalCount > 0
-    ? Math.round((currentOperation.processedCount / currentOperation.totalCount) * 100)
-    : 0;
+  const isDone =
+    currentOperation?.status === 'Completed' ||
+    currentOperation?.status === 'Failed' ||
+    currentOperation?.status === 'Cancelled';
+  const progressPercent =
+    currentOperation && currentOperation.totalCount > 0
+      ? Math.round((currentOperation.processedCount / currentOperation.totalCount) * 100)
+      : 0;
 
   return (
-    <Modal
-      title="批量操作"
-      open={visible}
-      onCancel={handleClose}
-      footer={null}
-      width={640}
-      destroyOnHidden
-    >
+    <Modal title="批量操作" open={visible} onCancel={handleClose} footer={null} width={640} destroyOnHidden>
       <div data-testid="bulk-operations-panel">
         {!currentOperation ? (
           <>
             <div style={{ marginBottom: 16 }}>
-              <Text strong>已选中 <Tag color="blue">{selectedWorkflowIds.length}</Tag> 个工作流</Text>
+              <Text strong>
+                已选中 <Tag color="blue">{selectedWorkflowIds.length}</Tag> 个工作流
+              </Text>
             </div>
 
             {selectedWorkflows.length > 0 && (
@@ -225,7 +231,9 @@ const BulkOperationsPanel: React.FC<BulkOperationsPanelProps> = ({
             <div style={{ marginBottom: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                 <Text>进度</Text>
-                <Text>{currentOperation.processedCount} / {currentOperation.totalCount}</Text>
+                <Text>
+                  {currentOperation.processedCount} / {currentOperation.totalCount}
+                </Text>
               </div>
               <Progress percent={progressPercent} status={isDone ? 'success' : 'active'} />
             </div>
@@ -243,7 +251,9 @@ const BulkOperationsPanel: React.FC<BulkOperationsPanelProps> = ({
 
             {currentOperation.errors.length > 0 && (
               <div style={{ marginBottom: 16 }}>
-                <Text type="danger" strong>错误信息</Text>
+                <Text type="danger" strong>
+                  错误信息
+                </Text>
                 <List
                   size="small"
                   dataSource={currentOperation.errors}
@@ -259,10 +269,12 @@ const BulkOperationsPanel: React.FC<BulkOperationsPanelProps> = ({
             )}
 
             <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
-              {isExecuting && currentOperation.cancellable && (
-                <Button onClick={handleCancel}>取消操作</Button>
+              {isExecuting && currentOperation.cancellable && <Button onClick={handleCancel}>取消操作</Button>}
+              {isDone && (
+                <Button type="primary" onClick={handleClose}>
+                  关闭
+                </Button>
               )}
-              {isDone && <Button type="primary" onClick={handleClose}>关闭</Button>}
             </Space>
           </>
         )}

@@ -63,7 +63,8 @@ export default {
   'pages.welcome.systemResources.diskDrive': '드라이브: {name} ({type})',
   'pages.welcome.systemResources.cpuCores': '코어 수: {count}',
   'pages.welcome.systemResources.unavailable': '시스템 리소스 데이터를 사용할 수 없음',
-  'pages.welcome.systemResources.unavailableDesc': '시스템 리소스 정보를 가져올 수 없습니다. 백엔드 서비스가 제대로 실행 중인지 확인하십시오.',
+  'pages.welcome.systemResources.unavailableDesc':
+    '시스템 리소스 정보를 가져올 수 없습니다. 백엔드 서비스가 제대로 실행 중인지 확인하십시오.',
   'pages.welcome.systemDetails': '시스템 상세 정보',
   'pages.welcome.systemDetails.machineName': '머신 이름:',
   'pages.welcome.systemDetails.processorCount': 'CPU 코어 수:',

@@ -1,224 +1,219 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { AlertOutlined, BellOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { ProColumns, ProTable } from '@ant-design/pro-components/es/table';
+import { useAccess, useIntl, useNavigate } from '@umijs/max';
+import { Alert, Badge, Button, Card, Empty, Space, Tag, Typography, theme } from 'antd';
 import type { ReactNode } from 'react';
-import { Card, Space, Tag, Empty, Button, Badge, theme, Typography, Alert } from 'antd';
-import { BellOutlined, AlertOutlined, ClockCircleOutlined } from '@ant-design/icons';
-import { useAccess, useNavigate, useIntl } from '@umijs/max';
-import { ProTable, ProColumns } from '@ant-design/pro-components/es/table';
-import { queryIoTEvents, getUnhandledEventCount } from '@/services/iot/api';
+import React, { useEffect, useRef, useState } from 'react';
 import type { IoTDeviceEvent } from '@/services/iot/api';
+import { getUnhandledEventCount, queryIoTEvents } from '@/services/iot/api';
 
 const { Text } = Typography;
 
 interface IoTEventAlertsCardProps {
-    readonly loading?: boolean;
+  readonly loading?: boolean;
 }
 
 const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: externalLoading = false }) => {
-    const { token } = theme.useToken();
-    const access = useAccess();
-    const navigate = useNavigate();
-    const intl = useIntl();
-    const actionRef = useRef<any>(null);
-    const [events, setEvents] = useState<IoTDeviceEvent[]>([]);
-    const [unhandledCount, setUnhandledCount] = useState(0);
-    const [loading, setLoading] = useState(false);
+  const { token } = theme.useToken();
+  const access = useAccess();
+  const navigate = useNavigate();
+  const intl = useIntl();
+  const actionRef = useRef<any>(null);
+  const [events, setEvents] = useState<IoTDeviceEvent[]>([]);
+  const [unhandledCount, setUnhandledCount] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-    const canAccessIoT = access.canAccessPath('/iot-platform');
+  const canAccessIoT = access.canAccessPath('/iot-platform');
 
-    const fetchUnhandledCount = async () => {
-        try {
-            const res = await getUnhandledEventCount();
-            if (res?.data?.count !== undefined) {
-                setUnhandledCount(res.data.count);
-            }
-        } catch (error) {
-            console.warn(intl.formatMessage({ id: 'pages.welcome.iotEvents.fetchCountFailed' }), error);
-        }
-    };
-
-    const fetchEvents = async () => {
-        try {
-            setLoading(true);
-            const res = await queryIoTEvents({
-                sortBy: 'occurredAt',
-                sortOrder: 'desc'
-            });
-            if (res?.data) {
-                setEvents(res.data.queryable || []);
-            }
-        } catch (error) {
-            console.warn(intl.formatMessage({ id: 'pages.welcome.iotEvents.fetchEventsFailed' }), error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        if (!canAccessIoT) return;
-        fetchUnhandledCount();
-        fetchEvents();
-    }, [canAccessIoT]);
-
-    const getLevelColor = (level: string) => {
-        switch (level?.toLowerCase()) {
-            case 'critical':
-                return 'red';
-            case 'error':
-                return 'orange';
-            case 'warning':
-                return 'gold';
-            case 'info':
-            default:
-                return 'blue';
-        }
-    };
-
-    const getEventTypeLabel = (eventType: string) => {
-        const typeMap: Record<string, string> = {
-            'Connected': intl.formatMessage({ id: 'pages.welcome.iotEvents.type.Connected' }),
-            'Disconnected': intl.formatMessage({ id: 'pages.welcome.iotEvents.type.Disconnected' }),
-            'DataReceived': intl.formatMessage({ id: 'pages.welcome.iotEvents.type.DataReceived' }),
-            'Alarm': intl.formatMessage({ id: 'pages.welcome.iotEvents.type.Alarm' }),
-            'Error': intl.formatMessage({ id: 'pages.welcome.iotEvents.type.Error' }),
-        };
-        return typeMap[eventType] || eventType;
-    };
-
-    const formatTime = (date: string | Date) => {
-        const d = new Date(date);
-        const now = new Date();
-        const diff = now.getTime() - d.getTime();
-        const minutes = Math.floor(diff / 60000);
-        const hours = Math.floor(diff / 3600000);
-        const days = Math.floor(diff / 86400000);
-
-        if (minutes < 1) return intl.formatMessage({ id: 'pages.welcome.iotEvents.time.justNow' });
-        if (minutes < 60) return intl.formatMessage({ id: 'pages.welcome.iotEvents.time.minutesAgo' }, { minutes });
-        if (hours < 24) return intl.formatMessage({ id: 'pages.welcome.iotEvents.time.hoursAgo' }, { hours });
-        if (days < 7) return intl.formatMessage({ id: 'pages.welcome.iotEvents.time.daysAgo' }, { days });
-        return d.toLocaleDateString();
-    };
-
-    if (!canAccessIoT) {
-        return null;
+  const fetchUnhandledCount = async () => {
+    try {
+      const res = await getUnhandledEventCount();
+      if (res?.data?.count !== undefined) {
+        setUnhandledCount(res.data.count);
+      }
+    } catch (error) {
+      console.warn(intl.formatMessage({ id: 'pages.welcome.iotEvents.fetchCountFailed' }), error);
     }
+  };
 
-    const columns: ProColumns<IoTDeviceEvent>[] = [
-        {
-            title: intl.formatMessage({ id: 'pages.welcome.iotEvents.level' }),
-            dataIndex: 'level',
-            key: 'level',
-            width: '12%',
-            render: (_: ReactNode, record: IoTDeviceEvent) => (
-                <Tag color={getLevelColor(record.level)}>{record.level}</Tag>
-            ),
-        },
-        {
-            title: intl.formatMessage({ id: 'pages.welcome.iotEvents.eventType' }),
-            dataIndex: 'eventType',
-            key: 'eventType',
-            width: '18%',
-            render: (_: ReactNode, record: IoTDeviceEvent) => (
-                <Text strong>{getEventTypeLabel(record.eventType)}</Text>
-            ),
-        },
-        {
-            title: intl.formatMessage({ id: 'pages.welcome.iotEvents.description' }),
-            dataIndex: 'description',
-            key: 'description',
-            width: '35%',
-            render: (_: ReactNode, record: IoTDeviceEvent) => (
-                <Text type="secondary" style={{ fontSize: '12px' }}>
-                    {record.description || intl.formatMessage({ id: 'pages.welcome.iotEvents.noDescription' })}
-                </Text>
-            ),
-        },
-        {
-            title: intl.formatMessage({ id: 'pages.welcome.iotEvents.device' }),
-            dataIndex: 'deviceId',
-            key: 'deviceId',
-            width: '15%',
-            render: (_: ReactNode, record: IoTDeviceEvent) => (
-                <Text type="secondary" style={{ fontSize: '12px' }}>
-                    {record.deviceId || '-'}
-                </Text>
-            ),
-        },
-        {
-            title: intl.formatMessage({ id: 'pages.welcome.iotEvents.time' }),
-            dataIndex: 'occurredAt',
-            key: 'occurredAt',
-            width: '20%',
-            render: (_: ReactNode, record: IoTDeviceEvent) => (
-                <Space size={4} style={{ fontSize: '12px', color: token.colorTextSecondary }}>
-                    <ClockCircleOutlined />
-                    <span>{formatTime(record.occurredAt)}</span>
-                </Space>
-            ),
-        },
-    ];
+  const fetchEvents = async () => {
+    try {
+      setLoading(true);
+      const res = await queryIoTEvents({
+        sortBy: 'occurredAt',
+        sortOrder: 'desc',
+      });
+      if (res?.data) {
+        setEvents(res.data.queryable || []);
+      }
+    } catch (error) {
+      console.warn(intl.formatMessage({ id: 'pages.welcome.iotEvents.fetchEventsFailed' }), error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    return (
-        <Card
-            title={
-                <Space>
-                    {unhandledCount > 0 && (
-                        <Badge count={unhandledCount} color={token.colorError}>
-                            <BellOutlined />
-                        </Badge>
-                    )}
-                    {unhandledCount === 0 && <BellOutlined />}
-                    <span>{intl.formatMessage({ id: 'pages.welcome.iotEvents.title' })}</span>
-                </Space>
-            }
-            style={{ height: '100%', borderRadius: '12px' }}
-            loading={externalLoading || loading}
-        >
-            {unhandledCount === 0 && events.length === 0 ? (
-                <Empty
-                    description={intl.formatMessage({ id: 'pages.welcome.iotEvents.noEvents' })}
-                    style={{ marginTop: '20px' }}
-                />
-            ) : (
-                <Space style={{ width: '100%' }} orientation="vertical" size={12}>
-                    {unhandledCount > 0 && (
-                        <Alert
-                            message={intl.formatMessage({ id: 'pages.welcome.iotEvents.unhandledCount' }, { count: unhandledCount })}
-                            type="warning"
-                            showIcon
-                            icon={<AlertOutlined />}
-                            style={{ borderRadius: '8px' }}
-                        />
-                    )}
-                    <ProTable
-                        actionRef={actionRef}
-                        columns={columns}
-                        dataSource={events}
-                        rowKey="id"
-                        search={false}
-                        pagination={false}
-                        options={false}
-                        toolBarRender={false}
-                        size="small"
-                        style={{ marginTop: '12px' }}
-                    />
-                    {events.length > 0 && (
-                        <div style={{ marginTop: '12px', textAlign: 'center' }}>
-                            <Button
-                                type="link"
-                                size="small"
-                                onClick={() => {
-                                    navigate('/iot-platform/event-management');
-                                }}
-                            >
-                                {intl.formatMessage({ id: 'pages.welcome.iotEvents.viewAll' })}
-                            </Button>
-                        </div>
-                    )}
-                </Space>
-            )}
-        </Card>
-    );
+  useEffect(() => {
+    if (!canAccessIoT) return;
+    fetchUnhandledCount();
+    fetchEvents();
+  }, [canAccessIoT, fetchUnhandledCount, fetchEvents]);
+
+  const getLevelColor = (level: string) => {
+    switch (level?.toLowerCase()) {
+      case 'critical':
+        return 'red';
+      case 'error':
+        return 'orange';
+      case 'warning':
+        return 'gold';
+      default:
+        return 'blue';
+    }
+  };
+
+  const getEventTypeLabel = (eventType: string) => {
+    const typeMap: Record<string, string> = {
+      Connected: intl.formatMessage({ id: 'pages.welcome.iotEvents.type.Connected' }),
+      Disconnected: intl.formatMessage({ id: 'pages.welcome.iotEvents.type.Disconnected' }),
+      DataReceived: intl.formatMessage({ id: 'pages.welcome.iotEvents.type.DataReceived' }),
+      Alarm: intl.formatMessage({ id: 'pages.welcome.iotEvents.type.Alarm' }),
+      Error: intl.formatMessage({ id: 'pages.welcome.iotEvents.type.Error' }),
+    };
+    return typeMap[eventType] || eventType;
+  };
+
+  const formatTime = (date: string | Date) => {
+    const d = new Date(date);
+    const now = new Date();
+    const diff = now.getTime() - d.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return intl.formatMessage({ id: 'pages.welcome.iotEvents.time.justNow' });
+    if (minutes < 60) return intl.formatMessage({ id: 'pages.welcome.iotEvents.time.minutesAgo' }, { minutes });
+    if (hours < 24) return intl.formatMessage({ id: 'pages.welcome.iotEvents.time.hoursAgo' }, { hours });
+    if (days < 7) return intl.formatMessage({ id: 'pages.welcome.iotEvents.time.daysAgo' }, { days });
+    return d.toLocaleDateString();
+  };
+
+  if (!canAccessIoT) {
+    return null;
+  }
+
+  const columns: ProColumns<IoTDeviceEvent>[] = [
+    {
+      title: intl.formatMessage({ id: 'pages.welcome.iotEvents.level' }),
+      dataIndex: 'level',
+      key: 'level',
+      width: '12%',
+      render: (_: ReactNode, record: IoTDeviceEvent) => <Tag color={getLevelColor(record.level)}>{record.level}</Tag>,
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.welcome.iotEvents.eventType' }),
+      dataIndex: 'eventType',
+      key: 'eventType',
+      width: '18%',
+      render: (_: ReactNode, record: IoTDeviceEvent) => <Text strong>{getEventTypeLabel(record.eventType)}</Text>,
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.welcome.iotEvents.description' }),
+      dataIndex: 'description',
+      key: 'description',
+      width: '35%',
+      render: (_: ReactNode, record: IoTDeviceEvent) => (
+        <Text type="secondary" style={{ fontSize: '12px' }}>
+          {record.description || intl.formatMessage({ id: 'pages.welcome.iotEvents.noDescription' })}
+        </Text>
+      ),
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.welcome.iotEvents.device' }),
+      dataIndex: 'deviceId',
+      key: 'deviceId',
+      width: '15%',
+      render: (_: ReactNode, record: IoTDeviceEvent) => (
+        <Text type="secondary" style={{ fontSize: '12px' }}>
+          {record.deviceId || '-'}
+        </Text>
+      ),
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.welcome.iotEvents.time' }),
+      dataIndex: 'occurredAt',
+      key: 'occurredAt',
+      width: '20%',
+      render: (_: ReactNode, record: IoTDeviceEvent) => (
+        <Space size={4} style={{ fontSize: '12px', color: token.colorTextSecondary }}>
+          <ClockCircleOutlined />
+          <span>{formatTime(record.occurredAt)}</span>
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <Card
+      title={
+        <Space>
+          {unhandledCount > 0 && (
+            <Badge count={unhandledCount} color={token.colorError}>
+              <BellOutlined />
+            </Badge>
+          )}
+          {unhandledCount === 0 && <BellOutlined />}
+          <span>{intl.formatMessage({ id: 'pages.welcome.iotEvents.title' })}</span>
+        </Space>
+      }
+      style={{ height: '100%', borderRadius: '12px' }}
+      loading={externalLoading || loading}
+    >
+      {unhandledCount === 0 && events.length === 0 ? (
+        <Empty
+          description={intl.formatMessage({ id: 'pages.welcome.iotEvents.noEvents' })}
+          style={{ marginTop: '20px' }}
+        />
+      ) : (
+        <Space style={{ width: '100%' }} orientation="vertical" size={12}>
+          {unhandledCount > 0 && (
+            <Alert
+              message={intl.formatMessage({ id: 'pages.welcome.iotEvents.unhandledCount' }, { count: unhandledCount })}
+              type="warning"
+              showIcon
+              icon={<AlertOutlined />}
+              style={{ borderRadius: '8px' }}
+            />
+          )}
+          <ProTable
+            actionRef={actionRef}
+            columns={columns}
+            dataSource={events}
+            rowKey="id"
+            search={false}
+            pagination={false}
+            options={false}
+            toolBarRender={false}
+            size="small"
+            style={{ marginTop: '12px' }}
+          />
+          {events.length > 0 && (
+            <div style={{ marginTop: '12px', textAlign: 'center' }}>
+              <Button
+                type="link"
+                size="small"
+                onClick={() => {
+                  navigate('/iot-platform/event-management');
+                }}
+              >
+                {intl.formatMessage({ id: 'pages.welcome.iotEvents.viewAll' })}
+              </Button>
+            </div>
+          )}
+        </Space>
+      )}
+    </Card>
+  );
 };
 
 export default IoTEventAlertsCard;

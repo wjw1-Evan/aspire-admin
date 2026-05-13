@@ -103,7 +103,8 @@ export default {
   'pages.webScraper.deduplicate': 'URL ডুপ্লিকেট সরান',
   'pages.webScraper.scheduleCron': 'সময়সূচী এক্সপ্রেশন',
   'pages.webScraper.scheduleCronPlaceholder': '0 */10 * * * *',
-  'pages.webScraper.scheduleCronTooltip': '<p>সাধারণ উদাহরণ:</p><ul><li>প্রতি 10 মিনিটে: <code>*/10 * * * *</code></li><li>প্রতি ঘন্টায়: <code>0 * * * *</code></li><li>প্রতিদিন মধ্যরাতে: <code>0 0 * * *</code></li><li>প্রতি সোমবার: <code>0 0 * * 1</code></li></ul>',
+  'pages.webScraper.scheduleCronTooltip':
+    '<p>সাধারণ উদাহরণ:</p><ul><li>প্রতি 10 মিনিটে: <code>*/10 * * * *</code></li><li>প্রতি ঘন্টায়: <code>0 * * * *</code></li><li>প্রতিদিন মধ্যরাতে: <code>0 0 * * *</code></li><li>প্রতি সোমবার: <code>0 0 * * 1</code></li></ul>',
   'pages.webScraper.mode.single': 'শুধু বর্তমান পৃষ্ঠা',
   'pages.webScraper.mode.depth': 'গভীরতা-প্রথম',
   'pages.webScraper.mode.breadth': 'প্রস্থ-প্রথম',

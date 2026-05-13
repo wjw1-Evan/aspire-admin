@@ -9,7 +9,8 @@ export default {
   'pages.help.architecture.backend.item3': '领域驱动设计 (DDD) - 分层架构实践',
   'pages.help.architecture.backend.item4': '无状态 JWT 身份验证与基于角色的 RBAC',
   'pages.help.architecture.backend.title': '后端架构',
-  'pages.help.architecture.dataFlow.description': '前端请求通过统一入口进入系统，经过身份验证与权限校验后，由后端服务处理并与数据库交互。',
+  'pages.help.architecture.dataFlow.description':
+    '前端请求通过统一入口进入系统，经过身份验证与权限校验后，由后端服务处理并与数据库交互。',
   'pages.help.architecture.dataFlow.title': '数据流转',
   'pages.help.architecture.database.item1': 'MongoDB - 灵活分布式的业务文档存储',
   'pages.help.architecture.database.item2': 'Redis - 分布式缓存与高性能会话存储',
@@ -26,7 +27,8 @@ export default {
   'pages.help.architecture.infrastructure.item3': 'Scalar - 交互式 OpenAPI 文档',
   'pages.help.architecture.infrastructure.item4': 'GitHub Actions - 自动化 CI/CD',
   'pages.help.architecture.infrastructure.title': '基础设施',
-  'pages.help.architecture.overview.description': '系统采用微服务架构模式，前端通过 API Gateway 与后端服务通信，各服务组件通过 .NET Aspire Dashboard 进行统一监控和管理。',
+  'pages.help.architecture.overview.description':
+    '系统采用微服务架构模式，前端通过 API Gateway 与后端服务通信，各服务组件通过 .NET Aspire Dashboard 进行统一监控和管理。',
   'pages.help.architecture.overview.title': '架构概览',
   'pages.help.architecture.security.item1': 'TLS/SSL 数据传输加密',
   'pages.help.architecture.security.item2': 'RBAC 细粒度权限控制与租户隔离',
@@ -40,10 +42,13 @@ export default {
   'pages.help.development.api.permission': '权限控制 - 使用 [RequireMenu("menu-name")] 特性声明菜单权限',
   'pages.help.development.api.title': 'API 开发规范',
   'pages.help.development.api.unified': '统一响应格式 - 所有 API 必须返回 ApiResponse<T> 格式',
-  'pages.help.development.architecture.backend': '后端服务 (Platform.ApiService) - 多租户 REST API 服务，提供统一的业务接口',
+  'pages.help.development.architecture.backend':
+    '后端服务 (Platform.ApiService) - 多租户 REST API 服务，提供统一的业务接口',
   'pages.help.development.architecture.description': '平台采用微服务架构，主要包含以下模块：',
-  'pages.help.development.architecture.frontend': '管理后台 (Platform.Admin) - React 19 + Ant Design Pro，提供完整的管理界面',
-  'pages.help.development.architecture.infrastructure': '基础设施 (Platform.AppHost, Platform.ServiceDefaults) - 服务编排、统一配置',
+  'pages.help.development.architecture.frontend':
+    '管理后台 (Platform.Admin) - React 19 + Ant Design Pro，提供完整的管理界面',
+  'pages.help.development.architecture.infrastructure':
+    '基础设施 (Platform.AppHost, Platform.ServiceDefaults) - 服务编排、统一配置',
   'pages.help.development.architecture.mobile': '移动应用 (Platform.App) - React Native + Expo，跨平台移动应用',
   'pages.help.development.architecture.title': '系统架构',
   'pages.help.development.bestPractices.description': '开发时建议遵循以下最佳实践：',
@@ -56,7 +61,8 @@ export default {
   'pages.help.development.database.audit': '审计字段 - 实体实现 ITimestamped，工厂自动维护 CreatedAt、UpdatedAt 等字段',
   'pages.help.development.database.builder': '使用构建器 - 使用 FilterBuilder、SortBuilder、UpdateBuilder 构建查询条件',
   'pages.help.development.database.description': '数据库操作必须遵循以下规范：',
-  'pages.help.development.database.factory': '使用工厂模式 - 禁止直接注入 IMongoCollection，必须使用 IDatabaseOperationFactory<T>',
+  'pages.help.development.database.factory':
+    '使用工厂模式 - 禁止直接注入 IMongoCollection，必须使用 IDatabaseOperationFactory<T>',
   'pages.help.development.database.softdelete': '软删除支持 - 实体实现 ISoftDeletable，自动处理软删除逻辑',
   'pages.help.development.database.title': '数据库操作规范',
   'pages.help.development.description': '本文档介绍如何基于 {title} 进行二次开发，包括架构说明、开发指南、最佳实践等。',
@@ -81,7 +87,8 @@ export default {
   'pages.help.development.resources.permissionGuide': '菜单级权限模型',
   'pages.help.development.resources.title': '开发资源',
   'pages.help.development.title': '二次开发指南',
-  'pages.help.faq.chat.a': '系统集成了 SSE 实时聊天功能，支持创建会话、发送消息、撤回消息、查看已读状态。聊天记录会自动保存，支持附件上传和预览。AI 智能助手可以帮助您快速回复和推荐内容。',
+  'pages.help.faq.chat.a':
+    '系统集成了 SSE 实时聊天功能，支持创建会话、发送消息、撤回消息、查看已读状态。聊天记录会自动保存，支持附件上传和预览。AI 智能助手可以帮助您快速回复和推荐内容。',
   'pages.help.faq.chat.q': 'Q: 实时聊天功能如何使用？',
   'pages.help.faq.dataLoss.a': '系统采用软删除机制，数据不会真正删除。请联系管理员恢复数据。',
   'pages.help.faq.dataLoss.q': 'Q: 数据丢失或误删除？',
@@ -89,25 +96,34 @@ export default {
   'pages.help.faq.editProfile.q': 'Q: 如何修改个人信息？',
   'pages.help.faq.forgotPassword.a': '请联系系统管理员重置密码，或通过"忘记密码"功能自助重置。',
   'pages.help.faq.forgotPassword.q': 'Q: 忘记密码怎么办？',
-  'pages.help.faq.iotDevice.a': '在"IoT 平台"页面，点击"添加设备"按钮，填写设备信息（名称、类型、网关等）。设备添加后，系统会自动监控设备状态和数据流，您可以在设备列表中查看详细信息。',
+  'pages.help.faq.iotDevice.a':
+    '在"IoT 平台"页面，点击"添加设备"按钮，填写设备信息（名称、类型、网关等）。设备添加后，系统会自动监控设备状态和数据流，您可以在设备列表中查看详细信息。',
   'pages.help.faq.iotDevice.q': 'Q: IoT 平台如何添加设备？',
   'pages.help.faq.noPermission.a': '请联系管理员为您分配相应的角色和菜单权限。在 v6.0 中，权限控制已简化为菜单级权限。',
   'pages.help.faq.noPermission.q': 'Q: 没有某个功能的权限？',
-  'pages.help.faq.noTranslation.a': '系统正在持续完善多语言支持。如果发现某些内容未翻译，请联系技术支持。目前核心功能（用户管理、角色管理、企业设置等）已完整支持所有语言。',
+  'pages.help.faq.noTranslation.a':
+    '系统正在持续完善多语言支持。如果发现某些内容未翻译，请联系技术支持。目前核心功能（用户管理、角色管理、企业设置等）已完整支持所有语言。',
   'pages.help.faq.noTranslation.q': 'Q: 某些界面元素没有翻译？',
-  'pages.help.faq.pageError.a': '1. 清除浏览器缓存（Ctrl+Shift+R 或 Cmd+Shift+R）\n2. 检查网络连接\n3. 尝试重新登录\n4. 如果问题持续，请联系技术支持',
+  'pages.help.faq.pageError.a':
+    '1. 清除浏览器缓存（Ctrl+Shift+R 或 Cmd+Shift+R）\n2. 检查网络连接\n3. 尝试重新登录\n4. 如果问题持续，请联系技术支持',
   'pages.help.faq.pageError.q': 'Q: 页面加载慢或出错？',
-  'pages.help.faq.passwordBook.a': '访问"密码本管理"菜单，您可以创建密码条目、设置分类和标签、使用密码生成器生成强密码。密码使用 AES-256-GCM 加密存储，每个用户使用独立密钥，确保数据安全。支持密码强度检测和数据导出功能。',
+  'pages.help.faq.passwordBook.a':
+    '访问"密码本管理"菜单，您可以创建密码条目、设置分类和标签、使用密码生成器生成强密码。密码使用 AES-256-GCM 加密存储，每个用户使用独立密钥，确保数据安全。支持密码强度检测和数据导出功能。',
   'pages.help.faq.passwordBook.q': 'Q: 密码本功能如何使用？',
-  'pages.help.faq.ruleManagement.a': '规则管理系统支持创建业务规则、配置触发条件、设置执行动作。系统支持 MCP 集成，可以实现自动化工作流。规则可以启用/禁用，支持状态管理和版本控制。',
+  'pages.help.faq.ruleManagement.a':
+    '规则管理系统支持创建业务规则、配置触发条件、设置执行动作。系统支持 MCP 集成，可以实现自动化工作流。规则可以启用/禁用，支持状态管理和版本控制。',
   'pages.help.faq.ruleManagement.q': 'Q: 规则管理支持哪些功能？',
-  'pages.help.faq.sameButtons.a': '这是 v6.0 的设计特性。所有用户看到相同的界面，但点击按钮时，后端会验证菜单权限。无权限时会返回 403 错误。',
+  'pages.help.faq.sameButtons.a':
+    '这是 v6.0 的设计特性。所有用户看到相同的界面，但点击按钮时，后端会验证菜单权限。无权限时会返回 403 错误。',
   'pages.help.faq.sameButtons.q': 'Q: 为什么所有用户看到相同的按钮？',
-  'pages.help.faq.switchCompany.a': '点击右上角头像 → 选择"切换企业"，在弹出窗口中选择要切换的企业。系统支持用户隶属多个企业，切换后所有数据会自动按企业隔离显示。',
+  'pages.help.faq.switchCompany.a':
+    '点击右上角头像 → 选择"切换企业"，在弹出窗口中选择要切换的企业。系统支持用户隶属多个企业，切换后所有数据会自动按企业隔离显示。',
   'pages.help.faq.switchCompany.q': 'Q: 如何切换企业？',
-  'pages.help.faq.switchLanguage.a': '点击右上角的语言选择器（🌐 图标），选择您想要的语言。系统支持 8 种语言：简体中文、繁体中文、英语、日语、葡萄牙语（巴西）、波斯语（伊朗）、印尼语、孟加拉语',
+  'pages.help.faq.switchLanguage.a':
+    '点击右上角的语言选择器（🌐 图标），选择您想要的语言。系统支持 8 种语言：简体中文、繁体中文、英语、日语、葡萄牙语（巴西）、波斯语（伊朗）、印尼语、孟加拉语',
   'pages.help.faq.switchLanguage.q': 'Q: 如何切换界面语言？',
-  'pages.help.faq.taskManagement.a': '访问"任务管理"菜单，您可以创建新任务、分配给团队成员、设置优先级和截止日期。系统会自动跟踪任务进度，并提供统计报表帮助您了解任务完成情况。',
+  'pages.help.faq.taskManagement.a':
+    '访问"任务管理"菜单，您可以创建新任务、分配给团队成员、设置优先级和截止日期。系统会自动跟踪任务进度，并提供统计报表帮助您了解任务完成情况。',
   'pages.help.faq.taskManagement.q': 'Q: 如何使用任务管理功能？',
   'pages.help.features.activityLog.description': '完整的用户操作审计日志，记录所有关键操作：',
   'pages.help.features.activityLog.title': '活动日志',
@@ -117,7 +133,8 @@ export default {
   'pages.help.features.companyCollaboration.title': '企业协作',
   'pages.help.features.iotPlatform.description': '物联网设备管理平台，支持设备注册、监控和数据流管理：',
   'pages.help.features.iotPlatform.title': 'IoT 平台',
-  'pages.help.features.passwordBook.description': '安全的密码存储和管理功能，支持加密存储、分类管理、密码生成和强度检测：',
+  'pages.help.features.passwordBook.description':
+    '安全的密码存储和管理功能，支持加密存储、分类管理、密码生成和强度检测：',
   'pages.help.features.passwordBook.title': '密码本管理',
   'pages.help.features.realTimeChat.description': '基于 SSE 的实时聊天系统，支持会话管理和消息功能：',
   'pages.help.features.realTimeChat.title': '实时聊天',
@@ -133,14 +150,20 @@ export default {
   'pages.help.features.userManagement.description': '用户管理模块提供完整的用户生命周期管理功能：',
   'pages.help.features.userManagement.title': '用户管理',
   'pages.help.features.workflowManagement.description': '可视化工作流设计与自动化审批系统：',
-  'pages.help.features.workflowManagement.item1': '可视化工作流设计 - 支持审批节点、条件分支（网关）、并行执行与跳转逻辑的可视化配置',
-  'pages.help.features.workflowManagement.item2': '动态表单绑定 - 节点可关联自定义业务表单，支持权限控制与数据预填，适配多种审批场景',
-  'pages.help.features.workflowManagement.item3': '审批中心体验 - 智能进度追踪，支持退回指定节点、转办、委派与委派、加签，全方位覆盖公文流转需求',
-  'pages.help.features.workflowManagement.item4': '可视化实例监控 - 实时渲染流程进度图，审批历史、节点数据一目了然，提供透明化的流转监控',
-  'pages.help.features.workflowManagement.item5': '多租户隔离 - 严格的组织架构与企业数据隔离，确保各企业工作流定义与实例互不干扰',
+  'pages.help.features.workflowManagement.item1':
+    '可视化工作流设计 - 支持审批节点、条件分支（网关）、并行执行与跳转逻辑的可视化配置',
+  'pages.help.features.workflowManagement.item2':
+    '动态表单绑定 - 节点可关联自定义业务表单，支持权限控制与数据预填，适配多种审批场景',
+  'pages.help.features.workflowManagement.item3':
+    '审批中心体验 - 智能进度追踪，支持退回指定节点、转办、委派与委派、加签，全方位覆盖公文流转需求',
+  'pages.help.features.workflowManagement.item4':
+    '可视化实例监控 - 实时渲染流程进度图，审批历史、节点数据一目了然，提供透明化的流转监控',
+  'pages.help.features.workflowManagement.item5':
+    '多租户隔离 - 严格的组织架构与企业数据隔离，确保各企业工作流定义与实例互不干扰',
   'pages.help.features.workflowManagement.title': '工作流管理',
   'pages.help.quickStart.coreFeatures': '核心功能模块',
-  'pages.help.quickStart.description': '这是一个基于 .NET Aspire、React 和 Ant Design Pro 构建的现代化企业级管理平台，提供统一的后端服务、管理后台与跨平台移动应用。',
+  'pages.help.quickStart.description':
+    '这是一个基于 .NET Aspire、React 和 Ant Design Pro 构建的现代化企业级管理平台，提供统一的后端服务、管理后台与跨平台移动应用。',
   'pages.help.quickStart.feature.activityLog': '活动日志 - 记录所有用户操作，便于审计和追溯',
   'pages.help.quickStart.feature.aiAssistant': 'AI 智能助手 - 智能回复、匹配推荐、话题引导、附件处理',
   'pages.help.quickStart.feature.apiDocs': 'API 文档 - 集成 Scalar API 文档系统，支持在线测试',
@@ -154,25 +177,35 @@ export default {
   'pages.help.quickStart.feature.systemMonitor': '系统监控 - 资源监控、性能指标、健康检查、OpenTelemetry 追踪',
   'pages.help.quickStart.feature.taskManagement': '任务管理 - 创建任务、分配执行人、跟踪进度、统计报表',
   'pages.help.quickStart.feature.userManagement': '用户管理 - 创建、编辑、删除用户，分配角色，支持多企业隶属',
-  'pages.help.quickStart.feature.workflowManagement': '工作流管理 - 可视化流程建模、动态表单绑定、审批流追踪与自动化流转',
+  'pages.help.quickStart.feature.workflowManagement':
+    '工作流管理 - 可视化流程建模、动态表单绑定、审批流追踪与自动化流转',
   'pages.help.quickStart.gettingStarted.description': '系统采用注册制，没有默认账户。请按照以下步骤开始使用：',
   'pages.help.quickStart.gettingStarted.step1': '注册账户 - 访问注册页面，填写用户名、邮箱和密码',
   'pages.help.quickStart.gettingStarted.step2': '自动创建企业 - 注册成功后，系统会自动为您创建个人企业',
   'pages.help.quickStart.gettingStarted.step3': '自动设置管理员 - 您将自动成为企业管理员，拥有所有权限',
   'pages.help.quickStart.gettingStarted.step4': '立即登录 - 注册完成后会自动登录系统',
   'pages.help.quickStart.gettingStarted.step5': '探索功能 - 访问欢迎页面查看系统概览，或直接使用各个功能模块',
-  'pages.help.quickStart.gettingStarted.tip': '提示：每个用户注册时都会自动获得一个个人企业，您可以后续申请加入其他企业或创建新企业。系统支持多企业切换，方便在不同工作空间间切换。',
+  'pages.help.quickStart.gettingStarted.tip':
+    '提示：每个用户注册时都会自动获得一个个人企业，您可以后续申请加入其他企业或创建新企业。系统支持多企业切换，方便在不同工作空间间切换。',
   'pages.help.quickStart.gettingStarted.title': '开始使用',
-  'pages.help.quickStart.highlights': '平台提供多租户数据隔离、菜单级权限控制、实时聊天、AI 助手、IoT 平台、规则管理等完整的企业级功能！',
-  'pages.help.quickStart.highlights.aiIntegration': 'AI 集成 - 内置 AI 智能回复服务，支持智能匹配推荐、话题引导，提升沟通效率。',
-  'pages.help.quickStart.highlights.iot': 'IoT 平台 - 完整的物联网设备管理能力，支持设备注册、网关配置、数据流监控和状态追踪。',
-  'pages.help.quickStart.highlights.menuPermission': '菜单级权限 - 简化的权限模型，菜单即权限，能访问菜单就能使用功能，降低配置复杂度。',
-  'pages.help.quickStart.highlights.multiTenant': '多租户架构 - 所有数据通过企业 ID 自动隔离，支持用户隶属多个企业，灵活切换工作空间。',
-  'pages.help.quickStart.highlights.realTime': '实时通信 - 基于 SSE 的实时聊天系统，支持自动重连、会话房间、消息撤回、已读状态推送。',
-  'pages.help.quickStart.highlights.ruleEngine': '规则引擎 - 灵活的规则配置系统，支持 MCP 集成，实现自动化工作流和业务规则管理。',
+  'pages.help.quickStart.highlights':
+    '平台提供多租户数据隔离、菜单级权限控制、实时聊天、AI 助手、IoT 平台、规则管理等完整的企业级功能！',
+  'pages.help.quickStart.highlights.aiIntegration':
+    'AI 集成 - 内置 AI 智能回复服务，支持智能匹配推荐、话题引导，提升沟通效率。',
+  'pages.help.quickStart.highlights.iot':
+    'IoT 平台 - 完整的物联网设备管理能力，支持设备注册、网关配置、数据流监控和状态追踪。',
+  'pages.help.quickStart.highlights.menuPermission':
+    '菜单级权限 - 简化的权限模型，菜单即权限，能访问菜单就能使用功能，降低配置复杂度。',
+  'pages.help.quickStart.highlights.multiTenant':
+    '多租户架构 - 所有数据通过企业 ID 自动隔离，支持用户隶属多个企业，灵活切换工作空间。',
+  'pages.help.quickStart.highlights.realTime':
+    '实时通信 - 基于 SSE 的实时聊天系统，支持自动重连、会话房间、消息撤回、已读状态推送。',
+  'pages.help.quickStart.highlights.ruleEngine':
+    '规则引擎 - 灵活的规则配置系统，支持 MCP 集成，实现自动化工作流和业务规则管理。',
   'pages.help.quickStart.highlights.title': '功能亮点',
   'pages.help.quickStart.multilang.description': '系统支持 8 种语言的完整界面翻译：',
-  'pages.help.quickStart.multilang.note': '点击右上角的语言选择器可以切换界面语言。所有界面元素（菜单、按钮、提示信息等）都已完整翻译。',
+  'pages.help.quickStart.multilang.note':
+    '点击右上角的语言选择器可以切换界面语言。所有界面元素（菜单、按钮、提示信息等）都已完整翻译。',
   'pages.help.quickStart.multilang.title': '多语言支持',
   'pages.help.quickStart.welcome': '欢迎使用 {title}',
   'pages.help.tab.architecture': '系统架构',
@@ -191,7 +224,8 @@ export default {
   'pages.help.tech.frontend.title': '前端技术',
   'pages.help.tech.mobile.title': '移动开发',
   'pages.help.tech.title': '技术栈',
-  'pages.help.tech.version.content': '{title}\n核心版本: v6.2.0\n更新内容: 多语言支持完善、任务管理、IoT 平台、规则管理、实时聊天、AI 助手、密码本管理、工作流系统\n技术栈: .NET 10.0, React 19, Ant Design Pro 5, MongoDB, .NET Aspire\n© 2024-2025 All Rights Reserved',
+  'pages.help.tech.version.content':
+    '{title}\n核心版本: v6.2.0\n更新内容: 多语言支持完善、任务管理、IoT 平台、规则管理、实时聊天、AI 助手、密码本管理、工作流系统\n技术栈: .NET 10.0, React 19, Ant Design Pro 5, MongoDB, .NET Aspire\n© 2024-2025 All Rights Reserved',
   'pages.help.tech.version.title': '版本信息',
   'pages.help.title': '系统帮助',
   'pages.help.versionHistory.description': '以下是 Aspire Admin 平台的完整版本历史，记录了每个版本的重要更新和改进。',
@@ -209,12 +243,17 @@ export default {
   'pages.help.versionHistory.v6_1.title': 'v6.1.0 - 多语言支持完善',
   'pages.help.versionHistory.v6_2.summary': '工作流交互升级，Premium UI 标准',
   'pages.help.versionHistory.v6_2.title': 'v6.2 - 工作流交互体验升级',
-  'pages.help.versionHistory.v6_2.ui.feature1': 'Premium 设计标准 - 引入玻璃拟态 (Glassmorphism) 与平滑动画，提升视觉质感',
+  'pages.help.versionHistory.v6_2.ui.feature1':
+    'Premium 设计标准 - 引入玻璃拟态 (Glassmorphism) 与平滑动画，提升视觉质感',
   'pages.help.versionHistory.v6_2.ui.feature2': '交互式图表 - 工作流图表支持自适应布局与高亮提示，关键信息触手可及',
   'pages.help.versionHistory.v6_2.ui.title': 'UI/UX 优化',
-  'pages.help.versionHistory.v6_2.workflow.feature1': '可视化设计器升级 - 全新的流程节点样式，支持审批、条件跳转、并行网关等可视化配置',
-  'pages.help.versionHistory.v6_2.workflow.feature2': '动态审批中心 - 交互式流程图展示，实时追踪当前节点、审批状态与流转进度',
-  'pages.help.versionHistory.v6_2.workflow.feature3': '高级审批功能 - 支持退回指定节点、转办、加签等复杂业务场景，优化审批体验',
-  'pages.help.versionHistory.v6_2.workflow.feature4': '表单集成优化 - 节点绑定表单支持动态渲染与预填，增强业务逻辑灵活性',
+  'pages.help.versionHistory.v6_2.workflow.feature1':
+    '可视化设计器升级 - 全新的流程节点样式，支持审批、条件跳转、并行网关等可视化配置',
+  'pages.help.versionHistory.v6_2.workflow.feature2':
+    '动态审批中心 - 交互式流程图展示，实时追踪当前节点、审批状态与流转进度',
+  'pages.help.versionHistory.v6_2.workflow.feature3':
+    '高级审批功能 - 支持退回指定节点、转办、加签等复杂业务场景，优化审批体验',
+  'pages.help.versionHistory.v6_2.workflow.feature4':
+    '表单集成优化 - 节点绑定表单支持动态渲染与预填，增强业务逻辑灵活性',
   'pages.help.versionHistory.v6_2.workflow.title': '工作流与审批中心',
 };

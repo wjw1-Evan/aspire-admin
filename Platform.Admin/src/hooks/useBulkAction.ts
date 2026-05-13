@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
 export interface UseBulkActionOptions {
   /** 操作成功后的回调 */
@@ -120,7 +120,7 @@ export function useBulkAction(options: UseBulkActionOptions = {}) {
         if (onError) {
           onError(error);
         }
-        
+
         // 重新抛出错误，确保全局错误处理能够捕获并显示错误提示
         // 如果没有提供 onError，错误会被全局错误处理统一处理
         throw error;

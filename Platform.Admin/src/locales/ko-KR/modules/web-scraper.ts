@@ -40,7 +40,8 @@ export default {
   'pages.web-scraper.deduplicate': 'URL 중복 제거',
   'pages.web-scraper.scheduleCron': '스케줄 표현식',
   'pages.web-scraper.scheduleCronPlaceholder': '0 */10 * * * *',
-  'pages.web-scraper.scheduleCronTooltip': '<p>일반적인 예:</p><ul><li>10분마다: <code>*/10 * * * *</code></li><li>매시간: <code>0 * * * *</code></li><li>매일 자정: <code>0 0 * * *</code></li><li>매주 월요일: <code>0 0 * * 1</code></li></ul>',
+  'pages.web-scraper.scheduleCronTooltip':
+    '<p>일반적인 예:</p><ul><li>10분마다: <code>*/10 * * * *</code></li><li>매시간: <code>0 * * * *</code></li><li>매일 자정: <code>0 0 * * *</code></li><li>매주 월요일: <code>0 0 * * 1</code></li></ul>',
   'pages.web-scraper.mode.single': '현재 페이지만',
   'pages.web-scraper.mode.depth': '깊이 우선',
   'pages.web-scraper.mode.breadth': '너비 우선',

@@ -75,7 +75,8 @@ export default {
   'pages.login.error.CAPTCHA_REQUIRED': 'Por favor, insira o captcha',
   'pages.login.error.ACCOUNT_DISABLED': 'A conta foi desativada',
   'pages.login.error.ACCOUNT_LOCKED': 'A conta foi bloqueada',
-  'pages.login.error.CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN': 'Por segurança, o captcha é necessário para logins subsequentes',
+  'pages.login.error.CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN':
+    'Por segurança, o captcha é necessário para logins subsequentes',
   'pages.login.error.INVALID_CREDENTIALS': 'Credenciais inválidas',
   'pages.login.error.LOGIN_FAILED': 'Login falhou',
   'pages.login.error.PASSWORD_EXPIRED': 'A senha expirou',

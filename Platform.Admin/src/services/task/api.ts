@@ -5,34 +5,34 @@ import type { ApiResponse, PagedResult } from '@/types';
  * 任务状态枚举
  */
 export enum TaskStatus {
-  Pending = 0,      // 待分配
-  Assigned = 1,     // 已分配
-  InProgress = 2,   // 执行中
-  Completed = 3,    // 已完成
-  Cancelled = 4,    // 已取消
-  Failed = 5,       // 失败
-  Paused = 6        // 暂停
+  Pending = 0, // 待分配
+  Assigned = 1, // 已分配
+  InProgress = 2, // 执行中
+  Completed = 3, // 已完成
+  Cancelled = 4, // 已取消
+  Failed = 5, // 失败
+  Paused = 6, // 暂停
 }
 
 /**
  * 任务优先级枚举
  */
 export enum TaskPriority {
-  Low = 0,      // 低
-  Medium = 1,   // 中
-  High = 2,     // 高
-  Urgent = 3    // 紧急
+  Low = 0, // 低
+  Medium = 1, // 中
+  High = 2, // 高
+  Urgent = 3, // 紧急
 }
 
 /**
  * 执行结果枚举
  */
 export enum TaskExecutionResult {
-  NotExecuted = 0,  // 未执行
-  Success = 1,      // 成功
-  Failed = 2,       // 失败
-  Timeout = 3,      // 超时
-  Interrupted = 4   // 被中断
+  NotExecuted = 0, // 未执行
+  Success = 1, // 成功
+  Failed = 2, // 失败
+  Timeout = 3, // 超时
+  Interrupted = 4, // 被中断
 }
 
 /**
@@ -309,18 +309,11 @@ export async function getTaskStatistics(userId?: string) {
 /**
  * 获取任务执行日志
  */
-export async function getTaskExecutionLogs(
-  taskId: string,
-  page: number = 1,
-  pageSize: number = 10,
-) {
-  return request<ApiResponse<PagedResult<TaskExecutionLogDto>>>(
-    `/apiservice/api/task/${taskId}/logs`,
-    {
-      method: 'POST',
-      data: { page, pageSize },
-    },
-  );
+export async function getTaskExecutionLogs(taskId: string, page: number = 1, pageSize: number = 10) {
+  return request<ApiResponse<PagedResult<TaskExecutionLogDto>>>(`/apiservice/api/task/${taskId}/logs`, {
+    method: 'POST',
+    data: { page, pageSize },
+  });
 }
 
 /**
@@ -451,4 +444,3 @@ export async function getCriticalPath(projectId: string) {
     method: 'GET',
   });
 }
-

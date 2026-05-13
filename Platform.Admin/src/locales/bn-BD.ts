@@ -1,12 +1,6 @@
 import component from './bn-BD/component';
 import globalHeader from './bn-BD/globalHeader';
 import menu from './bn-BD/menu';
-import pages from './bn-BD/pages';
-import pwa from './bn-BD/pwa';
-import settingDrawer from './bn-BD/settingDrawer';
-import settings from './bn-BD/settings';
-import welcome from './bn-BD/welcome';
-
 import auth from './bn-BD/modules/auth';
 import cloudStorage from './bn-BD/modules/cloud-storage';
 import company from './bn-BD/modules/company';
@@ -25,6 +19,11 @@ import user from './bn-BD/modules/user';
 import webScraper from './bn-BD/modules/web-scraper';
 import workflow from './bn-BD/modules/workflow';
 import xiaoke from './bn-BD/modules/xiaoke';
+import pages from './bn-BD/pages';
+import pwa from './bn-BD/pwa';
+import settingDrawer from './bn-BD/settingDrawer';
+import settings from './bn-BD/settings';
+import welcome from './bn-BD/welcome';
 
 export default {
   'navBar.lang': 'ভাষা',
@@ -33,8 +32,7 @@ export default {
   'layout.user.link.terms': 'শর্তাদি',
   'app.preview.down.block': 'আপনার স্থানীয় প্রকল্পে এই পৃষ্ঠাটি ডাউনলোড করুন',
   'app.welcome.link.fetch-blocks': 'সমস্ত ব্লক পান',
-  'app.welcome.link.block-list':
-    '`block` ডেভেলপমেন্ট এর উপর ভিত্তি করে দ্রুত স্ট্যান্ডার্ড, পৃষ্ঠাসমূহ তৈরি করুন।',
+  'app.welcome.link.block-list': '`block` ডেভেলপমেন্ট এর উপর ভিত্তি করে দ্রুত স্ট্যান্ডার্ড, পৃষ্ঠাসমূহ তৈরি করুন।',
   ...globalHeader,
   ...menu,
   ...settingDrawer,

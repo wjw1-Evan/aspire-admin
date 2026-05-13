@@ -1,93 +1,101 @@
-import React from 'react';
-import { Row, Col, Space, theme } from 'antd';
+import {
+  BarChartOutlined,
+  BlockOutlined,
+  ClusterOutlined,
+  CrownOutlined,
+  RocketOutlined,
+  TeamOutlined,
+  ThunderboltOutlined,
+} from '@ant-design/icons';
 import { ProCard } from '@ant-design/pro-components/es/card';
-import { BarChartOutlined, TeamOutlined, ThunderboltOutlined, CrownOutlined, RocketOutlined, BlockOutlined, ClusterOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
+import { Col, Row, Space, theme } from 'antd';
+import React from 'react';
 import StatCard from './StatCard';
 
 interface StatisticsOverviewProps {
-    readonly statistics: any;
-    readonly loading: boolean;
+  readonly statistics: any;
+  readonly loading: boolean;
 }
 
 const StatisticsOverview: React.FC<StatisticsOverviewProps> = ({ statistics, loading }) => {
-    const intl = useIntl();
-    const { token } = theme.useToken();
+  const intl = useIntl();
+  const { token } = theme.useToken();
 
-    return (
-        <ProCard
-            title={
-                <Space>
-                    <BarChartOutlined />
-                    <span>{intl.formatMessage({ id: 'pages.welcome.overview' })}</span>
-                </Space>
-            }
-            style={{ height: '100%', borderRadius: '12px' }}
-        >
-            <Row gutter={[12, 12]}>
-                <Col xs={24} sm={12} md={12} lg={12} xl={8}>
-                    <StatCard
-                        title={intl.formatMessage({ id: 'pages.welcome.stats.totalUsers' })}
-                        value={statistics?.totalUsers || 0}
-                        icon={<TeamOutlined />}
-                        color={token.colorPrimary}
-                        loading={loading}
-                        token={token}
-                    />
-                </Col>
-                <Col xs={24} sm={12} md={12} lg={12} xl={8}>
-                    <StatCard
-                        title={intl.formatMessage({ id: 'pages.welcome.stats.activeUsers' })}
-                        value={statistics?.activeUsers || 0}
-                        icon={<ThunderboltOutlined />}
-                        color={token.colorSuccess}
-                        loading={loading}
-                        token={token}
-                    />
-                </Col>
-                <Col xs={24} sm={12} md={12} lg={12} xl={8}>
-                    <StatCard
-                        title={intl.formatMessage({ id: 'pages.welcome.stats.adminUsers' })}
-                        value={statistics?.adminUsers || 0}
-                        icon={<CrownOutlined />}
-                        color={token.colorWarning}
-                        loading={loading}
-                        token={token}
-                    />
-                </Col>
-                <Col xs={24} sm={12} md={12} lg={12} xl={8}>
-                    <StatCard
-                        title={intl.formatMessage({ id: 'pages.welcome.stats.newUsersToday' })}
-                        value={statistics?.newUsersToday || 0}
-                        icon={<RocketOutlined />}
-                        color={token.colorError}
-                        loading={loading}
-                        token={token}
-                    />
-                </Col>
-                <Col xs={24} sm={12} md={12} lg={12} xl={8}>
-                    <StatCard
-                        title={intl.formatMessage({ id: 'pages.welcome.stats.totalRoles' })}
-                        value={statistics?.totalRoles || 0}
-                        icon={<BlockOutlined />}
-                        color={token.geekblue}
-                        loading={loading}
-                        token={token}
-                    />
-                </Col>
-                <Col xs={24} sm={12} md={12} lg={12} xl={8}>
-                    <StatCard
-                        title={intl.formatMessage({ id: 'pages.welcome.stats.totalOrganizations' })}
-                        value={statistics?.totalOrganizations || 0}
-                        icon={<ClusterOutlined />}
-                        color={token.purple}
-                        loading={loading}
-                        token={token}
-                    />
-                </Col>
-            </Row>
-        </ProCard>
-    );
+  return (
+    <ProCard
+      title={
+        <Space>
+          <BarChartOutlined />
+          <span>{intl.formatMessage({ id: 'pages.welcome.overview' })}</span>
+        </Space>
+      }
+      style={{ height: '100%', borderRadius: '12px' }}
+    >
+      <Row gutter={[12, 12]}>
+        <Col xs={24} sm={12} md={12} lg={12} xl={8}>
+          <StatCard
+            title={intl.formatMessage({ id: 'pages.welcome.stats.totalUsers' })}
+            value={statistics?.totalUsers || 0}
+            icon={<TeamOutlined />}
+            color={token.colorPrimary}
+            loading={loading}
+            token={token}
+          />
+        </Col>
+        <Col xs={24} sm={12} md={12} lg={12} xl={8}>
+          <StatCard
+            title={intl.formatMessage({ id: 'pages.welcome.stats.activeUsers' })}
+            value={statistics?.activeUsers || 0}
+            icon={<ThunderboltOutlined />}
+            color={token.colorSuccess}
+            loading={loading}
+            token={token}
+          />
+        </Col>
+        <Col xs={24} sm={12} md={12} lg={12} xl={8}>
+          <StatCard
+            title={intl.formatMessage({ id: 'pages.welcome.stats.adminUsers' })}
+            value={statistics?.adminUsers || 0}
+            icon={<CrownOutlined />}
+            color={token.colorWarning}
+            loading={loading}
+            token={token}
+          />
+        </Col>
+        <Col xs={24} sm={12} md={12} lg={12} xl={8}>
+          <StatCard
+            title={intl.formatMessage({ id: 'pages.welcome.stats.newUsersToday' })}
+            value={statistics?.newUsersToday || 0}
+            icon={<RocketOutlined />}
+            color={token.colorError}
+            loading={loading}
+            token={token}
+          />
+        </Col>
+        <Col xs={24} sm={12} md={12} lg={12} xl={8}>
+          <StatCard
+            title={intl.formatMessage({ id: 'pages.welcome.stats.totalRoles' })}
+            value={statistics?.totalRoles || 0}
+            icon={<BlockOutlined />}
+            color={token.geekblue}
+            loading={loading}
+            token={token}
+          />
+        </Col>
+        <Col xs={24} sm={12} md={12} lg={12} xl={8}>
+          <StatCard
+            title={intl.formatMessage({ id: 'pages.welcome.stats.totalOrganizations' })}
+            value={statistics?.totalOrganizations || 0}
+            icon={<ClusterOutlined />}
+            color={token.purple}
+            loading={loading}
+            token={token}
+          />
+        </Col>
+      </Row>
+    </ProCard>
+  );
 };
 
 export default StatisticsOverview;

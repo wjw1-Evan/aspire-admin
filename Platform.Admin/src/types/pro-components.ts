@@ -2,8 +2,7 @@
  * ProComponents 类型定义替代
  * 用于替代 @ant-design/pro-components 的类型定义
  */
-import type { TableColumnsType, TableProps } from 'antd';
-import type { RefObject } from 'react';
+import type { TableColumnsType } from 'antd';
 
 // ActionType 用于表格操作引用
 export interface ActionType {

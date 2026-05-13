@@ -1,27 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Tag,
-  Badge,
-  Typography,
-  Space,
-  Button,
-  Spin,
-  Flex,
-  Timeline,
-} from 'antd';
-import {
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  ClockCircleOutlined,
-  HistoryOutlined,
-} from '@ant-design/icons';
-import { request, useIntl } from '@umijs/max';
+import { CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { ProCard } from '@ant-design/pro-components/es/card';
 import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import { getAllRoles } from '@/services/role/api';
-import type { Role } from '@/services/role/api';
-import type { UserActivityLog } from '@/types';
+import { request, useIntl } from '@umijs/max';
+import { Badge, Button, Flex, Space, Spin, Tag, Timeline, Typography } from 'antd';
 import dayjs from 'dayjs';
+import React, { useEffect, useState } from 'react';
+import type { Role } from '@/services/role/api';
+import { getAllRoles } from '@/services/role/api';
+import type { UserActivityLog } from '@/types';
 import { getActionTagColor, getActionText } from '@/utils/activityLog';
 
 const { Text } = Typography;
@@ -59,14 +45,6 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose, isMobile }) => {
   const [activityLogs, setActivityLogs] = useState<UserActivityLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [roleMap, setRoleMap] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    fetchRoles();
-  }, []);
-
-  useEffect(() => {
-    fetchActivityLogs();
-  }, [user.id]);
 
   const fetchRoles = async () => {
     try {
@@ -113,13 +91,21 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose, isMobile }) => {
     }
   };
 
+  useEffect(() => {
+    fetchRoles();
+  }, [fetchRoles]);
+
+  useEffect(() => {
+    fetchActivityLogs();
+  }, [fetchActivityLogs]);
+
   return (
     <div>
       <ProCard title={intl.formatMessage({ id: 'pages.userDetail.basicInfo' })} style={{ marginBottom: 16 }}>
         <ProDescriptions column={isMobile ? 1 : 2} size="small">
           <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.username' })} span={2}>
-              {user.username}
-            </ProDescriptions.Item>
+            {user.username}
+          </ProDescriptions.Item>
 
           <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.account.center.name' })}>
             {user.name || '-'}
@@ -153,9 +139,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose, isMobile }) => {
 
           <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.organization' })} span={2}>
             {!user.organizations || user.organizations.length === 0 ? (
-              <Text type="secondary">
-                {intl.formatMessage({ id: 'pages.userManagement.organization.empty' })}
-              </Text>
+              <Text type="secondary">{intl.formatMessage({ id: 'pages.userManagement.organization.empty' })}</Text>
             ) : (
               <Space orientation="vertical" size={4} wrap>
                 {user.organizations.map((org) => (
@@ -177,12 +161,10 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose, isMobile }) => {
               status={user.isActive ? 'success' : 'error'}
               text={
                 <Space>
-                  {user.isActive ? (
-                    <CheckCircleOutlined />
-                  ) : (
-                    <CloseCircleOutlined />
-                  )}
-                  {user.isActive ? intl.formatMessage({ id: 'pages.table.activated' }) : intl.formatMessage({ id: 'pages.table.deactivated' })}
+                  {user.isActive ? <CheckCircleOutlined /> : <CloseCircleOutlined />}
+                  {user.isActive
+                    ? intl.formatMessage({ id: 'pages.table.activated' })
+                    : intl.formatMessage({ id: 'pages.table.deactivated' })}
                 </Space>
               }
             />
@@ -215,97 +197,73 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose, isMobile }) => {
         {activityLogs.length > 0 ? (
           <div style={{ padding: '16px 8px 0' }}>
             <Timeline
-                items={activityLogs.map((log) => ({
-                  color:
-                    log.statusCode && log.statusCode >= 400
-                      ? 'red'
-                      : log.statusCode && log.statusCode < 300
-                        ? 'green'
-                        : 'blue',
-                  content: (
-                    <Flex vertical gap={4}>
-                      <Space wrap>
-                        <Tag color={getActionTagColor(log.action)}>
-                          {getActionText(log.action)}
+              items={activityLogs.map((log) => ({
+                color:
+                  log.statusCode && log.statusCode >= 400
+                    ? 'red'
+                    : log.statusCode && log.statusCode < 300
+                      ? 'green'
+                      : 'blue',
+                content: (
+                  <Flex vertical gap={4}>
+                    <Space wrap>
+                      <Tag color={getActionTagColor(log.action)}>{getActionText(log.action)}</Tag>
+                      {log.httpMethod && (
+                        <Tag color={log.httpMethod === 'GET' ? 'cyan' : log.httpMethod === 'POST' ? 'blue' : 'orange'}>
+                          {log.httpMethod}
                         </Tag>
-                        {log.httpMethod && (
-                          <Tag
-                            color={
-                              log.httpMethod === 'GET'
-                                ? 'cyan'
-                                : log.httpMethod === 'POST'
-                                  ? 'blue'
-                                  : 'orange'
-                            }
-                          >
-                            {log.httpMethod}
-                          </Tag>
-                        )}
-                        <Text strong style={{ fontSize: '13px' }}>
-                          {log.description}
-                        </Text>
-                        <Text type="secondary" style={{ fontSize: '12px' }}>
-                          {log.createdAt ? dayjs(log.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
-                        </Text>
-                      </Space>
+                      )}
+                      <Text strong style={{ fontSize: '13px' }}>
+                        {log.description}
+                      </Text>
+                      <Text type="secondary" style={{ fontSize: '12px' }}>
+                        {log.createdAt ? dayjs(log.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
+                      </Text>
+                    </Space>
 
-                      <Space
-                        separator={<Text type="secondary">|</Text>}
-                        wrap
-                        style={{ fontSize: '12px' }}
-                      >
-                        {log.statusCode && (
-                          <Text
-                            type={log.statusCode >= 400 ? 'danger' : 'secondary'}
-                          >
-                            {intl.formatMessage({ id: 'pages.logDetail.responseStatus' })}: {log.statusCode}
-                          </Text>
-                        )}
-                        {log.duration && (
-                          <Text type="secondary">
-                            {intl.formatMessage(
-                              { id: 'pages.logDetail.durationMs' },
-                              { ms: log.duration },
-                            )}
-                          </Text>
-                        )}
-                        {log.ipAddress && (
-                          <Text type="secondary">
-                            {intl.formatMessage(
-                              { id: 'pages.userDetail.ipPrefix' },
-                              { ip: log.ipAddress },
-                            )}
-                          </Text>
-                        )}
-                      </Space>
-                      {log.path && (
-                        <Text
-                          type="secondary"
-                          style={{
-                            fontSize: '11px',
-                            wordBreak: 'break-all',
-                            fontFamily: 'monospace',
-                            backgroundColor: '#f5f5f5',
-                            padding: '2px 4px',
-                            borderRadius: '4px',
-                          }}
-                        >
-                          {log.path}
+                    <Space separator={<Text type="secondary">|</Text>} wrap style={{ fontSize: '12px' }}>
+                      {log.statusCode && (
+                        <Text type={log.statusCode >= 400 ? 'danger' : 'secondary'}>
+                          {intl.formatMessage({ id: 'pages.logDetail.responseStatus' })}: {log.statusCode}
                         </Text>
                       )}
-                    </Flex>
-                  ),
-                }))}
-              />
-            </div>
-          ) : (
-            <div
-              style={{ textAlign: 'center', padding: '20px', color: '#999' }}
-            >
-              {intl.formatMessage({ id: 'pages.userDetail.noActivity' })}
-            </div>
-          )}
-        </Spin>
+                      {log.duration && (
+                        <Text type="secondary">
+                          {intl.formatMessage({ id: 'pages.logDetail.durationMs' }, { ms: log.duration })}
+                        </Text>
+                      )}
+                      {log.ipAddress && (
+                        <Text type="secondary">
+                          {intl.formatMessage({ id: 'pages.userDetail.ipPrefix' }, { ip: log.ipAddress })}
+                        </Text>
+                      )}
+                    </Space>
+                    {log.path && (
+                      <Text
+                        type="secondary"
+                        style={{
+                          fontSize: '11px',
+                          wordBreak: 'break-all',
+                          fontFamily: 'monospace',
+                          backgroundColor: '#f5f5f5',
+                          padding: '2px 4px',
+                          borderRadius: '4px',
+                        }}
+                      >
+                        {log.path}
+                      </Text>
+                    )}
+                  </Flex>
+                ),
+              }))}
+            />
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+            {intl.formatMessage({ id: 'pages.userDetail.noActivity' })}
+          </div>
+        )}
+      </Spin>
 
       <div style={{ marginTop: 16, textAlign: 'right' }}>
         <Button onClick={onClose}>{intl.formatMessage({ id: 'pages.userDetail.close' })}</Button>

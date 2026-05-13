@@ -6,20 +6,22 @@ export default {
   'pages.cloud-storage.recycle.message.deleteFailed': 'Ошибка удаления',
   'pages.cloud-storage.recycle.message.emptySuccess': 'Очистка успешна, удалено {count} файлов',
   'pages.cloud-storage.recycle.message.emptyFailed': 'Ошибка очистки',
-  
+
   // Сообщения управления общим доступом
   'pages.cloud-storage.share.message.updateSuccess': 'Обновление успешно',
   'pages.cloud-storage.share.message.linkCopied': 'Ссылка для общего доступа скопирована',
-  
+
   // Сообщения управления квотами
   'pages.cloud-storage.quota.message.updateSuccess': 'Квота успешно обновлена',
   'pages.cloud-storage.quota.message.createSuccess': 'Квота успешно создана',
   'pages.cloud-storage.recycle.title': 'Recycle Bin',
   'pages.cloud-storage.recycle.confirmDelete': 'Confirm Permanent Delete',
-  'pages.cloud-storage.recycle.confirmDeleteContent': 'Are you sure you want to permanently delete "{name}"? This action cannot be undone.',
+  'pages.cloud-storage.recycle.confirmDeleteContent':
+    'Are you sure you want to permanently delete "{name}"? This action cannot be undone.',
   'pages.cloud-storage.recycle.confirmDeleteOk': 'Delete',
   'pages.cloud-storage.recycle.confirmEmpty': 'Confirm Empty Recycle Bin',
-  'pages.cloud-storage.recycle.confirmEmptyContent': 'Are you sure you want to empty the entire recycle bin? This will permanently delete all files and cannot be undone!',
+  'pages.cloud-storage.recycle.confirmEmptyContent':
+    'Are you sure you want to empty the entire recycle bin? This will permanently delete all files and cannot be undone!',
   'pages.cloud-storage.recycle.confirmEmptyOk': 'Empty',
   'pages.cloud-storage.recycle.searchPlaceholder': 'Search...',
   'pages.cloud-storage.recycle.tagTotal': 'Total {count}',

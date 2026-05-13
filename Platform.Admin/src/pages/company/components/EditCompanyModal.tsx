@@ -1,11 +1,10 @@
 import { ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-components/es/form';
 import { useIntl } from '@umijs/max';
-import Settings from '../../../../config/defaultSettings';
-import { updateCurrentCompany } from '@/services/company';
-import { getErrorMessage } from '@/utils/getErrorMessage';
-import type { Company } from '@/types';
-import React from 'react';
 import { Tooltip } from 'antd';
+import { updateCurrentCompany } from '@/services/company';
+import type { Company } from '@/types';
+import { getErrorMessage } from '@/utils/getErrorMessage';
+import Settings from '../../../../config/defaultSettings';
 
 interface EditCompanyModalProps {
   open: boolean;
@@ -14,12 +13,7 @@ interface EditCompanyModalProps {
   onSuccess: () => void;
 }
 
-export default function EditCompanyModal({
-  open,
-  company,
-  onCancel,
-  onSuccess,
-}: EditCompanyModalProps) {
+export default function EditCompanyModal({ open, company, onCancel, onSuccess }: EditCompanyModalProps) {
   const intl = useIntl();
 
   return (
@@ -44,7 +38,7 @@ export default function EditCompanyModal({
           }
 
           throw new Error(getErrorMessage(response, 'pages.companySettings.edit.updateFailed'));
-        } catch (error) {
+        } catch (_error) {
           return false;
         }
       }}
@@ -88,7 +82,9 @@ export default function EditCompanyModal({
         name="contactEmail"
         label={intl.formatMessage({ id: 'pages.companySettings.edit.contactEmailLabel' })}
         placeholder={intl.formatMessage({ id: 'pages.companySettings.edit.contactEmailPlaceholder' })}
-        rules={[{ type: 'email', message: intl.formatMessage({ id: 'pages.companySettings.edit.contactEmailInvalid' }) }]}
+        rules={[
+          { type: 'email', message: intl.formatMessage({ id: 'pages.companySettings.edit.contactEmailInvalid' }) },
+        ]}
       />
 
       <ProFormText
@@ -121,7 +117,12 @@ export default function EditCompanyModal({
         label={
           <span>
             {intl.formatMessage({ id: 'pages.companySettings.edit.displayNameLabel' })}
-            <Tooltip title={intl.formatMessage({ id: 'pages.companySettings.edit.displayNameTooltip' }, { title: Settings.title })}>
+            <Tooltip
+              title={intl.formatMessage(
+                { id: 'pages.companySettings.edit.displayNameTooltip' },
+                { title: Settings.title },
+              )}
+            >
               <span style={{ marginLeft: 4, cursor: 'help' }}>ℹ️</span>
             </Tooltip>
           </span>

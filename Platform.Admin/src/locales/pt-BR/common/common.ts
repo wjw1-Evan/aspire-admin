@@ -8,7 +8,8 @@ export default {
   'pages.button.query': 'Consultar',
   'pages.button.refresh': 'Atualizar',
   'pages.button.reset': 'Redefinir',
-  'pages.message.registerSuccess': 'Registro bem-sucedido! Sua empresa pessoal foi criada automaticamente. Redirecionando...',
+  'pages.message.registerSuccess':
+    'Registro bem-sucedido! Sua empresa pessoal foi criada automaticamente. Redirecionando...',
   'pages.searchTable.batchApproval': 'aprovação em lote',
   'pages.searchTable.batchDeletion': 'deleção em lote',
   'pages.searchTable.chosen': 'selecionado',

@@ -75,7 +75,8 @@ export default {
   'pages.login.error.CAPTCHA_REQUIRED': 'Vui lòng nhập captcha',
   'pages.login.error.ACCOUNT_DISABLED': 'Tài khoản đã bị vô hiệu hóa',
   'pages.login.error.ACCOUNT_LOCKED': 'Tài khoản đã bị khóa',
-  'pages.login.error.CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN': 'Vì lý do bảo mật, captcha được yêu cầu cho các lần đăng nhập tiếp theo',
+  'pages.login.error.CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN':
+    'Vì lý do bảo mật, captcha được yêu cầu cho các lần đăng nhập tiếp theo',
   'pages.login.error.INVALID_CREDENTIALS': 'Thông tin đăng nhập không hợp lệ',
   'pages.login.error.LOGIN_FAILED': 'Đăng nhập thất bại',
   'pages.login.error.PASSWORD_EXPIRED': 'Mật khẩu đã hết hạn',

@@ -1,16 +1,23 @@
-import React from 'react';
-import { Button, Space } from 'antd';
-import { ModalForm, ProFormText, ProFormTextArea, ProFormSelect, ProFormSwitch, ProFormSlider, ProFormDigit } from '@ant-design/pro-components/es/form';
-import { useIntl } from '@umijs/max';
-import { useMessage } from '@/hooks/useMessage';
-import { getErrorMessage } from '@/utils/getErrorMessage';
 import {
-  createXiaokeConfig,
-  updateXiaokeConfig,
+  ModalForm,
+  ProFormDigit,
+  ProFormSelect,
+  ProFormSlider,
+  ProFormSwitch,
+  ProFormText,
+  ProFormTextArea,
+} from '@ant-design/pro-components/es/form';
+import { useIntl } from '@umijs/max';
+import React from 'react';
+import { useMessage } from '@/hooks/useMessage';
+import {
   type CreateXiaokeConfigRequest,
+  createXiaokeConfig,
   type UpdateXiaokeConfigRequest,
+  updateXiaokeConfig,
   type XiaokeConfig,
 } from '@/services/xiaoke/api';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 interface ConfigFormProps {
   config?: XiaokeConfig | null;
@@ -26,9 +33,7 @@ const ConfigForm: React.FC<ConfigFormProps> = ({ config, open, onOpenChange, onS
 
   const isEdit = !!config;
 
-  const modelOptions = [
-    { label: 'gpt-4o-mini', value: 'gpt-4o-mini' },
-  ];
+  const modelOptions = [{ label: 'gpt-4o-mini', value: 'gpt-4o-mini' }];
 
   const handleSubmit = async (values: any) => {
     setLoading(true);
@@ -88,9 +93,11 @@ const ConfigForm: React.FC<ConfigFormProps> = ({ config, open, onOpenChange, onS
 
   return (
     <ModalForm
-      title={isEdit
-        ? intl.formatMessage({ id: 'pages.xiaokeManagement.config.editConfig' })
-        : intl.formatMessage({ id: 'pages.xiaokeManagement.config.createConfig' })}
+      title={
+        isEdit
+          ? intl.formatMessage({ id: 'pages.xiaokeManagement.config.editConfig' })
+          : intl.formatMessage({ id: 'pages.xiaokeManagement.config.createConfig' })
+      }
       open={open}
       onOpenChange={onOpenChange}
       onFinish={handleSubmit}
@@ -113,7 +120,9 @@ const ConfigForm: React.FC<ConfigFormProps> = ({ config, open, onOpenChange, onS
         name="name"
         label={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.name' })}
         placeholder={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.namePlaceholder' })}
-        rules={[{ required: true, message: intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.nameRequired' }) }]}
+        rules={[
+          { required: true, message: intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.nameRequired' }) },
+        ]}
       />
 
       <ProFormSelect
@@ -121,7 +130,9 @@ const ConfigForm: React.FC<ConfigFormProps> = ({ config, open, onOpenChange, onS
         label={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.model' })}
         placeholder={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.modelPlaceholder' })}
         options={modelOptions}
-        rules={[{ required: true, message: intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.modelRequired' }) }]}
+        rules={[
+          { required: true, message: intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.modelRequired' }) },
+        ]}
       />
 
       <ProFormTextArea
@@ -151,7 +162,12 @@ const ConfigForm: React.FC<ConfigFormProps> = ({ config, open, onOpenChange, onS
         min={1}
         max={100000}
         fieldProps={{ style: { width: '100%' } }}
-        rules={[{ required: true, message: intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.maxTokensRequired' }) }]}
+        rules={[
+          {
+            required: true,
+            message: intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.maxTokensRequired' }),
+          },
+        ]}
       />
 
       <ProFormSlider

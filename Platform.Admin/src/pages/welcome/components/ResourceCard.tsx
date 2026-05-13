@@ -1,6 +1,6 @@
-import React from 'react';
-import { Typography, theme } from 'antd';
 import { ProCard } from '@ant-design/pro-components/es/card';
+import { Typography, theme } from 'antd';
+import React from 'react';
 
 const { Text } = Typography;
 const { useToken } = theme;
@@ -16,69 +16,75 @@ interface ResourceCardProps {
   readonly children?: React.ReactNode;
 }
 
-const ResourceCard: React.FC<ResourceCardProps> = React.memo(({ title, value, icon, color = '#1890ff', loading = false, token, chart, children }) => {
-  const { token: themeToken } = useToken();
-  return (
-    <ProCard
-      size="small"
-      styles={{ body: { padding: '16px', display: 'flex', flexDirection: 'column', height: '100%' } }}
-      style={{
-        borderRadius: '12px',
-        border: `1px solid ${token?.colorBorderSecondary || themeToken.colorBorderSecondary}`,
-        backgroundColor: token?.colorBgContainer || themeToken.colorBgContainer,
-        height: '100%',
-        overflow: 'hidden'
-      }}
-      loading={loading}
-    >
-      <div
+const ResourceCard: React.FC<ResourceCardProps> = React.memo(
+  ({ title, value, icon, color = '#1890ff', loading = false, token, chart, children }) => {
+    const { token: themeToken } = useToken();
+    return (
+      <ProCard
+        size="small"
+        styles={{ body: { padding: '16px', display: 'flex', flexDirection: 'column', height: '100%' } }}
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          marginBottom: 12
+          borderRadius: '12px',
+          border: `1px solid ${token?.colorBorderSecondary || themeToken.colorBorderSecondary}`,
+          backgroundColor: token?.colorBgContainer || themeToken.colorBgContainer,
+          height: '100%',
+          overflow: 'hidden',
         }}
+        loading={loading}
       >
-        <div style={{
-          color,
-          fontSize: '24px',
-          flexShrink: 0,
-          width: 44,
-          height: 44,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: `${color}10`,
-          borderRadius: '50%'
-        }}>
-          {icon}
-        </div>
-        <div>
-          <Text type="secondary" style={{ fontSize: '13px' }}>{title}</Text>
-          <div style={{ fontSize: '24px', fontWeight: 600, lineHeight: 1.2 }}>
-            {value}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            marginBottom: 12,
+          }}
+        >
+          <div
+            style={{
+              color,
+              fontSize: '24px',
+              flexShrink: 0,
+              width: 44,
+              height: 44,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: `${color}10`,
+              borderRadius: '50%',
+            }}
+          >
+            {icon}
+          </div>
+          <div>
+            <Text type="secondary" style={{ fontSize: '13px' }}>
+              {title}
+            </Text>
+            <div style={{ fontSize: '24px', fontWeight: 600, lineHeight: 1.2 }}>{value}</div>
           </div>
         </div>
-      </div>
 
-      {/* Chart Area */}
-      {chart && (
-        <div style={{ flex: 1, minHeight: 60, display: 'flex', alignItems: 'flex-end', marginBottom: 12 }}>
-          {chart}
-        </div>
-      )}
+        {/* Chart Area */}
+        {chart && (
+          <div style={{ flex: 1, minHeight: 60, display: 'flex', alignItems: 'flex-end', marginBottom: 12 }}>
+            {chart}
+          </div>
+        )}
 
-      {children && (
-        <div style={{
-          borderTop: `1px solid ${token?.colorBorderSecondary || '#f0f0f0'}`,
-          paddingTop: 12,
-          marginTop: 'auto'
-        }}>
-          {children}
-        </div>
-      )}
-    </ProCard>
-  );
-});
+        {children && (
+          <div
+            style={{
+              borderTop: `1px solid ${token?.colorBorderSecondary || '#f0f0f0'}`,
+              paddingTop: 12,
+              marginTop: 'auto',
+            }}
+          >
+            {children}
+          </div>
+        )}
+      </ProCard>
+    );
+  },
+);
 
 export default ResourceCard;

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
 export interface UseDeleteConfirmOptions {
   /** 删除成功后的回调 */
@@ -67,16 +67,13 @@ export function useDeleteConfirm(options: UseDeleteConfirmOptions = {}) {
   /**
    * 显示删除确认对话框
    */
-  const showConfirm = useCallback(
-    (item: { id?: string; name?: string; description?: string }) => {
-      setState({
-        visible: true,
-        currentItem: item,
-        loading: false,
-      });
-    },
-    [],
-  );
+  const showConfirm = useCallback((item: { id?: string; name?: string; description?: string }) => {
+    setState({
+      visible: true,
+      currentItem: item,
+      loading: false,
+    });
+  }, []);
 
   /**
    * 隐藏删除确认对话框
@@ -106,7 +103,7 @@ export function useDeleteConfirm(options: UseDeleteConfirmOptions = {}) {
         if (onError) {
           onError(error);
         }
-        
+
         // 重新抛出错误，确保全局错误处理能够捕获并显示错误提示
         // 如果没有提供 onError，错误会被全局错误处理统一处理
         throw error;

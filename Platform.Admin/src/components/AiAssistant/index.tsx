@@ -1,19 +1,26 @@
-import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import { FloatButton, App, Input, Button, Card, Avatar, Spin, Dropdown } from 'antd';
-import { MessageOutlined, CloseOutlined, SendOutlined, AudioOutlined, AudioMutedOutlined, PlusOutlined } from '@ant-design/icons';
-import { useModel, useIntl } from '@umijs/max';
-import { marked } from 'marked';
 import {
-  getOrCreateAssistantSession,
-  sendMessage,
-  getMessages,
-  getSessions,
-  createNewAssistantSession,
-  getSession,
-} from '@/services/chat/api';
+  AudioMutedOutlined,
+  AudioOutlined,
+  CloseOutlined,
+  MessageOutlined,
+  PlusOutlined,
+  SendOutlined,
+} from '@ant-design/icons';
+import { useIntl, useModel } from '@umijs/max';
+import { App, Avatar, Button, Card, Dropdown, FloatButton, Input, Spin } from 'antd';
+import { marked } from 'marked';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AI_ASSISTANT_AVATAR, AI_ASSISTANT_ID } from '@/constants/ai';
 import { useSseConnection } from '@/hooks/useSseConnection';
 import type { ChatMessage, ChatSession } from '@/services/chat/api';
-import { AI_ASSISTANT_ID, AI_ASSISTANT_AVATAR } from '@/constants/ai';
+import {
+  createNewAssistantSession,
+  getMessages,
+  getOrCreateAssistantSession,
+  getSession,
+  getSessions,
+  sendMessage,
+} from '@/services/chat/api';
 import { getUserAvatar } from '@/utils/avatar';
 
 const { TextArea } = Input;
@@ -62,12 +69,12 @@ const TypewriterContent: React.FC<{ content: string; isStreaming: boolean; onUpd
   // 当内容更新时通知父组件（用于滚动）
   useEffect(() => {
     onUpdate?.();
-  }, [displayContent, onUpdate]);
+  }, [onUpdate]);
 
   const html = useMemo(() => {
     try {
       return { __html: marked.parse(displayContent || '') as string };
-    } catch (e) {
+    } catch (_e) {
       return { __html: displayContent || '' };
     }
   }, [displayContent]);
@@ -109,11 +116,13 @@ const AiAssistant: React.FC<AiAssistantProps> = React.memo(({ defaultOpen }) => 
 
   // 对话框尺寸状态
   const isFullScreen = defaultOpen === true;
-  const [dialogSize, setDialogSize] = useState(isFullScreen ? { width: '100%' as any, height: '100%' as any } : { width: 400, height: 600 });
+  const [dialogSize, setDialogSize] = useState(
+    isFullScreen ? { width: '100%' as any, height: '100%' as any } : { width: 400, height: 600 },
+  );
 
   // 会话列表状态
   const [sessions, setSessions] = useState<ChatSession[]>([]);
-  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [_sessionsLoading, setSessionsLoading] = useState(false);
 
   // 初始化全局 SSE 连接 (用于监听通知、会话更新等实时事件)
   const sse = useSseConnection({
@@ -131,13 +140,9 @@ const AiAssistant: React.FC<AiAssistantProps> = React.memo(({ defaultOpen }) => 
       if (!data?.session) return;
       const updatedSession = data.session as ChatSession;
 
-      setSessions((prev) => prev.map((s) =>
-        s.id === updatedSession.id ? { ...s, ...updatedSession } : s,
-      ));
+      setSessions((prev) => prev.map((s) => (s.id === updatedSession.id ? { ...s, ...updatedSession } : s)));
 
-      setSession((prev) =>
-        prev?.id === updatedSession.id ? { ...prev, ...updatedSession } : prev,
-      );
+      setSession((prev) => (prev?.id === updatedSession.id ? { ...prev, ...updatedSession } : prev));
     });
 
     return () => unsub();
@@ -149,7 +154,7 @@ const AiAssistant: React.FC<AiAssistantProps> = React.memo(({ defaultOpen }) => 
 
     // 监听 ReceiveMessage（AI 回复）
     const unsubReceiveMessage = sse.on<any>('ReceiveMessage', (data) => {
-      if (!data || !data.message) return;
+      if (!data?.message) return;
 
       const msg = data.message;
       const isAssistantMessage = msg.senderId === AI_ASSISTANT_ID || msg.metadata?.isAssistant === true;
@@ -168,7 +173,7 @@ const AiAssistant: React.FC<AiAssistantProps> = React.memo(({ defaultOpen }) => 
 
     // 监听 MessageChunk（AI 回复增量）
     const unsubMessageChunk = sse.on<any>('MessageChunk', (data) => {
-      if (!data || !data.messageId || !data.delta) return;
+      if (!data?.messageId || !data.delta) return;
 
       if (data.sessionId === session.id) {
         const { messageId, delta } = data;
@@ -196,7 +201,7 @@ const AiAssistant: React.FC<AiAssistantProps> = React.memo(({ defaultOpen }) => 
 
     // 监听 MessageComplete（AI 回复完成）
     const unsubMessageComplete = sse.on<any>('MessageComplete', (data) => {
-      if (!data || !data.message) return;
+      if (!data?.message) return;
 
       const msg = data.message;
       if (msg.sessionId === session.id) {
@@ -271,8 +276,8 @@ const AiAssistant: React.FC<AiAssistantProps> = React.memo(({ defaultOpen }) => 
       setSessionsLoading(true);
       const result = await getSessions({ page: 1, pageSize: 50 });
       if (result?.queryable) {
-        const assistantSessions = result.queryable.filter(
-          (s: ChatSession) => s.participants?.includes(AI_ASSISTANT_ID)
+        const assistantSessions = result.queryable.filter((s: ChatSession) =>
+          s.participants?.includes(AI_ASSISTANT_ID),
         );
         setSessions(assistantSessions);
       }
@@ -286,17 +291,20 @@ const AiAssistant: React.FC<AiAssistantProps> = React.memo(({ defaultOpen }) => 
   /**
    * 切换到指定会话
    */
-  const switchToSession = useCallback(async (targetSession: ChatSession) => {
-    if (targetSession.id === session?.id) return;
-    setSession(targetSession);
-    setMessages([]);
-    setStreamingMessages({});
-    if (open) {
-      setMessagesLoading(true);
-      await loadMessages(targetSession.id);
-      setMessagesLoading(false);
-    }
-  }, [session?.id, open, loadMessages]);
+  const switchToSession = useCallback(
+    async (targetSession: ChatSession) => {
+      if (targetSession.id === session?.id) return;
+      setSession(targetSession);
+      setMessages([]);
+      setStreamingMessages({});
+      if (open) {
+        setMessagesLoading(true);
+        await loadMessages(targetSession.id);
+        setMessagesLoading(false);
+      }
+    },
+    [session?.id, open, loadMessages],
+  );
 
   /**
    * 创建新对话
@@ -343,67 +351,70 @@ const AiAssistant: React.FC<AiAssistantProps> = React.memo(({ defaultOpen }) => 
   /**
    * 发送消息
    */
-  const handleSendMessage = useCallback(async (contentOverride?: string) => {
-    const userMessage = (contentOverride ?? inputValue).trim();
+  const handleSendMessage = useCallback(
+    async (contentOverride?: string) => {
+      const userMessage = (contentOverride ?? inputValue).trim();
 
-    if (!userMessage || sending || !currentUser) {
-      return;
-    }
+      if (!userMessage || sending || !currentUser) {
+        return;
+      }
 
-    setInputValue('');
-    let currentSession = session;
+      setInputValue('');
+      let currentSession = session;
 
-    if (!currentSession) {
-      try {
-        const assistantSession = await getOrCreateAssistantSession();
-        if (assistantSession) {
-          currentSession = assistantSession;
-          setSession(assistantSession);
-        } else {
-          message.error(intl.formatMessage({ id: 'components.aiAssistant.sessionNotFound' }));
+      if (!currentSession) {
+        try {
+          const assistantSession = await getOrCreateAssistantSession();
+          if (assistantSession) {
+            currentSession = assistantSession;
+            setSession(assistantSession);
+          } else {
+            message.error(intl.formatMessage({ id: 'components.aiAssistant.sessionNotFound' }));
+            setSending(false);
+            return;
+          }
+        } catch {
+          message.error(intl.formatMessage({ id: 'components.aiAssistant.sendMessageFailed' }));
           setSending(false);
           return;
         }
-      } catch {
-        message.error(intl.formatMessage({ id: 'components.aiAssistant.sendMessageFailed' }));
-        setSending(false);
-        return;
       }
-    }
 
-    const tempUserId = currentUser?.id || 'temp-user';
-    const optimisticMessage: ChatMessage = {
-      id: `temp-${Date.now()}`,
-      sessionId: currentSession.id,
-      senderId: tempUserId,
-      recipientId: AI_ASSISTANT_ID,
-      type: 'Text',
-      content: userMessage,
-      createdAt: new Date().toISOString(),
-    };
-
-    try {
-      setMessages((prev) => [...prev, optimisticMessage]);
-
-      const sentMessage = await sendMessage({
+      const tempUserId = currentUser?.id || 'temp-user';
+      const optimisticMessage: ChatMessage = {
+        id: `temp-${Date.now()}`,
         sessionId: currentSession.id,
+        senderId: tempUserId,
+        recipientId: AI_ASSISTANT_ID,
         type: 'Text',
         content: userMessage,
-        recipientId: AI_ASSISTANT_ID,
-      });
+        createdAt: new Date().toISOString(),
+      };
 
-      setMessages((prev) => {
-        const filtered = prev.filter((msg) => msg.id !== optimisticMessage.id);
-        const updated = [...filtered, sentMessage];
-        return updated.sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
-      });
-    } catch {
-      message.error(intl.formatMessage({ id: 'components.aiAssistant.sendMessageFailed' }));
-      setMessages((prev) => prev.filter((msg) => msg.id !== optimisticMessage.id));
-    } finally {
-      setSending(false);
-    }
-  }, [inputValue, sending, session, currentUser, message, sse]);
+      try {
+        setMessages((prev) => [...prev, optimisticMessage]);
+
+        const sentMessage = await sendMessage({
+          sessionId: currentSession.id,
+          type: 'Text',
+          content: userMessage,
+          recipientId: AI_ASSISTANT_ID,
+        });
+
+        setMessages((prev) => {
+          const filtered = prev.filter((msg) => msg.id !== optimisticMessage.id);
+          const updated = [...filtered, sentMessage];
+          return updated.sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
+        });
+      } catch {
+        message.error(intl.formatMessage({ id: 'components.aiAssistant.sendMessageFailed' }));
+        setMessages((prev) => prev.filter((msg) => msg.id !== optimisticMessage.id));
+      } finally {
+        setSending(false);
+      }
+    },
+    [inputValue, sending, session, currentUser, message, intl.formatMessage],
+  );
 
   /**
    * 处理录音
@@ -445,7 +456,7 @@ const AiAssistant: React.FC<AiAssistantProps> = React.memo(({ defaultOpen }) => 
         if (event.error === 'not-allowed') {
           message.error(intl.formatMessage({ id: 'components.aiAssistant.micPermission' }));
         } else {
-          message.error(intl.formatMessage({ id: 'components.aiAssistant.voiceError' }) + ': ' + event.error);
+          message.error(`${intl.formatMessage({ id: 'components.aiAssistant.voiceError' })}: ${event.error}`);
         }
         setIsListening(false);
       };
@@ -465,7 +476,7 @@ const AiAssistant: React.FC<AiAssistantProps> = React.memo(({ defaultOpen }) => 
     } catch {
       setIsListening(false);
     }
-  }, [isListening, message]);
+  }, [isListening, message, intl.formatMessage, inputValue]);
 
   /**
    * 处理 Enter 键发送
@@ -481,7 +492,7 @@ const AiAssistant: React.FC<AiAssistantProps> = React.memo(({ defaultOpen }) => 
         handleSendMessage();
       }
     },
-    [handleSendMessage, isListening]
+    [handleSendMessage, isListening],
   );
 
   /**
@@ -511,14 +522,14 @@ const AiAssistant: React.FC<AiAssistantProps> = React.memo(({ defaultOpen }) => 
       loadMessages(session.id).finally(() => setMessagesLoading(false));
       loadSessions();
     }
-  }, [open, session?.id, initialized, loadMessages, loadSessions]);
+  }, [open, session?.id, loadMessages, loadSessions]);
 
   /**
    * 消息更新时滚动到底部
    */
   useEffect(() => {
     scrollToBottom();
-  }, [messages, scrollToBottom]);
+  }, [scrollToBottom]);
 
   // 计算显示的消息列表（合并流式内容）
   const displayMessages = useMemo(() => {
@@ -586,7 +597,7 @@ const AiAssistant: React.FC<AiAssistantProps> = React.memo(({ defaultOpen }) => 
               const handleMouseMove = (e: MouseEvent) => {
                 const diffX = startX - e.clientX;
                 const newWidth = Math.max(300, Math.min(800, startWidth + diffX));
-                setDialogSize(prev => ({ ...prev, width: newWidth }));
+                setDialogSize((prev) => ({ ...prev, width: newWidth }));
               };
 
               const handleMouseUp = () => {
@@ -628,7 +639,7 @@ const AiAssistant: React.FC<AiAssistantProps> = React.memo(({ defaultOpen }) => 
               const handleMouseMove = (e: MouseEvent) => {
                 const diffY = startY - e.clientY;
                 const newHeight = Math.max(400, Math.min(1000, startHeight + diffY));
-                setDialogSize(prev => ({ ...prev, height: newHeight }));
+                setDialogSize((prev) => ({ ...prev, height: newHeight }));
               };
 
               const handleMouseUp = () => {
@@ -704,7 +715,8 @@ const AiAssistant: React.FC<AiAssistantProps> = React.memo(({ defaultOpen }) => 
               height: 20,
               cursor: 'nwse-resize',
               zIndex: 11,
-              background: 'linear-gradient(to bottom right, transparent 0%, transparent 40%, #d9d9d9 40%, #d9d9d9 45%, transparent 45%, transparent 55%, #d9d9d9 55%, #d9d9d9 60%, transparent 60%)',
+              background:
+                'linear-gradient(to bottom right, transparent 0%, transparent 40%, #d9d9d9 40%, #d9d9d9 45%, transparent 45%, transparent 55%, #d9d9d9 55%, #d9d9d9 60%, transparent 60%)',
               backgroundSize: '20px 20px',
             }}
           />
@@ -723,15 +735,17 @@ const AiAssistant: React.FC<AiAssistantProps> = React.memo(({ defaultOpen }) => 
                   ...sessions.map((s) => ({
                     key: s.id,
                     label: (
-                      <div style={{
-                        maxWidth: 240,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}>
-                  {s.topicTags?.[0] && s.topicTags[0] !== 'assistant' && s.topicTags[0] !== 'direct'
-                    ? s.topicTags[0]
-                    : `          ${intl.formatMessage({ id: 'components.aiAssistant.name' })} ${intl.formatMessage({ id: 'components.aiAssistant.conversation' })}`}
+                      <div
+                        style={{
+                          maxWidth: 240,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {s.topicTags?.[0] && s.topicTags[0] !== 'assistant' && s.topicTags[0] !== 'direct'
+                          ? s.topicTags[0]
+                          : `          ${intl.formatMessage({ id: 'components.aiAssistant.name' })} ${intl.formatMessage({ id: 'components.aiAssistant.conversation' })}`}
                       </div>
                     ),
                     onClick: () => switchToSession(s),
@@ -753,12 +767,23 @@ const AiAssistant: React.FC<AiAssistantProps> = React.memo(({ defaultOpen }) => 
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, cursor: 'pointer' }}>
                 <Avatar src={AI_ASSISTANT_AVATAR} size={32} />
                 <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: 16 }}>{intl.formatMessage({ id: 'components.aiAssistant.name' })}</div>
-                  {session?.topicTags && session.topicTags.length > 0 && session.topicTags[0] !== 'assistant' && session.topicTags[0] !== 'direct' ? (
-                    <div style={{
-                      fontSize: 12, color: '#999',
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200,
-                    }}>
+                  <div style={{ fontWeight: 600, fontSize: 16 }}>
+                    {intl.formatMessage({ id: 'components.aiAssistant.name' })}
+                  </div>
+                  {session?.topicTags &&
+                  session.topicTags.length > 0 &&
+                  session.topicTags[0] !== 'assistant' &&
+                  session.topicTags[0] !== 'direct' ? (
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: '#999',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        maxWidth: 200,
+                      }}
+                    >
                       {session.topicTags[0]}
                     </div>
                   ) : session ? (
@@ -781,10 +806,7 @@ const AiAssistant: React.FC<AiAssistantProps> = React.memo(({ defaultOpen }) => 
                 title={intl.formatMessage({ id: 'components.aiAssistant.newConversation' })}
               />
               {!isFullScreen && (
-                <CloseOutlined
-                  onClick={() => setOpen(false)}
-                  style={{ cursor: 'pointer', fontSize: 16 }}
-                />
+                <CloseOutlined onClick={() => setOpen(false)} style={{ cursor: 'pointer', fontSize: 16 }} />
               )}
             </div>
           </div>
@@ -805,67 +827,67 @@ const AiAssistant: React.FC<AiAssistantProps> = React.memo(({ defaultOpen }) => 
             ) : messages.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '60px 20px', color: '#999' }}>
                 <MessageOutlined style={{ fontSize: 48, display: 'block', marginBottom: 16, opacity: 0.3 }} />
-                <div style={{ fontSize: 16, marginBottom: 8 }}>{intl.formatMessage({ id: 'components.aiAssistant.name' })}</div>
+                <div style={{ fontSize: 16, marginBottom: 8 }}>
+                  {intl.formatMessage({ id: 'components.aiAssistant.name' })}
+                </div>
                 <div>{intl.formatMessage({ id: 'components.aiAssistant.empty' })}</div>
               </div>
             ) : (
-              <>
-                {displayMessages.map((msg, idx) => {
-                  const isAssistant = msg.senderId === AI_ASSISTANT_ID;
-                  const currentUserId = currentUser?.id;
-                  const isUser = currentUserId && msg.senderId === currentUserId;
-                  const senderAvatar = isAssistant ? AI_ASSISTANT_AVATAR : getUserAvatar(currentUser?.avatar);
-                  const senderName = isAssistant ? intl.formatMessage({ id: 'components.aiAssistant.name' }) : (msg.senderName || currentUser?.displayName || currentUser?.username || '我');
+              displayMessages.map((msg, idx) => {
+                const isAssistant = msg.senderId === AI_ASSISTANT_ID;
+                const currentUserId = currentUser?.id;
+                const isUser = currentUserId && msg.senderId === currentUserId;
+                const senderAvatar = isAssistant ? AI_ASSISTANT_AVATAR : getUserAvatar(currentUser?.avatar);
+                const senderName = isAssistant
+                  ? intl.formatMessage({ id: 'components.aiAssistant.name' })
+                  : msg.senderName || currentUser?.displayName || currentUser?.username || '我';
 
-                  return (
+                return (
+                  <div
+                    key={msg.id || idx}
+                    style={{
+                      display: 'flex',
+                      justifyContent: isAssistant ? 'flex-start' : 'flex-end',
+                      marginBottom: 16,
+                      alignItems: 'flex-end',
+                      gap: 8,
+                    }}
+                  >
+                    {isAssistant && <Avatar src={senderAvatar} size={32} />}
                     <div
-                      key={msg.id || idx}
                       style={{
-                        display: 'flex',
-                        justifyContent: isAssistant ? 'flex-start' : 'flex-end',
-                        marginBottom: 16,
-                        alignItems: 'flex-end',
-                        gap: 8,
+                        maxWidth: '70%',
                       }}
                     >
-                      {isAssistant && <Avatar src={senderAvatar} size={32} />}
+                      {isAssistant && <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>{senderName}</div>}
                       <div
                         style={{
-                          maxWidth: '70%',
+                          padding: '8px 12px',
+                          borderRadius: 8,
+                          backgroundColor: isAssistant ? '#fff' : '#1890ff',
+                          color: isAssistant ? '#000' : '#fff',
+                          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
+                          wordBreak: 'break-word',
                         }}
                       >
-                        {isAssistant && (
-                          <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>{senderName}</div>
+                        {isAssistant ? (
+                          <TypewriterContent
+                            content={msg.content || intl.formatMessage({ id: 'components.aiAssistant.thinking' })}
+                            isStreaming={msg.id in streamingMessages}
+                            onUpdate={scrollToBottom}
+                          />
+                        ) : (
+                          msg.content || ''
                         )}
-                        <div
-                          style={{
-                            padding: '8px 12px',
-                            borderRadius: 8,
-                            backgroundColor: isAssistant ? '#fff' : '#1890ff',
-                            color: isAssistant ? '#000' : '#fff',
-                            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
-                            wordBreak: 'break-word',
-                          }}
-                        >
-                          {isAssistant ? (
-                            <TypewriterContent
-                              content={msg.content || intl.formatMessage({ id: 'components.aiAssistant.thinking' })}
-                              isStreaming={msg.id in streamingMessages}
-                              onUpdate={scrollToBottom}
-                            />
-                          ) : (
-                            msg.content || ''
-                          )}
-                          {isAssistant && msg.id in streamingMessages && (
-                            <span style={{ opacity: 0.5, marginLeft: 4 }}></span>
-                          )}
-                        </div>
+                        {isAssistant && msg.id in streamingMessages && (
+                          <span style={{ opacity: 0.5, marginLeft: 4 }}></span>
+                        )}
                       </div>
-                      {!isUser && !isAssistant && <Avatar src={senderAvatar} size={32} />}
                     </div>
-                  );
-                })}
-              </>
+                    {!isUser && !isAssistant && <Avatar src={senderAvatar} size={32} />}
+                  </div>
+                );
+              })
             )}
           </div>
 
@@ -883,18 +905,26 @@ const AiAssistant: React.FC<AiAssistantProps> = React.memo(({ defaultOpen }) => 
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder={isListening ? intl.formatMessage({ id: 'components.aiAssistant.listening' }) : intl.formatMessage({ id: 'components.aiAssistant.inputPlaceholder' })}
+                placeholder={
+                  isListening
+                    ? intl.formatMessage({ id: 'components.aiAssistant.listening' })
+                    : intl.formatMessage({ id: 'components.aiAssistant.inputPlaceholder' })
+                }
                 autoSize={{ minRows: 1, maxRows: 4 }}
                 disabled={sending}
                 style={{ flex: 1 }}
               />
               <Button
-                type={isListening ? "primary" : "default"}
+                type={isListening ? 'primary' : 'default'}
                 danger={isListening}
                 icon={isListening ? <AudioMutedOutlined /> : <AudioOutlined />}
                 onClick={handleToggleListen}
                 disabled={sending}
-                title={isListening ? intl.formatMessage({ id: 'components.aiAssistant.stopRecording' }) : intl.formatMessage({ id: 'components.aiAssistant.voiceInput' })}
+                title={
+                  isListening
+                    ? intl.formatMessage({ id: 'components.aiAssistant.stopRecording' })
+                    : intl.formatMessage({ id: 'components.aiAssistant.voiceInput' })
+                }
               />
               <Button
                 type="primary"
@@ -915,7 +945,9 @@ const AiAssistant: React.FC<AiAssistantProps> = React.memo(({ defaultOpen }) => 
               </Button>
             </div>
             {isListening && (
-              <div style={{ fontSize: '12px', color: '#ff4d4f', textAlign: 'center', animation: 'pulse 1.5s infinite' }}>
+              <div
+                style={{ fontSize: '12px', color: '#ff4d4f', textAlign: 'center', animation: 'pulse 1.5s infinite' }}
+              >
                 <style>{`
                   @keyframes pulse {
                     0% { opacity: 0.6; }

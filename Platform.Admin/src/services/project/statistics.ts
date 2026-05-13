@@ -2,78 +2,71 @@ import { request } from '@umijs/max';
 import type { ApiResponse } from '@/types';
 
 export enum ProjectStatisticsPeriod {
-    Day = 0,
-    Week = 1,
-    Month = 2,
-    Quarter = 3,
-    Year = 4,
-    Custom = 5,
+  Day = 0,
+  Week = 1,
+  Month = 2,
+  Quarter = 3,
+  Year = 4,
+  Custom = 5,
 }
 
 export interface ProjectStatistics {
-    totalProjects: number;
-    inProgressProjects: number;
-    completedProjects: number;
-    delayedProjects: number;
-    projectsByStatus: Record<string, number>;
-    projectsByPriority: Record<string, number>;
+  totalProjects: number;
+  inProgressProjects: number;
+  completedProjects: number;
+  delayedProjects: number;
+  projectsByStatus: Record<string, number>;
+  projectsByPriority: Record<string, number>;
 }
 
 export interface TaskStatistics {
-    totalTasks: number;
-    pendingTasks: number;
-    inProgressTasks: number;
-    completedTasks: number;
-    failedTasks: number;
-    overdueTasks: number;
-    completionRate: number;
-    tasksByPriority: Record<string, number>;
-    tasksByStatus: Record<string, number>;
+  totalTasks: number;
+  pendingTasks: number;
+  inProgressTasks: number;
+  completedTasks: number;
+  failedTasks: number;
+  overdueTasks: number;
+  completionRate: number;
+  tasksByPriority: Record<string, number>;
+  tasksByStatus: Record<string, number>;
 }
 
 export interface ProjectMemberStatistics {
-    totalMembers: number;
-    membersByRole: Record<string, number>;
+  totalMembers: number;
+  membersByRole: Record<string, number>;
 }
 
 export interface MilestoneStatistics {
-    totalMilestones: number;
-    pendingMilestones: number;
-    achievedMilestones: number;
-    delayedMilestones: number;
+  totalMilestones: number;
+  pendingMilestones: number;
+  achievedMilestones: number;
+  delayedMilestones: number;
 }
 
 export interface ProjectDashboardStatistics {
-    project: ProjectStatistics;
-    task: TaskStatistics;
-    member: ProjectMemberStatistics;
-    milestone: MilestoneStatistics;
+  project: ProjectStatistics;
+  task: TaskStatistics;
+  member: ProjectMemberStatistics;
+  milestone: MilestoneStatistics;
 }
 
 /**
  * 获取仪表盘统计数据
  */
-export async function getDashboardStatistics(
-    startDate?: string,
-    endDate?: string
-) {
-    return request<ApiResponse<ProjectDashboardStatistics>>('/apiservice/api/project/statistics/dashboard', {
-        method: 'GET',
-        params: { startDate, endDate },
-    });
+export async function getDashboardStatistics(startDate?: string, endDate?: string) {
+  return request<ApiResponse<ProjectDashboardStatistics>>('/apiservice/api/project/statistics/dashboard', {
+    method: 'GET',
+    params: { startDate, endDate },
+  });
 }
 
 /**
  * 生成 AI 统计报告
  */
-export async function generateAiReport(
-    startDate?: string,
-    endDate?: string,
-    data?: any
-) {
-    return request<ApiResponse<string>>('/apiservice/api/project/statistics/ai-report', {
-        method: 'POST',
-        params: { startDate, endDate },
-        data,
-    });
+export async function generateAiReport(startDate?: string, endDate?: string, data?: any) {
+  return request<ApiResponse<string>>('/apiservice/api/project/statistics/ai-report', {
+    method: 'POST',
+    params: { startDate, endDate },
+    data,
+  });
 }

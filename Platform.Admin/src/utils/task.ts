@@ -1,4 +1,4 @@
-import { TaskStatus, TaskPriority } from '@/services/task/api';
+import { TaskPriority, TaskStatus } from '@/services/task/api';
 
 export function getTaskStatusColor(status: number): string {
   switch (status) {

@@ -3,9 +3,7 @@ import type { CurrentUser, MenuTreeNode } from '@/types';
 /**
  * @see https://umijs.org/docs/max/access#access
  * */
-export default function access(
-  initialState: { currentUser?: CurrentUser } | undefined,
-) {
+export default function access(initialState: { currentUser?: CurrentUser } | undefined) {
   const { currentUser } = initialState ?? {};
   const accessValue = (currentUser as any)?.access as 'admin' | 'user' | 'guest' | undefined;
 
@@ -13,7 +11,7 @@ export default function access(
    * 检查用户是否可以访问指定菜单
    */
   const canAccessMenu = (menuId: string): boolean => {
-    if (!currentUser || !currentUser.menus) {
+    if (!currentUser?.menus) {
       return false;
     }
 
@@ -39,7 +37,7 @@ export default function access(
    * 检查用户是否可以访问指定路径
    */
   const canAccessPath = (path: string): boolean => {
-    if (!currentUser || !currentUser.menus) {
+    if (!currentUser?.menus) {
       return false;
     }
 
@@ -65,7 +63,7 @@ export default function access(
    * 检查是否有指定角色
    */
   const hasRole = (roleName: string): boolean => {
-    if (!currentUser || !currentUser.roles) {
+    if (!currentUser?.roles) {
       return false;
     }
     return currentUser.roles.includes(roleName);

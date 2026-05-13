@@ -27,14 +27,7 @@ export type HeaderDropdownProps = {
    * 为兼容旧代码，保留该属性并映射到 styles.root
    */
   overlayStyle?: React.CSSProperties;
-  placement?:
-  | 'bottomLeft'
-  | 'bottomRight'
-  | 'topLeft'
-  | 'topCenter'
-  | 'topRight'
-  | 'bottomCenter'
-  | 'bottom';
+  placement?: 'bottomLeft' | 'bottomRight' | 'topLeft' | 'topCenter' | 'topRight' | 'bottomCenter' | 'bottom';
   /** 传递给 antd Dropdown 的 classNames */
   classNames?: DropDownProps['classNames'];
   /** 传递给 antd Dropdown 的 styles */
@@ -62,11 +55,7 @@ const HeaderDropdown: React.FC<HeaderDropdownProps> = ({
       styles={{ root: style }}
       arrow={{ pointAtCenter: true }}
       transitionName=""
-      popupRender={(menu) => (
-        <div className={styles.popupWrapper}>
-          {dropdownRender ? dropdownRender(menu) : menu}
-        </div>
-      )}
+      popupRender={(menu) => <div className={styles.popupWrapper}>{dropdownRender ? dropdownRender(menu) : menu}</div>}
       {...restProps}
     />
   );

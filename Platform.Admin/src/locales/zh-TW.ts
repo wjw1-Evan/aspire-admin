@@ -1,12 +1,6 @@
 import component from './zh-TW/component';
 import globalHeader from './zh-TW/globalHeader';
 import menu from './zh-TW/menu';
-import pages from './zh-TW/pages';
-import pwa from './zh-TW/pwa';
-import settingDrawer from './zh-TW/settingDrawer';
-import settings from './zh-TW/settings';
-import welcome from './zh-TW/welcome';
-
 import auth from './zh-TW/modules/auth';
 import cloudStorage from './zh-TW/modules/cloud-storage';
 import company from './zh-TW/modules/company';
@@ -25,6 +19,11 @@ import user from './zh-TW/modules/user';
 import webScraper from './zh-TW/modules/web-scraper';
 import workflow from './zh-TW/modules/workflow';
 import xiaoke from './zh-TW/modules/xiaoke';
+import pages from './zh-TW/pages';
+import pwa from './zh-TW/pwa';
+import settingDrawer from './zh-TW/settingDrawer';
+import settings from './zh-TW/settings';
+import welcome from './zh-TW/welcome';
 
 export default {
   'navBar.lang': '語言',

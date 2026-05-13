@@ -32,8 +32,8 @@ if (pwa) {
   window.addEventListener('sw.updated', (event: Event) => {
     const e = event as CustomEvent;
     const notification = getNotification();
-    const message = getMessage();
-    
+    const _message = getMessage();
+
     const reloadSW = async () => {
       // Check if there is sw whose state is waiting in ServiceWorkerRegistration
       // https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerRegistration

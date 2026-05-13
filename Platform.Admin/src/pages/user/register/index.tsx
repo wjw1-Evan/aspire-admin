@@ -1,28 +1,15 @@
-import * as API from '@/types';
-import {
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  LockOutlined,
-  MailOutlined,
-  UserOutlined,
-} from '@ant-design/icons';
-import {
-  FormattedMessage,
-  history,
-  Link,
-  useIntl,
-} from '@umijs/max';
-import { SelectLang } from '@/components';
-import { App, Button, Form, Input, Space } from 'antd';
+import { CheckCircleOutlined, LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons';
 import { ProCard } from '@ant-design/pro-components/es/card';
 import { ProForm, ProFormText } from '@ant-design/pro-components/es/form';
+import { FormattedMessage, history, Link, useIntl } from '@umijs/max';
+import { App, Form, Space } from 'antd';
 import { createStyles } from 'antd-style';
 import React, { useState } from 'react';
-import { Footer } from '@/components';
+import { Footer, SelectLang } from '@/components';
 import { checkUsernameExists, register } from '@/services/ant-design-pro/api';
+import * as API from '@/types';
 import { PasswordEncryption } from '@/utils/encryption';
 import Settings from '../../../../config/defaultSettings';
-import { REGISTER_KNOWN_ERRORS } from '@/constants/errorCodes';
 
 const useStyles = createStyles(({ token }) => {
   return {
@@ -75,8 +62,7 @@ const useStyles = createStyles(({ token }) => {
     infoBox: {
       marginTop: 16,
       textAlign: 'center',
-      background:
-        'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)',
+      background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)',
       padding: '16px',
       borderRadius: '12px',
       color: '#666',
@@ -102,9 +88,7 @@ export default function Register() {
   const [form] = Form.useForm();
 
   // 用户名检测状态
-  const [usernameStatus, setUsernameStatus] = useState<
-    'checking' | 'available' | 'exists' | null
-  >(null);
+  const [usernameStatus, setUsernameStatus] = useState<'checking' | 'available' | 'exists' | null>(null);
   const [usernameMessage, setUsernameMessage] = useState<string>('');
   const [usernameValue, setUsernameValue] = useState<string>('');
 
@@ -114,7 +98,7 @@ export default function Register() {
     try {
       const encryptedPassword = values.password
         ? await PasswordEncryption.encrypt(values.password)
-        : values.password ?? '';
+        : (values.password ?? '');
 
       const response = await register({
         username: values.username,
@@ -170,9 +154,7 @@ export default function Register() {
     }
 
     setUsernameStatus('checking');
-    setUsernameMessage(
-      intl.formatMessage({ id: 'pages.register.username.checking' }),
-    );
+    setUsernameMessage(intl.formatMessage({ id: 'pages.register.username.checking' }));
 
     try {
       const response = await checkUsernameExists(username);
@@ -183,9 +165,7 @@ export default function Register() {
           setUsernameMessage('');
         } else {
           setUsernameStatus('available');
-          setUsernameMessage(
-            intl.formatMessage({ id: 'pages.register.username.available' }),
-          );
+          setUsernameMessage(intl.formatMessage({ id: 'pages.register.username.available' }));
         }
       } else {
         setUsernameStatus(null);
@@ -246,19 +226,28 @@ export default function Register() {
                     prefix: <UserOutlined />,
                     onChange: (e: React.ChangeEvent<HTMLInputElement>) => handleUsernameChange(e.target.value),
                     onBlur: handleUsernameBlur,
-                    suffix: usernameStatus === 'checking' ? (
-                      <span style={{ color: '#1890ff' }}>
-                        <FormattedMessage id="pages.register.username.checking" />
-                      </span>
-                    ) : usernameStatus === 'available' ? (
-                      <CheckCircleOutlined style={{ color: '#52c41a' }} />
-                    ) : null,
+                    suffix:
+                      usernameStatus === 'checking' ? (
+                        <span style={{ color: '#1890ff' }}>
+                          <FormattedMessage id="pages.register.username.checking" />
+                        </span>
+                      ) : usernameStatus === 'available' ? (
+                        <CheckCircleOutlined style={{ color: '#52c41a' }} />
+                      ) : null,
                   }}
-                  extra={usernameMessage ? (
-                    <Space style={{ color: usernameStatus === 'exists' ? '#ff4d4f' : '#52c41a', fontSize: '12px', marginTop: '4px' }}>
-                      {usernameMessage}
-                    </Space>
-                  ) : null}
+                  extra={
+                    usernameMessage ? (
+                      <Space
+                        style={{
+                          color: usernameStatus === 'exists' ? '#ff4d4f' : '#52c41a',
+                          fontSize: '12px',
+                          marginTop: '4px',
+                        }}
+                      >
+                        {usernameMessage}
+                      </Space>
+                    ) : null
+                  }
                   rules={[
                     { required: true, message: <FormattedMessage id="pages.register.username.required" /> },
                     { min: 3, message: <FormattedMessage id="pages.register.username.min" /> },
@@ -297,14 +286,13 @@ export default function Register() {
                         if (!value || getFieldValue('password') === value) {
                           return Promise.resolve();
                         }
-                        return Promise.reject(new Error(intl.formatMessage({ id: 'pages.register.confirmPassword.mismatch' })));
+                        return Promise.reject(
+                          new Error(intl.formatMessage({ id: 'pages.register.confirmPassword.mismatch' })),
+                        );
                       },
                     }),
                   ]}
                 />
-
-
-
               </ProForm>
               <div style={{ textAlign: 'center', marginTop: 16 }}>
                 <Link to="/user/login" style={{ color: '#667eea', fontWeight: 500 }}>

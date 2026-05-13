@@ -146,7 +146,7 @@ export default {
   'pages.document.statistics.total': '总数',
   'pages.document.statistics.draft': '草稿',
   'pages.document.statistics.pending': '审批中',
-'pages.document.statistics.approved': '已通过',
+  'pages.document.statistics.approved': '已通过',
   'pages.document.statistics.rejected': '已拒绝',
   'pages.document.statistics.archived': '已归档',
 

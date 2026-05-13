@@ -1,37 +1,84 @@
-import { readFileSync, writeFileSync } from 'node:fs';
-import { readdirSync } from 'node:fs';
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 const MODULE_MAP = {
-  PageContainer: 'layout', ProBreadcrumb: 'layout', ProPageHeader: 'layout',
-  PageHeader: 'layout', FooterToolbar: 'layout', GridContent: 'layout',
-  DefaultFooter: 'layout', DefaultHeader: 'layout', SettingDrawer: 'layout',
-  TopNavHeader: 'layout', PageLoading: 'layout',
-  ProCard: 'card', CheckCard: 'card', StatisticCard: 'card', Statistic: 'card',
+  PageContainer: 'layout',
+  ProBreadcrumb: 'layout',
+  ProPageHeader: 'layout',
+  PageHeader: 'layout',
+  FooterToolbar: 'layout',
+  GridContent: 'layout',
+  DefaultFooter: 'layout',
+  DefaultHeader: 'layout',
+  SettingDrawer: 'layout',
+  TopNavHeader: 'layout',
+  PageLoading: 'layout',
+  ProCard: 'card',
+  CheckCard: 'card',
+  StatisticCard: 'card',
+  Statistic: 'card',
   ProDescriptions: 'descriptions',
-  ProTable: 'table', ActionType: 'table', ProColumns: 'table', ProColumnType: 'table',
-  EditableProTable: 'table', DragSortTable: 'table', TableDropdown: 'table',
-  ListToolBar: 'table', IndexColumn: 'table', CellEditorTable: 'table',
-  RowEditorTable: 'table', Search: 'table',
-  ProForm: 'form', ModalForm: 'form', DrawerForm: 'form', StepsForm: 'form',
-  LightFilter: 'form', QueryFilter: 'form', LoginForm: 'form', LoginFormPage: 'form',
+  ProTable: 'table',
+  ActionType: 'table',
+  ProColumns: 'table',
+  ProColumnType: 'table',
+  EditableProTable: 'table',
+  DragSortTable: 'table',
+  TableDropdown: 'table',
+  ListToolBar: 'table',
+  IndexColumn: 'table',
+  CellEditorTable: 'table',
+  RowEditorTable: 'table',
+  Search: 'table',
+  ProForm: 'form',
+  ModalForm: 'form',
+  DrawerForm: 'form',
+  StepsForm: 'form',
+  LightFilter: 'form',
+  QueryFilter: 'form',
+  LoginForm: 'form',
+  LoginFormPage: 'form',
   ProFormGroup: 'form',
-  ProFormText: 'form', ProFormSelect: 'form', ProFormTextArea: 'form',
-  ProFormDigit: 'form', ProFormDatePicker: 'form', ProFormDateTimePicker: 'form',
-  ProFormTimePicker: 'form', ProFormDateRangePicker: 'form',
-  ProFormDateMonthRangePicker: 'form', ProFormDateQuarterRangePicker: 'form',
-  ProFormDateTimeRangePicker: 'form', ProFormDateWeekRangePicker: 'form',
-  ProFormDateYearRangePicker: 'form', ProFormTimeRangePicker: 'form',
-  ProFormRadio: 'form', ProFormCheckbox: 'form', ProFormSwitch: 'form',
-  ProFormItem: 'form', ProFormSlider: 'form', ProFormCaptcha: 'form',
-  ProFormCascader: 'form', ProFormColorPicker: 'form', ProFormDependency: 'form',
-  ProFormDigitRange: 'form', ProFormField: 'form', ProFormFieldSet: 'form',
-  ProFormMoney: 'form', ProFormList: 'form', ProFormTreeSelect: 'form',
-  ProFormUploadButton: 'form', ProFormUploadDragger: 'form',
-  FormListContext: 'form', ProFormContext: 'form', LightWrapper: 'form',
-  FieldContext: 'form', GridContext: 'form',
+  ProFormText: 'form',
+  ProFormSelect: 'form',
+  ProFormTextArea: 'form',
+  ProFormDigit: 'form',
+  ProFormDatePicker: 'form',
+  ProFormDateTimePicker: 'form',
+  ProFormTimePicker: 'form',
+  ProFormDateRangePicker: 'form',
+  ProFormDateMonthRangePicker: 'form',
+  ProFormDateQuarterRangePicker: 'form',
+  ProFormDateTimeRangePicker: 'form',
+  ProFormDateWeekRangePicker: 'form',
+  ProFormDateYearRangePicker: 'form',
+  ProFormTimeRangePicker: 'form',
+  ProFormRadio: 'form',
+  ProFormCheckbox: 'form',
+  ProFormSwitch: 'form',
+  ProFormItem: 'form',
+  ProFormSlider: 'form',
+  ProFormCaptcha: 'form',
+  ProFormCascader: 'form',
+  ProFormColorPicker: 'form',
+  ProFormDependency: 'form',
+  ProFormDigitRange: 'form',
+  ProFormField: 'form',
+  ProFormFieldSet: 'form',
+  ProFormMoney: 'form',
+  ProFormList: 'form',
+  ProFormTreeSelect: 'form',
+  ProFormUploadButton: 'form',
+  ProFormUploadDragger: 'form',
+  FormListContext: 'form',
+  ProFormContext: 'form',
+  LightWrapper: 'form',
+  FieldContext: 'form',
+  GridContext: 'form',
   ProList: 'list',
-  ConfigConsumer: 'provider', IntlConsumer: 'provider', createIntl: 'provider',
+  ConfigConsumer: 'provider',
+  IntlConsumer: 'provider',
+  createIntl: 'provider',
 };
 
 function findFiles(dir) {
@@ -102,21 +149,25 @@ function transformFile(content) {
     const line = lines[i];
     if (!line.includes('@ant-design/pro-components')) continue;
     if (!line.includes('} from')) continue;
-    if (!line.includes("from '@ant-design/pro-components'") && !line.includes('from "@ant-design/pro-components"')) continue;
+    if (!line.includes("from '@ant-design/pro-components'") && !line.includes('from "@ant-design/pro-components"'))
+      continue;
 
     const content = findImportBlock(lines, i);
     if (!content) continue;
 
     // Parse names
-    const rawNames = content.split(',').map(s => s.trim()).filter(Boolean);
-    const entries = rawNames.map(r => {
+    const rawNames = content
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const entries = rawNames.map((r) => {
       const isType = r.startsWith('type ');
       return { name: r.replace(/^type\s+/, '').replace(/\s+$/, ''), isType };
     });
 
     // Filter to known only
-    const known = entries.filter(e => MODULE_MAP[e.name]);
-    const unknown = entries.filter(e => !MODULE_MAP[e.name]);
+    const known = entries.filter((e) => MODULE_MAP[e.name]);
+    const unknown = entries.filter((e) => !MODULE_MAP[e.name]);
     for (const e of unknown) {
       console.warn(`  ⚠ Unknown: ${e.name}`);
     }
@@ -153,16 +204,17 @@ function transformFile(content) {
     }
 
     const modules = Object.keys(grouped).sort();
-    const newImports = modules.map(mod => {
-      const items = grouped[mod];
-      const vals = items.filter(x => !x.isType).map(x => x.name);
-      const types = items.filter(x => x.isType).map(x => x.name);
-      if (vals.length > 0 && types.length > 0)
-        return `import { ${vals.join(', ')}, type ${types.join(', ')} } from '@ant-design/pro-components/es/${mod}';`;
-      if (types.length > 0)
-        return `import type { ${types.join(', ')} } from '@ant-design/pro-components/es/${mod}';`;
-      return `import { ${vals.join(', ')} } from '@ant-design/pro-components/es/${mod}';`;
-    }).join('\n');
+    const newImports = modules
+      .map((mod) => {
+        const items = grouped[mod];
+        const vals = items.filter((x) => !x.isType).map((x) => x.name);
+        const types = items.filter((x) => x.isType).map((x) => x.name);
+        if (vals.length > 0 && types.length > 0)
+          return `import { ${vals.join(', ')}, type ${types.join(', ')} } from '@ant-design/pro-components/es/${mod}';`;
+        if (types.length > 0) return `import type { ${types.join(', ')} } from '@ant-design/pro-components/es/${mod}';`;
+        return `import { ${vals.join(', ')} } from '@ant-design/pro-components/es/${mod}';`;
+      })
+      .join('\n');
 
     replacements.push({ startLine, endLine: i, newText: newImports });
     // Mark lines to skip
@@ -178,7 +230,7 @@ function transformFile(content) {
   for (let i = 0; i < lines.length; i++) {
     if (linesToSkip.has(i)) {
       // Check if this is the first line of a replacement block
-      const rep = replacements.find(r => r.startLine === i);
+      const rep = replacements.find((r) => r.startLine === i);
       if (rep) {
         result.push(rep.newText);
       }
@@ -192,8 +244,7 @@ function transformFile(content) {
 
 // Main
 const srcDir = path.resolve('src');
-const files = findFiles(srcDir)
-  .filter(f => !f.includes('/.umi/') && !f.includes('/.umi-production/'));
+const files = findFiles(srcDir).filter((f) => !f.includes('/.umi/') && !f.includes('/.umi-production/'));
 
 console.log(`Searching ${files.length} files...`);
 let changedCount = 0;

@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Switch, Radio, Space, Divider, App as AntApp } from 'antd';
-import { Drawer } from 'antd';
 import { BulbOutlined, MoonOutlined } from '@ant-design/icons';
-import { useModel, useIntl } from '@umijs/max';
+import { useIntl, useModel } from '@umijs/max';
+import { App as AntApp, Divider, Drawer, Radio, Space, Switch } from 'antd';
+import React, { useEffect, useState } from 'react';
 import type { LayoutSettings } from '@/types';
 
 interface ThemeSettingsDrawerProps {
@@ -159,9 +158,7 @@ export const ThemeSettingsDrawer: React.FC<ThemeSettingsDrawerProps> = ({ open, 
       <Space orientation="vertical" size="large" style={{ width: '100%' }}>
         {/* 整体风格设置 */}
         <div>
-          <div style={{ marginBottom: 12, fontWeight: 500 }}>
-            {intl.formatMessage({ id: 'app.setting.pagestyle' })}
-          </div>
+          <div style={{ marginBottom: 12, fontWeight: 500 }}>{intl.formatMessage({ id: 'app.setting.pagestyle' })}</div>
           <Radio.Group
             value={currentTheme}
             onChange={(e) => handleThemeChange(e.target.value)}
@@ -197,15 +194,9 @@ export const ThemeSettingsDrawer: React.FC<ThemeSettingsDrawerProps> = ({ open, 
             style={{ width: '100%' }}
           >
             <Space orientation="vertical" style={{ width: '100%' }}>
-              <Radio value="side">
-                {intl.formatMessage({ id: 'app.setting.sidemenu' })}
-              </Radio>
-              <Radio value="top">
-                {intl.formatMessage({ id: 'app.setting.topmenu' })}
-              </Radio>
-              <Radio value="mix">
-                {intl.formatMessage({ id: 'app.setting.mixmenu' })}
-              </Radio>
+              <Radio value="side">{intl.formatMessage({ id: 'app.setting.sidemenu' })}</Radio>
+              <Radio value="top">{intl.formatMessage({ id: 'app.setting.topmenu' })}</Radio>
+              <Radio value="mix">{intl.formatMessage({ id: 'app.setting.mixmenu' })}</Radio>
             </Space>
           </Radio.Group>
         </div>
@@ -223,12 +214,8 @@ export const ThemeSettingsDrawer: React.FC<ThemeSettingsDrawerProps> = ({ open, 
             style={{ width: '100%' }}
           >
             <Space orientation="vertical" style={{ width: '100%' }}>
-              <Radio value="Fixed">
-                {intl.formatMessage({ id: 'app.setting.content-width.fixed' })}
-              </Radio>
-              <Radio value="Fluid">
-                {intl.formatMessage({ id: 'app.setting.content-width.fluid' })}
-              </Radio>
+              <Radio value="Fixed">{intl.formatMessage({ id: 'app.setting.content-width.fixed' })}</Radio>
+              <Radio value="Fluid">{intl.formatMessage({ id: 'app.setting.content-width.fluid' })}</Radio>
             </Space>
           </Radio.Group>
         </div>
@@ -243,24 +230,15 @@ export const ThemeSettingsDrawer: React.FC<ThemeSettingsDrawerProps> = ({ open, 
           <Space orientation="vertical" style={{ width: '100%' }} size="middle">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span>{intl.formatMessage({ id: 'app.setting.fixedheader' })}</span>
-              <Switch
-                checked={settings.fixedHeader !== false}
-                onChange={handleFixedHeaderChange}
-              />
+              <Switch checked={settings.fixedHeader !== false} onChange={handleFixedHeaderChange} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span>{intl.formatMessage({ id: 'app.setting.fixedsidebar' })}</span>
-              <Switch
-                checked={settings.fixSiderbar !== false}
-                onChange={handleFixedSiderbarChange}
-              />
+              <Switch checked={settings.fixSiderbar !== false} onChange={handleFixedSiderbarChange} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span>{intl.formatMessage({ id: 'app.setting.weakmode' })}</span>
-              <Switch
-                checked={settings.colorWeak === true}
-                onChange={handleColorWeakChange}
-              />
+              <Switch checked={settings.colorWeak === true} onChange={handleColorWeakChange} />
             </div>
           </Space>
         </div>

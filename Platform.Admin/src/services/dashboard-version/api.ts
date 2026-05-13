@@ -63,7 +63,7 @@ const api = {
   restore: (dashboardId: string, versionNumber: number) =>
     request<ApiResponse<DashboardVersion>>(
       `/apiservice/api/dashboard-version/${dashboardId}/versions/${versionNumber}/restore`,
-      { method: 'POST' }
+      { method: 'POST' },
     ),
 
   // 删除版本
@@ -75,27 +75,22 @@ const api = {
   // 比较版本
   compare: (versionId1: string, versionId2: string) =>
     request<ApiResponse<DashboardVersionComparison>>(
-      `/apiservice/api/dashboard-version/versions/${versionId1}/compare/${versionId2}`
+      `/apiservice/api/dashboard-version/versions/${versionId1}/compare/${versionId2}`,
     ),
 
   // 获取当前版本
   getCurrent: (dashboardId: string) =>
-    request<ApiResponse<DashboardVersion>>(
-      `/apiservice/api/dashboard-version/${dashboardId}/current-version`
-    ),
+    request<ApiResponse<DashboardVersion>>(`/apiservice/api/dashboard-version/${dashboardId}/current-version`),
 
   // 设置为当前版本
   setCurrent: (versionId: string) =>
-    request<ApiResponse<DashboardVersion>>(
-      `/apiservice/api/dashboard-version/versions/${versionId}/set-current`,
-      { method: 'POST' }
-    ),
+    request<ApiResponse<DashboardVersion>>(`/apiservice/api/dashboard-version/versions/${versionId}/set-current`, {
+      method: 'POST',
+    }),
 
   // 获取版本统计
   statistics: (dashboardId: string) =>
-    request<ApiResponse<DashboardVersionStatistics>>(
-      `/apiservice/api/dashboard-version/${dashboardId}/statistics`
-    ),
+    request<ApiResponse<DashboardVersionStatistics>>(`/apiservice/api/dashboard-version/${dashboardId}/statistics`),
 };
 
 export default api;

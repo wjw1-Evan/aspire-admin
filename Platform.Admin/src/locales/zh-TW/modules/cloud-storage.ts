@@ -6,20 +6,22 @@ export default {
   'pages.cloud-storage.recycle.message.deleteFailed': '刪除失敗',
   'pages.cloud-storage.recycle.message.emptySuccess': '清空成功，刪除了 {count} 個檔案',
   'pages.cloud-storage.recycle.message.emptyFailed': '清空失敗',
-  
+
   // 分享管理消息
   'pages.cloud-storage.share.message.updateSuccess': '更新成功',
   'pages.cloud-storage.share.message.linkCopied': '分享連結已複製',
-  
+
   // 配額管理消息
   'pages.cloud-storage.quota.message.updateSuccess': '更新配額成功',
   'pages.cloud-storage.quota.message.createSuccess': '新增配額成功',
   'pages.cloud-storage.recycle.title': 'Recycle Bin',
   'pages.cloud-storage.recycle.confirmDelete': 'Confirm Permanent Delete',
-  'pages.cloud-storage.recycle.confirmDeleteContent': 'Are you sure you want to permanently delete "{name}"? This action cannot be undone.',
+  'pages.cloud-storage.recycle.confirmDeleteContent':
+    'Are you sure you want to permanently delete "{name}"? This action cannot be undone.',
   'pages.cloud-storage.recycle.confirmDeleteOk': 'Delete',
   'pages.cloud-storage.recycle.confirmEmpty': 'Confirm Empty Recycle Bin',
-  'pages.cloud-storage.recycle.confirmEmptyContent': 'Are you sure you want to empty the entire recycle bin? This will permanently delete all files and cannot be undone!',
+  'pages.cloud-storage.recycle.confirmEmptyContent':
+    'Are you sure you want to empty the entire recycle bin? This will permanently delete all files and cannot be undone!',
   'pages.cloud-storage.recycle.confirmEmptyOk': 'Empty',
   'pages.cloud-storage.recycle.searchPlaceholder': 'Search...',
   'pages.cloud-storage.recycle.tagTotal': 'Total {count}',

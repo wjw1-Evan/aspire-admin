@@ -1,26 +1,25 @@
 import {
-  LogoutOutlined,
-  UserOutlined,
-  LockOutlined,
-  QuestionCircleOutlined,
   BankOutlined,
   CheckOutlined,
+  LogoutOutlined,
   PlusOutlined,
+  QuestionCircleOutlined,
   SettingOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
-import { history, useModel, useIntl, request } from '@umijs/max';
+import { history, request, useIntl, useModel } from '@umijs/max';
 import type { MenuProps } from 'antd';
-import { Spin, Avatar, App as AntApp, Tag } from 'antd';
-import React, { useState, useEffect, useCallback } from 'react';
+import { App as AntApp, Spin, Tag } from 'antd';
+import React, { useCallback, useEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { outLogin } from '@/services/ant-design-pro/api';
 import { tokenUtils } from '@/utils/token';
+import { CreateCompanyModal } from '../CreateCompanyModal';
 import HeaderDropdown from '../HeaderDropdown';
 import HelpModal from '../HelpModal';
-import { ThemeSettingsDrawer } from './ThemeSettingsDrawer';
 import { JoinCompanyModal } from '../JoinCompanyModal';
-import { CreateCompanyModal } from '../CreateCompanyModal';
 import { useHeaderStyles } from './styles';
+import { ThemeSettingsDrawer } from './ThemeSettingsDrawer';
 
 export type GlobalHeaderRightProps = {
   menu?: boolean;
@@ -33,10 +32,7 @@ export const AvatarName = () => {
   return <span>{currentUser?.displayName || currentUser?.username}</span>;
 };
 
-export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
-  menu,
-  children,
-}) => {
+export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({ menu, children }) => {
   const { styles } = useHeaderStyles();
   const { initialState, setInitialState } = useModel('@@initialState');
   const { currentUser } = initialState || {};
@@ -167,7 +163,15 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
     ...companies.map((company) => ({
       key: company.companyId,
       label: (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0', minWidth: 250 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '4px 0',
+            minWidth: 250,
+          }}
+        >
           <div style={{ flex: 1 }}>
             <div style={{}}>
               {company.companyName}
@@ -183,7 +187,8 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
               )}
             </div>
             <div style={{ color: 'var(--ant-color-text-description)' }}>
-              {company.roleNames.join(intl.formatMessage({ id: 'pages.company.roleSeparator' })) || intl.formatMessage({ id: 'pages.company.noRole' })}
+              {company.roleNames.join(intl.formatMessage({ id: 'pages.company.roleSeparator' })) ||
+                intl.formatMessage({ id: 'pages.company.noRole' })}
             </div>
           </div>
           {company.isCurrent && <CheckOutlined style={{ marginLeft: 12, color: 'var(--ant-color-success)' }} />}
@@ -196,7 +201,9 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
     {
       key: 'create-company',
       label: (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--ant-color-primary)', fontWeight: 500 }}>
+        <div
+          style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--ant-color-primary)', fontWeight: 500 }}
+        >
           <PlusOutlined /> {intl.formatMessage({ id: 'pages.company.createNew' })}
         </div>
       ),
@@ -204,7 +211,9 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
     {
       key: 'join-company',
       label: (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--ant-color-primary)', fontWeight: 500 }}>
+        <div
+          style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--ant-color-primary)', fontWeight: 500 }}
+        >
           <PlusOutlined /> {intl.formatMessage({ id: 'pages.company.joinNew' })}
         </div>
       ),
@@ -214,21 +223,23 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
   const menuItems: MenuProps['items'] = [
     ...(menu
       ? [
-        {
-          key: 'center',
-          icon: <UserOutlined />,
-          label: intl.formatMessage({ id: 'menu.account.center' }),
-        },
-        {
-          type: 'divider' as const,
-        },
-      ]
+          {
+            key: 'center',
+            icon: <UserOutlined />,
+            label: intl.formatMessage({ id: 'menu.account.center' }),
+          },
+          {
+            type: 'divider' as const,
+          },
+        ]
       : []),
     {
       key: 'company',
       icon: <BankOutlined />,
       label: intl.formatMessage({ id: 'menu.account.company' }),
-      children: companiesLoading ? [{ key: 'loading', label: <Spin size="small" />, disabled: true }] : companyMenuItems,
+      children: companiesLoading
+        ? [{ key: 'loading', label: <Spin size="small" />, disabled: true }]
+        : companyMenuItems,
     },
     {
       key: 'help',
@@ -262,23 +273,11 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
           items: menuItems,
         }}
       >
-        <span className={styles.headerActionButton}>
-          {children}
-        </span>
+        <span className={styles.headerActionButton}>{children}</span>
       </HeaderDropdown>
-      <ThemeSettingsDrawer
-        open={settingsDrawerOpen}
-        onClose={() => setSettingsDrawerOpen(false)}
-      />
-      <HelpModal
-        open={helpModalOpen}
-        onClose={() => setHelpModalOpen(false)}
-      />
-      <JoinCompanyModal
-        open={joinModalOpen}
-        onClose={() => setJoinModalOpen(false)}
-        onSuccess={loadCompanies}
-      />
+      <ThemeSettingsDrawer open={settingsDrawerOpen} onClose={() => setSettingsDrawerOpen(false)} />
+      <HelpModal open={helpModalOpen} onClose={() => setHelpModalOpen(false)} />
+      <JoinCompanyModal open={joinModalOpen} onClose={() => setJoinModalOpen(false)} onSuccess={loadCompanies} />
       <CreateCompanyModal
         open={createCompanyModalOpen}
         onClose={() => setCreateCompanyModalOpen(false)}

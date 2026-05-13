@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export interface UseModalStateOptions {
   /** 是否显示弹窗 */
@@ -62,9 +62,7 @@ export interface UseModalStateResult {
  * );
  * ```
  */
-export function useModalState(
-  options: UseModalStateOptions = {},
-): UseModalStateResult {
+export function useModalState(options: UseModalStateOptions = {}): UseModalStateResult {
   const { visible = false, onConfirm, onCancel } = options;
 
   const [reason, setReason] = useState<string>('');

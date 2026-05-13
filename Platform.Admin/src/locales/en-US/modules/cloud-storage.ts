@@ -18,11 +18,11 @@ export default {
   'pages.cloud-storage.recycle.daysUntilExpiry': ' days until expiry',
   'pages.cloud-storage.recycle.restoreFile': 'Restore File',
   'pages.cloud-storage.recycle.fileNamePlaceholder': 'Please enter file name',
-  
+
   // 分享管理消息
   'pages.cloud-storage.share.message.updateSuccess': 'Update successful',
   'pages.cloud-storage.share.message.linkCopied': 'Share link copied',
-  
+
   // 文件管理
   'pages.cloud-storage.files.fileName': 'File Name',
   'pages.cloud-storage.files.shareType': 'Share Type',
@@ -37,16 +37,18 @@ export default {
   'pages.cloud-storage.share.enabled': 'Enabled',
   'pages.cloud-storage.share.disabled': 'Disabled',
   'pages.cloud-storage.share.confirmDelete': 'Are you sure to delete share "{name}"?',
-  
+
   // 配额管理消息
   'pages.cloud-storage.quota.message.updateSuccess': 'Quota updated successfully',
   'pages.cloud-storage.quota.message.createSuccess': 'Quota created successfully',
   'pages.cloud-storage.recycle.title': 'Recycle Bin',
   'pages.cloud-storage.recycle.confirmDelete': 'Confirm Permanent Delete',
-  'pages.cloud-storage.recycle.confirmDeleteContent': 'Are you sure you want to permanently delete "{name}"? This action cannot be undone.',
+  'pages.cloud-storage.recycle.confirmDeleteContent':
+    'Are you sure you want to permanently delete "{name}"? This action cannot be undone.',
   'pages.cloud-storage.recycle.confirmDeleteOk': 'Delete',
   'pages.cloud-storage.recycle.confirmEmpty': 'Confirm Empty Recycle Bin',
-  'pages.cloud-storage.recycle.confirmEmptyContent': 'Are you sure you want to empty the entire recycle bin? This will permanently delete all files and cannot be undone!',
+  'pages.cloud-storage.recycle.confirmEmptyContent':
+    'Are you sure you want to empty the entire recycle bin? This will permanently delete all files and cannot be undone!',
   'pages.cloud-storage.recycle.confirmEmptyOk': 'Empty',
   'pages.cloud-storage.recycle.searchPlaceholder': 'Search...',
   'pages.cloud-storage.recycle.tagTotal': 'Total {count}',

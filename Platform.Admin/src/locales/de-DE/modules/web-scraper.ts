@@ -27,10 +27,12 @@ export default {
   'pages.web-scraper.descriptionPlaceholder': 'Beschreibung eingeben (optional)',
   'pages.web-scraper.titleSelector': 'Titel-Selektor',
   'pages.web-scraper.titleSelectorPlaceholder': 'CSS-Selektor, z.B. h1.title',
-  'pages.web-scraper.titleSelectorTooltip': 'CSS-Selektor zum Extrahieren des Seitentitels, leer lassen für <title>-Tag',
+  'pages.web-scraper.titleSelectorTooltip':
+    'CSS-Selektor zum Extrahieren des Seitentitels, leer lassen für <title>-Tag',
   'pages.web-scraper.contentSelector': 'Inhalts-Selektor',
   'pages.web-scraper.contentSelectorPlaceholder': 'CSS-Selektor, z.B. article.content',
-  'pages.web-scraper.contentSelectorTooltip': 'CSS-Selektor zum Extrahieren des Seiteninhalts, leer lassen für <body>-Tag',
+  'pages.web-scraper.contentSelectorTooltip':
+    'CSS-Selektor zum Extrahieren des Seiteninhalts, leer lassen für <body>-Tag',
   'pages.web-scraper.crawlDepth': 'Crawl-Tiefe',
   'pages.web-scraper.maxPagesPerLevel': 'Max. Seiten pro Ebene',
   'pages.web-scraper.crawlMode': 'Crawl-Modus',
@@ -40,7 +42,8 @@ export default {
   'pages.web-scraper.deduplicate': 'URLs deduplizieren',
   'pages.web-scraper.scheduleCron': 'Zeitplan-Ausdruck',
   'pages.web-scraper.scheduleCronPlaceholder': '0 */10 * * * *',
-  'pages.web-scraper.scheduleCronTooltip': '<p>Häufige Beispiele:</p><ul><li>Alle 10 Minuten: <code>*/10 * * * *</code></li><li>Stündlich: <code>0 * * * *</code></li><li>Täglich Mitternacht: <code>0 0 * * *</code></li><li>Jeden Montag: <code>0 0 * * 1</code></li></ul>',
+  'pages.web-scraper.scheduleCronTooltip':
+    '<p>Häufige Beispiele:</p><ul><li>Alle 10 Minuten: <code>*/10 * * * *</code></li><li>Stündlich: <code>0 * * * *</code></li><li>Täglich Mitternacht: <code>0 0 * * *</code></li><li>Jeden Montag: <code>0 0 * * 1</code></li></ul>',
   'pages.web-scraper.mode.single': 'Nur aktuelle Seite',
   'pages.web-scraper.mode.depth': 'Tiefe zuerst',
   'pages.web-scraper.mode.breadth': 'Breite zuerst',

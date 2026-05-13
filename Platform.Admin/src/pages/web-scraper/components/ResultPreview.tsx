@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
 import { useIntl } from '@umijs/max';
-import { Modal, Table, Tabs, Tag, Button, Card, Space, Typography, Descriptions } from 'antd';
-import { DownloadOutlined, LinkOutlined, PictureOutlined } from '@ant-design/icons';
+import { Button, Card, Descriptions, Modal, Space, Table, Tabs, Tag, Typography } from 'antd';
+import React, { useState } from 'react';
 
 const { Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
@@ -45,7 +44,12 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
   if (!data) return null;
 
   const pageColumns = [
-    { title: intl.formatMessage({ id: 'pages.webScraper.resultPreview.col.level' }), dataIndex: 'level', key: 'level', width: 60 },
+    {
+      title: intl.formatMessage({ id: 'pages.webScraper.resultPreview.col.level' }),
+      dataIndex: 'level',
+      key: 'level',
+      width: 60,
+    },
     {
       title: intl.formatMessage({ id: 'pages.webScraper.resultPreview.col.url' }),
       dataIndex: 'url',
@@ -70,19 +74,26 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
       key: 'success',
       width: 80,
       render: (success: boolean) => (
-        <Tag color={success ? 'success' : 'error'}>{success ? intl.formatMessage({ id: 'pages.webScraper.resultPreview.status.success' }) : intl.formatMessage({ id: 'pages.webScraper.resultPreview.status.failed' })}</Tag>
+        <Tag color={success ? 'success' : 'error'}>
+          {success
+            ? intl.formatMessage({ id: 'pages.webScraper.resultPreview.status.success' })
+            : intl.formatMessage({ id: 'pages.webScraper.resultPreview.status.failed' })}
+        </Tag>
       ),
     },
     {
       title: intl.formatMessage({ id: 'pages.webScraper.resultPreview.col.match' }),
       width: 80,
-      render: (_: any, record: PageResult) => (
+      render: (_: any, record: PageResult) =>
         record.isFiltered ? (
           <Tag color={record.isMatched ? 'green' : 'default'}>
-            {record.isMatched ? `${intl.formatMessage({ id: 'pages.webScraper.resultPreview.match.matched' })} ${record.relevanceScore || 0}%` : intl.formatMessage({ id: 'pages.webScraper.resultPreview.match.unmatched' })}
+            {record.isMatched
+              ? `${intl.formatMessage({ id: 'pages.webScraper.resultPreview.match.matched' })} ${record.relevanceScore || 0}%`
+              : intl.formatMessage({ id: 'pages.webScraper.resultPreview.match.unmatched' })}
           </Tag>
-        ) : '-'
-      ),
+        ) : (
+          '-'
+        ),
     },
     {
       title: intl.formatMessage({ id: 'pages.webScraper.resultPreview.col.action' }),
@@ -96,18 +107,14 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
     },
   ];
 
-  const linkColumns = [
-    { title: 'URL', dataIndex: 'url', key: 'url', ellipsis: true },
-  ];
+  const linkColumns = [{ title: 'URL', dataIndex: 'url', key: 'url', ellipsis: true }];
 
   const imageColumns = [
     {
       title: '图片',
       dataIndex: 'src',
       key: 'src',
-      render: (src: string) => (
-        <img src={src} alt="" style={{ maxWidth: 100, maxHeight: 60 }} />
-      ),
+      render: (src: string) => <img src={src} alt="" style={{ maxWidth: 100, maxHeight: 60 }} />,
     },
     { title: '地址', dataIndex: 'src', key: 'src', ellipsis: true },
   ];
@@ -123,18 +130,38 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
       <Tabs activeKey={activeTab} onChange={setActiveTab}>
         <TabPane tab={intl.formatMessage({ id: 'pages.webScraper.resultPreview.tab.summary' })} key="summary">
           <Descriptions bordered column={4}>
-            <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.resultPreview.summary.totalPages' })}>{data.totalPages}</Descriptions.Item>
-            <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.resultPreview.summary.success' })}>{data.successCount}</Descriptions.Item>
-            <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.resultPreview.summary.failed' })}>{data.failedCount}</Descriptions.Item>
-            <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.resultPreview.summary.duration' })}>{data.totalDuration || '-'}</Descriptions.Item>
+            <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.resultPreview.summary.totalPages' })}>
+              {data.totalPages}
+            </Descriptions.Item>
+            <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.resultPreview.summary.success' })}>
+              {data.successCount}
+            </Descriptions.Item>
+            <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.resultPreview.summary.failed' })}>
+              {data.failedCount}
+            </Descriptions.Item>
+            <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.resultPreview.summary.duration' })}>
+              {data.totalDuration || '-'}
+            </Descriptions.Item>
             {(data.filteredCount !== undefined || data.matchedCount !== undefined) && (
               <>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.resultPreview.summary.filtered' })}>{data.filteredCount ?? 0}</Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.resultPreview.summary.matched' })}>
-                  <Text type="success" strong>{data.matchedCount ?? 0}</Text>
+                <Descriptions.Item
+                  label={intl.formatMessage({ id: 'pages.webScraper.resultPreview.summary.filtered' })}
+                >
+                  {data.filteredCount ?? 0}
                 </Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.resultPreview.summary.unmatched' })}>{data.filteredCount! - data.matchedCount!}</Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.resultPreview.summary.matchRate' })}>
+                <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.resultPreview.summary.matched' })}>
+                  <Text type="success" strong>
+                    {data.matchedCount ?? 0}
+                  </Text>
+                </Descriptions.Item>
+                <Descriptions.Item
+                  label={intl.formatMessage({ id: 'pages.webScraper.resultPreview.summary.unmatched' })}
+                >
+                  {data.filteredCount! - data.matchedCount!}
+                </Descriptions.Item>
+                <Descriptions.Item
+                  label={intl.formatMessage({ id: 'pages.webScraper.resultPreview.summary.matchRate' })}
+                >
                   {data.filteredCount! > 0 ? Math.round((data.matchedCount! / data.filteredCount!) * 100) : 0}%
                 </Descriptions.Item>
               </>
@@ -142,7 +169,10 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
           </Descriptions>
         </TabPane>
 
-        <TabPane tab={`${intl.formatMessage({ id: 'pages.webScraper.resultPreview.tab.pages' })} (${data.pages?.length || 0})`} key="pages">
+        <TabPane
+          tab={`${intl.formatMessage({ id: 'pages.webScraper.resultPreview.tab.pages' })} (${data.pages?.length || 0})`}
+          key="pages"
+        >
           <Table
             dataSource={data.pages || []}
             columns={pageColumns}
@@ -152,7 +182,10 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
           />
         </TabPane>
 
-        <TabPane tab={`${intl.formatMessage({ id: 'pages.webScraper.resultPreview.tab.links' })} (${(data.pages || []).reduce((acc, p) => acc + (p.links?.length || 0), 0)})`} key="links">
+        <TabPane
+          tab={`${intl.formatMessage({ id: 'pages.webScraper.resultPreview.tab.links' })} (${(data.pages || []).reduce((acc, p) => acc + (p.links?.length || 0), 0)})`}
+          key="links"
+        >
           <Table
             dataSource={(data.pages || []).flatMap((p) => (p.links || []).map((l) => ({ url: l })))}
             columns={linkColumns}
@@ -162,7 +195,10 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
           />
         </TabPane>
 
-        <TabPane tab={`${intl.formatMessage({ id: 'pages.webScraper.resultPreview.tab.images' })} (${(data.pages || []).reduce((acc, p) => acc + (p.images?.length || 0), 0)})`} key="images">
+        <TabPane
+          tab={`${intl.formatMessage({ id: 'pages.webScraper.resultPreview.tab.images' })} (${(data.pages || []).reduce((acc, p) => acc + (p.images?.length || 0), 0)})`}
+          key="images"
+        >
           <Table
             dataSource={(data.pages || []).flatMap((p) => (p.images || []).map((src) => ({ src })))}
             columns={imageColumns}
@@ -173,11 +209,19 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
         </TabPane>
 
         {(data.matchedCount ?? 0) > 0 && (
-          <TabPane tab={`${intl.formatMessage({ id: 'pages.webScraper.resultPreview.tab.matched' })} (${data.matchedCount})`} key="matched">
+          <TabPane
+            tab={`${intl.formatMessage({ id: 'pages.webScraper.resultPreview.tab.matched' })} (${data.matchedCount})`}
+            key="matched"
+          >
             <Table
               dataSource={(data.pages || []).filter((p) => p.isFiltered && p.isMatched)}
               columns={[
-                { title: intl.formatMessage({ id: 'pages.webScraper.resultPreview.col.level' }), dataIndex: 'level', key: 'level', width: 60 },
+                {
+                  title: intl.formatMessage({ id: 'pages.webScraper.resultPreview.col.level' }),
+                  dataIndex: 'level',
+                  key: 'level',
+                  width: 60,
+                },
                 {
                   title: intl.formatMessage({ id: 'pages.webScraper.resultPreview.col.url' }),
                   dataIndex: 'url',
@@ -241,13 +285,19 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
                   {selectedPage.url}
                 </a>
               </Descriptions.Item>
-              <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.resultPreview.detail.level' })}>{selectedPage.level}</Descriptions.Item>
+              <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.resultPreview.detail.level' })}>
+                {selectedPage.level}
+              </Descriptions.Item>
               <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.resultPreview.detail.status' })}>
                 <Tag color={selectedPage.success ? 'success' : 'error'}>
-                  {selectedPage.success ? intl.formatMessage({ id: 'pages.webScraper.resultPreview.status.success' }) : intl.formatMessage({ id: 'pages.webScraper.resultPreview.status.failed' })}
+                  {selectedPage.success
+                    ? intl.formatMessage({ id: 'pages.webScraper.resultPreview.status.success' })
+                    : intl.formatMessage({ id: 'pages.webScraper.resultPreview.status.failed' })}
                 </Tag>
               </Descriptions.Item>
-              <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.resultPreview.detail.title' })}>{selectedPage.title || '-'}</Descriptions.Item>
+              <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.resultPreview.detail.title' })}>
+                {selectedPage.title || '-'}
+              </Descriptions.Item>
             </Descriptions>
 
             {selectedPage.title && (
@@ -261,20 +311,32 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
                 <Space direction="vertical" style={{ width: '100%' }}>
                   <Space>
                     <Tag color={selectedPage.isMatched ? 'green' : 'default'}>
-                      {selectedPage.isMatched ? intl.formatMessage({ id: 'pages.webScraper.resultPreview.match.matched' }) : intl.formatMessage({ id: 'pages.webScraper.resultPreview.match.unmatched' })}
+                      {selectedPage.isMatched
+                        ? intl.formatMessage({ id: 'pages.webScraper.resultPreview.match.matched' })
+                        : intl.formatMessage({ id: 'pages.webScraper.resultPreview.match.unmatched' })}
                     </Tag>
-                    <Text>{intl.formatMessage({ id: 'pages.webScraper.resultPreview.col.relevance' })}: {selectedPage.relevanceScore ?? 0}%</Text>
+                    <Text>
+                      {intl.formatMessage({ id: 'pages.webScraper.resultPreview.col.relevance' })}:{' '}
+                      {selectedPage.relevanceScore ?? 0}%
+                    </Text>
                   </Space>
-                  {selectedPage.matchReason && (
-                    <Text type="secondary">{selectedPage.matchReason}</Text>
-                  )}
+                  {selectedPage.matchReason && <Text type="secondary">{selectedPage.matchReason}</Text>}
                 </Space>
               </Card>
             )}
 
             {selectedPage.content && (
-              <Card title={intl.formatMessage({ id: 'pages.webScraper.resultPreview.detail.contentPreview' })} size="small">
-                <Paragraph ellipsis={{ rows: 10, expandable: true, symbol: intl.formatMessage({ id: 'pages.webScraper.resultPreview.expand' }) }}>
+              <Card
+                title={intl.formatMessage({ id: 'pages.webScraper.resultPreview.detail.contentPreview' })}
+                size="small"
+              >
+                <Paragraph
+                  ellipsis={{
+                    rows: 10,
+                    expandable: true,
+                    symbol: intl.formatMessage({ id: 'pages.webScraper.resultPreview.expand' }),
+                  }}
+                >
                   {selectedPage.content}
                 </Paragraph>
               </Card>
@@ -297,7 +359,10 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
             )}
 
             {(selectedPage.links?.length || 0) > 0 && (
-              <Card title={`${intl.formatMessage({ id: 'pages.webScraper.resultPreview.detail.links' })} (${selectedPage.links.length})`} size="small">
+              <Card
+                title={`${intl.formatMessage({ id: 'pages.webScraper.resultPreview.detail.links' })} (${selectedPage.links.length})`}
+                size="small"
+              >
                 <Space direction="vertical" style={{ width: '100%' }}>
                   {selectedPage.links.slice(0, 20).map((link, i) => (
                     <a key={i} href={link} target="_blank" rel="noopener noreferrer">
@@ -305,7 +370,12 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
                     </a>
                   ))}
                   {selectedPage.links.length > 20 && (
-                    <Text type="secondary">{intl.formatMessage({ id: 'pages.webScraper.resultPreview.detail.moreLinks' }, { count: selectedPage.links.length - 20 })}</Text>
+                    <Text type="secondary">
+                      {intl.formatMessage(
+                        { id: 'pages.webScraper.resultPreview.detail.moreLinks' },
+                        { count: selectedPage.links.length - 20 },
+                      )}
+                    </Text>
                   )}
                 </Space>
               </Card>

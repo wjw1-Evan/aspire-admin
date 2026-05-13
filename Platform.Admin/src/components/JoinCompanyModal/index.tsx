@@ -1,10 +1,10 @@
-import { PlusOutlined, SearchOutlined, CheckCircleOutlined } from '@ant-design/icons';
-import { Button, Input, Modal, Space, App as AntApp, Tag, Divider, Typography, Flex } from 'antd';
-import React, { useState, useMemo } from 'react';
+import { CheckCircleOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
-import { applyToJoinCompany, searchCompanies, leaveCompany, cancelJoinRequest } from '@/services/company';
-import { getErrorMessage } from '@/utils/getErrorMessage';
+import { App as AntApp, Button, Divider, Flex, Input, Modal, Space, Tag, Typography } from 'antd';
+import React, { useMemo, useState } from 'react';
+import { applyToJoinCompany, cancelJoinRequest, leaveCompany, searchCompanies } from '@/services/company';
 import type { CompanySearchResult } from '@/types';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 const { Text } = Typography;
 
@@ -20,17 +20,12 @@ interface JoinCompanyModalProps {
  * 加入企业申请模态框
  * 支持搜索企业和提交加入申请
  */
-export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
-  open,
-  onClose,
-  onSuccess,
-}) => {
+export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({ open, onClose, onSuccess }) => {
   const intl = useIntl();
   const { message, modal } = AntApp.useApp();
   const [keyword, setKeyword] = useState('');
   const [searchResults, setSearchResults] = useState<CompanySearchResult[]>([]);
-  const [selectedCompany, setSelectedCompany] =
-    useState<CompanySearchResult | null>(null);
+  const [selectedCompany, setSelectedCompany] = useState<CompanySearchResult | null>(null);
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
@@ -137,10 +132,7 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
   const handleLeaveCompany = async (companyId: string, companyName: string) => {
     modal.confirm({
       title: intl.formatMessage({ id: 'pages.company.join.confirmLeave' }),
-      content: intl.formatMessage(
-        { id: 'pages.company.join.leaveContent' },
-        { companyName },
-      ),
+      content: intl.formatMessage({ id: 'pages.company.join.leaveContent' }, { companyName }),
       onOk: async () => {
         try {
           const response = await leaveCompany(companyId);
@@ -197,7 +189,6 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
       }
     }
 
-
     return {
       joinedCompanies: joined,
       availableCompanies: available,
@@ -224,13 +215,7 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
               size="large"
               prefix={<SearchOutlined />}
             />
-            <Button
-              type="primary"
-              icon={<SearchOutlined />}
-              onClick={handleSearch}
-              loading={searching}
-              size="large"
-            >
+            <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch} loading={searching} size="large">
               {intl.formatMessage({ id: 'pages.company.join.search' })}
             </Button>
           </Space.Compact>
@@ -278,19 +263,21 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
                     >
                       <Flex vertical gap={4} style={{ flex: 1, minWidth: 0 }}>
                         <Space wrap>
-                          <span style={{ fontWeight: 500, color: '#595959' }}>
-                            {item.company?.name}
-                          </span>
+                          <span style={{ fontWeight: 500, color: '#595959' }}>{item.company?.name}</span>
                           {item.isMember && (
                             <Tag color="success" icon={<CheckCircleOutlined />} style={{ margin: 0 }}>
                               {intl.formatMessage({ id: 'pages.company.joined' })}
                             </Tag>
                           )}
                           {item.hasPendingRequest && !item.isMember && (
-                            <Tag color="processing" style={{ margin: 0 }}>{intl.formatMessage({ id: 'pages.company.pendingReview' })}</Tag>
+                            <Tag color="processing" style={{ margin: 0 }}>
+                              {intl.formatMessage({ id: 'pages.company.pendingReview' })}
+                            </Tag>
                           )}
                           {item.isCreator && (
-                            <Tag color="gold" style={{ margin: 0 }}>{intl.formatMessage({ id: 'pages.company.myCompany' })}</Tag>
+                            <Tag color="gold" style={{ margin: 0 }}>
+                              {intl.formatMessage({ id: 'pages.company.myCompany' })}
+                            </Tag>
                           )}
                         </Space>
                         <Space orientation="vertical" size={0}>
@@ -298,9 +285,7 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
                             {intl.formatMessage({ id: 'pages.company.join.companyCode' })}: {item.company?.code}
                           </span>
                           {item.company?.description && (
-                            <span style={{ fontSize: 12, color: '#8c8c8c' }}>
-                              {item.company?.description}
-                            </span>
+                            <span style={{ fontSize: 12, color: '#8c8c8c' }}>{item.company?.description}</span>
                           )}
                           {(item.memberCount ?? 0) > 0 && (
                             <span style={{ fontSize: 12, color: '#8c8c8c' }}>
@@ -347,9 +332,7 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
             ) : null}
 
             {/* 分隔线 */}
-            {joinedCompanies.length > 0 && availableCompanies.length > 0 && (
-              <Divider style={{ margin: 0 }} />
-            )}
+            {joinedCompanies.length > 0 && availableCompanies.length > 0 && <Divider style={{ margin: 0 }} />}
 
             {/* 可申请的企业 */}
             {availableCompanies.length > 0 ? (
@@ -364,7 +347,8 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
                   <Space>
                     <PlusOutlined style={{ color: '#1890ff' }} />
                     <Text strong style={{ color: '#1890ff' }}>
-                      {intl.formatMessage({ id: 'pages.company.join.availableCompanies' })} ({availableCompanies.length})
+                      {intl.formatMessage({ id: 'pages.company.join.availableCompanies' })} ({availableCompanies.length}
+                      )
                     </Text>
                   </Space>
                 </div>
@@ -405,9 +389,7 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
                               {intl.formatMessage({ id: 'pages.company.join.companyCode' })}: {item.company?.code}
                             </span>
                             {item.company?.description && (
-                              <span style={{ fontSize: 12, color: '#8c8c8c' }}>
-                                {item.company?.description}
-                              </span>
+                              <span style={{ fontSize: 12, color: '#8c8c8c' }}>{item.company?.description}</span>
                             )}
                             {(item.memberCount ?? 0) > 0 && (
                               <span style={{ fontSize: 12, color: '#8c8c8c' }}>
@@ -438,7 +420,9 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
         {/* 申请理由 */}
         {selectedCompany && (
           <div>
-            <div style={{ marginBottom: 8, fontWeight: 500 }}>{intl.formatMessage({ id: 'pages.company.join.reasonLabel' })}</div>
+            <div style={{ marginBottom: 8, fontWeight: 500 }}>
+              {intl.formatMessage({ id: 'pages.company.join.reasonLabel' })}
+            </div>
             <TextArea
               rows={4}
               placeholder={intl.formatMessage({ id: 'pages.company.join.reasonPlaceholder' })}

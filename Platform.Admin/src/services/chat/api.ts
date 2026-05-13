@@ -1,8 +1,7 @@
 import { request } from '@umijs/max';
 import type { ApiResponse, PagedResult } from '@/types';
-import { AI_ASSISTANT_ID } from '@/constants/ai';
-import { tokenUtils } from '@/utils/token';
 import { getApiBaseUrl } from '@/utils/request';
+import { tokenUtils } from '@/utils/token';
 
 /**
  * 聊天消息类型
@@ -102,9 +101,7 @@ export interface MessageQueryParams {
 /**
  * 获取会话列表
  */
-export async function getSessions(
-  params: SessionQueryParams = {}
-): Promise<SessionListResponse> {
+export async function getSessions(params: SessionQueryParams = {}): Promise<SessionListResponse> {
   const queryParams = new URLSearchParams();
   if (params.page) queryParams.append('page', params.page.toString());
   if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
@@ -161,9 +158,12 @@ export async function createNewAssistantSession(): Promise<ChatSession | null> {
  */
 export async function getSession(sessionId: string): Promise<ChatSession | null> {
   try {
-    const response = await request<ApiResponse<ChatSession>>(`/apiservice/api/chat/sessions/${encodeURIComponent(sessionId)}`, {
-      method: 'GET',
-    });
+    const response = await request<ApiResponse<ChatSession>>(
+      `/apiservice/api/chat/sessions/${encodeURIComponent(sessionId)}`,
+      {
+        method: 'GET',
+      },
+    );
     return response.success && response.data ? response.data : null;
   } catch (error) {
     console.error('获取会话失败:', error);
@@ -176,9 +176,7 @@ export async function getSession(sessionId: string): Promise<ChatSession | null>
  * @param messageRequest 消息请求
  * @returns 发送的消息
  */
-export async function sendMessage(
-  messageRequest: SendMessageRequest
-): Promise<ChatMessage> {
+export async function sendMessage(messageRequest: SendMessageRequest): Promise<ChatMessage> {
   const token = tokenUtils.getToken();
   if (!token) {
     throw new Error('未找到认证令牌');
@@ -206,15 +204,14 @@ export async function sendMessage(
  */
 export async function getMessages(
   sessionId: string,
-  params: MessageQueryParams = {}
+  params: MessageQueryParams = {},
 ): Promise<MessageTimelineResponse> {
   const queryParams = new URLSearchParams();
   if (params.cursor) queryParams.append('cursor', params.cursor);
   if (params.limit) queryParams.append('limit', params.limit.toString());
 
   const query = queryParams.toString();
-  const url = `/apiservice/api/chat/messages/${encodeURIComponent(sessionId)}${query ? `?${query}` : ''
-    }`;
+  const url = `/apiservice/api/chat/messages/${encodeURIComponent(sessionId)}${query ? `?${query}` : ''}`;
 
   const response = await request<ApiResponse<MessageTimelineResponse>>(url, {
     method: 'GET',
@@ -228,5 +225,3 @@ export async function getMessages(
 
   return response.data;
 }
-
-

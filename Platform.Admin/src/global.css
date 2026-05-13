@@ -108,7 +108,7 @@ ol {
   .ant-table-tbody > tr > th,
   .ant-table-tbody > tr > td {
     white-space: nowrap;
-    padding: 8px 12px !important;
+    padding: 8px 12px;
   }
 
   .ant-form-item {
@@ -116,18 +116,18 @@ ol {
   }
 
   .ant-pro-page-container-children-container {
-    padding-inline: 12px !important;
+    padding-inline: 12px;
   }
 
   .ant-card-body {
-    padding: 12px !important;
+    padding: 12px;
   }
 }
 
 /* fix mobile drawer scroll */
 body[style*="overflow: hidden"] #root,
 body.ant-scrolling-effect #root {
-  overflow: hidden !important;
+  overflow: hidden;
 }
 
 /* Workflow Designer Styles */
@@ -157,7 +157,7 @@ body.ant-scrolling-effect #root {
   color: #64748b;
   width: 32px;
   height: 32px;
-  display: flex !important;
+  display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 8px;
@@ -193,9 +193,9 @@ body.ant-scrolling-effect #root {
 .workflow-node-selected .elsa-node-wrapper {
   box-shadow:
     0 0 0 3px rgba(59, 130, 246, 0.4),
-    0 25px 50px -12px rgba(59, 130, 246, 0.25) !important;
+    0 25px 50px -12px rgba(59, 130, 246, 0.25);
   transform: translateY(-4px) scale(1.02);
-  border-color: #3b82f6 !important;
+  border-color: #3b82f6;
 }
 
 .elsa-node-wrapper {
@@ -397,9 +397,9 @@ body.ant-scrolling-effect #root {
 .node-drawer .ant-input,
 .node-drawer .ant-input-number,
 .node-drawer .ant-select-selector {
-  border-radius: 10px !important;
-  border-color: #e2e8f0 !important;
-  padding: 6px 12px !important;
+  border-radius: 10px;
+  border-color: #e2e8f0;
+  padding: 6px 12px;
 }
 
 .node-drawer .ant-input:hover,
@@ -408,6 +408,6 @@ body.ant-scrolling-effect #root {
 .node-drawer .ant-input-number:focus,
 .node-drawer .ant-select-selector:hover,
 .node-drawer .ant-select-selector:focus {
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1) !important;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }

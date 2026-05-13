@@ -27,10 +27,12 @@ export default {
   'pages.web-scraper.descriptionPlaceholder': 'Ingrese la descripción de la tarea (opcional)',
   'pages.web-scraper.titleSelector': 'Selector de título',
   'pages.web-scraper.titleSelectorPlaceholder': 'Selector CSS, ej: h1.title',
-  'pages.web-scraper.titleSelectorTooltip': 'Selector CSS para extraer el título de la página, dejar vacío para usar la etiqueta <title>',
+  'pages.web-scraper.titleSelectorTooltip':
+    'Selector CSS para extraer el título de la página, dejar vacío para usar la etiqueta <title>',
   'pages.web-scraper.contentSelector': 'Selector de contenido',
   'pages.web-scraper.contentSelectorPlaceholder': 'Selector CSS, ej: article.content',
-  'pages.web-scraper.contentSelectorTooltip': 'Selector CSS para extraer el contenido principal, dejar vacío para usar la etiqueta <body>',
+  'pages.web-scraper.contentSelectorTooltip':
+    'Selector CSS para extraer el contenido principal, dejar vacío para usar la etiqueta <body>',
   'pages.web-scraper.crawlDepth': 'Profundidad de rastreo',
   'pages.web-scraper.maxPagesPerLevel': 'Máximo de páginas por nivel',
   'pages.web-scraper.crawlMode': 'Modo de rastreo',
@@ -40,7 +42,8 @@ export default {
   'pages.web-scraper.deduplicate': 'Deduplicar URLs',
   'pages.web-scraper.scheduleCron': 'Expresión de programación',
   'pages.web-scraper.scheduleCronPlaceholder': '0 */10 * * * *',
-  'pages.web-scraper.scheduleCronTooltip': '<p>Ejemplos comunes:</p><ul><li>Cada 10 minutos: <code>*/10 * * * *</code></li><li>Cada hora: <code>0 * * * *</code></li><li>Cada día a medianoche: <code>0 0 * * *</code></li><li>Cada lunes: <code>0 0 * * 1</code></li></ul>',
+  'pages.web-scraper.scheduleCronTooltip':
+    '<p>Ejemplos comunes:</p><ul><li>Cada 10 minutos: <code>*/10 * * * *</code></li><li>Cada hora: <code>0 * * * *</code></li><li>Cada día a medianoche: <code>0 0 * * *</code></li><li>Cada lunes: <code>0 0 * * 1</code></li></ul>',
   'pages.web-scraper.mode.single': 'Solo página actual',
   'pages.web-scraper.mode.depth': 'Profundidad primero',
   'pages.web-scraper.mode.breadth': 'Anchura primero',

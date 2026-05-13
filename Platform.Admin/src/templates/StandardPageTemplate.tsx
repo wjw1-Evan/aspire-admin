@@ -1,13 +1,15 @@
-import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import { useIntl, request } from '@umijs/max';
-import { Button, Tag, Space, Grid, App, Modal, Spin, Input, Popconfirm, Drawer } from 'antd';
+import { request, useIntl } from '@umijs/max';
+import { App, Button, Drawer, Grid, Input, Popconfirm, Space, Spin, Tag } from 'antd';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 const { useBreakpoint } = Grid;
+
+import { DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { ProCard } from '@ant-design/pro-components/es/card';
 import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import { ModalForm, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-components/es/form';
+import { ModalForm, ProFormText } from '@ant-design/pro-components/es/form';
 import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components/es/table';
-import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
+import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult } from '@/types';
 
@@ -48,18 +50,13 @@ interface FormValues {
  * 根据实际业务修改此对象
  */
 const api = {
-  list: (params: any) =>
-    request<ApiResponse<PagedResult<Entity>>>('/apiservice/api/xxx/list', { params }),
-  get: (id: string) =>
-    request<ApiResponse<Entity>>(`/apiservice/api/xxx/${id}`),
-  create: (data: Partial<FormValues>) =>
-    request<ApiResponse<Entity>>('/apiservice/api/xxx', { method: 'POST', data }),
+  list: (params: any) => request<ApiResponse<PagedResult<Entity>>>('/apiservice/api/xxx/list', { params }),
+  get: (id: string) => request<ApiResponse<Entity>>(`/apiservice/api/xxx/${id}`),
+  create: (data: Partial<FormValues>) => request<ApiResponse<Entity>>('/apiservice/api/xxx', { method: 'POST', data }),
   update: (id: string, data: Partial<FormValues>) =>
     request<ApiResponse<Entity>>(`/apiservice/api/xxx/${id}`, { method: 'PUT', data }),
-  delete: (id: string) =>
-    request<ApiResponse<void>>(`/apiservice/api/xxx/${id}`, { method: 'DELETE' }),
-  statistics: () =>
-    request<ApiResponse<Statistics>>('/apiservice/api/xxx/statistics'),
+  delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/xxx/${id}`, { method: 'DELETE' }),
+  statistics: () => request<ApiResponse<Statistics>>('/apiservice/api/xxx/statistics'),
 };
 
 // ==================== Detail Component ====================
@@ -75,13 +72,16 @@ const DetailContent: React.FC<{ id: string; isMobile: boolean }> = ({ id, isMobi
   useEffect(() => {
     if (id) {
       setLoading(true);
-      api.get(id).then(r => {
-        if (r.success && r.data) {
-          setData(r.data);
-        }
-      }).finally(() => {
-        setLoading(false);
-      });
+      api
+        .get(id)
+        .then((r) => {
+          if (r.success && r.data) {
+            setData(r.data);
+          }
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     }
   }, [id]);
 
@@ -128,11 +128,11 @@ const XxxManagement: React.FC = () => {
     search: '',
   });
 
-  const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
+  const set = useCallback((partial: Partial<typeof state>) => setState((prev) => ({ ...prev, ...partial })), []);
 
   // ==================== Load Statistics ====================
   const loadStatistics = useCallback(() => {
-    api.statistics().then(r => {
+    api.statistics().then((r) => {
       if (r.success && r.data) {
         set({ statistics: r.data });
       }
@@ -144,71 +144,70 @@ const XxxManagement: React.FC = () => {
   }, [loadStatistics]);
 
   // ==================== Columns ====================
-  const columns: ProColumns<Entity>[] = useMemo(() => [
-    {
-      title: intl.formatMessage({ id: 'pages.xxx.table.name' }),
-      dataIndex: 'name',
-      key: 'name',
-      sorter: true,
-      render: (_, r) => (
-        <a onClick={() => set({ viewingId: r.id, detailVisible: true })}>{r.name}</a>
-      ),
-    },
-    {
-      title: intl.formatMessage({ id: 'pages.xxx.table.createdAt' }),
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      sorter: true,
-      valueType: 'dateTime',
-      render: (_, r) => dayjs(r.createdAt).format('YYYY-MM-DD HH:mm'),
-    },
-    {
-      title: intl.formatMessage({ id: 'pages.table.action' }),
-      key: 'action',
-      valueType: 'option',
-      fixed: 'right',
-      width: 180,
-      render: (_, r) => (
-        <Space size={4}>
-          <Button
-            type="link"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => set({ editingEntity: r, formVisible: true })}
-          >
-            {intl.formatMessage({ id: 'pages.action.edit' })}
-          </Button>
-          <Popconfirm
-            title={intl.formatMessage({ id: 'pages.xxx.message.confirmDelete' })}
-            onConfirm={async () => {
-              const res = await api.delete(r.id);
-              if (res.success) {
-                message.success(intl.formatMessage({ id: 'pages.xxx.message.deleteSuccess' }));
-                actionRef.current?.reload();
-                loadStatistics();
-              }
-            }}
-          >
-            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-              {intl.formatMessage({ id: 'pages.action.delete' })}
+  const columns: ProColumns<Entity>[] = useMemo(
+    () => [
+      {
+        title: intl.formatMessage({ id: 'pages.xxx.table.name' }),
+        dataIndex: 'name',
+        key: 'name',
+        sorter: true,
+        render: (_, r) => <a onClick={() => set({ viewingId: r.id, detailVisible: true })}>{r.name}</a>,
+      },
+      {
+        title: intl.formatMessage({ id: 'pages.xxx.table.createdAt' }),
+        dataIndex: 'createdAt',
+        key: 'createdAt',
+        sorter: true,
+        valueType: 'dateTime',
+        render: (_, r) => dayjs(r.createdAt).format('YYYY-MM-DD HH:mm'),
+      },
+      {
+        title: intl.formatMessage({ id: 'pages.table.action' }),
+        key: 'action',
+        valueType: 'option',
+        fixed: 'right',
+        width: 180,
+        render: (_, r) => (
+          <Space size={4}>
+            <Button
+              type="link"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => set({ editingEntity: r, formVisible: true })}
+            >
+              {intl.formatMessage({ id: 'pages.action.edit' })}
             </Button>
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ], [intl, message, set, loadStatistics]);
+            <Popconfirm
+              title={intl.formatMessage({ id: 'pages.xxx.message.confirmDelete' })}
+              onConfirm={async () => {
+                const res = await api.delete(r.id);
+                if (res.success) {
+                  message.success(intl.formatMessage({ id: 'pages.xxx.message.deleteSuccess' }));
+                  actionRef.current?.reload();
+                  loadStatistics();
+                }
+              }}
+            >
+              <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+                {intl.formatMessage({ id: 'pages.action.delete' })}
+              </Button>
+            </Popconfirm>
+          </Space>
+        ),
+      },
+    ],
+    [intl, message, set, loadStatistics],
+  );
 
   // ==================== Handle Finish ====================
   const handleFinish = async (values: FormValues) => {
-    const res = state.editingEntity
-      ? await api.update(state.editingEntity.id, values)
-      : await api.create(values);
+    const res = state.editingEntity ? await api.update(state.editingEntity.id, values) : await api.create(values);
 
     if (res.success) {
       message.success(
         intl.formatMessage({
           id: state.editingEntity ? 'pages.xxx.message.updateSuccess' : 'pages.xxx.message.createSuccess',
-        })
+        }),
       );
       set({ formVisible: false, editingEntity: null });
       actionRef.current?.reload();
@@ -276,7 +275,11 @@ const XxxManagement: React.FC = () => {
       {/* ModalForm 表单 */}
       <ModalForm
         key={state.editingEntity?.id || 'create'}
-        title={state.editingEntity ? intl.formatMessage({ id: 'pages.xxx.form.edit' }) : intl.formatMessage({ id: 'pages.xxx.form.create' })}
+        title={
+          state.editingEntity
+            ? intl.formatMessage({ id: 'pages.xxx.form.edit' })
+            : intl.formatMessage({ id: 'pages.xxx.form.create' })
+        }
         open={state.formVisible}
         onOpenChange={(open) => {
           if (!open) {

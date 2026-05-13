@@ -8,7 +8,8 @@ export default {
   'pages.button.query': 'Cari',
   'pages.button.refresh': 'Muat Ulang',
   'pages.button.reset': 'Reset',
-  'pages.message.registerSuccess': 'Registrasi berhasil! Perusahaan pribadi Anda telah dibuat secara otomatis. Mengalihkan...',
+  'pages.message.registerSuccess':
+    'Registrasi berhasil! Perusahaan pribadi Anda telah dibuat secara otomatis. Mengalihkan...',
   'pages.searchTable.batchApproval': 'Persetujuan batch',
   'pages.searchTable.batchDeletion': 'Penghapusan batch',
   'pages.searchTable.chosen': 'Terpilih',

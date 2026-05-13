@@ -1,11 +1,36 @@
 import { request } from '@umijs/max';
 import type { ApiResponse } from '@/types';
 
-export interface MenuItem { id: string; name: string; title: string; path?: string; icon?: string; sortOrder?: number; parentId?: string; type?: string; children?: MenuItem[]; }
-export interface MenuTreeNode { id?: string; name?: string; title?: string; children?: MenuTreeNode[]; }
-export interface CreateMenuRequest { name: string; title: string; path?: string; icon?: string; sortOrder?: number; parentId?: string; type?: string; }
-export interface UpdateMenuRequest extends Partial<CreateMenuRequest> { }
-export interface ReorderMenusRequest { items: { id: string; parentId?: string; sortOrder: number }[]; }
+export interface MenuItem {
+  id: string;
+  name: string;
+  title: string;
+  path?: string;
+  icon?: string;
+  sortOrder?: number;
+  parentId?: string;
+  type?: string;
+  children?: MenuItem[];
+}
+export interface MenuTreeNode {
+  id?: string;
+  name?: string;
+  title?: string;
+  children?: MenuTreeNode[];
+}
+export interface CreateMenuRequest {
+  name: string;
+  title: string;
+  path?: string;
+  icon?: string;
+  sortOrder?: number;
+  parentId?: string;
+  type?: string;
+}
+export interface UpdateMenuRequest extends Partial<CreateMenuRequest> {}
+export interface ReorderMenusRequest {
+  items: { id: string; parentId?: string; sortOrder: number }[];
+}
 
 /**
  * 获取所有菜单
@@ -61,11 +86,7 @@ export async function createMenu(data: CreateMenuRequest, options?: Record<strin
 /**
  * 更新菜单
  */
-export async function updateMenu(
-  id: string,
-  data: UpdateMenuRequest,
-  options?: Record<string, any>,
-) {
+export async function updateMenu(id: string, data: UpdateMenuRequest, options?: Record<string, any>) {
   return request<ApiResponse<boolean>>(`/apiservice/api/menu/${id}`, {
     method: 'PUT',
     data,
@@ -94,4 +115,3 @@ export async function reorderMenus(data: ReorderMenusRequest, options?: Record<s
     ...(options || {}),
   });
 }
-

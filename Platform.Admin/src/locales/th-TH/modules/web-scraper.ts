@@ -103,7 +103,8 @@ export default {
   'pages.webScraper.deduplicate': 'ลบ URL ที่ซ้ำกัน',
   'pages.webScraper.scheduleCron': 'นิพจน์กำหนดเวลา',
   'pages.webScraper.scheduleCronPlaceholder': '0 */10 * * * *',
-  'pages.webScraper.scheduleCronTooltip': '<p>ตัวอย่างทั่วไป:</p><ul><li>ทุก 10 นาที: <code>*/10 * * * *</code></li><li>ทุกชั่วโมง: <code>0 * * * *</code></li><li>ทุกวันเที่ยงคืน: <code>0 0 * * *</code></li><li>ทุกวันจันทร์: <code>0 0 * * 1</code></li></ul>',
+  'pages.webScraper.scheduleCronTooltip':
+    '<p>ตัวอย่างทั่วไป:</p><ul><li>ทุก 10 นาที: <code>*/10 * * * *</code></li><li>ทุกชั่วโมง: <code>0 * * * *</code></li><li>ทุกวันเที่ยงคืน: <code>0 0 * * *</code></li><li>ทุกวันจันทร์: <code>0 0 * * 1</code></li></ul>',
   'pages.webScraper.mode.single': 'เฉพาะหน้าปัจจุบัน',
   'pages.webScraper.mode.depth': 'ความลึกก่อน',
   'pages.webScraper.mode.breadth': 'ความกว้างก่อน',

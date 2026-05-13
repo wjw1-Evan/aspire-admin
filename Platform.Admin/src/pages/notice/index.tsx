@@ -1,27 +1,16 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { useIntl } from '@umijs/max';
 import {
-  Card,
-  Tag,
-  Typography,
-  Button,
-  Empty,
-  Badge,
-  Space,
-  Divider,
-  Skeleton,
-  message,
-} from 'antd';
-import {
-  NotificationOutlined,
   CheckCircleOutlined,
   InfoCircleOutlined,
-  WarningOutlined,
+  NotificationOutlined,
   ReloadOutlined,
+  WarningOutlined,
 } from '@ant-design/icons';
+import { PageContainer } from '@ant-design/pro-components/es/layout';
+import { useIntl } from '@umijs/max';
+import { Badge, Button, Card, Divider, Empty, message, Skeleton, Space, Tag, Typography } from 'antd';
 import dayjs from 'dayjs';
-import { getNotifications, markAllAsRead, AppNotification } from '@/services/notification/api';
+import React, { useCallback, useEffect, useState } from 'react';
+import { AppNotification, getNotifications, markAllAsRead } from '@/services/notification/api';
 
 const { Text, Title } = Typography;
 
@@ -97,12 +86,7 @@ const NoticePage: React.FC = () => {
         extra={
           <Space>
             {unreadCount > 0 && (
-              <Button
-                type="primary"
-                icon={<CheckCircleOutlined />}
-                onClick={handleMarkAllAsRead}
-                loading={markingAll}
-              >
+              <Button type="primary" icon={<CheckCircleOutlined />} onClick={handleMarkAllAsRead} loading={markingAll}>
                 {intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAllAsRead' })}
               </Button>
             )}
@@ -134,9 +118,7 @@ const NoticePage: React.FC = () => {
                   <div style={{ flex: 1 }}>
                     <Space>
                       <Title level={5} style={{ margin: 0 }}>
-                        {isUnread && (
-                          <Badge status="processing" style={{ marginRight: 8 }} />
-                        )}
+                        {isUnread && <Badge status="processing" style={{ marginRight: 8 }} />}
                         {item.title}
                       </Title>
                       <Tag color={tagInfo.color}>{tagInfo.label}</Tag>
@@ -145,9 +127,7 @@ const NoticePage: React.FC = () => {
                     <Text type="secondary">{item.content}</Text>
                     <div style={{ marginTop: 8 }}>
                       <Text type="secondary" style={{ fontSize: 12 }}>
-                        {item.createdAt
-                          ? dayjs(item.createdAt).format('YYYY-MM-DD HH:mm:ss')
-                          : ''}
+                        {item.createdAt ? dayjs(item.createdAt).format('YYYY-MM-DD HH:mm:ss') : ''}
                       </Text>
                     </div>
                   </div>
@@ -156,10 +136,7 @@ const NoticePage: React.FC = () => {
             );
           })
         ) : (
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={intl.formatMessage({ id: 'pages.notice.empty' })}
-          />
+          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={intl.formatMessage({ id: 'pages.notice.empty' })} />
         )}
       </Card>
     </PageContainer>

@@ -62,10 +62,7 @@ declare module 'react-grid-layout' {
   export const ResponsiveGridLayout: React.FC<ResponsiveGridLayoutProps>;
   export const GridLayout: React.FC<GridLayoutProps>;
 
-  export function useContainerWidth(options?: {
-    measureBeforeMount?: boolean;
-    initialWidth?: number;
-  }): {
+  export function useContainerWidth(options?: { measureBeforeMount?: boolean; initialWidth?: number }): {
     width: number;
     mounted: boolean;
     containerRef: React.RefObject<HTMLDivElement>;

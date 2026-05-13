@@ -4,8 +4,8 @@ export interface LocationService {
 }
 
 const locationService: LocationService = {
-  startPeriodicReporting: async () => { },
-  stopPeriodicReporting: () => { },
+  startPeriodicReporting: async () => {},
+  stopPeriodicReporting: () => {},
 };
 
 export default locationService;

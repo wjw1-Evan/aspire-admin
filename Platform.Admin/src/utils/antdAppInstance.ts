@@ -4,7 +4,7 @@
  * 解决静态方法无法消费动态主题的问题
  */
 
-import { App, message, notification } from 'antd';
+import { message, notification } from 'antd';
 import type { useAppProps } from 'antd/es/app/context';
 
 let cachedMessage: any = null;

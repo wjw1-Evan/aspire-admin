@@ -1,5 +1,4 @@
 import { Badge } from 'antd';
-import React from 'react';
 
 export function getMethodColor(method?: string): string {
   const colors: Record<string, string> = {

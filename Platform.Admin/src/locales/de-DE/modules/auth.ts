@@ -74,7 +74,8 @@ export default {
   'pages.login.error.CAPTCHA_REQUIRED': 'Bitte Bild-CAPTCHA eingeben',
   'pages.login.error.ACCOUNT_DISABLED': 'Konto wurde deaktiviert',
   'pages.login.error.ACCOUNT_LOCKED': 'Konto wurde gesperrt',
-  'pages.login.error.CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN': 'Aus Sicherheitsgründen ist CAPTCHA für nachfolgende Logins erforderlich',
+  'pages.login.error.CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN':
+    'Aus Sicherheitsgründen ist CAPTCHA für nachfolgende Logins erforderlich',
   'pages.login.error.INVALID_CREDENTIALS': 'Ungültiger Benutzername oder Passwort',
   'pages.login.error.LOGIN_FAILED': 'Login fehlgeschlagen',
   'pages.login.error.PASSWORD_EXPIRED': 'Passwort ist abgelaufen',

@@ -52,15 +52,9 @@ export function getLocaleDisplayName(locale: string): string {
 /**
  * 使用 OpenAI API 翻译文本
  */
-export async function translateWithOpenAI(
-  text: string,
-  targetLocale: string,
-  sourceText?: string
-): Promise<string> {
+export async function translateWithOpenAI(text: string, targetLocale: string, sourceText?: string): Promise<string> {
   const targetName = getLocaleDisplayName(targetLocale);
-  const prompt = TRANSLATION_PROMPT
-    .replace('{targetLocale}', targetName)
-    .replace('{sourceText}', sourceText || text);
+  const _prompt = TRANSLATION_PROMPT.replace('{targetLocale}', targetName).replace('{sourceText}', sourceText || text);
 
   try {
     const token = localStorage.getItem('auth_token');
@@ -68,7 +62,7 @@ export async function translateWithOpenAI(
       'Content-Type': 'application/json',
     };
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      headers.Authorization = `Bearer ${token}`;
     }
 
     const response = await fetch('/apiservice/api/translation/translate', {
@@ -100,11 +94,7 @@ export async function translateWithOpenAI(
 /**
  * 翻译单个文本
  */
-export async function translateText(
-  text: string,
-  targetLocale: string,
-  sourceText?: string
-): Promise<string> {
+export async function translateText(text: string, targetLocale: string, sourceText?: string): Promise<string> {
   if (!text || text.trim() === '') {
     return text;
   }
@@ -117,7 +107,7 @@ export async function translateText(
  */
 export async function translateBatch(
   texts: Array<{ id: string; text: string }>,
-  targetLocale: string
+  targetLocale: string,
 ): Promise<Map<string, string>> {
   const results = new Map<string, string>();
 

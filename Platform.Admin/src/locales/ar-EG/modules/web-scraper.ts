@@ -41,7 +41,8 @@ export default {
   'pages.web-scraper.deduplicate': 'إزالة الروابط المكررة',
   'pages.web-scraper.scheduleCron': 'تعبير الجدولة',
   'pages.web-scraper.scheduleCronPlaceholder': '0 */10 * * * *',
-  'pages.web-scraper.scheduleCronTooltip': '<p>أمثلة شائعة:</p><ul><li>كل 10 دقائق: <code>*/10 * * * *</code></li><li>كل ساعة: <code>0 * * * *</code></li><li>يومياً عند منتصف الليل: <code>0 0 * * *</code></li><li>كل يوم إثنين: <code>0 0 * * 1</code></li></ul>',
+  'pages.web-scraper.scheduleCronTooltip':
+    '<p>أمثلة شائعة:</p><ul><li>كل 10 دقائق: <code>*/10 * * * *</code></li><li>كل ساعة: <code>0 * * * *</code></li><li>يومياً عند منتصف الليل: <code>0 0 * * *</code></li><li>كل يوم إثنين: <code>0 0 * * 1</code></li></ul>',
   'pages.web-scraper.mode.single': 'الصفحة الحالية فقط',
   'pages.web-scraper.mode.depth': 'العمق أولاً',
   'pages.web-scraper.mode.breadth': 'الاتساع أولاً',

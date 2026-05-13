@@ -1,12 +1,12 @@
-import React, { useState, useRef } from 'react';
+import { ApiOutlined, DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ProTable, ProColumns, ActionType } from '@ant-design/pro-components/es/table';
-import { Button, Space, Tag, App, Input, Drawer } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, ApiOutlined, SearchOutlined } from '@ant-design/icons';
-import { getWorkflowList, deleteWorkflow, type WorkflowDefinition } from '@/services/workflow/api';
-import WorkflowDesignerModal from './components/WorkflowDesignerModal';
+import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useIntl } from '@umijs/max';
+import { App, Button, Drawer, Input, Space, Tag } from 'antd';
 import dayjs from 'dayjs';
+import React, { useRef, useState } from 'react';
+import { deleteWorkflow, getWorkflowList, type WorkflowDefinition } from '@/services/workflow/api';
+import WorkflowDesignerModal from './components/WorkflowDesignerModal';
 
 const WorkflowManagement: React.FC = () => {
   const intl = useIntl();
@@ -19,41 +19,92 @@ const WorkflowManagement: React.FC = () => {
 
   const columns: ProColumns<WorkflowDefinition>[] = [
     {
-      title: intl.formatMessage({ id: 'pages.workflow.table.name' }), dataIndex: 'name', ellipsis: true, sorter: true,
+      title: intl.formatMessage({ id: 'pages.workflow.table.name' }),
+      dataIndex: 'name',
+      ellipsis: true,
+      sorter: true,
       render: (dom, record) => (
-        <Button type="link" style={{ padding: 0 }} onClick={() => { setEditingWorkflow(record); setPreviewMode(true); setDesignerVisible(true); }}>{dom}</Button>
+        <Button
+          type="link"
+          style={{ padding: 0 }}
+          onClick={() => {
+            setEditingWorkflow(record);
+            setPreviewMode(true);
+            setDesignerVisible(true);
+          }}
+        >
+          {dom}
+        </Button>
       ),
     },
-    { title: intl.formatMessage({ id: 'pages.workflow.table.category' }), dataIndex: 'category', ellipsis: true, sorter: true },
-    { title: intl.formatMessage({ id: 'pages.workflow.table.version' }), dataIndex: ['version', 'major'], render: (_, record) => `v${record.version.major}.${record.version.minor}` },
     {
-      title: intl.formatMessage({ id: 'pages.workflow.table.status' }), dataIndex: 'isActive', sorter: true,
+      title: intl.formatMessage({ id: 'pages.workflow.table.category' }),
+      dataIndex: 'category',
+      ellipsis: true,
+      sorter: true,
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.workflow.table.version' }),
+      dataIndex: ['version', 'major'],
+      render: (_, record) => `v${record.version.major}.${record.version.minor}`,
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.workflow.table.status' }),
+      dataIndex: 'isActive',
+      sorter: true,
       render: (_, record) => (
         <Tag color={record.isActive ? 'green' : 'default'}>
-          {record.isActive ? intl.formatMessage({ id: 'pages.workflow.status.enabled' }) : intl.formatMessage({ id: 'pages.workflow.status.disabled' })}
+          {record.isActive
+            ? intl.formatMessage({ id: 'pages.workflow.status.enabled' })
+            : intl.formatMessage({ id: 'pages.workflow.status.disabled' })}
         </Tag>
       ),
     },
-    { title: intl.formatMessage({ id: 'pages.workflow.table.createdAt' }), dataIndex: 'createdAt', sorter: true, render: (dom) => dom ? dayjs(dom as string).format('YYYY-MM-DD HH:mm:ss') : '' },
     {
-      title: intl.formatMessage({ id: 'pages.workflow.table.action' }), width: 150,
+      title: intl.formatMessage({ id: 'pages.workflow.table.createdAt' }),
+      dataIndex: 'createdAt',
+      sorter: true,
+      render: (dom) => (dom ? dayjs(dom as string).format('YYYY-MM-DD HH:mm:ss') : ''),
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.workflow.table.action' }),
+      width: 150,
       render: (_, record) => (
         <Space>
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { setEditingWorkflow(record); setDesignerVisible(true); }}>
+          <Button
+            type="link"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => {
+              setEditingWorkflow(record);
+              setDesignerVisible(true);
+            }}
+          >
             {intl.formatMessage({ id: 'pages.workflow.action.edit' })}
           </Button>
-          <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => {
-            modal.confirm({
-              title: intl.formatMessage({ id: 'pages.workflow.modal.confirmDelete' }),
-              content: intl.formatMessage({ id: 'pages.workflow.modal.confirmDeleteContent' }, { name: record.name }),
-              onOk: async () => {
-                try {
-                  const response = await deleteWorkflow(record.id!);
-                  if (response.success) { message.success(intl.formatMessage({ id: 'pages.workflow.message.deleteSuccess' })); actionRef.current?.reload(); }
-                } catch (error) { console.error('删除失败:', error); }
-              },
-            });
-          }}>
+          <Button
+            type="link"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => {
+              modal.confirm({
+                title: intl.formatMessage({ id: 'pages.workflow.modal.confirmDelete' }),
+                content: intl.formatMessage({ id: 'pages.workflow.modal.confirmDeleteContent' }, { name: record.name }),
+                onOk: async () => {
+                  try {
+                    const response = await deleteWorkflow(record.id!);
+                    if (response.success) {
+                      message.success(intl.formatMessage({ id: 'pages.workflow.message.deleteSuccess' }));
+                      actionRef.current?.reload();
+                    }
+                  } catch (error) {
+                    console.error('删除失败:', error);
+                  }
+                },
+              });
+            }}
+          >
             {intl.formatMessage({ id: 'pages.workflow.action.delete' })}
           </Button>
         </Space>
@@ -66,7 +117,10 @@ const WorkflowManagement: React.FC = () => {
       <ProTable
         headerTitle={
           <Space size={24}>
-            <Space><ApiOutlined />{intl.formatMessage({ id: 'pages.workflow.table.name' })}</Space>
+            <Space>
+              <ApiOutlined />
+              {intl.formatMessage({ id: 'pages.workflow.table.name' })}
+            </Space>
           </Space>
         }
         actionRef={actionRef}
@@ -88,20 +142,57 @@ const WorkflowManagement: React.FC = () => {
             allowClear
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            onSearch={(value) => { setSearchText(value); actionRef.current?.reload(); }}
+            onSearch={(value) => {
+              setSearchText(value);
+              actionRef.current?.reload();
+            }}
             style={{ width: 260, marginRight: 8 }}
             prefix={<SearchOutlined />}
           />,
-          <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { setEditingWorkflow(null); setPreviewMode(false); setDesignerVisible(true); }}>{intl.formatMessage({ id: 'pages.workflow.create' })}</Button>,
+          <Button
+            key="create"
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              setEditingWorkflow(null);
+              setPreviewMode(false);
+              setDesignerVisible(true);
+            }}
+          >
+            {intl.formatMessage({ id: 'pages.workflow.create' })}
+          </Button>,
         ]}
       />
-      <Drawer title={editingWorkflow ? intl.formatMessage({ id: 'pages.workflow.action.edit' }) : intl.formatMessage({ id: 'pages.workflow.create.title' })} size="large" open={designerVisible}
-        onClose={() => { setDesignerVisible(false); setEditingWorkflow(null); setPreviewMode(false); }}>
-        <WorkflowDesignerModal workflow={editingWorkflow} readOnly={previewMode} onSuccess={() => { setDesignerVisible(false); setEditingWorkflow(null); actionRef.current?.reload(); }} onCancel={() => { setDesignerVisible(false); setEditingWorkflow(null); }} />
+      <Drawer
+        title={
+          editingWorkflow
+            ? intl.formatMessage({ id: 'pages.workflow.action.edit' })
+            : intl.formatMessage({ id: 'pages.workflow.create.title' })
+        }
+        size="large"
+        open={designerVisible}
+        onClose={() => {
+          setDesignerVisible(false);
+          setEditingWorkflow(null);
+          setPreviewMode(false);
+        }}
+      >
+        <WorkflowDesignerModal
+          workflow={editingWorkflow}
+          readOnly={previewMode}
+          onSuccess={() => {
+            setDesignerVisible(false);
+            setEditingWorkflow(null);
+            actionRef.current?.reload();
+          }}
+          onCancel={() => {
+            setDesignerVisible(false);
+            setEditingWorkflow(null);
+          }}
+        />
       </Drawer>
     </PageContainer>
   );
 };
 
 export default WorkflowManagement;
-

@@ -1,26 +1,20 @@
-import React, { useRef, useState, useCallback, forwardRef } from 'react';
+import { DeleteOutlined, MessageOutlined, SearchOutlined } from '@ant-design/icons';
+import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useIntl } from '@umijs/max';
-import { Button, Tag, Space, Modal, Input } from 'antd';
-import {
-  EyeOutlined,
-  DeleteOutlined,
-  SearchOutlined,
-  MessageOutlined,
-} from '@ant-design/icons';
+import { Button, Input, Space, Tag } from 'antd';
+import dayjs from 'dayjs';
+import React, { useCallback, useRef, useState } from 'react';
 import { useMessage } from '@/hooks/useMessage';
 import { useModal } from '@/hooks/useModal';
-import { getErrorMessage } from '@/utils/getErrorMessage';
 import {
-  getChatHistory,
-  deleteChatHistory,
-  getChatHistoryDetail,
-  type ChatHistoryListItem,
   type ChatHistoryDetailResponse,
+  type ChatHistoryListItem,
+  deleteChatHistory,
+  getChatHistory,
+  getChatHistoryDetail,
 } from '@/services/xiaoke/api';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 import ChatHistoryDetail from './ChatHistoryDetail';
-import dayjs from 'dayjs';
-import { ProTable, ProColumns, ActionType } from '@ant-design/pro-components/es/table';
-
 
 const ChatHistoryManagement: React.FC = () => {
   const intl = useIntl();
@@ -31,42 +25,52 @@ const ChatHistoryManagement: React.FC = () => {
   const [detailData, setDetailData] = useState<ChatHistoryDetailResponse | null>(null);
   const [searchText, setSearchText] = useState('');
 
-  const handleViewDetail = useCallback(async (record: ChatHistoryListItem) => {
-    try {
-      const response = await getChatHistoryDetail(record.sessionId);
-      if (response.success && response.data) {
-        setDetailData(response.data);
-        setDetailVisible(true);
-      } else {
-        message.error(getErrorMessage(response, 'pages.xiaokeManagement.chatHistory.message.getDetailFailed'));
-      }
-    } catch (error: any) {
-      message.error(error.message || intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.getDetailFailed' }));
-    }
-  }, [intl, message]);
-
-  const handleDelete = useCallback((record: ChatHistoryListItem) => {
-    confirm({
-      title: intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.modal.confirmDelete' }),
-      content: intl.formatMessage(
-        { id: 'pages.xiaokeManagement.chatHistory.modal.confirmDeleteContent' },
-        { sessionId: record.sessionId },
-      ),
-      onOk: async () => {
-        try {
-          const response = await deleteChatHistory(record.sessionId);
-          if (response.success) {
-            message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.deleteSuccess' }));
-            actionRef.current?.reload();
-          } else {
-            message.error(getErrorMessage(response, 'pages.xiaokeManagement.chatHistory.message.deleteFailed'));
-          }
-        } catch (error: any) {
-          message.error(error.message || intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.deleteFailed' }));
+  const handleViewDetail = useCallback(
+    async (record: ChatHistoryListItem) => {
+      try {
+        const response = await getChatHistoryDetail(record.sessionId);
+        if (response.success && response.data) {
+          setDetailData(response.data);
+          setDetailVisible(true);
+        } else {
+          message.error(getErrorMessage(response, 'pages.xiaokeManagement.chatHistory.message.getDetailFailed'));
         }
-      },
-    });
-  }, [intl, message, confirm]);
+      } catch (error: any) {
+        message.error(
+          error.message || intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.getDetailFailed' }),
+        );
+      }
+    },
+    [intl, message],
+  );
+
+  const handleDelete = useCallback(
+    (record: ChatHistoryListItem) => {
+      confirm({
+        title: intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.modal.confirmDelete' }),
+        content: intl.formatMessage(
+          { id: 'pages.xiaokeManagement.chatHistory.modal.confirmDeleteContent' },
+          { sessionId: record.sessionId },
+        ),
+        onOk: async () => {
+          try {
+            const response = await deleteChatHistory(record.sessionId);
+            if (response.success) {
+              message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.deleteSuccess' }));
+              actionRef.current?.reload();
+            } else {
+              message.error(getErrorMessage(response, 'pages.xiaokeManagement.chatHistory.message.deleteFailed'));
+            }
+          } catch (error: any) {
+            message.error(
+              error.message || intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.deleteFailed' }),
+            );
+          }
+        },
+      });
+    },
+    [intl, message, confirm],
+  );
 
   const handleCloseDetail = useCallback(() => {
     setDetailVisible(false);
@@ -80,11 +84,16 @@ const ChatHistoryManagement: React.FC = () => {
       key: 'topicTags',
       width: 200,
       ellipsis: true,
-      render: (dom: any, record: ChatHistoryListItem) => {
+      render: (_dom: any, record: ChatHistoryListItem) => {
         const tag = record.topicTags?.[0];
-        const content = tag && tag !== 'assistant' && tag !== 'direct'
-          ? <span style={{ fontWeight: 500 }}>{tag}</span>
-          : <span style={{ color: '#999' }}>{intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.table.defaultTitle' })}</span>;
+        const content =
+          tag && tag !== 'assistant' && tag !== 'direct' ? (
+            <span style={{ fontWeight: 500 }}>{tag}</span>
+          ) : (
+            <span style={{ color: '#999' }}>
+              {intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.table.defaultTitle' })}
+            </span>
+          );
         return <a onClick={() => handleViewDetail(record)}>{content}</a>;
       },
     },
@@ -101,12 +110,10 @@ const ChatHistoryManagement: React.FC = () => {
       dataIndex: 'participants',
       key: 'participants',
       width: 200,
-      render: (dom: any, record: ChatHistoryListItem) => (
+      render: (_dom: any, record: ChatHistoryListItem) => (
         <Space wrap>
           {(record.participants || []).map((participantId) => (
-            <Tag key={participantId}>
-              {record.participantNames?.[participantId] || participantId}
-            </Tag>
+            <Tag key={participantId}>{record.participantNames?.[participantId] || participantId}</Tag>
           ))}
         </Space>
       ),
@@ -133,8 +140,7 @@ const ChatHistoryManagement: React.FC = () => {
       key: 'lastMessageAt',
       width: 180,
       sorter: true,
-      render: (dom: any) =>
-        dom ? dayjs(dom).format('YYYY-MM-DD HH:mm:ss') : '-',
+      render: (dom: any) => (dom ? dayjs(dom).format('YYYY-MM-DD HH:mm:ss') : '-'),
     },
     {
       title: intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.table.createdAt' }),
@@ -151,13 +157,7 @@ const ChatHistoryManagement: React.FC = () => {
       fixed: 'right',
       render: (_: any, record: ChatHistoryListItem) => (
         <Space>
-          <Button
-            type="link"
-            size="small"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record)}
-          >
+          <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)}>
             {intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.table.action.delete' })}
           </Button>
         </Space>
@@ -170,7 +170,10 @@ const ChatHistoryManagement: React.FC = () => {
       <ProTable<ChatHistoryListItem>
         headerTitle={
           <Space size={24}>
-            <Space><MessageOutlined />{intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.title' })}</Space>
+            <Space>
+              <MessageOutlined />
+              {intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.title' })}
+            </Space>
           </Space>
         }
         actionRef={actionRef}
@@ -192,18 +195,17 @@ const ChatHistoryManagement: React.FC = () => {
             allowClear
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            onSearch={(value) => { setSearchText(value); actionRef.current?.reload(); }}
+            onSearch={(value) => {
+              setSearchText(value);
+              actionRef.current?.reload();
+            }}
             style={{ width: 260 }}
             prefix={<SearchOutlined />}
           />,
         ]}
       />
 
-      <ChatHistoryDetail
-        open={detailVisible}
-        detail={detailData}
-        onClose={handleCloseDetail}
-      />
+      <ChatHistoryDetail open={detailVisible} detail={detailData} onClose={handleCloseDetail} />
     </>
   );
 };

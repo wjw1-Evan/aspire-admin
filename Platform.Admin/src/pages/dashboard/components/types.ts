@@ -4,24 +4,24 @@
 
 /** 卡片类型枚举 */
 export type CardType =
-  | 'statistic'        // 统计指标卡
-  | 'gauge'            // 仪表盘
-  | 'ring'             // 环形图/饼图
-  | 'lineChart'        // 折线图
-  | 'barChart'         // 柱状图
-  | 'areaChart'        // 面积图
-  | 'pieChart'         // 饼图
-  | 'radarChart'       // 雷达图
-  | 'statusGrid'       // 状态网格（科室状态等）
-  | 'functionModule'   // 功能模块网格
-  | 'alertList'        // 告警列表
-  | 'progressBar'      // 进度条
-  | 'text'             // 富文本
-  | 'image'            // 图片
-  | 'table'            // 表格
-  | 'header'           // 看板标题头
-  | 'clock'            // 时钟
-  | 'statusBar';       // 底部状态栏
+  | 'statistic' // 统计指标卡
+  | 'gauge' // 仪表盘
+  | 'ring' // 环形图/饼图
+  | 'lineChart' // 折线图
+  | 'barChart' // 柱状图
+  | 'areaChart' // 面积图
+  | 'pieChart' // 饼图
+  | 'radarChart' // 雷达图
+  | 'statusGrid' // 状态网格（科室状态等）
+  | 'functionModule' // 功能模块网格
+  | 'alertList' // 告警列表
+  | 'progressBar' // 进度条
+  | 'text' // 富文本
+  | 'image' // 图片
+  | 'table' // 表格
+  | 'header' // 看板标题头
+  | 'clock' // 时钟
+  | 'statusBar'; // 底部状态栏
 
 /** 卡片类型分组 */
 export const CARD_TYPE_GROUPS = {
@@ -75,8 +75,8 @@ export interface StyleConfig {
   titleFontSize?: number;
 
   // 统计卡片
-  prefix?: string;      // 前缀（如 ¥）
-  suffix?: string;      // 后缀（如 %、kW）
+  prefix?: string; // 前缀（如 ¥）
+  suffix?: string; // 后缀（如 %、kW）
   valueColor?: string;
   valueSize?: number;
   icon?: string;

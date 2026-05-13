@@ -1,8 +1,8 @@
-import React, { useMemo } from 'react';
-import { Radio, DatePicker, Space } from 'antd';
 import { useIntl } from '@umijs/max';
+import { DatePicker, Radio, Space } from 'antd';
 import dayjs, { Dayjs } from 'dayjs';
 import quarterOfYear from 'dayjs/plugin/quarterOfYear';
+import React, { useMemo } from 'react';
 
 dayjs.extend(quarterOfYear);
 
@@ -66,7 +66,7 @@ const StatisticsPeriodSelector: React.FC<StatisticsPeriodSelectorProps> = ({
   };
 
   const handleRangeChange = (dates: [Dayjs | null, Dayjs | null] | null) => {
-    if (dates && dates[0] && dates[1]) {
+    if (dates?.[0] && dates[1]) {
       setInnerValue('custom');
       const range: [Dayjs, Dayjs] = [dates[0].startOf('day'), dates[1].startOf('day')];
       onChange(range, 'custom');
@@ -77,11 +77,7 @@ const StatisticsPeriodSelector: React.FC<StatisticsPeriodSelectorProps> = ({
 
   return (
     <Space wrap>
-      <Radio.Group
-        value={innerValue}
-        onChange={(e) => handlePeriodChange(e.target.value)}
-        disabled={disabled}
-      >
+      <Radio.Group value={innerValue} onChange={(e) => handlePeriodChange(e.target.value)} disabled={disabled}>
         <Radio.Button value="week">
           {intl.formatMessage({
             id: 'pages.statistics.period.week',
@@ -95,18 +91,18 @@ const StatisticsPeriodSelector: React.FC<StatisticsPeriodSelectorProps> = ({
         <Radio.Button value="quarter">
           {intl.formatMessage({
             id: 'pages.statistics.period.quarter',
-                      })}
+          })}
         </Radio.Button>
         <Radio.Button value="year">
           {intl.formatMessage({
             id: 'pages.statistics.period.year',
-                      })}
+          })}
         </Radio.Button>
         {showCustom && (
           <Radio.Button value="custom">
             {intl.formatMessage({
               id: 'pages.statistics.period.custom',
-                          })}
+            })}
           </Radio.Button>
         )}
       </Radio.Group>

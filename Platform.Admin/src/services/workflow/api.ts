@@ -53,43 +53,43 @@ export interface CreateBulkOperationRequest {
  * 工作流状态枚举
  */
 export enum WorkflowStatus {
-  Running = 0,      // 运行中
-  Completed = 1,    // 已完成
-  Cancelled = 2,    // 已取消
-  Rejected = 3,     // 已拒绝
-  Waiting = 4       // 挂起等待
+  Running = 0, // 运行中
+  Completed = 1, // 已完成
+  Cancelled = 2, // 已取消
+  Rejected = 3, // 已拒绝
+  Waiting = 4, // 挂起等待
 }
 
 /**
  * 审批动作枚举
  */
 export enum ApprovalAction {
-  Approve = 0,      // 通过
-  Reject = 1,       // 拒绝
-  Return = 2,       // 退回
-  Delegate = 3,     // 转办
-  CC = 4,           // 抄送
-  AutoSystem = 10   // 系统自动执行
+  Approve = 0, // 通过
+  Reject = 1, // 拒绝
+  Return = 2, // 退回
+  Delegate = 3, // 转办
+  CC = 4, // 抄送
+  AutoSystem = 10, // 系统自动执行
 }
 
 /**
  * 审批类型枚举
  */
 export enum ApprovalType {
-  All = 0,          // 会签
-  Any = 1,          // 或签
-  Sequential = 2    // 顺序审批
+  All = 0, // 会签
+  Any = 1, // 或签
+  Sequential = 2, // 顺序审批
 }
 
 /**
  * 审批人类型枚举
  */
 export enum ApproverType {
-  User = 0,         // 指定用户
-  Role = 1,          // 角色
-  Department = 2,    // 部门
-  FormField = 3,     // 表单字段
-  Supervisor = 4     // 主管（发起人的上级）
+  User = 0, // 指定用户
+  Role = 1, // 角色
+  Department = 2, // 部门
+  FormField = 3, // 表单字段
+  Supervisor = 4, // 主管（发起人的上级）
 }
 
 /**
@@ -508,7 +508,10 @@ export async function createWorkflow(data: CreateWorkflowRequest): Promise<ApiRe
 /**
  * 更新流程定义
  */
-export async function updateWorkflow(id: string, data: UpdateWorkflowRequest): Promise<ApiResponse<WorkflowDefinition>> {
+export async function updateWorkflow(
+  id: string,
+  data: UpdateWorkflowRequest,
+): Promise<ApiResponse<WorkflowDefinition>> {
   return request(`/apiservice/api/workflows/${id}`, {
     method: 'PUT',
     data,
@@ -585,7 +588,10 @@ export async function getApprovalHistory(id: string): Promise<ApiResponse<Approv
 /**
  * 获取实例当前节点的表单定义与初始值
  */
-export async function getNodeForm(instanceId: string, nodeId: string): Promise<ApiResponse<{ form: FormDefinition | null; initialValues: Record<string, any> | null }>> {
+export async function getNodeForm(
+  instanceId: string,
+  nodeId: string,
+): Promise<ApiResponse<{ form: FormDefinition | null; initialValues: Record<string, any> | null }>> {
   return request(`/apiservice/api/workflows/instances/${instanceId}/nodes/${nodeId}/form`, {
     method: 'GET',
   });
@@ -594,7 +600,11 @@ export async function getNodeForm(instanceId: string, nodeId: string): Promise<A
 /**
  * 提交节点表单数据
  */
-export async function submitNodeForm(instanceId: string, nodeId: string, values: Record<string, any>): Promise<ApiResponse<Record<string, any>>> {
+export async function submitNodeForm(
+  instanceId: string,
+  nodeId: string,
+  values: Record<string, any>,
+): Promise<ApiResponse<Record<string, any>>> {
   return request(`/apiservice/api/workflows/instances/${instanceId}/nodes/${nodeId}/form`, {
     method: 'POST',
     data: values,
@@ -604,12 +614,16 @@ export async function submitNodeForm(instanceId: string, nodeId: string, values:
 /**
  * 执行节点动作：approve/reject/return/delegate
  */
-export async function executeNodeAction(instanceId: string, nodeId: string, data: {
-  action: 'approve' | 'reject' | 'return' | 'delegate';
-  comment?: string;
-  targetNodeId?: string;
-  delegateToUserId?: string;
-}): Promise<ApiResponse<string>> {
+export async function executeNodeAction(
+  instanceId: string,
+  nodeId: string,
+  data: {
+    action: 'approve' | 'reject' | 'return' | 'delegate';
+    comment?: string;
+    targetNodeId?: string;
+    delegateToUserId?: string;
+  },
+): Promise<ApiResponse<string>> {
   return request(`/apiservice/api/workflows/instances/${instanceId}/nodes/${nodeId}/action`, {
     method: 'POST',
     data,
@@ -629,7 +643,9 @@ export async function withdrawInstance(instanceId: string, reason?: string): Pro
 /**
  * 获取用于创建公文的流程表单
  */
-export async function getDocumentCreateForm(definitionId: string): Promise<ApiResponse<{ form: FormDefinition | null; dataScopeKey?: string; initialValues?: Record<string, any> }>> {
+export async function getDocumentCreateForm(
+  definitionId: string,
+): Promise<ApiResponse<{ form: FormDefinition | null; dataScopeKey?: string; initialValues?: Record<string, any> }>> {
   return request(`/apiservice/api/workflows/${definitionId}/document-form`, {
     method: 'GET',
   });
@@ -638,20 +654,22 @@ export async function getDocumentCreateForm(definitionId: string): Promise<ApiRe
 /**
  * 获取流程中使用的所有表单及其字段
  */
-export async function getWorkflowFormsAndFields(definitionId: string): Promise<ApiResponse<{
-  forms: Array<{
-    id: string;
-    name: string;
-    key: string;
-    fields: Array<{
+export async function getWorkflowFormsAndFields(definitionId: string): Promise<
+  ApiResponse<{
+    forms: Array<{
       id: string;
-      label: string;
-      dataKey: string;
-      type: string;
-      required: boolean;
+      name: string;
+      key: string;
+      fields: Array<{
+        id: string;
+        label: string;
+        dataKey: string;
+        type: string;
+        required: boolean;
+      }>;
     }>;
-  }>;
-}>> {
+  }>
+> {
   return request(`/apiservice/api/workflows/${definitionId}/forms-and-fields`, {
     method: 'GET',
   });
@@ -660,10 +678,13 @@ export async function getWorkflowFormsAndFields(definitionId: string): Promise<A
 /**
  * 按流程表单创建草稿公文
  */
-export async function createDocumentByWorkflow(definitionId: string, data: {
-  values: Record<string, any>;
-  attachmentIds?: string[];
-}): Promise<ApiResponse<any>> {
+export async function createDocumentByWorkflow(
+  definitionId: string,
+  data: {
+    values: Record<string, any>;
+    attachmentIds?: string[];
+  },
+): Promise<ApiResponse<any>> {
   return request(`/apiservice/api/workflows/${definitionId}/documents`, {
     method: 'POST',
     data,
@@ -673,11 +694,14 @@ export async function createDocumentByWorkflow(definitionId: string, data: {
 /**
  * 创建并启动流程（一步到位）
  */
-export async function createAndStartDocumentWorkflow(definitionId: string, data: {
-  values: Record<string, any>;
-  attachmentIds?: string[];
-  variables?: Record<string, any>;
-}): Promise<ApiResponse<{ document: any; workflowInstance: WorkflowInstance }>> {
+export async function createAndStartDocumentWorkflow(
+  definitionId: string,
+  data: {
+    values: Record<string, any>;
+    attachmentIds?: string[];
+    variables?: Record<string, any>;
+  },
+): Promise<ApiResponse<{ document: any; workflowInstance: WorkflowInstance }>> {
   return request(`/apiservice/api/workflows/${definitionId}/documents/start`, {
     method: 'POST',
     data,
@@ -895,10 +919,13 @@ export async function getOrganizationTree(): Promise<ApiResponse<OrganizationTre
 /**
  * 获取组织成员
  */
-export async function getOrganizationMembers(orgId: string, params?: {
-  page?: number;
-  pageSize?: number;
-}): Promise<ApiResponse<PagedResult<{ userId: string; username: string; email?: string }>>> {
+export async function getOrganizationMembers(
+  orgId: string,
+  params?: {
+    page?: number;
+    pageSize?: number;
+  },
+): Promise<ApiResponse<PagedResult<{ userId: string; username: string; email?: string }>>> {
   return request(`/apiservice/api/organization/${orgId}/members`, {
     method: 'GET',
     params,

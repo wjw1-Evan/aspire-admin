@@ -1,33 +1,69 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import { DeleteOutlined, EditOutlined, PlusOutlined, SafetyOutlined } from '@ant-design/icons';
 import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import { ModalForm, ProFormText, ProFormTextArea, ProFormSwitch, ProForm } from '@ant-design/pro-components/es/form';
+import { ModalForm, ProFormSwitch, ProFormText, ProFormTextArea } from '@ant-design/pro-components/es/form';
 import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ProTable, ProColumns, ActionType } from '@ant-design/pro-components/es/table';
-import { useIntl } from '@umijs/max';
-import { request } from '@umijs/max';
-import { Tag, Space, Button, Input, Popconfirm, Switch, Tree, Spin, Divider } from 'antd';
-import { Drawer } from 'antd';
-import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined, SafetyOutlined } from '@ant-design/icons';
-import { ApiResponse, PagedResult } from '@/types';
+import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
+import { request, useIntl } from '@umijs/max';
+import { Button, Divider, Drawer, Input, Popconfirm, Space, Spin, Switch, Tag, Tree } from 'antd';
 import dayjs from 'dayjs';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ApiResponse, PagedResult } from '@/types';
 
 // ==================== Types ====================
-interface Role { id?: string; name: string; description?: string; menuIds: string[]; isActive: boolean; createdAt?: string; updatedAt?: string; }
-interface RoleWithStats extends Role { userCount?: number; menuCount?: number; }
-interface RoleStatistics { totalRoles: number; activeRoles: number; totalUsers: number; totalMenus: number; }
-interface CreateRoleRequest { name: string; description?: string; menuIds: string[]; isActive: boolean; }
-interface UpdateRoleRequest { name?: string; description?: string; menuIds?: string[]; isActive?: boolean; }
-interface MenuTreeNode { id?: string; name?: string; title?: string; children?: MenuTreeNode[]; }
-interface TreeNode { key: string; title: string; children?: TreeNode[]; }
+interface Role {
+  id?: string;
+  name: string;
+  description?: string;
+  menuIds: string[];
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+interface RoleWithStats extends Role {
+  userCount?: number;
+  menuCount?: number;
+}
+interface RoleStatistics {
+  totalRoles: number;
+  activeRoles: number;
+  totalUsers: number;
+  totalMenus: number;
+}
+interface CreateRoleRequest {
+  name: string;
+  description?: string;
+  menuIds: string[];
+  isActive: boolean;
+}
+interface UpdateRoleRequest {
+  name?: string;
+  description?: string;
+  menuIds?: string[];
+  isActive?: boolean;
+}
+interface MenuTreeNode {
+  id?: string;
+  name?: string;
+  title?: string;
+  children?: MenuTreeNode[];
+}
+interface TreeNode {
+  key: string;
+  title: string;
+  children?: TreeNode[];
+}
 
 // ==================== API ====================
 const api = {
-  list: (params: any) => request<ApiResponse<PagedResult<RoleWithStats>>>('/apiservice/api/role/with-stats', { params }),
+  list: (params: any) =>
+    request<ApiResponse<PagedResult<RoleWithStats>>>('/apiservice/api/role/with-stats', { params }),
   statistics: () => request<ApiResponse<RoleStatistics>>('/apiservice/api/role/statistics'),
   get: (id: string) => request<ApiResponse<Role>>(`/apiservice/api/role/${id}`),
   create: (data: CreateRoleRequest) => request<ApiResponse<Role>>('/apiservice/api/role', { method: 'POST', data }),
-  update: (id: string, data: UpdateRoleRequest) => request<ApiResponse<boolean>>(`/apiservice/api/role/${id}`, { method: 'PUT', data }),
-  delete: (id: string, reason?: string) => request<ApiResponse<boolean>>(`/apiservice/api/role/${id}`, { method: 'DELETE', params: { reason } }),
+  update: (id: string, data: UpdateRoleRequest) =>
+    request<ApiResponse<boolean>>(`/apiservice/api/role/${id}`, { method: 'PUT', data }),
+  delete: (id: string, reason?: string) =>
+    request<ApiResponse<boolean>>(`/apiservice/api/role/${id}`, { method: 'DELETE', params: { reason } }),
   menuTree: () => request<ApiResponse<MenuTreeNode[]>>('/apiservice/api/menu/tree'),
   roleMenus: (id: string) => request<ApiResponse<string[]>>(`/apiservice/api/role/${id}/menus`),
 };
@@ -52,49 +88,161 @@ const RoleManagement: React.FC = () => {
     menuLoading: false,
     deleteReason: '',
   });
-  const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
+  const set = useCallback((partial: Partial<typeof state>) => setState((prev) => ({ ...prev, ...partial })), []);
 
   const loadStatistics = useCallback(() => {
-    api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
-  }, []);
+    api.statistics().then((r) => {
+      if (r.success && r.data) set({ statistics: r.data });
+    });
+  }, [set]);
 
-  useEffect(() => { loadStatistics(); }, [loadStatistics]);
+  useEffect(() => {
+    loadStatistics();
+  }, [loadStatistics]);
 
   const columns: ProColumns<RoleWithStats>[] = [
-    { title: intl.formatMessage({ id: 'pages.table.roleName' }), dataIndex: 'name', key: 'name', sorter: true, render: (dom, r) => <a onClick={() => set({ viewingRole: r, detailVisible: true })}>{dom}</a>, search: true },
-    { title: intl.formatMessage({ id: 'pages.table.description' }), dataIndex: 'description', key: 'description', sorter: true, ellipsis: true, render: (dom) => dom || '-', search: true },
-    { title: intl.formatMessage({ id: 'pages.table.status' }), dataIndex: 'isActive', key: 'isActive', sorter: true, valueType: 'select', fieldProps: { options: [{ label: intl.formatMessage({ id: 'pages.table.activated' }), value: 'true' }, { label: intl.formatMessage({ id: 'pages.table.deactivated' }), value: 'false' }] }, render: (_, r) => <Tag color={r.isActive ? 'success' : 'default'}>{r.isActive ? intl.formatMessage({ id: 'pages.table.activated' }) : intl.formatMessage({ id: 'pages.table.deactivated' })}</Tag> },
-    { title: intl.formatMessage({ id: 'pages.table.stats' }), valueType: 'option', render: (_, r) => <Space separator="|"><span>{intl.formatMessage({ id: 'pages.table.user' })}: {r.userCount || 0}</span><span>{intl.formatMessage({ id: 'pages.table.menu' })}: {r.menuCount || 0}</span></Space> },
-    { title: intl.formatMessage({ id: 'pages.table.createdAt' }), dataIndex: 'createdAt', key: 'createdAt', sorter: true, valueType: 'dateTime' },
     {
-      title: intl.formatMessage({ id: 'pages.table.actions' }), key: 'action', valueType: 'option', fixed: 'right', width: 180, render: (_, r) => (
+      title: intl.formatMessage({ id: 'pages.table.roleName' }),
+      dataIndex: 'name',
+      key: 'name',
+      sorter: true,
+      render: (dom, r) => <a onClick={() => set({ viewingRole: r, detailVisible: true })}>{dom}</a>,
+      search: true,
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.table.description' }),
+      dataIndex: 'description',
+      key: 'description',
+      sorter: true,
+      ellipsis: true,
+      render: (dom) => dom || '-',
+      search: true,
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.table.status' }),
+      dataIndex: 'isActive',
+      key: 'isActive',
+      sorter: true,
+      valueType: 'select',
+      fieldProps: {
+        options: [
+          { label: intl.formatMessage({ id: 'pages.table.activated' }), value: 'true' },
+          { label: intl.formatMessage({ id: 'pages.table.deactivated' }), value: 'false' },
+        ],
+      },
+      render: (_, r) => (
+        <Tag color={r.isActive ? 'success' : 'default'}>
+          {r.isActive
+            ? intl.formatMessage({ id: 'pages.table.activated' })
+            : intl.formatMessage({ id: 'pages.table.deactivated' })}
+        </Tag>
+      ),
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.table.stats' }),
+      valueType: 'option',
+      render: (_, r) => (
+        <Space separator="|">
+          <span>
+            {intl.formatMessage({ id: 'pages.table.user' })}: {r.userCount || 0}
+          </span>
+          <span>
+            {intl.formatMessage({ id: 'pages.table.menu' })}: {r.menuCount || 0}
+          </span>
+        </Space>
+      ),
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.table.createdAt' }),
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      sorter: true,
+      valueType: 'dateTime',
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.table.actions' }),
+      key: 'action',
+      valueType: 'option',
+      fixed: 'right',
+      width: 180,
+      render: (_, r) => (
         <Space size={4}>
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { set({ editingRole: r, formVisible: true }); setFormState(p => ({ ...p, checkedKeys: r.menuIds || [] })); }}>{intl.formatMessage({ id: 'pages.table.edit' })}</Button>
-          <Popconfirm title={intl.formatMessage({ id: 'pages.modal.confirmDeleteRole' }, { roleName: r.name })} onConfirm={async () => { await api.delete(r.id!); actionRef.current?.reload(); loadStatistics(); }}>
-            <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.table.delete' })}</Button>
+          <Button
+            type="link"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => {
+              set({ editingRole: r, formVisible: true });
+              setFormState((p) => ({ ...p, checkedKeys: r.menuIds || [] }));
+            }}
+          >
+            {intl.formatMessage({ id: 'pages.table.edit' })}
+          </Button>
+          <Popconfirm
+            title={intl.formatMessage({ id: 'pages.modal.confirmDeleteRole' }, { roleName: r.name })}
+            onConfirm={async () => {
+              await api.delete(r.id!);
+              actionRef.current?.reload();
+              loadStatistics();
+            }}
+          >
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+              {intl.formatMessage({ id: 'pages.table.delete' })}
+            </Button>
           </Popconfirm>
         </Space>
-      )
+      ),
     },
   ];
 
-  const convertToTreeData = (menus: MenuTreeNode[]): TreeNode[] => menus.filter((m): m is MenuTreeNode & { id: string } => Boolean(m.id)).map(m => ({ key: m.id, title: m.title || m.name || '', children: m.children ? convertToTreeData(m.children) : [] }));
-  const getAllKeys = (menus: TreeNode[]): string[] => { let keys: string[] = []; menus.forEach(m => { if (m.key) keys.push(m.key); if (m.children?.length) keys = keys.concat(getAllKeys(m.children)); }); return keys; };
+  const convertToTreeData = (menus: MenuTreeNode[]): TreeNode[] =>
+    menus
+      .filter((m): m is MenuTreeNode & { id: string } => Boolean(m.id))
+      .map((m) => ({
+        key: m.id,
+        title: m.title || m.name || '',
+        children: m.children ? convertToTreeData(m.children) : [],
+      }));
+  const getAllKeys = (menus: TreeNode[]): string[] => {
+    let keys: string[] = [];
+    menus.forEach((m) => {
+      if (m.key) keys.push(m.key);
+      if (m.children?.length) keys = keys.concat(getAllKeys(m.children));
+    });
+    return keys;
+  };
 
   return (
     <PageContainer>
-      <ProTable actionRef={actionRef} request={async (params: any, sort: any, filter: any) => {
-        const res = await api.list({ ...params, search: state.search, sort, filter });
-        return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
-      }} columns={columns} rowKey="id" search={false}
+      <ProTable
+        actionRef={actionRef}
+        request={async (params: any, sort: any, filter: any) => {
+          const res = await api.list({ ...params, search: state.search, sort, filter });
+          return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+        }}
+        columns={columns}
+        rowKey="id"
+        search={false}
         headerTitle={
           <Space size={24}>
-            <Space><SafetyOutlined />{intl.formatMessage({ id: 'menu.system.role-management' })}</Space>
+            <Space>
+              <SafetyOutlined />
+              {intl.formatMessage({ id: 'menu.system.role-management' })}
+            </Space>
             <Space size={12}>
-              <Tag color="blue">{intl.formatMessage({ id: 'pages.table.role' })}{intl.formatMessage({ id: 'pages.table.stats' })}: {state.statistics?.totalRoles || 0}</Tag>
-              <Tag color="green">{intl.formatMessage({ id: 'pages.status.approved' })}: {state.statistics?.activeRoles || 0}</Tag>
-              <Tag color="orange">{intl.formatMessage({ id: 'pages.table.user' })}: {state.statistics?.totalUsers || 0}</Tag>
-              <Tag color="purple">{intl.formatMessage({ id: 'pages.table.menu' })}: {state.statistics?.totalMenus || 0}</Tag>
+              <Tag color="blue">
+                {intl.formatMessage({ id: 'pages.table.role' })}
+                {intl.formatMessage({ id: 'pages.table.stats' })}: {state.statistics?.totalRoles || 0}
+              </Tag>
+              <Tag color="green">
+                {intl.formatMessage({ id: 'pages.status.approved' })}: {state.statistics?.activeRoles || 0}
+              </Tag>
+              <Tag color="orange">
+                {intl.formatMessage({ id: 'pages.table.user' })}: {state.statistics?.totalUsers || 0}
+              </Tag>
+              <Tag color="purple">
+                {intl.formatMessage({ id: 'pages.table.menu' })}: {state.statistics?.totalMenus || 0}
+              </Tag>
             </Space>
           </Space>
         }
@@ -106,70 +254,191 @@ const RoleManagement: React.FC = () => {
             allowClear
             value={state.search}
             onChange={(e) => set({ search: e.target.value })}
-            onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+            onSearch={(value) => {
+              set({ search: value });
+              actionRef.current?.reload();
+            }}
             style={{ width: 260, marginRight: 8 }}
           />,
-          <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { set({ editingRole: null, formVisible: true }); setFormState(p => ({ ...p, checkedKeys: [], expandedKeys: [], autoExpandParent: true })); }}>{intl.formatMessage({ id: 'pages.button.addRole' })}</Button>,
+          <Button
+            key="create"
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              set({ editingRole: null, formVisible: true });
+              setFormState((p) => ({ ...p, checkedKeys: [], expandedKeys: [], autoExpandParent: true }));
+            }}
+          >
+            {intl.formatMessage({ id: 'pages.button.addRole' })}
+          </Button>,
         ]}
       />
 
-      <ModalForm key={state.editingRole?.id || 'create'}
-        title={state.editingRole ? intl.formatMessage({ id: 'pages.roleForm.editTitle' }) : intl.formatMessage({ id: 'pages.roleForm.createTitle' })}
+      <ModalForm
+        key={state.editingRole?.id || 'create'}
+        title={
+          state.editingRole
+            ? intl.formatMessage({ id: 'pages.roleForm.editTitle' })
+            : intl.formatMessage({ id: 'pages.roleForm.createTitle' })
+        }
         open={state.formVisible}
         onOpenChange={(open) => {
           if (open) {
-            setFormState(p => ({ ...p, menuLoading: true }));
+            setFormState((p) => ({ ...p, menuLoading: true }));
             Promise.all([
               api.menuTree(),
-              state.editingRole ? api.roleMenus(state.editingRole.id!) : Promise.resolve({ success: true, data: [] })
+              state.editingRole ? api.roleMenus(state.editingRole.id!) : Promise.resolve({ success: true, data: [] }),
             ]).then(([menuRes, roleMenuRes]) => {
               if (menuRes.success && menuRes.data) {
                 const treeData = convertToTreeData(menuRes.data);
                 const allKeys = getAllKeys(treeData);
                 const roleMenus = roleMenuRes.success ? roleMenuRes.data || [] : [];
-                setFormState(p => ({ ...p, menuTree: treeData, checkedKeys: roleMenus, expandedKeys: allKeys, autoExpandParent: true, menuLoading: false }));
+                setFormState((p) => ({
+                  ...p,
+                  menuTree: treeData,
+                  checkedKeys: roleMenus,
+                  expandedKeys: allKeys,
+                  autoExpandParent: true,
+                  menuLoading: false,
+                }));
               } else {
-                setFormState(p => ({ ...p, menuLoading: false }));
+                setFormState((p) => ({ ...p, menuLoading: false }));
               }
             });
           } else {
             set({ formVisible: false, editingRole: null });
           }
         }}
-        initialValues={state.editingRole ? { name: state.editingRole.name, description: state.editingRole.description, isActive: state.editingRole.isActive } : { isActive: true }}
+        initialValues={
+          state.editingRole
+            ? {
+                name: state.editingRole.name,
+                description: state.editingRole.description,
+                isActive: state.editingRole.isActive,
+              }
+            : { isActive: true }
+        }
         onFinish={async (values) => {
-          const data = { name: values.name, description: values.description, menuIds: formState.checkedKeys, isActive: values.isActive };
+          const data = {
+            name: values.name,
+            description: values.description,
+            menuIds: formState.checkedKeys,
+            isActive: values.isActive,
+          };
           const res = state.editingRole ? await api.update(state.editingRole.id!, data) : await api.create(data);
-          if (res.success) { set({ formVisible: false, editingRole: null }); actionRef.current?.reload(); loadStatistics(); }
+          if (res.success) {
+            set({ formVisible: false, editingRole: null });
+            actionRef.current?.reload();
+            loadStatistics();
+          }
           return res.success;
-        }} autoFocusFirstInput width={700}
+        }}
+        autoFocusFirstInput
+        width={700}
       >
-        <ProFormText name="name" label={intl.formatMessage({ id: 'pages.roleForm.nameLabel' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.roleForm.nameRequired' }) }]} placeholder={intl.formatMessage({ id: 'pages.roleForm.namePlaceholder' })} />
-        <ProFormTextArea name="description" label={intl.formatMessage({ id: 'pages.roleForm.descriptionLabel' })} placeholder={intl.formatMessage({ id: 'pages.roleForm.descriptionPlaceholder' })} rows={3} />
+        <ProFormText
+          name="name"
+          label={intl.formatMessage({ id: 'pages.roleForm.nameLabel' })}
+          rules={[{ required: true, message: intl.formatMessage({ id: 'pages.roleForm.nameRequired' }) }]}
+          placeholder={intl.formatMessage({ id: 'pages.roleForm.namePlaceholder' })}
+        />
+        <ProFormTextArea
+          name="description"
+          label={intl.formatMessage({ id: 'pages.roleForm.descriptionLabel' })}
+          placeholder={intl.formatMessage({ id: 'pages.roleForm.descriptionPlaceholder' })}
+          rows={3}
+        />
         <ProFormSwitch name="isActive" label={intl.formatMessage({ id: 'pages.roleForm.isActiveLabel' })} />
         <Divider>{intl.formatMessage({ id: 'pages.roleForm.menuPermission' })}</Divider>
         <div style={{ marginBottom: 16 }}>
-          <Button type="link" onClick={() => { const all = getAllKeys(formState.menuTree); setFormState(p => ({ ...p, checkedKeys: p.checkedKeys.length === all.length ? [] : all })); }} style={{ padding: 0 }}>
-            {formState.checkedKeys.length === getAllKeys(formState.menuTree).length ? intl.formatMessage({ id: 'pages.roleForm.deselectAll' }) : intl.formatMessage({ id: 'pages.roleForm.selectAll' })}
+          <Button
+            type="link"
+            onClick={() => {
+              const all = getAllKeys(formState.menuTree);
+              setFormState((p) => ({ ...p, checkedKeys: p.checkedKeys.length === all.length ? [] : all }));
+            }}
+            style={{ padding: 0 }}
+          >
+            {formState.checkedKeys.length === getAllKeys(formState.menuTree).length
+              ? intl.formatMessage({ id: 'pages.roleForm.deselectAll' })
+              : intl.formatMessage({ id: 'pages.roleForm.selectAll' })}
           </Button>
         </div>
-        {formState.menuLoading ? <div style={{ textAlign: 'center', padding: '40px 0' }}><Spin /></div> : <Tree checkable treeData={formState.menuTree} checkedKeys={formState.checkedKeys} expandedKeys={formState.expandedKeys} autoExpandParent={formState.autoExpandParent} onExpand={(keys) => setFormState(p => ({ ...p, expandedKeys: keys.map(String), autoExpandParent: false }))} onCheck={(checkedKeysValue) => setFormState(p => ({ ...p, checkedKeys: checkedKeysValue as React.Key[] as string[] }))} />}
-        <div style={{ marginTop: 16 }}><Switch checked={formState.checkedKeys.length > 0} disabled /> <span style={{ marginLeft: 8 }}>{intl.formatMessage({ id: 'pages.roleForm.menuCount' }, { count: formState.checkedKeys.length })}</span></div>
+        {formState.menuLoading ? (
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <Spin />
+          </div>
+        ) : (
+          <Tree
+            checkable
+            treeData={formState.menuTree}
+            checkedKeys={formState.checkedKeys}
+            expandedKeys={formState.expandedKeys}
+            autoExpandParent={formState.autoExpandParent}
+            onExpand={(keys) =>
+              setFormState((p) => ({ ...p, expandedKeys: keys.map(String), autoExpandParent: false }))
+            }
+            onCheck={(checkedKeysValue) =>
+              setFormState((p) => ({ ...p, checkedKeys: checkedKeysValue as React.Key[] as string[] }))
+            }
+          />
+        )}
+        <div style={{ marginTop: 16 }}>
+          <Switch checked={formState.checkedKeys.length > 0} disabled />{' '}
+          <span style={{ marginLeft: 8 }}>
+            {intl.formatMessage({ id: 'pages.roleForm.menuCount' }, { count: formState.checkedKeys.length })}
+          </span>
+        </div>
       </ModalForm>
 
-      <Drawer title={state.viewingRole ? `${intl.formatMessage({ id: 'pages.roleManagement.title' })} - ${state.viewingRole.name}` : intl.formatMessage({ id: 'pages.roleManagement.title' })} open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingRole: null })} size="large">
-        {state.viewingRole && <ProDescriptions column={1} bordered size="small">
-          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.table.roleName' })}>{state.viewingRole.name}</ProDescriptions.Item>
-          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.table.description' })}>{state.viewingRole.description || '-'}</ProDescriptions.Item>
-          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.table.status' })}><Tag color={state.viewingRole.isActive ? 'success' : 'default'}>{state.viewingRole.isActive ? intl.formatMessage({ id: 'pages.table.activated' }) : intl.formatMessage({ id: 'pages.table.deactivated' })}</Tag></ProDescriptions.Item>
-          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.table.stats' })}><Space><span>{intl.formatMessage({ id: 'pages.table.user' })}: {state.viewingRole.userCount || 0}</span><span>{intl.formatMessage({ id: 'pages.table.menu' })}: {state.viewingRole.menuCount || 0}</span></Space></ProDescriptions.Item>
-          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.table.createdAt' })}>{state.viewingRole.createdAt ? dayjs(state.viewingRole.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
-          {state.viewingRole.updatedAt && <ProDescriptions.Item label="更新时间">{dayjs(state.viewingRole.updatedAt).format('YYYY-MM-DD HH:mm:ss')}</ProDescriptions.Item>}
-        </ProDescriptions>}
+      <Drawer
+        title={
+          state.viewingRole
+            ? `${intl.formatMessage({ id: 'pages.roleManagement.title' })} - ${state.viewingRole.name}`
+            : intl.formatMessage({ id: 'pages.roleManagement.title' })
+        }
+        open={state.detailVisible}
+        onClose={() => set({ detailVisible: false, viewingRole: null })}
+        size="large"
+      >
+        {state.viewingRole && (
+          <ProDescriptions column={1} bordered size="small">
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.table.roleName' })}>
+              {state.viewingRole.name}
+            </ProDescriptions.Item>
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.table.description' })}>
+              {state.viewingRole.description || '-'}
+            </ProDescriptions.Item>
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.table.status' })}>
+              <Tag color={state.viewingRole.isActive ? 'success' : 'default'}>
+                {state.viewingRole.isActive
+                  ? intl.formatMessage({ id: 'pages.table.activated' })
+                  : intl.formatMessage({ id: 'pages.table.deactivated' })}
+              </Tag>
+            </ProDescriptions.Item>
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.table.stats' })}>
+              <Space>
+                <span>
+                  {intl.formatMessage({ id: 'pages.table.user' })}: {state.viewingRole.userCount || 0}
+                </span>
+                <span>
+                  {intl.formatMessage({ id: 'pages.table.menu' })}: {state.viewingRole.menuCount || 0}
+                </span>
+              </Space>
+            </ProDescriptions.Item>
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.table.createdAt' })}>
+              {state.viewingRole.createdAt ? dayjs(state.viewingRole.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
+            </ProDescriptions.Item>
+            {state.viewingRole.updatedAt && (
+              <ProDescriptions.Item label="更新时间">
+                {dayjs(state.viewingRole.updatedAt).format('YYYY-MM-DD HH:mm:ss')}
+              </ProDescriptions.Item>
+            )}
+          </ProDescriptions>
+        )}
       </Drawer>
     </PageContainer>
   );
 };
 
 export default RoleManagement;
-

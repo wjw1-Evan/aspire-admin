@@ -1,5 +1,5 @@
-import React from 'react';
 import { AppstoreOutlined } from '@ant-design/icons';
+import React from 'react';
 import { CORE_ICON_MAP } from '@/utils/iconMap';
 
 export function getGreeting(): string {
@@ -17,10 +17,13 @@ export function getIconComponent(iconName?: string): React.ReactNode {
   if (iconName) {
     const icon = CORE_ICON_MAP[iconName];
     if (icon) return icon;
-    
+
     const toPascalCase = (name: string) =>
-      name.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('');
-    
+      name
+        .split('-')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join('');
+
     const baseName = toPascalCase(iconName);
     const suffixes = ['Outlined', 'Filled', 'TwoTone', ''];
     for (const suffix of suffixes) {
@@ -58,7 +61,7 @@ export function getMenuColor(path?: string): string {
 export function flattenMenus(menus: any[]): any[] {
   const result: any[] = [];
   const flatten = (items: any[]) => {
-    items.forEach(item => {
+    items.forEach((item) => {
       if (item.path) {
         result.push(item);
       }

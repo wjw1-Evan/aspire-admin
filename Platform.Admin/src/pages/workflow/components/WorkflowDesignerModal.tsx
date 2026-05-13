@@ -1,9 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { Button, Spin, Result, Input, Switch, Select } from 'antd';
-import { InfoCircleOutlined, SaveOutlined } from '@ant-design/icons';
+import { InfoCircleOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
+import { Button, Input, Result, Select, Spin, Switch } from 'antd';
+import React, { useEffect, useState } from 'react';
 import { useMessage } from '@/hooks/useMessage';
-import { createWorkflow, updateWorkflow, getWorkflowDetail, type WorkflowDefinition, type WorkflowGraph } from '@/services/workflow/api';
+import {
+  createWorkflow,
+  getWorkflowDetail,
+  updateWorkflow,
+  type WorkflowDefinition,
+  type WorkflowGraph,
+} from '@/services/workflow/api';
 import WorkflowDesigner from './WorkflowDesigner';
 
 interface WorkflowDesignerModalProps {
@@ -17,8 +23,13 @@ const WorkflowDesignerModal: React.FC<WorkflowDesignerModalProps> = ({ workflow,
   const intl = useIntl();
   const message = useMessage();
   const [loading, setLoading] = useState(false);
-  const [detailLoading, setDetailLoading] = useState(!!(workflow?.id));
-  const [formData, setFormData] = useState({ name: workflow?.name || '', isActive: workflow?.isActive ?? true, category: workflow?.category || 'default', version: workflow?.version || { major: 1, minor: 0 } });
+  const [detailLoading, setDetailLoading] = useState(!!workflow?.id);
+  const [formData, setFormData] = useState({
+    name: workflow?.name || '',
+    isActive: workflow?.isActive ?? true,
+    category: workflow?.category || 'default',
+    version: workflow?.version || { major: 1, minor: 0 },
+  });
   const [fullWorkflow, setFullWorkflow] = useState<WorkflowDefinition | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -36,7 +47,12 @@ const WorkflowDesignerModal: React.FC<WorkflowDesignerModalProps> = ({ workflow,
           const response = await getWorkflowDetail(workflowId);
           if (response.success && response.data) {
             setFullWorkflow(response.data);
-            setFormData({ name: response.data.name, isActive: response.data.isActive, category: response.data.category || 'default', version: response.data.version || { major: 1, minor: 0 } });
+            setFormData({
+              name: response.data.name,
+              isActive: response.data.isActive,
+              category: response.data.category || 'default',
+              version: response.data.version || { major: 1, minor: 0 },
+            });
           } else {
             setLoadError('加载工作流详情失败');
           }
@@ -63,8 +79,20 @@ const WorkflowDesignerModal: React.FC<WorkflowDesignerModalProps> = ({ workflow,
     try {
       setLoading(true);
       const response = !workflowId
-        ? await createWorkflow({ name: formData.name, description: '', category: formData.category, graph, isActive: formData.isActive })
-        : await updateWorkflow(workflowId, { name: formData.name, description: fullWorkflow?.description || '', category: formData.category, isActive: formData.isActive, graph });
+        ? await createWorkflow({
+            name: formData.name,
+            description: '',
+            category: formData.category,
+            graph,
+            isActive: formData.isActive,
+          })
+        : await updateWorkflow(workflowId, {
+            name: formData.name,
+            description: fullWorkflow?.description || '',
+            category: formData.category,
+            isActive: formData.isActive,
+            graph,
+          });
       if (response.success) {
         message.success(intl.formatMessage({ id: 'pages.workflow.message.saveSuccess' }));
         onSuccess();
@@ -84,21 +112,44 @@ const WorkflowDesignerModal: React.FC<WorkflowDesignerModalProps> = ({ workflow,
 
   if (detailLoading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '400px' }}>
+      <div
+        style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '400px' }}
+      >
         <Spin size="large" description="加载工作流数据..." />
       </div>
     );
   }
 
   if (loadError) {
-    return <Result status="error" title="加载失败" subTitle={loadError} extra={<Button onClick={onCancel}>返回</Button>} />;
+    return (
+      <Result status="error" title="加载失败" subTitle={loadError} extra={<Button onClick={onCancel}>返回</Button>} />
+    );
   }
 
   const defaultGraph = {
     nodes: [
-      { id: 'start-1', type: 'start', data: { label: intl.formatMessage({ id: 'pages.workflow.designer.addStart' }), nodeType: 'start', config: {} }, position: { x: 250, y: 50 } },
-      { id: 'approval-1', type: 'approval', data: { label: intl.formatMessage({ id: 'pages.workflow.designer.addApproval' }), nodeType: 'approval', config: {} }, position: { x: 250, y: 250 } },
-      { id: 'end-1', type: 'end', data: { label: intl.formatMessage({ id: 'pages.workflow.designer.addEnd' }), nodeType: 'end', config: {} }, position: { x: 250, y: 450 } },
+      {
+        id: 'start-1',
+        type: 'start',
+        data: { label: intl.formatMessage({ id: 'pages.workflow.designer.addStart' }), nodeType: 'start', config: {} },
+        position: { x: 250, y: 50 },
+      },
+      {
+        id: 'approval-1',
+        type: 'approval',
+        data: {
+          label: intl.formatMessage({ id: 'pages.workflow.designer.addApproval' }),
+          nodeType: 'approval',
+          config: {},
+        },
+        position: { x: 250, y: 250 },
+      },
+      {
+        id: 'end-1',
+        type: 'end',
+        data: { label: intl.formatMessage({ id: 'pages.workflow.designer.addEnd' }), nodeType: 'end', config: {} },
+        position: { x: 250, y: 450 },
+      },
     ],
     edges: [
       { id: 'edge-1', source: 'start-1', target: 'approval-1' },
@@ -108,7 +159,16 @@ const WorkflowDesignerModal: React.FC<WorkflowDesignerModalProps> = ({ workflow,
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', background: '#fafafa', display: 'flex', alignItems: 'center', gap: 16 }}>
+      <div
+        style={{
+          padding: '12px 16px',
+          borderBottom: '1px solid #f0f0f0',
+          background: '#fafafa',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+        }}
+      >
         <InfoCircleOutlined style={{ color: '#1890ff', fontSize: 18 }} />
         {readOnly ? (
           <span style={{ fontWeight: 500, fontSize: 15 }}>{formData.name}</span>
@@ -128,16 +188,22 @@ const WorkflowDesignerModal: React.FC<WorkflowDesignerModalProps> = ({ workflow,
             value={formData.category}
             onChange={(v) => setFormData({ ...formData, category: v })}
             style={{ width: 120 }}
-             options={[
-               { value: 'default', label: intl.formatMessage({ id: 'pages.workflow.node.type.default' }) },
-               { value: 'approval', label: intl.formatMessage({ id: 'pages.workflow.node.type.approval' }) },
-               { value: 'notification', label: intl.formatMessage({ id: 'pages.workflow.node.type.notification' }) },
-               { value: 'task', label: intl.formatMessage({ id: 'pages.workflow.node.type.task' }) },
-             ]}
+            options={[
+              { value: 'default', label: intl.formatMessage({ id: 'pages.workflow.node.type.default' }) },
+              { value: 'approval', label: intl.formatMessage({ id: 'pages.workflow.node.type.approval' }) },
+              { value: 'notification', label: intl.formatMessage({ id: 'pages.workflow.node.type.notification' }) },
+              { value: 'task', label: intl.formatMessage({ id: 'pages.workflow.node.type.task' }) },
+            ]}
             disabled={readOnly}
           />
         )}
-        <Switch checkedChildren="启用" unCheckedChildren="禁用" checked={formData.isActive} onChange={(v) => setFormData({ ...formData, isActive: v })} disabled={readOnly} />
+        <Switch
+          checkedChildren="启用"
+          unCheckedChildren="禁用"
+          checked={formData.isActive}
+          onChange={(v) => setFormData({ ...formData, isActive: v })}
+          disabled={readOnly}
+        />
       </div>
       <div style={{ flex: 1, minHeight: 0 }}>
         <WorkflowDesigner

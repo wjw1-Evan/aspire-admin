@@ -1,23 +1,9 @@
+import { Badge, Descriptions, Divider, Drawer, Grid, Space, Spin, Tag, Typography } from 'antd';
 import React, { useEffect, useState } from 'react';
-import {
-  Drawer,
-  Descriptions,
-  Tag,
-  Badge,
-  Space,
-  Typography,
-  Divider,
-  Spin,
-  Grid,
-} from 'antd';
 
 const { useBreakpoint } = Grid;
-import {
-  ClockCircleOutlined,
-  GlobalOutlined,
-  ApiOutlined,
-  ThunderboltOutlined,
-} from '@ant-design/icons';
+
+import { ApiOutlined, ClockCircleOutlined, GlobalOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -87,7 +73,7 @@ export default function LogDetailDrawer({
       // 关闭时重置状态
       setLog(null);
     }
-  }, [open, logId, initialLog, fetchFromApi, fetcher, intl]);
+  }, [open, logId, initialLog, fetchFromApi, fetcher]);
   const formattedResponseBody = React.useMemo(() => {
     if (!log?.responseBody) {
       return null;
@@ -102,7 +88,7 @@ export default function LogDetailDrawer({
   }, [log?.responseBody]);
 
   const isResponseTruncated = React.useMemo(
-    () => Boolean(log?.responseBody && log.responseBody.endsWith('...(truncated)')),
+    () => Boolean(log?.responseBody?.endsWith('...(truncated)')),
     [log?.responseBody],
   );
 
@@ -113,13 +99,28 @@ export default function LogDetailDrawer({
     if (!statusCode) return null;
 
     if (statusCode >= 200 && statusCode < 300) {
-      return <Badge status="success" text={intl.formatMessage({ id: 'pages.logDetail.statusSuccess' }, { code: statusCode })} />;
+      return (
+        <Badge
+          status="success"
+          text={intl.formatMessage({ id: 'pages.logDetail.statusSuccess' }, { code: statusCode })}
+        />
+      );
     }
     if (statusCode >= 400 && statusCode < 500) {
-      return <Badge status="warning" text={intl.formatMessage({ id: 'pages.logDetail.statusClientError' }, { code: statusCode })} />;
+      return (
+        <Badge
+          status="warning"
+          text={intl.formatMessage({ id: 'pages.logDetail.statusClientError' }, { code: statusCode })}
+        />
+      );
     }
     if (statusCode >= 500) {
-      return <Badge status="error" text={intl.formatMessage({ id: 'pages.logDetail.statusServerError' }, { code: statusCode })} />;
+      return (
+        <Badge
+          status="error"
+          text={intl.formatMessage({ id: 'pages.logDetail.statusServerError' }, { code: statusCode })}
+        />
+      );
     }
     return <Badge status="default" text={`${statusCode}`} />;
   };
@@ -172,62 +173,53 @@ export default function LogDetailDrawer({
             </Descriptions>
 
             {/* HTTP 请求信息 */}
-            {(log.httpMethod ||
-              log.path ||
-              log.statusCode ||
-              log.duration !== undefined) && (
-                <>
-                  <Divider />
-                  <Descriptions title={intl.formatMessage({ id: 'pages.logDetail.httpRequestInfo' })} bordered column={1}>
-                    {log.httpMethod && (
-                      <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.requestMethod' })}>
-                        <Tag
-                          color={getMethodColor(log.httpMethod)}
-                          icon={<ApiOutlined />}
-                        >
-                          {log.httpMethod}
-                        </Tag>
-                      </Descriptions.Item>
-                    )}
-                    {log.path && (
-                      <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.requestPath' })}>
-                        <Text code copyable>
-                          {log.path}
-                        </Text>
-                      </Descriptions.Item>
-                    )}
-                    {log.queryString && (
-                      <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.queryParams' })}>
-                        <Paragraph
-                          code
-                          copyable
-                          ellipsis={{ rows: 2, expandable: true }}
-                          style={{ marginBottom: 0 }}
-                        >
-                          {log.queryString}
-                        </Paragraph>
-                      </Descriptions.Item>
-                    )}
-                    {log.statusCode !== undefined && (
-                      <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.responseStatus' })}>
-                        {getStatusBadge(log.statusCode)}
-                      </Descriptions.Item>
-                    )}
-                    {log.duration !== undefined && (
-                      <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.requestDuration' })}>
-                        <Space>
-                          <ThunderboltOutlined />
-                          <Text strong>{formatDuration(log.duration)}</Text>
-                          {log.duration > 1000 && log.duration <= 3000 && (
-                            <Tag color="warning">{intl.formatMessage({ id: 'pages.logDetail.responseSlow' })}</Tag>
-                          )}
-                          {log.duration > 3000 && <Tag color="error">{intl.formatMessage({ id: 'pages.logDetail.responseTimeout' })}</Tag>}
-                        </Space>
-                      </Descriptions.Item>
-                    )}
-                  </Descriptions>
-                </>
-              )}
+            {(log.httpMethod || log.path || log.statusCode || log.duration !== undefined) && (
+              <>
+                <Divider />
+                <Descriptions title={intl.formatMessage({ id: 'pages.logDetail.httpRequestInfo' })} bordered column={1}>
+                  {log.httpMethod && (
+                    <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.requestMethod' })}>
+                      <Tag color={getMethodColor(log.httpMethod)} icon={<ApiOutlined />}>
+                        {log.httpMethod}
+                      </Tag>
+                    </Descriptions.Item>
+                  )}
+                  {log.path && (
+                    <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.requestPath' })}>
+                      <Text code copyable>
+                        {log.path}
+                      </Text>
+                    </Descriptions.Item>
+                  )}
+                  {log.queryString && (
+                    <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.queryParams' })}>
+                      <Paragraph code copyable ellipsis={{ rows: 2, expandable: true }} style={{ marginBottom: 0 }}>
+                        {log.queryString}
+                      </Paragraph>
+                    </Descriptions.Item>
+                  )}
+                  {log.statusCode !== undefined && (
+                    <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.responseStatus' })}>
+                      {getStatusBadge(log.statusCode)}
+                    </Descriptions.Item>
+                  )}
+                  {log.duration !== undefined && (
+                    <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.requestDuration' })}>
+                      <Space>
+                        <ThunderboltOutlined />
+                        <Text strong>{formatDuration(log.duration)}</Text>
+                        {log.duration > 1000 && log.duration <= 3000 && (
+                          <Tag color="warning">{intl.formatMessage({ id: 'pages.logDetail.responseSlow' })}</Tag>
+                        )}
+                        {log.duration > 3000 && (
+                          <Tag color="error">{intl.formatMessage({ id: 'pages.logDetail.responseTimeout' })}</Tag>
+                        )}
+                      </Space>
+                    </Descriptions.Item>
+                  )}
+                </Descriptions>
+              </>
+            )}
 
             {formattedResponseBody && (
               <>
@@ -248,9 +240,7 @@ export default function LogDetailDrawer({
                       {formattedResponseBody}
                     </Paragraph>
                     {isResponseTruncated && (
-                      <Text type="secondary">
-                        {intl.formatMessage({ id: 'pages.logDetail.responseTruncated' })}
-                      </Text>
+                      <Text type="secondary">{intl.formatMessage({ id: 'pages.logDetail.responseTruncated' })}</Text>
                     )}
                   </Descriptions.Item>
                 </Descriptions>
@@ -272,11 +262,7 @@ export default function LogDetailDrawer({
                   )}
                   {log.userAgent && (
                     <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.userAgent' })}>
-                      <Paragraph
-                        copyable
-                        ellipsis={{ rows: 3, expandable: true }}
-                        style={{ marginBottom: 0 }}
-                      >
+                      <Paragraph copyable ellipsis={{ rows: 3, expandable: true }} style={{ marginBottom: 0 }}>
                         {log.userAgent}
                       </Paragraph>
                     </Descriptions.Item>
@@ -287,9 +273,7 @@ export default function LogDetailDrawer({
           </Space>
         ) : (
           <div style={{ textAlign: 'center', padding: '40px 0' }}>
-            <Text type="secondary">
-              {intl.formatMessage({ id: 'pages.logDetail.noData' }) || '暂无数据'}
-            </Text>
+            <Text type="secondary">{intl.formatMessage({ id: 'pages.logDetail.noData' }) || '暂无数据'}</Text>
           </div>
         )}
       </Spin>

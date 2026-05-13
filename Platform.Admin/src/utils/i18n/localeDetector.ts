@@ -2,7 +2,7 @@
  * 缺失翻译检测器 - 通过 console.warn 捕获 React Intl 的缺失消息
  */
 
-import { getIntl as originalGetIntl, addLocale, getLocale } from '@umijs/max';
+import { addLocale, getLocale, getIntl as originalGetIntl } from '@umijs/max';
 import { translateText } from './translationService';
 
 interface MissingTranslation {
@@ -61,7 +61,11 @@ export function initSavedTranslations(): void {
       antd: null as any,
     });
 
-    console.log('[i18n] ✅ 已加载保存的翻译:', { locale: currentLocale, count: Object.keys(messages).length, keys: Object.keys(messages) });
+    console.log('[i18n] ✅ 已加载保存的翻译:', {
+      locale: currentLocale,
+      count: Object.keys(messages).length,
+      keys: Object.keys(messages),
+    });
   } else {
     console.log('[i18n] ℹ️  没有保存的翻译:', { locale: currentLocale });
   }
@@ -186,7 +190,7 @@ export function startMissingTranslationDetection(): void {
   if (typeof window !== 'undefined') {
     // 拦截 console.warn
     consoleWarnSpy = console.warn;
-    console.warn = function(...args: any[]) {
+    console.warn = function (...args: any[]) {
       const message = args[0];
 
       if (typeof message === 'string' && message.includes('Missing message')) {
@@ -202,7 +206,7 @@ export function startMissingTranslationDetection(): void {
 
     // 拦截 console.error
     consoleErrorSpy = console.error;
-    console.error = function(...args: any[]) {
+    console.error = function (...args: any[]) {
       const message = args[0];
 
       if (typeof message === 'string' && message.includes('Missing message')) {

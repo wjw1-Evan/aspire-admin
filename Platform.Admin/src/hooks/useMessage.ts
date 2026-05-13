@@ -6,6 +6,6 @@ import { getMessage } from '@/utils/antdAppInstance';
  * 优先使用 App 组件提供的 context-aware message，回退到全局实例
  */
 export function useMessage() {
-    const { message } = App.useApp();
-    return message || getMessage();
+  const { message } = App.useApp();
+  return message || getMessage();
 }

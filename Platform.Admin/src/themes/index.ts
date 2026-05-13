@@ -2,7 +2,8 @@ import type { ThemeConfig } from 'antd';
 
 export const lightTheme: ThemeConfig = {
   token: {
-    fontFamily: 'AlibabaSans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    fontFamily:
+      'AlibabaSans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   },
   components: {
     Layout: {
@@ -33,7 +34,8 @@ export const darkTheme: ThemeConfig = {
     colorWarning: '#ffc53d',
     colorError: '#ff7875',
     colorInfo: '#4096ff',
-    fontFamily: 'AlibabaSans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    fontFamily:
+      'AlibabaSans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
     boxShadowSecondary: '0 1px 4px rgba(0, 0, 0, 0.12)',
   },

@@ -1,13 +1,6 @@
 import component from './zh-CN/component';
 import globalHeader from './zh-CN/globalHeader';
 import menu from './zh-CN/menu';
-import pages from './zh-CN/pages';
-import pwa from './zh-CN/pwa';
-import settingDrawer from './zh-CN/settingDrawer';
-import settings from './zh-CN/settings';
-import request from './zh-CN/request';
-import welcome from './zh-CN/welcome';
-
 import auth from './zh-CN/modules/auth';
 import cloudStorage from './zh-CN/modules/cloud-storage';
 import company from './zh-CN/modules/company';
@@ -22,11 +15,17 @@ import park from './zh-CN/modules/park';
 import project from './zh-CN/modules/project';
 import role from './zh-CN/modules/role';
 import task from './zh-CN/modules/task';
-import userLog from './zh-CN/modules/user-log';
 import user from './zh-CN/modules/user';
+import userLog from './zh-CN/modules/user-log';
 import webScraper from './zh-CN/modules/web-scraper';
 import workflow from './zh-CN/modules/workflow';
 import xiaoke from './zh-CN/modules/xiaoke';
+import pages from './zh-CN/pages';
+import pwa from './zh-CN/pwa';
+import request from './zh-CN/request';
+import settingDrawer from './zh-CN/settingDrawer';
+import settings from './zh-CN/settings';
+import welcome from './zh-CN/welcome';
 
 export default {
   'navBar.lang': '语言',

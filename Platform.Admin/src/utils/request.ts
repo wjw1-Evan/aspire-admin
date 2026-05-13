@@ -16,4 +16,3 @@ export function getApiBaseUrl(): string {
   // In production, use the environment variable or empty string
   return process.env.REACT_APP_API_BASE_URL || '';
 }
-

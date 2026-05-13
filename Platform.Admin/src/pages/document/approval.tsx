@@ -1,28 +1,31 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import {
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  EyeOutlined,
+  FileTextOutlined,
+  HistoryOutlined,
+  RollbackOutlined,
+  UserSwitchOutlined,
+} from '@ant-design/icons';
 import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
 import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ProTable, ProColumns, ActionType } from '@ant-design/pro-components/es/table';
-import { Space, Tag, Button, Input, Modal, App, Select } from 'antd';
-import { Drawer } from 'antd';
-import { CheckCircleOutlined, CloseCircleOutlined, FileTextOutlined, EyeOutlined, HistoryOutlined, RollbackOutlined, UserSwitchOutlined } from '@ant-design/icons';
-import dayjs from 'dayjs';
+import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useIntl } from '@umijs/max';
+import { App, Button, Drawer, Input, Modal, Select, Space, Tag } from 'antd';
+import dayjs from 'dayjs';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import type { Document } from '@/services/document/api';
+import { getDocumentDetail } from '@/services/document/api';
 import {
+  ApprovalAction,
+  executeNodeAction,
+  getApprovalHistory,
   getTodoInstances,
   getWorkflowInstance,
-  getApprovalHistory,
-  executeNodeAction,
-  getNodeForm,
-  submitNodeForm,
   type WorkflowInstance,
   WorkflowStatus,
-  ApprovalAction,
-  type FormDefinition,
-  FormFieldType,
 } from '@/services/workflow/api';
-import { getDocumentDetail } from '@/services/document/api';
-import type { Document } from '@/services/document/api';
-import { getStatusMeta, workflowStatusMap, approvalActionMap } from '@/utils/statusMaps';
+import { approvalActionMap, getStatusMeta, workflowStatusMap } from '@/utils/statusMaps';
 
 interface TodoItem {
   id: string;
@@ -36,7 +39,15 @@ interface TodoItem {
   definitionName: string;
   definitionCategory: string;
   currentNode: { id: string; label?: string; nodeType: string };
-  document?: { id: string; title: string; status: number; documentType: string; category: string; createdAt: string; createdBy: string };
+  document?: {
+    id: string;
+    title: string;
+    status: number;
+    documentType: string;
+    category: string;
+    createdAt: string;
+    createdBy: string;
+  };
 }
 
 const ApprovalPage: React.FC = () => {
@@ -50,9 +61,9 @@ const ApprovalPage: React.FC = () => {
     history: [] as any[],
     search: '',
   });
-  const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
+  const set = useCallback((partial: Partial<typeof state>) => setState((prev) => ({ ...prev, ...partial })), []);
 
-  const getFlowStatus = (status?: WorkflowStatus | null) => getStatusMeta(intl, status, workflowStatusMap);
+  const _getFlowStatus = (status?: WorkflowStatus | null) => getStatusMeta(intl, status, workflowStatusMap);
 
   const handleApprove = async (item: TodoItem) => {
     modal.confirm({
@@ -80,7 +91,9 @@ const ApprovalPage: React.FC = () => {
           <Input.TextArea
             id="reject-reason-input"
             rows={3}
-            onChange={(e) => { rejectComment = e.target.value; }}
+            onChange={(e) => {
+              rejectComment = e.target.value;
+            }}
             placeholder={intl.formatMessage({ id: 'pages.document.approval.rejectReasonPlaceholder' })}
           />
         </div>
@@ -113,13 +126,17 @@ const ApprovalPage: React.FC = () => {
           <Select
             style={{ width: '100%', marginBottom: 12 }}
             placeholder={intl.formatMessage({ id: 'pages.document.approval.selectTargetNode' })}
-            onChange={(value) => { targetNodeId = value; }}
+            onChange={(value) => {
+              targetNodeId = value;
+            }}
             options={[]}
           />
           <p>{intl.formatMessage({ id: 'pages.document.approval.returnReason' })}</p>
           <Input.TextArea
             rows={3}
-            onChange={(e) => { returnComment = e.target.value; }}
+            onChange={(e) => {
+              returnComment = e.target.value;
+            }}
             placeholder={intl.formatMessage({ id: 'pages.document.approval.reasonPlaceholder' })}
           />
         </div>
@@ -153,7 +170,9 @@ const ApprovalPage: React.FC = () => {
           <Select
             style={{ width: '100%', marginBottom: 12 }}
             placeholder={intl.formatMessage({ id: 'pages.document.approval.selectUser' })}
-            onChange={(value) => { delegateToUserId = value; }}
+            onChange={(value) => {
+              delegateToUserId = value;
+            }}
             options={[]}
             showSearch
             filterOption={(input, option) => ((option as any)?.label ?? '').toLowerCase().includes(input.toLowerCase())}
@@ -161,7 +180,9 @@ const ApprovalPage: React.FC = () => {
           <p>{intl.formatMessage({ id: 'pages.document.approval.returnReason' })}</p>
           <Input.TextArea
             rows={3}
-            onChange={(e) => { delegateComment = e.target.value; }}
+            onChange={(e) => {
+              delegateComment = e.target.value;
+            }}
             placeholder={intl.formatMessage({ id: 'pages.document.approval.reasonPlaceholder' })}
           />
         </div>
@@ -190,7 +211,11 @@ const ApprovalPage: React.FC = () => {
       dataIndex: ['document', 'title'],
       ellipsis: true,
       sorter: true,
-      render: (_, r) => <a onClick={() => set({ viewingInstance: r, detailVisible: true })}><FileTextOutlined /> {r.document?.title || '-'}</a>,
+      render: (_, r) => (
+        <a onClick={() => set({ viewingInstance: r, detailVisible: true })}>
+          <FileTextOutlined /> {r.document?.title || '-'}
+        </a>
+      ),
     },
     {
       title: intl.formatMessage({ id: 'pages.workflow.table.name' }),
@@ -216,7 +241,7 @@ const ApprovalPage: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.document.table.createdAt' }),
       dataIndex: 'startedAt',
       sorter: true,
-      render: (dom) => dom ? dayjs(dom as string).format('YYYY-MM-DD HH:mm') : '-',
+      render: (dom) => (dom ? dayjs(dom as string).format('YYYY-MM-DD HH:mm') : '-'),
     },
     {
       title: intl.formatMessage({ id: 'pages.document.table.action' }),
@@ -225,7 +250,13 @@ const ApprovalPage: React.FC = () => {
       width: 260,
       render: (_, r) => (
         <Space size={4}>
-          <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => set({ viewingInstance: r, detailVisible: true })}>
+          <Button
+            variant="link"
+            color="cyan"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => set({ viewingInstance: r, detailVisible: true })}
+          >
             {intl.formatMessage({ id: 'pages.document.action.view' })}
           </Button>
           <Button type="link" size="small" icon={<CheckCircleOutlined />} onClick={() => handleApprove(r)}>
@@ -237,17 +268,30 @@ const ApprovalPage: React.FC = () => {
           <Button type="link" size="small" danger icon={<CloseCircleOutlined />} onClick={() => handleReject(r)}>
             {intl.formatMessage({ id: 'pages.document.approval.reject' })}
           </Button>
-          <Button type="link" size="small" color="purple" icon={<UserSwitchOutlined />} onClick={() => handleDelegate(r)}>
+          <Button
+            type="link"
+            size="small"
+            color="purple"
+            icon={<UserSwitchOutlined />}
+            onClick={() => handleDelegate(r)}
+          >
             {intl.formatMessage({ id: 'pages.document.approval.delegate' })}
           </Button>
-          <Button type="link" size="small" icon={<HistoryOutlined />} onClick={async () => {
-            try {
-              const historyResponse = await getApprovalHistory(r.id);
-              if (historyResponse.success && historyResponse.data) {
-                set({ history: historyResponse.data, historyVisible: true });
+          <Button
+            type="link"
+            size="small"
+            icon={<HistoryOutlined />}
+            onClick={async () => {
+              try {
+                const historyResponse = await getApprovalHistory(r.id);
+                if (historyResponse.success && historyResponse.data) {
+                  set({ history: historyResponse.data, historyVisible: true });
+                }
+              } catch (error) {
+                console.error('获取审批历史失败:', error);
               }
-            } catch (error) { console.error('获取审批历史失败:', error); }
-          }}>
+            }}
+          >
             {intl.formatMessage({ id: 'pages.workflow.monitor.action.history' })}
           </Button>
         </Space>
@@ -261,10 +305,13 @@ const ApprovalPage: React.FC = () => {
         actionRef={actionRef}
         headerTitle={
           <Space size={24}>
-            <Space><FileTextOutlined />{intl.formatMessage({ id: 'pages.document.approval' })}</Space>
+            <Space>
+              <FileTextOutlined />
+              {intl.formatMessage({ id: 'pages.document.approval' })}
+            </Space>
           </Space>
         }
-        request={async (params: any, sort: any, filter: any) => {
+        request={async (params: any, _sort: any, _filter: any) => {
           const response = await getTodoInstances({
             page: params.current,
             pageSize: params.pageSize,
@@ -290,7 +337,10 @@ const ApprovalPage: React.FC = () => {
             allowClear
             value={state.search}
             onChange={(e) => set({ search: e.target.value })}
-            onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+            onSearch={(value) => {
+              set({ search: value });
+              actionRef.current?.reload();
+            }}
             style={{ width: 260, marginRight: 8 }}
           />,
         ]}
@@ -322,10 +372,26 @@ const ApprovalPage: React.FC = () => {
             state.history.map((record, index) => (
               <div key={index} style={{ padding: '12px 0', borderBottom: '1px solid #f0f0f0' }}>
                 <Space direction="vertical" style={{ width: '100%' }}>
-                  <div><strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.approver' })}:</strong> {record.approverName || record.approverId}</div>
-                  <div><strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.action' })}:</strong> {(() => { const actionMeta = getStatusMeta(intl, record.action as ApprovalAction, approvalActionMap); return <Tag color={actionMeta.color}>{actionMeta.text}</Tag>; })()}</div>
-                  {record.comment && <div><strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.comment' })}:</strong> {record.comment}</div>}
-                  <div><strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.time' })}:</strong> {record.approvedAt ? dayjs(record.approvedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</div>
+                  <div>
+                    <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.approver' })}:</strong>{' '}
+                    {record.approverName || record.approverId}
+                  </div>
+                  <div>
+                    <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.action' })}:</strong> {(() => {
+                      const actionMeta = getStatusMeta(intl, record.action as ApprovalAction, approvalActionMap);
+                      return <Tag color={actionMeta.color}>{actionMeta.text}</Tag>;
+                    })()}
+                  </div>
+                  {record.comment && (
+                    <div>
+                      <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.comment' })}:</strong>{' '}
+                      {record.comment}
+                    </div>
+                  )}
+                  <div>
+                    <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.time' })}:</strong>{' '}
+                    {record.approvedAt ? dayjs(record.approvedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
+                  </div>
                 </Space>
               </div>
             ))
@@ -354,16 +420,27 @@ const ApprovalDetail: React.FC<{ item: TodoItem }> = ({ item }) => {
 
   return (
     <div>
-      <ProDescriptions column={1} bordered size="small" title={intl.formatMessage({ id: 'pages.document.detail.title' })}>
+      <ProDescriptions
+        column={1}
+        bordered
+        size="small"
+        title={intl.formatMessage({ id: 'pages.document.detail.title' })}
+      >
         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.table.title' })}>
           <strong>{doc?.title || item.document?.title || '-'}</strong>
         </ProDescriptions.Item>
-        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.workflow.table.name' })}>{item.definitionName}</ProDescriptions.Item>
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.workflow.table.name' })}>
+          {item.definitionName}
+        </ProDescriptions.Item>
         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.workflow.monitor.table.currentNode' })}>
           <Tag color="blue">{item.currentNode?.label || item.currentNodeId}</Tag>
         </ProDescriptions.Item>
-        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.table.type' })}>{doc?.documentType || '-'}</ProDescriptions.Item>
-        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.table.createdBy' })}>{item.startedBy}</ProDescriptions.Item>
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.table.type' })}>
+          {doc?.documentType || '-'}
+        </ProDescriptions.Item>
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.table.createdBy' })}>
+          {item.startedBy}
+        </ProDescriptions.Item>
         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.document.table.createdAt' })}>
           {item.startedAt ? dayjs(item.startedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
         </ProDescriptions.Item>
@@ -371,7 +448,10 @@ const ApprovalDetail: React.FC<{ item: TodoItem }> = ({ item }) => {
       {doc?.content && (
         <div style={{ marginTop: 16 }}>
           <h4>{intl.formatMessage({ id: 'pages.document.detail.content' })}</h4>
-          <div style={{ padding: 12, border: '1px solid #f0f0f0', borderRadius: 6 }} dangerouslySetInnerHTML={{ __html: doc.content }} />
+          <div
+            style={{ padding: 12, border: '1px solid #f0f0f0', borderRadius: 6 }}
+            dangerouslySetInnerHTML={{ __html: doc.content }}
+          />
         </div>
       )}
       {instance?.variables && Object.keys(instance.variables).length > 0 && (
@@ -391,4 +471,3 @@ const ApprovalDetail: React.FC<{ item: TodoItem }> = ({ item }) => {
 };
 
 export default ApprovalPage;
-

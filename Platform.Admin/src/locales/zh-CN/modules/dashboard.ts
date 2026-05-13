@@ -264,5 +264,5 @@ export default {
   'pages.dashboard.version.detail': '版本详情',
   'pages.dashboard.version.cardsSnapshot': '卡片快照',
   'pages.dashboard.version.selectTwoVersions': '请选择两个版本进行比较',
-   'pages.dashboard.cardConfig.refreshInterval': '刷新间隔（秒）',
+  'pages.dashboard.cardConfig.refreshInterval': '刷新间隔（秒）',
 };

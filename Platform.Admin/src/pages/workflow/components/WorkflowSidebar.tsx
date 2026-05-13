@@ -1,6 +1,6 @@
-import React from 'react';
+import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
-import { MenuUnfoldOutlined, MenuFoldOutlined } from '@ant-design/icons';
+import React from 'react';
 import { NODE_CONFIGS } from './WorkflowDesignerConstants';
 
 export interface WorkflowSidebarProps {
@@ -12,7 +12,11 @@ export interface WorkflowSidebarProps {
 }
 
 const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
-  collapsed, onToggle, onAddNode, onDragStart, readOnly = false,
+  collapsed,
+  onToggle,
+  onAddNode,
+  onDragStart,
+  readOnly = false,
 }) => {
   const intl = useIntl();
 
@@ -33,25 +37,50 @@ const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
 
   return (
     <>
-      <div style={{
-        width: collapsed ? 0 : 280, background: 'white', borderRight: collapsed ? 'none' : '1px solid #e2e8f0',
-        display: 'flex', flexDirection: 'column', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-        zIndex: 10, position: 'relative', boxShadow: collapsed ? 'none' : '4px 0 10px rgba(0,0,0,0.02)',
-        overflow: 'hidden',
-      }}>
-        <div style={{
-          padding: '20px 16px', borderBottom: '1px solid #f1f5f9', fontWeight: 700,
-          color: '#0f172a', fontSize: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        }}>
+      <div
+        style={{
+          width: collapsed ? 0 : 280,
+          background: 'white',
+          borderRight: collapsed ? 'none' : '1px solid #e2e8f0',
+          display: 'flex',
+          flexDirection: 'column',
+          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+          zIndex: 10,
+          position: 'relative',
+          boxShadow: collapsed ? 'none' : '4px 0 10px rgba(0,0,0,0.02)',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            padding: '20px 16px',
+            borderBottom: '1px solid #f1f5f9',
+            fontWeight: 700,
+            color: '#0f172a',
+            fontSize: 16,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
           <span>组件库</span>
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
           {Object.entries(activityCategories).map(([category, items]) => (
             <div style={{ marginBottom: 24 }} key={category}>
-              <div style={{
-                fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase',
-                letterSpacing: '0.1em', marginBottom: 12, paddingLeft: 4, display: 'flex', alignItems: 'center',
-              }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: '#94a3b8',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  marginBottom: 12,
+                  paddingLeft: 4,
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
                 {category}
                 <span style={{ flex: 1, height: 1, background: '#f1f5f9', marginLeft: 10 }} />
               </div>
@@ -63,9 +92,15 @@ const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
                   draggable
                   title={intl.formatMessage({ id: 'pages.workflow.designer.dragDropTooltip' })}
                   style={{
-                    display: 'flex', alignItems: 'center', padding: 12, marginBottom: 8,
-                    border: '1px solid rgba(226, 232, 240, 0.6)', borderRadius: 12, cursor: 'grab',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', background: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: 12,
+                    marginBottom: 8,
+                    border: '1px solid rgba(226, 232, 240, 0.6)',
+                    borderRadius: 12,
+                    cursor: 'grab',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    background: 'white',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.borderColor = '#3b82f6';
@@ -78,18 +113,33 @@ const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
                     e.currentTarget.style.transform = 'none';
                   }}
                 >
-                  <div style={{
-                    width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    borderRadius: 10, marginRight: 14, fontSize: 20, background: '#f8fafc',
-                    border: '1px solid #f1f5f9', color: '#3b82f6', transition: 'all 0.3s',
-                  }}>
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: 10,
+                      marginRight: 14,
+                      fontSize: 20,
+                      background: '#f8fafc',
+                      border: '1px solid #f1f5f9',
+                      color: '#3b82f6',
+                      transition: 'all 0.3s',
+                    }}
+                  >
                     {item.icon}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: '#1e293b', marginBottom: 2 }}>
-                      {intl.formatMessage({ id: `pages.workflow.designer.add${item.type.charAt(0).toUpperCase() + item.type.slice(1)}` })}
+                      {intl.formatMessage({
+                        id: `pages.workflow.designer.add${item.type.charAt(0).toUpperCase() + item.type.slice(1)}`,
+                      })}
                     </div>
-                    <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.4 }}>{(item as any).description || ''}</div>
+                    <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.4 }}>
+                      {(item as any).description || ''}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -100,16 +150,33 @@ const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
       <div
         onClick={onToggle}
         style={{
-          position: 'absolute', left: collapsed ? 0 : 280, top: '50%', transform: 'translateY(-50%)',
-          width: collapsed ? 28 : 24, height: 56, background: 'white',
-          border: `1px solid #e2e8f0`, borderLeft: collapsed ? '1px solid #e2e8f0' : 'none',
+          position: 'absolute',
+          left: collapsed ? 0 : 280,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          width: collapsed ? 28 : 24,
+          height: 56,
+          background: 'white',
+          border: `1px solid #e2e8f0`,
+          borderLeft: collapsed ? '1px solid #e2e8f0' : 'none',
           borderRadius: collapsed ? '0 12px 12px 0' : '0 12px 12px 0',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-          zIndex: 100, transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)', color: '#94a3b8',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          zIndex: 100,
+          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+          color: '#94a3b8',
           boxShadow: '4px 0 10px rgba(0,0,0,0.02)',
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.color = '#3b82f6'; e.currentTarget.style.background = '#fcfdfe'; }}
-        onMouseLeave={(e) => { e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.background = 'white'; }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.color = '#3b82f6';
+          e.currentTarget.style.background = '#fcfdfe';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.color = '#94a3b8';
+          e.currentTarget.style.background = 'white';
+        }}
       >
         {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
       </div>

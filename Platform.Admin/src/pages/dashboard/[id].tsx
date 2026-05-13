@@ -1,14 +1,11 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate, history } from '@umijs/max';
-import { Space, Typography, Button, Spin, Result, Card, Row, Col, Empty, Grid } from 'antd';
-import { PlusOutlined, SaveOutlined, ArrowLeftOutlined, SettingOutlined, DashboardOutlined } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
-import { ModalForm, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-components/es/form';
+import { ArrowLeftOutlined, PlusOutlined, SaveOutlined, SettingOutlined } from '@ant-design/icons';
+import { ModalForm, ProFormSelect, ProFormText, ProFormTextArea } from '@ant-design/pro-components/es/form';
 import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { request, useIntl } from '@umijs/max';
-
-import type { ApiResponse } from '@/types';
+import { history, request, useIntl, useNavigate, useParams } from '@umijs/max';
+import { Button, Card, Col, Empty, Grid, Result, Row, Space, Spin, Typography } from 'antd';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useMessage } from '@/hooks/useMessage';
+import type { ApiResponse } from '@/types';
 
 const { useBreakpoint } = Grid;
 const { Title } = Typography;
@@ -42,19 +39,23 @@ interface Dashboard {
 
 const api = {
   get: (id: string) => request<ApiResponse<Dashboard>>(`/apiservice/api/dashboard/${id}`),
-  update: (id: string, data: Partial<Dashboard>) => request<ApiResponse<Dashboard>>(`/apiservice/api/dashboard/${id}`, { method: 'PUT', data }),
-  addCard: (dashboardId: string, data: Partial<DashboardCard>) => request<ApiResponse<DashboardCard>>(`/apiservice/api/dashboard/${dashboardId}/cards`, { method: 'POST', data }),
-  updateCard: (cardId: string, data: Partial<DashboardCard>) => request<ApiResponse<DashboardCard>>(`/apiservice/api/dashboard/cards/${cardId}`, { method: 'PUT', data }),
-  deleteCard: (cardId: string) => request<ApiResponse<void>>(`/apiservice/api/dashboard/cards/${cardId}`, { method: 'DELETE' }),
+  update: (id: string, data: Partial<Dashboard>) =>
+    request<ApiResponse<Dashboard>>(`/apiservice/api/dashboard/${id}`, { method: 'PUT', data }),
+  addCard: (dashboardId: string, data: Partial<DashboardCard>) =>
+    request<ApiResponse<DashboardCard>>(`/apiservice/api/dashboard/${dashboardId}/cards`, { method: 'POST', data }),
+  updateCard: (cardId: string, data: Partial<DashboardCard>) =>
+    request<ApiResponse<DashboardCard>>(`/apiservice/api/dashboard/cards/${cardId}`, { method: 'PUT', data }),
+  deleteCard: (cardId: string) =>
+    request<ApiResponse<void>>(`/apiservice/api/dashboard/cards/${cardId}`, { method: 'DELETE' }),
 };
 
 const DashboardEditPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
   const intl = useIntl();
   const message = useMessage();
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const screens = useBreakpoint();
-  const isMobile = !screens.md;
+  const _isMobile = !screens.md;
 
   const [state, setState] = useState({
     loading: true,
@@ -63,13 +64,7 @@ const DashboardEditPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
     cardFormVisible: false,
     editingCard: null as DashboardCard | null,
   });
-  const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
-
-  useEffect(() => {
-    if (id) {
-      loadDashboard();
-    }
-  }, [id]);
+  const set = useCallback((partial: Partial<typeof state>) => setState((prev) => ({ ...prev, ...partial })), []);
 
   const loadDashboard = async () => {
     if (!id) return;
@@ -86,6 +81,12 @@ const DashboardEditPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
       set({ loading: false });
     }
   };
+
+  useEffect(() => {
+    if (id) {
+      loadDashboard();
+    }
+  }, [id, loadDashboard]);
 
   const handleUpdateDashboard = async (values: Record<string, any>) => {
     if (!state.dashboard) return false;
@@ -114,7 +115,7 @@ const DashboardEditPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
         loadDashboard();
       }
       return res.success;
-    } catch (error) {
+    } catch (_error) {
       message.error(intl.formatMessage({ id: 'pages.dashboard.addCardFailed' }));
       return false;
     }
@@ -130,7 +131,7 @@ const DashboardEditPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
         loadDashboard();
       }
       return res.success;
-    } catch (error) {
+    } catch (_error) {
       message.error(intl.formatMessage({ id: 'pages.dashboard.updateCardFailed' }));
       return false;
     }
@@ -143,7 +144,7 @@ const DashboardEditPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
         message.success(intl.formatMessage({ id: 'pages.dashboard.deleteCardSuccess' }));
         loadDashboard();
       }
-    } catch (error) {
+    } catch (_error) {
       message.error(intl.formatMessage({ id: 'pages.dashboard.deleteCardFailed' }));
     }
   };
@@ -163,19 +164,16 @@ const DashboardEditPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
             >
               {intl.formatMessage({ id: 'pages.dashboard.settings' })}
             </Button>
-            <Button
-              type="link"
-              size="small"
-              danger
-              onClick={() => handleDeleteCard(card.id)}
-            >
+            <Button type="link" size="small" danger onClick={() => handleDeleteCard(card.id)}>
               {intl.formatMessage({ id: 'pages.dashboard.delete' })}
             </Button>
           </Space>
         }
         style={{ height: '100%' }}
       >
-        <div style={{ height: card.height * 100 - 60, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div
+          style={{ height: card.height * 100 - 60, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
           <Empty description={intl.formatMessage({ id: 'pages.dashboard.cardPlaceholder' })} />
         </div>
       </Card>
@@ -221,10 +219,7 @@ const DashboardEditPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
           </Title>
         </Space>
         <Space>
-          <Button
-            icon={<SaveOutlined />}
-            onClick={() => set({ dashboardFormVisible: true })}
-          >
+          <Button icon={<SaveOutlined />} onClick={() => set({ dashboardFormVisible: true })}>
             {intl.formatMessage({ id: 'pages.dashboard.edit' })}
           </Button>
           <Button
@@ -238,16 +233,11 @@ const DashboardEditPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
       </div>
 
       {state.dashboard.description && (
-        <div style={{ marginBottom: 16, color: '#666' }}>
-          {state.dashboard.description}
-        </div>
+        <div style={{ marginBottom: 16, color: '#666' }}>{state.dashboard.description}</div>
       )}
 
       {state.dashboard.cards.length === 0 ? (
-        <Empty
-          description={intl.formatMessage({ id: 'pages.dashboard.noCards' })}
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-        >
+        <Empty description={intl.formatMessage({ id: 'pages.dashboard.noCards' })} image={Empty.PRESENTED_IMAGE_SIMPLE}>
           <Button
             type="primary"
             icon={<PlusOutlined />}
@@ -258,7 +248,7 @@ const DashboardEditPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
         </Empty>
       ) : (
         <Row gutter={[16, 16]}>
-          {state.dashboard.cards.map(card => (
+          {state.dashboard.cards.map((card) => (
             <Col key={card.id} xs={24} sm={12} md={8} lg={6}>
               {renderCard(card)}
             </Col>
@@ -270,14 +260,20 @@ const DashboardEditPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
         key={state.dashboard?.id || 'edit'}
         title={intl.formatMessage({ id: 'pages.dashboard.edit' })}
         open={state.dashboardFormVisible}
-        onOpenChange={(open) => { if (!open) set({ dashboardFormVisible: false }); }}
-        initialValues={state.dashboard ? {
-          name: state.dashboard.name,
-          description: state.dashboard.description,
-          layoutType: state.dashboard.layoutType,
-          theme: state.dashboard.theme,
-          isPublic: state.dashboard.isPublic ? 'true' : 'false',
-        } : undefined}
+        onOpenChange={(open) => {
+          if (!open) set({ dashboardFormVisible: false });
+        }}
+        initialValues={
+          state.dashboard
+            ? {
+                name: state.dashboard.name,
+                description: state.dashboard.description,
+                layoutType: state.dashboard.layoutType,
+                theme: state.dashboard.theme,
+                isPublic: state.dashboard.isPublic ? 'true' : 'false',
+              }
+            : undefined
+        }
         onFinish={handleUpdateDashboard}
         autoFocusFirstInput
         width={600}
@@ -322,20 +318,28 @@ const DashboardEditPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
 
       <ModalForm
         key={state.editingCard?.id || 'create'}
-        title={state.editingCard ? intl.formatMessage({ id: 'pages.dashboard.editCard' }) : intl.formatMessage({ id: 'pages.dashboard.addCard' })}
+        title={
+          state.editingCard
+            ? intl.formatMessage({ id: 'pages.dashboard.editCard' })
+            : intl.formatMessage({ id: 'pages.dashboard.addCard' })
+        }
         open={state.cardFormVisible}
-        onOpenChange={(open) => { if (!open) set({ cardFormVisible: false, editingCard: null }); }}
-        initialValues={state.editingCard || {
-          cardType: 'statistic',
-          title: '',
-          positionX: 0,
-          positionY: 0,
-          width: 4,
-          height: 3,
-          dataSource: '{}',
-          styleConfig: '{}',
-          refreshInterval: 300,
+        onOpenChange={(open) => {
+          if (!open) set({ cardFormVisible: false, editingCard: null });
         }}
+        initialValues={
+          state.editingCard || {
+            cardType: 'statistic',
+            title: '',
+            positionX: 0,
+            positionY: 0,
+            width: 4,
+            height: 3,
+            dataSource: '{}',
+            styleConfig: '{}',
+            refreshInterval: 300,
+          }
+        }
         onFinish={state.editingCard ? handleUpdateCard : handleAddCard}
         autoFocusFirstInput
         width={600}

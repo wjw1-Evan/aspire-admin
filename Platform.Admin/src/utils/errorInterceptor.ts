@@ -6,6 +6,7 @@
 
 import { getMessage, getNotification } from './antdAppInstance';
 import { getIntl, getLocale } from '@umijs/max';
+import { reportError } from './monitor';
 
 // 将提示操作调度到渲染阶段之外，避免 React 18 并发模式警告
 const runAfterRender = (fn: () => void) => {
@@ -554,13 +555,11 @@ class UnifiedErrorInterceptor {
    * 发送到监控系统
    */
   private sendToMonitoring(errorInfo: ErrorInfo) {
-    // 集成监控系统（如 Sentry、LogRocket 等）
-    if (typeof globalThis !== 'undefined' && (globalThis as any).gtag) {
-      (globalThis as any).gtag('event', 'exception', {
-        description: errorInfo.message,
-        fatal: errorInfo.severity === ErrorSeverity.CRITICAL,
-      });
-    }
+    reportError({
+      message: errorInfo.message,
+      severity: errorInfo.severity,
+      context: { url: errorInfo.url, errorCode: errorInfo.errorCode, httpCode: errorInfo.httpCode },
+    });
   }
 
   /**

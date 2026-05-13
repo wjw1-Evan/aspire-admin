@@ -62,7 +62,7 @@
     {
         "Name": "user-log",
         "Title": "操作日志",
-        "Path": "/user-log",
+        "Path": "/system/user-log",
         "Component": "./user-log",
         "Icon": "file-text",
         "ParentId": "system",
@@ -120,7 +120,7 @@
     {
         "Name": "project-management-task",
         "Title": "任务管理",
-        "Path": "/task-management",
+        "Path": "/project-management/task-management",
         "Component": "./task-management",
         "Icon": "schedule",
         "ParentId": "project-management",

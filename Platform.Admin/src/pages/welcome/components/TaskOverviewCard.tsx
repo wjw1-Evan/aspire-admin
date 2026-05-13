@@ -1,7 +1,7 @@
 import * as API from '@/types';
 import React, { useState } from 'react';
 import { Row, Col, Space, Alert, Typography, Tag, theme, Checkbox } from 'antd';
-import { ProCard } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
 import { BarChartOutlined, ClockCircleOutlined, RocketOutlined, CheckCircleOutlined, CloseCircleOutlined, SafetyOutlined, MenuOutlined } from '@ant-design/icons';
 import { useIntl, history } from '@umijs/max';
 import useCommonStyles from '@/hooks/useCommonStyles';
@@ -69,7 +69,7 @@ const TaskOverviewCard: React.FC<TaskOverviewCardProps> = ({ taskStatistics, tod
                         color={token.colorPrimary}
                         loading={loading}
                         token={token}
-                        onClick={() => history.push('/task-management')}
+                        onClick={() => history.push('/project-management/task-management')}
                     />
                 </Col>
                 <Col xs={24} sm={8}>
@@ -80,7 +80,7 @@ const TaskOverviewCard: React.FC<TaskOverviewCardProps> = ({ taskStatistics, tod
                         color={token.colorWarning}
                         loading={loading}
                         token={token}
-                        onClick={() => history.push('/task-management?status=0')}
+                        onClick={() => history.push('/project-management/task-management?status=0')}
                     />
                 </Col>
                 <Col xs={24} sm={8}>
@@ -91,7 +91,7 @@ const TaskOverviewCard: React.FC<TaskOverviewCardProps> = ({ taskStatistics, tod
                         color={token.colorSuccess}
                         loading={loading}
                         token={token}
-                        onClick={() => history.push('/task-management?status=2')}
+                        onClick={() => history.push('/project-management/task-management?status=2')}
                     />
                 </Col>
             </Row>
@@ -104,7 +104,7 @@ const TaskOverviewCard: React.FC<TaskOverviewCardProps> = ({ taskStatistics, tod
                         color={token.colorSuccess}
                         loading={loading}
                         token={token}
-                        onClick={() => history.push('/task-management?status=3')}
+                        onClick={() => history.push('/project-management/task-management?status=3')}
                     />
                 </Col>
                 <Col xs={24} sm={8}>
@@ -115,7 +115,7 @@ const TaskOverviewCard: React.FC<TaskOverviewCardProps> = ({ taskStatistics, tod
                         color={token.colorError}
                         loading={loading}
                         token={token}
-                        onClick={() => history.push('/task-management?status=5')}
+                        onClick={() => history.push('/project-management/task-management?status=5')}
                     />
                 </Col>
                 <Col xs={24} sm={8}>
@@ -127,7 +127,7 @@ const TaskOverviewCard: React.FC<TaskOverviewCardProps> = ({ taskStatistics, tod
                         color={token.colorPrimary}
                         loading={loading}
                         token={token}
-                        onClick={() => history.push('/task-management')}
+                        onClick={() => history.push('/project-management/task-management')}
                     />
                 </Col>
             </Row>
@@ -152,7 +152,7 @@ const TaskOverviewCard: React.FC<TaskOverviewCardProps> = ({ taskStatistics, tod
                                     borderBottom: '1px solid #f0f0f0',
                                     cursor: 'pointer'
                                 }}
-                                onClick={() => history.push(`/task-management?taskId=${task.id}`)}
+                                onClick={() => history.push(`/project-management/task-management?taskId=${task.id}`)}
                             >
                                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                                     <div

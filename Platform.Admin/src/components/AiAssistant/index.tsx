@@ -88,7 +88,7 @@ interface AiAssistantProps {
   defaultOpen?: boolean;
 }
 
-const AiAssistant: React.FC<AiAssistantProps> = ({ defaultOpen }) => {
+const AiAssistant: React.FC<AiAssistantProps> = React.memo(({ defaultOpen }) => {
   const intl = useIntl();
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser;
@@ -938,6 +938,6 @@ const AiAssistant: React.FC<AiAssistantProps> = ({ defaultOpen }) => {
       )}
     </div>
   );
-};
+});
 
 export default AiAssistant;

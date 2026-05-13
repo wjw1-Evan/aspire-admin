@@ -106,6 +106,11 @@ export default [
   },
   {
     path: '/task-management',
+    redirect: '/project-management/task-management',
+    hideInMenu: true,
+  },
+  {
+    path: '/project-management/task-management',
     component: './task-management',
     hideInMenu: true,
   },

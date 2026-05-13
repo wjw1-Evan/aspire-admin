@@ -105,7 +105,7 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => 
   return { nodes: newNodes, edges };
 };
 
-const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
+const WorkflowDesigner: React.FC<WorkflowDesignerProps> = React.memo(({
   graph, onSave, onClose, readOnly = false,
 }) => {
   const intl = useIntl();
@@ -517,6 +517,6 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
       />
     </div>
   );
-};
+});
 
 export default WorkflowDesigner;

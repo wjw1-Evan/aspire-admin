@@ -15,6 +15,10 @@ import { tokenUtils } from '@/utils/token';
 import TokenRefreshManager from '@/utils/tokenRefreshManager';
 import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './request-error-config';
+import { initMonitor } from '@/utils/monitor';
+
+// 初始化性能监控（Web Vitals）
+initMonitor();
 
 // 🚀 核心优化：全量 Layout 系统中剥离大型组件（AiAssistant 是真正的 React 组件，可以使用 lazy）
 const AiAssistant = React.lazy(() => import('@/components/AiAssistant'));
@@ -429,7 +433,7 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
         const desiredOrder = [
           '/welcome',
           '/project-management',
-          '/task-management',
+          '/project-management/task-management',
           '/user-management',
           '/cloud-storage',
           '/iot-platform',

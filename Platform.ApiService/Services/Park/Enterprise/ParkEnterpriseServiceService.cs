@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using System.Linq.Dynamic.Core;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.AI;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
@@ -14,16 +15,18 @@ namespace Platform.ApiService.Services;
 public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
 {
     private readonly DbContext _context;
-
+    private readonly IChatClient _openAiClient;
     private readonly ILogger<ParkEnterpriseServiceService> _logger;
 
     /// <summary>
     /// 初始化企业服务管理服务
     /// </summary>
     public ParkEnterpriseServiceService(DbContext context,
+        IChatClient openAiClient,
         ILogger<ParkEnterpriseServiceService> logger
     ) {
         _context = context;
+        _openAiClient = openAiClient;
         _logger = logger;
     }
 
@@ -158,16 +161,70 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
         return request != null ? await MapToRequestDtoAsync(request) : null;
     }
 
+    #region AI 智能分类
+
     /// <summary>
-    /// 创建服务申请
+    /// AI 智能建议服务类别
+    /// </summary>
+    public async Task<SuggestCategoryResponse> SuggestCategoryAsync(string description)
+    {
+        var categories = await _context.Set<ServiceCategory>().Where(c => c.IsActive).OrderBy(c => c.SortOrder).ToListAsync();
+        if (categories.Count == 0)
+            return new SuggestCategoryResponse { CategoryId = string.Empty, CategoryName = string.Empty };
+
+        var categoryList = string.Join("\n", categories.Select(c => $"- {c.Id}: {c.Name}{(string.IsNullOrEmpty(c.Description) ? "" : $" ({c.Description})")}"));
+
+        var prompt = $"根据以下服务需求描述，从已有的服务类别中选择最合适的一个。请只返回类别 ID，不要任何其他内容。\n\n可选类别：\n{categoryList}\n\n需求描述：{description}";
+
+        try
+        {
+            var messages = new List<Microsoft.Extensions.AI.ChatMessage>
+            {
+                new(ChatRole.System, "你是一个园区企业服务的智能分类助手。根据用户描述的服务需求，从预定义的服务类别中选择最匹配的一个。仅返回类别 ID，不要任何解释。"),
+                new(ChatRole.User, prompt)
+            };
+
+            var completion = await _openAiClient.GetResponseAsync(messages);
+            var result = completion.Text?.Trim();
+
+            if (!string.IsNullOrEmpty(result))
+            {
+                var matched = categories.FirstOrDefault(c => c.Id == result);
+                if (matched != null)
+                    return new SuggestCategoryResponse { CategoryId = matched.Id, CategoryName = matched.Name };
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "AI 分类建议失败");
+        }
+
+        return new SuggestCategoryResponse { CategoryId = categories.First().Id, CategoryName = categories.First().Name };
+    }
+
+    #endregion
+
+    /// <summary>
+    /// 创建服务申请（支持 AI 自动分类）
     /// </summary>
     public async Task<ServiceRequestDto> CreateRequestAsync(CreateServiceRequestRequest request)
     {
+        var categoryId = request.CategoryId;
+        if (string.IsNullOrEmpty(categoryId) && !string.IsNullOrEmpty(request.Description))
+        {
+            var suggestion = await SuggestCategoryAsync(request.Description);
+            categoryId = suggestion.CategoryId;
+        }
+
+        var title = request.Title;
+        if (string.IsNullOrEmpty(title) && !string.IsNullOrEmpty(request.Description))
+            title = request.Description.Length > 100 ? request.Description[..100] + "..." : request.Description;
+
         var serviceRequest = new ServiceRequest
         {
-            CategoryId = request.CategoryId,
+            CategoryId = categoryId ?? string.Empty,
             TenantId = request.TenantId,
-            Title = request.Title,
+            Title = title ?? string.Empty,
             Description = request.Description,
             ContactPerson = request.ContactPerson,
             ContactPhone = request.ContactPhone,
@@ -177,6 +234,38 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
         };
 
         await _context.Set<ServiceRequest>().AddAsync(serviceRequest);
+        await _context.SaveChangesAsync();
+        return await MapToRequestDtoAsync(serviceRequest);
+    }
+
+    /// <summary>
+    /// 更新服务申请
+    /// </summary>
+    public async Task<ServiceRequestDto?> UpdateRequestAsync(string id, CreateServiceRequestRequest request)
+    {
+        var serviceRequest = await _context.Set<ServiceRequest>().FirstOrDefaultAsync(x => x.Id == id);
+        if (serviceRequest == null) return null;
+
+        var categoryId = request.CategoryId;
+        if (string.IsNullOrEmpty(categoryId) && !string.IsNullOrEmpty(request.Description))
+        {
+            var suggestion = await SuggestCategoryAsync(request.Description);
+            categoryId = suggestion.CategoryId;
+        }
+
+        serviceRequest.CategoryId = categoryId ?? serviceRequest.CategoryId;
+        var title = request.Title;
+        if (string.IsNullOrEmpty(title) && !string.IsNullOrEmpty(request.Description))
+            title = request.Description.Length > 100 ? request.Description[..100] + "..." : request.Description;
+        if (!string.IsNullOrEmpty(title))
+            serviceRequest.Title = title;
+        serviceRequest.Description = request.Description;
+        serviceRequest.ContactPerson = request.ContactPerson;
+        serviceRequest.ContactPhone = request.ContactPhone;
+        serviceRequest.Priority = request.Priority ?? serviceRequest.Priority;
+        if (!string.IsNullOrEmpty(request.TenantId))
+            serviceRequest.TenantId = request.TenantId;
+
         await _context.SaveChangesAsync();
         return await MapToRequestDtoAsync(serviceRequest);
     }
@@ -253,7 +342,8 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
             Status = request.Status,
             AssignedTo = request.AssignedTo,
             CompletedAt = request.CompletedAt,
-            Rating = request.Rating
+            Rating = request.Rating,
+            CreatedAt = request.CreatedAt
         };
     }
 

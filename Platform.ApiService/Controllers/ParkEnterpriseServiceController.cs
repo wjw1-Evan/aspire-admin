@@ -129,6 +129,19 @@ public class ParkEnterpriseServiceController : BaseApiController
     }
 
     /// <summary>
+    /// 更新服务申请
+    /// </summary>
+    [HttpPut("requests/{id}")]
+    [RequireMenu("park-management-enterprise-service")]
+    public async Task<IActionResult> UpdateRequest(string id, [FromBody] CreateServiceRequestRequest request)
+    {
+        var result = await _enterpriseService.UpdateRequestAsync(id, request);
+        if (result == null)
+            throw new KeyNotFoundException(ErrorCode.ResourceNotFound);
+        return Success(result);
+    }
+
+    /// <summary>
     /// 更新服务申请状态
     /// </summary>
     [HttpPut("requests/{id}/status")]
@@ -165,6 +178,21 @@ public class ParkEnterpriseServiceController : BaseApiController
         if (!result)
             throw new KeyNotFoundException(ErrorCode.ResourceNotFound);
         return Success(true);
+    }
+
+    #endregion
+
+    #region AI 智能分类
+
+    /// <summary>
+    /// AI 智能建议服务类别
+    /// </summary>
+    [HttpPost("categories/suggest")]
+    [RequireMenu("park-management-enterprise-service")]
+    public async Task<IActionResult> SuggestCategory([FromBody] SuggestCategoryRequest request)
+    {
+        var result = await _enterpriseService.SuggestCategoryAsync(request.Description);
+        return Success(result);
     }
 
     #endregion

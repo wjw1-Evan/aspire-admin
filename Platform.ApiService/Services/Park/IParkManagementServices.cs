@@ -257,6 +257,11 @@ public interface IParkEnterpriseServiceService
     Task<ServiceRequestDto> CreateRequestAsync(CreateServiceRequestRequest request);
 
     /// <summary>
+    /// 更新服务申请
+    /// </summary>
+    Task<ServiceRequestDto?> UpdateRequestAsync(string id, CreateServiceRequestRequest request);
+
+    /// <summary>
     /// 更新服务申请状态
     /// </summary>
     Task<ServiceRequestDto?> UpdateRequestStatusAsync(string id, UpdateServiceRequestStatusRequest request);
@@ -270,6 +275,11 @@ public interface IParkEnterpriseServiceService
     /// 服务申请评价
     /// </summary>
     Task<bool> RateRequestAsync(string id, int rating, string? feedback);
+
+    /// <summary>
+    /// AI 智能建议服务类别
+    /// </summary>
+    Task<SuggestCategoryResponse> SuggestCategoryAsync(string description);
 
     /// <summary>
     /// 获取企业服务统计数据

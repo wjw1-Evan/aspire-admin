@@ -45,15 +45,25 @@ public class ServiceRequestDto
     public string? AssignedToName { get; set; }
     public DateTime? CompletedAt { get; set; }
     public int? Rating { get; set; }
+    public DateTime? CreatedAt { get; set; }
+}
+
+public class SuggestCategoryRequest
+{
+    public string Description { get; set; } = string.Empty;
+}
+
+public class SuggestCategoryResponse
+{
+    public string CategoryId { get; set; } = string.Empty;
+    public string CategoryName { get; set; } = string.Empty;
 }
 
 public class CreateServiceRequestRequest
 {
-    [Required]
-    public string CategoryId { get; set; } = string.Empty;
+    public string? CategoryId { get; set; }
     public string? TenantId { get; set; }
-    [Required]
-    public string Title { get; set; } = string.Empty;
+    public string? Title { get; set; }
     public string? Description { get; set; }
     public string? ContactPerson { get; set; }
     public string? ContactPhone { get; set; }

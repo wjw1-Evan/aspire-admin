@@ -8,7 +8,6 @@ import {
   UserAddOutlined,
   UserOutlined,
 } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
 import { ModalForm, ProFormSelect, ProFormSwitch, ProFormTextArea } from '@ant-design/pro-components/es/form';
 import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
@@ -451,8 +450,7 @@ const UserManagement: React.FC = () => {
 
   return (
     <PageContainer>
-      <ProCard>
-        <ProTable
+      <ProTable
           actionRef={actionRef}
           params={{ search: state.search }}
           request={async (params: any, sort: any, filter: any) => {
@@ -509,7 +507,6 @@ const UserManagement: React.FC = () => {
             />,
           ]}
         />
-      </ProCard>
 
       <ModalForm
         key={state.editingUser?.id || 'edit'}

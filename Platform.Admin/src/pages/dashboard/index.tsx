@@ -9,7 +9,6 @@ import {
   SearchOutlined,
   ShareAltOutlined,
 } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
 import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
 import { ModalForm, ProFormSelect, ProFormText, ProFormTextArea } from '@ant-design/pro-components/es/form';
 import { PageContainer } from '@ant-design/pro-components/es/layout';
@@ -291,8 +290,7 @@ const DashboardListPage: React.FC = () => {
 
   return (
     <PageContainer>
-      <ProCard>
-        <ProTable
+      <ProTable
           actionRef={actionRef}
           headerTitle={
             <Space size={24}>
@@ -481,7 +479,6 @@ const DashboardListPage: React.FC = () => {
             />
           )}
         </Drawer>
-      </ProCard>
     </PageContainer>
   );
 };

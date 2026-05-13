@@ -37,7 +37,6 @@ const { Text } = Typography;
 
 interface ServiceRequest {
   id: string;
-  categoryId: string;
   categoryName?: string;
   tenantId?: string;
   tenantName?: string;
@@ -69,7 +68,6 @@ interface ParkTenant {
   phone?: string;
 }
 interface SuggestCategoryResult {
-  categoryId: string;
   categoryName: string;
 }
 
@@ -245,7 +243,7 @@ const EnterpriseService: React.FC = () => {
             icon={<EditOutlined />}
             onClick={() => {
               setCurrentRequest(record);
-              set({ suggestedCategory: { categoryId: record.categoryId, categoryName: record.categoryName || '' } });
+              set({ suggestedCategory: { categoryName: record.categoryName || '' } });
               setModal({ requestVisible: true });
             }}
           >
@@ -411,15 +409,12 @@ const EnterpriseService: React.FC = () => {
           set({ categorizing: true });
           const suggestion = await api.suggestCategory(values.description || '');
           set({ categorizing: false });
-          if (!suggestion.success || !suggestion.data?.categoryId) {
+          if (!suggestion.success || !suggestion.data?.categoryName) {
             message.error(intl.formatMessage({ id: 'pages.park.service.message.categorySuggestFailed' }));
             return false;
           }
           set({ suggestedCategory: suggestion.data });
-          const res = await api.createRequest({
-            ...values,
-            categoryId: suggestion.data.categoryId,
-          });
+          const res = await api.createRequest(values);
           if (res.success) {
             message.success(intl.formatMessage({ id: 'pages.park.service.message.createSuccess' }));
             setModal({ requestVisible: false });

@@ -3,35 +3,19 @@ using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Models;
 
-public class ServiceCategoryListResponse
+public class SuggestCategoryRequest
 {
-    public List<ServiceCategoryDto> Categories { get; set; } = new();
+    public string Description { get; set; } = string.Empty;
 }
 
-public class ServiceCategoryDto
+public class SuggestCategoryResponse
 {
-    public string Id { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public string? Icon { get; set; }
-    public int SortOrder { get; set; }
-    public bool IsActive { get; set; }
-    public int RequestCount { get; set; }
-}
-
-public class CreateServiceCategoryRequest
-{
-    [Required]
-    public string Name { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public string? Icon { get; set; }
-    public int SortOrder { get; set; }
+    public string CategoryName { get; set; } = string.Empty;
 }
 
 public class ServiceRequestDto
 {
     public string Id { get; set; } = string.Empty;
-    public string CategoryId { get; set; } = string.Empty;
     public string? CategoryName { get; set; }
     public string? TenantId { get; set; }
     public string? TenantName { get; set; }
@@ -48,20 +32,8 @@ public class ServiceRequestDto
     public DateTime? CreatedAt { get; set; }
 }
 
-public class SuggestCategoryRequest
-{
-    public string Description { get; set; } = string.Empty;
-}
-
-public class SuggestCategoryResponse
-{
-    public string CategoryId { get; set; } = string.Empty;
-    public string CategoryName { get; set; } = string.Empty;
-}
-
 public class CreateServiceRequestRequest
 {
-    public string? CategoryId { get; set; }
     public string? TenantId { get; set; }
     public string? Title { get; set; }
     public string? Description { get; set; }

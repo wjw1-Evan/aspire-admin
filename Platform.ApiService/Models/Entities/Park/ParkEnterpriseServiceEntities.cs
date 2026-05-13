@@ -5,28 +5,10 @@ using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
 
-public class ServiceCategory : MultiTenantEntity
-{
-    [Required]
-    [StringLength(100)]
-    public string Name { get; set; } = string.Empty;
-
-    [StringLength(500)]
-    public string? Description { get; set; }
-
-    [StringLength(100)]
-    public string? Icon { get; set; }
-
-    public int SortOrder { get; set; }
-
-    public bool IsActive { get; set; } = true;
-}
-
 public class ServiceRequest : MultiTenantEntity
 {
-    [Required]
     [StringLength(100)]
-    public string CategoryId { get; set; } = string.Empty;
+    public string? CategoryName { get; set; }
 
     [StringLength(100)]
     public string? TenantId { get; set; }

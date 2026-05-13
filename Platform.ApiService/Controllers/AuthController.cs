@@ -18,7 +18,6 @@ namespace Platform.ApiService.Controllers;
 public class AuthController : BaseApiController
 {
     private readonly IAuthService _authService;
-    private readonly IImageCaptchaService _imageCaptchaService;
     private readonly IPasswordEncryptionService _encryptionService;
     private readonly IUserService _userService;
     private readonly ILogger<AuthController> _logger;
@@ -27,19 +26,16 @@ public class AuthController : BaseApiController
     /// 初始化认证控制器
     /// </summary>
     /// <param name="authService">认证服务</param>
-    /// <param name="imageCaptchaService">图形验证码服务</param>
     /// <param name="encryptionService">密码加密服务</param>
     /// <param name="userService">用户服务</param>
     /// <param name="logger">日志记录器</param>
     public AuthController(
         IAuthService authService,
-        IImageCaptchaService imageCaptchaService,
         IPasswordEncryptionService encryptionService,
         IUserService userService,
         ILogger<AuthController> logger)
     {
         _authService = authService ?? throw new ArgumentNullException(nameof(authService));
-        _imageCaptchaService = imageCaptchaService ?? throw new ArgumentNullException(nameof(imageCaptchaService));
         _encryptionService = encryptionService ?? throw new ArgumentNullException(nameof(encryptionService));
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         _logger = logger;
@@ -195,95 +191,6 @@ public class AuthController : BaseApiController
         var userAgent = Request.Headers["User-Agent"].ToString();
         await _authService.LogoutAsync(RequiredUserId, ipAddress, userAgent);
         return Success(null, "登出成功");
-    }
-
-
-    /// <summary>
-    /// 获取图形验证码
-    /// </summary>
-    /// <param name="type">验证码类型（login, register）</param>
-    /// <remarks>
-    /// 生成图形验证码，用于登录和注册时的安全验证。
-    ///
-    /// 示例请求：
-    /// ```
-    /// GET /api/captcha/image?type=login
-    /// ```
-    ///
-    /// 示例响应：
-    /// ```json
-    /// {
-    ///   "success": true,
-    ///   "data": {
-    ///     "captchaId": "abc123def456",
-    ///     "imageData": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...",
-    ///     "expiresIn": 300
-    ///   }
-    /// }
-    /// ```
-    /// </remarks>
-    /// <returns>图形验证码信息</returns>
-    /// <response code="200">验证码生成成功</response>
-    /// <response code="400">验证码类型不正确</response>
-    [HttpGet("captcha/image")]
-    [AllowAnonymous]
-    public async Task<IActionResult> GetImageCaptcha([FromQuery] string type = "login")
-    {
-        if (type != "login" && type != "register")
-        {
-            throw new ArgumentException("验证码类型只能是 login 或 register");
-        }
-
-        var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString();
-        var result = await _imageCaptchaService.GenerateCaptchaAsync(type, clientIp);
-
-        return Success(result);
-    }
-
-    /// <summary>
-    /// 验证图形验证码
-    /// </summary>
-    /// <param name="request">图形验证码验证请求</param>
-    /// <remarks>
-    /// 验证图形验证码是否正确，主要用于测试环境。
-    ///
-    /// 示例请求：
-    /// ```json
-    /// POST /api/captcha/verify-image
-    /// Content-Type: application/json
-    ///
-    /// {
-    ///   "captchaId": "abc123def456",
-    ///   "answer": "ABC123",
-    ///   "type": "login"
-    /// }
-    /// ```
-    ///
-    /// 示例响应：
-    /// ```json
-    /// {
-    /// }
-    /// ```
-    /// </remarks>
-    /// <returns>验证结果</returns>
-    /// <response code="200">验证完成</response>
-    /// <response code="400">验证码ID或答案格式不正确</response>
-    [HttpPost("captcha/verify-image")]
-    [AllowAnonymous]
-    public async Task<IActionResult> VerifyImageCaptcha([FromBody] VerifyCaptchaImageRequest request)
-    {
-        if (string.IsNullOrEmpty(request.CaptchaId))
-            throw new ArgumentException("验证码ID不能为空");
-
-        if (string.IsNullOrEmpty(request.Answer))
-            throw new ArgumentException("验证码答案不能为空");
-
-        var isValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.Answer, request.Type);
-
-        if (!isValid)
-            throw new ArgumentException("验证码不正确或已过期");
-
-        return Success(null, "验证码正确");
     }
 
 

@@ -11,8 +11,7 @@ using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using System.Security.Cryptography;
 using System.Text;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Processing;
+using SkiaSharp;
 
 namespace Platform.ApiService.Services;
 
@@ -759,10 +758,18 @@ public class CloudStorageService : ICloudStorageService
     private async Task GenerateAndUploadThumbnailAsync(Stream stream, FileItem file)
     {
         stream.Position = 0;
-        using var image = await Image.LoadAsync(stream);
-        image.Mutate(x => x.Resize(200, 0));
-        using var ms = new MemoryStream();
-        await image.SaveAsPngAsync(ms);
+        using var original = SKBitmap.Decode(stream);
+        if (original == null) return;
+
+        var newWidth = 200;
+        var newHeight = original.Height * 200 / original.Width;
+
+        using var resized = original.Resize(new SKImageInfo(newWidth, newHeight), new SKSamplingOptions(SKFilterMode.Linear));
+        if (resized == null) return;
+
+        using var image = SKImage.FromBitmap(resized);
+        using var data = image.Encode(SKEncodedImageFormat.Png, 80);
+        var ms = new MemoryStream(data.ToArray());
         ms.Position = 0;
         file.ThumbnailGridFSId = await _storageClient.UploadAsync(ms, $"{file.Id}.png", "image/png", null, "cloud_storage_thumbnails");
         await _context.SaveChangesAsync();

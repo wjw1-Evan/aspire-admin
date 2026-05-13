@@ -3,10 +3,7 @@ using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using System.Text;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Processing;
-using SixLabors.ImageSharp.Drawing.Processing;
-using SixLabors.ImageSharp.PixelFormats;
+using SkiaSharp;
 
 namespace Platform.ApiService.Services;
 
@@ -392,7 +389,6 @@ public class FilePreviewService : IFilePreviewService
     /// </summary>
     private async Task<byte[]> GenerateThumbnailDataAsync(Stream originalStream, string mimeType, int width, int height)
     {
-        // 仅处理图片类型
         if (mimeType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
         {
             try
@@ -400,19 +396,25 @@ public class FilePreviewService : IFilePreviewService
                 if (originalStream.CanSeek)
                     originalStream.Position = 0;
 
-                using var image = await Image.LoadAsync(originalStream);
+                using var original = SKBitmap.Decode(originalStream);
+                if (original == null)
+                    return Encoding.UTF8.GetBytes($"Thumbnail placeholder for {mimeType}");
 
-                var options = new ResizeOptions
+                var newWidth = width;
+                var newHeight = original.Height * width / original.Width;
+                if (newHeight > height)
                 {
-                    Size = new Size(width, height),
-                    Mode = ResizeMode.Max
-                };
+                    newHeight = height;
+                    newWidth = original.Width * height / original.Height;
+                }
 
-                image.Mutate(x => x.Resize(options));
+                using var resized = original.Resize(new SKImageInfo(newWidth, newHeight), new SKSamplingOptions(SKFilterMode.Linear));
+                if (resized == null)
+                    return Encoding.UTF8.GetBytes($"Thumbnail placeholder for {mimeType}");
 
-                using var ms = new MemoryStream();
-                await image.SaveAsPngAsync(ms);
-                return ms.ToArray();
+                using var image = SKImage.FromBitmap(resized);
+                using var data = image.Encode(SKEncodedImageFormat.Png, 80);
+                return data.ToArray();
             }
             catch (Exception ex)
             {
@@ -420,10 +422,7 @@ public class FilePreviewService : IFilePreviewService
             }
         }
 
-        // 对于不支持的类型或处理失败的情况，返回一个简单的占位符
-        // 注意：实际生产中可能需要根据类型生成默认图标
-        var placeholderText = $"Thumbnail placeholder for {mimeType}";
-        return Encoding.UTF8.GetBytes(placeholderText);
+        return Encoding.UTF8.GetBytes($"Thumbnail placeholder for {mimeType}");
     }
 
     /// <summary>
@@ -469,25 +468,16 @@ public class FilePreviewService : IFilePreviewService
     {
         try
         {
-            // 由于缺乏专门的PDF处理库，我们生成一个带文字的图片作为预览
             var width = options.MaxWidth ?? 800;
             var height = options.MaxHeight ?? 600;
 
-            using var image = new Image<SixLabors.ImageSharp.PixelFormats.Rgba32>(width, height);
+            using var bitmap = new SKBitmap(width, height);
+            using var canvas = new SKCanvas(bitmap);
+            canvas.Clear(SKColors.White);
 
-            // 填充白色背景
-            image.Mutate(x => x.BackgroundColor(SixLabors.ImageSharp.Color.White));
-
-            // 绘制文字 (简单模拟，不使用字体库以避免依赖问题，或者画简单的形状)
-            // 由于ImageSharp.Drawing需要字体，这里简化为只返回基本信息
-            // 如果项目中引入了字体，可以使用 TextGraphics
-
-            // 简单起见，我们生成一个带有 "PDF Preview" 字样颜色块的图片
-            image.Mutate(x => x.Fill(SixLabors.ImageSharp.Color.LightGray, new Rectangle(0, 0, width, 50)));
-
-            using var ms = new MemoryStream();
-            await image.SaveAsPngAsync(ms);
-            var base64 = Convert.ToBase64String(ms.ToArray());
+            using var image = SKImage.FromBitmap(bitmap);
+            using var data = image.Encode(SKEncodedImageFormat.Png, 80);
+            var base64 = Convert.ToBase64String(data.ToArray());
 
             previewContent.Content = $"data:image/png;base64,{base64}";
             previewContent.ContentType = "image/png";

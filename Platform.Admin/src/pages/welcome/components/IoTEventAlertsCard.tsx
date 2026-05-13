@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { Card, Space, Tag, Empty, Button, Badge, theme, Typography, Alert } from 'antd';
 import { BellOutlined, AlertOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { useAccess, useNavigate, useIntl } from '@umijs/max';
-import { ProTable, ProColumns } from '@ant-design/pro-components';
+import { ProTable, ProColumns } from '@ant-design/pro-components/es/table';
 import { queryIoTEvents, getUnhandledEventCount } from '@/services/iot/api';
 import type { IoTDeviceEvent } from '@/services/iot/api';
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useParams } from '@umijs/max';
 import { Space, Typography, Spin, Result, Input, Button, Tag } from 'antd';
-import { ProCard } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
 import { request } from '@umijs/max';
 import { ApiResponse } from '@/types';
 import { useIntl } from '@umijs/max';

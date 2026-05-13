@@ -1,6 +1,6 @@
 import React from 'react';
 import { Row, Col, Space, theme } from 'antd';
-import { ProCard } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
 import { BarChartOutlined, TeamOutlined, ThunderboltOutlined, CrownOutlined, RocketOutlined, BlockOutlined, ClusterOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import StatCard from './StatCard';

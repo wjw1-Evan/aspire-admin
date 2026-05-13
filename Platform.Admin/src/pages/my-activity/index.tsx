@@ -1,5 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import { PageContainer, ProDescriptions, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
+import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
+import { PageContainer } from '@ant-design/pro-components/es/layout';
+import { ProTable, ProColumns, ActionType } from '@ant-design/pro-components/es/table';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
 import { Tag, Space, Input } from 'antd';

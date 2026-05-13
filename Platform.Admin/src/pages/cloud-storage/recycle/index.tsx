@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { PageContainer, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
+import { PageContainer } from '@ant-design/pro-components/es/layout';
+import { ProTable, ProColumns, ActionType } from '@ant-design/pro-components/es/table';
 import { Button, Space, Modal, Form, Input, Select, App, Popconfirm, Tag } from 'antd';
 import { DeleteOutlined, ClearOutlined, SearchOutlined, UndoOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';

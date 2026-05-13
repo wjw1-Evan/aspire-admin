@@ -1,5 +1,8 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { PageContainer, ProTable, ProColumns, ProDescriptions, ModalForm, ProFormText, ProFormDatePicker } from '@ant-design/pro-components';
+import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
+import { ModalForm, ProFormText, ProFormDatePicker } from '@ant-design/pro-components/es/form';
+import { PageContainer } from '@ant-design/pro-components/es/layout';
+import { ProTable, ProColumns } from '@ant-design/pro-components/es/table';
 import { request } from '@umijs/max';
 import { App, Tag, Typography, Empty, Rate, Button, Space, Input, Row, Col, Popconfirm } from 'antd';
 import { Drawer } from 'antd';

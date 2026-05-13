@@ -1,6 +1,6 @@
 import React from 'react';
 import { Row, Col, Space, Tag, Alert, Typography, theme } from 'antd';
-import { ProCard } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
 import { DatabaseOutlined, ThunderboltOutlined, CiOutlined, HddOutlined, MonitorOutlined, CloudServerOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import ResourceCard from './ResourceCard';

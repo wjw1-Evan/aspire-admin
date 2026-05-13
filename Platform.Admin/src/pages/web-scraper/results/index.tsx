@@ -1,7 +1,8 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { request, useIntl } from '@umijs/max';
 import { Tag, Space, Button, Modal, Input, Descriptions, Card, Row, Col, Tabs } from 'antd';
-import { PageContainer, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
+import { PageContainer } from '@ant-design/pro-components/es/layout';
+import { ProTable, ProColumns, ActionType } from '@ant-design/pro-components/es/table';
 import { EyeOutlined, FileTextOutlined, PictureOutlined, LinkOutlined, DatabaseOutlined } from '@ant-design/icons';
 import { ApiResponse, PagedResult } from '@/types';
 import { useMessage } from '@/hooks/useMessage';

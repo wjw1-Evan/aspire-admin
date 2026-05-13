@@ -1,6 +1,8 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useIntl } from '@umijs/max';
-import { type ProColumns, ActionType, ProTable, ProCard, ProDescriptions } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
+import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
+import { ActionType, ProTable, type ProColumns } from '@ant-design/pro-components/es/table';
 import { Button, Grid, Input, Space, Tag, Typography } from 'antd';
 import { Drawer } from 'antd';
 import { ReloadOutlined, SearchOutlined, DatabaseOutlined } from '@ant-design/icons';

@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { PageContainer, ProCard, ProTable, ProColumns } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
+import { PageContainer } from '@ant-design/pro-components/es/layout';
+import { ProTable, ProColumns } from '@ant-design/pro-components/es/table';
 import { Tag, Space, Button, Modal, Input, Form, InputNumber, Switch, Select, Checkbox } from 'antd';
 import { EyeOutlined, MonitorOutlined, HistoryOutlined, FormOutlined, SearchOutlined } from '@ant-design/icons';
 import {

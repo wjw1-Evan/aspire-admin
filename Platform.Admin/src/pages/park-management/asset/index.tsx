@@ -1,5 +1,9 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import { PageContainer, ProCard, ProTable, ProColumns, ActionType, ModalForm, ProFormText, ProFormSelect, ProFormDatePicker, ProDescriptions } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
+import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
+import { ModalForm, ProFormText, ProFormSelect, ProFormDatePicker } from '@ant-design/pro-components/es/form';
+import { PageContainer } from '@ant-design/pro-components/es/layout';
+import { ProTable, ProColumns, ActionType } from '@ant-design/pro-components/es/table';
 import { useIntl, request } from '@umijs/max';
 import { Tag, Space, Row, Col, Button, Input, Popconfirm, Typography, Upload, DatePicker, Tabs, App } from 'antd';
 import { Drawer } from 'antd';

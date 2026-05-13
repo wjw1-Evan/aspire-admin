@@ -1,7 +1,7 @@
 import { EditOutlined, UserOutlined, MailOutlined, MobileOutlined, CalendarOutlined, CameraOutlined, DeleteOutlined, LockOutlined } from '@ant-design/icons';
 import { FormattedMessage, useIntl, request, useModel } from '@umijs/max';
 import { App, Avatar, Button, Card, Divider, Space, Tag, Typography, Form, Input, InputNumber, Tooltip, Alert, Modal } from 'antd';
-import { ProDescriptions } from '@ant-design/pro-components';
+import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import { createStyles } from 'antd-style';
 import React, { useEffect, useState } from 'react';

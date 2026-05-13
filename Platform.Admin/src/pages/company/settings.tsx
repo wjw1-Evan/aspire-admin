@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { PageContainer, ProDescriptions } from '@ant-design/pro-components';
+import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
+import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { Card, Spin, Row, Col, Tag, Space, Button } from 'antd';
 import {
   EditOutlined,

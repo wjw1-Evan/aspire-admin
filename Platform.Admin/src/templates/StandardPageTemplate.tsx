@@ -2,7 +2,11 @@ import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import { useIntl, request } from '@umijs/max';
 import { Button, Tag, Space, Grid, App, Modal, Spin, Input, Popconfirm, Drawer } from 'antd';
 const { useBreakpoint } = Grid;
-import { PageContainer, ProDescriptions, ProCard, ProTable, ActionType, ModalForm, ProFormText, ProFormSelect, ProFormTextArea, ProColumns } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
+import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
+import { ModalForm, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-components/es/form';
+import { PageContainer } from '@ant-design/pro-components/es/layout';
+import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components/es/table';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult } from '@/types';

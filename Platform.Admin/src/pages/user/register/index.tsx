@@ -14,7 +14,8 @@ import {
 } from '@umijs/max';
 import { SelectLang } from '@/components';
 import { App, Button, Form, Input, Space } from 'antd';
-import { ProCard, ProForm, ProFormText } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
+import { ProForm, ProFormText } from '@ant-design/pro-components/es/form';
 import { createStyles } from 'antd-style';
 import React, { useState } from 'react';
 import { Footer } from '@/components';

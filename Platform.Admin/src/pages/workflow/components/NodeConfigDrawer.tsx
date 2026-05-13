@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button, Form, Input, Select, Switch, Space, Divider, Tabs, FormInstance, TreeSelect, Radio } from 'antd';
 import { Drawer } from 'antd';
-import { ProCard } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
 import { DeleteOutlined, SaveOutlined, PlusOutlined, InfoCircleOutlined, EditOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import { NODE_CONFIGS } from './WorkflowDesignerConstants';

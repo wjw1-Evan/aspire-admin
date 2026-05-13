@@ -1,5 +1,8 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import { ProColumns, PageContainer, ProDescriptions, ProCard, ProTable, ActionType } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
+import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
+import { PageContainer } from '@ant-design/pro-components/es/layout';
+import { ProColumns, ProTable, ActionType } from '@ant-design/pro-components/es/table';
 import { useIntl, useLocation, useModel } from '@umijs/max';
 import { request } from '@umijs/max';
 import { Button, Tag, Space, Grid, App, Spin, Timeline, Empty, Progress, Input, Popconfirm } from 'antd';

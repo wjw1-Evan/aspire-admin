@@ -1,7 +1,7 @@
 import React from 'react';
 import { Avatar, Tag, Space } from 'antd';
 import { Drawer } from 'antd';
-import { ProDescriptions } from '@ant-design/pro-components';
+import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
 import { UserOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useIntl } from '@umijs/max';

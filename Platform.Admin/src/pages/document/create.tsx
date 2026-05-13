@@ -1,5 +1,7 @@
 import React, { useState, useCallback } from 'react';
-import { PageContainer, ProCard, ProForm, ProFormSelect } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
+import { ProForm, ProFormSelect } from '@ant-design/pro-components/es/form';
+import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { Button, Upload } from 'antd';
 import { useMessage } from '@/hooks/useMessage';
 import { SaveOutlined, UploadOutlined } from '@ant-design/icons';

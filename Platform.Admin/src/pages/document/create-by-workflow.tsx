@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { PageContainer, ProCard, ProForm, ProFormSelect, ProFormText, ProFormTextArea, ProFormDigit, ProFormDatePicker, ProFormDateTimePicker, ProFormRadio, ProFormCheckbox, ProFormSwitch, ProFormItem } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
+import { ProForm, ProFormSelect, ProFormText, ProFormTextArea, ProFormDigit, ProFormDatePicker, ProFormDateTimePicker, ProFormRadio, ProFormCheckbox, ProFormSwitch, ProFormItem } from '@ant-design/pro-components/es/form';
+import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { Space, Upload, Button } from 'antd';
 import { useMessage } from '@/hooks/useMessage';
 import { PlayCircleOutlined, UploadOutlined } from '@ant-design/icons';

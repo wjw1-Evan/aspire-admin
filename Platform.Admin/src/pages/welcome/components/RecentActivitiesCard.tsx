@@ -1,7 +1,7 @@
 import * as API from '@/types';
 import React from 'react';
 import { Space, Timeline, Typography, Button, Tag, Badge, theme } from 'antd';
-import { ProCard } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
 import { ClockCircleOutlined, LinkOutlined, RightOutlined } from '@ant-design/icons';
 import { useIntl, history } from '@umijs/max';
 import useCommonStyles from '@/hooks/useCommonStyles';

@@ -1,7 +1,7 @@
 import * as API from '@/types';
 import React from 'react';
 import { Row, Col, Avatar, Typography, Space, Tag, theme, Grid } from 'antd';
-import { ProCard } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
 import { UserOutlined, GlobalOutlined, CrownOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 

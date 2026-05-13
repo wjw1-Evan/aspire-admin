@@ -1,5 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { PageContainer, ProDescriptions, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
+import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
+import { PageContainer } from '@ant-design/pro-components/es/layout';
+import { ProTable, ProColumns, ActionType } from '@ant-design/pro-components/es/table';
 import { Space, Tag, Button, Input, Modal, App, Select } from 'antd';
 import { Drawer } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, FileTextOutlined, EyeOutlined, HistoryOutlined, RollbackOutlined, UserSwitchOutlined } from '@ant-design/icons';

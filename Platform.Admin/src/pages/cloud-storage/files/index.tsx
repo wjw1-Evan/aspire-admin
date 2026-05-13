@@ -3,7 +3,11 @@
  */
 
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { PageContainer, ProDescriptions, ProCard, ProTable, ProColumns, ActionType, ModalForm, ProFormText, ProFormDatePicker, ProFormSelect, ProFormDigit } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
+import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
+import { ModalForm, ProFormText, ProFormDatePicker, ProFormSelect, ProFormDigit } from '@ant-design/pro-components/es/form';
+import { PageContainer } from '@ant-design/pro-components/es/layout';
+import { ProTable, ProColumns, ActionType } from '@ant-design/pro-components/es/table';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
 import { App, Button, Tag, Space, Breadcrumb, Dropdown, Image, Input, Modal, Popconfirm, Card, Upload, Progress } from 'antd';

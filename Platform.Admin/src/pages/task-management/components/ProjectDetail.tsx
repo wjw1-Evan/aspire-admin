@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Tag, Progress, Space, Grid, Empty, Spin, Tooltip } from 'antd';
 import { Drawer } from 'antd';
-import { ProDescriptions } from '@ant-design/pro-components';
+import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
 import { useIntl } from '@umijs/max';
 
 const { useBreakpoint } = Grid;

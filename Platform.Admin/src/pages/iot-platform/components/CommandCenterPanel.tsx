@@ -16,7 +16,7 @@ import {
     InputNumber,
     Empty,
 } from 'antd';
-import { ProForm } from '@ant-design/pro-components';
+import { ProForm } from '@ant-design/pro-components/es/form';
 import {
     SendOutlined,
     CheckCircleOutlined,

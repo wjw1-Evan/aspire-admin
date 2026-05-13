@@ -1,6 +1,9 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useIntl } from '@umijs/max';
-import { PageContainer, ProDescriptions, ProFormSelect, ProFormText, ProFormTextArea, ModalForm, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
+import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
+import { ProFormSelect, ProFormText, ProFormTextArea, ModalForm } from '@ant-design/pro-components/es/form';
+import { PageContainer } from '@ant-design/pro-components/es/layout';
+import { ProTable, ProColumns, ActionType } from '@ant-design/pro-components/es/table';
 import { Space, Tag, Button, App, Input, Popconfirm, Form, Modal } from 'antd';
 import { Drawer } from 'antd';
 import { FileTextOutlined, PlusOutlined, EyeOutlined, SendOutlined, DeleteOutlined, EditOutlined, FileProtectOutlined } from '@ant-design/icons';

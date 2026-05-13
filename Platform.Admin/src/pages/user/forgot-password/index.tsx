@@ -2,7 +2,7 @@ import * as API from '@/types';
 import { LockOutlined, MailOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import { FormattedMessage, Link, useIntl, history } from '@umijs/max';
 import { App, Button, Form, Input, Space, Steps } from 'antd';
-import { ProCard } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
 import { createStyles } from 'antd-style';
 import React, { useState, useEffect } from 'react';
 import { Footer, SelectLang } from '@/components';

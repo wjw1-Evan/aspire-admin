@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Row, Col, Space, Alert, theme, Button } from 'antd';
-import { ProCard } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
 import { RocketOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';
 import { useIntl, history } from '@umijs/max';
 

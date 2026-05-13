@@ -1,7 +1,8 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { Button, Space, Tag, Popconfirm, Input, Drawer, Form, Select, Switch, Modal, Radio, Upload, Checkbox, Empty, App } from 'antd';
 const { Group: RadioGroup } = Radio;
-import { PageContainer, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
+import { PageContainer } from '@ant-design/pro-components/es/layout';
+import { ProTable, ProColumns, ActionType } from '@ant-design/pro-components/es/table';
 import { PlusOutlined, DeleteOutlined, EyeOutlined, EditOutlined, RollbackOutlined, PartitionOutlined, UploadOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import { FormDefinition, FormVersion } from './types';

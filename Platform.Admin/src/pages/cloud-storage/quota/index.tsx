@@ -1,5 +1,8 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { PageContainer, ModalForm, ProFormDigit, ProFormSwitch, ProFormSelect, ProCard, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
+import { ModalForm, ProFormDigit, ProFormSwitch, ProFormSelect } from '@ant-design/pro-components/es/form';
+import { PageContainer } from '@ant-design/pro-components/es/layout';
+import { ProTable, ProColumns, ActionType } from '@ant-design/pro-components/es/table';
 import { StatCard } from '@/components';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import { useIntl } from '@umijs/max';

@@ -10,7 +10,11 @@ import {
   SearchOutlined,
 } from '@ant-design/icons';
 import { useIntl, useParams, history } from '@umijs/max';
-import { PageContainer, ProCard, ProDescriptions, ProTable, ActionType, ProColumns, ModalForm, ProFormText, ProFormTextArea, ProFormDigit } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
+import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
+import { ModalForm, ProFormText, ProFormTextArea, ProFormDigit } from '@ant-design/pro-components/es/form';
+import { PageContainer } from '@ant-design/pro-components/es/layout';
+import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components/es/table';
 import * as kbService from '@/services/workflow/knowledge-base';
 import type { KnowledgeDocument } from '@/services/workflow/knowledge-base';
 import { getErrorMessage } from '@/utils/getErrorMessage';

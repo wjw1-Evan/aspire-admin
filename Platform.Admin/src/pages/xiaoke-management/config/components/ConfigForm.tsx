@@ -1,14 +1,6 @@
 import React from 'react';
 import { Button, Space } from 'antd';
-import {
-  ModalForm,
-  ProFormText,
-  ProFormTextArea,
-  ProFormSelect,
-  ProFormSwitch,
-  ProFormSlider,
-  ProFormDigit,
-} from '@ant-design/pro-components';
+import { ModalForm, ProFormText, ProFormTextArea, ProFormSelect, ProFormSwitch, ProFormSlider, ProFormDigit } from '@ant-design/pro-components/es/form';
 import { useIntl } from '@umijs/max';
 import { useMessage } from '@/hooks/useMessage';
 import { getErrorMessage } from '@/utils/getErrorMessage';

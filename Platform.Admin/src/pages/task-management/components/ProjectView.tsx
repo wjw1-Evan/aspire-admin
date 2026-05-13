@@ -24,7 +24,7 @@ import type { ApiResponse } from '@/types';
 import ProjectForm from './ProjectForm';
 import ProjectDetail from './ProjectDetail';
 import { useModal } from '@/hooks/useModal';
-import { ProTable, ProColumns } from '@ant-design/pro-components';
+import { ProTable, ProColumns } from '@ant-design/pro-components/es/table';
 
 export interface ProjectViewRef {
   reload: () => void;

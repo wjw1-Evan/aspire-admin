@@ -1,5 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { PageContainer, ProCard, ProDescriptions, ProFormText, ProFormDigit, ModalForm, ProForm } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
+import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
+import { ProFormText, ProFormDigit, ModalForm, ProForm } from '@ant-design/pro-components/es/form';
+import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { request } from '@umijs/max';
 import { Card, Button, Col, Empty, Form, Input, Modal, Popconfirm, Row, Select, Space, Spin, Tag, Tree, TreeSelect, Typography, theme } from 'antd';
 import useCommonStyles from '@/hooks/useCommonStyles';

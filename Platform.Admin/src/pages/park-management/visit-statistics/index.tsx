@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Row, Col, Statistic, Spin, Typography, Progress, Tag, Empty, Button, Space, Modal } from 'antd';
-import { ProCard, ProTable, ProColumns, PageContainer } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
+import { PageContainer } from '@ant-design/pro-components/es/layout';
+import { ProTable, ProColumns } from '@ant-design/pro-components/es/table';
 import { useIntl, request } from '@umijs/max';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';

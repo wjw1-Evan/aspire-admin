@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Select, Space, Progress, Tag, Tooltip, Empty } from 'antd';
-import { ProCard } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
 import { useIntl } from '@umijs/max';
 import { getTasksByProjectId, getTaskTree, getCriticalPath, type TaskDto } from '@/services/task/api';
 import { getProjectList, type ProjectDto } from '@/services/task/project';

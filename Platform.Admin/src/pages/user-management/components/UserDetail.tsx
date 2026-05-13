@@ -16,7 +16,8 @@ import {
   HistoryOutlined,
 } from '@ant-design/icons';
 import { request, useIntl } from '@umijs/max';
-import { ProDescriptions, ProCard } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
+import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
 import { getAllRoles } from '@/services/role/api';
 import type { Role } from '@/services/role/api';
 import type { UserActivityLog } from '@/types';

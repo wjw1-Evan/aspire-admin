@@ -1,6 +1,6 @@
 import React from 'react';
 import { Row, Col, Space, Alert, Typography, Tag, theme, Button } from 'antd';
-import { ProCard } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
 import {
   CheckCircleOutlined,
   ClockCircleOutlined,

@@ -13,7 +13,8 @@ import {
 } from '@umijs/max';
 import { SelectLang } from '@/components';
 import { Alert, App, Form, Space } from 'antd';
-import { ProCard, ProForm, ProFormText } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
+import { ProForm, ProFormText } from '@ant-design/pro-components/es/form';
 import { createStyles } from 'antd-style';
 import React, { useState, useEffect } from 'react';
 import { flushSync } from 'react-dom';

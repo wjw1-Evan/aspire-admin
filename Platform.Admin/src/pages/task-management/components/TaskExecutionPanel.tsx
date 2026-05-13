@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useIntl } from '@umijs/max';
 import { App, Spin, Alert, Space, Button, Divider, Tag } from 'antd';
-import { ModalForm, ProFormText, ProFormSelect, ProFormSlider, ProDescriptions, ProCard } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
+import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
+import { ModalForm, ProFormText, ProFormSelect, ProFormSlider } from '@ant-design/pro-components/es/form';
 import { executeTask, completeTask, TaskStatus, TaskExecutionResult, type TaskDto, type ExecuteTaskRequest, type CompleteTaskRequest } from '@/services/task/api';
 
 interface TaskExecutionPanelProps { open: boolean; task?: TaskDto | null; onClose: () => void; onSuccess: () => void; }

@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { useIntl } from '@umijs/max';
 import { ProjectOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import { Space, Button } from 'antd';

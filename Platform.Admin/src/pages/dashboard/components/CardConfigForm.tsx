@@ -4,10 +4,7 @@
  */
 import React, { useMemo, useState } from 'react';
 import { useIntl } from '@umijs/max';
-import {
-  ModalForm, ProFormText, ProFormSelect, ProFormDigit,
-  ProFormTextArea, ProFormSwitch, ProFormGroup,
-} from '@ant-design/pro-components';
+import { ModalForm, ProFormText, ProFormSelect, ProFormDigit, ProFormTextArea, ProFormSwitch, ProFormGroup } from '@ant-design/pro-components/es/form';
 import { Form, Tabs, Divider, Space, Button, Input, InputNumber, Select, ColorPicker, Typography } from 'antd';
 import type { GetProps } from 'antd';
 

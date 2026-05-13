@@ -1,6 +1,6 @@
 import React from 'react';
 import { Typography, theme } from 'antd';
-import { ProCard } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
 import { RightOutlined } from '@ant-design/icons';
 
 const { Text, Paragraph } = Typography;

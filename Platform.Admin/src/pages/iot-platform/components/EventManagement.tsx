@@ -1,6 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useIntl } from '@umijs/max';
-import { type ProColumns, ActionType, ProTable, ModalForm, ProFormTextArea, ProForm } from '@ant-design/pro-components';
+import { ModalForm, ProFormTextArea, ProForm } from '@ant-design/pro-components/es/form';
+import { ActionType, ProTable, type ProColumns } from '@ant-design/pro-components/es/table';
 import { Button, Grid, Input, Space, Tag } from 'antd';
 import { CheckOutlined, AlertOutlined, CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';

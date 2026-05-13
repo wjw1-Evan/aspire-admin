@@ -2,7 +2,9 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, history } from '@umijs/max';
 import { Space, Typography, Button, Spin, Result, Card, Row, Col, Empty, Grid } from 'antd';
 import { PlusOutlined, SaveOutlined, ArrowLeftOutlined, SettingOutlined, DashboardOutlined } from '@ant-design/icons';
-import { PageContainer, ModalForm, ProFormText, ProFormSelect, ProFormTextArea, ProCard } from '@ant-design/pro-components';
+import { ProCard } from '@ant-design/pro-components/es/card';
+import { ModalForm, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-components/es/form';
+import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { request, useIntl } from '@umijs/max';
 
 import type { ApiResponse } from '@/types';

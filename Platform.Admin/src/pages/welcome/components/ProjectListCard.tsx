@@ -44,7 +44,7 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
   useEffect(() => {
     if (!canAccessProject) return;
     fetchProjects();
-  }, [canAccessProject, fetchProjects]);
+  }, [canAccessProject]);
 
   const getStatusColor = (status: number) => {
     switch (status) {

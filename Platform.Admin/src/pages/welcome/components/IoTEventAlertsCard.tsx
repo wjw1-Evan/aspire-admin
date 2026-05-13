@@ -57,7 +57,7 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
     if (!canAccessIoT) return;
     fetchUnhandledCount();
     fetchEvents();
-  }, [canAccessIoT, fetchUnhandledCount, fetchEvents]);
+  }, [canAccessIoT]);
 
   const getLevelColor = (level: string) => {
     switch (level?.toLowerCase()) {

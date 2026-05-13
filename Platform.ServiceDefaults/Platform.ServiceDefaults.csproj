@@ -9,9 +9,9 @@
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Aspire.MongoDB.EntityFrameworkCore" Version="13.3.0" />
-    <PackageReference Include="Aspire.OpenAI" Version="13.3.0-preview.1.26256.5" />
-    <PackageReference Include="Aspire.StackExchange.Redis" Version="13.3.0" />
+    <PackageReference Include="Aspire.MongoDB.EntityFrameworkCore" Version="13.3.1" />
+    <PackageReference Include="Aspire.OpenAI" Version="13.3.1-preview.1.26261.7" />
+    <PackageReference Include="Aspire.StackExchange.Redis" Version="13.3.1" />
     <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.2" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.7" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.DynamicLinq" Version="10.7.2" />

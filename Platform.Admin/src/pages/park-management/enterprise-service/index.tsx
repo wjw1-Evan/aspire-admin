@@ -6,6 +6,7 @@ import {
   SearchOutlined,
   SettingOutlined,
   StarOutlined,
+  UploadOutlined,
 } from '@ant-design/icons';
 import { ProCard } from '@ant-design/pro-components/es/card';
 import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
@@ -13,6 +14,7 @@ import { ModalForm, ProFormSelect, ProFormText, ProFormTextArea } from '@ant-des
 import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { history, request, useIntl, useSearchParams } from '@umijs/max';
+import type { UploadFile } from 'antd';
 import {
   App,
   Button,
@@ -20,6 +22,7 @@ import {
   Drawer,
   Flex,
   Form,
+  Image,
   Input,
   Popconfirm,
   Rate,
@@ -28,10 +31,12 @@ import {
   Spin,
   Tag,
   Typography,
+  Upload,
 } from 'antd';
 import dayjs from 'dayjs';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiResponse, PagedResult } from '@/types';
+import { tokenUtils } from '@/utils/token';
 
 const { Text } = Typography;
 
@@ -51,6 +56,7 @@ interface ServiceRequest {
   completedAt?: string;
   rating?: number;
   createdAt: string;
+  attachments?: string[];
 }
 interface ServiceStatistics {
   totalCategories: number;
@@ -96,6 +102,8 @@ const api = {
       method: 'POST',
       data: { description },
     }),
+  uploadFile: (data: FormData) =>
+    request<ApiResponse<{ id: string; name: string }>>('/apiservice/api/cloud-storage/upload', { method: 'POST', data }),
 };
 
 const priorityOptions = (intl: ReturnType<typeof useIntl>) => [
@@ -126,6 +134,7 @@ const EnterpriseService: React.FC = () => {
     search: '',
     categorizing: false,
     suggestedCategory: null as SuggestCategoryResult | null,
+    attachmentFileList: [] as UploadFile[],
   });
   const set = useCallback((partial: Partial<typeof state>) => setState((prev) => ({ ...prev, ...partial })), []);
   const [modalState, setModalState] = useState({
@@ -174,7 +183,19 @@ const EnterpriseService: React.FC = () => {
       dataIndex: 'description',
       width: 200,
       ellipsis: true,
-      render: (text) => text || <Text type="secondary">-</Text>,
+      render: (text, record) => (
+        <Button
+          type="link"
+          size="small"
+          style={{ padding: 0, height: 'auto', textAlign: 'left' }}
+          onClick={() => {
+            setCurrentRequest(record);
+            setModal({ detailVisible: true });
+          }}
+        >
+          {text || <Text type="secondary">-</Text>}
+        </Button>
+      ),
     },
     {
       title: intl.formatMessage({ id: 'pages.park.service.request.tenant' }),
@@ -243,7 +264,7 @@ const EnterpriseService: React.FC = () => {
             icon={<EditOutlined />}
             onClick={() => {
               setCurrentRequest(record);
-              set({ suggestedCategory: { categoryName: record.categoryName || '' } });
+              set({ suggestedCategory: { categoryName: record.categoryName || '' }, attachmentFileList: [] });
               setModal({ requestVisible: true });
             }}
           >
@@ -358,7 +379,7 @@ const EnterpriseService: React.FC = () => {
             icon={<PlusOutlined />}
             onClick={() => {
               setCurrentRequest(null);
-              set({ suggestedCategory: null });
+              set({ suggestedCategory: null, attachmentFileList: [] });
               setModal({ requestVisible: true });
             }}
           >
@@ -379,7 +400,7 @@ const EnterpriseService: React.FC = () => {
           if (!open) {
             setModal({ requestVisible: false });
             setCurrentRequest(null);
-            set({ suggestedCategory: null });
+            set({ suggestedCategory: null, attachmentFileList: [] });
           }
         }}
         initialValues={
@@ -394,13 +415,22 @@ const EnterpriseService: React.FC = () => {
             : undefined
         }
         onFinish={async (values) => {
+          const attachmentUrls = state.attachmentFileList
+            .filter((f) => f.status === 'done')
+            .map((item) => {
+              if (item.response?.data?.path) return item.response.data.path;
+              if (item.response?.data?.url) return item.response.data.url;
+              return item.url;
+            })
+            .filter(Boolean) as string[];
+          const data = { ...values, attachments: attachmentUrls };
           if (currentRequest) {
-            const res = await api.updateRequest(currentRequest.id, values);
+            const res = await api.updateRequest(currentRequest.id, data);
             if (res.success) {
               message.success(intl.formatMessage({ id: 'pages.park.service.message.updateSuccess' }));
               setModal({ requestVisible: false });
               setCurrentRequest(null);
-              set({ suggestedCategory: null });
+              set({ suggestedCategory: null, attachmentFileList: [] });
               actionRef.current?.reload();
               loadData();
             }
@@ -414,11 +444,11 @@ const EnterpriseService: React.FC = () => {
             return false;
           }
           set({ suggestedCategory: suggestion.data });
-          const res = await api.createRequest(values);
+          const res = await api.createRequest(data);
           if (res.success) {
             message.success(intl.formatMessage({ id: 'pages.park.service.message.createSuccess' }));
             setModal({ requestVisible: false });
-            set({ suggestedCategory: null });
+            set({ suggestedCategory: null, attachmentFileList: [] });
             actionRef.current?.reload();
             loadData();
           }
@@ -434,6 +464,115 @@ const EnterpriseService: React.FC = () => {
           placeholder={intl.formatMessage({ id: 'pages.park.service.request.descriptionPlaceholder' })}
           rules={[{ required: true, message: intl.formatMessage({ id: 'pages.park.service.request.descriptionRequired' }) }]}
         />
+        <Form.Item
+          label={intl.formatMessage({ id: 'pages.park.service.request.attachments' })}
+          style={{ marginBottom: 16 }}
+        >
+          <Image.PreviewGroup>
+            <Upload
+              listType="picture-card"
+              accept="image/*"
+              multiple
+              fileList={state.attachmentFileList}
+              showUploadList={{
+                showRemoveIcon: true,
+                showPreviewIcon: true,
+              }}
+              onPreview={(file) => {
+                const img = new window.Image();
+                img.src = file.url || file.thumbUrl || '';
+                const win = window.open('');
+                win?.document.write(`<img src="${img.src}" style="max-width:90vw;max-height:90vh;object-fit:contain" />`);
+              }}
+              itemRender={(originNode, file) => (
+                <div
+                  style={{
+                    position: 'relative',
+                    width: 104,
+                    height: 104,
+                    borderRadius: 8,
+                    overflow: 'hidden',
+                    border: '1px solid #d9d9d9',
+                  }}
+                >
+                  <Image
+                    src={file.url || file.thumbUrl}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    preview={{ mask: null }}
+                  />
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={<DeleteOutlined />}
+                    onClick={() => {
+                      const newList = state.attachmentFileList.filter((f) => f.uid !== file.uid);
+                      set({ attachmentFileList: newList });
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: 2,
+                      right: 2,
+                      width: 22,
+                      height: 22,
+                      minWidth: 22,
+                      padding: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'rgba(0,0,0,0.5)',
+                      color: '#fff',
+                      borderRadius: 4,
+                      zIndex: 10,
+                    }}
+                  />
+                </div>
+              )}
+              customRequest={async (options) => {
+                const { file, onSuccess, onError } = options;
+                try {
+                  const formData = new FormData();
+                  formData.append('file', file as File);
+                  const res = await api.uploadFile(formData);
+                  if (res.success && res.data) {
+                    const url = `/apiservice/api/cloud-storage/items/${res.data.id}/download`;
+                    const newFile: UploadFile = {
+                      uid: res.data.id,
+                      name: res.data.name,
+                      status: 'done',
+                      url,
+                      thumbUrl: url,
+                      response: res.data,
+                    };
+                    set({ attachmentFileList: [...state.attachmentFileList, newFile] });
+                    onSuccess?.(res.data);
+                  } else {
+                    onError?.(new Error(res.message || '上传失败'));
+                  }
+                } catch (err) {
+                  onError?.(err as Error);
+                }
+              }}
+            >
+              {state.attachmentFileList.length < 9 && (
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '100%',
+                    gap: 4,
+                  }}
+                >
+                  <UploadOutlined style={{ fontSize: 24, color: '#999' }} />
+                  <span style={{ fontSize: 12, color: '#999' }}>
+                    {intl.formatMessage({ id: 'pages.park.service.request.uploadAttachment' })}
+                  </span>
+                </div>
+              )}
+            </Upload>
+          </Image.PreviewGroup>
+        </Form.Item>
         <Row gutter={16}>
           <Col span={12}>
             <ProFormSelect

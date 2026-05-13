@@ -40,9 +40,12 @@ export interface BulkUserActionRequest {
 export interface CreateUserManagementRequest {
   username: string;
   password: string;
+  name?: string;
   email?: string;
-  role: string;
+  phoneNumber?: string;
+  roleIds?: string[];
   isActive: boolean;
+  remark?: string;
 }
 
 export interface UpdateProfileRequest {
@@ -105,7 +108,7 @@ export async function deactivateUser(userId: string) {
   });
 }
 
-export async function createUser(data: Partial<AppUser>) {
+export async function createUser(data: CreateUserManagementRequest) {
   return request<ApiResponse<AppUser>>('/apiservice/api/users', {
     method: 'POST',
     data,

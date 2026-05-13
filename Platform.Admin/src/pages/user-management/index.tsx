@@ -4,11 +4,12 @@ import {
   CrownOutlined,
   DeleteOutlined,
   EditOutlined,
+  PlusOutlined,
   SearchOutlined,
   UserAddOutlined,
   UserOutlined,
 } from '@ant-design/icons';
-import { ModalForm, ProFormSelect, ProFormSwitch, ProFormTextArea } from '@ant-design/pro-components/es/form';
+import { ModalForm, ProFormSelect, ProFormSwitch, ProFormText, ProFormTextArea } from '@ant-design/pro-components/es/form';
 import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { request, useIntl } from '@umijs/max';
@@ -82,6 +83,8 @@ const api = {
   activate: (id: string) => request<ApiResponse<unknown>>(`/apiservice/api/users/${id}/activate`, { method: 'PUT' }),
   deactivate: (id: string) =>
     request<ApiResponse<unknown>>(`/apiservice/api/users/${id}/deactivate`, { method: 'PUT' }),
+  create: (data: unknown) =>
+    request<ApiResponse<UnifiedUser>>('/apiservice/api/users', { method: 'POST', data }),
   update: (id: string, data: unknown) =>
     request<ApiResponse<UnifiedUser>>(`/apiservice/api/users/${id}`, { method: 'PUT', data }),
   roles: () => request<ApiResponse<PagedResult<Role>>>('/apiservice/api/role', { method: 'GET' }),
@@ -256,6 +259,10 @@ const UserManagement: React.FC = () => {
     },
     [modal, message, loadStatistics, intl],
   );
+
+  const handleCreate = useCallback(() => {
+    set({ formVisible: true, editingUser: null });
+  }, [set]);
 
   const handleApprove = useCallback(
     async (id: string) => {
@@ -492,6 +499,9 @@ const UserManagement: React.FC = () => {
             </Space>
           }
           toolBarRender={() => [
+            <Button key="add" type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+              {intl.formatMessage({ id: 'pages.userManagement.form.create' })}
+            </Button>,
             <Input.Search
               key="search"
               placeholder={intl.formatMessage({ id: 'pages.common.search' })}
@@ -509,7 +519,7 @@ const UserManagement: React.FC = () => {
         />
 
       <ModalForm
-        key={state.editingUser?.id || 'edit'}
+        key={state.editingUser?.id || 'new'}
         title={
           state.editingUser
             ? intl.formatMessage({ id: 'pages.userManagement.form.edit' })
@@ -529,26 +539,86 @@ const UserManagement: React.FC = () => {
             : { isActive: true }
         }
         onFinish={async (values) => {
-          if (!state.editingUser) return false;
-          const res = await api.update(state.editingUser.id, {
+          if (state.editingUser) {
+            const res = await api.update(state.editingUser.id, {
+              roleIds: values.roleIds || [],
+              isActive: values.isActive,
+              remark: values.remark,
+            });
+            if (res.success) {
+              message.success(intl.formatMessage({ id: 'pages.userManagement.message.updateSuccess' }));
+              set({ formVisible: false, editingUser: null });
+              loadStatistics();
+              actionRef.current?.reload();
+            } else {
+              message.error(getErrorMessage(res, 'pages.userManagement.message.updateFailed'));
+              return false;
+            }
+            return res.success;
+          }
+
+          const res = await api.create({
+            username: values.username,
+            password: values.password,
+            name: values.name,
+            email: values.email,
+            phoneNumber: values.phoneNumber,
             roleIds: values.roleIds || [],
             isActive: values.isActive,
             remark: values.remark,
           });
           if (res.success) {
-            message.success(intl.formatMessage({ id: 'pages.userManagement.message.updateSuccess' }));
+            message.success(intl.formatMessage({ id: 'pages.userManagement.message.createSuccess' }));
             set({ formVisible: false, editingUser: null });
             loadStatistics();
             actionRef.current?.reload();
           } else {
-            message.error(getErrorMessage(res, 'pages.userManagement.message.updateFailed'));
+            message.error(getErrorMessage(res, 'pages.userManagement.message.createFailed'));
             return false;
           }
-          return res.success;
+          return true;
         }}
         autoFocusFirstInput
         width={600}
       >
+        {!state.editingUser && (
+          <>
+            <ProFormText
+              name="username"
+              label={intl.formatMessage({ id: 'pages.userManagement.table.username' })}
+              placeholder={intl.formatMessage({ id: 'pages.userManagement.form.usernamePlaceholder' })}
+              rules={[
+                { required: true, message: intl.formatMessage({ id: 'pages.userManagement.form.usernameRequired' }) },
+                { min: 3, max: 50, message: intl.formatMessage({ id: 'pages.userManagement.form.usernameLength' }) },
+              ]}
+            />
+            <ProFormText.Password
+              name="password"
+              label={intl.formatMessage({ id: 'pages.userManagement.form.password' })}
+              placeholder={intl.formatMessage({ id: 'pages.userManagement.form.passwordPlaceholder' })}
+              rules={[
+                { required: true, message: intl.formatMessage({ id: 'pages.userManagement.form.passwordRequired' }) },
+                { min: 6, message: intl.formatMessage({ id: 'pages.userManagement.form.passwordMinLength' }) },
+              ]}
+            />
+            <ProFormText
+              name="name"
+              label={intl.formatMessage({ id: 'pages.userManagement.table.name' })}
+              placeholder={intl.formatMessage({ id: 'pages.userManagement.form.namePlaceholder' })}
+            />
+            <ProFormText
+              name="email"
+              label={intl.formatMessage({ id: 'pages.userManagement.table.email' })}
+              placeholder={intl.formatMessage({ id: 'pages.userManagement.form.emailPlaceholder' })}
+              rules={[{ type: 'email', message: intl.formatMessage({ id: 'pages.userManagement.form.emailInvalid' }) }]}
+            />
+            <ProFormText
+              name="phoneNumber"
+              label={intl.formatMessage({ id: 'pages.userManagement.table.phoneNumber' })}
+              placeholder={intl.formatMessage({ id: 'pages.userManagement.form.phonePlaceholder' })}
+            />
+          </>
+        )}
         <ProFormSelect
           name="roleIds"
           label={intl.formatMessage({ id: 'pages.userManagement.form.roles' })}

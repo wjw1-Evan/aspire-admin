@@ -1,7 +1,7 @@
 import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
 import { useIntl } from '@umijs/max';
 import { Drawer, Empty, Grid, Progress, Space, Spin, Tag, Tooltip } from 'antd';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 const { useBreakpoint } = Grid;
 
@@ -72,13 +72,13 @@ const CombinedTaskView: React.FC<{ tasks: TaskDto[] }> = ({ tasks }) => {
 
     return (
       <React.Fragment key={task.id}>
-        <tr style={{ backgroundColor: level > 0 ? '#fafafa' : '#fff' }}>
+        <tr style={{ backgroundColor: level > 0 ? 'var(--ant-color-fill-tertiary)' : 'var(--ant-color-bg-container)' }}>
           <td
             style={{
               padding: '10px 8px',
               borderBottom: '1px solid #f0f0f0',
               borderRight: '1px solid #f0f0f0',
-              backgroundColor: '#fff',
+              backgroundColor: 'var(--ant-color-bg-container)',
               position: 'sticky',
               top: 0,
               left: 0,
@@ -115,7 +115,7 @@ const CombinedTaskView: React.FC<{ tasks: TaskDto[] }> = ({ tasks }) => {
                   )}
                   {task.taskType && <Tag style={{ fontSize: 10, padding: '0 3px', margin: 0 }}>{task.taskType}</Tag>}
                 </div>
-                <div style={{ fontSize: 11, color: '#8c8c8c', marginTop: 2, lineHeight: '18px' }}>
+                <div style={{ fontSize: 11, color: 'var(--ant-color-text-tertiary)', marginTop: 2, lineHeight: '18px' }}>
                   {task.assignedToName && <span>分配给: {task.assignedToName}</span>}
                 </div>
               </div>
@@ -126,7 +126,7 @@ const CombinedTaskView: React.FC<{ tasks: TaskDto[] }> = ({ tasks }) => {
               padding: '10px 8px',
               borderBottom: '1px solid #f0f0f0',
               borderRight: '1px solid #f0f0f0',
-              backgroundColor: '#fff',
+              backgroundColor: 'var(--ant-color-bg-container)',
               position: 'sticky',
               top: 0,
               left: 200,
@@ -163,7 +163,7 @@ const CombinedTaskView: React.FC<{ tasks: TaskDto[] }> = ({ tasks }) => {
                     top: 0,
                     bottom: 0,
                     width: dayWidth,
-                    backgroundColor: isWeekend ? '#f5f5f5' : isToday ? '#e6f7ff' : '#f9f9f9',
+                    backgroundColor: isWeekend ? 'var(--ant-color-fill-tertiary)' : isToday ? 'var(--ant-color-primary-bg)' : 'var(--ant-color-fill-tertiary)',
                     borderRight: '1px solid #e8e8e8',
                     display: 'flex',
                     alignItems: 'center',
@@ -228,7 +228,7 @@ const CombinedTaskView: React.FC<{ tasks: TaskDto[] }> = ({ tasks }) => {
   return (
     <div style={{ position: 'relative', borderRadius: 8, border: '1px solid #f0f0f0', overflow: 'hidden' }}>
       <div style={{ overflowX: 'auto', maxHeight: 500 }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#fff' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'var(--ant-color-bg-container)' }}>
           <thead>
             <tr>
               <th
@@ -236,7 +236,7 @@ const CombinedTaskView: React.FC<{ tasks: TaskDto[] }> = ({ tasks }) => {
                   padding: '10px 8px',
                   borderBottom: '2px solid #1890ff',
                   borderRight: '1px solid #f0f0f0',
-                  backgroundColor: '#e6f7ff',
+                  backgroundColor: 'var(--ant-color-primary-bg)',
                   textAlign: 'left',
                   fontWeight: 600,
                   color: '#1890ff',
@@ -254,7 +254,7 @@ const CombinedTaskView: React.FC<{ tasks: TaskDto[] }> = ({ tasks }) => {
                   padding: '10px 8px',
                   borderBottom: '2px solid #1890ff',
                   borderRight: '1px solid #f0f0f0',
-                  backgroundColor: '#e6f7ff',
+                  backgroundColor: 'var(--ant-color-primary-bg)',
                   fontWeight: 600,
                   color: '#1890ff',
                   position: 'sticky',
@@ -270,7 +270,7 @@ const CombinedTaskView: React.FC<{ tasks: TaskDto[] }> = ({ tasks }) => {
                 style={{
                   padding: '10px 8px',
                   borderBottom: '2px solid #1890ff',
-                  backgroundColor: '#e6f7ff',
+                  backgroundColor: 'var(--ant-color-primary-bg)',
                   fontWeight: 600,
                   color: '#1890ff',
                   position: 'sticky',
@@ -304,7 +304,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
   const [tasks, setTasks] = useState<TaskDto[]>([]);
   const [tasksLoading, setTasksLoading] = useState(false);
 
-  const loadTasks = async () => {
+  const loadTasks = useCallback(async () => {
     if (!project.id) return;
     setTasksLoading(true);
     try {
@@ -317,7 +317,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
     } finally {
       setTasksLoading(false);
     }
-  };
+  }, [project.id]);
 
   useEffect(() => {
     if (project.id) {

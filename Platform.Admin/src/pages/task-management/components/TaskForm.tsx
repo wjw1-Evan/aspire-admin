@@ -10,7 +10,7 @@ import { useIntl } from '@umijs/max';
 import { Col, Row, Spin } from 'antd';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { useMessage } from '@/hooks/useMessage';
 import {
   type CreateTaskRequest,
@@ -70,7 +70,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
   const [usersLoading, setUsersLoading] = React.useState(false);
   const [tasks, setTasks] = React.useState<TaskDto[]>([]);
 
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     setUsersLoading(true);
     try {
       const response = await getUserList({ page: 1 });
@@ -81,7 +81,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
     } finally {
       setUsersLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (open) {

@@ -59,7 +59,7 @@ const TaskDetail: React.FC<{ id: string; onClose: () => void; open: boolean; isM
   const [executionLogs, setExecutionLogs] = useState<TaskExecutionLogDto[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
 
-  const loadTaskDetail = async () => {
+  const loadTaskDetail = useCallback(async () => {
     setLoading(true);
     try {
       const response = await getTaskById(id);
@@ -69,9 +69,9 @@ const TaskDetail: React.FC<{ id: string; onClose: () => void; open: boolean; isM
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
-  const loadExecutionLogs = async () => {
+  const loadExecutionLogs = useCallback(async () => {
     setLogsLoading(true);
     try {
       const response = await getTaskExecutionLogs(id, 1, 100);
@@ -81,7 +81,7 @@ const TaskDetail: React.FC<{ id: string; onClose: () => void; open: boolean; isM
     } finally {
       setLogsLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     if (open && id) {

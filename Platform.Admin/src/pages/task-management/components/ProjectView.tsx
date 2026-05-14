@@ -62,7 +62,7 @@ const ProjectView = forwardRef<ProjectViewRef>((_props, ref) => {
         }
       });
     }
-  }, [searchParams.get]);
+  }, [searchParams]);
 
   useImperativeHandle(
     ref,

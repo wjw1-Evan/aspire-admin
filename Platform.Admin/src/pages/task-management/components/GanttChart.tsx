@@ -2,7 +2,7 @@ import { ProCard } from '@ant-design/pro-components/es/card';
 import { useIntl } from '@umijs/max';
 import { Empty, Progress, Select, Space, Tag, Tooltip } from 'antd';
 import dayjs from 'dayjs';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { getCriticalPath, getTasksByProjectId, getTaskTree, type TaskDto } from '@/services/task/api';
 import { getProjectList, type ProjectDto } from '@/services/task/project';
 import { getTaskPriorityColor } from '@/utils/task';
@@ -19,16 +19,16 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId: initialProjectId }) 
   const [criticalPath, setCriticalPath] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const loadProjects = async () => {
+  const loadProjects = useCallback(async () => {
     try {
       const response = await getProjectList({});
       if (response.success && response.data) setProjects(response.data.queryable);
     } catch (error) {
       console.error('加载项目列表失败:', error);
     }
-  };
+  }, []);
 
-  const loadTasks = async (projId: string) => {
+  const loadTasks = useCallback(async (projId: string) => {
     setLoading(true);
     try {
       const response = await getTasksByProjectId(projId);
@@ -39,9 +39,9 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId: initialProjectId }) 
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const loadAllTasks = async () => {
+  const loadAllTasks = useCallback(async () => {
     setLoading(true);
     try {
       const response = await getTaskTree();
@@ -52,16 +52,16 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId: initialProjectId }) 
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const loadCriticalPath = async (projId: string) => {
+  const loadCriticalPath = useCallback(async (projId: string) => {
     try {
       const response = await getCriticalPath(projId);
       if (response.success && response.data) setCriticalPath(response.data);
     } catch (error) {
       console.error('加载关键路径失败:', error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadProjects();
@@ -145,13 +145,13 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId: initialProjectId }) 
 
       return (
         <React.Fragment key={task.id}>
-          <tr style={{ backgroundColor: level > 0 ? '#fafafa' : '#fff' }}>
+          <tr style={{ backgroundColor: level > 0 ? 'var(--ant-color-fill-tertiary)' : 'var(--ant-color-bg-container)' }}>
             <td
               style={{
                 padding: '12px 8px',
                 borderBottom: '1px solid #f0f0f0',
                 borderRight: '1px solid #f0f0f0',
-                backgroundColor: '#fff',
+                backgroundColor: 'var(--ant-color-bg-container)',
                 position: 'sticky',
                 left: 0,
                 zIndex: 1,
@@ -193,7 +193,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId: initialProjectId }) 
                 padding: '12px 8px',
                 borderBottom: '1px solid #f0f0f0',
                 borderRight: '1px solid #f0f0f0',
-                backgroundColor: '#fff',
+                backgroundColor: 'var(--ant-color-bg-container)',
                 position: 'sticky',
                 left: 250,
                 zIndex: 1,
@@ -231,7 +231,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId: initialProjectId }) 
                       top: 0,
                       bottom: 0,
                       width: dayWidth,
-                      backgroundColor: isWeekend ? '#f5f5f5' : i === todayOffset ? '#e6f7ff' : 'transparent',
+                      backgroundColor: isWeekend ? 'var(--ant-color-fill-tertiary)' : i === todayOffset ? 'var(--ant-color-primary-bg)' : 'transparent',
                       borderRight: '1px dashed #f0f0f0',
                       display: 'flex',
                       flexDirection: 'column',
@@ -240,7 +240,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId: initialProjectId }) 
                     }}
                   >
                     {date.getDate() === 1 || date.getDate() === 15 || i === 0 || i === totalDays - 1 ? (
-                      <span style={{ fontSize: 10, color: '#8c8c8c' }}>{date.getDate()}日</span>
+                      <span style={{ fontSize: 10, color: 'var(--ant-color-text-tertiary)' }}>{date.getDate()}日</span>
                     ) : null}
                     {isToday && (
                       <div
@@ -309,7 +309,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId: initialProjectId }) 
 
     return (
       <div style={{ overflowX: 'auto', borderRadius: 8, border: '1px solid #f0f0f0' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#fff' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'var(--ant-color-bg-container)' }}>
           <thead>
             <tr>
               <th
@@ -317,7 +317,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId: initialProjectId }) 
                   padding: '12px 8px',
                   borderBottom: '2px solid #1890ff',
                   borderRight: '1px solid #f0f0f0',
-                  backgroundColor: '#e6f7ff',
+                  backgroundColor: 'var(--ant-color-primary-bg)',
                   textAlign: 'left',
                   fontWeight: 600,
                   color: '#1890ff',
@@ -334,7 +334,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId: initialProjectId }) 
                   padding: '12px 8px',
                   borderBottom: '2px solid #1890ff',
                   borderRight: '1px solid #f0f0f0',
-                  backgroundColor: '#e6f7ff',
+                  backgroundColor: 'var(--ant-color-primary-bg)',
                   fontWeight: 600,
                   color: '#1890ff',
                   position: 'sticky',
@@ -349,7 +349,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId: initialProjectId }) 
                 style={{
                   padding: '12px 8px',
                   borderBottom: '2px solid #1890ff',
-                  backgroundColor: '#e6f7ff',
+                  backgroundColor: 'var(--ant-color-primary-bg)',
                   fontWeight: 600,
                   color: '#1890ff',
                   minWidth: totalDays * dayWidth,

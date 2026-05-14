@@ -96,6 +96,8 @@ const api = {
     request<ApiResponse<ServiceRequest>>('/apiservice/api/park/services/requests', { method: 'POST', data }),
   updateRequest: (id: string, data: Partial<ServiceRequest>) =>
     request<ApiResponse<ServiceRequest>>(`/apiservice/api/park/services/requests/${id}`, { method: 'PUT', data }),
+  getRequestById: (id: string) =>
+    request<ApiResponse<ServiceRequest>>(`/apiservice/api/park/services/requests/${id}`, { method: 'GET' }),
   updateStatus: (id: string, data: { status: string; assignedTo?: string; resolution?: string }) =>
     request<ApiResponse<ServiceRequest>>(`/apiservice/api/park/services/requests/${id}/status`, {
       method: 'PUT',
@@ -155,6 +157,8 @@ const EnterpriseService: React.FC = () => {
   });
   const setModal = (partial: Partial<typeof modalState>) => setModalState((prev) => ({ ...prev, ...partial }));
   const [currentRequest, setCurrentRequest] = useState<ServiceRequest | null>(null);
+  const [detailData, setDetailData] = useState<ServiceRequest | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   const loadData = useCallback(async () => {
     api.statistics().then((r) => {
@@ -359,11 +363,16 @@ const EnterpriseService: React.FC = () => {
         scroll={{ x: 'max-content' }}
         onRow={(record) => ({
           style: { cursor: 'pointer' },
-          onClick: (e) => {
+          onClick: async (e) => {
             const target = e.target as HTMLElement;
             if (target.closest('a, button, [role="button"], .ant-btn')) return;
-            setCurrentRequest(record);
             setModal({ detailVisible: true });
+            setDetailLoading(true);
+            const res = await api.getRequestById(record.id);
+            if (res.success && res.data) {
+              setDetailData(res.data);
+            }
+            setDetailLoading(false);
           },
         })}
         toolBarRender={() => [
@@ -732,117 +741,122 @@ const EnterpriseService: React.FC = () => {
 
       <Drawer
         title={
-          currentRequest?.title || intl.formatMessage({ id: 'pages.park.service.request.requestDetail' })
+          detailData?.title || intl.formatMessage({ id: 'pages.park.service.request.requestDetail' })
         }
         open={modalState.detailVisible}
-        onClose={() => setModal({ detailVisible: false })}
+        onClose={() => {
+          setModal({ detailVisible: false });
+          setDetailData(null);
+        }}
         placement="right"
         size="large"
       >
-        {currentRequest && (
-          <ProDescriptions bordered column={2} size="small">
-            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.titleField' })} span={2}>
-              {currentRequest.title}
-            </ProDescriptions.Item>
-            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.tenant' })}>
-              {currentRequest.tenantName || '-'}
-            </ProDescriptions.Item>
-            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.category' })}>
-              {currentRequest.categoryName || '-'}
-            </ProDescriptions.Item>
-            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.priority' })}>
-              <Tag color={priorityOptions(intl).find((o) => o.value === currentRequest?.priority)?.color}>
-                {priorityOptions(intl).find((o) => o.value === currentRequest?.priority)?.label ||
-                  currentRequest?.priority}
-              </Tag>
-            </ProDescriptions.Item>
-            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.status' })}>
-              <Tag color={statusOptions(intl).find((o) => o.value === currentRequest?.status)?.color}>
-                {statusOptions(intl).find((o) => o.value === currentRequest?.status)?.label ||
-                  currentRequest?.status}
-              </Tag>
-            </ProDescriptions.Item>
-            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.rating' })}>
-              {currentRequest.rating ? <Rate disabled value={currentRequest.rating} /> : '-'}
-            </ProDescriptions.Item>
-            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.contact' })}>
-              {currentRequest.contactPerson || '-'}
-            </ProDescriptions.Item>
-            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.contactPhone' })}>
-              {currentRequest.contactPhone || '-'}
-            </ProDescriptions.Item>
-            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.createdAt' })}>
-              {dayjs(currentRequest.createdAt).format('YYYY-MM-DD HH:mm')}
-            </ProDescriptions.Item>
-            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.completedAt' })}>
-              {currentRequest.completedAt
-                ? dayjs(currentRequest.completedAt).format('YYYY-MM-DD HH:mm')
-                : '-'}
-            </ProDescriptions.Item>
-            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.description' })} span={2}>
-              {currentRequest.description || '-'}
-            </ProDescriptions.Item>
-            {currentRequest.attachments && currentRequest.attachments.length > 0 && (
-              <ProDescriptions.Item
-                label={intl.formatMessage({ id: 'pages.park.service.request.attachments' })}
-                span={2}
-              >
-                <Image.PreviewGroup>
-                  <Space wrap size={8}>
-                    {currentRequest.attachments.map((url, index) => (
-                      <Image
-                        key={`${url}-${index}`}
-                        src={url}
-                        width={80}
-                        height={80}
-                        style={{ objectFit: 'cover', borderRadius: 4, border: '1px solid #d9d9d9' }}
-                        fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
-                      />
-                    ))}
-                  </Space>
-                </Image.PreviewGroup>
+        <Spin spinning={detailLoading}>
+          {detailData && (
+            <ProDescriptions bordered column={2} size="small">
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.titleField' })} span={2}>
+                {detailData.title}
               </ProDescriptions.Item>
-            )}
-            {currentRequest.statusHistory && currentRequest.statusHistory.length > 0 && (
-              <ProDescriptions.Item
-                label={intl.formatMessage({ id: 'pages.park.service.request.statusHistory' })}
-                span={2}
-              >
-                <Timeline
-                  items={currentRequest.statusHistory.map((h) => {
-                    const fromOpt = statusOptions(intl).find((o) => o.value === h.fromStatus);
-                    const toOpt = statusOptions(intl).find((o) => o.value === h.toStatus);
-                    return {
-                      color: toOpt?.color === 'green' ? 'green' : toOpt?.color === 'orange' ? 'orange' : toOpt?.color === 'processing' ? 'blue' : 'gray',
-                      children: (
-                        <div>
-                          <Space size={4}>
-                            <Tag color="default">{fromOpt?.label || h.fromStatus || '-'}</Tag>
-                            <span>→</span>
-                            <Tag color={toOpt?.color || 'default'}>{toOpt?.label || h.toStatus}</Tag>
-                          </Space>
-                          <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>
-                            {dayjs(h.changedAt).format('YYYY-MM-DD HH:mm')}
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.tenant' })}>
+                {detailData.tenantName || '-'}
+              </ProDescriptions.Item>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.category' })}>
+                {detailData.categoryName || '-'}
+              </ProDescriptions.Item>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.priority' })}>
+                <Tag color={priorityOptions(intl).find((o) => o.value === detailData?.priority)?.color}>
+                  {priorityOptions(intl).find((o) => o.value === detailData?.priority)?.label ||
+                    detailData?.priority}
+                </Tag>
+              </ProDescriptions.Item>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.status' })}>
+                <Tag color={statusOptions(intl).find((o) => o.value === detailData?.status)?.color}>
+                  {statusOptions(intl).find((o) => o.value === detailData?.status)?.label ||
+                    detailData?.status}
+                </Tag>
+              </ProDescriptions.Item>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.rating' })}>
+                {detailData.rating ? <Rate disabled value={detailData.rating} /> : '-'}
+              </ProDescriptions.Item>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.contact' })}>
+                {detailData.contactPerson || '-'}
+              </ProDescriptions.Item>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.contactPhone' })}>
+                {detailData.contactPhone || '-'}
+              </ProDescriptions.Item>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.createdAt' })}>
+                {dayjs(detailData.createdAt).format('YYYY-MM-DD HH:mm')}
+              </ProDescriptions.Item>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.completedAt' })}>
+                {detailData.completedAt
+                  ? dayjs(detailData.completedAt).format('YYYY-MM-DD HH:mm')
+                  : '-'}
+              </ProDescriptions.Item>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.description' })} span={2}>
+                {detailData.description || '-'}
+              </ProDescriptions.Item>
+              {detailData.attachments && detailData.attachments.length > 0 && (
+                <ProDescriptions.Item
+                  label={intl.formatMessage({ id: 'pages.park.service.request.attachments' })}
+                  span={2}
+                >
+                  <Image.PreviewGroup>
+                    <Space wrap size={8}>
+                      {detailData.attachments.map((url, index) => (
+                        <Image
+                          key={`${url}-${index}`}
+                          src={url}
+                          width={80}
+                          height={80}
+                          style={{ objectFit: 'cover', borderRadius: 4, border: '1px solid #d9d9d9' }}
+                          fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+                        />
+                      ))}
+                    </Space>
+                  </Image.PreviewGroup>
+                </ProDescriptions.Item>
+              )}
+              {detailData.statusHistory && detailData.statusHistory.length > 0 && (
+                <ProDescriptions.Item
+                  label={intl.formatMessage({ id: 'pages.park.service.request.statusHistory' })}
+                  span={2}
+                >
+                  <Timeline
+                    items={detailData.statusHistory.map((h) => {
+                      const fromOpt = statusOptions(intl).find((o) => o.value === h.fromStatus);
+                      const toOpt = statusOptions(intl).find((o) => o.value === h.toStatus);
+                      return {
+                        color: toOpt?.color === 'green' ? 'green' : toOpt?.color === 'orange' ? 'orange' : toOpt?.color === 'processing' ? 'blue' : 'gray',
+                        children: (
+                          <div>
+                            <Space size={4}>
+                              <Tag color="default">{fromOpt?.label || h.fromStatus || '-'}</Tag>
+                              <span>→</span>
+                              <Tag color={toOpt?.color || 'default'}>{toOpt?.label || h.toStatus}</Tag>
+                            </Space>
+                            <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>
+                              {dayjs(h.changedAt).format('YYYY-MM-DD HH:mm')}
+                            </div>
+                            {h.changedByName && (
+                              <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
+                                {intl.formatMessage({ id: 'pages.park.service.request.handler' })}: {h.changedByName}
+                              </div>
+                            )}
+                            {h.comment && (
+                              <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
+                                {intl.formatMessage({ id: 'pages.park.service.request.handlingResult' })}: {h.comment}
+                              </div>
+                            )}
                           </div>
-                          {h.changedByName && (
-                            <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
-                              {intl.formatMessage({ id: 'pages.park.service.request.handler' })}: {h.changedByName}
-                            </div>
-                          )}
-                          {h.comment && (
-                            <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
-                              {intl.formatMessage({ id: 'pages.park.service.request.handlingResult' })}: {h.comment}
-                            </div>
-                          )}
-                        </div>
-                      ),
-                    };
-                  })}
-                />
-              </ProDescriptions.Item>
-            )}
-          </ProDescriptions>
-        )}
+                        ),
+                      };
+                    })}
+                  />
+                </ProDescriptions.Item>
+              )}
+            </ProDescriptions>
+          )}
+        </Spin>
       </Drawer>
     </PageContainer>
   );

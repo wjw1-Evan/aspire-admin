@@ -160,7 +160,7 @@ const VisitTaskPage: React.FC = () => {
       sorter: true,
       width: 200,
       ellipsis: true,
-      render: (dom: any, r: VisitTask) => <a onClick={() => handleViewTask(r.id)}>{dom}</a>,
+      render: (dom: any) => dom,
     },
     {
       title: intl.formatMessage({ id: 'pages.park.visitTask.visitType' }),
@@ -299,6 +299,10 @@ const VisitTaskPage: React.FC = () => {
           </Space>
         }
         scroll={{ x: 'max-content' }}
+        onRow={(record) => ({
+          onClick: () => handleViewTask(record.id),
+          style: { cursor: 'pointer' },
+        })}
         toolBarRender={() => [
           <Input.Search
             key="search"

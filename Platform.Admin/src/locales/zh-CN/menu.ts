@@ -134,8 +134,10 @@ export default {
   // 园区管理
   'menu.park-management': '园区管理',
   'menu.park-management.desc': '园区综合管理功能',
-  'menu.park-management-asset': '资产管理',
-  'menu.park-management-asset.desc': '管理园区楼宇房源资产',
+  'menu.park-management-building': '楼宇管理',
+  'menu.park-management-building.desc': '管理园区楼宇信息',
+  'menu.park-management-property': '房源管理',
+  'menu.park-management-property.desc': '管理园区房源信息',
   'menu.park-management-investment': '招商管理',
   'menu.park-management-investment.desc': '管理招商线索与项目',
   'menu.park-management-tenant': '租户管理',

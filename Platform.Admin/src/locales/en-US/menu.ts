@@ -145,8 +145,10 @@ export default {
   // Park Management
   'menu.park-management': 'Park Management',
   'menu.park-management.desc': 'Park management functions',
-  'menu.park-management-asset': 'Asset Management',
-  'menu.park-management-asset.desc': 'Manage park buildings and units',
+  'menu.park-management-building': 'Building Management',
+  'menu.park-management-building.desc': 'Manage park buildings',
+  'menu.park-management-property': 'Property Management',
+  'menu.park-management-property.desc': 'Manage park properties',
   'menu.park-management-investment': 'Inv. Promotion',
   'menu.park-management-investment.desc': 'Manage investment leads and projects',
   'menu.park-management-tenant': 'Tenant Management',

@@ -192,7 +192,7 @@ const VisitStatisticsPage: React.FC = () => {
     <ProCard style={{ height: 140, padding: '12px 16px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
         <div>
-          <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>{title}</div>
+          <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>{title}</div>
           <div style={{ fontSize: 24, fontWeight: 500, color }}>
             {value}
             {suffix}
@@ -202,7 +202,7 @@ const VisitStatisticsPage: React.FC = () => {
           <span style={{ fontSize: 18, color }}>{icon}</span>
         </div>
       </div>
-      {subInfo && <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>{subInfo}</div>}
+      {subInfo && <div style={{ fontSize: 11, color: 'var(--ant-color-text-description)' }}>{subInfo}</div>}
     </ProCard>
   );
 
@@ -250,7 +250,7 @@ const VisitStatisticsPage: React.FC = () => {
                     style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}
                   >
                     <div>
-                      <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+                      <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
                         {intl.formatMessage({ id: 'pages.park.visitStatistics.completedThisMonth' })}
                       </div>
                       <div style={{ fontSize: 24, fontWeight: 500, color: '#52c41a' }}>
@@ -388,7 +388,7 @@ const VisitStatisticsPage: React.FC = () => {
                 <RobotOutlined style={{ color: '#1890ff' }} />
                 AI 分析报告
               </Space>
-              <div style={{ fontSize: 12, fontWeight: 'normal', color: 'rgba(0, 0, 0, 0.45)', marginLeft: 24 }}>
+              <div style={{ fontSize: 12, fontWeight: 'normal', color: 'var(--ant-color-text-description)', marginLeft: 24 }}>
                 报告周期:{' '}
                 <Tag color="blue" style={{ marginRight: 8 }}>
                   {state.period === 'month'
@@ -416,7 +416,7 @@ const VisitStatisticsPage: React.FC = () => {
               dangerouslySetInnerHTML={{ __html: state.aiReportContent }}
               style={{ fontSize: 15, lineHeight: 1.8, marginBottom: 16 }}
             />
-            <style>{`.markdown-body table { border-collapse: collapse; width: 100%; margin-bottom: 16px; } .markdown-body th, .markdown-body td { border: 1px solid #d9d9d9; padding: 8px 12px; text-align: left; } .markdown-body th { background-color: #fafafa; font-weight: 600; } .markdown-body tr:nth-child(even) { background-color: #fbfbfb; } .markdown-body blockquote { margin: 0 0 16px; padding: 0 1em; color: #6a737d; border-left: 0.25em solid #dfe2e5; }`}</style>
+            <style>{`.markdown-body table { border-collapse: collapse; width: 100%; margin-bottom: 16px; } .markdown-body th, .markdown-body td { border: 1px solid var(--ant-color-border-secondary); padding: 8px 12px; text-align: left; } .markdown-body th { background-color: #fafafa; font-weight: 600; } .markdown-body tr:nth-child(even) { background-color: #fbfbfb; } .markdown-body blockquote { margin: 0 0 16px; padding: 0 1em; color: #6a737d; border-left: 0.25em solid #dfe2e5; }`}</style>
           </Spin>
         </Modal>
       </Spin>

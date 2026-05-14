@@ -589,7 +589,7 @@ export default {
   'pages.park.asset.detail.field.area': '房源面积',
   'pages.park.asset.detail.field.unitType': '房源类型',
   'pages.park.asset.detail.field.monthlyRent': '月租金',
-  'pages.park.asset.detail.field.dailyRent': '日租金',
+  'pages.park.asset.detail.field.propertyFee': '物业费 (月)',
   'pages.park.asset.detail.field.currentTenant': '当前租客',
   'pages.park.asset.detail.field.leaseEndDate': '租期到期',
 
@@ -740,9 +740,11 @@ export default {
   'pages.park.asset.unitType': '房源类型',
   'pages.park.asset.unitTypePlaceholder': '请选择类型',
   'pages.park.asset.monthlyRentPlaceholder': '月租金',
+  'pages.park.asset.propertyFee': '物业费 (月)',
+  'pages.park.asset.propertyFeePlaceholder': '物业费',
+  'pages.park.asset.propertyFeeRequired': '请输入物业费',
   'pages.park.asset.monthlyRentRequired': '请输入月租金',
-  'pages.park.asset.dailyRent': '日租金 (元/m²)',
-  'pages.park.asset.dailyRentPlaceholder': '日租金',
+
   'pages.park.asset.buildingDetail': '楼宇详情',
   'pages.park.asset.editBuilding': '编辑楼宇',
   'pages.park.asset.addBuilding': '新增楼宇',

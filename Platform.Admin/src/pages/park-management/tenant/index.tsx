@@ -172,7 +172,7 @@ const TenantManagement: React.FC = () => {
       render: (_, record) => (
         <Space>
           <UserOutlined style={{ color: '#1890ff' }} />
-          <a onClick={() => handleViewTenant(record.id)}>{record.tenantName}</a>
+          {record.tenantName}
         </Space>
       ),
     },
@@ -349,6 +349,10 @@ const TenantManagement: React.FC = () => {
         rowKey="id"
         search={false}
         scroll={{ x: 'max-content' }}
+        onRow={(record) => ({
+          onClick: () => handleViewTenant(record.id),
+          style: { cursor: 'pointer' },
+        })}
         toolBarRender={() => [
           <Input.Search
             key="search"

@@ -177,7 +177,7 @@ const ContractManagement: React.FC = () => {
       render: (_, record) => (
         <Space>
           <FileTextOutlined style={{ color: '#1890ff' }} />
-          <a onClick={() => handleViewContract(record.id)}>{record.contractNumber}</a>
+          {record.contractNumber}
         </Space>
       ),
     },
@@ -357,6 +357,10 @@ const ContractManagement: React.FC = () => {
         rowKey="id"
         search={false}
         scroll={{ x: 'max-content' }}
+        onRow={(record) => ({
+          onClick: () => handleViewContract(record.id),
+          style: { cursor: 'pointer' },
+        })}
         toolBarRender={() => [
           <Input.Search
             key="search"
@@ -620,7 +624,7 @@ const ContractManagement: React.FC = () => {
                     justifyContent: 'space-between',
                     alignItems: 'flex-start',
                     padding: '12px 0',
-                    borderBottom: '1px solid rgba(0,0,0,0.06)',
+                    borderBottom: '1px solid var(--ant-color-border-secondary)',
                   }}
                 >
                   <div style={{ flex: 1 }}>
@@ -663,7 +667,7 @@ const ContractManagement: React.FC = () => {
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       padding: '12px 0',
-                      borderBottom: '1px solid rgba(0,0,0,0.06)',
+                      borderBottom: '1px solid var(--ant-color-border-secondary)',
                     }}
                   >
                     <Space>

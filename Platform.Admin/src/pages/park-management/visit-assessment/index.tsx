@@ -273,7 +273,7 @@ const VisitAssessmentList: React.FC = () => {
             </Divider>
             <div>
               <Text strong>{intl.formatMessage({ id: 'pages.park.visit.taskDescription' })}：</Text>
-              <div style={{ marginTop: 8, padding: 12, background: '#f5f5f5', borderRadius: 8 }}>
+              <div style={{ marginTop: 8, padding: 12, background: 'var(--ant-color-fill-tertiary)', borderRadius: 8 }}>
                 {state.selectedAssessment.taskDescription || '-'}
               </div>
             </div>
@@ -284,7 +284,7 @@ const VisitAssessmentList: React.FC = () => {
             </Divider>
             <div style={{ marginBottom: 24 }}>
               <Text strong>{intl.formatMessage({ id: 'pages.park.visit.comments' })}：</Text>
-              <div style={{ marginTop: 8, padding: 12, border: '1px solid #f0f0f0', borderRadius: 8, minHeight: 100 }}>
+              <div style={{ marginTop: 8, padding: 12, border: '1px solid var(--ant-color-border-secondary)', borderRadius: 8, minHeight: 100 }}>
                 {state.selectedAssessment.comments || intl.formatMessage({ id: 'pages.park.common.noData' })}
               </div>
             </div>

@@ -239,7 +239,7 @@ const StatisticsPage: React.FC = () => {
       <ProCard style={{ height: 140, padding: '12px 16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
           <div>
-            <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>{title}</div>
+            <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>{title}</div>
             <div style={{ fontSize: 22, fontWeight: 500, color }}>
               {prefix}
               {value}
@@ -250,7 +250,7 @@ const StatisticsPage: React.FC = () => {
             <span style={{ fontSize: 16, color }}>{icon}</span>
           </div>
         </div>
-        {subInfo && <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>{subInfo}</div>}
+        {subInfo && <div style={{ fontSize: 11, color: 'var(--ant-color-text-description)' }}>{subInfo}</div>}
       </ProCard>
     );
 
@@ -263,18 +263,18 @@ const StatisticsPage: React.FC = () => {
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}
               >
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+                  <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
                     {intl.formatMessage({ id: 'pages.park.statistics.rentIncome' })}
                   </div>
                   <div style={{ fontSize: 22, fontWeight: 500, color: '#cf1322' }}>
                     ¥{(tenant?.totalReceived || 0).toLocaleString()}
                   </div>
                 </div>
-                <div style={{ background: 'linear-gradient(135deg, #fff1f0, #fff7e6)', padding: 8, borderRadius: 6 }}>
+                <div style={{ background: 'linear-gradient(135deg, #cf132210, #cf132220)', padding: 8, borderRadius: 6 }}>
                   <span style={{ fontSize: 16, color: '#cf1322' }}>¥</span>
                 </div>
               </div>
-              <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>
+              <div style={{ fontSize: 11, color: 'var(--ant-color-text-description)' }}>
                 {intl.formatMessage({ id: 'pages.park.statistics.receivableLabel' })} ¥
                 {(tenant?.totalExpected || 0).toLocaleString()} |{' '}
                 {intl.formatMessage({ id: 'pages.park.statistics.collectionRateLabel' })}{' '}
@@ -288,18 +288,18 @@ const StatisticsPage: React.FC = () => {
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}
               >
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+                  <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
                     {intl.formatMessage({ id: 'pages.park.statistics.comprehensiveOccupancy' })}
                   </div>
                   <div style={{ fontSize: 22, fontWeight: 500, color: getOccupancyColor(calculatedOccupancyRate) }}>
                     {calculatedOccupancyRate.toFixed(1)}%
                   </div>
                 </div>
-                <div style={{ background: 'linear-gradient(135deg, #f6ffed, #f9f6f2)', padding: 8, borderRadius: 6 }}>
+                <div style={{ background: 'linear-gradient(135deg, #52c41a10, #52c41a20)', padding: 8, borderRadius: 6 }}>
                   <span style={{ fontSize: 16, color: getOccupancyColor(calculatedOccupancyRate) }}>%</span>
                 </div>
               </div>
-              <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>
+              <div style={{ fontSize: 11, color: 'var(--ant-color-text-description)' }}>
                 {intl.formatMessage({ id: 'pages.park.statistics.rentedLabel' })}{' '}
                 {(asset?.rentedArea || 0).toLocaleString()}
                 {intl.formatMessage({ id: 'pages.park.statistics.areaSquareMeters' })} |{' '}
@@ -321,7 +321,7 @@ const StatisticsPage: React.FC = () => {
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}
               >
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+                  <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
                     {isYearly
                       ? intl.formatMessage({ id: 'pages.park.statistics.newThisYear' }, { type: '' })
                       : intl.formatMessage({ id: 'pages.park.statistics.newThisMonth' }, { type: '' })}
@@ -330,11 +330,11 @@ const StatisticsPage: React.FC = () => {
                     {investment?.newLeadsThisMonth || 0}
                   </div>
                 </div>
-                <div style={{ background: 'linear-gradient(135deg, #e6f7ff, #f0f5ff)', padding: 8, borderRadius: 6 }}>
+                <div style={{ background: 'linear-gradient(135deg, #1890ff10, #1890ff20)', padding: 8, borderRadius: 6 }}>
                   <ArrowUpOutlined style={{ fontSize: 16, color: '#1890ff' }} />
                 </div>
               </div>
-              <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>
+              <div style={{ fontSize: 11, color: 'var(--ant-color-text-description)' }}>
                 {intl.formatMessage({ id: 'pages.park.statistics.negotiationLabel' })}{' '}
                 {investment?.projectsInNegotiation || 0} |{' '}
                 {intl.formatMessage({ id: 'pages.park.statistics.conversionLabel' })}{' '}
@@ -348,18 +348,18 @@ const StatisticsPage: React.FC = () => {
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}
               >
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+                  <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
                     {intl.formatMessage({ id: 'pages.park.statistics.activeTenants' })}
                   </div>
                   <div style={{ fontSize: 22, fontWeight: 500, color: '#722ed1' }}>
                     {tenant?.activeTenants || 0} {intl.formatMessage({ id: 'pages.park.statistics.tenantUnit' })}
                   </div>
                 </div>
-                <div style={{ background: 'linear-gradient(135deg, #f9f0ff, #efdbff)', padding: 8, borderRadius: 6 }}>
+                <div style={{ background: 'linear-gradient(135deg, #722ed110, #722ed120)', padding: 8, borderRadius: 6 }}>
                   <TeamOutlined style={{ fontSize: 16, color: '#722ed1' }} />
                 </div>
               </div>
-              <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>
+              <div style={{ fontSize: 11, color: 'var(--ant-color-text-description)' }}>
                 {intl.formatMessage({ id: 'pages.park.statistics.expiringLabel' })}{' '}
                 <span style={{ color: '#faad14' }}>{tenant?.expiringContracts || 0}</span> |{' '}
                 {intl.formatMessage({ id: 'pages.park.statistics.workOrderLabel' })}{' '}
@@ -486,14 +486,14 @@ const StatisticsPage: React.FC = () => {
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}
               >
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+                  <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
                     {intl.formatMessage({ id: 'pages.park.statistics.assetScaleLabel' })}
                   </div>
                   <div style={{ fontSize: 22, fontWeight: 500, color: '#1890ff' }}>
                     {asset.totalBuildings} {intl.formatMessage({ id: 'pages.park.statistics.totalBuildings' })}
                   </div>
                 </div>
-                <div style={{ background: 'linear-gradient(135deg, #e6f7ff, #f0f5ff)', padding: 8, borderRadius: 6 }}>
+                <div style={{ background: 'linear-gradient(135deg, #1890ff10, #1890ff20)', padding: 8, borderRadius: 6 }}>
                   <BankOutlined style={{ fontSize: 16, color: '#1890ff' }} />
                 </div>
               </div>
@@ -505,10 +505,10 @@ const StatisticsPage: React.FC = () => {
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}
               >
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+                  <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
                     {intl.formatMessage({ id: 'pages.park.statistics.totalAreaLabel' })}
                   </div>
-                  <div style={{ fontSize: 22, fontWeight: 500, color: '#595959' }}>
+                  <div style={{ fontSize: 22, fontWeight: 500, color: 'var(--ant-color-text-secondary)' }}>
                     {asset.totalArea.toLocaleString()}{' '}
                     {intl.formatMessage({ id: 'pages.park.statistics.areaSquareMeters' })}
                   </div>
@@ -522,7 +522,7 @@ const StatisticsPage: React.FC = () => {
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}
               >
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+                  <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
                     {intl.formatMessage({ id: 'pages.park.statistics.rentableAreaLabel' })}
                   </div>
                   <div style={{ fontSize: 22, fontWeight: 500, color: '#faad14' }}>
@@ -539,7 +539,7 @@ const StatisticsPage: React.FC = () => {
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}
               >
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+                  <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
                     {intl.formatMessage({ id: 'pages.park.statistics.occupancyRateLabel' })}
                   </div>
                   <div
@@ -552,7 +552,7 @@ const StatisticsPage: React.FC = () => {
                     {areaPercent}%
                   </div>
                 </div>
-                <div style={{ background: 'linear-gradient(135deg, #f6ffed, #fffbe6)', padding: 8, borderRadius: 6 }}>
+                <div style={{ background: `linear-gradient(135deg, ${Number(areaPercent) >= 80 ? '#52c41a' : '#faad14'}10, ${Number(areaPercent) >= 80 ? '#52c41a' : '#faad14'}20)`, padding: 8, borderRadius: 6 }}>
                   <span style={{ fontSize: 16, color: Number(areaPercent) >= 80 ? '#52c41a' : '#faad14' }}>%</span>
                 </div>
               </div>
@@ -575,7 +575,7 @@ const StatisticsPage: React.FC = () => {
                   format={(percent) => (
                     <div>
                       <div style={{ fontSize: 24, fontWeight: 'bold' }}>{percent}%</div>
-                      <div style={{ fontSize: 12, color: '#999' }}>
+                      <div style={{ fontSize: 12, color: 'var(--ant-color-text-tertiary)' }}>
                         {intl.formatMessage({ id: 'pages.park.statistics.rented' })}
                       </div>
                     </div>
@@ -613,7 +613,7 @@ const StatisticsPage: React.FC = () => {
                   format={(percent) => (
                     <div>
                       <div style={{ fontSize: 24, fontWeight: 'bold' }}>{percent}%</div>
-                      <div style={{ fontSize: 12, color: '#999' }}>
+                      <div style={{ fontSize: 12, color: 'var(--ant-color-text-tertiary)' }}>
                         {intl.formatMessage({ id: 'pages.park.statistics.rentedUnitsLabel' })}
                       </div>
                     </div>
@@ -669,12 +669,12 @@ const StatisticsPage: React.FC = () => {
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}
               >
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+                  <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
                     {intl.formatMessage({ id: 'pages.park.statistics.totalLeadsLabel' })}
                   </div>
                   <div style={{ fontSize: 22, fontWeight: 500, color: '#1890ff' }}>{investment.totalLeads}</div>
                 </div>
-                <div style={{ background: 'linear-gradient(135deg, #e6f7ff, #f0f5ff)', padding: 8, borderRadius: 6 }}>
+                <div style={{ background: 'linear-gradient(135deg, #1890ff10, #1890ff20)', padding: 8, borderRadius: 6 }}>
                   <UserSwitchOutlined style={{ fontSize: 16, color: '#1890ff' }} />
                 </div>
               </div>
@@ -686,14 +686,14 @@ const StatisticsPage: React.FC = () => {
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}
               >
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+                  <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
                     {state.period === 'year'
                       ? intl.formatMessage({ id: 'pages.park.statistics.newThisYear' }, { type: '' })
                       : intl.formatMessage({ id: 'pages.park.statistics.newThisMonth' }, { type: '' })}
                   </div>
                   <div style={{ fontSize: 22, fontWeight: 500, color: '#52c41a' }}>{investment.newLeadsThisMonth}</div>
                 </div>
-                <div style={{ background: 'linear-gradient(135deg, #f6ffed, #f9f6f2)', padding: 8, borderRadius: 6 }}>
+                <div style={{ background: 'linear-gradient(135deg, #52c41a10, #52c41a20)', padding: 8, borderRadius: 6 }}>
                   <ArrowUpOutlined style={{ fontSize: 16, color: '#52c41a' }} />
                 </div>
               </div>
@@ -705,12 +705,12 @@ const StatisticsPage: React.FC = () => {
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}
               >
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+                  <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
                     {intl.formatMessage({ id: 'pages.park.statistics.totalProjectsLabel' })}
                   </div>
                   <div style={{ fontSize: 22, fontWeight: 500, color: '#722ed1' }}>{investment.totalProjects}</div>
                 </div>
-                <div style={{ background: 'linear-gradient(135deg, #f9f0ff, #efdbff)', padding: 8, borderRadius: 6 }}>
+                <div style={{ background: 'linear-gradient(135deg, #722ed110, #722ed120)', padding: 8, borderRadius: 6 }}>
                   <FundProjectionScreenOutlined style={{ fontSize: 16, color: '#722ed1' }} />
                 </div>
               </div>
@@ -722,7 +722,7 @@ const StatisticsPage: React.FC = () => {
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}
               >
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+                  <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
                     {intl.formatMessage({ id: 'pages.park.statistics.conversionRateLabel' })}
                   </div>
                   <div
@@ -735,7 +735,7 @@ const StatisticsPage: React.FC = () => {
                     {Number(investment.conversionRate).toFixed(1)}%
                   </div>
                 </div>
-                <div style={{ background: 'linear-gradient(135deg, #fffbe6, #fff7e6)', padding: 8, borderRadius: 6 }}>
+                <div style={{ background: `linear-gradient(135deg, ${investment.conversionRate >= 30 ? '#52c41a' : '#faad14'}10, ${investment.conversionRate >= 30 ? '#52c41a' : '#faad14'}20)`, padding: 8, borderRadius: 6 }}>
                   <span style={{ fontSize: 16, color: investment.conversionRate >= 30 ? '#52c41a' : '#faad14' }}>
                     %
                   </span>
@@ -846,12 +846,12 @@ const StatisticsPage: React.FC = () => {
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}
               >
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+                  <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
                     {intl.formatMessage({ id: 'pages.park.statistics.totalTenantsLabel' })}
                   </div>
                   <div style={{ fontSize: 22, fontWeight: 500, color: '#1890ff' }}>{tenant.totalTenants}</div>
                 </div>
-                <div style={{ background: 'linear-gradient(135deg, #e6f7ff, #f0f5ff)', padding: 8, borderRadius: 6 }}>
+                <div style={{ background: 'linear-gradient(135deg, #1890ff10, #1890ff20)', padding: 8, borderRadius: 6 }}>
                   <TeamOutlined style={{ fontSize: 16, color: '#1890ff' }} />
                 </div>
               </div>
@@ -863,12 +863,12 @@ const StatisticsPage: React.FC = () => {
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}
               >
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+                  <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
                     {intl.formatMessage({ id: 'pages.park.statistics.activeTenantsLabel' })}
                   </div>
                   <div style={{ fontSize: 22, fontWeight: 500, color: '#52c41a' }}>{tenant.activeTenants}</div>
                 </div>
-                <div style={{ background: 'linear-gradient(135deg, #f6ffed, #f9f6f2)', padding: 8, borderRadius: 6 }}>
+                <div style={{ background: 'linear-gradient(135deg, #52c41a10, #52c41a20)', padding: 8, borderRadius: 6 }}>
                   <CheckCircleOutlined style={{ fontSize: 16, color: '#52c41a' }} />
                 </div>
               </div>
@@ -880,12 +880,12 @@ const StatisticsPage: React.FC = () => {
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}
               >
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+                  <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
                     {intl.formatMessage({ id: 'pages.park.statistics.activeContractsLabel' })}
                   </div>
                   <div style={{ fontSize: 22, fontWeight: 500, color: '#722ed1' }}>{tenant.activeContracts}</div>
                 </div>
-                <div style={{ background: 'linear-gradient(135deg, #f9f0ff, #efdbff)', padding: 8, borderRadius: 6 }}>
+                <div style={{ background: 'linear-gradient(135deg, #722ed110, #722ed120)', padding: 8, borderRadius: 6 }}>
                   <FileTextOutlined style={{ fontSize: 16, color: '#722ed1' }} />
                 </div>
               </div>
@@ -899,18 +899,18 @@ const StatisticsPage: React.FC = () => {
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}
               >
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+                  <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
                     {intl.formatMessage({ id: 'pages.park.statistics.totalReceived' })}
                   </div>
                   <div style={{ fontSize: 22, fontWeight: 500, color: '#cf1322' }}>
                     ¥{(tenant.totalReceived || 0).toLocaleString()}
                   </div>
                 </div>
-                <div style={{ background: 'linear-gradient(135deg, #fff1f0, #fff7e6)', padding: 8, borderRadius: 6 }}>
+                <div style={{ background: 'linear-gradient(135deg, #cf132210, #cf132220)', padding: 8, borderRadius: 6 }}>
                   <span style={{ fontSize: 16, color: '#cf1322' }}>¥</span>
                 </div>
               </div>
-              <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>
+              <div style={{ fontSize: 11, color: 'var(--ant-color-text-description)' }}>
                 {intl.formatMessage({ id: 'pages.park.statistics.receivableLabel' })} ¥
                 {(tenant.totalExpected || 0).toLocaleString()}
               </div>
@@ -922,14 +922,14 @@ const StatisticsPage: React.FC = () => {
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}
               >
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+                  <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
                     {intl.formatMessage({ id: 'pages.park.statistics.yearlyEstimateLabel' })}
                   </div>
                   <div style={{ fontSize: 22, fontWeight: 500, color: '#faad14' }}>
                     ¥{(tenant.yearlyEstimate || 0).toLocaleString()}
                   </div>
                 </div>
-                <div style={{ background: 'linear-gradient(135deg, #fffbe6, #fff7e6)', padding: 8, borderRadius: 6 }}>
+                <div style={{ background: 'linear-gradient(135deg, #faad1410, #faad1420)', padding: 8, borderRadius: 6 }}>
                   <span style={{ fontSize: 16, color: '#faad14' }}>¥</span>
                 </div>
               </div>
@@ -941,14 +941,14 @@ const StatisticsPage: React.FC = () => {
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}
               >
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+                  <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
                     {intl.formatMessage({ id: 'pages.park.statistics.contractAmountLabel' })}
                   </div>
                   <div style={{ fontSize: 22, fontWeight: 500, color: '#13c2c2' }}>
                     ¥{(tenant.totalContractAmount || 0).toLocaleString()}
                   </div>
                 </div>
-                <div style={{ background: 'linear-gradient(135deg, #e6fffa, #f0f5ff)', padding: 8, borderRadius: 6 }}>
+                <div style={{ background: 'linear-gradient(135deg, #13c2c210, #13c2c220)', padding: 8, borderRadius: 6 }}>
                   <span style={{ fontSize: 16, color: '#13c2c2' }}>¥</span>
                 </div>
               </div>
@@ -1116,12 +1116,12 @@ const StatisticsPage: React.FC = () => {
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}
               >
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+                  <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
                     {intl.formatMessage({ id: 'pages.park.statistics.totalRequestsLabel' })}
                   </div>
                   <div style={{ fontSize: 22, fontWeight: 500, color: '#1890ff' }}>{service.totalRequests}</div>
                 </div>
-                <div style={{ background: 'linear-gradient(135deg, #e6f7ff, #f0f5ff)', padding: 8, borderRadius: 6 }}>
+                <div style={{ background: 'linear-gradient(135deg, #1890ff10, #1890ff20)', padding: 8, borderRadius: 6 }}>
                   <CustomerServiceOutlined style={{ fontSize: 16, color: '#1890ff' }} />
                 </div>
               </div>
@@ -1133,12 +1133,12 @@ const StatisticsPage: React.FC = () => {
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}
               >
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+                  <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
                     {intl.formatMessage({ id: 'pages.park.statistics.avgRatingLabel' })}
                   </div>
                   <div style={{ fontSize: 22, fontWeight: 500, color: '#faad14' }}>{service.averageRating} / 5</div>
                 </div>
-                <div style={{ background: 'linear-gradient(135deg, #fffbe6, #fff7e6)', padding: 8, borderRadius: 6 }}>
+                <div style={{ background: 'linear-gradient(135deg, #faad1410, #faad1420)', padding: 8, borderRadius: 6 }}>
                   <StarOutlined style={{ fontSize: 16, color: '#faad14' }} />
                 </div>
               </div>
@@ -1152,7 +1152,7 @@ const StatisticsPage: React.FC = () => {
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}
               >
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+                  <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
                     {intl.formatMessage({ id: 'pages.park.statistics.pendingLabel' })}
                   </div>
                   <div
@@ -1165,7 +1165,7 @@ const StatisticsPage: React.FC = () => {
                     {service.pendingRequests}
                   </div>
                 </div>
-                <div style={{ background: 'linear-gradient(135deg, #fffbe6, #fff7e6)', padding: 8, borderRadius: 6 }}>
+                <div style={{ background: `linear-gradient(135deg, ${service.pendingRequests > 10 ? '#f5222d' : '#faad14'}10, ${service.pendingRequests > 10 ? '#f5222d' : '#faad14'}20)`, padding: 8, borderRadius: 6 }}>
                   <ClockCircleOutlined
                     style={{ fontSize: 16, color: service.pendingRequests > 10 ? '#f5222d' : '#faad14' }}
                   />
@@ -1179,12 +1179,12 @@ const StatisticsPage: React.FC = () => {
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}
               >
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+                  <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
                     {intl.formatMessage({ id: 'pages.park.statistics.processingRequests' })}
                   </div>
                   <div style={{ fontSize: 22, fontWeight: 500, color: '#1890ff' }}>{service.processingRequests}</div>
                 </div>
-                <div style={{ background: 'linear-gradient(135deg, #e6f7ff, #f0f5ff)', padding: 8, borderRadius: 6 }}>
+                <div style={{ background: 'linear-gradient(135deg, #1890ff10, #1890ff20)', padding: 8, borderRadius: 6 }}>
                   <SyncOutlined spin style={{ fontSize: 16, color: '#1890ff' }} />
                 </div>
               </div>
@@ -1196,12 +1196,12 @@ const StatisticsPage: React.FC = () => {
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}
               >
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+                  <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
                     {intl.formatMessage({ id: 'pages.park.statistics.completedRequests' })}
                   </div>
                   <div style={{ fontSize: 22, fontWeight: 500, color: '#52c41a' }}>{service.completedRequests}</div>
                 </div>
-                <div style={{ background: 'linear-gradient(135deg, #f6ffed, #f9f6f2)', padding: 8, borderRadius: 6 }}>
+                <div style={{ background: 'linear-gradient(135deg, #52c41a10, #52c41a20)', padding: 8, borderRadius: 6 }}>
                   <CheckCircleOutlined style={{ fontSize: 16, color: '#52c41a' }} />
                 </div>
               </div>
@@ -1368,7 +1368,7 @@ const StatisticsPage: React.FC = () => {
               <RobotOutlined style={{ color: '#722ed1' }} />
               {intl.formatMessage({ id: 'pages.park.statistics.aiReportTitle' })}
             </Space>
-            <div style={{ fontSize: 12, fontWeight: 'normal', color: 'rgba(0, 0, 0, 0.45)', marginLeft: 24 }}>
+            <div style={{ fontSize: 12, fontWeight: 'normal', color: 'var(--ant-color-text-description)', marginLeft: 24 }}>
               {intl.formatMessage({ id: 'pages.park.statistics.reportPeriod' })}:{' '}
               <Tag color="blue" style={{ marginRight: 8 }}>
                 {state.period === 'month'
@@ -1410,30 +1410,30 @@ const StatisticsPage: React.FC = () => {
   box-shadow: 0 1px 2px rgba(0,0,0,0.06);
 }
 .markdown-body th {
-  background-color: #f0f5ff;
-  border: 1px solid #d9d9d9;
+  background-color: var(--ant-color-fill-tertiary);
+  border: 1px solid var(--ant-color-border-secondary);
   padding: 10px 14px;
   text-align: left;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--ant-color-text);
 }
 .markdown-body td {
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--ant-color-border-secondary);
   padding: 10px 14px;
-  color: #333;
+  color: var(--ant-color-text);
 }
 .markdown-body tr:nth-child(even) {
-  background-color: #fafafa;
+  background-color: var(--ant-color-fill-quaternary);
 }
 .markdown-body tr:hover {
-  background-color: #e6f4ff;
+  background-color: var(--ant-color-primary-bg);
 }
 .markdown-body blockquote {
   margin: 0 0 20px;
   padding: 0 1em;
-  color: #6a737d;
-  border-left: 0.25em solid #1677ff;
-  background: #f0f5ff;
+  color: var(--ant-color-text-secondary);
+  border-left: 0.25em solid var(--ant-color-primary);
+  background: var(--ant-color-fill-tertiary);
   border-radius: 0 4px 4px 0;
 }
 .markdown-body h1, .markdown-body h2, .markdown-body h3 {

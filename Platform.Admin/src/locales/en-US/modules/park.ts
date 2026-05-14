@@ -138,7 +138,7 @@ export default {
   'pages.park.asset.detail.field.buildingName': 'Building Name',
   'pages.park.asset.detail.field.buildingType': 'Building Type',
   'pages.park.asset.detail.field.currentTenant': 'Current Tenant',
-  'pages.park.asset.detail.field.dailyRent': 'Daily Rent',
+  'pages.park.asset.detail.field.propertyFee': 'Property Fee (Month)',
   'pages.park.asset.detail.field.deliveryDate': 'Delivery/Acquisition Date',
   'pages.park.asset.detail.field.floor': 'Floor',
   'pages.park.asset.detail.field.leaseEndDate': 'Lease End Date',
@@ -630,8 +630,7 @@ export default {
   'pages.park.asset.areaRequired': 'Please enter area',
   'pages.park.asset.monthlyRentPlaceholder': 'Monthly rent',
   'pages.park.asset.monthlyRentRequired': 'Please enter monthly rent',
-  'pages.park.asset.dailyRent': 'Daily Rent (Yuan/m²)',
-  'pages.park.asset.dailyRentPlaceholder': 'Daily rent',
+
 
   // asset/index.tsx - page UI labels
   'pages.park.asset.buildings': 'Buildings',
@@ -647,6 +646,7 @@ export default {
   'pages.park.asset.buildingType.office': 'Office',
   'pages.park.asset.buildingType.commercial': 'Commercial',
   'pages.park.asset.buildingType.mixed': 'Mixed',
+  'pages.park.asset.buildingType.residential': 'Residential',
 
   // asset/index.tsx - building status tags
   'pages.park.asset.status.active': 'Active',
@@ -657,6 +657,7 @@ export default {
   'pages.park.asset.unitType.office': 'Office',
   'pages.park.asset.unitType.commercial': 'Commercial',
   'pages.park.asset.unitType.warehouse': 'Warehouse',
+  'pages.park.asset.unitType.residential': 'Residential',
   'pages.park.asset.unitType.other': 'Other',
 
   // asset/index.tsx - unit status tags
@@ -676,6 +677,9 @@ export default {
   'pages.park.asset.building.status': 'Status',
 
   // asset/index.tsx - unit table columns
+  'pages.park.asset.propertyFee': 'Property Fee (Month)',
+  'pages.park.asset.propertyFeePlaceholder': 'Property Fee',
+  'pages.park.asset.propertyFeeRequired': 'Please enter property fee',
   'pages.park.asset.unit.number': 'Unit Number',
   'pages.park.asset.unit.building': 'Building',
   'pages.park.asset.unit.floor': 'Floor',

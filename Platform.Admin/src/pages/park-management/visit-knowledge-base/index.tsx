@@ -90,10 +90,10 @@ const VisitKnowledgeBase: React.FC = () => {
   });
   const set = useCallback((partial: Partial<typeof state>) => setState((prev) => ({ ...prev, ...partial })), []);
 
-  const loadAllQuestions = async () => {
+  const loadAllQuestions = useCallback(async () => {
     const res = await api.questions({ page: 1, pageSize: 1000 });
     if (res.success && res.data) set({ allQuestions: res.data.queryable });
-  };
+  }, [set]);
   const handleDeleteQuestion = (id: string) => {
     modal.confirm({
       title: intl.formatMessage({ id: 'pages.park.visitKnowledge.confirmDelete' }),
@@ -112,11 +112,11 @@ const VisitKnowledgeBase: React.FC = () => {
       },
     });
   };
-  const loadStatistics = () => {
+  const loadStatistics = useCallback(() => {
     api.statistics().then((r) => {
       if (r.success && r.data) set({ statistics: r.data });
     });
-  };
+  }, [set]);
 
   const handleGenerateAnswer = async () => {
     const values = form.getFieldsValue(['content', 'category']);
@@ -177,7 +177,7 @@ const VisitKnowledgeBase: React.FC = () => {
       sorter: true,
       width: 100,
       render: (dom) =>
-        dom ? <StarFilled style={{ color: '#fadb14' }} /> : <StarOutlined style={{ color: '#d9d9d9' }} />,
+        dom ? <StarFilled style={{ color: '#fadb14' }} /> : <StarOutlined style={{ color: 'var(--ant-color-text-quaternary)' }} />,
     },
     {
       title: intl.formatMessage({ id: 'common.action' }),
@@ -381,7 +381,7 @@ const VisitKnowledgeBase: React.FC = () => {
                 {state.selectedQuestion.isFrequentlyUsed ? (
                   <StarFilled style={{ color: '#fadb14' }} />
                 ) : (
-                  <StarOutlined style={{ color: '#d9d9d9' }} />
+                  <StarOutlined style={{ color: 'var(--ant-color-text-quaternary)' }} />
                 )}
               </ProDescriptions.Item>
             </ProDescriptions>

@@ -860,6 +860,7 @@ export default {
   // ── Park Asset Building Types ──
   'pages.park.asset.buildingType.commercial': 'Commercial Building',
   'pages.park.asset.buildingType.mixed': 'Mixed Building',
+  'pages.park.asset.buildingType.residential': 'Residential Building',
   'pages.park.asset.buildingType.office': 'Office Building',
   'pages.park.asset.unit.status.available': 'Available',
   'pages.park.asset.unit.status.maintenance': 'Maintenance',
@@ -871,6 +872,7 @@ export default {
   'pages.park.asset.unitType.commercial': 'Commercial',
   'pages.park.asset.unitType.office': 'Office',
   'pages.park.asset.unitType.warehouse': 'Warehouse',
+  'pages.park.asset.unitType.residential': 'Residential',
   'pages.park.asset.unitType.other': 'Other',
 
   // ── Password Book ──

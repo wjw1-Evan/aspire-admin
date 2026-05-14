@@ -158,7 +158,7 @@ const EnterpriseService: React.FC = () => {
     ratingVisible: false,
     detailVisible: false,
   });
-  const setModal = (partial: Partial<typeof modalState>) => setModalState((prev) => ({ ...prev, ...partial }));
+  const setModal = useCallback((partial: Partial<typeof modalState>) => setModalState((prev) => ({ ...prev, ...partial })), []);
   const [currentRequest, setCurrentRequest] = useState<ServiceRequest | null>(null);
   const [detailData, setDetailData] = useState<ServiceRequest | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -520,7 +520,7 @@ const EnterpriseService: React.FC = () => {
                     height: 104,
                     borderRadius: 8,
                     overflow: 'hidden',
-                    border: '1px solid #d9d9d9',
+                    border: '1px solid var(--ant-color-border-secondary)',
                   }}
                 >
                   <Image
@@ -592,8 +592,8 @@ const EnterpriseService: React.FC = () => {
                     gap: 4,
                   }}
                 >
-                  <UploadOutlined style={{ fontSize: 24, color: '#999' }} />
-                  <span style={{ fontSize: 12, color: '#999' }}>
+                  <UploadOutlined style={{ fontSize: 24, color: 'var(--ant-color-text-tertiary)' }} />
+                  <span style={{ fontSize: 12, color: 'var(--ant-color-text-tertiary)' }}>
                     {intl.formatMessage({ id: 'pages.park.service.request.uploadAttachment' })}
                   </span>
                 </div>
@@ -811,7 +811,7 @@ const EnterpriseService: React.FC = () => {
                           src={url}
                           width={80}
                           height={80}
-                          style={{ objectFit: 'cover', borderRadius: 4, border: '1px solid #d9d9d9' }}
+                          style={{ objectFit: 'cover', borderRadius: 4, border: '1px solid var(--ant-color-border-secondary)' }}
                           fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
                         />
                       ))}
@@ -848,19 +848,19 @@ const EnterpriseService: React.FC = () => {
                                   }
                                 }}
                               >
-                                <DeleteOutlined style={{ fontSize: 11, color: '#999', cursor: 'pointer' }} />
+                                <DeleteOutlined style={{ fontSize: 11, color: 'var(--ant-color-text-tertiary)', cursor: 'pointer' }} />
                               </Popconfirm>
                             </Space>
-                            <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>
+                            <div style={{ fontSize: 12, color: 'var(--ant-color-text-tertiary)', marginTop: 2 }}>
                               {dayjs(h.changedAt).format('YYYY-MM-DD HH:mm')}
                             </div>
                             {h.handledBy && (
-                              <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
+                              <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)', marginTop: 2 }}>
                                 {intl.formatMessage({ id: 'pages.park.service.request.handler' })}: {h.handledBy}
                               </div>
                             )}
                             {h.comment && (
-                              <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
+                              <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)', marginTop: 2 }}>
                                 {intl.formatMessage({ id: 'pages.park.service.request.handlingResult' })}: {h.comment}
                               </div>
                             )}

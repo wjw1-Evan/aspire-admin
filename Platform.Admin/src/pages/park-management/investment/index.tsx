@@ -249,12 +249,9 @@ const InvestmentManagement: React.FC = () => {
       sorter: true,
       width: 180,
       render: (_, record) => (
-        <Space
-          onClick={() => set({ currentLead: record, leadDetailVisible: true })}
-          style={{ cursor: 'pointer', color: '#1890ff' }}
-        >
+        <Space>
           <TeamOutlined />
-          <Text strong style={{ color: 'inherit' }}>
+          <Text strong>
             {record.companyName}
           </Text>
         </Space>
@@ -369,12 +366,9 @@ const InvestmentManagement: React.FC = () => {
       sorter: true,
       width: 200,
       render: (_, record) => (
-        <Space
-          onClick={() => set({ currentProject: record, projectDetailVisible: true })}
-          style={{ cursor: 'pointer', color: '#52c41a' }}
-        >
+        <Space>
           <ProjectOutlined />
-          <Text strong style={{ color: 'inherit' }}>
+          <Text strong>
             {record.projectName}
           </Text>
         </Space>
@@ -568,6 +562,10 @@ const InvestmentManagement: React.FC = () => {
                     </Button>,
                   ]}
                   scroll={{ x: 1400 }}
+                  onRow={(record) => ({
+                    onClick: () => set({ currentLead: record, leadDetailVisible: true }),
+                    style: { cursor: 'pointer' },
+                  })}
                 />
               ),
             },
@@ -622,6 +620,10 @@ const InvestmentManagement: React.FC = () => {
                     </Button>,
                   ]}
                   scroll={{ x: 1300 }}
+                  onRow={(record) => ({
+                    onClick: () => set({ currentProject: record, projectDetailVisible: true }),
+                    style: { cursor: 'pointer' },
+                  })}
                 />
               ),
             },

@@ -119,7 +119,7 @@ const StatisticsPage: React.FC = () => {
       <ProCard className="stat-card" style={{ height: 200, padding: '12px 16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <div>
-            <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+            <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
               {intl.formatMessage({ id: 'pages.project.statistics.totalProjects' })}
             </div>
             <div style={{ fontSize: 24, fontWeight: 500, color: '#1890ff' }}>{totalProjects}</div>
@@ -150,7 +150,7 @@ const StatisticsPage: React.FC = () => {
           <Col span={8}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 16, fontWeight: 500, color: '#1890ff' }}>{inProgressProjects}</div>
-              <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>
+              <div style={{ fontSize: 11, color: 'var(--ant-color-text-description)' }}>
                 {intl.formatMessage({ id: 'pages.project.statistics.inProgressProjects' })}
               </div>
             </div>
@@ -158,7 +158,7 @@ const StatisticsPage: React.FC = () => {
           <Col span={8}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 16, fontWeight: 500, color: '#52c41a' }}>{completedProjects}</div>
-              <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>
+              <div style={{ fontSize: 11, color: 'var(--ant-color-text-description)' }}>
                 {intl.formatMessage({ id: 'pages.project.statistics.completedProjects' })}
               </div>
             </div>
@@ -166,7 +166,7 @@ const StatisticsPage: React.FC = () => {
           <Col span={8}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 16, fontWeight: 500, color: '#ff4d4f' }}>{delayedProjects}</div>
-              <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>
+              <div style={{ fontSize: 11, color: 'var(--ant-color-text-description)' }}>
                 {intl.formatMessage({ id: 'pages.project.statistics.delayedProjects' })}
               </div>
             </div>
@@ -187,7 +187,7 @@ const StatisticsPage: React.FC = () => {
       <ProCard className="stat-card" style={{ height: 200, padding: '12px 16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <div>
-            <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+            <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
               {intl.formatMessage({ id: 'pages.project.statistics.taskTotal' })}
             </div>
             <div style={{ fontSize: 24, fontWeight: 500, color: '#52c41a' }}>{totalTasks}</div>
@@ -215,7 +215,7 @@ const StatisticsPage: React.FC = () => {
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
           <div>
-            <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>
+            <div style={{ fontSize: 11, color: 'var(--ant-color-text-description)' }}>
               {intl.formatMessage({ id: 'pages.project.statistics.completedProjects' })}
             </div>
             <div style={{ fontSize: 16, fontWeight: 500, color: '#52c41a' }}>{completedTasks}</div>
@@ -243,7 +243,7 @@ const StatisticsPage: React.FC = () => {
       <ProCard className="stat-card" style={{ height: 200, padding: '12px 16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <div>
-            <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+            <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
               {intl.formatMessage({ id: 'pages.project.statistics.milestoneTotal' })}
             </div>
             <div style={{ fontSize: 24, fontWeight: 500, color: '#faad14' }}>{totalMilestones}</div>
@@ -259,7 +259,7 @@ const StatisticsPage: React.FC = () => {
               <ClockCircleOutlined style={{ color: '#faad14', fontSize: 14 }} />
               <div>
                 <div style={{ fontSize: 14, fontWeight: 500 }}>{pendingMilestones}</div>
-                <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>
+                <div style={{ fontSize: 11, color: 'var(--ant-color-text-description)' }}>
                   {intl.formatMessage({ id: 'pages.project.statistics.pendingMilestones' })}
                 </div>
               </div>
@@ -270,7 +270,7 @@ const StatisticsPage: React.FC = () => {
               <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 14 }} />
               <div>
                 <div style={{ fontSize: 14, fontWeight: 500 }}>{achievedMilestones}</div>
-                <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>
+                <div style={{ fontSize: 11, color: 'var(--ant-color-text-description)' }}>
                   {intl.formatMessage({ id: 'pages.project.statistics.achievedMilestones' })}
                 </div>
               </div>
@@ -300,7 +300,7 @@ const StatisticsPage: React.FC = () => {
       <ProCard className="stat-card" style={{ height: 200, padding: '12px 16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <div>
-            <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+            <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
               {intl.formatMessage({ id: 'pages.project.statistics.teamSize' })}
             </div>
             <div style={{ fontSize: 24, fontWeight: 500, color: '#722ed1' }}>{totalMembers}</div>
@@ -320,7 +320,7 @@ const StatisticsPage: React.FC = () => {
                   justifyContent: 'space-between',
                   padding: '4px 0',
                   fontSize: 12,
-                  color: 'rgba(0,0,0,0.65)',
+                  color: 'var(--ant-color-text-secondary)',
                 }}
               >
                 <span>{role}</span>
@@ -401,7 +401,7 @@ const StatisticsPage: React.FC = () => {
             dangerouslySetInnerHTML={{ __html: aiReportContent }}
             style={{ fontSize: 15, lineHeight: 1.8, marginBottom: 16 }}
           />
-          <style>{`.markdown-body table { border-collapse: collapse; width: 100%; margin-bottom: 16px; } .markdown-body th, .markdown-body td { border: 1px solid #d9d9d9; padding: 8px 12px; text-align: left; } .markdown-body th { background-color: #fafafa; font-weight: 600; } .markdown-body tr:nth-child(even) { background-color: #fbfbfb; } .markdown-body blockquote { margin: 0 0 16px; padding: 0 1em; color: #6a737d; border-left: 0.25em solid #dfe2e5; }`}</style>
+          <style>{`.markdown-body table { border-collapse: collapse; width: 100%; margin-bottom: 16px; } .markdown-body th, .markdown-body td { border: 1px solid var(--ant-color-border-secondary); padding: 8px 12px; text-align: left; } .markdown-body th { background-color: #fafafa; font-weight: 600; } .markdown-body tr:nth-child(even) { background-color: #fbfbfb; } .markdown-body blockquote { margin: 0 0 16px; padding: 0 1em; color: #6a737d; border-left: 0.25em solid #dfe2e5; }`}</style>
         </Spin>
       </Modal>
     </PageContainer>

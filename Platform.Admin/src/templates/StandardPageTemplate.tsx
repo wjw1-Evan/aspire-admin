@@ -91,7 +91,7 @@ const DetailContent: React.FC<{ id: string; isMobile: boolean }> = ({ id, isMobi
     <Spin spinning={loading}>
       <ProCard title={intl.formatMessage({ id: 'pages.xxx.detail.basicInfo' })} style={{ marginBottom: 16 }}>
         <ProDescriptions column={isMobile ? 1 : 2} size="small">
-          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.xxx.table.name' })} span={2}>
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.xxx.table.name' })} span={isMobile ? 1 : 2}>
             {data.name}
           </ProDescriptions.Item>
           <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.xxx.table.createdAt' })}>

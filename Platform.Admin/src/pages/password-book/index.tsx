@@ -403,35 +403,35 @@ const DetailContent: React.FC<{ id: string; isMobile: boolean }> = ({ id, isMobi
 
   return (
     <ProDescriptions column={isMobile ? 1 : 2} bordered size="small">
-      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.platform' })} span={2}>
-        <strong>{entry.platform}</strong>
-      </ProDescriptions.Item>
-<ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.account' })} span={2}>
+<ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.platform' })}>
+         <strong>{entry.platform}</strong>
+       </ProDescriptions.Item>
+       <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.account' })}>
          <Space>
            {entry.account}
            <CopyButton text={entry.account} />
          </Space>
        </ProDescriptions.Item>
-       <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.password' })} span={2}>
+       <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.password' })}>
          <Space>
            <Input.Password value={entry.password} variant="borderless" readOnly />
            <CopyButton text={entry.password || ''} />
          </Space>
        </ProDescriptions.Item>
-      {entry.url && (
-        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.url' })} span={2}>
-          <a href={entry.url} target="_blank" rel="noopener">
-            {entry.url}
-          </a>
-        </ProDescriptions.Item>
-      )}
-{entry.category && (
-         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.category' })} span={2}>
+       {entry.url && (
+         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.url' })}>
+           <a href={entry.url} target="_blank" rel="noopener">
+             {entry.url}
+           </a>
+         </ProDescriptions.Item>
+       )}
+       {entry.category && (
+         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.category' })}>
            <Tag color="blue">{entry.category}</Tag>
          </ProDescriptions.Item>
        )}
        {entry.tags?.length > 0 && (
-         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.tags' })} span={2}>
+         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.tags' })}>
            <Space wrap>
              {entry.tags.map((t) => (
                <Tag key={t}>{t}</Tag>
@@ -440,21 +440,21 @@ const DetailContent: React.FC<{ id: string; isMobile: boolean }> = ({ id, isMobi
          </ProDescriptions.Item>
        )}
        {entry.lastUsedAt && (
-         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.lastUsedAt' })} span={2}>
+         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.lastUsedAt' })}>
            {dayjs(entry.lastUsedAt).format('YYYY-MM-DD HH:mm')}
          </ProDescriptions.Item>
        )}
-<ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.createdAt' })} span={2}>
+       <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.createdAt' })}>
          {dayjs(entry.createdAt).format('YYYY-MM-DD HH:mm')}
        </ProDescriptions.Item>
-       <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.updatedAt' })} span={2}>
+       <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.updatedAt' })}>
          {dayjs(entry.updatedAt).format('YYYY-MM-DD HH:mm')}
        </ProDescriptions.Item>
-      {entry.notes && (
-        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.notes' })} span={2}>
-          <div style={{ whiteSpace: 'pre-wrap' }}>{entry.notes}</div>
-        </ProDescriptions.Item>
-      )}
+       {entry.notes && (
+         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.notes' })}>
+           <div style={{ whiteSpace: 'pre-wrap' }}>{entry.notes}</div>
+         </ProDescriptions.Item>
+       )}
     </ProDescriptions>
   );
 };

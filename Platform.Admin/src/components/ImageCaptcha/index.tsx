@@ -1,7 +1,7 @@
 import { ReloadOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import { Button, Image, Input, Space } from 'antd';
-import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react';
+import React, { forwardRef, useCallback, useImperativeHandle, useRef, useState } from 'react';
 import { useMessage } from '@/hooks/useMessage';
 import { getImageCaptcha, verifyImageCaptcha } from '@/services/ant-design-pro/api';
 
@@ -31,7 +31,7 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(
     const defaultPlaceholder = placeholder || intl.formatMessage({ id: 'pages.captcha.placeholder' });
 
     // 获取图形验证码
-    const fetchCaptcha = async (showSuccessMessage = false) => {
+    const fetchCaptcha = useCallback(async (showSuccessMessage = false) => {
       try {
         setLoading(true);
         const response = await getImageCaptcha(type);
@@ -64,7 +64,7 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(
       } finally {
         setLoading(false);
       }
-    };
+    }, [type, onCaptchaIdChange, onChange, message, intl]);
 
     // 暴露刷新方法给父组件（自动刷新，不显示成功消息）
     useImperativeHandle(ref, () => ({

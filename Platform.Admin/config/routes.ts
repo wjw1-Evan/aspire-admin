@@ -286,11 +286,15 @@ export default [
     routes: [
       {
         path: '/park-management',
-        redirect: '/park-management/asset',
+        redirect: '/park-management/building',
       },
       {
-        path: '/park-management/asset',
-        component: './park-management/asset',
+        path: '/park-management/building',
+        component: './park-management/building',
+      },
+      {
+        path: '/park-management/property',
+        component: './park-management/property',
       },
       {
         path: '/park-management/investment',

@@ -3,39 +3,18 @@ import type { MenuProps } from 'antd';
 import { createStyles } from 'antd-style';
 import React from 'react';
 import HeaderDropdown from '@/components/HeaderDropdown';
+import { useHeaderStyles } from '@/components/RightContent/styles';
 
 const useStyles = createStyles(({ css }) => ({
-  headerActionButton: css`
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
+  roundButton: css`
     padding: 0;
-    margin: 0 4px;
-    cursor: pointer;
+    width: 44px;
     border-radius: 50%;
-    font-size: 20px;
-    color: #333;
-    transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
-    line-height: 1;
-    background: #ffffff;
-    border: 1px solid #e8e8e8;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 
     &:hover {
-      background: #fafafa;
-      border-color: #1890ff;
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
-      transform: translateY(-2px) scale(1.08);
-
       .flagWrapper {
-        transform: scale(1.15) rotate(5deg);
+        transform: rotate(8deg);
       }
-    }
-
-    &:active {
-      transform: scale(0.95);
     }
   `,
   flagWrapper: css`
@@ -74,6 +53,7 @@ const locales = [
 ];
 
 const SelectLang: React.FC = () => {
+  const { styles: headerBtnStyles } = useHeaderStyles();
   const { styles } = useStyles();
   const currentLocale = getLocale();
 
@@ -113,7 +93,7 @@ const SelectLang: React.FC = () => {
       placement="bottomRight"
       trigger={['click']}
     >
-      <span className={styles.headerActionButton}>
+      <span className={`${headerBtnStyles.headerActionButton} ${styles.roundButton}`}>
         {currentLocaleInfo && <span className={styles.flagWrapper}>{currentLocaleInfo.icon}</span>}
       </span>
     </HeaderDropdown>

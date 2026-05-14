@@ -12,7 +12,7 @@ import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { useIntl, useModel } from '@umijs/max';
 import { Button, Card, Col, Row, Spin, Tag } from 'antd';
 import dayjs from 'dayjs';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { StatCard } from '@/components';
 import { getCompanyStatistics, getCurrentCompany } from '@/services/company';
 import type { Company, CompanyStatistics } from '@/types';
@@ -26,7 +26,7 @@ export default function CompanySettings() {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const { initialState, setInitialState } = useModel('@@initialState');
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [companyRes, statsRes] = await Promise.all([getCurrentCompany(), getCompanyStatistics()]);
@@ -42,7 +42,7 @@ export default function CompanySettings() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();

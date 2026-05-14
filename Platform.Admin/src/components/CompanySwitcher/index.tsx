@@ -3,7 +3,7 @@ import { request, useIntl, useModel } from '@umijs/max';
 import type { MenuProps } from 'antd';
 import { App as AntApp, Dropdown, Spin } from 'antd';
 import { createStyles } from 'antd-style';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import type { ApiResponse, SwitchCompanyResult, UserCompanyItem } from '@/types';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { CreateCompanyModal } from '../CreateCompanyModal';
@@ -99,7 +99,7 @@ export const CompanySwitcher: React.FC = () => {
   const [switching, setSwitching] = useState(false);
   const [createCompanyModalOpen, setCreateCompanyModalOpen] = useState(false);
 
-  const loadCompanies = async () => {
+  const loadCompanies = useCallback(async () => {
     setLoading(true);
     try {
       const response = await request<ApiResponse<UserCompanyItem[]>>('/apiservice/api/company/my-companies', {
@@ -120,7 +120,7 @@ export const CompanySwitcher: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // 加载用户的企业列表
   useEffect(() => {

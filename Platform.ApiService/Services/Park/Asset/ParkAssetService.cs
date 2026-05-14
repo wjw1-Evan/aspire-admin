@@ -43,10 +43,17 @@ public class ParkAssetService : IParkAssetService
 
         var buildingIds = items.Select(b => b.Id).Distinct().ToList();
 
-        var unitsByBuilding = await _context.Set<PropertyUnit>()
+        var units = await _context.Set<PropertyUnit>()
             .Where(u => buildingIds.Contains(u.BuildingId))
-            .GroupBy(u => u.BuildingId)
-            .ToDictionaryAsync(g => g.Key, g => g.ToList());
+            .ToListAsync();
+
+        var unitsByBuilding = new Dictionary<string, List<PropertyUnit>>();
+        foreach (var unit in units)
+        {
+            if (!unitsByBuilding.ContainsKey(unit.BuildingId))
+                unitsByBuilding[unit.BuildingId] = new List<PropertyUnit>();
+            unitsByBuilding[unit.BuildingId].Add(unit);
+        }
 
         var buildings = items.Select(b => MapToBuildingDto(b, unitsByBuilding)).ToList();
 
@@ -231,7 +238,7 @@ public class ParkAssetService : IParkAssetService
             Floor = request.Floor,
             Area = request.Area,
             MonthlyRent = request.MonthlyRent,
-            DailyRent = request.DailyRent,
+            PropertyFee = request.PropertyFee,
             UnitType = request.UnitType ?? "Office",
             Description = request.Description,
             Facilities = request.Facilities,
@@ -261,7 +268,7 @@ public class ParkAssetService : IParkAssetService
         u.Floor = request.Floor;
         u.Area = request.Area;
         u.MonthlyRent = request.MonthlyRent;
-        u.DailyRent = request.DailyRent;
+        u.PropertyFee = request.PropertyFee;
         u.UnitType = request.UnitType ?? u.UnitType;
         u.Description = request.Description;
         u.Facilities = request.Facilities;
@@ -305,7 +312,7 @@ public class ParkAssetService : IParkAssetService
             Floor = u.Floor,
             Area = u.Area,
             MonthlyRent = u.MonthlyRent,
-            DailyRent = u.DailyRent,
+            PropertyFee = u.PropertyFee,
             UnitType = u.UnitType,
             Status = u.Status,
             CurrentTenantId = u.CurrentTenantId,

@@ -33,7 +33,6 @@ public class CreateBuildingRequest
     public decimal TotalArea { get; set; }
     public string? BuildingType { get; set; }
     public int YearBuilt { get; set; }
-    [Required]
     public DateTime? DeliveryDate { get; set; }
     public string? Description { get; set; }
     public string? CoverImage { get; set; }
@@ -55,7 +54,7 @@ public class PropertyUnitDto
     public int Floor { get; set; }
     public decimal Area { get; set; }
     public decimal MonthlyRent { get; set; }
-    public decimal? DailyRent { get; set; }
+    public decimal? PropertyFee { get; set; }
     public string UnitType { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public string? CurrentTenantId { get; set; }
@@ -75,7 +74,7 @@ public class CreatePropertyUnitRequest
     public int Floor { get; set; }
     public decimal Area { get; set; }
     public decimal MonthlyRent { get; set; }
-    public decimal? DailyRent { get; set; }
+    public decimal? PropertyFee { get; set; }
     public string? UnitType { get; set; }
     public string? Description { get; set; }
     public List<string>? Facilities { get; set; }

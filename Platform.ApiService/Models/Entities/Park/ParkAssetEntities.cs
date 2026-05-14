@@ -25,7 +25,6 @@ public class Building : MultiTenantEntity
     [Range(1900, 2100)]
     public int YearBuilt { get; set; }
 
-    [Required]
     public DateTime? DeliveryDate { get; set; }
 
     [StringLength(20)]
@@ -59,7 +58,7 @@ public class PropertyUnit : MultiTenantEntity
 
     public decimal MonthlyRent { get; set; }
 
-    public decimal? DailyRent { get; set; }
+    public decimal? PropertyFee { get; set; }
 
     [StringLength(50)]
     public string UnitType { get; set; } = "Office";

@@ -12,7 +12,7 @@
 
 | 你的目标 | 需要加载的文档 | 参考示例 |
 |----------|-------------|---------|
-| **新做一个页面** | [前端规范](docs/agents/modules/frontend.md) + [架构规范](docs/agents/modules/architecture.md) | `密码本页面` → `src/pages/password-book/index.tsx` |
+| **新做一个页面** | [前端规范](docs/agents/modules/frontend.md) + [架构规范](docs/agents/modules/architecture.md) | `密码本页面` → `src/pages/password-book/index.tsx`（支持点击行弹详情） |
 | **新增一个 API** | [后端规范](docs/agents/modules/backend.md) | `PasswordBookController.cs` |
 | **给页面加国际化** | [前端规范 → 7.8](docs/agents/modules/frontend.md#78-国际化-i18n) | `src/locales/zh-CN/modules/` |
 | **写一个测试** | [测试规范](docs/agents/modules/testing.md) | `tests/e2e/task/` |
@@ -212,8 +212,8 @@ git push origin HEAD
 | 错误码常量 | `Platform.ServiceDefaults/Models/ErrorCode.cs` |
 | 前端统一类型 | `Platform.Admin/src/types/api-response.ts` |
 | 前端错误码常量 | `Platform.Admin/src/constants/errorCodes.ts` |
-| 标准页面模板 | `Platform.Admin/src/templates/StandardPageTemplate.tsx` |
-| 页面开发标准 | `Platform.Admin/src/pages/password-book/index.tsx` |
+| 标准页面模板 | `Platform.Admin/src/templates/StandardPageTemplate.tsx` | 点击行弹详情，columns 用普通数组，handleView 为普通函数 |
+| 页面开发标准 | `Platform.Admin/src/pages/password-book/index.tsx` | 页面开发风格参考（`onRow`、`handleView`、`useMemo` 等模式） |
 
 ---
 

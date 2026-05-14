@@ -1,11 +1,10 @@
 import { request, useIntl } from '@umijs/max';
-import { App, Button, Drawer, Grid, Input, Popconfirm, Space, Spin, Tag } from 'antd';
+import { App, Button, Drawer, Grid, Input, Popconfirm, Space, Spin } from 'antd';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 const { useBreakpoint } = Grid;
 
 import { DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
 import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
 import { ModalForm, ProFormText } from '@ant-design/pro-components/es/form';
 import { PageContainer } from '@ant-design/pro-components/es/layout';
@@ -64,7 +63,7 @@ const api = {
  * 详情组件
  * 使用 Drawer + ProDescriptions 展示详情
  */
-const DetailContent: React.FC<{ id: string; isMobile: boolean }> = ({ id, isMobile }) => {
+const DetailContent: React.FC<{ id: string }> = ({ id }) => {
   const intl = useIntl();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<Entity | null>(null);
@@ -89,19 +88,17 @@ const DetailContent: React.FC<{ id: string; isMobile: boolean }> = ({ id, isMobi
 
   return (
     <Spin spinning={loading}>
-      <ProCard title={intl.formatMessage({ id: 'pages.xxx.detail.basicInfo' })} style={{ marginBottom: 16 }}>
-        <ProDescriptions column={isMobile ? 1 : 2} size="small">
-          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.xxx.table.name' })} span={isMobile ? 1 : 2}>
-            {data.name}
-          </ProDescriptions.Item>
-          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.xxx.table.createdAt' })}>
-            {dayjs(data.createdAt).format('YYYY-MM-DD HH:mm:ss')}
-          </ProDescriptions.Item>
-          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.xxx.table.updatedAt' })}>
-            {data.updatedAt ? dayjs(data.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
-          </ProDescriptions.Item>
-        </ProDescriptions>
-      </ProCard>
+      <ProDescriptions column={1} bordered size="small">
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.xxx.table.name' })}>
+          <strong>{data.name}</strong>
+        </ProDescriptions.Item>
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.xxx.table.createdAt' })}>
+          {dayjs(data.createdAt).format('YYYY-MM-DD HH:mm:ss')}
+        </ProDescriptions.Item>
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.xxx.table.updatedAt' })}>
+          {data.updatedAt ? dayjs(data.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
+        </ProDescriptions.Item>
+      </ProDescriptions>
     </Spin>
   );
 };
@@ -154,6 +151,7 @@ const XxxManagement: React.FC = () => {
       dataIndex: 'name',
       key: 'name',
       sorter: true,
+      render: (_, r) => <span>{r.name}</span>,
     },
     {
       title: intl.formatMessage({ id: 'pages.xxx.table.createdAt' }),
@@ -233,9 +231,7 @@ const XxxManagement: React.FC = () => {
         search={false}
         scroll={{ x: 'max-content' }}
         onRow={(record) => ({
-          onClick: (e) => {
-            const target = e.target as HTMLElement;
-            if (target.closest('.ant-btn')) return;
+          onClick: () => {
             handleView(record.id);
           },
           style: { cursor: 'pointer' },
@@ -315,7 +311,7 @@ const XxxManagement: React.FC = () => {
         size="large"
         destroyOnClose
       >
-        {state.viewingId && <DetailContent id={state.viewingId} isMobile={isMobile} />}
+        {state.viewingId && <DetailContent id={state.viewingId} />}
       </Drawer>
     </PageContainer>
   );

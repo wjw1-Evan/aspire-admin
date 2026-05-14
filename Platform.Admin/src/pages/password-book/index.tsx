@@ -14,12 +14,10 @@ import { ModalForm, ProFormSelect, ProFormText, ProFormTextArea } from '@ant-des
 import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { request, useIntl } from '@umijs/max';
-import { Button, Drawer, Form, Grid, Input, Modal, Popconfirm, Space, Tag } from 'antd';
+import { Button, Drawer, Form, Input, Modal, Popconfirm, Space, Tag } from 'antd';
 import dayjs from 'dayjs';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiResponse, PagedResult } from '@/types';
-
-const { useBreakpoint } = Grid;
 
 interface Entry {
   id: string;
@@ -63,9 +61,6 @@ const api = {
 const PasswordBook: React.FC = () => {
   const intl = useIntl();
   const actionRef = useRef<ActionType | undefined>(undefined);
-  const screens = useBreakpoint();
-  const isMobile = !screens.md;
-
   const [state, setState] = useState({
     statistics: null as Stats | null,
     exportVisible: false,
@@ -371,7 +366,7 @@ const PasswordBook: React.FC = () => {
         onClose={() => set({ detailVisible: false, viewingId: '' })}
         size="large"
       >
-        <DetailContent id={state.viewingId} isMobile={isMobile} />
+        <DetailContent id={state.viewingId} />
       </Drawer>
 
       <Modal
@@ -389,7 +384,7 @@ const PasswordBook: React.FC = () => {
   );
 };
 
-const DetailContent: React.FC<{ id: string; isMobile: boolean }> = ({ id, isMobile }) => {
+const DetailContent: React.FC<{ id: string }> = ({ id }) => {
   const intl = useIntl();
   const [entry, setEntry] = useState<Entry | null>(null);
   useEffect(() => {
@@ -402,7 +397,7 @@ const DetailContent: React.FC<{ id: string; isMobile: boolean }> = ({ id, isMobi
   if (!entry) return null;
 
   return (
-    <ProDescriptions column={isMobile ? 1 : 2} bordered size="small">
+    <ProDescriptions bordered size="small">
 <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.platform' })}>
          <strong>{entry.platform}</strong>
        </ProDescriptions.Item>

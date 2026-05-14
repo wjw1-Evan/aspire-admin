@@ -142,7 +142,7 @@ const StatisticsPage: React.FC = () => {
   });
   const set = useCallback((partial: Partial<typeof state>) => setState((prev) => ({ ...prev, ...partial })), []);
 
-  const loadAllStatistics = async () => {
+  const loadAllStatistics = useCallback(async () => {
     set({ loading: true });
     try {
       let startDate: string | undefined, endDate: string | undefined;
@@ -169,7 +169,7 @@ const StatisticsPage: React.FC = () => {
     } finally {
       set({ loading: false });
     }
-  };
+  }, [state.dateRange, set]);
 
   useEffect(() => {
     if (state.period !== 'custom' || (state.period === 'custom' && state.dateRange)) loadAllStatistics();

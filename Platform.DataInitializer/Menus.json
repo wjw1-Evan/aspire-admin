@@ -348,13 +348,22 @@
         "SortOrder": 11
     },
     {
-        "Name": "park-management-asset",
-        "Title": "资产管理",
-        "Path": "/park-management/asset",
-        "Component": "./park-management/asset",
-        "Icon": "home",
+        "Name": "park-management-building",
+        "Title": "楼宇管理",
+        "Path": "/park-management/building",
+        "Component": "./park-management/building",
+        "Icon": "bank",
         "ParentId": "park-management",
         "SortOrder": 1
+    },
+    {
+        "Name": "park-management-property",
+        "Title": "房源管理",
+        "Path": "/park-management/property",
+        "Component": "./park-management/property",
+        "Icon": "home",
+        "ParentId": "park-management",
+        "SortOrder": 2
     },
     {
         "Name": "park-management-investment",
@@ -363,7 +372,7 @@
         "Component": "./park-management/investment",
         "Icon": "fund",
         "ParentId": "park-management",
-        "SortOrder": 2
+        "SortOrder": 3
     },
     {
         "Name": "park-management-tenant",
@@ -372,7 +381,7 @@
         "Component": "./park-management/tenant",
         "Icon": "team",
         "ParentId": "park-management",
-        "SortOrder": 3
+        "SortOrder": 4
     },
     {
         "Name": "park-management-contract",
@@ -381,7 +390,7 @@
         "Component": "./park-management/contract",
         "Icon": "file-done",
         "ParentId": "park-management",
-        "SortOrder": 4
+        "SortOrder": 5
     },
     {
         "Name": "park-management-enterprise-service",
@@ -390,7 +399,7 @@
         "Component": "./park-management/enterprise-service",
         "Icon": "customer-service",
         "ParentId": "park-management",
-        "SortOrder": 5
+        "SortOrder": 6
     },
     {
         "Name": "park-management-statistics",

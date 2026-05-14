@@ -1,6 +1,6 @@
 import { request, useIntl } from '@umijs/max';
 import { App, Button, Drawer, Grid, Input, Popconfirm, Space, Spin, Tag } from 'antd';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 const { useBreakpoint } = Grid;
 
@@ -124,10 +124,9 @@ const XxxManagement: React.FC = () => {
     formVisible: false,
     detailVisible: false,
     editingEntity: null as Entity | null,
-    viewingId: null as string | null,
-    search: '',
+    viewingId: '' as string,
+    search: '' as string,
   });
-
   const set = useCallback((partial: Partial<typeof state>) => setState((prev) => ({ ...prev, ...partial })), []);
 
   // ==================== Load Statistics ====================
@@ -139,70 +138,65 @@ const XxxManagement: React.FC = () => {
     });
   }, [set]);
 
-useEffect(() => {
-     loadStatistics();
-   }, [loadStatistics]);
+  useEffect(() => {
+    loadStatistics();
+  }, [loadStatistics]);
 
-   // ==================== Handle View ====================
-   const handleView = useCallback((record: Entity) => {
-     set({ viewingId: record.id, detailVisible: true });
-   }, [set]);
+  // ==================== Handle View ====================
+  const handleView = (id: string) => {
+    set({ viewingId: id, detailVisible: true });
+  };
 
-   // ==================== Columns ====================
-  const columns: ProColumns<Entity>[] = useMemo(
-    () => [
-      {
-        title: intl.formatMessage({ id: 'pages.xxx.table.name' }),
-        dataIndex: 'name',
-        key: 'name',
-        sorter: true,
-        render: (_, r) => <span style={{ cursor: 'pointer' }}>{r.name}</span>,
-      },
-      {
-        title: intl.formatMessage({ id: 'pages.xxx.table.createdAt' }),
-        dataIndex: 'createdAt',
-        key: 'createdAt',
-        sorter: true,
-        valueType: 'dateTime',
-        render: (_, r) => dayjs(r.createdAt).format('YYYY-MM-DD HH:mm'),
-      },
-      {
-        title: intl.formatMessage({ id: 'pages.table.action' }),
-        key: 'action',
-        valueType: 'option',
-        fixed: 'right',
-        width: 180,
-        render: (_, r) => (
-          <Space size={4}>
-            <Button
-              type="link"
-              size="small"
-              icon={<EditOutlined />}
-              onClick={() => set({ editingEntity: r, formVisible: true })}
-            >
-              {intl.formatMessage({ id: 'pages.action.edit' })}
+  // ==================== Columns ====================
+  const columns: ProColumns<Entity>[] = [
+    {
+      title: intl.formatMessage({ id: 'pages.xxx.table.name' }),
+      dataIndex: 'name',
+      key: 'name',
+      sorter: true,
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.xxx.table.createdAt' }),
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      sorter: true,
+      valueType: 'dateTime',
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.table.action' }),
+      key: 'action',
+      valueType: 'option',
+      fixed: 'right',
+      width: 180,
+      render: (_, r) => (
+        <Space size={4}>
+          <Button
+            type="link"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => set({ editingEntity: r, formVisible: true })}
+          >
+            {intl.formatMessage({ id: 'pages.action.edit' })}
+          </Button>
+          <Popconfirm
+            title={intl.formatMessage({ id: 'pages.xxx.message.confirmDelete' })}
+            onConfirm={async () => {
+              const res = await api.delete(r.id);
+              if (res.success) {
+                message.success(intl.formatMessage({ id: 'pages.xxx.message.deleteSuccess' }));
+                actionRef.current?.reload();
+                loadStatistics();
+              }
+            }}
+          >
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+              {intl.formatMessage({ id: 'pages.action.delete' })}
             </Button>
-            <Popconfirm
-              title={intl.formatMessage({ id: 'pages.xxx.message.confirmDelete' })}
-              onConfirm={async () => {
-                const res = await api.delete(r.id);
-                if (res.success) {
-                  message.success(intl.formatMessage({ id: 'pages.xxx.message.deleteSuccess' }));
-                  actionRef.current?.reload();
-                  loadStatistics();
-                }
-              }}
-            >
-              <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-                {intl.formatMessage({ id: 'pages.action.delete' })}
-              </Button>
-            </Popconfirm>
-          </Space>
-        ),
-      },
-    ],
-    [intl, message, set, loadStatistics],
-  );
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
 
   // ==================== Handle Finish ====================
   const handleFinish = async (values: FormValues) => {
@@ -233,19 +227,19 @@ useEffect(() => {
             total: res.data?.rowCount || 0,
             success: res.success,
           };
-}}
-        onRow={(record) => ({
-           onClick: (e) => {
-             const target = e.target as HTMLElement;
-             if (target.closest('.ant-btn')) return;
-             handleView(record);
-           },
-          style: { cursor: 'pointer' },
-        })}
+        }}
         columns={columns}
         rowKey="id"
         search={false}
         scroll={{ x: 'max-content' }}
+        onRow={(record) => ({
+          onClick: (e) => {
+            const target = e.target as HTMLElement;
+            if (target.closest('.ant-btn')) return;
+            handleView(record.id);
+          },
+          style: { cursor: 'pointer' },
+        })}
         headerTitle={
           <Space size={24}>
             <Space>
@@ -317,7 +311,7 @@ useEffect(() => {
         title={intl.formatMessage({ id: 'pages.xxx.detail.title' })}
         placement="right"
         open={state.detailVisible}
-        onClose={() => set({ detailVisible: false, viewingId: null })}
+        onClose={() => set({ detailVisible: false, viewingId: '' })}
         size="large"
         destroyOnClose
       >

@@ -1396,10 +1396,54 @@ const StatisticsPage: React.FC = () => {
           tip={intl.formatMessage({ id: 'pages.park.statistics.generatingReport' })}
         >
           <div
+            className="markdown-body"
             dangerouslySetInnerHTML={{ __html: state.aiReportContent }}
             style={{ fontSize: 15, lineHeight: 1.8, marginBottom: 16 }}
           />
-          <style>{`.markdown-body table { border-collapse: collapse; width: 100%; margin-bottom: 16px; } .markdown-body th, .markdown-body td { border: 1px solid #d9d9d9; padding: 8px 12px; text-align: left; } .markdown-body th { background-color: #fafafa; font-weight: 600; } .markdown-body tr:nth-child(even) { background-color: #fbfbfb; } .markdown-body blockquote { margin: 0 0 16px; padding: 0 1em; color: #6a737d; border-left: 0.25em solid #dfe2e5; }`}</style>
+          <style>{`
+.markdown-body table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 20px;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+.markdown-body th {
+  background-color: #f0f5ff;
+  border: 1px solid #d9d9d9;
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+.markdown-body td {
+  border: 1px solid #d9d9d9;
+  padding: 10px 14px;
+  color: #333;
+}
+.markdown-body tr:nth-child(even) {
+  background-color: #fafafa;
+}
+.markdown-body tr:hover {
+  background-color: #e6f4ff;
+}
+.markdown-body blockquote {
+  margin: 0 0 20px;
+  padding: 0 1em;
+  color: #6a737d;
+  border-left: 0.25em solid #1677ff;
+  background: #f0f5ff;
+  border-radius: 0 4px 4px 0;
+}
+.markdown-body h1, .markdown-body h2, .markdown-body h3 {
+  margin-top: 24px;
+  margin-bottom: 12px;
+}
+.markdown-body p {
+  margin-bottom: 12px;
+}
+`}</style>
         </Spin>
       </Modal>
     </PageContainer>

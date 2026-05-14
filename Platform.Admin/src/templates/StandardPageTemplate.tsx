@@ -1,9 +1,6 @@
 import { request, useIntl } from '@umijs/max';
-import { App, Button, Drawer, Grid, Input, Popconfirm, Space, Spin } from 'antd';
+import { App, Button, Drawer, Tag, Input, Popconfirm, Space, Spin } from 'antd';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-
-const { useBreakpoint } = Grid;
-
 import { DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
 import { ModalForm, ProFormText } from '@ant-design/pro-components/es/form';
@@ -112,8 +109,6 @@ const XxxManagement: React.FC = () => {
   const intl = useIntl();
   const { message } = App.useApp();
   const actionRef = useRef<ActionType | undefined>(undefined);
-  const screens = useBreakpoint();
-  const isMobile = !screens.md;
 
   // ==================== State ====================
   const [state, setState] = useState({
@@ -151,7 +146,6 @@ const XxxManagement: React.FC = () => {
       dataIndex: 'name',
       key: 'name',
       sorter: true,
-      render: (_, r) => <span>{r.name}</span>,
     },
     {
       title: intl.formatMessage({ id: 'pages.xxx.table.createdAt' }),

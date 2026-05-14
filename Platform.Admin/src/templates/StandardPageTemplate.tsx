@@ -139,11 +139,16 @@ const XxxManagement: React.FC = () => {
     });
   }, [set]);
 
-  useEffect(() => {
-    loadStatistics();
-  }, [loadStatistics]);
+useEffect(() => {
+     loadStatistics();
+   }, [loadStatistics]);
 
-  // ==================== Columns ====================
+   // ==================== Handle View ====================
+   const handleView = useCallback((record: Entity) => {
+     set({ viewingId: record.id, detailVisible: true });
+   }, [set]);
+
+   // ==================== Columns ====================
   const columns: ProColumns<Entity>[] = useMemo(
     () => [
       {
@@ -151,7 +156,7 @@ const XxxManagement: React.FC = () => {
         dataIndex: 'name',
         key: 'name',
         sorter: true,
-        render: (_, r) => <a onClick={() => set({ viewingId: r.id, detailVisible: true })}>{r.name}</a>,
+        render: (_, r) => <span style={{ cursor: 'pointer' }}>{r.name}</span>,
       },
       {
         title: intl.formatMessage({ id: 'pages.xxx.table.createdAt' }),
@@ -228,7 +233,15 @@ const XxxManagement: React.FC = () => {
             total: res.data?.rowCount || 0,
             success: res.success,
           };
-        }}
+}}
+        onRow={(record) => ({
+           onClick: (e) => {
+             const target = e.target as HTMLElement;
+             if (target.closest('.ant-btn')) return;
+             handleView(record);
+           },
+          style: { cursor: 'pointer' },
+        })}
         columns={columns}
         rowKey="id"
         search={false}

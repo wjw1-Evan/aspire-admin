@@ -53,6 +53,11 @@ public class AppNotification : MultiTenantEntity
     public NotificationStatus Status { get; set; } = NotificationStatus.Unread;
 
     /// <summary>
+    /// 发送批次ID（关联 NotificationSendRecord，用于管理员追踪发送状态）
+    /// </summary>
+    public string? BatchId { get; set; }
+
+    /// <summary>
     /// 业务元数据 (JSON)
     /// </summary>
     public Dictionary<string, string> Metadata { get; set; } = new();

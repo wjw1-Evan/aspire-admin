@@ -19,7 +19,8 @@ public interface INotificationService
         NotificationLevel level = NotificationLevel.Info,
         string? actionUrl = null,
         Dictionary<string, string>? metadata = null,
-        string? companyId = null);
+        string? companyId = null,
+        string? batchId = null);
 
     /// <summary>
     /// 获取用户的最新通知（包含已读和未读）
@@ -93,11 +94,13 @@ public class NotificationService : INotificationService
         NotificationLevel level = NotificationLevel.Info,
         string? actionUrl = null,
         Dictionary<string, string>? metadata = null,
-        string? companyId = null)
+        string? companyId = null,
+        string? batchId = null)
     {
         var notification = new AppNotification
         {
             RecipientId = recipientId,
+            BatchId = batchId,
             Title = title,
             Content = content,
             Category = category,

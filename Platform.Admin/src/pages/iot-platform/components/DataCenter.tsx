@@ -214,7 +214,7 @@ const DataCenter = React.forwardRef<DataCenterRef, any>((_props, _ref) => {
                         return (
                           <div style={{ wordBreak: 'break-all', color: '#ff4d4f' }}>
                             {state.viewingRecord.value}
-                            <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
+                            <div style={{ fontSize: '12px', color: 'var(--ant-color-text-tertiary)', marginTop: '4px' }}>
                               ({intl.formatMessage({ id: 'pages.iotPlatform.datacenter.jsonParseFailed' })})
                             </div>
                           </div>

@@ -40,7 +40,7 @@ const IoTPlatform: React.FC = () => {
   const [state, setState] = useState({ loading: false, statistics: null as PlatformStatistics | null });
   const set = useCallback((partial: Partial<typeof state>) => setState((prev) => ({ ...prev, ...partial })), []);
 
-  const loadStatistics = async () => {
+  const loadStatistics = useCallback(async () => {
     try {
       set({ loading: true });
       const res = await api.statistics();
@@ -52,7 +52,7 @@ const IoTPlatform: React.FC = () => {
     } finally {
       set({ loading: false });
     }
-  };
+  }, [set]);
 
   useEffect(() => {
     loadStatistics();
@@ -112,11 +112,11 @@ const IoTPlatform: React.FC = () => {
         <Spin spinning={state.loading}>
           <Row gutter={[12, 12]}>
             <Col xs={24} sm={12} md={6}>
-              <div style={{ padding: 16, background: '#fafafa', borderRadius: 8, border: '1px solid #f0f0f0' }}>
+              <div style={{ padding: 16, background: 'var(--ant-color-fill-tertiary)', borderRadius: 8, border: '1px solid #f0f0f0' }}>
                 <div style={{ fontSize: 24, fontWeight: 'bold', color: '#1890ff' }}>
                   {state.statistics?.totalGateways || 0}
                 </div>
-                <div style={{ color: '#8c8c8c', fontSize: 12 }}>
+                <div style={{ color: 'var(--ant-color-text-tertiary)', fontSize: 12 }}>
                   <CloudServerOutlined /> {intl.formatMessage({ id: 'pages.iotPlatform.card.totalGateways' })}
                 </div>
               </div>
@@ -126,17 +126,17 @@ const IoTPlatform: React.FC = () => {
                 <div style={{ fontSize: 24, fontWeight: 'bold', color: '#52c41a' }}>
                   {state.statistics?.onlineGateways || 0}
                 </div>
-                <div style={{ color: '#8c8c8c', fontSize: 12 }}>
+                <div style={{ color: 'var(--ant-color-text-tertiary)', fontSize: 12 }}>
                   <CloudServerOutlined /> {intl.formatMessage({ id: 'pages.iotPlatform.card.onlineGateways' })}
                 </div>
               </div>
             </Col>
             <Col xs={24} sm={12} md={6}>
-              <div style={{ padding: 16, background: '#fafafa', borderRadius: 8, border: '1px solid #f0f0f0' }}>
+              <div style={{ padding: 16, background: 'var(--ant-color-fill-tertiary)', borderRadius: 8, border: '1px solid #f0f0f0' }}>
                 <div style={{ fontSize: 24, fontWeight: 'bold', color: '#1890ff' }}>
                   {state.statistics?.totalDevices || 0}
                 </div>
-                <div style={{ color: '#8c8c8c', fontSize: 12 }}>
+                <div style={{ color: 'var(--ant-color-text-tertiary)', fontSize: 12 }}>
                   <DesktopOutlined /> {intl.formatMessage({ id: 'pages.iotPlatform.card.totalDevices' })}
                 </div>
               </div>
@@ -146,7 +146,7 @@ const IoTPlatform: React.FC = () => {
                 <div style={{ fontSize: 24, fontWeight: 'bold', color: '#52c41a' }}>
                   {state.statistics?.onlineDevices || 0}
                 </div>
-                <div style={{ color: '#8c8c8c', fontSize: 12 }}>
+                <div style={{ color: 'var(--ant-color-text-tertiary)', fontSize: 12 }}>
                   <DesktopOutlined /> {intl.formatMessage({ id: 'pages.iotPlatform.card.onlineDevices' })}
                 </div>
               </div>
@@ -158,7 +158,7 @@ const IoTPlatform: React.FC = () => {
                 <div style={{ fontSize: 24, fontWeight: 'bold', color: '#722ed1' }}>
                   {state.statistics?.totalDataPoints || 0}
                 </div>
-                <div style={{ color: '#8c8c8c', fontSize: 12 }}>
+                <div style={{ color: 'var(--ant-color-text-tertiary)', fontSize: 12 }}>
                   <DatabaseOutlined /> {intl.formatMessage({ id: 'pages.iotPlatform.card.totalDataPoints' })}
                 </div>
               </div>
@@ -168,7 +168,7 @@ const IoTPlatform: React.FC = () => {
                 <div style={{ fontSize: 24, fontWeight: 'bold', color: '#ff4d4f' }}>
                   {state.statistics?.totalAlarms || 0}
                 </div>
-                <div style={{ color: '#8c8c8c', fontSize: 12 }}>
+                <div style={{ color: 'var(--ant-color-text-tertiary)', fontSize: 12 }}>
                   <AlertOutlined /> {intl.formatMessage({ id: 'pages.iotPlatform.card.totalAlarms' })}
                 </div>
               </div>
@@ -178,19 +178,19 @@ const IoTPlatform: React.FC = () => {
                 <div style={{ fontSize: 24, fontWeight: 'bold', color: '#fa8c16' }}>
                   {state.statistics?.unhandledAlarms || 0}
                 </div>
-                <div style={{ color: '#8c8c8c', fontSize: 12 }}>
+                <div style={{ color: 'var(--ant-color-text-tertiary)', fontSize: 12 }}>
                   <AlertOutlined /> {intl.formatMessage({ id: 'pages.iotPlatform.card.unhandledAlarms' })}
                 </div>
               </div>
             </Col>
             <Col xs={24} sm={12} md={6}>
-              <div style={{ padding: 16, background: '#fafafa', borderRadius: 8, border: '1px solid #f0f0f0' }}>
-                <div style={{ fontSize: 24, fontWeight: 'bold', color: '#666' }}>
+              <div style={{ padding: 16, background: 'var(--ant-color-fill-tertiary)', borderRadius: 8, border: '1px solid #f0f0f0' }}>
+                <div style={{ fontSize: 24, fontWeight: 'bold', color: 'var(--ant-color-text-description)' }}>
                   {state.statistics?.lastUpdatedAt
                     ? new Date(state.statistics.lastUpdatedAt).toLocaleTimeString()
                     : '-'}
                 </div>
-                <div style={{ color: '#8c8c8c', fontSize: 12 }}>
+                <div style={{ color: 'var(--ant-color-text-tertiary)', fontSize: 12 }}>
                   <DatabaseOutlined /> {intl.formatMessage({ id: 'pages.iotPlatform.card.lastUpdatedAt' })}
                 </div>
               </div>

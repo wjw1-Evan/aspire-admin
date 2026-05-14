@@ -49,12 +49,12 @@ const JsonEditor: React.FC<{
           fontSize: 12,
           lineHeight: 1.6,
           padding: '10px 12px',
-          border: `1px solid ${error ? '#ff4d4f' : '#d9d9d9'}`,
+          border: `1px solid ${error ? '#ff4d4f' : 'var(--ant-color-border-secondary)'}`,
           borderRadius: 6,
-          background: readonly ? '#f5f5f5' : '#fff',
+          background: readonly ? 'var(--ant-color-fill-tertiary)' : 'var(--ant-color-bg-container)',
           resize: 'vertical',
           outline: 'none',
-          color: '#1a1a1a',
+          color: 'var(--ant-color-text)',
         }}
       />
       {error && (
@@ -143,7 +143,7 @@ const DeviceTwinPanel: React.FC<DeviceTwinPanelProps> = ({ deviceId }) => {
         }}
       >
         <InfoCircleOutlined style={{ color: '#1677ff' }} />
-        <Text style={{ fontFamily: 'monospace', fontSize: 12, color: '#666' }}>
+        <Text style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--ant-color-text-description)' }}>
           ETag: <strong>{twin?.etag?.slice(0, 12) ?? '-'}...</strong>
         </Text>
         <Tag color="blue" style={metaTagStyle}>

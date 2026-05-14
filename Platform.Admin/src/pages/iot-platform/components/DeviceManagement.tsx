@@ -539,7 +539,7 @@ const DeviceManagement = React.forwardRef<DeviceManagementRef, any>((_props, _re
               </ProDescriptions.Item>
             </ProDescriptions>
             <div style={{ marginTop: 12 }}>
-              <span style={{ display: 'block', marginBottom: 6, color: '#666' }}>Primary Key（明文）</span>
+              <span style={{ display: 'block', marginBottom: 6, color: 'var(--ant-color-text-description)' }}>Primary Key（明文）</span>
               <div
                 style={{
                   fontFamily: 'monospace',

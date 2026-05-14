@@ -181,7 +181,7 @@ const CommandCenterPanel: React.FC<CommandCenterPanelProps> = ({ deviceId }) => 
                 style={{
                   fontFamily: 'monospace',
                   fontSize: 11,
-                  background: '#f5f5f5',
+                  background: 'var(--ant-color-fill-tertiary)',
                   padding: '4px 8px',
                   borderRadius: 4,
                   marginBottom: 4,
@@ -235,7 +235,7 @@ const CommandCenterPanel: React.FC<CommandCenterPanelProps> = ({ deviceId }) => 
         }
         style={{
           borderRadius: 8,
-          background: 'linear-gradient(135deg, #f0f5ff 0%, #fff 100%)',
+          background: 'linear-gradient(135deg, #f0f5ff 0%, var(--ant-color-bg-container) 100%)',
         }}
       >
         <Form form={form} layout="vertical">

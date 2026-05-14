@@ -196,19 +196,19 @@ const EventManagement = React.forwardRef<EventManagementRef, any>((_props, _ref)
         {state.editingEvent && (
           <>
             <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#666', marginBottom: 4 }}>
+              <div style={{ color: 'var(--ant-color-text-description)', marginBottom: 4 }}>
                 {intl.formatMessage({ id: 'pages.iotPlatform.event.eventType' })}
               </div>
               <div style={{ fontSize: 14 }}>{state.editingEvent.eventType}</div>
             </div>
             <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#666', marginBottom: 4 }}>
+              <div style={{ color: 'var(--ant-color-text-description)', marginBottom: 4 }}>
                 {intl.formatMessage({ id: 'pages.iotPlatform.event.description' })}
               </div>
               <div style={{ fontSize: 14 }}>{state.editingEvent.description}</div>
             </div>
             <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#666', marginBottom: 4 }}>
+              <div style={{ color: 'var(--ant-color-text-description)', marginBottom: 4 }}>
                 {intl.formatMessage({ id: 'pages.iotPlatform.event.occurredAt' })}
               </div>
               <div style={{ fontSize: 14 }}>{dayjs(state.editingEvent.occurredAt).format('YYYY-MM-DD HH:mm:ss')}</div>

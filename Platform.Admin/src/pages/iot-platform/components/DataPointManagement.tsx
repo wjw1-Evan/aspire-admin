@@ -120,7 +120,7 @@ const DataPointManagement = React.forwardRef<DataPointManagementRef, any>((_prop
         const val = dom as string | null | undefined;
         if (!val)
           return (
-            <span style={{ color: '#999' }}>{intl.formatMessage({ id: 'pages.iotPlatform.datapoint.noData' })}</span>
+            <span style={{ color: 'var(--ant-color-text-tertiary)' }}>{intl.formatMessage({ id: 'pages.iotPlatform.datapoint.noData' })}</span>
           );
         if (record.dataType?.toLowerCase() === 'json') {
           try {
@@ -143,7 +143,7 @@ const DataPointManagement = React.forwardRef<DataPointManagementRef, any>((_prop
         return (
           <span title={val}>
             {val}
-            {record.unit && <span style={{ color: '#999', marginLeft: 4 }}>{record.unit}</span>}
+            {record.unit && <span style={{ color: 'var(--ant-color-text-tertiary)', marginLeft: 4 }}>{record.unit}</span>}
           </span>
         );
       },
@@ -156,7 +156,7 @@ const DataPointManagement = React.forwardRef<DataPointManagementRef, any>((_prop
         const dt = dom as string | null | undefined;
         if (!dt)
           return (
-            <span style={{ color: '#999' }}>{intl.formatMessage({ id: 'pages.iotPlatform.datapoint.noData' })}</span>
+            <span style={{ color: 'var(--ant-color-text-tertiary)' }}>{intl.formatMessage({ id: 'pages.iotPlatform.datapoint.noData' })}</span>
           );
         const date = new Date(dt);
         const diffMins = Math.floor((Date.now() - date.getTime()) / 60000);
@@ -175,7 +175,7 @@ const DataPointManagement = React.forwardRef<DataPointManagementRef, any>((_prop
         return (
           <div>
             <div>{dayjs(dt).format('YYYY-MM-DD HH:mm:ss')}</div>
-            {timeAgo && <div style={{ fontSize: '12px', color: '#999', marginTop: 2 }}>{timeAgo}</div>}
+            {timeAgo && <div style={{ fontSize: '12px', color: 'var(--ant-color-text-tertiary)', marginTop: 2 }}>{timeAgo}</div>}
           </div>
         );
       },
@@ -555,7 +555,7 @@ const DataPointManagement = React.forwardRef<DataPointManagementRef, any>((_prop
                   <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.iotPlatform.datapoint.dataValue' })}>
                     {state.viewingDataPoint.lastValue}
                     {state.viewingDataPoint.unit && (
-                      <span style={{ color: '#999', marginLeft: 4 }}>{state.viewingDataPoint.unit}</span>
+                      <span style={{ color: 'var(--ant-color-text-tertiary)', marginLeft: 4 }}>{state.viewingDataPoint.unit}</span>
                     )}
                   </ProDescriptions.Item>
                   {state.viewingDataPoint.lastUpdatedAt && (
@@ -567,7 +567,7 @@ const DataPointManagement = React.forwardRef<DataPointManagementRef, any>((_prop
                   )}
                 </ProDescriptions>
               ) : (
-                <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--ant-color-text-tertiary)' }}>
                   {intl.formatMessage({ id: 'pages.iotPlatform.datapoint.noCollection' })}
                 </div>
               )}

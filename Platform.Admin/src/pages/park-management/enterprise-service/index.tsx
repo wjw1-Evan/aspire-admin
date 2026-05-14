@@ -46,6 +46,7 @@ interface StatusChangeRecord {
   toStatus: string;
   changedBy?: string;
   changedByName?: string;
+  handledBy?: string;
   comment?: string;
   changedAt: string;
 }
@@ -837,9 +838,9 @@ const EnterpriseService: React.FC = () => {
                             <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>
                               {dayjs(h.changedAt).format('YYYY-MM-DD HH:mm')}
                             </div>
-                            {h.changedByName && (
+                            {h.handledBy && (
                               <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
-                                {intl.formatMessage({ id: 'pages.park.service.request.handler' })}: {h.changedByName}
+                                {intl.formatMessage({ id: 'pages.park.service.request.handler' })}: {h.handledBy}
                               </div>
                             )}
                             {h.comment && (

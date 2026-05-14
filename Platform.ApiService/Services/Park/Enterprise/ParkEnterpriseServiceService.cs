@@ -215,7 +215,8 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
                 FromStatus = oldStatus,
                 ToStatus = request.Status,
                 ChangedBy = currentUserId,
-                ChangedByName = currentUserName,
+                ChangedByName = request.AssignedTo ?? currentUserName,
+                HandledBy = request.AssignedTo,
                 Comment = request.Resolution,
                 ChangedAt = DateTime.UtcNow
             });
@@ -272,6 +273,7 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
                 ToStatus = h.ToStatus,
                 ChangedBy = h.ChangedBy,
                 ChangedByName = h.ChangedByName,
+                HandledBy = h.HandledBy,
                 Comment = h.Comment,
                 ChangedAt = h.ChangedAt
             }).ToList()

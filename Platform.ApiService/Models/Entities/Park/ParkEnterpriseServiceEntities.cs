@@ -59,6 +59,7 @@ public class StatusChangeRecord
     public string ToStatus { get; set; } = string.Empty;
     public string? ChangedBy { get; set; }
     public string? ChangedByName { get; set; }
+    public string? HandledBy { get; set; }
     public string? Comment { get; set; }
     public DateTime ChangedAt { get; set; }
 }

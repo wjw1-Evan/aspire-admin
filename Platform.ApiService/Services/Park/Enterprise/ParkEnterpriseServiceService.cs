@@ -118,6 +118,12 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
         if (string.IsNullOrEmpty(title) && !string.IsNullOrEmpty(request.Description))
             title = request.Description.Length > 100 ? request.Description[..100] + "..." : request.Description;
 
+        var currentUserId = _tenantContext.GetCurrentUserId();
+        var currentUser = currentUserId != null
+            ? await _context.Set<AppUser>().FirstOrDefaultAsync(u => u.Id == currentUserId)
+            : null;
+        var currentUserName = currentUser?.Name ?? currentUserId;
+
         var serviceRequest = new ServiceRequest
         {
             CategoryName = categoryName,
@@ -135,7 +141,8 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
                 {
                     FromStatus = "",
                     ToStatus = "Pending",
-                    ChangedBy = _tenantContext.GetCurrentUserId(),
+                    ChangedBy = currentUserId,
+                    ChangedByName = currentUserName,
                     ChangedAt = DateTime.UtcNow
                 }
             ]
@@ -196,12 +203,19 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
 
         if (oldStatus != request.Status)
         {
+            var currentUserId = _tenantContext.GetCurrentUserId();
+            var currentUser = currentUserId != null
+                ? await _context.Set<AppUser>().FirstOrDefaultAsync(u => u.Id == currentUserId)
+                : null;
+            var currentUserName = currentUser?.Name ?? currentUserId;
+
             serviceRequest.StatusHistory ??= [];
             serviceRequest.StatusHistory.Add(new StatusChangeRecord
             {
                 FromStatus = oldStatus,
                 ToStatus = request.Status,
-                ChangedBy = _tenantContext.GetCurrentUserId(),
+                ChangedBy = currentUserId,
+                ChangedByName = currentUserName,
                 Comment = request.Resolution,
                 ChangedAt = DateTime.UtcNow
             });

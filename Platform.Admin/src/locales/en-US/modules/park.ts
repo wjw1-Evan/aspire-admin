@@ -418,6 +418,8 @@ export default {
   'pages.park.service.request.attachments': 'Images',
   'pages.park.service.request.uploadAttachment': 'Upload Image',
   'pages.park.service.request.statusHistory': 'Status History',
+  'pages.park.service.request.handler': 'Handler',
+  'pages.park.service.request.handlingResult': 'Handling Result',
   'pages.park.service.request.feedbackPlaceholder': 'Enter your feedback',
   'pages.park.service.request.requestDetail': 'Request Details',
   'pages.park.service.statistics.categories': 'Categories',

@@ -378,6 +378,8 @@ export default {
   'pages.park.service.request.attachments': '图片',
   'pages.park.service.request.uploadAttachment': '上传图片',
   'pages.park.service.request.statusHistory': '状态变更记录',
+  'pages.park.service.request.handler': '处理人',
+  'pages.park.service.request.handlingResult': '处理结果',
   'pages.park.service.request.contactPlaceholder': '联系人',
   'pages.park.service.request.contactPhone': '联系电话',
   'pages.park.service.request.contactPhonePlaceholder': '联系电话',

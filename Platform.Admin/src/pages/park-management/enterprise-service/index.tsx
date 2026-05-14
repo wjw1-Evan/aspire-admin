@@ -823,8 +823,17 @@ const EnterpriseService: React.FC = () => {
                           </Space>
                           <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>
                             {dayjs(h.changedAt).format('YYYY-MM-DD HH:mm')}
-                            {h.comment && ` · ${h.comment}`}
                           </div>
+                          {h.changedByName && (
+                            <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
+                              {intl.formatMessage({ id: 'pages.park.service.request.handler' })}: {h.changedByName}
+                            </div>
+                          )}
+                          {h.comment && (
+                            <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
+                              {intl.formatMessage({ id: 'pages.park.service.request.handlingResult' })}: {h.comment}
+                            </div>
+                          )}
                         </div>
                       ),
                     };

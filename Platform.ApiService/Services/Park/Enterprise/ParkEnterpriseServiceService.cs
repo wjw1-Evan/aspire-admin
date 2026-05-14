@@ -201,27 +201,24 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
         if (request.Status == "Completed")
             serviceRequest.CompletedAt = DateTime.UtcNow;
 
-        if (oldStatus != request.Status)
-        {
-            var currentUserId = _tenantContext.GetCurrentUserId();
-            var currentUser = currentUserId != null
-                ? await _context.Set<AppUser>().FirstOrDefaultAsync(u => u.Id == currentUserId)
-                : null;
-            var currentUserName = currentUser?.Name ?? currentUserId;
+        var currentUserId = _tenantContext.GetCurrentUserId();
+        var currentUser = currentUserId != null
+            ? await _context.Set<AppUser>().FirstOrDefaultAsync(u => u.Id == currentUserId)
+            : null;
+        var currentUserName = currentUser?.Name ?? currentUserId;
 
-            serviceRequest.StatusHistory ??= [];
-            serviceRequest.StatusHistory.Add(new StatusChangeRecord
-            {
-                FromStatus = oldStatus,
-                ToStatus = request.Status,
-                ChangedBy = currentUserId,
-                ChangedByName = request.AssignedTo ?? currentUserName,
-                HandledBy = request.AssignedTo,
-                Comment = request.Resolution,
-                ChangedAt = DateTime.UtcNow
-            });
-            _context.Entry(serviceRequest).State = EntityState.Modified;
-        }
+        serviceRequest.StatusHistory ??= [];
+        serviceRequest.StatusHistory.Add(new StatusChangeRecord
+        {
+            FromStatus = oldStatus,
+            ToStatus = request.Status,
+            ChangedBy = currentUserId,
+            ChangedByName = request.AssignedTo ?? currentUserName,
+            HandledBy = request.AssignedTo,
+            Comment = request.Resolution,
+            ChangedAt = DateTime.UtcNow
+        });
+        _context.Entry(serviceRequest).State = EntityState.Modified;
 
         await _context.SaveChangesAsync();
         return MapToRequestDto(serviceRequest);

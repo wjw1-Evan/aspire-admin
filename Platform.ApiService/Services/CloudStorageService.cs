@@ -545,9 +545,11 @@ public class CloudStorageService : ICloudStorageService
     }
 
     /// <inheritdoc/>
-    public async Task<Stream> DownloadFileAsync(string id)
+    public async Task<(Stream Stream, string MimeType, string Name)> DownloadFileAsync(string id)
     {
-        var item = await GetFileItemAsync(id);
+        var item = await _context.Set<FileItem>()
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.Id == id && x.Status == FileStatus.Active);
         if (item == null || item.Type != FileItemType.File || string.IsNullOrEmpty(item.GridFSId))
             throw new ArgumentException("文件不存在或无法下载");
 
@@ -555,13 +557,16 @@ public class CloudStorageService : ICloudStorageService
         item.LastAccessedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
-        return await _storageClient.GetDownloadStreamAsync(item.GridFSId, "cloud_storage_files");
+        var stream = await _storageClient.GetDownloadStreamAsync(item.GridFSId, "cloud_storage_files");
+        return (stream, item.MimeType, item.Name);
     }
 
     /// <inheritdoc/>
     public async Task<Stream> GetThumbnailAsync(string id)
     {
-        var item = await GetFileItemAsync(id);
+        var item = await _context.Set<FileItem>()
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.Id == id && x.Status == FileStatus.Active);
         if (item == null || string.IsNullOrEmpty(item.ThumbnailGridFSId)) throw new ArgumentException("缩略图不存在");
         return await _storageClient.GetDownloadStreamAsync(item.ThumbnailGridFSId, "cloud_storage_thumbnails");
     }
@@ -576,7 +581,7 @@ public class CloudStorageService : ICloudStorageService
             FileId = id,
             IsPreviewable = IsPreviewableFile(item.MimeType),
             PreviewType = GetPreviewType(item.MimeType),
-            PreviewUrl = $"/api/cloud-storage/files/{id}/download",
+            PreviewUrl = $"/api/cloud-storage/items/{id}/download",
             ThumbnailUrl = !string.IsNullOrEmpty(item.ThumbnailGridFSId) ? $"/api/cloud-storage/files/{id}/thumbnail" : string.Empty
         };
     }

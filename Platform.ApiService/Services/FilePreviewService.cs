@@ -111,7 +111,7 @@ public class FilePreviewService : IFilePreviewService
         try
         {
             // 获取原文件内容
-            using var originalStream = await _cloudStorageService.DownloadFileAsync(fileItemId);
+            using var originalStream = (await _cloudStorageService.DownloadFileAsync(fileItemId)).Stream;
 
             var thumbnailData = await GenerateThumbnailDataAsync(originalStream, fileItem.MimeType, width, height);
 
@@ -430,7 +430,7 @@ public class FilePreviewService : IFilePreviewService
     /// </summary>
     private async Task GenerateImagePreviewAsync(FileItem fileItem, FilePreviewContent previewContent, PreviewOptions options)
     {
-        using var stream = await _cloudStorageService.DownloadFileAsync(fileItem.Id);
+        using var stream = (await _cloudStorageService.DownloadFileAsync(fileItem.Id)).Stream;
 
         // 这里应该实现图片预览逻辑
         // 现在只是返回基本信息
@@ -444,7 +444,7 @@ public class FilePreviewService : IFilePreviewService
     /// </summary>
     private async Task GenerateTextPreviewAsync(FileItem fileItem, FilePreviewContent previewContent, PreviewOptions options)
     {
-        using var stream = await _cloudStorageService.DownloadFileAsync(fileItem.Id);
+        using var stream = (await _cloudStorageService.DownloadFileAsync(fileItem.Id)).Stream;
         using var reader = new StreamReader(stream, Encoding.UTF8);
 
         var content = await reader.ReadToEndAsync();

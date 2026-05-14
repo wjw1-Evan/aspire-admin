@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -102,7 +103,7 @@ public class CloudStorageController : BaseApiController
 
         var fileItem = await _cloudStorageService.GetFileItemAsync(id);
         if (fileItem == null)
-            throw new ArgumentException("文件项 {id} 不存在");
+            throw new ArgumentException($"文件项 {id} 不存在");
 
         return Success(fileItem);
     }
@@ -199,18 +200,14 @@ public class CloudStorageController : BaseApiController
     /// <param name="id">文件项ID</param>
     /// <returns>文件流</returns>
     [HttpGet("items/{id}/download")]
+    [AllowAnonymous]
     public async Task<IActionResult> DownloadFile(string id)
     {
         if (string.IsNullOrWhiteSpace(id))
             throw new ArgumentException("文件ID不能为空");
 
-        var fileItem = await _cloudStorageService.GetFileItemAsync(id);
-        if (fileItem == null)
-            throw new ArgumentException("文件 {id} 不存在");
-
-        var stream = await _cloudStorageService.DownloadFileAsync(id);
-
-        return File(stream, fileItem.MimeType, fileItem.Name);
+        var (stream, mimeType, name) = await _cloudStorageService.DownloadFileAsync(id);
+        return File(stream, mimeType, name);
     }
 
     /// <summary>
@@ -250,6 +247,7 @@ public class CloudStorageController : BaseApiController
     /// <param name="id">文件ID</param>
     /// <returns>缩略图流</returns>
     [HttpGet("items/{id}/thumbnail")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetThumbnail(string id)
     {
         if (string.IsNullOrWhiteSpace(id))

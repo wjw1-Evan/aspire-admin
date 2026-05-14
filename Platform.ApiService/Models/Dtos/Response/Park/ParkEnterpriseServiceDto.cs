@@ -30,6 +30,18 @@ public class ServiceRequestDto
     public DateTime? CompletedAt { get; set; }
     public int? Rating { get; set; }
     public DateTime? CreatedAt { get; set; }
+    public List<string>? Attachments { get; set; }
+    public List<StatusChangeRecordDto>? StatusHistory { get; set; }
+}
+
+public class StatusChangeRecordDto
+{
+    public string FromStatus { get; set; } = string.Empty;
+    public string ToStatus { get; set; } = string.Empty;
+    public string? ChangedBy { get; set; }
+    public string? ChangedByName { get; set; }
+    public string? Comment { get; set; }
+    public DateTime ChangedAt { get; set; }
 }
 
 public class CreateServiceRequestRequest

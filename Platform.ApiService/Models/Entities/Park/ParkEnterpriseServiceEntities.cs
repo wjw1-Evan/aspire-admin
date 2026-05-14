@@ -49,4 +49,16 @@ public class ServiceRequest : MultiTenantEntity
     public string? Feedback { get; set; }
 
     public List<string>? Attachments { get; set; }
+
+    public List<StatusChangeRecord>? StatusHistory { get; set; }
+}
+
+public class StatusChangeRecord
+{
+    public string FromStatus { get; set; } = string.Empty;
+    public string ToStatus { get; set; } = string.Empty;
+    public string? ChangedBy { get; set; }
+    public string? ChangedByName { get; set; }
+    public string? Comment { get; set; }
+    public DateTime ChangedAt { get; set; }
 }

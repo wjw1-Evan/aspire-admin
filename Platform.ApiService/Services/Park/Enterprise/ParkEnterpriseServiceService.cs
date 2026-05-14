@@ -13,14 +13,17 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
 {
     private readonly DbContext _context;
     private readonly IChatClient _openAiClient;
+    private readonly ITenantContext _tenantContext;
     private readonly ILogger<ParkEnterpriseServiceService> _logger;
 
     public ParkEnterpriseServiceService(DbContext context,
         IChatClient openAiClient,
+        ITenantContext tenantContext,
         ILogger<ParkEnterpriseServiceService> logger
     ) {
         _context = context;
         _openAiClient = openAiClient;
+        _tenantContext = tenantContext;
         _logger = logger;
     }
 
@@ -52,6 +55,33 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
         return new SuggestCategoryResponse { CategoryName = "其他" };
     }
 
+    private async Task<string> SuggestPriorityAsync(string description)
+    {
+        var prompt = $"根据以下服务需求描述，判断优先级（Urgent=紧急，High=高，Normal=普通，Low=低）。只返回优先级英文单词，不要任何其他内容。\n\n需求描述：{description}";
+
+        try
+        {
+            var messages = new List<Microsoft.Extensions.AI.ChatMessage>
+            {
+                new(ChatRole.System, "你是一个园区企业服务的智能优先级评估助手。根据用户描述的服务需求紧急程度，从 Urgent、High、Normal、Low 中选择一个。仅返回英文单词，不要任何解释。"),
+                new(ChatRole.User, prompt)
+            };
+
+            var completion = await _openAiClient.GetResponseAsync(messages);
+            var result = completion.Text?.Trim().Trim('"', '\'', '「', '」').Trim();
+
+            if (!string.IsNullOrEmpty(result) && new[] { "Urgent", "High", "Normal", "Low" }.Contains(result, StringComparer.OrdinalIgnoreCase))
+                return result;
+
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "AI 优先级评估失败");
+        }
+
+        return "Normal";
+    }
+
     #endregion
 
     #region 服务申请管理
@@ -74,10 +104,14 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
     public async Task<ServiceRequestDto> CreateRequestAsync(CreateServiceRequestRequest request)
     {
         var categoryName = string.Empty;
+        var priority = request.Priority;
         if (!string.IsNullOrEmpty(request.Description))
         {
-            var suggestion = await SuggestCategoryAsync(request.Description);
-            categoryName = suggestion.CategoryName;
+            var categoryTask = SuggestCategoryAsync(request.Description);
+            var priorityTask = string.IsNullOrEmpty(priority) ? SuggestPriorityAsync(request.Description) : Task.FromResult(priority);
+            await Task.WhenAll(categoryTask, priorityTask);
+            categoryName = categoryTask.Result.CategoryName;
+            priority = priorityTask.Result;
         }
 
         var title = request.Title;
@@ -92,9 +126,19 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
             Description = request.Description,
             ContactPerson = request.ContactPerson,
             ContactPhone = request.ContactPhone,
-            Priority = request.Priority ?? "Normal",
+            Priority = priority ?? "Normal",
             Attachments = request.Attachments,
-            Status = "Pending"
+            Status = "Pending",
+            StatusHistory =
+            [
+                new StatusChangeRecord
+                {
+                    FromStatus = "",
+                    ToStatus = "Pending",
+                    ChangedBy = _tenantContext.GetCurrentUserId(),
+                    ChangedAt = DateTime.UtcNow
+                }
+            ]
         };
 
         await _context.Set<ServiceRequest>().AddAsync(serviceRequest);
@@ -124,6 +168,8 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
         serviceRequest.Priority = request.Priority ?? serviceRequest.Priority;
         if (!string.IsNullOrEmpty(request.TenantId))
             serviceRequest.TenantId = request.TenantId;
+        if (request.Attachments != null)
+            serviceRequest.Attachments = request.Attachments;
 
         await _context.SaveChangesAsync();
         return MapToRequestDto(serviceRequest);
@@ -133,6 +179,8 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
     {
         var serviceRequest = await _context.Set<ServiceRequest>().FirstOrDefaultAsync(x => x.Id == id);
         if (serviceRequest == null) return null;
+
+        var oldStatus = serviceRequest.Status;
 
         serviceRequest.Status = request.Status;
         serviceRequest.Resolution = request.Resolution;
@@ -145,6 +193,20 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
 
         if (request.Status == "Completed")
             serviceRequest.CompletedAt = DateTime.UtcNow;
+
+        if (oldStatus != request.Status)
+        {
+            serviceRequest.StatusHistory ??= [];
+            serviceRequest.StatusHistory.Add(new StatusChangeRecord
+            {
+                FromStatus = oldStatus,
+                ToStatus = request.Status,
+                ChangedBy = _tenantContext.GetCurrentUserId(),
+                Comment = request.Resolution,
+                ChangedAt = DateTime.UtcNow
+            });
+            _context.Entry(serviceRequest).State = EntityState.Modified;
+        }
 
         await _context.SaveChangesAsync();
         return MapToRequestDto(serviceRequest);
@@ -188,7 +250,17 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
             AssignedTo = request.AssignedTo,
             CompletedAt = request.CompletedAt,
             Rating = request.Rating,
-            CreatedAt = request.CreatedAt
+            CreatedAt = request.CreatedAt,
+            Attachments = request.Attachments,
+            StatusHistory = request.StatusHistory?.Select(h => new StatusChangeRecordDto
+            {
+                FromStatus = h.FromStatus,
+                ToStatus = h.ToStatus,
+                ChangedBy = h.ChangedBy,
+                ChangedByName = h.ChangedByName,
+                Comment = h.Comment,
+                ChangedAt = h.ChangedAt
+            }).ToList()
         };
     }
 

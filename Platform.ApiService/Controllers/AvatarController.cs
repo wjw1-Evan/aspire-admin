@@ -116,7 +116,7 @@ public class AvatarController : BaseApiController
 
             if (fileInfo == null)
             {
-                throw new ArgumentException("头像文件 {fileName} 不存在");
+                throw new ArgumentException($"头像文件 {fileName} 不存在");
             }
 
             // 下载文件到流
@@ -134,7 +134,7 @@ public class AvatarController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "读取头像失败: {FileName}", fileName);
-            throw new ArgumentException("头像文件 {fileName} 不存在");
+            throw new ArgumentException($"头像文件 {fileName} 不存在");
         }
     }
 

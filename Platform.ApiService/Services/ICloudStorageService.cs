@@ -105,7 +105,7 @@ public interface ICloudStorageService
     /// </summary>
     /// <param name="id">文件ID</param>
     /// <returns>文件流</returns>
-    Task<Stream> DownloadFileAsync(string id);
+    Task<(Stream Stream, string MimeType, string Name)> DownloadFileAsync(string id);
 
     /// <summary>
     /// 获取文件缩略图

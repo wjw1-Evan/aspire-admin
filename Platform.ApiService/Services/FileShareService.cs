@@ -305,7 +305,8 @@ public class FileShareService : IFileShareService
             throw new UnauthorizedAccessException("此分享仅允许查看，不允许下载");
 
         // 获取文件内容
-        return await _cloudStorageService.DownloadFileAsync(share.FileItemId);
+        var (stream, _, _) = await _cloudStorageService.DownloadFileAsync(share.FileItemId);
+        return stream;
     }
 
     /// <summary>

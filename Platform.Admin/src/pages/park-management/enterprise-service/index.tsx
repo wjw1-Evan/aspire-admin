@@ -30,6 +30,7 @@ import {
   Space,
   Spin,
   Tag,
+  Timeline,
   Typography,
   Upload,
 } from 'antd';
@@ -40,6 +41,14 @@ import { tokenUtils } from '@/utils/token';
 
 const { Text } = Typography;
 
+interface StatusChangeRecord {
+  fromStatus: string;
+  toStatus: string;
+  changedBy?: string;
+  changedByName?: string;
+  comment?: string;
+  changedAt: string;
+}
 interface ServiceRequest {
   id: string;
   categoryName?: string;
@@ -57,6 +66,7 @@ interface ServiceRequest {
   rating?: number;
   createdAt: string;
   attachments?: string[];
+  statusHistory?: StatusChangeRecord[];
 }
 interface ServiceStatistics {
   totalCategories: number;
@@ -183,19 +193,7 @@ const EnterpriseService: React.FC = () => {
       dataIndex: 'description',
       width: 200,
       ellipsis: true,
-      render: (text, record) => (
-        <Button
-          type="link"
-          size="small"
-          style={{ padding: 0, height: 'auto', textAlign: 'left' }}
-          onClick={() => {
-            setCurrentRequest(record);
-            setModal({ detailVisible: true });
-          }}
-        >
-          {text || <Text type="secondary">-</Text>}
-        </Button>
-      ),
+      render: (text) => <Text ellipsis={{ tooltip: text }}>{text || '-'}</Text>,
     },
     {
       title: intl.formatMessage({ id: 'pages.park.service.request.tenant' }),
@@ -359,6 +357,15 @@ const EnterpriseService: React.FC = () => {
         rowKey="id"
         search={false}
         scroll={{ x: 'max-content' }}
+        onRow={(record) => ({
+          style: { cursor: 'pointer' },
+          onClick: (e) => {
+            const target = e.target as HTMLElement;
+            if (target.closest('a, button, [role="button"], .ant-btn')) return;
+            setCurrentRequest(record);
+            setModal({ detailVisible: true });
+          },
+        })}
         toolBarRender={() => [
           <Input.Search
             key="search"
@@ -479,10 +486,19 @@ const EnterpriseService: React.FC = () => {
                 showPreviewIcon: true,
               }}
               onPreview={(file) => {
-                const img = new window.Image();
-                img.src = file.url || file.thumbUrl || '';
+                const imgUrl = file.url || file.thumbUrl || '';
                 const win = window.open('');
-                win?.document.write(`<img src="${img.src}" style="max-width:90vw;max-height:90vh;object-fit:contain" />`);
+                if (win) {
+                  win.document.write(`
+                    <html>
+                      <head><title>${file.name || '预览'}</title></head>
+                      <body style="margin:0;display:flex;align-items:center;justify-content:center;width:100vw;height:100vh;background:#f0f0f0;">
+                        <img src="${imgUrl}" style="max-width:90vw;max-height:90vh;object-fit:contain;" />
+                      </body>
+                    </html>
+                  `);
+                  win.document.close();
+                }
               }}
               itemRender={(originNode, file) => (
                 <div
@@ -629,9 +645,10 @@ const EnterpriseService: React.FC = () => {
       </ModalForm>
 
       <ModalForm
-        key="update-status"
+        key={`update-status-${currentRequest?.id}`}
         title={intl.formatMessage({ id: 'pages.park.service.request.updateStatus' })}
         open={modalState.statusVisible}
+        initialValues={{ status: currentRequest?.status || 'Pending' }}
         onOpenChange={(open) => {
           if (!open) setModal({ statusVisible: false });
         }}
@@ -765,6 +782,56 @@ const EnterpriseService: React.FC = () => {
             <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.description' })} span={2}>
               {currentRequest.description || '-'}
             </ProDescriptions.Item>
+            {currentRequest.attachments && currentRequest.attachments.length > 0 && (
+              <ProDescriptions.Item
+                label={intl.formatMessage({ id: 'pages.park.service.request.attachments' })}
+                span={2}
+              >
+                <Image.PreviewGroup>
+                  <Space wrap size={8}>
+                    {currentRequest.attachments.map((url, index) => (
+                      <Image
+                        key={`${url}-${index}`}
+                        src={url}
+                        width={80}
+                        height={80}
+                        style={{ objectFit: 'cover', borderRadius: 4, border: '1px solid #d9d9d9' }}
+                        fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+                      />
+                    ))}
+                  </Space>
+                </Image.PreviewGroup>
+              </ProDescriptions.Item>
+            )}
+            {currentRequest.statusHistory && currentRequest.statusHistory.length > 0 && (
+              <ProDescriptions.Item
+                label={intl.formatMessage({ id: 'pages.park.service.request.statusHistory' })}
+                span={2}
+              >
+                <Timeline
+                  items={currentRequest.statusHistory.map((h) => {
+                    const fromOpt = statusOptions(intl).find((o) => o.value === h.fromStatus);
+                    const toOpt = statusOptions(intl).find((o) => o.value === h.toStatus);
+                    return {
+                      color: toOpt?.color === 'green' ? 'green' : toOpt?.color === 'orange' ? 'orange' : toOpt?.color === 'processing' ? 'blue' : 'gray',
+                      children: (
+                        <div>
+                          <Space size={4}>
+                            <Tag color="default">{fromOpt?.label || h.fromStatus || '-'}</Tag>
+                            <span>→</span>
+                            <Tag color={toOpt?.color || 'default'}>{toOpt?.label || h.toStatus}</Tag>
+                          </Space>
+                          <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>
+                            {dayjs(h.changedAt).format('YYYY-MM-DD HH:mm')}
+                            {h.comment && ` · ${h.comment}`}
+                          </div>
+                        </div>
+                      ),
+                    };
+                  })}
+                />
+              </ProDescriptions.Item>
+            )}
           </ProDescriptions>
         )}
       </Drawer>

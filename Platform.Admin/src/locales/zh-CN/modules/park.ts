@@ -377,6 +377,7 @@ export default {
   'pages.park.service.request.descriptionRequired': '请输入详细描述',
   'pages.park.service.request.attachments': '图片',
   'pages.park.service.request.uploadAttachment': '上传图片',
+  'pages.park.service.request.statusHistory': '状态变更记录',
   'pages.park.service.request.contactPlaceholder': '联系人',
   'pages.park.service.request.contactPhone': '联系电话',
   'pages.park.service.request.contactPhonePlaceholder': '联系电话',

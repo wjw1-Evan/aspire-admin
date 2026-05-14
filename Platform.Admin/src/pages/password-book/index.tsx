@@ -256,7 +256,11 @@ const PasswordBook: React.FC = () => {
         search={false}
         scroll={{ x: 'max-content' }}
         onRow={(record) => ({
-          onClick: () => handleView(record.id),
+          onClick: (e) => {
+            const target = e.target as HTMLElement;
+            if (target.closest('.ant-btn')) return;
+            handleView(record.id);
+          },
           style: { cursor: 'pointer' },
         })}
         toolBarRender={() => [

@@ -253,7 +253,7 @@ const EnterpriseService: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.park.service.request.createdAt' }),
       dataIndex: 'createdAt',
       sorter: true,
-      width: 120,
+      width: 170,
       render: (date) => dayjs(date as string).format('YYYY-MM-DD HH:mm'),
     },
     {

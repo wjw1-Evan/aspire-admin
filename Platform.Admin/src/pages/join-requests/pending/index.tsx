@@ -49,7 +49,7 @@ const PendingJoinRequests: React.FC = () => {
           <div>
             <strong>{record.username}</strong>
           </div>
-          {record.userEmail && <div style={{ fontSize: 12, color: '#999' }}>{record.userEmail}</div>}
+          {record.userEmail && <div style={{ fontSize: 12, color: 'var(--ant-color-text-tertiary)' }}>{record.userEmail}</div>}
         </div>
       ),
     },
@@ -61,7 +61,7 @@ const PendingJoinRequests: React.FC = () => {
       ellipsis: true,
       render: (text) =>
         (text as React.ReactNode) || (
-          <span style={{ color: '#999' }}>{intl.formatMessage({ id: 'pages.table.noReason' })}</span>
+          <span style={{ color: 'var(--ant-color-text-tertiary)' }}>{intl.formatMessage({ id: 'pages.table.noReason' })}</span>
         ),
     },
     {

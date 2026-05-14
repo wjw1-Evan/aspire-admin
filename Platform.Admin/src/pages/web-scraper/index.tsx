@@ -328,7 +328,7 @@ const WebScraper: React.FC = () => {
         dom ? (
           <Space>
             <Tag color="orange">{dom as string}</Tag>
-            <span style={{ color: '#999', fontSize: 12 }}>({explainCron(dom as string, intl)})</span>
+            <span style={{ color: 'var(--ant-color-text-tertiary)', fontSize: 12 }}>({explainCron(dom as string, intl)})</span>
           </Space>
         ) : (
           '-'

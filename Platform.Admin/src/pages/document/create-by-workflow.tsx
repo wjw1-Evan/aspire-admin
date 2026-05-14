@@ -262,7 +262,7 @@ const CreateAndStartByWorkflow: React.FC = () => {
           {formDef ? (
             (formDef.fields || []).map((f) => renderField(f))
           ) : (
-            <div style={{ color: '#999' }}>{intl.formatMessage({ id: 'pages.workflow.form.none' })}</div>
+            <div style={{ color: 'var(--ant-color-text-tertiary)' }}>{intl.formatMessage({ id: 'pages.workflow.form.none' })}</div>
           )}
 
           <ProFormItem

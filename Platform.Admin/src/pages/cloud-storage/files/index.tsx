@@ -859,7 +859,7 @@ const CloudStorageFilesPage: React.FC = () => {
                             {intl.formatMessage({ id: 'pages.cloudStorage.detail.version' })}{' '}
                             {v.versionNumber ?? v.version}
                           </div>
-                          <div style={{ color: '#666', fontSize: 12 }}>
+                          <div style={{ color: 'var(--ant-color-text-description)', fontSize: 12 }}>
                             {formatFileSize(v.size)} ·{' '}
                             {v.createdAt ? dayjs(v.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'} ·{' '}
                             {v.createdByName || '-'}

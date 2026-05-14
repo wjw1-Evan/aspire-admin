@@ -4,7 +4,7 @@ import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
 import { request, useIntl } from '@umijs/max';
 import { Badge, Button, Flex, Space, Spin, Tag, Timeline, Typography } from 'antd';
 import dayjs from 'dayjs';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import type { Role } from '@/services/role/api';
 import { getAllRoles } from '@/services/role/api';
 import type { UserActivityLog } from '@/types';
@@ -46,7 +46,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose, isMobile }) => {
   const [loading, setLoading] = useState(false);
   const [roleMap, setRoleMap] = useState<Record<string, string>>({});
 
-  const fetchRoles = async () => {
+  const fetchRoles = useCallback(async () => {
     try {
       const response = await getAllRoles();
       if (response.success && response.data) {
@@ -63,9 +63,9 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose, isMobile }) => {
       console.error('加载角色列表失败:', error);
       throw error;
     }
-  };
+  }, []);
 
-  const fetchActivityLogs = async () => {
+  const fetchActivityLogs = useCallback(async () => {
     if (!user.id) return;
 
     setLoading(true);
@@ -89,7 +89,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose, isMobile }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user.id]);
 
   useEffect(() => {
     fetchRoles();
@@ -245,7 +245,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose, isMobile }) => {
                           fontSize: '11px',
                           wordBreak: 'break-all',
                           fontFamily: 'monospace',
-                          backgroundColor: '#f5f5f5',
+                          backgroundColor: 'var(--ant-color-fill-tertiary)',
                           padding: '2px 4px',
                           borderRadius: '4px',
                         }}
@@ -259,7 +259,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose, isMobile }) => {
             />
           </div>
         ) : (
-          <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+          <div style={{ textAlign: 'center', padding: '20px', color: 'var(--ant-color-text-tertiary)' }}>
             {intl.formatMessage({ id: 'pages.userDetail.noActivity' })}
           </div>
         )}

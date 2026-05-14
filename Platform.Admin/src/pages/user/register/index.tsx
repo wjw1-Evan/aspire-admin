@@ -51,12 +51,12 @@ const useStyles = createStyles(({ token }) => {
     title: {
       fontSize: 28,
       fontWeight: 600,
-      color: '#1a1a1a',
+      color: 'var(--ant-color-text)',
       marginBottom: 8,
     },
     subTitle: {
       fontSize: 14,
-      color: '#666',
+      color: 'var(--ant-color-text-description)',
       marginBottom: 32,
     },
     infoBox: {
@@ -65,7 +65,7 @@ const useStyles = createStyles(({ token }) => {
       background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)',
       padding: '16px',
       borderRadius: '12px',
-      color: '#666',
+      color: 'var(--ant-color-text-description)',
       border: '1px solid rgba(102, 126, 234, 0.2)',
     },
   };

@@ -65,7 +65,7 @@ const SharePage: React.FC = () => {
   });
   const set = useCallback((partial: Partial<typeof state>) => setState((prev) => ({ ...prev, ...partial })), []);
 
-  const loadShare = async (pwd?: string) => {
+  const loadShare = useCallback(async (pwd?: string) => {
     if (!token) return;
     set({ loading: true, error: null });
     try {
@@ -98,7 +98,7 @@ const SharePage: React.FC = () => {
     } finally {
       set({ loading: false });
     }
-  };
+  }, [token, set, intl]);
 
   useEffect(() => {
     loadShare();
@@ -260,7 +260,7 @@ const SharePage: React.FC = () => {
     <div
       style={{
         minHeight: '100vh',
-        background: '#f5f5f5',
+        background: 'var(--ant-color-fill-tertiary)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

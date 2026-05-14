@@ -45,6 +45,17 @@ interface LogStatistics {
   averageDuration: number;
 }
 
+const api = {
+  list: (params: any) =>
+    request<ApiResponse<PagedResult<WebScrapingLog>>>('/apiservice/api/web-scraper/logs', { params }),
+  get: (id: string) => request<ApiResponse<WebScrapingLog>>(`/apiservice/api/web-scraper/logs/${id}`),
+  getTasks: () =>
+    request<ApiResponse<PagedResult<{ id: string; name: string }>>>('/apiservice/api/web-scraper/tasks', {
+      params: { page: 1, pageSize: 100 },
+    }),
+  statistics: () => request<ApiResponse<LogStatistics>>('/apiservice/api/web-scraper/logs/statistics'),
+};
+
 const WebScraperLogs: React.FC = () => {
   const actionRef = useRef<ActionType | undefined>(undefined);
   const [search, setSearch] = useState('');
@@ -55,29 +66,18 @@ const WebScraperLogs: React.FC = () => {
   const [statistics, setStatistics] = useState<LogStatistics | null>(null);
   const intl = useIntl();
 
-  const api = {
-    list: (params: any) =>
-      request<ApiResponse<PagedResult<WebScrapingLog>>>('/apiservice/api/web-scraper/logs', { params }),
-    get: (id: string) => request<ApiResponse<WebScrapingLog>>(`/apiservice/api/web-scraper/logs/${id}`),
-    getTasks: () =>
-      request<ApiResponse<PagedResult<{ id: string; name: string }>>>('/apiservice/api/web-scraper/tasks', {
-        params: { page: 1, pageSize: 100 },
-      }),
-    statistics: () => request<ApiResponse<LogStatistics>>('/apiservice/api/web-scraper/logs/statistics'),
-  };
-
   const loadTasks = useCallback(async () => {
     const res = await api.getTasks();
     if (res.success && res.data?.queryable) {
       setTasks(res.data.queryable.map((t) => ({ id: t.id, name: t.name })));
     }
-  }, [api.getTasks]);
+  }, []);
 
   const loadStatistics = useCallback(() => {
     api.statistics().then((r) => {
       if (r.success && r.data) setStatistics(r.data);
     });
-  }, [api.statistics]);
+  }, []);
 
   useEffect(() => {
     loadTasks();
@@ -92,7 +92,7 @@ const WebScraperLogs: React.FC = () => {
         setDetailVisible(true);
       }
     },
-    [api.get],
+    [],
   );
 
   const formatDuration = (ms: number) => {

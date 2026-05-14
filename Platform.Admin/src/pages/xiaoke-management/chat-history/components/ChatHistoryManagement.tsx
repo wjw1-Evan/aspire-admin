@@ -90,7 +90,7 @@ const ChatHistoryManagement: React.FC = () => {
           tag && tag !== 'assistant' && tag !== 'direct' ? (
             <span style={{ fontWeight: 500 }}>{tag}</span>
           ) : (
-            <span style={{ color: '#999' }}>
+            <span style={{ color: 'var(--ant-color-text-tertiary)' }}>
               {intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.table.defaultTitle' })}
             </span>
           );

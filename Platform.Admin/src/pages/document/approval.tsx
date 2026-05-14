@@ -365,7 +365,7 @@ const ApprovalPage: React.FC = () => {
       >
         <div>
           {state.history.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: 24, color: '#999' }}>
+            <div style={{ textAlign: 'center', padding: 24, color: 'var(--ant-color-text-tertiary)' }}>
               {intl.formatMessage({ id: 'pages.workflow.monitor.history.empty' })}
             </div>
           ) : (

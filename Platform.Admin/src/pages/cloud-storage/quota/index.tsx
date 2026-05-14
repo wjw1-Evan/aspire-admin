@@ -655,7 +655,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                                 </Tag>
                               </Space>
                             </div>
-                            <div style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: 14 }}>
+                            <div style={{ color: 'var(--ant-color-text-description)', fontSize: 14 }}>
                               <p>
                                 {intl.formatMessage(
                                   { id: 'pages.cloud-storage.quota.warning.info' },

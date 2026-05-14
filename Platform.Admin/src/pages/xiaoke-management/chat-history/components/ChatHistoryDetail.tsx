@@ -84,13 +84,13 @@ const ChatHistoryDetail: React.FC<ChatHistoryDetailProps> = ({ open, detail, onC
                       ? intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.detail.messageRecalled' })
                       : message.type}
                   </Tag>
-                  <span style={{ fontSize: 12, color: '#999' }}>
+                  <span style={{ fontSize: 12, color: 'var(--ant-color-text-tertiary)' }}>
                     {dayjs(message.createdAt).format('YYYY-MM-DD HH:mm:ss')}
                   </span>
                 </div>
                 <div>
                   {message.isRecalled ? (
-                    <span style={{ color: '#999', fontStyle: 'italic' }}>
+                    <span style={{ color: 'var(--ant-color-text-tertiary)', fontStyle: 'italic' }}>
                       {intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.detail.messageRecalled' })}
                     </span>
                   ) : (

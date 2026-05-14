@@ -107,9 +107,9 @@ const NoticePage: React.FC = () => {
                 key={item.id}
                 style={{
                   padding: 16,
-                  backgroundColor: isUnread ? '#e6f7ff' : '#fafafa',
+                  backgroundColor: isUnread ? 'var(--ant-color-primary-bg)' : 'var(--ant-color-fill-tertiary)',
                   borderRadius: 8,
-                  borderLeft: `4px solid ${isUnread ? '#1890ff' : '#d9d9d9'}`,
+                  borderLeft: `4px solid ${isUnread ? 'var(--ant-color-primary)' : 'var(--ant-color-border-secondary)'}`,
                   marginBottom: 8,
                 }}
               >

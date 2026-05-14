@@ -252,8 +252,8 @@ const Login: React.FC = () => {
             <ProCard className={styles.card}>
               <div style={{ textAlign: 'center', marginBottom: 24 }}>
                 <img alt="logo" src="/logo.svg" style={{ width: 64, height: 64, marginBottom: 16 }} />
-                <div style={{ fontSize: 28, fontWeight: 600, color: '#1a1a1a', marginBottom: 8 }}>{Settings.title}</div>
-                <div style={{ fontSize: 14, color: '#666', marginBottom: 32 }}>
+                <div style={{ fontSize: 28, fontWeight: 600, color: 'var(--ant-color-text)', marginBottom: 8 }}>{Settings.title}</div>
+                <div style={{ fontSize: 14, color: 'var(--ant-color-text-description)', marginBottom: 32 }}>
                   {intl.formatMessage({
                     id: 'pages.login.subTitle',
                   })}

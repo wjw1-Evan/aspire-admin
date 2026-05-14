@@ -45,6 +45,17 @@ interface ResultStatistics {
   totalContentLength: number;
 }
 
+const api = {
+  list: (params: any) =>
+    request<ApiResponse<PagedResult<WebScrapingResult>>>('/apiservice/api/web-scraper/results', { params }),
+  get: (id: string) => request<ApiResponse<WebScrapingResult>>(`/apiservice/api/web-scraper/results/${id}`),
+  getTasks: () =>
+    request<ApiResponse<PagedResult<{ id: string; name: string }>>>('/apiservice/api/web-scraper/tasks', {
+      params: { page: 1, pageSize: 100 },
+    }),
+  statistics: () => request<ApiResponse<ResultStatistics>>('/apiservice/api/web-scraper/results/statistics'),
+};
+
 const WebScraperResults: React.FC = () => {
   const _message = useMessage();
   const actionRef = useRef<ActionType | undefined>(undefined);
@@ -57,29 +68,18 @@ const WebScraperResults: React.FC = () => {
   const [statistics, setStatistics] = useState<ResultStatistics | null>(null);
   const intl = useIntl();
 
-  const api = {
-    list: (params: any) =>
-      request<ApiResponse<PagedResult<WebScrapingResult>>>('/apiservice/api/web-scraper/results', { params }),
-    get: (id: string) => request<ApiResponse<WebScrapingResult>>(`/apiservice/api/web-scraper/results/${id}`),
-    getTasks: () =>
-      request<ApiResponse<PagedResult<{ id: string; name: string }>>>('/apiservice/api/web-scraper/tasks', {
-        params: { page: 1, pageSize: 100 },
-      }),
-    statistics: () => request<ApiResponse<ResultStatistics>>('/apiservice/api/web-scraper/results/statistics'),
-  };
-
   const loadTasks = useCallback(async () => {
     const res = await api.getTasks();
     if (res.success && res.data?.queryable) {
       setTasks(res.data.queryable.map((t) => ({ id: t.id, name: t.name })));
     }
-  }, [api.getTasks]);
+  }, []);
 
   const loadStatistics = useCallback(() => {
     api.statistics().then((r) => {
       if (r.success && r.data) setStatistics(r.data);
     });
-  }, [api.statistics]);
+  }, []);
 
   useEffect(() => {
     loadTasks();
@@ -95,7 +95,7 @@ const WebScraperResults: React.FC = () => {
         setActiveTab('content');
       }
     },
-    [api.get],
+    [],
   );
 
   const columns: ProColumns<WebScrapingResult>[] = [
@@ -345,7 +345,7 @@ const WebScraperResults: React.FC = () => {
                     </span>
                   </Space>
                   {currentResult.matchReason && (
-                    <span style={{ color: '#666' }}>
+                    <span style={{ color: 'var(--ant-color-text-description)' }}>
                       {intl.formatMessage(
                         { id: 'pages.webScraper.results.detail.reasonLabel' },
                         { reason: currentResult.matchReason },
@@ -407,7 +407,7 @@ const WebScraperResults: React.FC = () => {
                       ))}
                       {(!currentResult.images || currentResult.images.length === 0) && (
                         <Col span={24}>
-                          <div style={{ textAlign: 'center', color: '#999' }}>
+                          <div style={{ textAlign: 'center', color: 'var(--ant-color-text-tertiary)' }}>
                             {intl.formatMessage({ id: 'pages.webScraper.results.noImages' })}
                           </div>
                         </Col>
@@ -433,7 +433,7 @@ const WebScraperResults: React.FC = () => {
                         </div>
                       ))}
                       {(!currentResult.links || currentResult.links.length === 0) && (
-                        <div style={{ textAlign: 'center', color: '#999' }}>
+                        <div style={{ textAlign: 'center', color: 'var(--ant-color-text-tertiary)' }}>
                           {intl.formatMessage({ id: 'pages.webScraper.results.noLinks' })}
                         </div>
                       )}

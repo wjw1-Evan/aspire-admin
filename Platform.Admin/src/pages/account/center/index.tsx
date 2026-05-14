@@ -28,7 +28,7 @@ import {
 } from 'antd';
 import { createStyles } from 'antd-style';
 import dayjs from 'dayjs';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import { changePassword, getCurrentUserProfile, updateUserProfile } from '@/services/ant-design-pro/api';
 import type { ApiResponse, ChangePasswordParams, ChangePasswordResult } from '@/types';
@@ -74,7 +74,7 @@ const UserCenter: React.FC = () => {
   const { initialState, setInitialState } = useModel('@@initialState');
   const { message } = App.useApp();
 
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = useCallback(async () => {
     try {
       setLoading(true);
       const response = await getCurrentUserProfile();
@@ -103,7 +103,7 @@ const UserCenter: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchUserProfile();
@@ -474,7 +474,7 @@ const UserCenter: React.FC = () => {
                 </span>
               }
             >
-              <Input disabled style={{ color: 'rgba(0, 0, 0, 0.45)' }} />
+              <Input disabled style={{ color: 'var(--ant-color-text-description)' }} />
             </Form.Item>
             <Form.Item name="name" label={<FormattedMessage id="pages.account.center.name" />}>
               <Input placeholder={intl.formatMessage({ id: 'pages.account.center.name.placeholder' })} />

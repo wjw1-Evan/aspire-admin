@@ -212,8 +212,8 @@ git push origin HEAD
 | 错误码常量 | `Platform.ServiceDefaults/Models/ErrorCode.cs` |
 | 前端统一类型 | `Platform.Admin/src/types/api-response.ts` |
 | 前端错误码常量 | `Platform.Admin/src/constants/errorCodes.ts` |
-| 标准页面模板 | `Platform.Admin/src/templates/StandardPageTemplate.tsx` | 点击行弹详情，columns 用普通数组，handleView 为普通函数 |
-| 页面开发标准 | `Platform.Admin/src/pages/password-book/index.tsx` | 页面开发风格参考（`onRow`、`handleView`、`useMemo` 等模式） |
+| 标准页面模板 | `Platform.Admin/src/templates/StandardPageTemplate.tsx` | 点击行弹详情，columns 用普通数组，handleView 为普通函数，DetailContent 无 isMobile |
+| 页面开发标准 | `Platform.Admin/src/pages/password-book/index.tsx` | 页面开发风格参考（`onRow`、`handleView`、普通数组 columns 等模式） |
 
 ---
 

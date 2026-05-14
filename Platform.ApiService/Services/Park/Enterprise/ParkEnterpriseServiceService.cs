@@ -234,6 +234,18 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
         return true;
     }
 
+    public async Task<bool> DeleteStatusHistoryAsync(string id, int index)
+    {
+        var serviceRequest = await _context.Set<ServiceRequest>().FirstOrDefaultAsync(x => x.Id == id);
+        if (serviceRequest?.StatusHistory == null || index < 0 || index >= serviceRequest.StatusHistory.Count)
+            return false;
+
+        serviceRequest.StatusHistory.RemoveAt(index);
+        _context.Entry(serviceRequest).State = EntityState.Modified;
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
     public async Task<bool> RateRequestAsync(string id, int rating, string? feedback)
     {
         var request = await _context.Set<ServiceRequest>().FirstOrDefaultAsync(x => x.Id == id);

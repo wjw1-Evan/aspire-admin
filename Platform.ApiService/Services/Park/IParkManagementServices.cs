@@ -61,6 +61,7 @@ public interface IParkEnterpriseServiceService
     Task<ServiceRequestDto?> UpdateRequestAsync(string id, CreateServiceRequestRequest request);
     Task<ServiceRequestDto?> UpdateRequestStatusAsync(string id, UpdateServiceRequestStatusRequest request);
     Task<bool> DeleteRequestAsync(string id);
+    Task<bool> DeleteStatusHistoryAsync(string id, int index);
     Task<bool> RateRequestAsync(string id, int rating, string? feedback);
     Task<SuggestCategoryResponse> SuggestCategoryAsync(string description);
     Task<ServiceStatisticsResponse> GetStatisticsAsync(DateTime? startDate = null, DateTime? endDate = null);

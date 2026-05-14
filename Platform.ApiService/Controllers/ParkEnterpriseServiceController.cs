@@ -90,6 +90,16 @@ public class ParkEnterpriseServiceController : BaseApiController
         return Success(true);
     }
 
+    [HttpDelete("requests/{id}/status-history/{index}")]
+    [RequireMenu("park-management-enterprise-service")]
+    public async Task<IActionResult> DeleteStatusHistory(string id, int index)
+    {
+        var result = await _enterpriseService.DeleteStatusHistoryAsync(id, index);
+        if (!result)
+            throw new KeyNotFoundException(ErrorCode.ResourceNotFound);
+        return Success(true);
+    }
+
     [HttpPost("requests/{id}/rate")]
     [RequireMenu("park-management-enterprise-service")]
     public async Task<IActionResult> RateRequest(string id, [FromBody] RateServiceRequest request)

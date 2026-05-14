@@ -106,6 +106,8 @@ const api = {
     }),
   deleteRequest: (id: string) =>
     request<ApiResponse<boolean>>(`/apiservice/api/park/services/requests/${id}`, { method: 'DELETE' }),
+  deleteStatusHistory: (id: string, index: number) =>
+    request<ApiResponse<boolean>>(`/apiservice/api/park/services/requests/${id}/status-history/${index}`, { method: 'DELETE' }),
   rateRequest: (id: string, data: { rating: number; feedback?: string }) =>
     request<ApiResponse<boolean>>(`/apiservice/api/park/services/requests/${id}/rate`, { method: 'POST', data }),
   tenants: (params: any) =>
@@ -823,7 +825,7 @@ const EnterpriseService: React.FC = () => {
                   span={2}
                 >
                   <Timeline
-                    items={detailData.statusHistory.map((h) => {
+                    items={detailData.statusHistory.map((h, index) => {
                       const fromOpt = statusOptions(intl).find((o) => o.value === h.fromStatus);
                       const toOpt = statusOptions(intl).find((o) => o.value === h.toStatus);
                       return {
@@ -834,6 +836,20 @@ const EnterpriseService: React.FC = () => {
                               <Tag color="default">{fromOpt?.label || h.fromStatus || '-'}</Tag>
                               <span>→</span>
                               <Tag color={toOpt?.color || 'default'}>{toOpt?.label || h.toStatus}</Tag>
+                              <Popconfirm
+                                title={intl.formatMessage({ id: 'common.confirmDelete' })}
+                                onConfirm={async () => {
+                                  if (!detailData) return;
+                                  const res = await api.deleteStatusHistory(detailData.id, index);
+                                  if (res.success) {
+                                    message.success(intl.formatMessage({ id: 'pages.park.service.message.deleteSuccess' }));
+                                    const reload = await api.getRequestById(detailData.id);
+                                    if (reload.success && reload.data) setDetailData(reload.data);
+                                  }
+                                }}
+                              >
+                                <DeleteOutlined style={{ fontSize: 11, color: '#999', cursor: 'pointer' }} />
+                              </Popconfirm>
                             </Space>
                             <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>
                               {dayjs(h.changedAt).format('YYYY-MM-DD HH:mm')}

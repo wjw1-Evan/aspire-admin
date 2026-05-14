@@ -197,7 +197,7 @@ const DashboardSharePage: React.FC = () => {
           <Title level={4} style={{ margin: 0 }}>
             {state.dashboard.name}
           </Title>
-          <span style={{ color: '#999', fontSize: '14px' }}>
+          <span style={{ color: 'var(--ant-color-text-tertiary)', fontSize: '14px' }}>
             {intl.formatMessage({ id: 'pages.dashboard.sharedView' })}
           </span>
         </Space>
@@ -207,7 +207,7 @@ const DashboardSharePage: React.FC = () => {
       </div>
 
       {state.dashboard.description && (
-        <div style={{ marginBottom: 16, color: '#666' }}>{state.dashboard.description}</div>
+        <div style={{ marginBottom: 16, color: 'var(--ant-color-text-description)' }}>{state.dashboard.description}</div>
       )}
 
       {state.dashboard.cards.length === 0 ? (

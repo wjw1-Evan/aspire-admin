@@ -213,7 +213,7 @@ const DashboardViewPage: React.FC = () => {
       </div>
 
       {state.dashboard.description && (
-        <div style={{ marginBottom: 16, color: '#666' }}>{state.dashboard.description}</div>
+        <div style={{ marginBottom: 16, color: 'var(--ant-color-text-description)' }}>{state.dashboard.description}</div>
       )}
 
       {state.dashboard.cards.length === 0 ? (

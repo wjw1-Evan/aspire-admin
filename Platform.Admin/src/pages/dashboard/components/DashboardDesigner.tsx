@@ -255,7 +255,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPr
           justifyContent: 'space-between',
           alignItems: 'center',
           borderBottom: '1px solid rgba(0,0,0,0.06)',
-          background: '#fafafa',
+          background: 'var(--ant-color-fill-tertiary)',
           flexShrink: 0,
         }}
       >

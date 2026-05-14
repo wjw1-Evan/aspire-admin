@@ -237,6 +237,9 @@ function getIconComponent(iconName?: string): React.ReactNode {
     if (icon) return icon;
   }
 
+  const directIcon = getIconFromMap(iconName);
+  if (directIcon) return directIcon;
+
   if (isDev) {
     console.warn(`Icon [${iconName}] not found in CORE_ICON_MAP.`);
   }

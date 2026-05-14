@@ -406,18 +406,18 @@ const DetailContent: React.FC<{ id: string; isMobile: boolean }> = ({ id, isMobi
       <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.platform' })} span={2}>
         <strong>{entry.platform}</strong>
       </ProDescriptions.Item>
-      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.account' })}>
-        <Space>
-          {entry.account}
-          <CopyButton text={entry.account} />
-        </Space>
-      </ProDescriptions.Item>
-      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.password' })}>
-        <Space>
-          <Input.Password value={entry.password} variant="borderless" readOnly />
-          <CopyButton text={entry.password || ''} />
-        </Space>
-      </ProDescriptions.Item>
+<ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.account' })} span={2}>
+         <Space>
+           {entry.account}
+           <CopyButton text={entry.account} />
+         </Space>
+       </ProDescriptions.Item>
+       <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.password' })} span={2}>
+         <Space>
+           <Input.Password value={entry.password} variant="borderless" readOnly />
+           <CopyButton text={entry.password || ''} />
+         </Space>
+       </ProDescriptions.Item>
       {entry.url && (
         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.url' })} span={2}>
           <a href={entry.url} target="_blank" rel="noopener">
@@ -444,12 +444,12 @@ const DetailContent: React.FC<{ id: string; isMobile: boolean }> = ({ id, isMobi
            {dayjs(entry.lastUsedAt).format('YYYY-MM-DD HH:mm')}
          </ProDescriptions.Item>
        )}
-      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.createdAt' })}>
-        {dayjs(entry.createdAt).format('YYYY-MM-DD HH:mm')}
-      </ProDescriptions.Item>
-      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.updatedAt' })}>
-        {dayjs(entry.updatedAt).format('YYYY-MM-DD HH:mm')}
-      </ProDescriptions.Item>
+<ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.createdAt' })} span={2}>
+         {dayjs(entry.createdAt).format('YYYY-MM-DD HH:mm')}
+       </ProDescriptions.Item>
+       <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.updatedAt' })} span={2}>
+         {dayjs(entry.updatedAt).format('YYYY-MM-DD HH:mm')}
+       </ProDescriptions.Item>
       {entry.notes && (
         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.notes' })} span={2}>
           <div style={{ whiteSpace: 'pre-wrap' }}>{entry.notes}</div>

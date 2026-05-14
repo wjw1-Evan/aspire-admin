@@ -48,8 +48,16 @@ public class ParkStatisticsService : IParkStatisticsService
         // 1. 获取所有模块统计数据
         object statsData;
         var periodDesc = startDate.HasValue && endDate.HasValue
-            ? $"{startDate:yyyy-MM-dd} 至 {endDate.Value.AddDays(-1):yyyy-MM-dd}"
-            : "本月";
+            ? culture switch
+            {
+                "zh-CN" => $"{startDate:yyyy-MM-dd} 至 {endDate.Value.AddDays(-1):yyyy-MM-dd}",
+                _ => $"{startDate:yyyy-MM-dd} to {endDate.Value.AddDays(-1):yyyy-MM-dd}"
+            }
+            : culture switch
+            {
+                "zh-CN" => "本月",
+                _ => "This Month"
+            };
 
         if (statisticsData != null)
         {
@@ -86,13 +94,20 @@ public class ParkStatisticsService : IParkStatisticsService
             "zh-TW" => "繁體中文",
             _ => culture
         };
-        var systemPrompt = $"请使用{languageName}语言回复，所有分析内容、标题、表格、描述、结论必须使用该语言。你是一个专业的园区运营数据分析师。请根据提供的园区各模块运营数据，通过 markdown 格式生成一份详细的运营分析报告。报告应重点关注数据背后的趋势和洞察。";
-        var userPrompt = $@"请基于以下统计数据生成运营分析报告：
+        var monthComparison = culture switch
+        {
+            "zh-CN" => "本月 vs 上月",
+            _ => "This Month vs Last Month"
+        };
+        var systemPrompt = $"你是一个专业的园区运营数据分析师。请使用{languageName}根据提供的园区各模块运营数据，通过 markdown 格式生成一份详细的运营分析报告。报告应重点关注数据背后的趋势和洞察。所有内容必须使用{languageName}，严格禁止混用其他语言。";
+        var userPrompt = $@"IMPORTANT: The ENTIRE report must be written in {languageName}. All titles, descriptions, tables, analysis, conclusions and suggestions MUST be in {languageName}. Do NOT use any other language.
+
+请基于以下统计数据生成运营分析报告：
 
 {statsJson}
 
 报告要求：
-0. **报告标题**：报告第一行必须是：# 🏢 园区运营分析报告 ({periodDesc})
+0. **报告标题**：报告第一行必须是 Markdown H1 标题（#），包含 🏢 Emoji，标题和周期描述 {periodDesc} 必须使用 {languageName}。
 1. **总体概览**：简要总结本周期通过关键指标体现的园区运营状况，重点提及关键绩效指标的完成情况。
 2. **各模块详细分析**：
    - **资产管理**：重点分析出租率、空置率以及资产规模（物业总数）的 **同比/环比变化**，以及可能的原因。
@@ -107,7 +122,7 @@ public class ParkStatisticsService : IParkStatisticsService
 
 请使用 Markdown 格式输出，并进行以下美化：
 1. **使用 Emoji 图标**：在标题和关键指标前使用合适的 Emoji（如 📊, 📈, 📉, ⚠️, ✅ 等）增强可读性。
-2. **使用表格**：务必使用标准的 Markdown 表格语法展示关键数据对比（如本月 vs 上月），确保表头和分隔线（|---|）正确。
+2. **使用表格**：务必使用标准的 Markdown 表格语法展示关键数据对比（如 {monthComparison}），确保表头和分隔线（|---|）正确。
 3. **高亮关键数据**：使用 **加粗** 或 `代码块` 突出显示核心数据。
 4. **趋势箭头**：使用 ⬆️ ⬇️ ➡️ 表示数据的涨跌趋势。
 5. **引用块**：使用 > 引用块展示核心洞察或重要结论。

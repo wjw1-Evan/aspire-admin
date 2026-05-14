@@ -113,3 +113,14 @@ export async function testPublishNotification(data: {
     data,
   });
 }
+
+/**
+ * 获取通知统计
+ */
+export async function getNotificationStatistics(): Promise<
+  ApiResponse<Record<string, number>>
+> {
+  return request('/apiservice/api/notifications/statistics', {
+    method: 'GET',
+  });
+}

@@ -264,6 +264,17 @@ const NoticeIcon: React.FC = () => {
           </div>
         )}
       </div>
+      <Button
+        type="link"
+        block
+        className={noticeStyles.notificationFooter}
+        onClick={() => {
+          navigate('/notice');
+          setPopoverOpen(false);
+        }}
+      >
+        {intl.formatMessage({ id: 'pages.unifiedNotificationCenter.viewAll' })}
+      </Button>
     </div>
   );
 

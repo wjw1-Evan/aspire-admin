@@ -101,4 +101,14 @@ export const useNoticeStyles = createStyles(({ css }) => ({
     padding: 12px;
     text-align: center;
   `,
+  notificationFooter: css`
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 10px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.3s;
+    &:hover {
+      background: rgba(0, 0, 0, 0.02);
+    }
+  `,
 }));

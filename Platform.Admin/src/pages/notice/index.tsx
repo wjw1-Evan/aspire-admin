@@ -1,30 +1,35 @@
 import {
+  BellOutlined,
   CheckCircleOutlined,
+  CloseCircleOutlined,
   InfoCircleOutlined,
-  NotificationOutlined,
-  ReloadOutlined,
+  SearchOutlined,
   WarningOutlined,
 } from '@ant-design/icons';
+import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
 import { PageContainer } from '@ant-design/pro-components/es/layout';
+import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useIntl } from '@umijs/max';
-import { Badge, Button, Card, Divider, Drawer, Empty, message, Skeleton, Space, Tag, Typography } from 'antd';
+import { Badge, Button, Drawer, Grid, Input, message, Space, Tag, Typography } from 'antd';
 import dayjs from 'dayjs';
-import React, { useCallback, useEffect, useState } from 'react';
-import { AppNotification, getNotifications, markAllAsRead, markAsRead } from '@/services/notification/api';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  AppNotification,
+  getNotificationStatistics,
+  getNotifications,
+  markAllAsRead,
+  markAsRead,
+  markAsUnread,
+} from '@/services/notification/api';
 
-const { Text, Title, Paragraph } = Typography;
+const { Text } = Typography;
+const { useBreakpoint } = Grid;
 
-const typeMap: Record<string, { label: string; color: string }> = {
-  System: { label: '系统', color: 'success' },
-  Work: { label: '工作', color: 'blue' },
-  Social: { label: '社交', color: 'purple' },
-  Security: { label: '安全', color: 'warning' },
-};
-
-const typeIconMap: Record<string, React.ReactNode> = {
-  System: <CheckCircleOutlined style={{ color: '#52c41a' }} />,
-  Warning: <WarningOutlined style={{ color: '#faad14' }} />,
-  Info: <InfoCircleOutlined style={{ color: '#1890ff' }} />,
+const categoryColorMap: Record<string, string> = {
+  System: 'success',
+  Work: 'blue',
+  Social: 'purple',
+  Security: 'warning',
 };
 
 const levelColorMap: Record<string, string> = {
@@ -34,246 +39,378 @@ const levelColorMap: Record<string, string> = {
   error: 'red',
 };
 
-const getIcon = (category: string) => {
-  return typeIconMap[category] || <NotificationOutlined style={{ color: '#722ed1' }} />;
+const levelIconMap: Record<string, React.ReactNode> = {
+  info: <InfoCircleOutlined style={{ color: '#1677ff' }} />,
+  success: <CheckCircleOutlined style={{ color: '#52c41a' }} />,
+  warning: <WarningOutlined style={{ color: '#faad14' }} />,
+  error: <CloseCircleOutlined style={{ color: '#ff4d4f' }} />,
 };
 
-const getTagInfo = (category: string) => {
-  return typeMap[category] || { label: '信息', color: 'default' };
-};
+interface Stats {
+  unread: number;
+  total: number;
+}
 
 const NoticePage: React.FC = () => {
   const intl = useIntl();
-  const [loading, setLoading] = useState(false);
-  const [notices, setNotices] = useState<AppNotification[]>([]);
-  const [markingAll, setMarkingAll] = useState(false);
+  const actionRef = useRef<ActionType | undefined>(undefined);
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
 
-  const unreadCount = notices.filter((n) => n.status === 'Unread').length;
+  const [state, setState] = useState({
+    detailVisible: false,
+    viewingNotification: null as AppNotification | null,
+    search: '' as string,
+  });
+  const set = useCallback((partial: Partial<typeof state>) => setState((prev) => ({ ...prev, ...partial })), []);
 
-  const [detailNotification, setDetailNotification] = useState<AppNotification | null>(null);
+  const [statistics, setStatistics] = useState<Stats>({ unread: 0, total: 0 });
 
-  const fetchNotices = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await getNotifications({ page: 1, pageSize: 50 });
+  const loadStatistics = useCallback(() => {
+    getNotificationStatistics().then((res) => {
       if (res.success && res.data) {
-        setNotices(res.data.queryable || []);
+        setStatistics({
+          unread: res.data.UnreadTotal || 0,
+          total: res.data.Total || 0,
+        });
       }
-    } catch {
-      /* silently ignore */
-    } finally {
-      setLoading(false);
-    }
+    });
   }, []);
 
   useEffect(() => {
-    fetchNotices();
-  }, [fetchNotices]);
+    loadStatistics();
+  }, [loadStatistics]);
 
   const handleMarkAllAsRead = async () => {
-    setMarkingAll(true);
     try {
       await markAllAsRead();
-      setNotices((prev) => prev.map((n) => ({ ...n, status: 'Read' })));
-      message.success(intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAsReadSuccess' }));
+      actionRef.current?.reload();
+      loadStatistics();
     } catch {
-      message.error(intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAsReadFailed' }));
-    } finally {
-      setMarkingAll(false);
+      /* silently ignore */
     }
   };
 
-  const handleOpenDetail = async (notification: AppNotification) => {
-    setDetailNotification(notification);
-    if (notification.status === 'Unread') {
-      try {
-        await markAsRead(notification.id);
-        setNotices((prev) =>
-          prev.map((n) => (n.id === notification.id ? { ...n, status: 'Read' } : n)),
-        );
-        setDetailNotification((prev) => (prev?.id === notification.id ? { ...prev, status: 'Read' } : prev));
-      } catch {
-        /* silently ignore */
-      }
+  const handleView = (record: AppNotification) => {
+    set({ viewingNotification: record, detailVisible: true });
+    if (record.status === 'unread') {
+      markAsRead(record.id).then(() => {
+        actionRef.current?.reload();
+        loadStatistics();
+      });
     }
   };
+
+  const columns: ProColumns<AppNotification>[] = [
+    {
+      title: intl.formatMessage({ id: 'pages.notice.table.title' }),
+      dataIndex: 'title',
+      key: 'title',
+      ellipsis: true,
+      render: (_, record) => (
+        <Space>
+          {record.status === 'unread' && <Badge status="processing" />}
+          <a onClick={() => handleView(record)}>{record.title}</a>
+        </Space>
+      ),
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.notice.table.category' }),
+      dataIndex: 'category',
+      key: 'category',
+      width: 100,
+      render: (_, record) => (
+        <Tag color={categoryColorMap[record.category] || 'default'}>{record.category}</Tag>
+      ),
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.notice.table.level' }),
+      dataIndex: 'level',
+      key: 'level',
+      width: 120,
+      render: (_, record) => (
+        <Space size={4}>
+          <span style={{ color: levelColorMap[record.level] }}>
+            {levelIconMap[record.level]}
+          </span>
+          <Text type="secondary">{record.level}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.notice.table.time' }),
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      width: 180,
+      sorter: true,
+      valueType: 'dateTime',
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.table.action' }),
+      key: 'action',
+      valueType: 'option',
+      fixed: 'right',
+      width: 160,
+render: (_, record) => (
+         <Space size={4}>
+           {record.status === 'unread' ? (
+             <Button
+               type="link"
+               size="small"
+               icon={<CheckCircleOutlined />}
+               onClick={async (e) => {
+                 e.stopPropagation();
+                 e.nativeEvent.stopImmediatePropagation();
+                 const res = await markAsRead(record.id);
+                 if (res.success) {
+                   message.success(intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAsReadSuccess' }));
+                   set((prev) => ({
+                     ...prev,
+                     viewingNotification: prev.viewingNotification?.id === record.id
+                       ? { ...prev.viewingNotification!, status: 'read' }
+                       : prev.viewingNotification,
+                   }));
+                 }
+                 actionRef.current?.reload();
+                 loadStatistics();
+               }}
+             >
+               {intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAsRead' })}
+             </Button>
+           ) : (
+             <Button
+               type="link"
+               size="small"
+               icon={<InfoCircleOutlined />}
+               onClick={async (e) => {
+                 e.stopPropagation();
+                 e.nativeEvent.stopImmediatePropagation();
+                 const res = await markAsUnread(record.id);
+                 if (res.success) {
+                   message.success(intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAsUnread' }));
+                   set((prev) => ({
+                     ...prev,
+                     viewingNotification: prev.viewingNotification?.id === record.id
+                       ? { ...prev.viewingNotification!, status: 'unread' }
+                       : prev.viewingNotification,
+                   }));
+                 }
+                 actionRef.current?.reload();
+                 loadStatistics();
+               }}
+             >
+               {intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAsUnread' })}
+             </Button>
+           )}
+         </Space>
+       ),
+    },
+  ];
 
   return (
     <PageContainer>
-      <Card
-        title={
-          <Space>
-            <NotificationOutlined />
-            {intl.formatMessage({ id: 'menu.notice' })}
-          </Space>
-        }
-        extra={
-          <Space>
-            {unreadCount > 0 && (
-              <Button type="primary" icon={<CheckCircleOutlined />} onClick={handleMarkAllAsRead} loading={markingAll}>
-                {intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAllAsRead' })}
-              </Button>
-            )}
-            <Button icon={<ReloadOutlined />} onClick={fetchNotices}>
-              {intl.formatMessage({ id: 'pages.common.refresh' })}
-            </Button>
-          </Space>
-        }
-      >
-        {loading ? (
-          <Skeleton active paragraph={{ rows: 5 }} />
-        ) : notices.length > 0 ? (
-          notices.map((item) => {
-            const tagInfo = getTagInfo(item.category);
-            const isUnread = item.status === 'Unread';
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => handleOpenDetail(item)}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  padding: 16,
-                  backgroundColor: isUnread ? 'var(--ant-color-primary-bg)' : 'var(--ant-color-fill-tertiary)',
-                  borderRadius: 8,
-                  border: 'none',
-                  borderLeft: `4px solid ${isUnread ? 'var(--ant-color-primary)' : 'var(--ant-color-border-secondary)'}`,
-                  marginBottom: 8,
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  transition: 'box-shadow 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = 'var(--ant-box-shadow)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              >
-                <Space align="start" style={{ width: '100%' }}>
-                  {getIcon(item.category)}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <Space>
-                      <Title level={5} style={{ margin: 0 }}>
-                        {isUnread && <Badge status="processing" style={{ marginRight: 8 }} />}
-                        {item.title}
-                      </Title>
-                      <Tag color={tagInfo.color}>{tagInfo.label}</Tag>
-                    </Space>
-                    <Divider style={{ margin: '8px 0' }} />
-                    <div
-                      style={{
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                      }}
-                    >
-                      <Text type="secondary">{item.content}</Text>
-                    </div>
-                    <div style={{ marginTop: 8 }}>
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        {item.createdAt ? dayjs(item.createdAt).format('YYYY-MM-DD HH:mm:ss') : ''}
-                      </Text>
-                    </div>
-                  </div>
-                </Space>
-              </button>
-            );
-          })
-        ) : (
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={intl.formatMessage({ id: 'pages.notice.empty' })} />
-        )}
-      </Card>
+      <ProTable
+        actionRef={actionRef}
+headerTitle={
+           <Space size={24}>
+             <Space>
+               <BellOutlined />
+               {intl.formatMessage({ id: 'pages.notice.title' })}
+             </Space>
+             <Space size={12}>
+               <Tag color="blue">
+                 {intl.formatMessage({ id: 'pages.notice.stat.unread' })}: {statistics.unread}
+               </Tag>
+               <Tag>
+                 {intl.formatMessage({ id: 'pages.notice.stat.total' })}: {statistics.total}
+               </Tag>
+             </Space>
+           </Space>
+         }
+         request={async (params) => {
+           const res = await getNotifications({
+             current: params.current,
+             pageSize: params.pageSize,
+             search: state.search,
+           });
+           const data = res.data;
+           return { data: data?.queryable || [], total: data?.rowCount || 0, success: res.success };
+         }}
+         columns={columns}
+         rowKey="id"
+         search={false}
+         scroll={{ x: 'max-content' }}
+         toolBarRender={() => [
+           <Input.Search
+             key="search"
+             placeholder={intl.formatMessage({ id: 'pages.common.search' })}
+             allowClear
+             value={state.search}
+             onChange={(e) => set({ search: e.target.value })}
+             onSearch={() => actionRef.current?.reload()}
+             style={{ width: 260, marginRight: 8 }}
+             prefix={<SearchOutlined />}
+           />,
+           <Button key="markAllRead" icon={<CheckCircleOutlined />} onClick={handleMarkAllAsRead}>
+             {intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAllAsRead' })}
+           </Button>,
+         ]}
+         onRow={(record) => ({
+           onClick: (e) => {
+             const target = e.target as HTMLElement;
+             if (target.closest('.ant-btn')) return;
+             handleView(record);
+           },
+           style: { cursor: 'pointer', fontWeight: record.status === 'unread' ? 600 : 'normal' },
+         })}
+       />
 
       <Drawer
         title={
           <Space>
-            <NotificationOutlined />
-            {detailNotification?.title || ''}
+            <BellOutlined />
+            {intl.formatMessage({ id: 'pages.notice.detail.title' })}
           </Space>
         }
         placement="right"
-        open={!!detailNotification}
-        onClose={() => setDetailNotification(null)}
+        open={state.detailVisible}
+        onClose={() => set({ detailVisible: false, viewingNotification: null })}
         width={560}
+        extra={
+          state.viewingNotification ? (
+            <Space>
+              {state.viewingNotification.status === 'unread' ? (
+                <Button
+                  type="primary"
+                  size="small"
+                  icon={<CheckCircleOutlined />}
+                  onClick={async () => {
+                    await markAsRead(state.viewingNotification!.id);
+                    actionRef.current?.reload();
+                    loadStatistics();
+                    set({
+                      viewingNotification: {
+                        ...state.viewingNotification!,
+                        status: 'read',
+                      },
+                    });
+                  }}
+                >
+                  {intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAsRead' })}
+                </Button>
+              ) : (
+                <Button
+                  size="small"
+                  icon={<InfoCircleOutlined />}
+                  onClick={async () => {
+                    await markAsUnread(state.viewingNotification!.id);
+                    actionRef.current?.reload();
+                    loadStatistics();
+                    set({
+                      viewingNotification: {
+                        ...state.viewingNotification!,
+                        status: 'unread',
+                      },
+                    });
+                  }}
+                >
+                  {intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAsUnread' })}
+                </Button>
+              )}
+            </Space>
+          ) : null
+        }
       >
-        {detailNotification && (
-          <Space direction="vertical" style={{ width: '100%' }} size={16}>
-            {detailNotification.actionUrl && (
-              <Button type="link" icon={<InfoCircleOutlined />} href={detailNotification.actionUrl} target="_blank">
-                {detailNotification.actionUrl}
-              </Button>
-            )}
-
-            <div>
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                分类
-              </Text>
-              <br />
-              <Tag color={getTagInfo(detailNotification.category).color}>
-                {getTagInfo(detailNotification.category).label}
-              </Tag>
-            </div>
-
-            <div>
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                级别
-              </Text>
-              <br />
-              <Tag color={levelColorMap[detailNotification.level] || 'default'}>
-                {detailNotification.level}
-              </Tag>
-            </div>
-
-            <div>
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                接收时间
-              </Text>
-              <br />
-              <Text>
-                {detailNotification.createdAt
-                  ? dayjs(detailNotification.createdAt).format('YYYY-MM-DD HH:mm:ss')
-                  : '-'}
-              </Text>
-            </div>
-
-            {detailNotification.readAt && (
-              <div>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  已读时间
-                </Text>
-                <br />
-                <Text>
-                  {dayjs(detailNotification.readAt).format('YYYY-MM-DD HH:mm:ss')}
-                </Text>
-              </div>
-            )}
-
-            <Divider style={{ margin: 0 }} />
-
-            <div>
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                内容
-              </Text>
-              <Paragraph
-                style={{
-                  marginTop: 8,
-                  padding: 12,
-                  backgroundColor: 'var(--ant-color-fill-tertiary)',
-                  borderRadius: 6,
-                  whiteSpace: 'pre-wrap',
-                }}
-              >
-                {detailNotification.content || '-'}
-              </Paragraph>
-            </div>
-          </Space>
+        {state.viewingNotification && (
+          <DetailContent notification={state.viewingNotification} isMobile={isMobile} />
         )}
       </Drawer>
     </PageContainer>
+  );
+};
+
+const DetailContent: React.FC<{ notification: AppNotification; isMobile: boolean }> = ({
+  notification,
+  isMobile,
+}) => {
+  const intl = useIntl();
+
+  return (
+    <ProDescriptions column={isMobile ? 1 : 2} bordered size="small">
+      <ProDescriptions.Item
+        label={intl.formatMessage({ id: 'pages.notice.table.title' })}
+        span={2}
+      >
+<Space>
+           {notification.status === 'unread' && <Badge status="processing" />}
+           <strong style={{ fontSize: 16 }}>{notification.title}</strong>
+         </Space>
+       </ProDescriptions.Item>
+       <ProDescriptions.Item
+         label={intl.formatMessage({ id: 'pages.notice.detail.status' })}
+         span={isMobile ? 1 : 2}
+       >
+        <Tag color={notification.status === 'unread' ? 'processing' : 'success'}>
+          {intl.formatMessage({
+            id:
+              notification.status === 'unread'
+                ? 'pages.notice.detail.status.unread'
+                : 'pages.notice.detail.status.read',
+          })}
+        </Tag>
+      </ProDescriptions.Item>
+      <ProDescriptions.Item
+         label={intl.formatMessage({ id: 'pages.notice.table.category' })}
+        span={isMobile ? 1 : 2}
+      >
+        <Tag color={categoryColorMap[notification.category] || 'default'}>
+          {notification.category}
+        </Tag>
+      </ProDescriptions.Item>
+      <ProDescriptions.Item
+        label={intl.formatMessage({ id: 'pages.notice.table.level' })}
+        span={isMobile ? 1 : 2}
+      >
+        <Space size={4}>
+          <span style={{ color: levelColorMap[notification.level] }}>
+            {levelIconMap[notification.level]}
+          </span>
+          <Text>{notification.level}</Text>
+        </Space>
+      </ProDescriptions.Item>
+      <ProDescriptions.Item
+        label={intl.formatMessage({ id: 'pages.notice.detail.receivedAt' })}
+        span={isMobile ? 1 : 2}
+      >
+        {notification.createdAt
+          ? dayjs(notification.createdAt).format('YYYY-MM-DD HH:mm:ss')
+          : '-'}
+      </ProDescriptions.Item>
+      {notification.readAt && (
+        <ProDescriptions.Item
+          label={intl.formatMessage({ id: 'pages.notice.detail.readAt' })}
+          span={isMobile ? 1 : 2}
+        >
+          {dayjs(notification.readAt).format('YYYY-MM-DD HH:mm:ss')}
+        </ProDescriptions.Item>
+      )}
+      {notification.actionUrl && (
+        <ProDescriptions.Item
+          label={intl.formatMessage({ id: 'pages.notice.detail.actionUrl' })}
+          span={2}
+        >
+          <a href={notification.actionUrl} target="_blank" rel="noopener noreferrer">
+            {notification.actionUrl}
+          </a>
+        </ProDescriptions.Item>
+      )}
+      <ProDescriptions.Item
+        label={intl.formatMessage({ id: 'pages.notice.detail.content' })}
+        span={2}
+      >
+        <div style={{ whiteSpace: 'pre-wrap' }}>{notification.content || '-'}</div>
+      </ProDescriptions.Item>
+    </ProDescriptions>
   );
 };
 

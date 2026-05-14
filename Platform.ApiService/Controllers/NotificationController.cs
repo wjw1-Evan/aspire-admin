@@ -32,10 +32,15 @@ public class NotificationController : BaseApiController
         return Success(result);
     }
 
-    // --- 以下接口已废弃，改由 SSE 推送更新 ---
-    // [HttpGet("statistics")]
-    // public async Task<IActionResult> GetStatistics() { ... }
-
+    /// <summary>
+    /// 获取通知统计
+    /// </summary>
+    [HttpGet("statistics")]
+    public async Task<IActionResult> GetStatistics()
+    {
+        var result = await _notificationService.GetStatisticsAsync(RequiredUserId);
+        return Success(result);
+    }
 
     /// <summary>
     /// 标记单条已读

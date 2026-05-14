@@ -93,13 +93,12 @@ const PasswordBook: React.FC = () => {
   };
 
   const columns: ProColumns<Entry>[] = [
-    {
-      title: intl.formatMessage({ id: 'pages.passwordBook.table.platform' }),
-      dataIndex: 'platform',
-      key: 'platform',
-      sorter: true,
-      render: (_, record) => <a onClick={() => handleView(record.id)}>{record.platform}</a>,
-    },
+{
+       title: intl.formatMessage({ id: 'pages.passwordBook.table.platform' }),
+       dataIndex: 'platform',
+       key: 'platform',
+       sorter: true,
+     },
     {
       title: intl.formatMessage({ id: 'pages.passwordBook.table.account' }),
       dataIndex: 'account',

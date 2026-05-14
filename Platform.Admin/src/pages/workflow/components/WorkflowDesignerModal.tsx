@@ -163,7 +163,7 @@ const WorkflowDesignerModal: React.FC<WorkflowDesignerModalProps> = ({ workflow,
         style={{
           padding: '12px 16px',
           borderBottom: '1px solid #f0f0f0',
-          background: '#fafafa',
+          background: 'var(--ant-color-fill-tertiary)',
           display: 'flex',
           alignItems: 'center',
           gap: 16,
@@ -182,7 +182,7 @@ const WorkflowDesignerModal: React.FC<WorkflowDesignerModalProps> = ({ workflow,
         )}
         {!isCreate && <span style={{ color: '#52c41a', fontWeight: 500, fontSize: 13 }}>{currentVersion}</span>}
         {readOnly ? (
-          <span style={{ color: '#8c8c8c', fontSize: 13 }}>{formData.category}</span>
+          <span style={{ color: 'var(--ant-color-text-tertiary)', fontSize: 13 }}>{formData.category}</span>
         ) : (
           <Select
             value={formData.category}

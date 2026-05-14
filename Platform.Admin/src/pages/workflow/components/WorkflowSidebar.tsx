@@ -40,7 +40,7 @@ const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
       <div
         style={{
           width: collapsed ? 0 : 280,
-          background: 'white',
+          background: 'var(--ant-color-bg-container)',
           borderRight: collapsed ? 'none' : '1px solid #e2e8f0',
           display: 'flex',
           flexDirection: 'column',
@@ -100,7 +100,7 @@ const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
                     borderRadius: 12,
                     cursor: 'grab',
                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    background: 'white',
+                    background: 'var(--ant-color-bg-container)',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.borderColor = '#3b82f6';
@@ -156,7 +156,7 @@ const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
           transform: 'translateY(-50%)',
           width: collapsed ? 28 : 24,
           height: 56,
-          background: 'white',
+          background: 'var(--ant-color-bg-container)',
           border: `1px solid #e2e8f0`,
           borderLeft: collapsed ? '1px solid #e2e8f0' : 'none',
           borderRadius: collapsed ? '0 12px 12px 0' : '0 12px 12px 0',

@@ -191,7 +191,7 @@ export const ConditionEdge: React.FC<EdgeProps> = ({
               textAlign: 'center',
               fontSize: 12,
               color: '#64748b',
-              background: '#fff',
+              background: 'var(--ant-color-bg-container)',
               padding: '2px 6px',
               borderRadius: 4,
               border: '1px solid #e2e8f0',

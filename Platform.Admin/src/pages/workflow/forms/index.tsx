@@ -217,26 +217,26 @@ const FormDefinitionManagement: React.FC = () => {
     <PageContainer>
       <style>{`
                 .form-designer { height: calc(100vh - 200px); display: flex; flex-direction: column; }
-                .designer-toolbar { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; background: #fff; }
+                .designer-toolbar { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; background: var(--ant-color-bg-container); }
                 .designer-body { flex: 1; display: flex; overflow: hidden; }
-                .field-library { width: 180px; background: #fff; border-right: 1px solid #f0f0f0; display: flex; flex-direction: column; }
+                .field-library { width: 180px; background: var(--ant-color-bg-container); border-right: 1px solid #f0f0f0; display: flex; flex-direction: column; }
                 .library-header { padding: 12px 16px; font-weight: 500; border-bottom: 1px solid #f0f0f0; }
                 .library-content { flex: 1; padding: 8px; overflow-y: auto; }
-                .library-item { display: flex; align-items: center; padding: 8px 12px; margin-bottom: 4px; border-radius: 4px; cursor: grab; background: #f5f5f5; user-select: none; }
-                .library-item:hover { background: #e6f7ff; border-color: #1890ff; }
+                .library-item { display: flex; align-items: center; padding: 8px 12px; margin-bottom: 4px; border-radius: 4px; cursor: grab; background: var(--ant-color-fill-tertiary); user-select: none; }
+                .library-item:hover { background: var(--ant-color-primary-bg); border-color: #1890ff; }
                 .library-item:active { cursor: grabbing; }
                 .library-item.dragging { opacity: 0.5; }
                 .drag-overlay { z-index: 1000; opacity: 0.85; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-                .canvas-drop-active { background: #e6f7ff !important; outline: 2px dashed #1890ff; outline-offset: -4px; }
+                .canvas-drop-active { background: var(--ant-color-primary-bg) !important; outline: 2px dashed #1890ff; outline-offset: -4px; }
                 .item-icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: #1890ff; color: #fff; border-radius: 4px; margin-right: 8px; font-size: 12px; }
                 .item-label { font-size: 13px; }
-                .form-canvas { flex: 1; display: flex; flex-direction: column; background: #fafafa; }
-                .canvas-header { padding: 12px 16px; font-weight: 500; border-bottom: 1px solid #f0f0f0; background: #fff; }
+                .form-canvas { flex: 1; display: flex; flex-direction: column; background: var(--ant-color-fill-tertiary); }
+                .canvas-header { padding: 12px 16px; font-weight: 500; border-bottom: 1px solid #f0f0f0; background: var(--ant-color-bg-container); }
                 .canvas-content { flex: 1; padding: 16px; overflow-y: auto; }
-                .canvas-field { position: relative; padding: 12px 16px; margin-bottom: 8px; background: #fff; border: 1px solid #d9d9d9; border-radius: 8px; cursor: move; transition: all 0.2s; display: flex; flex-direction: column; gap: 6px; }
+                .canvas-field { position: relative; padding: 12px 16px; margin-bottom: 8px; background: var(--ant-color-bg-container); border: 1px solid var(--ant-color-border-secondary); border-radius: 8px; cursor: move; transition: all 0.2s; display: flex; flex-direction: column; gap: 6px; }
                 .canvas-field:hover { border-color: #1890ff; }
                 .canvas-field.selected { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.2); }
-                .canvas-field-placeholder { height: 70px; margin-bottom: 8px; border: 2px dashed #1890ff; border-radius: 8px; background: #e6f7ff; animation: pulse 1s infinite; }
+                .canvas-field-placeholder { height: 70px; margin-bottom: 8px; border: 2px dashed #1890ff; border-radius: 8px; background: var(--ant-color-primary-bg); animation: pulse 1s infinite; }
                 @keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
 
                 .required-mark { color: #ff4d4f;  }
@@ -244,9 +244,9 @@ const FormDefinitionManagement: React.FC = () => {
                 .canvas-field:hover .field-delete-btn { opacity: 1; }
 
                 .field-property-panel { height: 100%; }
-                .panel-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #d9d9d9; margin-bottom: 12px; font-weight: 500; }
+                .panel-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--ant-color-border-secondary); margin-bottom: 12px; font-weight: 500; }
                 .property-group { margin-bottom: 12px; }
-                .property-group label { display: block; margin-bottom: 4px; font-size: 13px; color: #666; }
+                .property-group label { display: block; margin-bottom: 4px; font-size: 13px; color: var(--ant-color-text-description); }
                 .form-preview { padding: 24px; }
                 .preview-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; font-size: 16px; font-weight: 500; }
             `}</style>
@@ -368,7 +368,7 @@ const FormDefinitionManagement: React.FC = () => {
                     padding: '12px',
                     cursor: 'pointer',
                     borderBottom: '1px solid #f0f0f0',
-                    background: state.previewVersionId === item.id ? '#e6f7ff' : undefined,
+                    background: state.previewVersionId === item.id ? 'var(--ant-color-primary-bg)' : undefined,
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
@@ -377,7 +377,7 @@ const FormDefinitionManagement: React.FC = () => {
                 >
                   <div>
                     <div style={{ fontWeight: 500 }}>v{item.version}</div>
-                    <div style={{ fontSize: 12, color: '#666' }}>
+                    <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
                       {item.fields?.length || 0}
                       {intl.formatMessage({ id: 'pages.forms.detail.fieldCount' })} |{' '}
                       {item.isActive

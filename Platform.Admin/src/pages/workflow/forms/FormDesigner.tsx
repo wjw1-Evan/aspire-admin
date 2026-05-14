@@ -561,7 +561,7 @@ export const FormDesigner: React.FC<{ form: FormDefinition; onSave: (form: FormD
         </DndContext>
         <div
           className="field-properties"
-          style={{ width: 280, borderLeft: '1px solid #f0f0f0', background: '#fafafa', padding: 12 }}
+          style={{ width: 280, borderLeft: '1px solid #f0f0f0', background: 'var(--ant-color-fill-tertiary)', padding: 12 }}
         >
           {selectedField ? (
             <FieldPropertyPanel

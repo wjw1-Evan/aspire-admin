@@ -179,8 +179,8 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
     const fields = getSelectedFormFields(formId);
     if (!fields.length) return null;
     return (
-      <div style={{ marginTop: 8, padding: 8, background: '#f5f5f5', borderRadius: 6, fontSize: 12 }}>
-        <div style={{ fontWeight: 500, marginBottom: 6, color: '#595959' }}>表单字段 ({fields.length})</div>
+      <div style={{ marginTop: 8, padding: 8, background: 'var(--ant-color-fill-tertiary)', borderRadius: 6, fontSize: 12 }}>
+        <div style={{ fontWeight: 500, marginBottom: 6, color: 'var(--ant-color-text-secondary)' }}>表单字段 ({fields.length})</div>
         {fields.map((f) => (
           <div
             key={f.id}
@@ -193,7 +193,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
             }}
           >
             <span style={{ color: '#262626' }}>{f.label}</span>
-            <span style={{ color: '#8c8c8c' }}>({f.dataKey})</span>
+            <span style={{ color: 'var(--ant-color-text-tertiary)' }}>({f.dataKey})</span>
             <span style={{ color: '#bfbfbf', fontSize: 11 }}>{f.type}</span>
             {f.required && <span style={{ color: '#ff4d4f' }}>*</span>}
           </div>
@@ -570,7 +570,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                                             size="small"
                                             style={{
                                               marginBottom: 8,
-                                              background: '#ffffff',
+                                              background: 'var(--ant-color-bg-container)',
                                               border: '1px solid #e5e7eb',
                                             }}
                                             key={condKey}

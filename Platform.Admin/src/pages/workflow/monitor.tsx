@@ -220,11 +220,11 @@ const WorkflowMonitor: React.FC = () => {
           style={{
             textAlign: 'center',
             padding: '60px 20px',
-            color: '#999',
+            color: 'var(--ant-color-text-tertiary)',
             fontSize: 14,
-            backgroundColor: '#fafafa',
+            backgroundColor: 'var(--ant-color-fill-tertiary)',
             borderRadius: 8,
-            border: '1px dashed #d9d9d9',
+            border: '1px dashed var(--ant-color-border-secondary)',
           }}
         >
           <span style={{ fontSize: 48, display: 'block', marginBottom: 16 }}>📝</span>
@@ -393,7 +393,7 @@ const WorkflowMonitor: React.FC = () => {
                 </Button>
               </Space>
             </ProCard>
-            <div style={{ height: '500px', border: '1px solid #d9d9d9' }}>
+            <div style={{ height: '500px', border: '1px solid var(--ant-color-border-secondary)' }}>
               <WorkflowDesigner open={true} graph={previewGraph || undefined} />
             </div>
           </div>

@@ -108,7 +108,7 @@ export function FieldPropertyPanel({
                         style={{
                           marginBottom: 8,
                           padding: '8px 8px 4px',
-                          background: '#fafafa',
+                          background: 'var(--ant-color-fill-tertiary)',
                           border: '1px solid #f0f0f0',
                           borderRadius: 4,
                         }}

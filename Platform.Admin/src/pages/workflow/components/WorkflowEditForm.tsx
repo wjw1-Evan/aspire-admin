@@ -105,7 +105,7 @@ const WorkflowEditForm: React.FC<WorkflowEditFormProps> = ({ workflow, onSuccess
         style={{
           padding: '12px 16px',
           borderBottom: '1px solid #f0f0f0',
-          background: '#fafafa',
+          background: 'var(--ant-color-fill-tertiary)',
           display: 'flex',
           alignItems: 'center',
           gap: 16,
@@ -123,7 +123,7 @@ const WorkflowEditForm: React.FC<WorkflowEditFormProps> = ({ workflow, onSuccess
           </span>
         )}
         <span
-          style={{ color: '#8c8c8c', fontSize: 13, marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}
+          style={{ color: 'var(--ant-color-text-tertiary)', fontSize: 13, marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}
         >
           <Button size="small" onClick={onCancel}>
             退出

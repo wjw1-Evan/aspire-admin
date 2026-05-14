@@ -88,12 +88,12 @@ const PasswordBook: React.FC = () => {
   };
 
   const columns: ProColumns<Entry>[] = [
-{
-       title: intl.formatMessage({ id: 'pages.passwordBook.table.platform' }),
-       dataIndex: 'platform',
-       key: 'platform',
-       sorter: true,
-     },
+    {
+      title: intl.formatMessage({ id: 'pages.passwordBook.table.platform' }),
+      dataIndex: 'platform',
+      key: 'platform',
+      sorter: true,
+    },
     {
       title: intl.formatMessage({ id: 'pages.passwordBook.table.account' }),
       dataIndex: 'account',
@@ -300,14 +300,14 @@ const PasswordBook: React.FC = () => {
         initialValues={
           state.editingEntry
             ? {
-                platform: state.editingEntry.platform,
-                account: state.editingEntry.account,
-                password: state.editingEntry.password,
-                url: state.editingEntry.url,
-                category: state.editingEntry.category ? [state.editingEntry.category] : [],
-                tags: state.editingEntry.tags || [],
-                notes: state.editingEntry.notes,
-              }
+              platform: state.editingEntry.platform,
+              account: state.editingEntry.account,
+              password: state.editingEntry.password,
+              url: state.editingEntry.url,
+              category: state.editingEntry.category ? [state.editingEntry.category] : [],
+              tags: state.editingEntry.tags || [],
+              notes: state.editingEntry.notes,
+            }
             : undefined
         }
         onFinish={handleFinish}
@@ -364,7 +364,7 @@ const PasswordBook: React.FC = () => {
         placement="right"
         open={state.detailVisible}
         onClose={() => set({ detailVisible: false, viewingId: '' })}
-        size="medium"
+        size="large"
       >
         <DetailContent id={state.viewingId} />
       </Drawer>
@@ -397,59 +397,59 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
   if (!entry) return null;
 
   return (
-    <ProDescriptions bordered size="small">
-<ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.platform' })}>
-         <strong>{entry.platform}</strong>
-       </ProDescriptions.Item>
-       <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.account' })}>
-         <Space>
-           {entry.account}
-           <CopyButton text={entry.account} />
-         </Space>
-       </ProDescriptions.Item>
-       <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.password' })}>
-         <Space>
-           <Input.Password value={entry.password} variant="borderless" readOnly />
-           <CopyButton text={entry.password || ''} />
-         </Space>
-       </ProDescriptions.Item>
-       {entry.url && (
-         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.url' })}>
-           <a href={entry.url} target="_blank" rel="noopener">
-             {entry.url}
-           </a>
-         </ProDescriptions.Item>
-       )}
-       {entry.category && (
-         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.category' })}>
-           <Tag color="blue">{entry.category}</Tag>
-         </ProDescriptions.Item>
-       )}
-       {entry.tags?.length > 0 && (
-         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.tags' })}>
-           <Space wrap>
-             {entry.tags.map((t) => (
-               <Tag key={t}>{t}</Tag>
-             ))}
-           </Space>
-         </ProDescriptions.Item>
-       )}
-       {entry.lastUsedAt && (
-         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.lastUsedAt' })}>
-           {dayjs(entry.lastUsedAt).format('YYYY-MM-DD HH:mm')}
-         </ProDescriptions.Item>
-       )}
-       <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.createdAt' })}>
-         {dayjs(entry.createdAt).format('YYYY-MM-DD HH:mm')}
-       </ProDescriptions.Item>
-       <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.updatedAt' })}>
-         {dayjs(entry.updatedAt).format('YYYY-MM-DD HH:mm')}
-       </ProDescriptions.Item>
-       {entry.notes && (
-         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.notes' })}>
-           <div style={{ whiteSpace: 'pre-wrap' }}>{entry.notes}</div>
-         </ProDescriptions.Item>
-       )}
+    <ProDescriptions column={1} bordered size="small">
+      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.platform' })}>
+        <strong>{entry.platform}</strong>
+      </ProDescriptions.Item>
+      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.account' })}>
+        <Space>
+          {entry.account}
+          <CopyButton text={entry.account} />
+        </Space>
+      </ProDescriptions.Item>
+      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.password' })}>
+        <Space>
+          <Input.Password value={entry.password} variant="borderless" readOnly />
+          <CopyButton text={entry.password || ''} />
+        </Space>
+      </ProDescriptions.Item>
+      {entry.url && (
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.url' })}>
+          <a href={entry.url} target="_blank" rel="noopener">
+            {entry.url}
+          </a>
+        </ProDescriptions.Item>
+      )}
+      {entry.category && (
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.category' })}>
+          <Tag color="blue">{entry.category}</Tag>
+        </ProDescriptions.Item>
+      )}
+      {entry.tags?.length > 0 && (
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.tags' })}>
+          <Space wrap>
+            {entry.tags.map((t) => (
+              <Tag key={t}>{t}</Tag>
+            ))}
+          </Space>
+        </ProDescriptions.Item>
+      )}
+      {entry.lastUsedAt && (
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.lastUsedAt' })}>
+          {dayjs(entry.lastUsedAt).format('YYYY-MM-DD HH:mm')}
+        </ProDescriptions.Item>
+      )}
+      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.createdAt' })}>
+        {dayjs(entry.createdAt).format('YYYY-MM-DD HH:mm')}
+      </ProDescriptions.Item>
+      <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.updatedAt' })}>
+        {dayjs(entry.updatedAt).format('YYYY-MM-DD HH:mm')}
+      </ProDescriptions.Item>
+      {entry.notes && (
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.notes' })}>
+          <div style={{ whiteSpace: 'pre-wrap' }}>{entry.notes}</div>
+        </ProDescriptions.Item>
+      )}
     </ProDescriptions>
   );
 };

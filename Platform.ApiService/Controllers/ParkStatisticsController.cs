@@ -13,7 +13,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/park/statistics")]
-[RequireMenu("park-management-dashboard")]
+[RequireMenu("park-management-statistics")]
 public class ParkStatisticsController : BaseApiController
 {
     private readonly IParkStatisticsService _statisticsService;

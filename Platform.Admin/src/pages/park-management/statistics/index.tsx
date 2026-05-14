@@ -1230,7 +1230,19 @@ const StatisticsPage: React.FC = () => {
                           Completed: 'green',
                           Cancelled: 'default',
                         };
-                        return <Tag color={colorMap[status] || 'default'}>{status}</Tag>;
+                        const statusI18nMap: Record<string, string> = {
+                          Pending: 'pages.park.service.status.pending',
+                          Processing: 'pages.park.service.status.processing',
+                          Completed: 'pages.park.service.status.completed',
+                          Cancelled: 'pages.park.service.status.cancelled',
+                        };
+                        return (
+                          <Tag color={colorMap[status] || 'default'}>
+                            {statusI18nMap[status]
+                              ? intl.formatMessage({ id: statusI18nMap[status] })
+                              : status}
+                          </Tag>
+                        );
                       },
                     },
                     {

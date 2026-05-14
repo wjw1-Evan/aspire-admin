@@ -256,6 +256,10 @@ const PasswordBook: React.FC = () => {
         rowKey="id"
         search={false}
         scroll={{ x: 'max-content' }}
+        onRow={(record) => ({
+          onClick: () => handleView(record.id),
+          style: { cursor: 'pointer' },
+        })}
         toolBarRender={() => [
           <Input.Search
             key="search"

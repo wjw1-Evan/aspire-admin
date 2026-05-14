@@ -364,7 +364,7 @@ const PasswordBook: React.FC = () => {
         placement="right"
         open={state.detailVisible}
         onClose={() => set({ detailVisible: false, viewingId: '' })}
-        size="large"
+        size="medium"
       >
         <DetailContent id={state.viewingId} />
       </Drawer>

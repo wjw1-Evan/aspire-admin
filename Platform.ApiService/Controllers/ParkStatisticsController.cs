@@ -37,9 +37,10 @@ public class ParkStatisticsController : BaseApiController
     public async Task<IActionResult> GenerateAiReport(
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null,
+        [FromQuery] string? culture = "zh-CN",
         [FromBody] object? statisticsData = null)
     {
-        var result = await _statisticsService.GenerateAiReportAsync(startDate, endDate, statisticsData);
+        var result = await _statisticsService.GenerateAiReportAsync(startDate, endDate, statisticsData, culture);
         return Success(result);
     }
 }

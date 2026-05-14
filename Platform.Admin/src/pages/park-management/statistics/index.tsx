@@ -115,10 +115,10 @@ const api = {
       method: 'GET',
       params: { startDate, endDate },
     }),
-  generateAiReport: (startDate?: string, endDate?: string, data?: any) =>
+  generateAiReport: (startDate?: string, endDate?: string, data?: any, locale?: string) =>
     request<ApiResponse<string>>('/apiservice/api/park/statistics/ai-report', {
       method: 'POST',
-      params: { startDate, endDate },
+      params: { startDate, endDate, culture: locale },
       data,
     }),
 };
@@ -183,7 +183,7 @@ const StatisticsPage: React.FC = () => {
         startDate = state.dateRange[0].startOf('day').format('YYYY-MM-DDTHH:mm:ss');
         endDate = state.dateRange[1].add(1, 'day').startOf('day').format('YYYY-MM-DDTHH:mm:ss');
       }
-      const res = await api.generateAiReport(startDate, endDate, state.statistics);
+      const res = await api.generateAiReport(startDate, endDate, state.statistics, intl.locale);
       if (res.success && res.data) {
         try {
           const html = await marked.parse(res.data);

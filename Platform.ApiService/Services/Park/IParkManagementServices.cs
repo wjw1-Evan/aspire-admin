@@ -69,5 +69,5 @@ public interface IParkEnterpriseServiceService
 
 public interface IParkStatisticsService
 {
-    Task<string> GenerateAiReportAsync(DateTime? startDate = null, DateTime? endDate = null, object? statisticsData = null);
+    Task<string> GenerateAiReportAsync(DateTime? startDate = null, DateTime? endDate = null, object? statisticsData = null, string? culture = "zh-CN");
 }

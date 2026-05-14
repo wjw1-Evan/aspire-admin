@@ -43,7 +43,7 @@ public class ParkStatisticsService : IParkStatisticsService
     /// <summary>
     /// 生成 AI 统计报告
     /// </summary>
-    public async Task<string> GenerateAiReportAsync(DateTime? startDate = null, DateTime? endDate = null, object? statisticsData = null)
+    public async Task<string> GenerateAiReportAsync(DateTime? startDate = null, DateTime? endDate = null, object? statisticsData = null, string? culture = "zh-CN")
     {
         // 1. 获取所有模块统计数据
         object statsData;
@@ -80,7 +80,13 @@ public class ParkStatisticsService : IParkStatisticsService
         var statsJson = JsonSerializer.Serialize(statsData, new JsonSerializerOptions { WriteIndented = true });
 
         // 3. 构建 Prompt
-        var systemPrompt = "你是一个专业的园区运营数据分析师。请根据提供的园区各模块运营数据，通过 markdown 格式生成一份详细的运营分析报告。报告应重点关注数据背后的趋势和洞察。报告第一行必须是：# 🏢 园区运营分析报告 (周期描述)";
+        var languageName = culture switch
+        {
+            "zh-CN" => "简体中文",
+            "zh-TW" => "繁體中文",
+            _ => culture
+        };
+        var systemPrompt = $"请使用{languageName}语言回复，所有分析内容、标题、表格、描述、结论必须使用该语言。你是一个专业的园区运营数据分析师。请根据提供的园区各模块运营数据，通过 markdown 格式生成一份详细的运营分析报告。报告应重点关注数据背后的趋势和洞察。";
         var userPrompt = $@"请基于以下统计数据生成运营分析报告：
 
 {statsJson}

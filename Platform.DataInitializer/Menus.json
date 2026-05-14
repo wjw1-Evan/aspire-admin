@@ -408,7 +408,7 @@
         "Component": "./park-management/statistics",
         "Icon": "bar-chart",
         "ParentId": "park-management",
-        "SortOrder": 6
+        "SortOrder": 7
     },
     {
         "Name": "park-management-visit-task",

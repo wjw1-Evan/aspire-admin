@@ -425,25 +425,25 @@ const DetailContent: React.FC<{ id: string; isMobile: boolean }> = ({ id, isMobi
           </a>
         </ProDescriptions.Item>
       )}
-      {entry.category && (
-        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.category' })}>
-          <Tag color="blue">{entry.category}</Tag>
-        </ProDescriptions.Item>
-      )}
-      {entry.tags?.length > 0 && (
-        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.tags' })}>
-          <Space wrap>
-            {entry.tags.map((t) => (
-              <Tag key={t}>{t}</Tag>
-            ))}
-          </Space>
-        </ProDescriptions.Item>
-      )}
-      {entry.lastUsedAt && (
-        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.lastUsedAt' })}>
-          {dayjs(entry.lastUsedAt).format('YYYY-MM-DD HH:mm')}
-        </ProDescriptions.Item>
-      )}
+{entry.category && (
+         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.category' })} span={isMobile ? 1 : 2}>
+           <Tag color="blue">{entry.category}</Tag>
+         </ProDescriptions.Item>
+       )}
+       {entry.tags?.length > 0 && (
+         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.tags' })} span={isMobile ? 1 : 2}>
+           <Space wrap>
+             {entry.tags.map((t) => (
+               <Tag key={t}>{t}</Tag>
+             ))}
+           </Space>
+         </ProDescriptions.Item>
+       )}
+       {entry.lastUsedAt && (
+         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.lastUsedAt' })} span={isMobile ? 1 : 2}>
+           {dayjs(entry.lastUsedAt).format('YYYY-MM-DD HH:mm')}
+         </ProDescriptions.Item>
+       )}
       <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.passwordBook.detail.createdAt' })}>
         {dayjs(entry.createdAt).format('YYYY-MM-DD HH:mm')}
       </ProDescriptions.Item>

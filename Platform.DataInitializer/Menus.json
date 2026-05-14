@@ -455,12 +455,20 @@
         "SortOrder": 9
     },
     {
+        "Name": "notification-management",
+        "Title": "通知管理",
+        "Path": "/notification-management",
+        "Component": "./notification-management",
+        "Icon": "notification",
+        "SortOrder": 12
+    },
+    {
         "Name": "notice",
         "Title": "通知公告",
         "Path": "/notice",
         "Component": "./notice",
         "Icon": "notification",
-        "SortOrder": 12,
+        "SortOrder": 13,
         "HideInMenu": true
     }
 ]

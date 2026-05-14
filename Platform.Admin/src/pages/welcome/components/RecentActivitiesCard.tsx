@@ -30,7 +30,7 @@ const RecentActivitiesCard: React.FC<RecentActivitiesCardProps> = ({ currentUser
     else if (code >= 400 && code < 500) status = 'warning';
     else if (code >= 500) status = 'error';
 
-    return <Badge status={status} text={<span style={{ fontSize: '11px', color: '#8c8c8c' }}>{code}</span>} />;
+    return <Badge status={status} text={<span style={{ fontSize: '11px', color: 'var(--ant-color-text-tertiary)' }}>{code}</span>} />;
   };
 
   // 使用 useInfiniteScroll 加载数据
@@ -128,7 +128,7 @@ const RecentActivitiesCard: React.FC<RecentActivitiesCardProps> = ({ currentUser
                                 )}
                                 {renderStatusCode(activity.statusCode)}
                                 <Space size={4}>
-                                  <LinkOutlined style={{ fontSize: '11px', color: '#8c8c8c' }} />
+                                  <LinkOutlined style={{ fontSize: '11px', color: 'var(--ant-color-text-tertiary)' }} />
                                   <Text
                                     type="secondary"
                                     style={{
@@ -145,7 +145,7 @@ const RecentActivitiesCard: React.FC<RecentActivitiesCardProps> = ({ currentUser
                               </Space>
                             </div>
                           )}
-                          <div style={{ fontSize: '12px', color: '#8c8c8c', marginTop: '4px' }}>{formattedDate}</div>
+                          <div style={{ fontSize: '12px', color: 'var(--ant-color-text-tertiary)', marginTop: '4px' }}>{formattedDate}</div>
                         </div>
                       ),
                     };
@@ -162,7 +162,7 @@ const RecentActivitiesCard: React.FC<RecentActivitiesCardProps> = ({ currentUser
                           <Text type="secondary">
                             {intl.formatMessage({ id: 'pages.welcome.recentActivities.systemStart.desc' })}
                           </Text>
-                          <div style={{ fontSize: '12px', color: '#8c8c8c' }}>
+                          <div style={{ fontSize: '12px', color: 'var(--ant-color-text-tertiary)' }}>
                             {dayjs().format('YYYY-MM-DD HH:mm:ss')}
                           </div>
                         </div>
@@ -187,7 +187,7 @@ const RecentActivitiesCard: React.FC<RecentActivitiesCardProps> = ({ currentUser
                               },
                             )}
                           </Text>
-                          <div style={{ fontSize: '12px', color: '#8c8c8c' }}>
+                          <div style={{ fontSize: '12px', color: 'var(--ant-color-text-tertiary)' }}>
                             {dayjs().format('YYYY-MM-DD HH:mm:ss')}
                           </div>
                         </div>
@@ -204,7 +204,7 @@ const RecentActivitiesCard: React.FC<RecentActivitiesCardProps> = ({ currentUser
                           <Text type="secondary">
                             {intl.formatMessage({ id: 'pages.welcome.recentActivities.dataSync.desc' })}
                           </Text>
-                          <div style={{ fontSize: '12px', color: '#8c8c8c' }}>
+                          <div style={{ fontSize: '12px', color: 'var(--ant-color-text-tertiary)' }}>
                             {dayjs().format('YYYY-MM-DD HH:mm:ss')}
                           </div>
                         </div>
@@ -220,7 +220,7 @@ const RecentActivitiesCard: React.FC<RecentActivitiesCardProps> = ({ currentUser
           </div>
         )}
         {noMore && activities.length > 0 && (
-          <div style={{ padding: '12px', textAlign: 'center', color: '#bfbfbf', fontSize: '12px' }}>
+          <div style={{ padding: '12px', textAlign: 'center', color: 'var(--ant-color-text-quaternary)', fontSize: '12px' }}>
             {intl.formatMessage({ id: 'pages.welcome.recentActivities.noMore' })}
           </div>
         )}

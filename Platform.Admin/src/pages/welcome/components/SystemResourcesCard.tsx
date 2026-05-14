@@ -85,7 +85,7 @@ const SystemResourcesCard: React.FC<SystemResourcesCardProps> = ({
                 />
               }
             >
-              <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center' }}>
+              <div style={{ fontSize: '12px', color: 'var(--ant-color-text-tertiary)', textAlign: 'center' }}>
                 {intl.formatMessage(
                   { id: 'pages.welcome.systemResources.systemMemory' },
                   {
@@ -125,7 +125,7 @@ const SystemResourcesCard: React.FC<SystemResourcesCardProps> = ({
                 />
               }
             >
-              <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center' }}>
+              <div style={{ fontSize: '12px', color: 'var(--ant-color-text-tertiary)', textAlign: 'center' }}>
                 {intl.formatMessage({ id: 'pages.welcome.systemResources.uptime' })}
                 {formatDuration(systemResources.cpu?.uptime || 0)}
               </div>
@@ -161,7 +161,7 @@ const SystemResourcesCard: React.FC<SystemResourcesCardProps> = ({
                 />
               }
             >
-              <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center' }}>
+              <div style={{ fontSize: '12px', color: 'var(--ant-color-text-tertiary)', textAlign: 'center' }}>
                 {intl.formatMessage(
                   { id: 'pages.welcome.systemResources.diskSize' },
                   {
@@ -190,9 +190,9 @@ const SystemResourcesCard: React.FC<SystemResourcesCardProps> = ({
           style={{
             marginTop: '16px',
             padding: '16px',
-            backgroundColor: token.colorFillAlter || '#fafafa',
+            backgroundColor: token.colorFillAlter || 'var(--ant-color-fill-tertiary)',
             borderRadius: '12px',
-            border: `1px solid ${token.colorBorderSecondary || '#f0f0f0'}`,
+            border: `1px solid ${token.colorBorderSecondary || 'var(--ant-color-border-secondary)'}`,
           }}
         >
           <Title
@@ -241,9 +241,9 @@ const SystemResourcesCard: React.FC<SystemResourcesCardProps> = ({
           style={{
             marginTop: '16px',
             padding: '16px',
-            backgroundColor: token.colorFillAlter || '#fafafa',
+            backgroundColor: token.colorFillAlter || 'var(--ant-color-fill-tertiary)',
             borderRadius: '12px',
-            border: `1px solid ${token.colorBorderSecondary || '#f0f0f0'}`,
+            border: `1px solid ${token.colorBorderSecondary || 'var(--ant-color-border-secondary)'}`,
           }}
         >
           <Title

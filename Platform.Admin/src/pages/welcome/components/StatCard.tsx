@@ -45,12 +45,12 @@ const StatCard: React.FC<StatCardProps> = React.memo(
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, flexWrap: 'wrap' }}>
               <span
-                style={{ fontSize: '24px', fontWeight: '700', color: token?.colorText || '#000000', lineHeight: '1.2' }}
+                style={{ fontSize: '24px', fontWeight: '700', color: token?.colorText || 'var(--ant-color-text)', lineHeight: '1.2' }}
               >
                 {value}
               </span>
               {suffix && (
-                <span style={{ fontSize: '12px', color: token?.colorTextSecondary || '#8c8c8c' }}>{suffix}</span>
+                <span style={{ fontSize: '12px', color: token?.colorTextSecondary || 'var(--ant-color-text-tertiary)' }}>{suffix}</span>
               )}
             </div>
           </div>

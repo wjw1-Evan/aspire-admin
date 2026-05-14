@@ -74,7 +74,7 @@ const ResourceCard: React.FC<ResourceCardProps> = React.memo(
         {children && (
           <div
             style={{
-              borderTop: `1px solid ${token?.colorBorderSecondary || '#f0f0f0'}`,
+              borderTop: `1px solid ${token?.colorBorderSecondary || 'var(--ant-color-border-secondary)'}`,
               paddingTop: 12,
               marginTop: 'auto',
             }}

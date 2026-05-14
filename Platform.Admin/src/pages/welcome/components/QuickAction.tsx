@@ -64,7 +64,7 @@ const QuickAction: React.FC<QuickActionProps> = ({
             strong
             style={{
               fontSize: '15px',
-              color: token?.colorText || 'rgba(0, 0, 0, 0.88)',
+              color: token?.colorText || 'var(--ant-color-text)',
               display: 'block',
               marginBottom: 4,
             }}

@@ -82,8 +82,8 @@ const SortableCard: React.FC<SortableCardProps> = ({ id, children }) => {
             padding: 0,
             border: 'none',
             borderRadius: '4px',
-            backgroundColor: isDragging ? '#1890ff' : '#f5f5f5',
-            color: isDragging ? '#fff' : '#999',
+            backgroundColor: isDragging ? '#1890ff' : 'var(--ant-color-fill-tertiary)',
+            color: isDragging ? '#fff' : 'var(--ant-color-text-tertiary)',
             cursor: isDragging ? 'grabbing' : 'grab',
             transition: 'all 0.2s',
           }}
@@ -95,8 +95,8 @@ const SortableCard: React.FC<SortableCardProps> = ({ id, children }) => {
           }}
           onMouseOut={(e) => {
             if (!isDragging) {
-              e.currentTarget.style.backgroundColor = '#f5f5f5';
-              e.currentTarget.style.color = '#999';
+              e.currentTarget.style.backgroundColor = 'var(--ant-color-fill-tertiary)';
+              e.currentTarget.style.color = 'var(--ant-color-text-tertiary)';
               e.currentTarget.style.opacity = '0.6';
             }
           }}
@@ -428,7 +428,7 @@ const Welcome: React.FC = () => {
                 <div
                   style={{
                     opacity: 0.7,
-                    backgroundColor: '#fff',
+                    backgroundColor: 'var(--ant-color-bg-container)',
                     borderRadius: '8px',
                     boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
                     padding: '16px',

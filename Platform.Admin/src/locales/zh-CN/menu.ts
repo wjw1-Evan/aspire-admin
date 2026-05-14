@@ -40,6 +40,8 @@ export default {
   // 项目管理的任务菜单（路径为 /task-management，但菜单名为 project-management-task）
   'menu.project-management-task': '任务管理',
   'menu.project-management-task.desc': '查看和管理项目任务',
+  'menu.notification-management': '通知管理',
+  'menu.notification-management.desc': '发送和管理系统通知',
   'menu.notice': '通知公告',
   'menu.notice.desc': '查看和管理系统通知公告',
   'menu.iot-platform': '物联网平台',
@@ -134,6 +136,8 @@ export default {
   // 园区管理
   'menu.park-management': '园区管理',
   'menu.park-management.desc': '园区综合管理功能',
+  'menu.park-management-asset': '资产管理',
+  'menu.park-management-asset.desc': '管理园区资产信息',
   'menu.park-management-building': '楼宇管理',
   'menu.park-management-building.desc': '管理园区楼宇信息',
   'menu.park-management-property': '房源管理',

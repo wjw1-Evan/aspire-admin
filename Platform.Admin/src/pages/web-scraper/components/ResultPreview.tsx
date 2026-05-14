@@ -278,7 +278,7 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
         ]}
       >
         {selectedPage && (
-          <Space direction="vertical" style={{ width: '100%' }} size="middle">
+          <Space orientation="vertical" style={{ width: '100%' }} size="middle">
             <Descriptions column={1} bordered size="small">
               <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.resultPreview.detail.url' })}>
                 <a href={selectedPage.url} target="_blank" rel="noopener noreferrer">
@@ -308,7 +308,7 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
 
             {selectedPage.isFiltered && (
               <Card title={intl.formatMessage({ id: 'pages.webScraper.resultPreview.detail.aiResult' })} size="small">
-                <Space direction="vertical" style={{ width: '100%' }}>
+                <Space orientation="vertical" style={{ width: '100%' }}>
                   <Space>
                     <Tag color={selectedPage.isMatched ? 'green' : 'default'}>
                       {selectedPage.isMatched
@@ -363,7 +363,7 @@ const ResultPreview: React.FC<ResultPreviewProps> = ({ visible, data, onClose })
                 title={`${intl.formatMessage({ id: 'pages.webScraper.resultPreview.detail.links' })} (${selectedPage.links.length})`}
                 size="small"
               >
-                <Space direction="vertical" style={{ width: '100%' }}>
+                <Space orientation="vertical" style={{ width: '100%' }}>
                   {selectedPage.links.slice(0, 20).map((link, i) => (
                     <a key={i} href={link} target="_blank" rel="noopener noreferrer">
                       {link}

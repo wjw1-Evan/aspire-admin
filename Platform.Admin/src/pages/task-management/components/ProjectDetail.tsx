@@ -361,7 +361,8 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
       }
       open={true}
       onClose={() => onClose()}
-      width={isMobile ? 'large' : 900}
+      size={isMobile ? 'large' : undefined}
+      width={isMobile ? undefined : 900}
     >
       <ProDescriptions column={isMobile ? 1 : 2} bordered style={{ marginBottom: 24 }}>
         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.table.name' })}>

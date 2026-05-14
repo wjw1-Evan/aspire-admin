@@ -371,7 +371,7 @@ const ApprovalPage: React.FC = () => {
           ) : (
             state.history.map((record, index) => (
               <div key={index} style={{ padding: '12px 0', borderBottom: '1px solid #f0f0f0' }}>
-                <Space direction="vertical" style={{ width: '100%' }}>
+                <Space orientation="vertical" style={{ width: '100%' }}>
                   <div>
                     <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.approver' })}:</strong>{' '}
                     {record.approverName || record.approverId}

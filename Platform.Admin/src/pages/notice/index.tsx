@@ -7,12 +7,12 @@ import {
 } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { useIntl } from '@umijs/max';
-import { Badge, Button, Card, Divider, Empty, message, Skeleton, Space, Tag, Typography } from 'antd';
+import { Badge, Button, Card, Divider, Drawer, Empty, message, Skeleton, Space, Tag, Typography } from 'antd';
 import dayjs from 'dayjs';
 import React, { useCallback, useEffect, useState } from 'react';
-import { AppNotification, getNotifications, markAllAsRead } from '@/services/notification/api';
+import { AppNotification, getNotifications, markAllAsRead, markAsRead } from '@/services/notification/api';
 
-const { Text, Title } = Typography;
+const { Text, Title, Paragraph } = Typography;
 
 const typeMap: Record<string, { label: string; color: string }> = {
   System: { label: '系统', color: 'success' },
@@ -25,6 +25,13 @@ const typeIconMap: Record<string, React.ReactNode> = {
   System: <CheckCircleOutlined style={{ color: '#52c41a' }} />,
   Warning: <WarningOutlined style={{ color: '#faad14' }} />,
   Info: <InfoCircleOutlined style={{ color: '#1890ff' }} />,
+};
+
+const levelColorMap: Record<string, string> = {
+  info: 'blue',
+  success: 'green',
+  warning: 'orange',
+  error: 'red',
 };
 
 const getIcon = (category: string) => {
@@ -42,6 +49,8 @@ const NoticePage: React.FC = () => {
   const [markingAll, setMarkingAll] = useState(false);
 
   const unreadCount = notices.filter((n) => n.status === 'Unread').length;
+
+  const [detailNotification, setDetailNotification] = useState<AppNotification | null>(null);
 
   const fetchNotices = useCallback(async () => {
     setLoading(true);
@@ -74,6 +83,21 @@ const NoticePage: React.FC = () => {
     }
   };
 
+  const handleOpenDetail = async (notification: AppNotification) => {
+    setDetailNotification(notification);
+    if (notification.status === 'Unread') {
+      try {
+        await markAsRead(notification.id);
+        setNotices((prev) =>
+          prev.map((n) => (n.id === notification.id ? { ...n, status: 'Read' } : n)),
+        );
+        setDetailNotification((prev) => (prev?.id === notification.id ? { ...prev, status: 'Read' } : prev));
+      } catch {
+        /* silently ignore */
+      }
+    }
+  };
+
   return (
     <PageContainer>
       <Card
@@ -103,19 +127,33 @@ const NoticePage: React.FC = () => {
             const tagInfo = getTagInfo(item.category);
             const isUnread = item.status === 'Unread';
             return (
-              <div
+              <button
                 key={item.id}
+                type="button"
+                onClick={() => handleOpenDetail(item)}
                 style={{
+                  display: 'block',
+                  width: '100%',
                   padding: 16,
                   backgroundColor: isUnread ? 'var(--ant-color-primary-bg)' : 'var(--ant-color-fill-tertiary)',
                   borderRadius: 8,
+                  border: 'none',
                   borderLeft: `4px solid ${isUnread ? 'var(--ant-color-primary)' : 'var(--ant-color-border-secondary)'}`,
                   marginBottom: 8,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'box-shadow 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.boxShadow = 'var(--ant-box-shadow)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.boxShadow = 'none';
                 }}
               >
                 <Space align="start" style={{ width: '100%' }}>
                   {getIcon(item.category)}
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <Space>
                       <Title level={5} style={{ margin: 0 }}>
                         {isUnread && <Badge status="processing" style={{ marginRight: 8 }} />}
@@ -124,7 +162,17 @@ const NoticePage: React.FC = () => {
                       <Tag color={tagInfo.color}>{tagInfo.label}</Tag>
                     </Space>
                     <Divider style={{ margin: '8px 0' }} />
-                    <Text type="secondary">{item.content}</Text>
+                    <div
+                      style={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                      }}
+                    >
+                      <Text type="secondary">{item.content}</Text>
+                    </div>
                     <div style={{ marginTop: 8 }}>
                       <Text type="secondary" style={{ fontSize: 12 }}>
                         {item.createdAt ? dayjs(item.createdAt).format('YYYY-MM-DD HH:mm:ss') : ''}
@@ -132,13 +180,99 @@ const NoticePage: React.FC = () => {
                     </div>
                   </div>
                 </Space>
-              </div>
+              </button>
             );
           })
         ) : (
           <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={intl.formatMessage({ id: 'pages.notice.empty' })} />
         )}
       </Card>
+
+      <Drawer
+        title={
+          <Space>
+            <NotificationOutlined />
+            {detailNotification?.title || ''}
+          </Space>
+        }
+        placement="right"
+        open={!!detailNotification}
+        onClose={() => setDetailNotification(null)}
+        width={560}
+      >
+        {detailNotification && (
+          <Space direction="vertical" style={{ width: '100%' }} size={16}>
+            {detailNotification.actionUrl && (
+              <Button type="link" icon={<InfoCircleOutlined />} href={detailNotification.actionUrl} target="_blank">
+                {detailNotification.actionUrl}
+              </Button>
+            )}
+
+            <div>
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                分类
+              </Text>
+              <br />
+              <Tag color={getTagInfo(detailNotification.category).color}>
+                {getTagInfo(detailNotification.category).label}
+              </Tag>
+            </div>
+
+            <div>
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                级别
+              </Text>
+              <br />
+              <Tag color={levelColorMap[detailNotification.level] || 'default'}>
+                {detailNotification.level}
+              </Tag>
+            </div>
+
+            <div>
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                接收时间
+              </Text>
+              <br />
+              <Text>
+                {detailNotification.createdAt
+                  ? dayjs(detailNotification.createdAt).format('YYYY-MM-DD HH:mm:ss')
+                  : '-'}
+              </Text>
+            </div>
+
+            {detailNotification.readAt && (
+              <div>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  已读时间
+                </Text>
+                <br />
+                <Text>
+                  {dayjs(detailNotification.readAt).format('YYYY-MM-DD HH:mm:ss')}
+                </Text>
+              </div>
+            )}
+
+            <Divider style={{ margin: 0 }} />
+
+            <div>
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                内容
+              </Text>
+              <Paragraph
+                style={{
+                  marginTop: 8,
+                  padding: 12,
+                  backgroundColor: 'var(--ant-color-fill-tertiary)',
+                  borderRadius: 6,
+                  whiteSpace: 'pre-wrap',
+                }}
+              >
+                {detailNotification.content || '-'}
+              </Paragraph>
+            </div>
+          </Space>
+        )}
+      </Drawer>
     </PageContainer>
   );
 };

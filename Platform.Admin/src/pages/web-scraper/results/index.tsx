@@ -330,7 +330,7 @@ const WebScraperResults: React.FC = () => {
                 size="small"
                 style={{ marginBottom: 16 }}
               >
-                <Space direction="vertical">
+                <Space orientation="vertical">
                   <Space>
                     <Tag color={currentResult.isMatched ? 'green' : 'default'}>
                       {currentResult.isMatched

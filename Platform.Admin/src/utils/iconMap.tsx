@@ -119,6 +119,7 @@ export const CORE_ICON_MAP: Record<string, React.ReactNode> = {
   SecurityScanOutlined: <SecurityScanOutlined />,
   KeyOutlined: <KeyOutlined />,
   BellOutlined: <BellOutlined />,
+  notification: <BellOutlined />,
   CheckSquareOutlined: <CheckSquareOutlined />,
   QuestionCircleOutlined: <QuestionCircleOutlined />,
   GlobalOutlined: <GlobalOutlined />,

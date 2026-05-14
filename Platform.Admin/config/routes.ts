@@ -105,6 +105,11 @@ export default [
     hideInMenu: true,
   },
   {
+    path: '/notification-management',
+    component: './notification-management',
+    hideInMenu: true,
+  },
+  {
     path: '/task-management',
     redirect: '/project-management/task-management',
     hideInMenu: true,

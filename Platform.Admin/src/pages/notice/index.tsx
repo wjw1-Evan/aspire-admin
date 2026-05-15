@@ -66,7 +66,17 @@ const NoticePage: React.FC = () => {
     viewingNotification: null,
     search: '',
   });
-  const set = useCallback((partial: Partial<NoticeState>) => setState((prev: NoticeState) => ({ ...prev, ...partial })), []);
+  const set = useCallback(<K extends keyof NoticeState>(
+    partial: Pick<NoticeState, K> | ((prev: NoticeState) => Pick<NoticeState, K>)
+  ) => {
+    setState((prev) => {
+      const p =
+        typeof partial === 'function'
+          ? (partial as (prev: NoticeState) => Pick<NoticeState, K>)(prev)
+          : partial;
+      return { ...prev, ...p };
+    });
+  }, []);
 
   const [statistics, setStatistics] = useState<Stats>({ unread: 0, total: 0 });
 
@@ -90,24 +100,24 @@ const NoticePage: React.FC = () => {
       await markAllAsRead();
       actionRef.current?.reload();
       loadStatistics();
-    } catch {
+} catch {
       /* silently ignore */
     }
   };
 
-const handleView = async (record: AppNotification) => {
-     const res = await getNotificationDetail(record.id);
-     if (res.success && res.data) {
-       const notification = res.data;
-       set({ viewingNotification: notification, detailVisible: true });
-       if (notification.status === 'unread') {
-         markAsRead(notification.id).then(() => {
-           actionRef.current?.reload();
-           loadStatistics();
-         });
-       }
-     }
-   };
+  const handleView = async (record: AppNotification) => {
+    const res = await getNotificationDetail(record.id);
+    if (res.success && res.data) {
+      const notification = res.data;
+      set({ viewingNotification: notification, detailVisible: true });
+      if (notification.status === 'unread') {
+        markAsRead(notification.id).then(() => {
+          actionRef.current?.reload();
+          loadStatistics();
+        });
+      }
+    }
+  };
 
   const columns: ProColumns<AppNotification>[] = [
     {
@@ -169,12 +179,12 @@ render: (_, record) => (
                size="small"
                icon={<CheckCircleOutlined />}
                onClick={async (e) => {
-                 e.stopPropagation();
-                 e.nativeEvent.stopImmediatePropagation();
-                 const res = await markAsRead(record.id);
-                 if (res.success) {
-                   message.success(intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAsReadSuccess' }));
-set((prev: NoticeState) => ({
+e.stopPropagation();
+                  e.nativeEvent.stopImmediatePropagation();
+                  const res = await markAsRead(record.id);
+                  if (res.success) {
+                    message.success(intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAsReadSuccess' }));
+                    set((prev: NoticeState) => ({
                       ...prev,
                       viewingNotification: prev.viewingNotification?.id === record.id
                         ? { ...prev.viewingNotification!, status: 'read' }
@@ -193,12 +203,12 @@ set((prev: NoticeState) => ({
                size="small"
                icon={<InfoCircleOutlined />}
                onClick={async (e) => {
-                 e.stopPropagation();
-                 e.nativeEvent.stopImmediatePropagation();
-                 const res = await markAsUnread(record.id);
-                 if (res.success) {
-                   message.success(intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAsUnread' }));
-set((prev: NoticeState) => ({
+e.stopPropagation();
+                  e.nativeEvent.stopImmediatePropagation();
+                  const res = await markAsUnread(record.id);
+                  if (res.success) {
+                    message.success(intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAsUnread' }));
+                    set((prev: NoticeState) => ({
                       ...prev,
                       viewingNotification: prev.viewingNotification?.id === record.id
                         ? { ...prev.viewingNotification!, status: 'unread' }

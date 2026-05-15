@@ -377,7 +377,27 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
             TotalRequestsYoY = CalculateGrowth(currentTotalRequests, yoyTotalRequests),
             TotalRequestsMoM = CalculateGrowth(currentTotalRequests, momTotalRequests),
             AverageRatingYoY = CalculateGrowth(currentAvgRating, yoyAvgRating),
-            AverageRatingMoM = CalculateGrowth(currentAvgRating, momAvgRating)
+            AverageRatingMoM = CalculateGrowth(currentAvgRating, momAvgRating),
+            TotalRequestsPrev = momTotalRequests,
+            AverageRatingPrev = momAvgRating,
+            RequestsByPriority = requests
+                .Where(r => !string.IsNullOrEmpty(r.Priority))
+                .GroupBy(r => r.Priority!)
+                .ToDictionary(g => g.Key, g => g.Count()),
+            RequestsByHandler = requests
+                .Where(r => !string.IsNullOrEmpty(r.AssignedTo))
+                .GroupBy(r => r.AssignedTo!)
+                .ToDictionary(g => g.Key, g => g.Count()),
+            AvgResponseTime = (decimal)Math.Round(
+                completedRequests.Any()
+                    ? completedRequests.Average(r =>
+                    {
+                        var firstProcessing = r.StatusHistory?
+                            .FirstOrDefault(s => s.ToStatus == "Processing" || s.ToStatus == "Assigned")?.ChangedAt;
+                        var start = firstProcessing ?? r.CreatedAt;
+                        return (r.CompletedAt!.Value - start!.Value).TotalHours;
+                    })
+                    : 0, 1)
         };
     }
 

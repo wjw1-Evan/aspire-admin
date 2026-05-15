@@ -337,7 +337,14 @@ public class ParkInvestmentService : IParkInvestmentService
             NewLeadsYoY = CalculateGrowth(newLeadsInPeriod, yoyNewLeads),
             NewLeadsMoM = CalculateGrowth(newLeadsInPeriod, momNewLeads),
             SignedProjectsYoY = CalculateGrowth(signedProjectsInPeriod, yoySignedProjects),
-            SignedProjectsMoM = CalculateGrowth(signedProjectsInPeriod, momSignedProjects)
+            SignedProjectsMoM = CalculateGrowth(signedProjectsInPeriod, momSignedProjects),
+            NewLeadsThisMonthPrev = (int)momNewLeads,
+            SignedProjectsInPeriod = (int)signedProjectsInPeriod,
+            SignedProjectsInPeriodPrev = (int)momSignedProjects,
+            LeadsBySource = leads.Where(l => !string.IsNullOrEmpty(l.Source))
+                .GroupBy(l => l.Source!).ToDictionary(g => g.Key, g => g.Count()),
+            LeadsByIndustry = leads.Where(l => !string.IsNullOrEmpty(l.Industry))
+                .GroupBy(l => l.Industry!).ToDictionary(g => g.Key, g => g.Count())
         };
     }
 

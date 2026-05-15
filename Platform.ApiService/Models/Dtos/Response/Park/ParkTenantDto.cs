@@ -128,4 +128,11 @@ public class TenantStatisticsResponse
     public double? MonthlyRentMoM { get; set; }
     public double? ActiveTenantsYoY { get; set; }
     public double? ActiveTenantsMoM { get; set; }
+    public int ActiveTenantsPrev { get; set; }
+    public decimal TotalMonthlyRentPrev { get; set; }
+    public decimal TotalReceivedPrev { get; set; }
+    public decimal TotalExpectedPrev { get; set; }
+    public double CollectionRatePrev { get; set; }
+    public Dictionary<string, int> ContractsExpiringByQuarter { get; set; } = new();
+    public Dictionary<string, int> PaymentCycleDistribution { get; set; } = new();
 }

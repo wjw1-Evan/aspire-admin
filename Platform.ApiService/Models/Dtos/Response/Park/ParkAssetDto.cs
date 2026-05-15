@@ -102,4 +102,11 @@ public class AssetStatisticsResponse
     public double? RentedAreaMoM { get; set; }
     public double? TotalBuildingsYoY { get; set; }
     public double? TotalBuildingsMoM { get; set; }
+    public decimal OccupancyRatePrev { get; set; }
+    public decimal RentedAreaPrev { get; set; }
+    public int TotalBuildingsPrev { get; set; }
+    public Dictionary<string, int> UnitTypeDistribution { get; set; } = new();
+    public Dictionary<string, int> BuildingTypeDistribution { get; set; } = new();
+    public Dictionary<string, int> BuildingStatusDistribution { get; set; } = new();
+    public decimal AverageUnitPrice { get; set; }
 }

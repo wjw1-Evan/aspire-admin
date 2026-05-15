@@ -380,11 +380,11 @@ public class ParkAssetService : IParkAssetService
         var end = endDate ?? DateTime.UtcNow;
 
         var buildings = await _context.Set<Building>()
-            .Select(b => new BuildingStats { Id = b.Id, DeliveryDate = b.DeliveryDate, TotalArea = b.TotalArea })
+            .Select(b => new BuildingStats { Id = b.Id, DeliveryDate = b.DeliveryDate, TotalArea = b.TotalArea, BuildingType = b.BuildingType, Status = b.Status })
             .ToListAsync();
 
         var units = await _context.Set<PropertyUnit>()
-            .Select(u => new UnitStats { Id = u.Id, BuildingId = u.BuildingId, Status = u.Status, Area = u.Area })
+            .Select(u => new UnitStats { Id = u.Id, BuildingId = u.BuildingId, Status = u.Status, Area = u.Area, UnitType = u.UnitType, MonthlyRent = u.MonthlyRent })
             .ToListAsync();
 
         var contracts = await _context.Set<LeaseContract>()
@@ -405,6 +405,12 @@ public class ParkAssetService : IParkAssetService
             return (double)Math.Round((current - previous) / previous * 100, 2);
         }
 
+        var activeBuildingsAtEnd = buildings.Where(b => b.DeliveryDate == null || b.DeliveryDate <= end).ToList();
+        var activeUnitsAtEnd = units.Where(u => activeBuildingsAtEnd.Any(b => b.Id == u.BuildingId)).ToList();
+
+        var avgPrice = activeUnitsAtEnd.Where(u => u.MonthlyRent > 0 && u.Area > 0)
+            .Average(u => (double?)u.MonthlyRent / (double)u.Area) ?? 0;
+
         return new AssetStatisticsResponse
         {
             TotalBuildings = currentMetrics.TotalBuildingsCount,
@@ -420,7 +426,22 @@ public class ParkAssetService : IParkAssetService
             RentedAreaYoY = CalculateGrowth(currentMetrics.RentedArea, yoyMetrics.RentedArea),
             RentedAreaMoM = CalculateGrowth(currentMetrics.RentedArea, momMetrics.RentedArea),
             TotalBuildingsYoY = CalculateGrowth(currentMetrics.TotalBuildingsCount, yoyMetrics.TotalBuildingsCount),
-            TotalBuildingsMoM = CalculateGrowth(currentMetrics.TotalBuildingsCount, momMetrics.TotalBuildingsCount)
+            TotalBuildingsMoM = CalculateGrowth(currentMetrics.TotalBuildingsCount, momMetrics.TotalBuildingsCount),
+            OccupancyRatePrev = momMetrics.OccupancyRate,
+            RentedAreaPrev = momMetrics.RentedArea,
+            TotalBuildingsPrev = momMetrics.TotalBuildingsCount,
+            UnitTypeDistribution = activeUnitsAtEnd
+                .GroupBy(u => u.UnitType ?? "其他")
+                .ToDictionary(g => g.Key, g => g.Count()),
+            BuildingTypeDistribution = activeBuildingsAtEnd
+                .Where(b => !string.IsNullOrEmpty(b.BuildingType))
+                .GroupBy(b => b.BuildingType!)
+                .ToDictionary(g => g.Key, g => g.Count()),
+            BuildingStatusDistribution = activeBuildingsAtEnd
+                .Where(b => !string.IsNullOrEmpty(b.Status))
+                .GroupBy(b => b.Status!)
+                .ToDictionary(g => g.Key, g => g.Count()),
+            AverageUnitPrice = (decimal)Math.Round(avgPrice, 2)
         };
     }
 
@@ -488,6 +509,8 @@ public class ParkAssetService : IParkAssetService
         public string Id { get; set; } = string.Empty;
         public DateTime? DeliveryDate { get; set; }
         public decimal TotalArea { get; set; }
+        public string? BuildingType { get; set; }
+        public string Status { get; set; } = string.Empty;
     }
 
     private class UnitStats
@@ -496,6 +519,8 @@ public class ParkAssetService : IParkAssetService
         public string BuildingId { get; set; } = string.Empty;
         public string? Status { get; set; }
         public decimal Area { get; set; }
+        public string UnitType { get; set; } = string.Empty;
+        public decimal MonthlyRent { get; set; }
     }
 
     private class ContractStats

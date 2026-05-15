@@ -87,4 +87,9 @@ public class InvestmentStatisticsResponse
     public double? NewLeadsMoM { get; set; }
     public double? SignedProjectsYoY { get; set; }
     public double? SignedProjectsMoM { get; set; }
+    public int NewLeadsThisMonthPrev { get; set; }
+    public int SignedProjectsInPeriod { get; set; }
+    public int SignedProjectsInPeriodPrev { get; set; }
+    public Dictionary<string, int> LeadsBySource { get; set; } = new();
+    public Dictionary<string, int> LeadsByIndustry { get; set; } = new();
 }

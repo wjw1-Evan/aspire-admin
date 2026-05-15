@@ -82,4 +82,9 @@ public class ServiceStatisticsResponse
     public double? TotalRequestsMoM { get; set; }
     public double? AverageRatingYoY { get; set; }
     public double? AverageRatingMoM { get; set; }
+    public int TotalRequestsPrev { get; set; }
+    public decimal AverageRatingPrev { get; set; }
+    public Dictionary<string, int> RequestsByPriority { get; set; } = new();
+    public Dictionary<string, int> RequestsByHandler { get; set; } = new();
+    public decimal AvgResponseTime { get; set; }
 }

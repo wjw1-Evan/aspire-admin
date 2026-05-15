@@ -589,57 +589,50 @@ public class ParkTenantService : IParkTenantService
             return (double)Math.Round((current - previous) / previous * 100, 2);
         }
 
-        // Collection Status
-        var totalReceived = payments.Where(p => p.PaymentDate >= start && p.PaymentDate <= end).Sum(p => p.Amount);
-        decimal totalExpected = 0;
-        // Only calculate expected rent from active/renewed contracts (exclude Terminated, Draft, Expired)
-        var validContractsForBilling = contracts.Where(c => c.Status == "Active" || c.Status == "Renewed").ToList();
-        foreach (var c in validContractsForBilling)
+        // Helper to calculate collection stats for a given period
+        (decimal Received, decimal Expected, double Rate, Dictionary<string, decimal> ByType) CalculateCollectionStats(DateTime periodStart, DateTime periodEnd, List<LeaseContract> allContracts, List<LeasePaymentRecord> allPayments)
         {
-            // Calculate effective overlap duration
-            var overlapStart = c.StartDate > start ? c.StartDate : start;
-            // Treat Contract EndDate as inclusive (end of that day)
-            var cEndInclusive = c.EndDate.Date.AddDays(1).AddTicks(-1);
-            var overlapEnd = cEndInclusive < end ? cEndInclusive : end;
-
-            if (overlapStart < overlapEnd)
+            var received = allPayments.Where(p => p.PaymentDate >= periodStart && p.PaymentDate <= periodEnd).Sum(p => p.Amount);
+            decimal expected = 0;
+            var validContracts = allContracts.Where(c => c.Status == "Active" || c.Status == "Renewed").ToList();
+            foreach (var c in validContracts)
             {
-                // Calculate rent month by month for precision
-                var curr = overlapStart;
-                while (curr < overlapEnd)
+                var overlapStart = c.StartDate > periodStart ? c.StartDate : periodStart;
+                var cEndInclusive = c.EndDate.Date.AddDays(1).AddTicks(-1);
+                var overlapEnd = cEndInclusive < periodEnd ? cEndInclusive : periodEnd;
+
+                if (overlapStart < overlapEnd)
                 {
-                    var daysInMonth = DateTime.DaysInMonth(curr.Year, curr.Month);
-                    // End of the current month
-                    var monthEnd = new DateTime(curr.Year, curr.Month, daysInMonth).AddDays(1).AddTicks(-1);
-
-                    // Determine segment end in this month
-                    var segmentEnd = overlapEnd < monthEnd ? overlapEnd : monthEnd;
-
-                    // Calculate duration in days (including fractional days)
-                    var durationDays = (segmentEnd - curr).TotalDays;
-
-                    // Add pro-rated rent: (Duration / DaysInMonth) * MonthlyRent
-                    // We interpret MonthlyRent as price for the full month
-                    if (durationDays > 0)
+                    var curr = overlapStart;
+                    while (curr < overlapEnd)
                     {
-                        totalExpected += c.MonthlyRent * (decimal)(durationDays / daysInMonth);
+                        var daysInMonth = DateTime.DaysInMonth(curr.Year, curr.Month);
+                        var monthEnd = new DateTime(curr.Year, curr.Month, daysInMonth).AddDays(1).AddTicks(-1);
+                        var segmentEnd = overlapEnd < monthEnd ? overlapEnd : monthEnd;
+                        var durationDays = (segmentEnd - curr).TotalDays;
+                        if (durationDays > 0)
+                        {
+                            expected += c.MonthlyRent * (decimal)(durationDays / daysInMonth);
+                        }
+                        if (segmentEnd >= overlapEnd) break;
+                        curr = monthEnd.AddTicks(1);
                     }
-
-                    // Move to start of next month for next iteration
-                    // Ensure we move past the current segment or month end
-                    if (segmentEnd >= overlapEnd) break;
-                    curr = monthEnd.AddTicks(1);
                 }
             }
+            var rate = expected > 0 ? (double)Math.Round(received / expected * 100, 2) : 0;
+            var byType = allPayments
+                .Where(p => p.PaymentDate >= periodStart && p.PaymentDate <= periodEnd)
+                .GroupBy(p => p.PaymentType ?? "Rent")
+                .ToDictionary(g => g.Key, g => g.Sum(p => p.Amount));
+            return (received, expected, rate, byType);
         }
-        var paymentsInPeriod = payments.Where(p => p.PaymentDate >= start && p.PaymentDate <= end).ToList();
-        var receivedByPaymentType = paymentsInPeriod
-            .GroupBy(p => p.PaymentType ?? "Rent")
-            .ToDictionary(g => g.Key, g => g.Sum(p => p.Amount));
+
+        var (totalReceived, totalExpected, collectionRate, receivedByPaymentType) = CalculateCollectionStats(start, end, contracts, payments);
+        var momStart = start.AddMonths(-1);
+        var momEnd = end.AddMonths(-1);
+        var (momReceived, momExpected, momCollectionRate, _) = CalculateCollectionStats(momStart, momEnd, contracts, payments);
 
         var totalContractAmount = activeContracts.Sum(c => c.TotalAmount ?? 0);
-
-        var collectionRate = totalExpected > 0 ? (double)Math.Round(totalReceived / totalExpected * 100, 2) : 0;
 
         return new TenantStatisticsResponse
         {
@@ -661,7 +654,22 @@ public class ParkTenantService : IParkTenantService
             MonthlyRentYoY = CalculateGrowth(calcMonthlyRent, yoyMonthlyRent),
             MonthlyRentMoM = CalculateGrowth(calcMonthlyRent, momMonthlyRent),
             ActiveTenantsYoY = CalculateGrowth((decimal)calcActiveTenants, (decimal)yoyActiveTenants),
-            ActiveTenantsMoM = CalculateGrowth((decimal)calcActiveTenants, (decimal)momActiveTenants)
+            ActiveTenantsMoM = CalculateGrowth((decimal)calcActiveTenants, (decimal)momActiveTenants),
+            ActiveTenantsPrev = momActiveTenants,
+            TotalMonthlyRentPrev = momMonthlyRent,
+            TotalReceivedPrev = momReceived,
+            TotalExpectedPrev = momExpected,
+            CollectionRatePrev = momCollectionRate,
+            ContractsExpiringByQuarter = contracts
+                .Where(c => c.Status == "Active" || c.Status == "Renewed")
+                .GroupBy(c => $"{c.EndDate.Year}Q{(c.EndDate.Month + 2) / 3}")
+                .OrderBy(g => g.Key)
+                .ToDictionary(g => g.Key, g => g.Count()),
+            PaymentCycleDistribution = contracts
+                .Where(c => c.Status == "Active" || c.Status == "Renewed")
+                .Where(c => !string.IsNullOrEmpty(c.PaymentCycle))
+                .GroupBy(c => c.PaymentCycle!)
+                .ToDictionary(g => g.Key, g => g.Count())
         };
     }
 

@@ -107,4 +107,10 @@ public class VisitStatisticsDto
     public string? Period { get; set; }
     public int TotalQuestions { get; set; }
     public int FrequentlyUsedQuestions { get; set; }
+    public int PendingTasksPrev { get; set; }
+    public int CompletedTasksPrev { get; set; }
+    public int ActiveManagersPrev { get; set; }
+    public decimal CompletionRatePrev { get; set; }
+    public int TotalAssessmentsPrev { get; set; }
+    public decimal AverageScorePrev { get; set; }
 }

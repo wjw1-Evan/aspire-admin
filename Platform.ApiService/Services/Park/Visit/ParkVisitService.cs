@@ -498,71 +498,69 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<VisitStatisticsDto> GetVisitStatisticsAsync(DateTime? startDate = null, DateTime? endDate = null)
     {
-        // 1. 获取周期范围
         var now = DateTime.Now;
         var startOfPeriod = startDate ?? new DateTime(now.Year, now.Month, 1);
         var endOfPeriod = endDate ?? now;
 
-        // 1. 基础指标
-        var pendingTasks = await _context.Set<VisitTask>().LongCountAsync(t => t.Status == "Pending" && t.VisitDate >= startOfPeriod && t.VisitDate <= endOfPeriod);
-        var completedTasksInPeriod = await _context.Set<VisitTask>().LongCountAsync(t => t.Status == "Completed" && t.VisitDate >= startOfPeriod && t.VisitDate <= endOfPeriod);
-        var totalTasks = await _context.Set<VisitTask>().LongCountAsync(t => t.VisitDate >= startOfPeriod && t.VisitDate <= endOfPeriod);
-        decimal completionRate = totalTasks > 0 ? (decimal)completedTasksInPeriod * 100 / totalTasks : 0;
+        (int Pending, int Completed, int Total, decimal Rate, int Assessments, decimal Score, int Managers,
+         Dictionary<string, int> ByType, Dictionary<string, int> ByStatus, Dictionary<string, int> Ranking)
+            CalculateStats(DateTime pStart, DateTime pEnd)
+        {
+            var pPending = _context.Set<VisitTask>().LongCount(t => t.Status == "Pending" && t.VisitDate >= pStart && t.VisitDate <= pEnd);
+            var pCompleted = _context.Set<VisitTask>().LongCount(t => t.Status == "Completed" && t.VisitDate >= pStart && t.VisitDate <= pEnd);
+            var pTotal = _context.Set<VisitTask>().LongCount(t => t.VisitDate >= pStart && t.VisitDate <= pEnd);
+            var pRate = pTotal > 0 ? (decimal)pCompleted * 100 / pTotal : 0;
 
-        var assessments = await _context.Set<VisitAssessment>().Where(a => a.CreatedAt >= startOfPeriod && a.CreatedAt <= endOfPeriod).ToListAsync();
-        var totalAssessments = assessments.Count;
-        var averageScore = totalAssessments > 0 ? (decimal)assessments.Average(a => a.Score) : 0m;
+            var pAssessments = _context.Set<VisitAssessment>().Where(a => a.CreatedAt >= pStart && a.CreatedAt <= pEnd).ToList();
+            var pScore = pAssessments.Count > 0 ? (decimal)pAssessments.Average(a => a.Score) : 0m;
 
-        // 2-4. 按类型、状态、企管员排行统计（从基础数据加载后再分组，因为 IDataFactory 暂不支持直接复杂的聚合）
-        var tasks = await _context.Set<VisitTask>().Where(t => t.VisitDate >= startOfPeriod && t.VisitDate <= endOfPeriod).ToListAsync();
+            var pTasks = _context.Set<VisitTask>().Where(t => t.VisitDate >= pStart && t.VisitDate <= pEnd).ToList();
+            var pManagers = pTasks.Where(t => !string.IsNullOrEmpty(t.ManagerName) && t.Status == "Completed")
+                .Select(t => t.ManagerName!).Distinct().Count();
+            var pByType = pTasks.GroupBy(t => t.VisitType ?? "其他").ToDictionary(g => g.Key, g => g.Count());
+            var pByStatus = pTasks.GroupBy(t => t.Status ?? "Unknown").ToDictionary(g => g.Key, g => g.Count());
+            var pRanking = pTasks.GroupBy(t => t.ManagerName ?? "未知")
+                .OrderByDescending(g => g.Count()).Take(10).ToDictionary(g => g.Key, g => g.Count());
 
-        // 修复：活跃企管员数计算（有完成走访任务的企管员）
-        var activeManagers = tasks.Where(t =>
-            !string.IsNullOrEmpty(t.ManagerName) && t.Status == "Completed"
-        ).Select(t => t.ManagerName!).Distinct().Count();
+            return ((int)pPending, (int)pCompleted, (int)pTotal, pRate, pAssessments.Count, pScore, pManagers, pByType, pByStatus, pRanking);
+        }
 
-        var tasksByType = tasks.GroupBy(t => t.VisitType ?? "其他")
-                               .ToDictionary(g => g.Key, g => g.Count());
+        var current = CalculateStats(startOfPeriod, endOfPeriod);
+        var momStart = startOfPeriod.AddMonths(-1);
+        var momEnd = endOfPeriod.AddMonths(-1);
+        var prev = CalculateStats(momStart, momEnd);
 
-        var tasksByStatus = tasks.GroupBy(t => t.Status ?? "Unknown")
-                                 .ToDictionary(g => g.Key, g => g.Count());
-
-        var managerRanking = tasks.GroupBy(t => t.ManagerName ?? "未知")
-                                  .OrderByDescending(g => g.Count())
-                                  .Take(10)
-                                  .ToDictionary(g => g.Key, g => g.Count());
-
-        // 5. 趋势分析 (最近6个月) - 修复边界问题
-        var monthlyTrends = new Dictionary<string, int>();
+        // 趋势分析 (最近6个月)
         var sixMonthsAgo = startOfPeriod.AddMonths(-5).Date;
         var trendTasks = await _context.Set<VisitTask>().Where(t => t.VisitDate >= sixMonthsAgo).ToListAsync();
+        var monthlyTrends = trendTasks.GroupBy(t => new { t.VisitDate.Year, t.VisitDate.Month })
+            .OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Month)
+            .ToDictionary(g => $"{g.Key.Year:D4}-{g.Key.Month:D2}", g => g.Count());
 
-        monthlyTrends = trendTasks.GroupBy(t => new { t.VisitDate.Year, t.VisitDate.Month })
-                                   .OrderBy(g => g.Key.Year)
-                                   .ThenBy(g => g.Key.Month)
-                                   .ToDictionary(
-                                       g => $"{g.Key.Year:D4}-{g.Key.Month:D2}",
-                                       g => g.Count());
-
-        // 6. 知识库统计
         var totalQuestions = await _context.Set<VisitQuestion>().LongCountAsync();
         var frequentlyUsedQuestions = await _context.Set<VisitQuestion>().LongCountAsync(q => q.IsFrequentlyUsed == true);
 
         return new VisitStatisticsDto
         {
-            PendingTasks = (int)pendingTasks,
-            CompletedTasksThisMonth = (int)completedTasksInPeriod,
-            ActiveManagers = activeManagers,
-            CompletionRate = Math.Round(completionRate, 1),
-            TotalAssessments = (int)totalAssessments,
-            AverageScore = Math.Round((decimal)averageScore, 1),
-            TasksByType = tasksByType,
-            TasksByStatus = tasksByStatus,
-            ManagerRanking = managerRanking,
+            PendingTasks = current.Pending,
+            CompletedTasksThisMonth = current.Completed,
+            ActiveManagers = current.Managers,
+            CompletionRate = Math.Round(current.Rate, 1),
+            TotalAssessments = current.Assessments,
+            AverageScore = Math.Round(current.Score, 1),
+            TasksByType = current.ByType,
+            TasksByStatus = current.ByStatus,
+            ManagerRanking = current.Ranking,
             MonthlyTrends = monthlyTrends,
             Period = startDate.HasValue && endDate.HasValue ? $"{startDate:yyyy-MM-dd} 至 {endDate.Value.AddDays(-1):yyyy-MM-dd}" : "本月",
             TotalQuestions = (int)totalQuestions,
-            FrequentlyUsedQuestions = (int)frequentlyUsedQuestions
+            FrequentlyUsedQuestions = (int)frequentlyUsedQuestions,
+            PendingTasksPrev = prev.Pending,
+            CompletedTasksPrev = prev.Completed,
+            ActiveManagersPrev = prev.Managers,
+            CompletionRatePrev = Math.Round(prev.Rate, 1),
+            TotalAssessmentsPrev = prev.Assessments,
+            AverageScorePrev = Math.Round(prev.Score, 1)
         };
     }
 

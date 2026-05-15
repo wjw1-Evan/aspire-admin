@@ -57,6 +57,9 @@
 | **StorageQuotaMcpToolHandler.cs** | **存储配额** | ✅ **新增** |
 | **ChatAiMcpToolHandler.cs** | **AI 聊天** | ✅ **新增** |
 | **XiaokeConfigMcpToolHandler.cs** | **小科配置** | ✅ **新增** |
+| RoleMcpToolHandler.cs | 角色管理 | ✅ |
+| RuleMcpToolHandler.cs | 规则管理 | ✅ |
+| SystemMonitorMcpToolHandler.cs | 系统监控 | ✅ |
 
 ### 10.4 Handler 开发标准
 

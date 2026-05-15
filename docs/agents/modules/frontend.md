@@ -123,14 +123,14 @@ menuDataRender: () => {
 
 ```
 api/xxx              - CRUD 主资源
-api/xxx/list         - 分页列表
+api/xxx/list         - 分页列表（部分控制器使用 /query 替代，见实际后端实现）
 api/xxx/{id}         - 单个资源
 api/xxx/statistics   - 获取统计信息
 ```
 
 ### 前端 API 封装
 
-**[推荐]** 简单模块 API 直接内联在页面组件中：
+**[强制]** 简单模块 API 直接内联在页面组件中（参考 `password-book`），降低模块间耦合。仅当 API 逻辑复杂或被多页面复用时才抽离到 `@/services`：
 
 ```typescript
 const api = {
@@ -517,7 +517,7 @@ return <ProTable dataSource={data} />;
 | React | `import React from 'react'` |
 | Umi 运行时 | `import { request, useIntl, useModel, useAccess, history } from '@umijs/max'` |
 | Ant Design | `import { Button, Space, Tag, Popconfirm, App } from 'antd'` |
-| Pro 组件 | `import { ProTable, ModalForm, ProFormText, ProDescriptions, PageContainer } from '@ant-design/pro-components'` |
+| Pro 组件 | `import { ProTable, ModalForm, ProFormText, ProDescriptions, PageContainer, ProCard } from '@ant-design/pro-components'` |
 | 图标 | `import { EditOutlined, DeleteOutlined } from '@ant-design/icons'` |
 | React Query | `import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'` |
 | dayjs | `import dayjs from 'dayjs'` |
@@ -527,16 +527,4 @@ return <ProTable dataSource={data} />;
 
 ## 7.17 已重构页面清单
 
-| 页面 | 路径 | 完成项 |
-|------|------|--------|
-| 密码本 | `src/pages/password-book/index.tsx` | ✅ 国际化、移动端适配、统计信息、V6 模式 |
-| 任务管理 | `src/pages/task-management/index.tsx` | ✅ ModalForm、国际化 |
-| IoT 平台 | `src/pages/iot-platform/index.tsx` | ✅ 国际化、移动端适配 |
-| 用户管理 | `src/pages/user-management/index.tsx` | ✅ 统一状态管理、国际化 |
-| 工作流表单 | `src/pages/workflow/forms/index.tsx` | ✅ ModalForm、国际化 |
-| 项目管理 | `src/pages/project-management/index.tsx` | ✅ 国际化、统计信息 |
-| 云存储文件 | `src/pages/cloud-storage/files/index.tsx` | ✅ 国际化 |
-| 园区租户 | `src/pages/park-management/tenant/index.tsx` | ✅ 国际化 |
-| 组织架构 | `src/pages/organization/index.tsx` | ✅ 国际化 |
-| 网页抓取 | `src/pages/web-scraper/index.tsx` | ✅ 国际化 |
-| 分享页面 | `src/pages/share/index.tsx` | ✅ 国际化 |
+> 完整清单见 [AGENTS.md - 相关代码位置](../../AGENTS.md#3-相关代码位置)。

@@ -112,8 +112,8 @@
 aspire-admin/
 ├── Platform.AppHost/             # 微服务编排入口
 ├── Platform.ApiService/          # 后端核心业务网关
-│   ├── Controllers/             # 44 个 API 控制器
-│   ├── Services/                # 215+ 服务文件
+│   ├── Controllers/             # 46 个 API 控制器
+│   ├── Services/                # 225 个服务文件（含 MCP Handlers）
 │   └── Attributes/              # RequireMenu 等自定义属性
 ├── Platform.ServiceDefaults/     # 共享基础设施层
 ├── Platform.DataInitializer/     # 数据初始化 + 菜单配置

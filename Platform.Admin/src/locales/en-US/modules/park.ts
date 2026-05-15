@@ -10,6 +10,7 @@ export default {
   'pages.parkManagement.tenant.contractStatus.pending': 'Pending',
   'pages.parkManagement.tenant.contractStatus.renewed': 'Renewed',
   'pages.parkManagement.tenant.contractStatus.terminated': 'Terminated',
+  'pages.parkManagement.tenant.contractTable.propertyFee': 'Property Fee',
   'pages.parkManagement.tenant.contractTable.contractNumber': 'Contract Number',
   'pages.parkManagement.tenant.contractTable.dateRange': 'Date Range',
   'pages.parkManagement.tenant.contractTable.monthlyRent': 'Monthly Rent',
@@ -191,6 +192,7 @@ export default {
   'pages.park.contract.paymentMethod.alipay': 'Alipay',
   'pages.park.contract.paymentMethod.bank': 'Bank Transfer',
   'pages.park.contract.paymentMethod.cash': 'Cash',
+  'pages.park.contract.paymentMethod.check': 'Check',
   'pages.park.contract.paymentMethod.wechat': 'WeChat Pay',
   'pages.park.contract.paymentRecords': 'Payment Records',
   'pages.park.contract.paymentType': 'Payment Type',
@@ -688,4 +690,13 @@ export default {
   'pages.park.asset.unit.rent': 'Monthly Rent',
   'pages.park.asset.unit.type': 'Type',
   'pages.park.asset.unit.status': 'Status',
+
+  // asset - added for i18n
+  'pages.park.asset.occupancyRate': 'Occupancy Rate',
+  'pages.park.asset.buildingManagement': 'Building Management',
+  'pages.park.asset.propertyManagement': 'Property Management',
+  'pages.park.asset.leaseStatus.active': 'Active',
+  'pages.park.asset.leaseStatus.expired': 'Expired',
+  'pages.park.asset.leaseStatus.renewed': 'Renewed',
+  'pages.park.asset.leaseStatus.terminated': 'Terminated',
 };

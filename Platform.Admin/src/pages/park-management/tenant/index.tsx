@@ -34,6 +34,7 @@ interface LeaseContract {
   startDate: string;
   endDate: string;
   monthlyRent: number;
+  propertyFee?: number;
   totalAmount?: number;
   status: string;
   createdAt?: string;
@@ -585,6 +586,13 @@ const TenantManagement: React.FC = () => {
                     dataIndex: 'monthlyRent',
                     width: 100,
                     render: (_: any, r: LeaseContract) => `¥${(r.monthlyRent as number)?.toLocaleString()}`,
+                  },
+                  {
+                    title: intl.formatMessage({ id: 'pages.parkManagement.tenant.contractTable.propertyFee' }),
+                    dataIndex: 'propertyFee',
+                    width: 100,
+                    render: (_: any, r: LeaseContract) =>
+                      r.propertyFee ? `¥${(r.propertyFee as number)?.toLocaleString()}` : '-',
                   },
                   {
                     title: intl.formatMessage({ id: 'pages.parkManagement.tenant.contractTable.totalAmount' }),

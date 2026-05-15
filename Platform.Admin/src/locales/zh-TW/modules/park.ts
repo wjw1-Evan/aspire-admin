@@ -10,6 +10,7 @@ export default {
   'pages.parkManagement.tenant.contractStatus.pending': 'Pending',
   'pages.parkManagement.tenant.contractStatus.renewed': 'Renewed',
   'pages.parkManagement.tenant.contractStatus.terminated': 'Terminated',
+  'pages.parkManagement.tenant.contractTable.propertyFee': '物業費',
   'pages.parkManagement.tenant.contractTable.contractNumber': 'Contract Number',
   'pages.parkManagement.tenant.contractTable.dateRange': 'Date Range',
   'pages.parkManagement.tenant.contractTable.monthlyRent': 'Monthly Rent',

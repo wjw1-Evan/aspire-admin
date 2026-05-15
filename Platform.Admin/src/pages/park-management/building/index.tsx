@@ -280,11 +280,11 @@ const BuildingManagement: React.FC = () => {
             <Space size={24}>
               <Space>
                 <BankOutlined />
-                楼宇管理
+                {intl.formatMessage({ id: 'pages.park.asset.buildingManagement' })}
               </Space>
               <Space size={12}>
                 <Tag color="blue">{intl.formatMessage({ id: 'pages.park.asset.buildings' })} {statistics?.totalBuildings || 0}</Tag>
-                <Tag color="purple">总面积 {statistics?.totalArea?.toLocaleString() || 0} m²</Tag>
+                <Tag color="purple">{intl.formatMessage({ id: 'pages.park.asset.totalArea' })} {statistics?.totalArea?.toLocaleString() || 0}</Tag>
                 <Tag
                   color={
                     (statistics?.occupancyRate ?? 0) >= 80
@@ -294,7 +294,7 @@ const BuildingManagement: React.FC = () => {
                         : 'error'
                   }
                 >
-                  出租率 {statistics?.occupancyRate || 0}%
+                   {intl.formatMessage({ id: 'pages.park.asset.occupancyRate' })} {statistics?.occupancyRate || 0}%
                 </Tag>
               </Space>
             </Space>

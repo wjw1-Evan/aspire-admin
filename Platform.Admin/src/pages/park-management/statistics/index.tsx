@@ -473,7 +473,7 @@ const StatisticsPage: React.FC = () => {
 
   const renderAssetAnalysis = () => {
     const { asset } = state.statistics;
-    if (!asset) return <Empty description="暂无数据" />;
+    if (!asset) return <Empty description={intl.formatMessage({ id: 'pages.park.statistics.noData' })} />;
     const areaPercent =
       asset.totalRentableArea > 0 ? ((asset.rentedArea / asset.totalRentableArea) * 100).toFixed(1) : 0;
     return (
@@ -648,7 +648,7 @@ const StatisticsPage: React.FC = () => {
 
   const renderInvestmentAnalysis = () => {
     const { investment } = state.statistics;
-    if (!investment) return <Empty description="暂无数据" />;
+    if (!investment) return <Empty description={intl.formatMessage({ id: 'pages.park.statistics.noData' })} />;
     const leadsByStatusData = Object.entries(investment.leadsByStatus || {}).map(([status, count]) => ({
       key: status,
       status,
@@ -758,7 +758,7 @@ const StatisticsPage: React.FC = () => {
                     {
                       title: intl.formatMessage({ id: 'pages.park.statistics.status' }),
                       dataIndex: 'status',
-                      render: (status) => <Tag>{status}</Tag>,
+                      render: (status) => <Tag>{intl.formatMessage({ id: `pages.park.investment.status.${String(status).toLowerCase()}` })}</Tag>,
                     },
                     {
                       title: intl.formatMessage({ id: 'pages.park.statistics.count' }),
@@ -794,7 +794,7 @@ const StatisticsPage: React.FC = () => {
                     {
                       title: intl.formatMessage({ id: 'pages.park.statistics.stage' }),
                       dataIndex: 'stage',
-                      render: (stage) => <Tag color="purple">{stage}</Tag>,
+                      render: (stage) => <Tag color="purple">{intl.formatMessage({ id: `pages.park.investment.stage.${String(stage).toLowerCase()}` })}</Tag>,
                     },
                     {
                       title: intl.formatMessage({ id: 'pages.park.statistics.count' }),
@@ -825,7 +825,7 @@ const StatisticsPage: React.FC = () => {
 
   const renderTenantAnalysis = () => {
     const { tenant } = state.statistics;
-    if (!tenant) return <Empty description="暂无数据" />;
+    if (!tenant) return <Empty description={intl.formatMessage({ id: 'pages.park.statistics.noData' })} />;
     const industryData = Object.entries(tenant.tenantsByIndustry || {}).map(([industry, count]) => ({
       key: industry,
       industry,
@@ -833,7 +833,7 @@ const StatisticsPage: React.FC = () => {
     }));
     const paymentTypeData = Object.entries(tenant.receivedByPaymentType || {}).map(([type, amount]) => ({
       key: type,
-      type: type === 'Rent' ? '房租' : type === 'PropertyFee' ? '物业费' : type === 'Deposit' ? '押金' : '其他',
+      type: intl.formatMessage({ id: `pages.parkManagement.tenant.paymentType.${type?.toLowerCase() || 'other'}` }),
       amount,
     }));
     return (

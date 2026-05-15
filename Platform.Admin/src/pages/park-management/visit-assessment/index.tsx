@@ -132,7 +132,7 @@ const VisitAssessmentList: React.FC = () => {
         dom !== undefined && dom !== null ? (
           <Rate disabled value={dom as number} character={<StarFilled />} style={{ fontSize: 14 }} />
         ) : (
-          <Tag color="warning">待评价</Tag>
+          <Tag color="warning">{intl.formatMessage({ id: 'pages.park.visitAssessment.statistics.pending' })}</Tag>
         ),
     },
     {

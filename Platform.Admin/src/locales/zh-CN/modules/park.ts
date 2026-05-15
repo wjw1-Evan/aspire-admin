@@ -10,6 +10,7 @@ export default {
   'pages.parkManagement.tenant.contractStatus.pending': '待生效',
   'pages.parkManagement.tenant.contractStatus.renewed': '已续签',
   'pages.parkManagement.tenant.contractStatus.terminated': '已终止',
+  'pages.parkManagement.tenant.contractTable.propertyFee': '物业费',
   'pages.parkManagement.tenant.contractTable.contractNumber': '合同编号',
   'pages.parkManagement.tenant.contractTable.dateRange': '起止日期',
   'pages.parkManagement.tenant.contractTable.monthlyRent': '月租金',
@@ -462,6 +463,7 @@ export default {
   'pages.park.contract.paymentMethod.wechat': '微信支付',
   'pages.park.contract.paymentMethod.alipay': '支付宝',
   'pages.park.contract.paymentMethod.cash': '现金',
+  'pages.park.contract.paymentMethod.check': '支票',
   'pages.park.contract.paymentCycle.monthly': '月付',
   'pages.park.contract.paymentCycle.quarterly': '季付',
   'pages.park.contract.paymentCycle.yearly': '年付',
@@ -774,4 +776,12 @@ export default {
   'pages.park.asset.salePricePlaceholder': '请输入售价',
   'pages.park.asset.detail.field.purpose': '房屋类型',
   'pages.park.asset.detail.field.salePrice': '售价',
+  'pages.park.asset.occupancyRate': '出租率',
+  'pages.park.asset.buildingManagement': '楼宇管理',
+  'pages.park.asset.propertyManagement': '房源管理',
+
+  'pages.park.asset.leaseStatus.active': '有效',
+  'pages.park.asset.leaseStatus.expired': '已到期',
+  'pages.park.asset.leaseStatus.renewed': '已续签',
+  'pages.park.asset.leaseStatus.terminated': '已终止',
 };

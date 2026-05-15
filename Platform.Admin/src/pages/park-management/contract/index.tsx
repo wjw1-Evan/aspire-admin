@@ -208,9 +208,9 @@ const ContractManagement: React.FC = () => {
           {record.unitNumbers?.map((num, i) => (
             <Tag key={num} color="blue">
               {num}
-              {record.unitTypes?.[i] && <span style={{ marginLeft: 4 }}>({record.unitTypes[i]})</span>}
-              {record.unitPurposes?.[i] === 'Sale' && <span style={{ marginLeft: 4 }}>出售</span>}
-              {record.unitPurposes?.[i] === 'Both' && <span style={{ marginLeft: 4 }}>租售</span>}
+              {record.unitTypes?.[i] && <span style={{ marginLeft: 4 }}>({intl.formatMessage({ id: `pages.park.asset.unitType.${record.unitTypes[i].toLowerCase()}` })})</span>}
+              {record.unitPurposes?.[i] === 'Sale' && <span style={{ marginLeft: 4 }}>{intl.formatMessage({ id: 'pages.park.asset.purpose.sale' })}</span>}
+              {record.unitPurposes?.[i] === 'Both' && <span style={{ marginLeft: 4 }}>{intl.formatMessage({ id: 'pages.park.asset.purpose.both' })}</span>}
             </Tag>
           ))}
           {(!record.unitNumbers || record.unitNumbers.length === 0) && '-'}
@@ -648,9 +648,9 @@ const ContractManagement: React.FC = () => {
                   {state.currentContract!.unitNumbers?.map((num, i) => (
                     <Tag key={num} color="blue">
                       {num}
-                      {state.currentContract!.unitTypes?.[i] && <span style={{ marginLeft: 4 }}>({state.currentContract!.unitTypes[i]})</span>}
-                      {state.currentContract!.unitPurposes?.[i] === 'Sale' && <span style={{ marginLeft: 4 }}>出售</span>}
-                      {state.currentContract!.unitPurposes?.[i] === 'Both' && <span style={{ marginLeft: 4 }}>租售</span>}
+                      {state.currentContract!.unitTypes?.[i] && <span style={{ marginLeft: 4 }}>({intl.formatMessage({ id: `pages.park.asset.unitType.${state.currentContract!.unitTypes[i].toLowerCase()}` })})</span>}
+                      {state.currentContract!.unitPurposes?.[i] === 'Sale' && <span style={{ marginLeft: 4 }}>{intl.formatMessage({ id: 'pages.park.asset.purpose.sale' })}</span>}
+                      {state.currentContract!.unitPurposes?.[i] === 'Both' && <span style={{ marginLeft: 4 }}>{intl.formatMessage({ id: 'pages.park.asset.purpose.both' })}</span>}
                     </Tag>
                   ))}
                 </Space>
@@ -681,7 +681,7 @@ const ContractManagement: React.FC = () => {
                 </Tag>
               </ProDescriptions.Item>
               <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.contract.paymentCycle' })}>
-                {state.currentContract.paymentCycle}
+                {intl.formatMessage({ id: `pages.park.contract.paymentCycle.${state.currentContract.paymentCycle?.toLowerCase()}` })}
               </ProDescriptions.Item>
             </ProDescriptions>
             {state.currentContract.terms && (
@@ -718,14 +718,14 @@ const ContractManagement: React.FC = () => {
                     <Space>
                       <Text strong>¥{item.amount.toLocaleString()}</Text>
                       <Tag color="blue">
-                        {item.paymentType || intl.formatMessage({ id: 'pages.park.contract.paymentType.rent' })}
+                        {intl.formatMessage({ id: `pages.park.contract.paymentType.${item.paymentType?.toLowerCase() || 'rent'}` })}
                       </Tag>
                     </Space>
                     <div>
                       <Text type="secondary">
                         {intl.formatMessage({ id: 'pages.park.contract.date' })}:{' '}
                         {dayjs(item.paymentDate).format('YYYY-MM-DD')} |{' '}
-                        {intl.formatMessage({ id: 'pages.park.contract.method' })}: {item.paymentMethod}
+                        {intl.formatMessage({ id: 'pages.park.contract.method' })}: {item.paymentMethod ? intl.formatMessage({ id: `pages.park.contract.paymentMethod.${item.paymentMethod === 'BankTransfer' ? 'bankTransfer' : item.paymentMethod.toLowerCase()}` }) : '-'}
                       </Text>
                     </div>
                   </div>
@@ -874,6 +874,7 @@ const ContractManagement: React.FC = () => {
                 { label: intl.formatMessage({ id: 'pages.park.contract.paymentMethod.wechat' }), value: 'WeChat' },
                 { label: intl.formatMessage({ id: 'pages.park.contract.paymentMethod.alipay' }), value: 'Alipay' },
                 { label: intl.formatMessage({ id: 'pages.park.contract.paymentMethod.cash' }), value: 'Cash' },
+                { label: intl.formatMessage({ id: 'pages.park.contract.paymentMethod.check' }), value: 'Check' },
               ]}
             />
           </Col>

@@ -315,12 +315,12 @@ const PropertyManagement: React.FC = () => {
           <Space size={24}>
             <Space>
               <HomeOutlined />
-              房源管理
+              {intl.formatMessage({ id: 'pages.park.asset.propertyManagement' })}
             </Space>
             <Space size={12}>
               <Tag color="blue">{intl.formatMessage({ id: 'pages.park.asset.units' })} {statistics?.totalUnits || 0}</Tag>
               <Tag color="green">{intl.formatMessage({ id: 'pages.park.asset.available' })} {statistics?.availableUnits || 0}</Tag>
-              <Tag color="purple">总面积 {statistics?.totalArea?.toLocaleString() || 0} m²</Tag>
+              <Tag color="purple">{intl.formatMessage({ id: 'pages.park.asset.totalArea' })} {statistics?.totalArea?.toLocaleString() || 0}</Tag>
               <Tag
                 color={
                   (statistics?.occupancyRate ?? 0) >= 80
@@ -330,7 +330,7 @@ const PropertyManagement: React.FC = () => {
                       : 'error'
                 }
               >
-                出租率 {statistics?.occupancyRate || 0}%
+                 {intl.formatMessage({ id: 'pages.park.asset.occupancyRate' })} {statistics?.occupancyRate || 0}%
               </Tag>
             </Space>
           </Space>
@@ -667,7 +667,7 @@ const PropertyManagement: React.FC = () => {
                         Renewed: 'cyan',
                         Terminated: 'red',
                       };
-                      return <Tag color={statusColors[status] || 'blue'}>{status}</Tag>;
+                      return <Tag color={statusColors[status] || 'blue'}>{intl.formatMessage({ id: `pages.park.asset.leaseStatus.${status?.toLowerCase()}` })}</Tag>;
                     },
                   },
                 ]}

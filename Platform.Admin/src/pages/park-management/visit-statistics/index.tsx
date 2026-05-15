@@ -98,9 +98,9 @@ const VisitStatisticsPage: React.FC = () => {
         } catch {
           set({ aiReportContent: res.data });
         }
-      } else set({ aiReportContent: '生成报告失败，请稍后重试。' });
+      } else set({ aiReportContent: intl.formatMessage({ id: 'pages.park.statistics.generateFailed' }) });
     } catch {
-      set({ aiReportContent: '生成报告失败，请稍后重试。' });
+      set({ aiReportContent: intl.formatMessage({ id: 'pages.park.statistics.generateFailed' }) });
     } finally {
       set({ aiReportLoading: false });
     }
@@ -217,7 +217,7 @@ const VisitStatisticsPage: React.FC = () => {
             }}
           />
           <Button icon={<ReloadOutlined />} onClick={loadStatistics} loading={state.loading}>
-            刷新
+            {intl.formatMessage({ id: 'pages.park.visitStatistics.refresh' })}
           </Button>
           <Button
             type="primary"
@@ -226,7 +226,7 @@ const VisitStatisticsPage: React.FC = () => {
             disabled={!state.statistics}
             style={{ background: 'linear-gradient(45deg, #1890ff, #722ed1)', borderColor: 'transparent' }}
           >
-            AI 分析报告
+            {intl.formatMessage({ id: 'pages.park.visitStatistics.aiReport' })}
           </Button>
         </Space>
       </div>
@@ -283,10 +283,10 @@ const VisitStatisticsPage: React.FC = () => {
               <Col xs={24} sm={12} lg={6}>
                 {renderStatCard(
                   <TeamOutlined />,
-                  '活跃企管员',
+                  intl.formatMessage({ id: 'pages.park.visitStatistics.activeManagers' }),
                   state.statistics.activeManagers,
                   '#1890ff',
-                  '参与走访的企管员人数',
+                  intl.formatMessage({ id: 'pages.park.visitStatistics.activeManagersDesc' }),
                 )}
               </Col>
               <Col xs={24} sm={12} lg={6}>
@@ -305,10 +305,10 @@ const VisitStatisticsPage: React.FC = () => {
               <Col xs={24} sm={12} lg={6}>
                 {renderStatCard(
                   <BookOutlined />,
-                  '知识库问题',
+                  intl.formatMessage({ id: 'pages.park.visitStatistics.knowledgeBaseQuestions' }),
                   state.statistics.totalQuestions,
                   '#722ed1',
-                  `常用问题: ${state.statistics.frequentlyUsedQuestions}`,
+                  `${intl.formatMessage({ id: 'pages.park.visitStatistics.frequentlyUsedQuestions' })}: ${state.statistics.frequentlyUsedQuestions}`,
                 )}
               </Col>
             </Row>
@@ -385,17 +385,17 @@ const VisitStatisticsPage: React.FC = () => {
             <Space orientation="vertical" size={4} style={{ width: '100%' }}>
               <Space>
                 <RobotOutlined style={{ color: '#1890ff' }} />
-                AI 分析报告
+                {intl.formatMessage({ id: 'pages.park.visitStatistics.aiReport' })}
               </Space>
               <div style={{ fontSize: 12, fontWeight: 'normal', color: 'var(--ant-color-text-description)', marginLeft: 24 }}>
-                报告周期:{' '}
+                {intl.formatMessage({ id: 'pages.park.visitStatistics.reportPeriod' })}:{' '}
                 <Tag color="blue" style={{ marginRight: 8 }}>
                   {state.period === 'month'
-                    ? '本月'
+                    ? intl.formatMessage({ id: 'pages.park.visitStatistics.periodMonth' })
                     : state.period === 'year'
-                      ? '本年'
+                      ? intl.formatMessage({ id: 'pages.park.visitStatistics.periodYear' })
                       : state.period === 'custom'
-                        ? '自定义'
+                        ? intl.formatMessage({ id: 'pages.park.visitStatistics.periodCustom' })
                         : state.period}
                 </Tag>
                 {state.dateRange
@@ -410,7 +410,7 @@ const VisitStatisticsPage: React.FC = () => {
           width={900}
           styles={{ body: { maxHeight: '75vh', overflowY: 'auto', padding: '24px' } }}
         >
-          <Spin spinning={state.aiReportLoading} tip="正在生成报告，可能需要几十秒...">
+          <Spin spinning={state.aiReportLoading} tip={intl.formatMessage({ id: 'pages.park.visitStatistics.generatingReport' })}>
             <div
               dangerouslySetInnerHTML={{ __html: state.aiReportContent }}
               style={{ fontSize: 15, lineHeight: 1.8, marginBottom: 16 }}

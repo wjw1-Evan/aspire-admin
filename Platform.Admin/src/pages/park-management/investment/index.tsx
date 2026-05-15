@@ -553,7 +553,11 @@ const InvestmentManagement: React.FC = () => {
                   ]}
                   scroll={{ x: 1400 }}
                   onRow={(record) => ({
-                    onClick: () => set({ currentLead: record, leadDetailVisible: true }),
+                    onClick: (e) => {
+                      const target = e.target as HTMLElement;
+                      if (target.closest('.ant-btn')) return;
+                      set({ currentLead: record, leadDetailVisible: true });
+                    },
                     style: { cursor: 'pointer' },
                   })}
                 />
@@ -611,7 +615,11 @@ const InvestmentManagement: React.FC = () => {
                   ]}
                   scroll={{ x: 1300 }}
                   onRow={(record) => ({
-                    onClick: () => set({ currentProject: record, projectDetailVisible: true }),
+                    onClick: (e) => {
+                      const target = e.target as HTMLElement;
+                      if (target.closest('.ant-btn')) return;
+                      set({ currentProject: record, projectDetailVisible: true });
+                    },
                     style: { cursor: 'pointer' },
                   })}
                 />

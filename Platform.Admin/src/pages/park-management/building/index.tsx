@@ -335,7 +335,11 @@ const BuildingManagement: React.FC = () => {
           ]}
           scroll={{ x: 1200 }}
           onRow={(record) => ({
-            onClick: () => handleViewBuilding(record.id),
+            onClick: (e) => {
+              const target = e.target as HTMLElement;
+              if (target.closest('.ant-btn')) return;
+              handleViewBuilding(record.id);
+            },
             style: { cursor: 'pointer' },
           })}
         />

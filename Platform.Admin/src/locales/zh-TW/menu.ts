@@ -43,6 +43,8 @@ export default {
   'menu.project-management-task.desc': 'View and manage project tasks',
   'menu.notice': 'Notice',
   'menu.notice.desc': 'View and manage system notices',
+  'menu.notification-management': '通知管理',
+  'menu.notification-management.desc': '發送和管理系統通知',
   'menu.iot-platform': 'IoT Platform',
   'menu.iot-platform.desc': 'IoT platform functions',
   'menu.iot-platform.gateway': 'Gateway Management',

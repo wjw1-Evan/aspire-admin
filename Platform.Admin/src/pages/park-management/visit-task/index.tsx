@@ -298,7 +298,11 @@ const VisitTaskPage: React.FC = () => {
         }
         scroll={{ x: 'max-content' }}
         onRow={(record) => ({
-          onClick: () => handleViewTask(record.id),
+          onClick: (e) => {
+            const target = e.target as HTMLElement;
+            if (target.closest('.ant-btn')) return;
+            handleViewTask(record.id);
+          },
           style: { cursor: 'pointer' },
         })}
         toolBarRender={() => [

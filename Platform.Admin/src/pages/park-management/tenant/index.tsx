@@ -348,7 +348,11 @@ const TenantManagement: React.FC = () => {
         search={false}
         scroll={{ x: 'max-content' }}
         onRow={(record) => ({
-          onClick: () => handleViewTenant(record.id),
+          onClick: (e) => {
+            const target = e.target as HTMLElement;
+            if (target.closest('.ant-btn')) return;
+            handleViewTenant(record.id);
+          },
           style: { cursor: 'pointer' },
         })}
         toolBarRender={() => [

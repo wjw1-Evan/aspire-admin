@@ -408,6 +408,7 @@ export default {
   'pages.park.service.request.contactPlaceholder': 'Contact',
   'pages.park.service.request.description': 'Detailed Description',
   'pages.park.service.request.descriptionPlaceholder': 'Please describe your needs in detail',
+  'pages.park.service.request.descriptionRequired': 'Please enter a detailed description',
   'pages.park.service.request.priorityPlaceholder': 'Please select',
   'pages.park.service.request.tenantPlaceholder': 'Please select tenant',
   'pages.park.service.request.titleField': 'Title',

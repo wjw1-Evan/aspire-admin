@@ -25,8 +25,12 @@ interface LeaseContract {
   contractNumber: string;
   tenantId: string;
   tenantName?: string;
+  contactPerson?: string;
+  phone?: string;
   unitIds: string[];
   unitNumbers?: string[];
+  unitTypes?: string[];
+  unitPurposes?: string[];
   startDate: string;
   endDate: string;
   unitPrice: number;
@@ -64,10 +68,14 @@ interface PropertyUnit {
   buildingName?: string;
   unitNumber: string;
   area?: number;
+  purpose?: string;
+  unitType?: string;
 }
 interface ParkTenant {
   id: string;
   tenantName: string;
+  contactPerson?: string;
+  phone?: string;
 }
 interface ContractFormData {
   tenantId: string;
@@ -165,7 +173,7 @@ const ContractManagement: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.park.contract.number' }),
       dataIndex: 'contractNumber',
       sorter: true,
-      width: 140,
+      width: 190,
       render: (_, record) => (
         <Space>
           <FileTextOutlined style={{ color: '#1890ff' }} />
@@ -180,14 +188,29 @@ const ContractManagement: React.FC = () => {
       width: 150,
     },
     {
+      title: intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.contactPerson' }),
+      dataIndex: 'contactPerson',
+      width: 100,
+      render: (_, record) => record.contactPerson || '-',
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.phone' }),
+      dataIndex: 'phone',
+      width: 120,
+      render: (_, record) => record.phone || '-',
+    },
+    {
       title: intl.formatMessage({ id: 'pages.park.contract.units' }),
       dataIndex: 'unitNumbers',
-      width: 200,
+      width: 260,
       render: (_, record) => (
         <Space size={[0, 4]} wrap>
-          {record.unitNumbers?.map((num) => (
+          {record.unitNumbers?.map((num, i) => (
             <Tag key={num} color="blue">
               {num}
+              {record.unitTypes?.[i] && <span style={{ marginLeft: 4 }}>({record.unitTypes[i]})</span>}
+              {record.unitPurposes?.[i] === 'Sale' && <span style={{ marginLeft: 4 }}>出售</span>}
+              {record.unitPurposes?.[i] === 'Both' && <span style={{ marginLeft: 4 }}>租售</span>}
             </Tag>
           ))}
           {(!record.unitNumbers || record.unitNumbers.length === 0) && '-'}
@@ -212,6 +235,14 @@ const ContractManagement: React.FC = () => {
       width: 100,
       align: 'right',
       render: (rent) => `¥${rent?.toLocaleString()}`,
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.park.contract.propertyFee' }),
+      dataIndex: 'propertyFee',
+      sorter: true,
+      width: 100,
+      align: 'right',
+      render: (fee) => (fee ? `¥${fee?.toLocaleString()}` : '-'),
     },
     {
       title: intl.formatMessage({ id: 'pages.park.contract.totalAmount' }),
@@ -350,7 +381,11 @@ const ContractManagement: React.FC = () => {
         search={false}
         scroll={{ x: 'max-content' }}
         onRow={(record) => ({
-          onClick: () => handleViewContract(record.id),
+          onClick: (e) => {
+            const target = e.target as HTMLElement;
+            if (target.closest('.ant-btn')) return;
+            handleViewContract(record.id);
+          },
           style: { cursor: 'pointer' },
         })}
         toolBarRender={() => [
@@ -408,7 +443,15 @@ const ContractManagement: React.FC = () => {
                 totalAmount: state.currentContract.totalAmount,
                 terms: state.currentContract.terms,
               }
-            : undefined
+            : {
+                unitPrice: 0,
+                monthlyRent: 0,
+                propertyFee: 0,
+                deposit: 0,
+                totalAmount: 0,
+                paymentCycle: 'Monthly',
+                startDate: [dayjs(), dayjs().add(1, 'month')],
+              }
         }
         onFinish={async (values) => {
           const startDateVal = values.startDate?.[0]?.toISOString
@@ -460,7 +503,16 @@ const ContractManagement: React.FC = () => {
               label={intl.formatMessage({ id: 'pages.park.contract.tenant' })}
               placeholder={intl.formatMessage({ id: 'pages.park.contract.tenantPlaceholder' })}
               rules={[{ required: true }]}
-              options={state.tenants.map((t) => ({ label: t.tenantName, value: t.id }))}
+              options={state.tenants.map((t) => ({
+                label: (
+                  <Space size={4}>
+                    <span>{t.tenantName}</span>
+                    {t.contactPerson && <Tag>{t.contactPerson}</Tag>}
+                    {t.phone && <span style={{ color: '#999' }}>{t.phone}</span>}
+                  </Space>
+                ),
+                value: t.id,
+              }))}
             />
           </Col>
           <Col span={12}>
@@ -478,7 +530,14 @@ const ContractManagement: React.FC = () => {
           rules={[{ required: true }]}
           mode="multiple"
           options={state.allUnits.map((u) => ({
-            label: `${u.buildingName || ''} - ${u.unitNumber} (${u.area}m²)`,
+            label: (
+              <Space size={4}>
+                <span>{u.buildingName || ''} - {u.unitNumber}</span>
+                <Tag>{intl.formatMessage({ id: `pages.park.asset.unitType.${u.unitType?.toLowerCase() || 'office'}` })}</Tag>
+                <Tag color="purple">{intl.formatMessage({ id: `pages.park.asset.purpose.${u.purpose?.toLowerCase() || 'rent'}` })}</Tag>
+                <span>({u.area || '-'}m²)</span>
+              </Space>
+            ),
             value: u.id,
           }))}
         />
@@ -578,12 +637,42 @@ const ContractManagement: React.FC = () => {
               <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.contract.tenantName' })}>
                 {state.currentContract.tenantName}
               </ProDescriptions.Item>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.contactPerson' })}>
+                {state.currentContract.contactPerson || '-'}
+              </ProDescriptions.Item>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.phone' })}>
+                {state.currentContract.phone || '-'}
+              </ProDescriptions.Item>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.contract.units' })}>
+                <Space size={[0, 4]} wrap>
+                  {state.currentContract!.unitNumbers?.map((num, i) => (
+                    <Tag key={num} color="blue">
+                      {num}
+                      {state.currentContract!.unitTypes?.[i] && <span style={{ marginLeft: 4 }}>({state.currentContract!.unitTypes[i]})</span>}
+                      {state.currentContract!.unitPurposes?.[i] === 'Sale' && <span style={{ marginLeft: 4 }}>出售</span>}
+                      {state.currentContract!.unitPurposes?.[i] === 'Both' && <span style={{ marginLeft: 4 }}>租售</span>}
+                    </Tag>
+                  ))}
+                </Space>
+              </ProDescriptions.Item>
               <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.contract.period' })}>
                 {dayjs(state.currentContract.startDate).format('YYYY-MM-DD')} ~{' '}
                 {dayjs(state.currentContract.endDate).format('YYYY-MM-DD')}
               </ProDescriptions.Item>
               <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.contract.rent' })}>
                 ¥{state.currentContract.monthlyRent?.toLocaleString()}
+              </ProDescriptions.Item>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.contract.unitPrice' })}>
+                {state.currentContract.unitPrice ? `¥${state.currentContract.unitPrice.toLocaleString()}` : '-'}
+              </ProDescriptions.Item>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.contract.propertyFee' })}>
+                {state.currentContract.propertyFee ? `¥${state.currentContract.propertyFee.toLocaleString()}` : '-'}
+              </ProDescriptions.Item>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.contract.deposit' })}>
+                {state.currentContract.deposit ? `¥${state.currentContract.deposit.toLocaleString()}` : '-'}
+              </ProDescriptions.Item>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.contract.totalAmount' })}>
+                ¥{state.currentContract.totalAmount?.toLocaleString()}
               </ProDescriptions.Item>
               <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.contract.status' })}>
                 <Tag color={contractStatusOptions(intl).find((o) => o.value === state.currentContract?.status)?.color}>
@@ -595,6 +684,12 @@ const ContractManagement: React.FC = () => {
                 {state.currentContract.paymentCycle}
               </ProDescriptions.Item>
             </ProDescriptions>
+            {state.currentContract.terms && (
+              <div style={{ marginTop: 16 }}>
+                <Text strong>{intl.formatMessage({ id: 'pages.park.contract.terms' })}：</Text>
+                <Text>{state.currentContract.terms}</Text>
+              </div>
+            )}
             <div style={{ marginTop: 24 }}>
               <Flex justify="space-between" align="center" style={{ marginBottom: 16 }}>
                 <Text strong>{intl.formatMessage({ id: 'pages.park.contract.paymentRecords' })}</Text>

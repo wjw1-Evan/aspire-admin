@@ -335,7 +335,7 @@ const UserCenter: React.FC = () => {
 
           <Divider />
 
-          <ProDescriptions column={2} bordered>
+          <ProDescriptions column={1} bordered>
             <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.username" />}>
               <Text strong>{userProfile.username}</Text>
             </ProDescriptions.Item>

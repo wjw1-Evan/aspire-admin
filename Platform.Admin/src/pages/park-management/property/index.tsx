@@ -503,7 +503,7 @@ const PropertyManagement: React.FC = () => {
               <Title level={5} style={{ marginBottom: 16 }}>
                 {intl.formatMessage({ id: 'pages.park.asset.basicInfo' })}
               </Title>
-              <ProDescriptions bordered column={2} size="small">
+              <ProDescriptions bordered column={1} size="small">
                 <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.asset.detail.field.unitNumber' })}>
                   {currentUnit.unitNumber}
                 </ProDescriptions.Item>
@@ -549,7 +549,7 @@ const PropertyManagement: React.FC = () => {
                 <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.asset.detail.field.currentTenant' })}>
                   {currentUnit.currentTenantName || '-'}
                 </ProDescriptions.Item>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.asset.detail.field.leaseEndDate' })} span={2}>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.asset.detail.field.leaseEndDate' })}>
                   {currentUnit.leaseEndDate ? dayjs(currentUnit.leaseEndDate).format('YYYY-MM-DD') : '-'}
                 </ProDescriptions.Item>
               </ProDescriptions>

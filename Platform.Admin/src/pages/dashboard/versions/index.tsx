@@ -346,8 +346,8 @@ const DashboardVersionPage: React.FC = () => {
         width={700}
       >
         {viewingVersion && (
-          <Descriptions bordered column={2} size="small">
-            <Descriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.version.versionNumber' })} span={2}>
+          <Descriptions bordered column={1} size="small">
+            <Descriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.version.versionNumber' })}>
               <Space>
                 <Text strong>{viewingVersion.versionNumber}</Text>
                 {viewingVersion.isCurrentVersion && (
@@ -355,7 +355,7 @@ const DashboardVersionPage: React.FC = () => {
                 )}
               </Space>
             </Descriptions.Item>
-            <Descriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.version.name' })} span={2}>
+            <Descriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.version.name' })}>
               {viewingVersion.name}
             </Descriptions.Item>
             <Descriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.version.layoutType' })}>
@@ -364,7 +364,7 @@ const DashboardVersionPage: React.FC = () => {
             <Descriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.version.theme' })}>
               <Tag color={viewingVersion.theme === 'dark' ? 'blue' : 'default'}>{viewingVersion.theme}</Tag>
             </Descriptions.Item>
-            <Descriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.version.comment' })} span={2}>
+            <Descriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.version.comment' })}>
               {viewingVersion.comment || '-'}
             </Descriptions.Item>
             <Descriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.version.changedBy' })}>
@@ -373,7 +373,7 @@ const DashboardVersionPage: React.FC = () => {
             <Descriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.version.createdAt' })}>
               {viewingVersion.createdAt ? new Date(viewingVersion.createdAt).toLocaleString() : '-'}
             </Descriptions.Item>
-            <Descriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.version.cardsSnapshot' })} span={2}>
+            <Descriptions.Item label={intl.formatMessage({ id: 'pages.dashboard.version.cardsSnapshot' })}>
               <Paragraph ellipsis={{ rows: 6, expandable: true }} style={{ maxHeight: 200, overflow: 'auto' }}>
                 <pre style={{ margin: 0, fontSize: 12 }}>{viewingVersion.cardsSnapshot}</pre>
               </Paragraph>

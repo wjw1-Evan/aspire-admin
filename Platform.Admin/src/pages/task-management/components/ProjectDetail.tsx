@@ -386,7 +386,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.table.endDate' })} span={1}>
           {project.endDate || '-'}
         </ProDescriptions.Item>
-        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.detail.description' })} span={2}>
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.detail.description' })}>
           {project.description || '-'}
         </ProDescriptions.Item>
         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.project.table.createdAt' })}>

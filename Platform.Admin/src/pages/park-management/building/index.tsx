@@ -501,7 +501,7 @@ const BuildingManagement: React.FC = () => {
       >
         {currentBuilding && (
           <div>
-            <ProDescriptions bordered column={2} size="small" style={{ marginBottom: 24 }}>
+            <ProDescriptions bordered column={1} size="small" style={{ marginBottom: 24 }}>
               <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.asset.detail.field.buildingName' })}>
                 {currentBuilding.name}
               </ProDescriptions.Item>
@@ -512,7 +512,7 @@ const BuildingManagement: React.FC = () => {
                   })}
                 </Tag>
               </ProDescriptions.Item>
-              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.asset.detail.field.address' })} span={2}>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.asset.detail.field.address' })}>
                 {currentBuilding.address || '-'}
               </ProDescriptions.Item>
               <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.asset.detail.field.totalFloors' })}>

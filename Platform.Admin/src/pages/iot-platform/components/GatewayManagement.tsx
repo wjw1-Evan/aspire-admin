@@ -352,8 +352,8 @@ const GatewayManagement = React.forwardRef<GatewayManagementRef, any>((_props, _
               title={intl.formatMessage({ id: 'pages.iotPlatform.gateway.basicInfo' })}
               style={{ marginBottom: 16 }}
             >
-              <ProDescriptions column={isMobile ? 1 : 2} size="small">
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.iotPlatform.gateway.name' })} span={2}>
+<ProDescriptions column={1} size="small">
+                 <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.iotPlatform.gateway.name' })}>
                   {state.viewingGateway.title}
                 </ProDescriptions.Item>
                 <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.iotPlatform.gateway.gatewayId' })}>

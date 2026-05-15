@@ -473,7 +473,7 @@ const OrganizationPage: React.FC = () => {
           >
             {selectedNode ? (
               <>
-                <ProDescriptions column={2} bordered>
+                <ProDescriptions column={1} bordered>
                   <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.organization.field.name' })}>
                     <Space>
                       <ApartmentOutlined />
@@ -502,10 +502,9 @@ const OrganizationPage: React.FC = () => {
                   <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.organization.field.updatedAt' })}>
                     {selectedNode.updatedAt ? dayjs(selectedNode.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
                   </ProDescriptions.Item>
-                  <ProDescriptions.Item
-                    span={2}
-                    label={intl.formatMessage({ id: 'pages.organization.field.description' })}
-                  >
+<ProDescriptions.Item
+                     label={intl.formatMessage({ id: 'pages.organization.field.description' })}
+                   >
                     {selectedNode.description || '-'}
                   </ProDescriptions.Item>
                   <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.organization.field.createdAt' })}>

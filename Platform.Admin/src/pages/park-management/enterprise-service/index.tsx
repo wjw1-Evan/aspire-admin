@@ -756,8 +756,8 @@ const EnterpriseService: React.FC = () => {
       >
         <Spin spinning={detailLoading}>
           {detailData && (
-            <ProDescriptions bordered column={2} size="small">
-              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.titleField' })} span={2}>
+            <ProDescriptions bordered column={1} size="small">
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.titleField' })}>
                 {detailData.title}
               </ProDescriptions.Item>
               <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.tenant' })}>
@@ -795,14 +795,13 @@ const EnterpriseService: React.FC = () => {
                   ? dayjs(detailData.completedAt).format('YYYY-MM-DD HH:mm')
                   : '-'}
               </ProDescriptions.Item>
-              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.description' })} span={2}>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.service.request.description' })}>
                 {detailData.description || '-'}
               </ProDescriptions.Item>
               {detailData.attachments && detailData.attachments.length > 0 && (
-                <ProDescriptions.Item
-                  label={intl.formatMessage({ id: 'pages.park.service.request.attachments' })}
-                  span={2}
-                >
+<ProDescriptions.Item
+                   label={intl.formatMessage({ id: 'pages.park.service.request.attachments' })}
+                 >
                   <Image.PreviewGroup>
                     <Space wrap size={8}>
                       {detailData.attachments.map((url, index) => (
@@ -820,10 +819,9 @@ const EnterpriseService: React.FC = () => {
                 </ProDescriptions.Item>
               )}
               {detailData.statusHistory && detailData.statusHistory.length > 0 && (
-                <ProDescriptions.Item
-                  label={intl.formatMessage({ id: 'pages.park.service.request.statusHistory' })}
-                  span={2}
-                >
+<ProDescriptions.Item
+                   label={intl.formatMessage({ id: 'pages.park.service.request.statusHistory' })}
+                 >
                   <Timeline
                     items={detailData.statusHistory.map((h, index) => {
                       const fromOpt = statusOptions(intl).find((o) => o.value === h.fromStatus);

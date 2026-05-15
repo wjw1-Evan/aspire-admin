@@ -102,8 +102,8 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose, isMobile }) => {
   return (
     <div>
       <ProCard title={intl.formatMessage({ id: 'pages.userDetail.basicInfo' })} style={{ marginBottom: 16 }}>
-        <ProDescriptions column={isMobile ? 1 : 2} size="small">
-          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.username' })} span={2}>
+<ProDescriptions column={1} size="small">
+           <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.username' })}>
             {user.username}
           </ProDescriptions.Item>
 
@@ -123,7 +123,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose, isMobile }) => {
             {user.age || '-'}
           </ProDescriptions.Item>
 
-          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.role' })} span={2}>
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.role' })}>
             {!user.roleIds || user.roleIds.length === 0 ? (
               <Tag color="default">{intl.formatMessage({ id: 'pages.table.unassigned' })}</Tag>
             ) : (
@@ -137,7 +137,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose, isMobile }) => {
             )}
           </ProDescriptions.Item>
 
-          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.organization' })} span={2}>
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.organization' })}>
             {!user.organizations || user.organizations.length === 0 ? (
               <Text type="secondary">{intl.formatMessage({ id: 'pages.userManagement.organization.empty' })}</Text>
             ) : (

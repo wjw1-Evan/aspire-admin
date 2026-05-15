@@ -161,11 +161,9 @@ const DataCenter = React.forwardRef<DataCenterRef, any>((_props, _ref) => {
               title={intl.formatMessage({ id: 'pages.iotPlatform.datacenter.basicInfo' })}
               style={{ marginBottom: 16 }}
             >
-              <ProDescriptions column={isMobile ? 1 : 2} size="small">
-                <ProDescriptions.Item
-                  label={intl.formatMessage({ id: 'pages.iotPlatform.datacenter.recordId' })}
-                  span={2}
-                >
+<ProDescriptions column={1} size="small">
+                 <ProDescriptions.Item
+                   label={intl.formatMessage({ id: 'pages.iotPlatform.datacenter.recordId' })}>
                   {state.viewingRecord.id}
                 </ProDescriptions.Item>
                 <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.iotPlatform.datacenter.deviceId' })}>

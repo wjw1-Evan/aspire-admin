@@ -589,13 +589,12 @@ const DeviceManagement = React.forwardRef<DeviceManagementRef, any>((_props, _re
                       size="small"
                       style={{ marginBottom: 12 }}
                     >
-                      <ProDescriptions column={isMobile ? 1 : 2} size="small">
-                        <ProDescriptions.Item
-                          label={intl.formatMessage({ id: 'pages.iotPlatform.device.name' })}
-                          span={2}
-                        >
-                          {state.viewingDevice.title}
-                        </ProDescriptions.Item>
+<ProDescriptions column={1} size="small">
+                         <ProDescriptions.Item
+                           label={intl.formatMessage({ id: 'pages.iotPlatform.device.name' })}
+                         >
+                           {state.viewingDevice.title}
+                         </ProDescriptions.Item>
                         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.iotPlatform.device.deviceId' })}>
                           {state.viewingDevice.deviceId}
                         </ProDescriptions.Item>
@@ -630,16 +629,12 @@ const DeviceManagement = React.forwardRef<DeviceManagementRef, any>((_props, _re
                         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.iotPlatform.device.location' })}>
                           {state.viewingDevice.location || '-'}
                         </ProDescriptions.Item>
-                        <ProDescriptions.Item
-                          label={intl.formatMessage({ id: 'pages.iotPlatform.device.description' })}
-                          span={2}
-                        >
+<ProDescriptions.Item
+                           label={intl.formatMessage({ id: 'pages.iotPlatform.device.description' })}>
                           {state.viewingDevice.description || '-'}
                         </ProDescriptions.Item>
                         <ProDescriptions.Item
-                          label={intl.formatMessage({ id: 'pages.iotPlatform.device.tags' })}
-                          span={2}
-                        >
+label={intl.formatMessage({ id: 'pages.iotPlatform.device.tags' })}>
                           {state.viewingDevice.tags && Object.keys(state.viewingDevice.tags).length > 0 ? (
                             <Space size={4} wrap>
                               {Object.entries(state.viewingDevice.tags).map(([k, v]) => (
@@ -703,12 +698,21 @@ const DeviceManagement = React.forwardRef<DeviceManagementRef, any>((_props, _re
                     </ProCard>
                     {state.deviceStatistics && (
                       <ProCard title={intl.formatMessage({ id: 'pages.iotPlatform.device.dataStats' })} size="small">
-                        <ProDescriptions column={isMobile ? 1 : 2} size="small">
-                          <ProDescriptions.Item
-                            label={intl.formatMessage({ id: 'pages.iotPlatform.device.dataPointsTotal' })}
-                          >
-                            {state.deviceStatistics.totalDataPoints}
-                          </ProDescriptions.Item>
+<ProDescriptions column={1} size="small">
+                         <ProDescriptions.Item
+                           label={intl.formatMessage({ id: 'pages.iotPlatform.device.name' })}
+                         >
+                           {state.viewingDevice.title}
+                         </ProDescriptions.Item>
+                         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.iotPlatform.device.deviceId' })}>
+                           {state.viewingDevice.deviceId}
+                         </ProDescriptions.Item>
+                         <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.iotPlatform.device.type' })}>
+                           <Tag color={deviceTypeColor[state.viewingDevice.deviceType ?? 'Sensor']}>
+                             {deviceTypeLabel[state.viewingDevice.deviceType ?? 'Sensor'] ??
+                               state.viewingDevice.deviceType}
+                           </Tag>
+                         </ProDescriptions.Item>
                           <ProDescriptions.Item
                             label={intl.formatMessage({ id: 'pages.iotPlatform.datapoint.enabledStatus' })}
                           >

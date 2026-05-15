@@ -287,7 +287,7 @@ const WebScraperResults: React.FC = () => {
       >
         {currentResult && (
           <>
-            <Descriptions bordered column={2} style={{ marginBottom: 16 }}>
+            <Descriptions bordered column={1} style={{ marginBottom: 16 }}>
               <Descriptions.Item label={intl.formatMessage({ id: 'pages.webScraper.results.detail.taskName' })}>
                 {currentResult.taskName}
               </Descriptions.Item>

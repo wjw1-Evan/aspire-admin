@@ -610,8 +610,8 @@ const VisitTaskPage: React.FC = () => {
       >
         {state.selectedTask ? (
           <Space orientation="vertical" size="large" style={{ width: '100%' }}>
-            <ProDescriptions title={intl.formatMessage({ id: 'pages.park.visitTask.basicInfo' })} bordered column={2}>
-              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.visitTask.taskTitle' })} span={2}>
+            <ProDescriptions title={intl.formatMessage({ id: 'pages.park.visitTask.basicInfo' })} bordered column={1}>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.visitTask.taskTitle' })}>
                 {state.selectedTask.title}
               </ProDescriptions.Item>
               <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.visitTask.visitType' })}>
@@ -637,12 +637,12 @@ const VisitTaskPage: React.FC = () => {
               <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.visitTask.createdAt' })}>
                 {dayjs(state.selectedTask.createdAt).format('YYYY-MM-DD')}
               </ProDescriptions.Item>
-              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.visitTask.details' })} span={2}>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.visitTask.details' })}>
                 {state.selectedTask.details || '-'}
               </ProDescriptions.Item>
             </ProDescriptions>
-            <ProDescriptions title={intl.formatMessage({ id: 'pages.park.visitTask.visitInfo' })} bordered column={2}>
-              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.visitTask.tenant' })} span={2}>
+            <ProDescriptions title={intl.formatMessage({ id: 'pages.park.visitTask.visitInfo' })} bordered column={1}>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.visitTask.tenant' })}>
                 {state.selectedTask.tenantName || '-'}
               </ProDescriptions.Item>
               <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.visitTask.intervieweeName' })}>
@@ -651,7 +651,7 @@ const VisitTaskPage: React.FC = () => {
               <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.visitTask.intervieweePosition' })}>
                 {state.selectedTask.intervieweePosition || '-'}
               </ProDescriptions.Item>
-              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.visitTask.visitLocation' })} span={2}>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.visitTask.visitLocation' })}>
                 {state.selectedTask.visitLocation || '-'}
               </ProDescriptions.Item>
               <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.visitTask.visitDate' })}>

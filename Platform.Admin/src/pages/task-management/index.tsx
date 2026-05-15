@@ -112,8 +112,8 @@ const TaskDetail: React.FC<{ id: string; onClose: () => void; open: boolean; isM
               title={intl.formatMessage({ id: 'pages.taskManagement.detail.basicInfo' })}
               style={{ marginBottom: 16 }}
             >
-              <ProDescriptions column={isMobile ? 1 : 2} size="small">
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.name' })} span={2}>
+<ProDescriptions column={1} size="small">
+                 <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.name' })}>
                   {taskDetail.taskName}
                 </ProDescriptions.Item>
                 <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.type' })}>
@@ -128,11 +128,8 @@ const TaskDetail: React.FC<{ id: string; onClose: () => void; open: boolean; isM
                 <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.progress' })}>
                   {taskDetail.completionPercentage}%
                 </ProDescriptions.Item>
-                <ProDescriptions.Item
-                  label={intl.formatMessage({ id: 'pages.taskManagement.table.description' })}
-                  span={2}
-                >
-                  {taskDetail.description || '-'}
+<ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.description' })}>
+                   {taskDetail.description || '-'}
                 </ProDescriptions.Item>
               </ProDescriptions>
             </ProCard>
@@ -141,8 +138,8 @@ const TaskDetail: React.FC<{ id: string; onClose: () => void; open: boolean; isM
               title={intl.formatMessage({ id: 'pages.taskManagement.detail.assignment' })}
               style={{ marginBottom: 16 }}
             >
-              <ProDescriptions column={isMobile ? 1 : 2} size="small">
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.createdBy' })}>
+<ProDescriptions column={1} size="small">
+                 <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.createdBy' })}>
                   {taskDetail.createdByName || '-'}
                 </ProDescriptions.Item>
                 <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.createdAt' })}>
@@ -161,8 +158,8 @@ const TaskDetail: React.FC<{ id: string; onClose: () => void; open: boolean; isM
               title={intl.formatMessage({ id: 'pages.taskManagement.detail.timeInfo' })}
               style={{ marginBottom: 16 }}
             >
-              <ProDescriptions column={isMobile ? 1 : 2} size="small">
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.plannedStart' })}>
+<ProDescriptions column={1} size="small">
+                 <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.plannedStart' })}>
                   {taskDetail.plannedStartTime ? dayjs(taskDetail.plannedStartTime).format('YYYY-MM-DD HH:mm:ss') : '-'}
                 </ProDescriptions.Item>
                 <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.plannedEnd' })}>

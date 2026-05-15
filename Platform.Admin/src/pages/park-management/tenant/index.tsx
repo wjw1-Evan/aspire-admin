@@ -515,7 +515,7 @@ const TenantManagement: React.FC = () => {
             <Typography.Text strong style={{ fontSize: 16, marginBottom: 12, display: 'block' }}>
               {intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.basicInfo' })}
             </Typography.Text>
-            <ProDescriptions column={2} bordered size="small" style={{ marginBottom: 24 }}>
+            <ProDescriptions column={1} bordered size="small" style={{ marginBottom: 24 }}>
               <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.tenantName' })}>
                 {state.viewingTenant.tenantName}
               </ProDescriptions.Item>
@@ -530,10 +530,9 @@ const TenantManagement: React.FC = () => {
               <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.phone' })}>
                 {state.viewingTenant.phone || '-'}
               </ProDescriptions.Item>
-              <ProDescriptions.Item
-                label={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.email' })}
-                span={2}
-              >
+<ProDescriptions.Item
+                 label={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.email' })}
+               >
                 {state.viewingTenant.email || '-'}
               </ProDescriptions.Item>
               <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.parkManagement.tenant.detail.entryDate' })}>

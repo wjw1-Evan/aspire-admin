@@ -579,11 +579,11 @@ const ContractManagement: React.FC = () => {
       >
         {state.currentContract && (
           <div style={{ padding: '0 8px' }}>
-            <ProDescriptions bordered column={2} size="small">
-              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.contract.number' })} span={2}>
+            <ProDescriptions bordered column={1} size="small">
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.contract.number' })}>
                 {state.currentContract.contractNumber}
               </ProDescriptions.Item>
-              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.contract.tenantName' })} span={2}>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.contract.tenantName' })}>
                 {state.currentContract.tenantName}
               </ProDescriptions.Item>
               <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.contract.period' })}>

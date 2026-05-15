@@ -51,16 +51,22 @@ interface Stats {
   total: number;
 }
 
+interface NoticeState {
+  detailVisible: boolean;
+  viewingNotification: AppNotification | null;
+  search: string;
+}
+
 const NoticePage: React.FC = () => {
   const intl = useIntl();
   const actionRef = useRef<ActionType | undefined>(undefined);
 
-  const [state, setState] = useState({
+  const [state, setState] = useState<NoticeState>({
     detailVisible: false,
-    viewingNotification: null as AppNotification | null,
-    search: '' as string,
+    viewingNotification: null,
+    search: '',
   });
-  const set = useCallback((partial: Partial<typeof state>) => setState((prev) => ({ ...prev, ...partial })), []);
+  const set = useCallback((partial: Partial<NoticeState>) => setState((prev: NoticeState) => ({ ...prev, ...partial })), []);
 
   const [statistics, setStatistics] = useState<Stats>({ unread: 0, total: 0 });
 
@@ -112,7 +118,9 @@ const handleView = async (record: AppNotification) => {
       render: (_, record) => (
         <Space>
           {record.status === 'unread' && <Badge status="processing" />}
-          <a onClick={() => handleView(record)}>{record.title}</a>
+          <Button type="link" onClick={() => handleView(record)}>
+             {record.title}
+           </Button>
         </Space>
       ),
     },
@@ -166,18 +174,18 @@ render: (_, record) => (
                  const res = await markAsRead(record.id);
                  if (res.success) {
                    message.success(intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAsReadSuccess' }));
-                   set((prev) => ({
-                     ...prev,
-                     viewingNotification: prev.viewingNotification?.id === record.id
-                       ? { ...prev.viewingNotification!, status: 'read' }
-                       : prev.viewingNotification,
-                   }));
-                 }
-                 actionRef.current?.reload();
-                 loadStatistics();
-               }}
-             >
-               {intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAsRead' })}
+set((prev: NoticeState) => ({
+                      ...prev,
+                      viewingNotification: prev.viewingNotification?.id === record.id
+                        ? { ...prev.viewingNotification!, status: 'read' }
+                        : prev.viewingNotification,
+                    }));
+                  }
+                  actionRef.current?.reload();
+                  loadStatistics();
+                }}
+              >
+                {intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAsRead' })}
              </Button>
            ) : (
              <Button
@@ -190,18 +198,18 @@ render: (_, record) => (
                  const res = await markAsUnread(record.id);
                  if (res.success) {
                    message.success(intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAsUnread' }));
-                   set((prev) => ({
-                     ...prev,
-                     viewingNotification: prev.viewingNotification?.id === record.id
-                       ? { ...prev.viewingNotification!, status: 'unread' }
-                       : prev.viewingNotification,
-                   }));
-                 }
-                 actionRef.current?.reload();
-                 loadStatistics();
-               }}
-             >
-               {intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAsUnread' })}
+set((prev: NoticeState) => ({
+                      ...prev,
+                      viewingNotification: prev.viewingNotification?.id === record.id
+                        ? { ...prev.viewingNotification!, status: 'unread' }
+                        : prev.viewingNotification,
+                    }));
+                  }
+                  actionRef.current?.reload();
+                  loadStatistics();
+                }}
+              >
+                {intl.formatMessage({ id: 'pages.unifiedNotificationCenter.markAsUnread' })}
              </Button>
            )}
          </Space>
@@ -324,7 +332,7 @@ headerTitle={
         }
       >
         {state.viewingNotification && (
-          <DetailContent notification={state.viewingNotification} isMobile={isMobile} />
+          <DetailContent notification={state.viewingNotification} />
         )}
       </Drawer>
     </PageContainer>
@@ -349,7 +357,7 @@ const DetailContent: React.FC<{ notification: AppNotification }> = ({
        </ProDescriptions.Item>
        <ProDescriptions.Item
          label={intl.formatMessage({ id: 'pages.notice.detail.status' })}
-         span={isMobile ? 1 : 2}
+         span={2}
        >
         <Tag color={notification.status === 'unread' ? 'processing' : 'success'}>
           {intl.formatMessage({
@@ -362,7 +370,7 @@ const DetailContent: React.FC<{ notification: AppNotification }> = ({
       </ProDescriptions.Item>
       <ProDescriptions.Item
          label={intl.formatMessage({ id: 'pages.notice.table.category' })}
-        span={isMobile ? 1 : 2}
+        span={2}
       >
         <Tag color={categoryColorMap[notification.category] || 'default'}>
           {notification.category}
@@ -370,7 +378,7 @@ const DetailContent: React.FC<{ notification: AppNotification }> = ({
       </ProDescriptions.Item>
       <ProDescriptions.Item
         label={intl.formatMessage({ id: 'pages.notice.table.level' })}
-        span={isMobile ? 1 : 2}
+        span={2}
       >
         <Space size={4}>
           <span style={{ color: levelColorMap[notification.level] }}>
@@ -381,7 +389,7 @@ const DetailContent: React.FC<{ notification: AppNotification }> = ({
       </ProDescriptions.Item>
       <ProDescriptions.Item
         label={intl.formatMessage({ id: 'pages.notice.detail.receivedAt' })}
-        span={isMobile ? 1 : 2}
+        span={2}
       >
         {notification.createdAt
           ? dayjs(notification.createdAt).format('YYYY-MM-DD HH:mm:ss')
@@ -390,7 +398,7 @@ const DetailContent: React.FC<{ notification: AppNotification }> = ({
       {notification.readAt && (
         <ProDescriptions.Item
           label={intl.formatMessage({ id: 'pages.notice.detail.readAt' })}
-          span={isMobile ? 1 : 2}
+          span={2}
         >
           {dayjs(notification.readAt).format('YYYY-MM-DD HH:mm:ss')}
         </ProDescriptions.Item>

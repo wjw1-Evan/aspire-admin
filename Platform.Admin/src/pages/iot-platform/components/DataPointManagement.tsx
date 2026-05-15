@@ -470,8 +470,8 @@ const DataPointManagement = React.forwardRef<DataPointManagementRef, any>((_prop
               title={intl.formatMessage({ id: 'pages.iotPlatform.datapoint.basicInfo' })}
               style={{ marginBottom: 16 }}
             >
-              <ProDescriptions column={isMobile ? 1 : 2} size="small">
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.iotPlatform.datapoint.name' })} span={2}>
+<ProDescriptions column={1} size="small">
+                 <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.iotPlatform.datapoint.name' })}>
                   {state.viewingDataPoint.title}
                 </ProDescriptions.Item>
                 <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.iotPlatform.datapoint.dataPointId' })}>

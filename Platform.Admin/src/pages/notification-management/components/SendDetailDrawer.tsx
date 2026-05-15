@@ -137,8 +137,8 @@ const SendDetailDrawer: React.FC<Props> = ({ recordId, onClose }) => {
         <Spin />
       ) : detail ? (
         <>
-          <ProDescriptions column={2} bordered size="small">
-            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.notificationManagement.title' })} span={2}>
+<ProDescriptions column={1} bordered size="small">
+             <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.notificationManagement.title' })}>
               {detail.title}
             </ProDescriptions.Item>
             <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.notificationManagement.category' })}>
@@ -169,7 +169,7 @@ const SendDetailDrawer: React.FC<Props> = ({ recordId, onClose }) => {
               {detail.createdAt ? dayjs(detail.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
             </ProDescriptions.Item>
             {detail.actionUrl && (
-              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.notificationManagement.actionUrl' })} span={2}>
+              <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.notificationManagement.actionUrl' })}>
                 {detail.actionUrl}
               </ProDescriptions.Item>
             )}

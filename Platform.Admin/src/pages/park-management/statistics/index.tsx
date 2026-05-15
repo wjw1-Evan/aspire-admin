@@ -41,6 +41,13 @@ interface AssetStatistics {
   occupancyRateMoM?: number;
   totalBuildingsYoY?: number;
   totalBuildingsMoM?: number;
+  occupancyRatePrev: number;
+  rentedAreaPrev: number;
+  totalBuildingsPrev: number;
+  unitTypeDistribution: Record<string, number>;
+  buildingTypeDistribution: Record<string, number>;
+  buildingStatusDistribution: Record<string, number>;
+  averageUnitPrice: number;
 }
 interface InvestmentStatistics {
   totalLeads: number;
@@ -54,6 +61,11 @@ interface InvestmentStatistics {
   totalLeadsYoY?: number;
   newLeadsMoM?: number;
   conversionRateYoY?: number;
+  newLeadsThisMonthPrev: number;
+  signedProjectsInPeriod: number;
+  signedProjectsInPeriodPrev: number;
+  leadsBySource: Record<string, number>;
+  leadsByIndustry: Record<string, number>;
 }
 interface TenantStatistics {
   totalTenants: number;
@@ -77,6 +89,13 @@ interface TenantStatistics {
   activeTenantsYoY?: number;
   yearlyEstimate?: number;
   rentIncome?: number;
+  activeTenantsPrev: number;
+  totalMonthlyRentPrev: number;
+  totalReceivedPrev: number;
+  totalExpectedPrev: number;
+  collectionRatePrev: number;
+  contractsExpiringByQuarter: Record<string, number>;
+  paymentCycleDistribution: Record<string, number>;
 }
 interface ServiceStatistics {
   totalCategories: number;
@@ -91,6 +110,11 @@ interface ServiceStatistics {
   totalRequestsYoY?: number;
   totalRequestsMoM?: number;
   averageRatingYoY?: number;
+  totalRequestsPrev: number;
+  averageRatingPrev: number;
+  requestsByPriority: Record<string, number>;
+  requestsByHandler: Record<string, number>;
+  avgResponseTime: number;
 }
 
 const api = {
@@ -173,6 +197,39 @@ const StatisticsPage: React.FC = () => {
   useEffect(() => {
     if (state.period !== 'custom' || (state.period === 'custom' && state.dateRange)) loadAllStatistics();
   }, [state.period, state.dateRange, loadAllStatistics]);
+
+  const handleExportPdf = useCallback(() => {
+    const content = document.querySelector('.markdown-body') as HTMLElement | null;
+    if (!content) return;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+      .map((el) => el.outerHTML)
+      .join('\n');
+    printWindow.document.write(`
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AI Operations Analysis Report</title>
+  <meta charset="utf-8">
+  ${styles}
+  <style>
+body { padding: 48px; font-size: 15px; line-height: 1.8; color: #1d1d1f; }
+table { border-collapse: collapse; width: 100%; margin-bottom: 20px; border-radius: 6px; overflow: hidden; }
+th { background: #f5f5f7; border: 1px solid #e0e0e0; padding: 10px 14px; text-align: left; font-weight: 600; }
+td { border: 1px solid #e0e0e0; padding: 10px 14px; }
+tr:nth-child(even) { background: #fafafa; }
+blockquote { margin: 0 0 20px; padding: 0 1em; color: #666; border-left: 4px solid #1890ff; background: #f5f5f7; border-radius: 0 4px 4px 0; }
+h1, h2, h3 { margin-top: 24px; margin-bottom: 12px; }
+p { margin-bottom: 12px; }
+@media print { @page { margin: 20mm; } body { padding: 0; } }
+  </style>
+</head>
+<body>${content.innerHTML}</body>
+</html>`);
+    printWindow.document.close();
+    printWindow.onload = () => { printWindow.print(); };
+  }, []);
 
   const handleGenerateAiReport = async () => {
     set({ aiReportLoading: true, aiReportVisible: true, aiReportContent: '' });
@@ -1386,7 +1443,13 @@ const StatisticsPage: React.FC = () => {
         }
         open={state.aiReportVisible}
         onCancel={() => set({ aiReportVisible: false })}
-        footer={null}
+        footer={
+          state.aiReportContent ? (
+            <Button icon={<FileTextOutlined />} onClick={handleExportPdf}>
+              {intl.formatMessage({ id: 'pages.park.statistics.exportPdf' })}
+            </Button>
+          ) : null
+        }
         width={900}
         styles={{ body: { maxHeight: '75vh', overflowY: 'auto', padding: '24px' } }}
       >

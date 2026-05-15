@@ -508,6 +508,7 @@ export default {
   'pages.park.statistics.rentedArea': 'Rented Area',
   'pages.park.statistics.rentedUnits': 'Rented Units',
   'pages.park.statistics.reportPeriod': 'Report Period',
+  'pages.park.statistics.exportPdf': 'Export PDF',
   'pages.park.statistics.requestsByCategory': 'Requests by Category',
   'pages.park.statistics.requestsByStatus': 'Requests by Status',
   'pages.park.statistics.serviceAnalysis': 'Service Analysis',

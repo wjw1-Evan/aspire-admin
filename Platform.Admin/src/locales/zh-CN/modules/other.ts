@@ -541,6 +541,7 @@ export default {
   'pages.park.statistics.rentedArea': '已出租面积',
   'pages.park.statistics.rentedUnits': '已出租房源',
   'pages.park.statistics.reportPeriod': '报告周期',
+  'pages.park.statistics.exportPdf': '导出 PDF',
   'pages.park.statistics.requestsByCategory': '请求分类统计',
   'pages.park.statistics.requestsByStatus': '请求状态分布',
   'pages.park.statistics.serviceAnalysis': '服务分析',

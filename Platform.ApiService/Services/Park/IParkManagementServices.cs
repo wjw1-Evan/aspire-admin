@@ -41,7 +41,7 @@ public interface IParkTenantService
     Task<ParkTenantDto> CreateTenantAsync(CreateParkTenantRequest request);
     Task<ParkTenantDto?> UpdateTenantAsync(string id, CreateParkTenantRequest request);
     Task<bool> DeleteTenantAsync(string id);
-    Task<System.Linq.Dynamic.Core.PagedResult<LeaseContractDto>> GetContractsAsync(Platform.ServiceDefaults.Models.ProTableRequest request);
+    Task<System.Linq.Dynamic.Core.PagedResult<LeaseContractDto>> GetContractsAsync(Platform.ServiceDefaults.Models.ProTableRequest request, string? tenantId = null);
     Task<LeaseContractDto?> GetContractByIdAsync(string id);
     Task<LeaseContractDto> CreateContractAsync(CreateLeaseContractRequest request);
     Task<LeaseContractDto?> UpdateContractAsync(string id, CreateLeaseContractRequest request);
@@ -55,7 +55,7 @@ public interface IParkTenantService
 
 public interface IParkEnterpriseServiceService
 {
-    Task<System.Linq.Dynamic.Core.PagedResult<ServiceRequestDto>> GetRequestsAsync(Platform.ServiceDefaults.Models.ProTableRequest request);
+    Task<System.Linq.Dynamic.Core.PagedResult<ServiceRequestDto>> GetRequestsAsync(Platform.ServiceDefaults.Models.ProTableRequest request, string? tenantId = null);
     Task<ServiceRequestDto?> GetRequestByIdAsync(string id);
     Task<ServiceRequestDto> CreateRequestAsync(CreateServiceRequestRequest request);
     Task<ServiceRequestDto?> UpdateRequestAsync(string id, CreateServiceRequestRequest request);

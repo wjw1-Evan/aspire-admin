@@ -103,9 +103,9 @@ public class ParkTenantController : BaseApiController
     /// </summary>
     [HttpGet("contracts/list")]
     [RequireMenu("park-management-tenant")]
-    public async Task<IActionResult> GetContracts([FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request)
+    public async Task<IActionResult> GetContracts([FromQuery] Platform.ServiceDefaults.Models.ProTableRequest request, [FromQuery] string? tenantId = null)
     {
-        var result = await _tenantService.GetContractsAsync(request);
+        var result = await _tenantService.GetContractsAsync(request, tenantId);
         return Success(result);
     }
 

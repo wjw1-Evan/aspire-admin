@@ -155,9 +155,12 @@ public class ParkTenantService : IParkTenantService
     /// <summary>
     /// 获取合同列表
     /// </summary>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<LeaseContractDto>> GetContractsAsync(Platform.ServiceDefaults.Models.ProTableRequest request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<LeaseContractDto>> GetContractsAsync(Platform.ServiceDefaults.Models.ProTableRequest request, string? tenantId = null)
     {
-        var pagedResult = _context.Set<LeaseContract>().ToPagedList(request);
+        var query = _context.Set<LeaseContract>().AsQueryable();
+        if (!string.IsNullOrEmpty(tenantId))
+            query = query.Where(c => c.TenantId == tenantId);
+        var pagedResult = query.ToPagedList(request);
         var items = await pagedResult.Queryable.ToListAsync();
         var contracts = new List<LeaseContractDto>();
         foreach (var item in items)

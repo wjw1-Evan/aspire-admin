@@ -86,9 +86,12 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
 
     #region 服务申请管理
 
-    public async Task<System.Linq.Dynamic.Core.PagedResult<ServiceRequestDto>> GetRequestsAsync(ProTableRequest request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<ServiceRequestDto>> GetRequestsAsync(ProTableRequest request, string? tenantId = null)
     {
-        var pagedResult = _context.Set<ServiceRequest>().ToPagedList(request);
+        var query = _context.Set<ServiceRequest>().AsQueryable();
+        if (!string.IsNullOrEmpty(tenantId))
+            query = query.Where(r => r.TenantId == tenantId);
+        var pagedResult = query.ToPagedList(request);
         var items = await pagedResult.Queryable.ToListAsync();
         var requestDtos = items.Select(MapToRequestDto).ToList();
 

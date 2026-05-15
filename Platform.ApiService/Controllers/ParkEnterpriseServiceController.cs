@@ -36,9 +36,9 @@ public class ParkEnterpriseServiceController : BaseApiController
 
     [HttpGet("requests/list")]
     [RequireMenu("park-management-enterprise-service")]
-    public async Task<IActionResult> GetRequests([FromQuery] ProTableRequest request)
+    public async Task<IActionResult> GetRequests([FromQuery] ProTableRequest request, [FromQuery] string? tenantId = null)
     {
-        var result = await _enterpriseService.GetRequestsAsync(request);
+        var result = await _enterpriseService.GetRequestsAsync(request, tenantId);
         return Success(result);
     }
 

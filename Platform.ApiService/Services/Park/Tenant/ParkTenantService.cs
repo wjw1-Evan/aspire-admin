@@ -387,10 +387,14 @@ public class ParkTenantService : IParkTenantService
         var daysUntilExpiry = (contract.EndDate - DateTime.UtcNow).Days;
 
         var unitNumbers = new List<string>();
+        var unitTypes = new List<string>();
+        var unitPurposes = new List<string>();
         if (contract.UnitIds != null && contract.UnitIds.Any())
         {
             var units = await _context.Set<PropertyUnit>().Where(u => contract.UnitIds.Contains(u.Id)).ToListAsync();
             unitNumbers = units.Select(u => u.UnitNumber).ToList();
+            unitTypes = units.Select(u => u.UnitType).ToList();
+            unitPurposes = units.Select(u => u.Purpose ?? "Rent").ToList();
         }
 
         return new LeaseContractDto
@@ -398,9 +402,13 @@ public class ParkTenantService : IParkTenantService
             Id = contract.Id,
             TenantId = contract.TenantId,
             TenantName = tenant?.TenantName ?? string.Empty,
+            ContactPerson = tenant?.ContactPerson,
+            Phone = tenant?.Phone,
             ContractNumber = contract.ContractNumber,
             UnitIds = contract.UnitIds ?? new List<string>(),
             UnitNumbers = unitNumbers,
+            UnitTypes = unitTypes,
+            UnitPurposes = unitPurposes,
             StartDate = contract.StartDate,
             EndDate = contract.EndDate,
             MonthlyRent = contract.MonthlyRent,

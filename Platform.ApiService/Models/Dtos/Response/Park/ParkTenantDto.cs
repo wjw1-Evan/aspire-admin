@@ -37,9 +37,13 @@ public class LeaseContractDto
     public string Id { get; set; } = string.Empty;
     public string TenantId { get; set; } = string.Empty;
     public string? TenantName { get; set; }
+    public string? ContactPerson { get; set; }
+    public string? Phone { get; set; }
     public string ContractNumber { get; set; } = string.Empty;
     public List<string> UnitIds { get; set; } = new();
     public List<string>? UnitNumbers { get; set; }
+    public List<string>? UnitTypes { get; set; }
+    public List<string>? UnitPurposes { get; set; }
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public decimal MonthlyRent { get; set; }

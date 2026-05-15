@@ -66,6 +66,11 @@ public class PropertyUnit : MultiTenantEntity
     [StringLength(20)]
     public string Status { get; set; } = "Available";
 
+    [StringLength(20)]
+    public string? Purpose { get; set; }
+
+    public decimal? SalePrice { get; set; }
+
     [StringLength(1000)]
     public string? Description { get; set; }
 

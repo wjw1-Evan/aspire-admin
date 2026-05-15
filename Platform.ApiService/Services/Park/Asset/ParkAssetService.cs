@@ -240,6 +240,8 @@ public class ParkAssetService : IParkAssetService
             MonthlyRent = request.MonthlyRent,
             PropertyFee = request.PropertyFee,
             UnitType = request.UnitType ?? "Office",
+            Purpose = request.Purpose ?? "Rent",
+            SalePrice = request.SalePrice,
             Description = request.Description,
             Facilities = request.Facilities,
             Images = request.Images,
@@ -270,6 +272,8 @@ public class ParkAssetService : IParkAssetService
         u.MonthlyRent = request.MonthlyRent;
         u.PropertyFee = request.PropertyFee;
         u.UnitType = request.UnitType ?? u.UnitType;
+        u.Purpose = request.Purpose ?? u.Purpose;
+        u.SalePrice = request.SalePrice;
         u.Description = request.Description;
         u.Facilities = request.Facilities;
         u.Images = request.Images;
@@ -315,6 +319,8 @@ public class ParkAssetService : IParkAssetService
             PropertyFee = u.PropertyFee,
             UnitType = u.UnitType,
             Status = u.Status,
+            Purpose = u.Purpose ?? "Rent",
+            SalePrice = u.SalePrice,
             CurrentTenantId = u.CurrentTenantId,
             LeaseEndDate = u.LeaseEndDate,
             Facilities = u.Facilities,

@@ -57,6 +57,8 @@ public class PropertyUnitDto
     public decimal? PropertyFee { get; set; }
     public string UnitType { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
+    public string Purpose { get; set; } = "Rent";
+    public decimal? SalePrice { get; set; }
     public string? CurrentTenantId { get; set; }
     public string? CurrentTenantName { get; set; }
     public DateTime? LeaseEndDate { get; set; }
@@ -76,6 +78,8 @@ public class CreatePropertyUnitRequest
     public decimal MonthlyRent { get; set; }
     public decimal? PropertyFee { get; set; }
     public string? UnitType { get; set; }
+    public string? Purpose { get; set; }
+    public decimal? SalePrice { get; set; }
     public string? Description { get; set; }
     public List<string>? Facilities { get; set; }
     public List<string>? Images { get; set; }

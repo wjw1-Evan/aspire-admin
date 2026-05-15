@@ -42,10 +42,15 @@ public interface INotificationService
     /// </summary>
     Task<Dictionary<string, int>> GetStatisticsAsync(string userId);
 
-    /// <summary>
-    /// 标记为已读
-    /// </summary>
-    Task<bool> MarkAsReadAsync(string userId, string notificationId);
+/// <summary>
+     /// 获取单条通知详情
+     /// </summary>
+     Task<AppNotification?> GetByIdAsync(string userId, string notificationId);
+
+     /// <summary>
+     /// 标记为已读
+     /// </summary>
+     Task<bool> MarkAsReadAsync(string userId, string notificationId);
 
     /// <summary>
     /// 标记为未读
@@ -178,7 +183,13 @@ public class NotificationService : INotificationService
         return stats;
     }
 
-    public async Task<bool> MarkAsReadAsync(string userId, string notificationId)
+    public async Task<AppNotification?> GetByIdAsync(string userId, string notificationId)
+     {
+         return await _context.Set<AppNotification>()
+             .FirstOrDefaultAsync(n => n.Id == notificationId && n.RecipientId == userId);
+     }
+
+     public async Task<bool> MarkAsReadAsync(string userId, string notificationId)
     {
         var notification = await _context.Set<AppNotification>()
             .FirstOrDefaultAsync(n => n.Id == notificationId && n.RecipientId == userId);

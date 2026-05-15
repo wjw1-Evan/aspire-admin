@@ -42,10 +42,20 @@ public class NotificationController : BaseApiController
         return Success(result);
     }
 
-    /// <summary>
-    /// 标记单条已读
-    /// </summary>
-    [HttpPut("{id}/read")]
+/// <summary>
+     /// 获取通知详情
+     /// </summary>
+     [HttpGet("{id}")]
+     public async Task<IActionResult> GetDetail(string id)
+     {
+         var result = await _notificationService.GetByIdAsync(RequiredUserId, id);
+         return result != null ? Success(result) : NotFound("通知不存在");
+     }
+
+     /// <summary>
+     /// 标记单条已读
+     /// </summary>
+     [HttpPut("{id}/read")]
     public async Task<IActionResult> MarkAsRead(string id)
     {
         var success = await _notificationService.MarkAsReadAsync(RequiredUserId, id);

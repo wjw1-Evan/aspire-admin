@@ -71,6 +71,15 @@ export async function getNotifications(params: any): Promise<ApiResponse<PagedRe
 }
 
 /**
+ * 获取通知详情
+ */
+export async function getNotificationDetail(id: string): Promise<ApiResponse<AppNotification>> {
+  return request(`/apiservice/api/notifications/${id}`, {
+    method: 'GET',
+  });
+}
+
+/**
  * 标记为已读
  */
 export async function markAsRead(id: string): Promise<ApiResponse<void>> {

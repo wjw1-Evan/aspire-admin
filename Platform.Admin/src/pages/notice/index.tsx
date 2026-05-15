@@ -10,11 +10,12 @@ import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
 import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useIntl } from '@umijs/max';
-import { Badge, Button, Drawer, Grid, Input, message, Space, Tag, Typography } from 'antd';
+import { Badge, Button, Drawer, Input, message, Space, Tag, Typography } from 'antd';
 import dayjs from 'dayjs';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   AppNotification,
+  getNotificationDetail,
   getNotificationStatistics,
   getNotifications,
   markAllAsRead,
@@ -23,7 +24,6 @@ import {
 } from '@/services/notification/api';
 
 const { Text } = Typography;
-const { useBreakpoint } = Grid;
 
 const categoryColorMap: Record<string, string> = {
   System: 'success',
@@ -54,8 +54,6 @@ interface Stats {
 const NoticePage: React.FC = () => {
   const intl = useIntl();
   const actionRef = useRef<ActionType | undefined>(undefined);
-  const screens = useBreakpoint();
-  const isMobile = !screens.md;
 
   const [state, setState] = useState({
     detailVisible: false,
@@ -91,15 +89,19 @@ const NoticePage: React.FC = () => {
     }
   };
 
-  const handleView = (record: AppNotification) => {
-    set({ viewingNotification: record, detailVisible: true });
-    if (record.status === 'unread') {
-      markAsRead(record.id).then(() => {
-        actionRef.current?.reload();
-        loadStatistics();
-      });
-    }
-  };
+const handleView = async (record: AppNotification) => {
+     const res = await getNotificationDetail(record.id);
+     if (res.success && res.data) {
+       const notification = res.data;
+       set({ viewingNotification: notification, detailVisible: true });
+       if (notification.status === 'unread') {
+         markAsRead(notification.id).then(() => {
+           actionRef.current?.reload();
+           loadStatistics();
+         });
+       }
+     }
+   };
 
   const columns: ProColumns<AppNotification>[] = [
     {
@@ -329,14 +331,13 @@ headerTitle={
   );
 };
 
-const DetailContent: React.FC<{ notification: AppNotification; isMobile: boolean }> = ({
-  notification,
-  isMobile,
-}) => {
+const DetailContent: React.FC<{ notification: AppNotification }> = ({
+   notification,
+ }) => {
   const intl = useIntl();
 
   return (
-    <ProDescriptions column={isMobile ? 1 : 2} bordered size="small">
+    <ProDescriptions column={2} bordered size="small">
       <ProDescriptions.Item
         label={intl.formatMessage({ id: 'pages.notice.table.title' })}
         span={2}

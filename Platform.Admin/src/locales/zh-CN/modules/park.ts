@@ -765,4 +765,13 @@ export default {
   'pages.park.asset.descriptionInfo': '描述信息',
   'pages.park.asset.rentalHistory': '出租历史',
   'pages.park.asset.leaseStatus': '状态',
+  'pages.park.asset.purpose': '房屋类型',
+  'pages.park.asset.purposePlaceholder': '请选择类型',
+  'pages.park.asset.purpose.rent': '出租',
+  'pages.park.asset.purpose.sale': '出售',
+  'pages.park.asset.purpose.both': '租售均可',
+  'pages.park.asset.salePrice': '售价',
+  'pages.park.asset.salePricePlaceholder': '请输入售价',
+  'pages.park.asset.detail.field.purpose': '房屋类型',
+  'pages.park.asset.detail.field.salePrice': '售价',
 };

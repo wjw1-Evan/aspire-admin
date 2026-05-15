@@ -35,6 +35,8 @@ interface PropertyUnit {
   unitType: string;
   description?: string;
   status: string;
+  purpose?: string;
+  salePrice?: number;
   currentTenantId?: string;
   currentTenantName?: string;
   leaseEndDate?: string;
@@ -165,6 +167,16 @@ const PropertyManagement: React.FC = () => {
     return <Tag color={config.color}>{config.text}</Tag>;
   };
 
+  const renderPurpose = (purpose?: string) => {
+    const purposeMap: Record<string, { color: string; text: string }> = {
+      Rent: { color: 'blue', text: intl.formatMessage({ id: 'pages.park.asset.purpose.rent' }) },
+      Sale: { color: 'volcano', text: intl.formatMessage({ id: 'pages.park.asset.purpose.sale' }) },
+      Both: { color: 'purple', text: intl.formatMessage({ id: 'pages.park.asset.purpose.both' }) },
+    };
+    const config = purposeMap[purpose || 'Rent'] || { color: 'default', text: purpose || '' };
+    return <Tag color={config.color}>{config.text}</Tag>;
+  };
+
   const renderUnitStatus = (status: string) => {
     const statusMap: Record<string, { color: string; text: string }> = {
       Available: { color: 'green', text: intl.formatMessage({ id: 'pages.park.asset.unit.status.available' }) },
@@ -220,6 +232,14 @@ const PropertyManagement: React.FC = () => {
       render: (_, record) => `¥${record.monthlyRent?.toLocaleString()}`,
     },
     {
+      title: intl.formatMessage({ id: 'pages.park.asset.salePrice' }),
+      dataIndex: 'salePrice',
+      sorter: true,
+      width: 120,
+      align: 'right',
+      render: (_, record) => (record.salePrice ? `¥${record.salePrice.toLocaleString()}` : '-'),
+    },
+    {
       title: intl.formatMessage({ id: 'pages.park.asset.propertyFee' }),
       dataIndex: 'propertyFee',
       width: 120,
@@ -232,6 +252,13 @@ const PropertyManagement: React.FC = () => {
       sorter: true,
       width: 100,
       render: (_, record) => renderUnitType(record.unitType),
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.park.asset.purpose' }),
+      dataIndex: 'purpose',
+      sorter: true,
+      width: 100,
+      render: (_, record) => renderPurpose(record.purpose),
     },
     {
       title: intl.formatMessage({ id: 'pages.park.asset.unit.status' }),
@@ -343,10 +370,14 @@ const PropertyManagement: React.FC = () => {
           </Button>,
         ]}
         scroll={{ x: 1200 }}
-        onRow={(record) => ({
-          onClick: () => handleViewUnit(record.id),
-          style: { cursor: 'pointer' },
-        })}
+          onRow={(record) => ({
+            onClick: (e) => {
+              const target = e.target as HTMLElement;
+              if (target.closest('.ant-btn')) return;
+              handleViewUnit(record.id);
+            },
+            style: { cursor: 'pointer' },
+          })}
       />
 
       <ModalForm
@@ -371,6 +402,8 @@ const PropertyManagement: React.FC = () => {
                 floor: editingUnit.floor,
                 area: editingUnit.area,
                 unitType: editingUnit.unitType,
+                purpose: editingUnit.purpose,
+                salePrice: editingUnit.salePrice,
                 monthlyRent: editingUnit.monthlyRent,
                 propertyFee: editingUnit.propertyFee,
                 description: editingUnit.description,
@@ -438,6 +471,28 @@ const PropertyManagement: React.FC = () => {
                 { label: intl.formatMessage({ id: 'pages.park.asset.unitType.warehouse' }), value: 'Warehouse' },
                 { label: intl.formatMessage({ id: 'pages.park.asset.unitType.residential' }), value: 'Residential' },
               ]}
+            />
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col span={8}>
+            <ProFormSelect
+              name="purpose"
+              label={intl.formatMessage({ id: 'pages.park.asset.purpose' })}
+              placeholder={intl.formatMessage({ id: 'pages.park.asset.purposePlaceholder' })}
+              options={[
+                { label: intl.formatMessage({ id: 'pages.park.asset.purpose.rent' }), value: 'Rent' },
+                { label: intl.formatMessage({ id: 'pages.park.asset.purpose.sale' }), value: 'Sale' },
+                { label: intl.formatMessage({ id: 'pages.park.asset.purpose.both' }), value: 'Both' },
+              ]}
+            />
+          </Col>
+          <Col span={8}>
+            <ProFormText
+              name="salePrice"
+              label={intl.formatMessage({ id: 'pages.park.asset.salePrice' })}
+              placeholder={intl.formatMessage({ id: 'pages.park.asset.salePricePlaceholder' })}
+              fieldProps={{ type: 'number' }}
             />
           </Col>
         </Row>
@@ -531,8 +586,14 @@ const PropertyManagement: React.FC = () => {
                     })}
                   </Tag>
                 </ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.asset.detail.field.purpose' })}>
+                  {renderPurpose(currentUnit.purpose)}
+                </ProDescriptions.Item>
                 <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.asset.detail.field.monthlyRent' })}>
                   ¥{currentUnit.monthlyRent?.toLocaleString()}
+                </ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.asset.detail.field.salePrice' })}>
+                  {currentUnit.salePrice ? `¥${currentUnit.salePrice.toLocaleString()}` : '-'}
                 </ProDescriptions.Item>
                 <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.asset.detail.field.propertyFee' })}>
                   {currentUnit.propertyFee ? `¥${currentUnit.propertyFee?.toLocaleString()}` : '-'}

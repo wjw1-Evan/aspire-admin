@@ -1,7 +1,5 @@
-import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { useIntl } from '@umijs/max';
-import { Button, Space } from 'antd';
+import { PageContainer } from '@ant-design/pro-components/es/layout';
 import React, { useRef } from 'react';
 import ProjectView, { type ProjectViewRef } from '../task-management/components/ProjectView';
 
@@ -10,32 +8,7 @@ const ProjectManagement: React.FC = () => {
   const projectViewRef = useRef<ProjectViewRef>(null);
 
   return (
-    <PageContainer
-      extra={
-        <Space>
-          <Button
-            key="refresh"
-            icon={<ReloadOutlined />}
-            onClick={() => {
-              projectViewRef.current?.reload();
-              projectViewRef.current?.refreshStatistics();
-            }}
-          >
-            {intl.formatMessage({ id: 'pages.button.refresh' })}
-          </Button>
-          <Button
-            key="create"
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              projectViewRef.current?.handleCreate();
-            }}
-          >
-            {intl.formatMessage({ id: 'pages.project.createProject' })}
-          </Button>
-        </Space>
-      }
-    >
+    <PageContainer>
       <ProjectView ref={projectViewRef} />
     </PageContainer>
   );

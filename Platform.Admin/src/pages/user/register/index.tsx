@@ -1,6 +1,4 @@
 import { CheckCircleOutlined, LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
-import { ProForm, ProFormText } from '@ant-design/pro-components/es/form';
 import { FormattedMessage, history, Link, useIntl } from '@umijs/max';
 import { App, Form, Space } from 'antd';
 import { createStyles } from 'antd-style';
@@ -10,6 +8,8 @@ import { checkUsernameExists, register } from '@/services/ant-design-pro/api';
 import * as API from '@/types';
 import { PasswordEncryption } from '@/utils/encryption';
 import Settings from '../../../../config/defaultSettings';
+import { ProCard, ProForm, ProFormText } from '@ant-design/pro-components';
+
 
 const useStyles = createStyles(({ token }) => {
   return {

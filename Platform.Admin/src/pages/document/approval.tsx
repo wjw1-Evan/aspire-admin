@@ -7,9 +7,6 @@ import {
   RollbackOutlined,
   UserSwitchOutlined,
 } from '@ant-design/icons';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useIntl } from '@umijs/max';
 import { App, Button, Drawer, Input, Modal, Select, Space, Tag } from 'antd';
 import dayjs from 'dayjs';
@@ -26,6 +23,8 @@ import {
   WorkflowStatus,
 } from '@/services/workflow/api';
 import { approvalActionMap, getStatusMeta, workflowStatusMap } from '@/utils/statusMaps';
+import { ProDescriptions, PageContainer, ActionType, ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 interface TodoItem {
   id: string;

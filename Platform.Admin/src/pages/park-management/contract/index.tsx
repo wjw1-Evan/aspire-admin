@@ -9,22 +9,14 @@ import {
   SearchOutlined,
   UploadOutlined,
 } from '@ant-design/icons';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import {
-  ModalForm,
-  ProFormDatePicker,
-  ProFormDateRangePicker,
-  ProFormSelect,
-  ProFormText,
-} from '@ant-design/pro-components/es/form';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { request, useIntl } from '@umijs/max';
 import type { UploadFile, UploadProps } from 'antd';
 import { App, Button, Col, Drawer, Flex, Input, Popconfirm, Row, Space, Tag, Typography, Upload } from 'antd';
 import dayjs from 'dayjs';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiResponse, PagedResult } from '@/types';
+import { ProDescriptions, PageContainer, ActionType, ProColumns, ProTable, ModalForm, ProFormDatePicker, ProFormDateRangePicker, ProFormSelect, ProFormText } from '@ant-design/pro-components';
+
 
 const { Text } = Typography;
 

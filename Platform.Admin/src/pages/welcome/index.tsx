@@ -1,5 +1,4 @@
 import { DragOutlined } from '@ant-design/icons';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
 import {
   closestCenter,
   DndContext,
@@ -19,9 +18,8 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useAccess, useModel } from '@umijs/max';
-import { Col, Row, theme } from 'antd';
+import { Col, Row, theme, App } from 'antd';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useMessage } from '@/hooks/useMessage';
 import { getUserStatistics } from '@/services/ant-design-pro/api';
 import { getCurrentCompany } from '@/services/company';
 import { getDocumentStatistics } from '@/services/document/api';
@@ -30,6 +28,7 @@ import type { CardLayoutConfig } from '@/services/welcome/layout';
 import { getWelcomeLayout, saveWelcomeLayout } from '@/services/welcome/layout';
 import { getTodoInstances } from '@/services/workflow/api';
 
+import { PageContainer } from '@ant-design/pro-components';
 import {
   ApprovalOverviewCard,
   IoTEventAlertsCard,
@@ -113,9 +112,9 @@ const SortableCard: React.FC<SortableCardProps> = ({ id, children }) => {
 const Welcome: React.FC = () => {
   const { token } = theme.useToken();
   const { initialState } = useModel('@@initialState');
+  const { message: messageApi } = App.useApp();
   const currentUser = initialState?.currentUser as any;
-  const messageApi = useMessage();
-
+  
   const [statistics, setStatistics] = useState<any>(null);
   const [taskStatistics, setTaskStatistics] = useState<import('@/services/task/api').TaskStatistics | null>(null);
   const [todoTasks, setTodoTasks] = useState<import('@/services/task/api').TaskDto[]>([]);

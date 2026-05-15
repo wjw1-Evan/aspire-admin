@@ -1,11 +1,10 @@
 import { ArrowLeftOutlined, PlusOutlined, SaveOutlined, SettingOutlined } from '@ant-design/icons';
-import { ModalForm, ProFormSelect, ProFormText, ProFormTextArea } from '@ant-design/pro-components/es/form';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { history, request, useIntl, useNavigate, useParams } from '@umijs/max';
-import { Button, Card, Col, Empty, Grid, Result, Row, Space, Spin, Typography } from 'antd';
+import { Button, Card, Col, Empty, Grid, Result, Row, Space, Spin, Typography, App } from 'antd';
 import React, { useCallback, useEffect, useState } from 'react';
-import { useMessage } from '@/hooks/useMessage';
 import type { ApiResponse } from '@/types';
+import { ModalForm, ProFormSelect, ProFormText, ProFormTextArea, PageContainer } from '@ant-design/pro-components';
+
 
 const { useBreakpoint } = Grid;
 const { Title } = Typography;
@@ -50,9 +49,9 @@ const api = {
 };
 
 const DashboardEditPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
+  const { message } = App.useApp();
   const intl = useIntl();
-  const message = useMessage();
-  const _navigate = useNavigate();
+    const _navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const screens = useBreakpoint();
   const _isMobile = !screens.md;
@@ -67,6 +66,7 @@ const DashboardEditPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
   const set = useCallback((partial: Partial<typeof state>) => setState((prev) => ({ ...prev, ...partial })), []);
 
   const loadDashboard = async () => {
+    const { message } = App.useApp();
     if (!id) return;
     try {
       set({ loading: true });
@@ -89,6 +89,7 @@ const DashboardEditPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
   }, [id, loadDashboard]);
 
   const handleUpdateDashboard = async (values: Record<string, any>) => {
+    const { message } = App.useApp();
     if (!state.dashboard) return false;
     const data = {
       name: values.name,
@@ -106,6 +107,7 @@ const DashboardEditPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
   };
 
   const handleAddCard = async (values: Record<string, any>) => {
+    const { message } = App.useApp();
     if (!state.dashboard) return false;
     try {
       const res = await api.addCard(state.dashboard.id, values);
@@ -122,6 +124,7 @@ const DashboardEditPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
   };
 
   const handleUpdateCard = async (values: Record<string, any>) => {
+    const { message } = App.useApp();
     if (!state.editingCard) return false;
     try {
       const res = await api.updateCard(state.editingCard.id, values);
@@ -138,6 +141,7 @@ const DashboardEditPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
   };
 
   const handleDeleteCard = async (cardId: string) => {
+    const { message } = App.useApp();
     try {
       const res = await api.deleteCard(cardId);
       if (res.success) {
@@ -150,6 +154,7 @@ const DashboardEditPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
   };
 
   const renderCard = (card: DashboardCard) => {
+    const { message } = App.useApp();
     return (
       <Card
         key={card.id}

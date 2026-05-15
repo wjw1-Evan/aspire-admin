@@ -1,12 +1,12 @@
 import { ClearOutlined, DeleteOutlined, SearchOutlined, UndoOutlined } from '@ant-design/icons';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { request, useIntl } from '@umijs/max';
 import { App, Button, Form, Input, Modal, Space, Tag } from 'antd';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import React, { useRef, useState } from 'react';
 import { ApiResponse, PagedResult } from '@/types';
+import { PageContainer, ActionType, ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 dayjs.extend(relativeTime);
 

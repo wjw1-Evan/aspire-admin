@@ -6,7 +6,6 @@ import {
   MonitorOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
 import { useIntl } from '@umijs/max';
 import { Alert, Col, Row, Space, Tag, Typography, theme } from 'antd';
 import React from 'react';
@@ -14,6 +13,8 @@ import type { SystemResources } from '@/services/system/api';
 import { formatDuration, getResourceColor } from '../utils';
 import ResourceCard from './ResourceCard';
 import TinyAreaChart from './TinyAreaChart';
+import { ProCard } from '@ant-design/pro-components';
+
 
 const { Title, Text } = Typography;
 

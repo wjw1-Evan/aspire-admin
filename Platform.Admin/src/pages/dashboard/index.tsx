@@ -9,19 +9,16 @@ import {
   SearchOutlined,
   ShareAltOutlined,
 } from '@ant-design/icons';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import { ModalForm, ProFormSelect, ProFormText, ProFormTextArea } from '@ant-design/pro-components/es/form';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { request, useIntl } from '@umijs/max';
-import { Button, Drawer, Grid, Input, Popconfirm, Space, Tag } from 'antd';
+import { Button, Drawer, Grid, Input, Popconfirm, Space, Tag, App } from 'antd';
 import dayjs from 'dayjs';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useMessage } from '@/hooks/useMessage';
 import type { ApiResponse, PagedResult } from '@/types';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import DashboardDesigner from './components/DashboardDesigner';
 import DashboardPreview from './components/DashboardPreview';
+import { ProDescriptions, ModalForm, ProFormSelect, ProFormText, ProFormTextArea, PageContainer, ActionType, ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 const { useBreakpoint } = Grid;
 
@@ -72,9 +69,9 @@ const api = {
 };
 
 const DashboardListPage: React.FC = () => {
+  const { message } = App.useApp();
   const intl = useIntl();
-  const message = useMessage();
-  const actionRef = useRef<ActionType | undefined>(undefined);
+    const actionRef = useRef<ActionType | undefined>(undefined);
   const screens = useBreakpoint();
   const isMobile = !screens.md;
 
@@ -110,6 +107,7 @@ const DashboardListPage: React.FC = () => {
   const handlePreview = (id: string) => set({ previewingId: id, previewVisible: true });
 
   const closeDesign = () => {
+    const { message } = App.useApp();
     set({ designingId: '', designVisible: false });
     loadStatistics();
     actionRef.current?.reload();
@@ -118,6 +116,7 @@ const DashboardListPage: React.FC = () => {
   const closePreview = () => set({ previewingId: '', previewingLayouts: null, previewVisible: false });
 
   const handleEdit = async (id: string) => {
+    const { message } = App.useApp();
     try {
       const res = await api.get(id);
       if (res.success && res.data) set({ editingDashboard: res.data, formVisible: true });
@@ -127,6 +126,7 @@ const DashboardListPage: React.FC = () => {
   };
 
   const handleCopy = async (id: string) => {
+    const { message } = App.useApp();
     try {
       const res = await api.copy(id);
       if (res.success) {
@@ -140,6 +140,7 @@ const DashboardListPage: React.FC = () => {
   };
 
   const handleShare = async (id: string) => {
+    const { message } = App.useApp();
     try {
       const res = await api.share(id);
       if (res.success && res.data) {
@@ -152,6 +153,7 @@ const DashboardListPage: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
+    const { message } = App.useApp();
     try {
       const res = await api.delete(id);
       if (res.success) {
@@ -260,6 +262,7 @@ const DashboardListPage: React.FC = () => {
   ];
 
   const handleFinish = async (values: Record<string, string>) => {
+    const { message } = App.useApp();
     try {
       const data = {
         name: values.name,
@@ -485,6 +488,7 @@ const DashboardListPage: React.FC = () => {
 
 /** 看板详情 */
 const DetailContent: React.FC<{ id: string; isMobile: boolean }> = ({ id, isMobile }) => {
+  const { message } = App.useApp();
   const intl = useIntl();
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [loading, setLoading] = useState(false);

@@ -9,8 +9,6 @@ import {
   TrophyOutlined,
   WarningOutlined,
 } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { useIntl } from '@umijs/max';
 import { Button, Col, Empty, Modal, Progress, Row, Space, Spin, Tag, Typography } from 'antd';
 import type { Dayjs } from 'dayjs';
@@ -20,6 +18,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import StatisticsPeriodSelector from '@/components/StatisticsPeriodSelector';
 import * as projectStatisticsService from '@/services/project/statistics';
 import { ProjectDashboardStatistics } from '@/services/project/statistics';
+import { ProCard, PageContainer } from '@ant-design/pro-components';
+
 
 const { Text } = Typography;
 

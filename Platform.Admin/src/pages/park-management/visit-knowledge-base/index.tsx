@@ -8,22 +8,13 @@ import {
   StarFilled,
   StarOutlined,
 } from '@ant-design/icons';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import {
-  ModalForm,
-  ProForm,
-  ProFormSelect,
-  ProFormSwitch,
-  ProFormText,
-  ProFormTextArea,
-} from '@ant-design/pro-components/es/form';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { request, useIntl } from '@umijs/max';
 import { App, Button, Drawer, Empty, Popconfirm, Space, Tag, Typography } from 'antd';
 import { marked } from 'marked';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiResponse, PagedResult } from '@/types';
+import { ProDescriptions, PageContainer, ActionType, ProColumns, ProTable, ModalForm, ProForm, ProFormSelect, ProFormSwitch, ProFormText, ProFormTextArea } from '@ant-design/pro-components';
+
 
 const { Text, Paragraph } = Typography;
 

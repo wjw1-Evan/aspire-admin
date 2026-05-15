@@ -1,19 +1,19 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined, SettingOutlined } from '@ant-design/icons';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useIntl } from '@umijs/max';
-import { Button, Input, Space, Tag } from 'antd';
+import { Button, Input, Space, Tag, App } from 'antd';
 import dayjs from 'dayjs';
 import React, { useCallback, useRef, useState } from 'react';
-import { useMessage } from '@/hooks/useMessage';
 import { useModal } from '@/hooks/useModal';
 import { deleteXiaokeConfig, getXiaokeConfigs, setDefaultXiaokeConfig, type XiaokeConfig } from '@/services/xiaoke/api';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import ConfigForm from './ConfigForm';
+import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 const ConfigManagement: React.FC = () => {
+  const { message } = App.useApp();
   const intl = useIntl();
-  const message = useMessage();
-  const { confirm } = useModal();
+    const { confirm } = useModal();
   const actionRef = useRef<ActionType | undefined>(undefined);
   const [formVisible, setFormVisible] = useState(false);
   const [editingConfig, setEditingConfig] = useState<XiaokeConfig | null>(null);

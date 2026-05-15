@@ -1,6 +1,7 @@
-import { ProCard } from '@ant-design/pro-components/es/card';
 import { Typography, theme } from 'antd';
 import React from 'react';
+import { ProCard } from '@ant-design/pro-components';
+
 
 const { Text } = Typography;
 const { useToken } = theme;

@@ -7,12 +7,12 @@ import {
   ScheduleOutlined,
   WarningOutlined,
 } from '@ant-design/icons';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { request, useIntl } from '@umijs/max';
 import { Button, Card, Col, Input, Modal, Progress, Row, Space, Statistic, Tag, Timeline } from 'antd';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiResponse, PagedResult } from '@/types';
+import { PageContainer, ActionType, ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 interface WebScrapingLog {
   id: string;

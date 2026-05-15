@@ -8,15 +8,13 @@ import {
   SyncOutlined,
   TeamOutlined,
 } from '@ant-design/icons';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import { ModalForm, ProFormDateTimePicker, ProFormSelect, ProFormText } from '@ant-design/pro-components/es/form';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { request, useIntl } from '@umijs/max';
 import { App, AutoComplete, Button, Col, Drawer, Form, Input, Popconfirm, Row, Space, Tag, Typography } from 'antd';
 import dayjs from 'dayjs';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiResponse, PagedResult } from '@/types';
+import { ProDescriptions, ModalForm, ProFormDateTimePicker, ProFormSelect, ProFormText, PageContainer, ActionType, ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 interface VisitTask {
   id: string;

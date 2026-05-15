@@ -1,5 +1,4 @@
 import { ClockCircleOutlined, LinkOutlined, RightOutlined } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
 import { history, useIntl } from '@umijs/max';
 import { useInfiniteScroll } from 'ahooks';
 import { Badge, Button, Space, Spin, Tag, Timeline, Typography } from 'antd';
@@ -10,6 +9,8 @@ import { getCurrentUserActivityLogs } from '@/services/user-log/api';
 import * as API from '@/types';
 import { getMethodColor } from '@/utils/activityLog';
 import { getActionText, getActivityColor } from '../utils';
+import { ProCard } from '@ant-design/pro-components';
+
 
 const { Text } = Typography;
 

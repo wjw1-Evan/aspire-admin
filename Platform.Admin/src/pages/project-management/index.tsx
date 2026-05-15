@@ -1,7 +1,8 @@
 import { useIntl } from '@umijs/max';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
 import React, { useRef } from 'react';
 import ProjectView, { type ProjectViewRef } from '../task-management/components/ProjectView';
+import { PageContainer } from '@ant-design/pro-components';
+
 
 const ProjectManagement: React.FC = () => {
   const intl = useIntl();

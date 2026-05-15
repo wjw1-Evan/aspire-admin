@@ -1,14 +1,7 @@
-import {
-  ModalForm,
-  ProFormDigit,
-  ProFormSelect,
-  ProFormText,
-  ProFormTextArea,
-} from '@ant-design/pro-components/es/form';
+import { ModalForm, ProFormDigit, ProFormSelect, ProFormText, ProFormTextArea } from '@ant-design/pro-components';
 import { request, useIntl } from '@umijs/max';
-import { Col, Form, InputNumber, Row, Switch } from 'antd';
+import { Col, Form, InputNumber, Row, Switch, App } from 'antd';
 import React, { useEffect } from 'react';
-import { useMessage } from '@/hooks/useMessage';
 import { ApiResponse } from '@/types';
 
 interface TaskFormValues {
@@ -52,9 +45,9 @@ const api = {
 };
 
 const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onCancel, onSuccess }) => {
+  const { message } = App.useApp();
   const intl = useIntl();
-  const message = useMessage();
-  const [form] = Form.useForm();
+    const [form] = Form.useForm();
 
   useEffect(() => {
     if (visible && task) {
@@ -75,6 +68,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onCancel, onSuccess 
   }, [visible, task, form]);
 
   const handleFinish = async (values: TaskFormValues) => {
+    const { message } = App.useApp();
     try {
       if (task?.id) {
         await api.update(task.id, values);

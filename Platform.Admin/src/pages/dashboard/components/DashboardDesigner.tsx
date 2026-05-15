@@ -12,10 +12,9 @@ import {
   SaveOutlined,
 } from '@ant-design/icons';
 import { request, useIntl } from '@umijs/max';
-import { Button, Empty, Popconfirm, Space, Spin, Tooltip, Typography } from 'antd';
+import { Button, Empty, Popconfirm, Space, Spin, Tooltip, Typography, App } from 'antd';
 import React, { useCallback, useEffect, useState } from 'react';
 import { GridLayout as RGL, useContainerWidth } from 'react-grid-layout';
-import { useMessage } from '@/hooks/useMessage';
 import type { ApiResponse } from '@/types';
 import CardConfigForm from './CardConfigForm';
 import CardRenderer from './CardRenderer';
@@ -82,9 +81,9 @@ interface DashboardDesignerProps {
 }
 
 const DashboardDesigner: React.FC<DashboardDesignerProps> = ({ dashboardId, onPreview, onClose }) => {
+  const { message } = App.useApp();
   const intl = useIntl();
-  const message = useMessage();
-  const [dashboard, setDashboard] = useState<DashboardDto | null>(null);
+    const [dashboard, setDashboard] = useState<DashboardDto | null>(null);
   const [cards, setCards] = useState<DashboardCardDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

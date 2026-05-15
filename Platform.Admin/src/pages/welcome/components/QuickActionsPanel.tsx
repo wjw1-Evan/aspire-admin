@@ -1,5 +1,4 @@
 import { DownOutlined, RocketOutlined, UpOutlined } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
 import { history, useIntl } from '@umijs/max';
 import { Alert, Button, Col, Row, Space, theme } from 'antd';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -7,6 +6,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import { flattenMenus, getIconComponent, getMenuColor } from '../utils';
 import QuickAction from './QuickAction';
+import { ProCard } from '@ant-design/pro-components';
+
 
 interface QuickActionsPanelProps {
   readonly currentUser?: any;

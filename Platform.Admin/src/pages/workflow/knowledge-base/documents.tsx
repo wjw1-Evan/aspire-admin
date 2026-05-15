@@ -6,11 +6,6 @@ import {
   PlusOutlined,
   SearchOutlined,
 } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import { ModalForm, ProFormDigit, ProFormText, ProFormTextArea } from '@ant-design/pro-components/es/form';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { history, useIntl, useParams } from '@umijs/max';
 import { App, Button, Drawer, Grid, Input, Popconfirm, Space, Tag } from 'antd';
 import dayjs from 'dayjs';
@@ -18,6 +13,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { KnowledgeDocument } from '@/services/workflow/knowledge-base';
 import * as kbService from '@/services/workflow/knowledge-base';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import { ProCard, ProDescriptions, ModalForm, ProFormDigit, ProFormText, ProFormTextArea, PageContainer, ActionType, ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 const { useBreakpoint } = Grid;
 

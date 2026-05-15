@@ -16,10 +16,6 @@ import {
   UserOutlined,
   WarningOutlined,
 } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
-import { ModalForm, ProFormDigit, ProFormSelect, ProFormSwitch } from '@ant-design/pro-components/es/form';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { request, useIntl } from '@umijs/max';
 import {
   App,
@@ -46,6 +42,8 @@ import { getCurrentCompany } from '@/services/company';
 import { type AppUser, getUserList } from '@/services/user/api';
 import { ApiResponse, PagedResult } from '@/types';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import { ProCard, ModalForm, ProFormDigit, ProFormSelect, ProFormSwitch, PageContainer, ActionType, ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 interface StorageQuota {
   userId: string;

@@ -1,11 +1,12 @@
 import { AlertOutlined, BellOutlined, ClockCircleOutlined } from '@ant-design/icons';
-import { ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useAccess, useIntl, useNavigate } from '@umijs/max';
 import { Alert, Badge, Button, Card, Empty, Space, Tag, Typography, theme } from 'antd';
 import type { ReactNode } from 'react';
 import React, { useEffect, useRef, useState } from 'react';
 import type { IoTDeviceEvent } from '@/services/iot/api';
 import { getUnhandledEventCount, queryIoTEvents } from '@/services/iot/api';
+import { ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 const { Text } = Typography;
 

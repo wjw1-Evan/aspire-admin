@@ -1,7 +1,6 @@
 import { useIntl } from '@umijs/max';
-import { Form, Input, Modal } from 'antd';
+import { Form, Input, Modal, App } from 'antd';
 import React from 'react';
-import { useMessage } from '@/hooks/useMessage';
 import { createCompany } from '@/services/company';
 import type { CreateCompanyRequest } from '@/types';
 import { getErrorMessage } from '@/utils/getErrorMessage';
@@ -17,12 +16,12 @@ interface CreateCompanyModalProps {
  */
 export const CreateCompanyModal: React.FC<CreateCompanyModalProps> = ({ open, onClose, onSuccess }) => {
   const intl = useIntl();
-  const message = useMessage();
-
+  
   /**
    * 提交创建企业
    */
   const handleSubmit = async (values: CreateCompanyRequest) => {
+    const { message } = App.useApp();
     try {
       const response = await createCompany(values as any);
       if (response.success && response.data) {

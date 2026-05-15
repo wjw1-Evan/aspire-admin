@@ -2,12 +2,11 @@ import { request, useIntl } from '@umijs/max';
 import { App, Button, Drawer, Tag, Input, Popconfirm, Space, Spin } from 'antd';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import { ModalForm, ProFormText } from '@ant-design/pro-components/es/form';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult } from '@/types';
+import { getErrorMessage } from '@/utils/getErrorMessage';
+import { ProDescriptions, ModalForm, ProFormText, PageContainer, ActionType, ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 // ==================== Types ====================
 /**
@@ -178,6 +177,8 @@ const XxxManagement: React.FC = () => {
                 message.success(intl.formatMessage({ id: 'pages.xxx.message.deleteSuccess' }));
                 actionRef.current?.reload();
                 loadStatistics();
+              } else {
+                message.error(getErrorMessage(res, 'pages.xxx.message.deleteFailed'));
               }
             }}
           >
@@ -225,7 +226,9 @@ const XxxManagement: React.FC = () => {
         search={false}
         scroll={{ x: 'max-content' }}
         onRow={(record) => ({
-          onClick: () => {
+          onClick: (e) => {
+            const target = e.target as HTMLElement;
+            if (target.closest('.ant-btn')) return;
             handleView(record.id);
           },
           style: { cursor: 'pointer' },

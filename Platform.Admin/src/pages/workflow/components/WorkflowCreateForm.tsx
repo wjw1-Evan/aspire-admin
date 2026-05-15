@@ -1,8 +1,7 @@
 import { InfoCircleOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
-import { Button, Input, Switch } from 'antd';
+import { Button, Input, Switch, App } from 'antd';
 import React, { useState } from 'react';
-import { useMessage } from '@/hooks/useMessage';
 import { createWorkflow, type WorkflowGraph } from '@/services/workflow/api';
 import WorkflowDesigner from './WorkflowDesigner';
 
@@ -12,12 +11,13 @@ interface WorkflowCreateFormProps {
 }
 
 const WorkflowCreateForm: React.FC<WorkflowCreateFormProps> = ({ onSuccess, onCancel }) => {
+  const { message } = App.useApp();
   const intl = useIntl();
-  const message = useMessage();
-  const [_loading, setLoading] = useState(false);
+    const [_loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({ name: '', category: '', description: '', isActive: true });
 
   const handleSave = async (workflowGraph: WorkflowGraph) => {
+    const { message } = App.useApp();
     try {
       if (!formData.name) {
         message.error(intl.formatMessage({ id: 'pages.workflow.create.form.nameRequired' }));

@@ -7,8 +7,6 @@ import {
   TeamOutlined,
   UserOutlined,
 } from '@ant-design/icons';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { useIntl, useModel } from '@umijs/max';
 import { Button, Card, Col, Row, Spin, Tag } from 'antd';
 import dayjs from 'dayjs';
@@ -17,6 +15,8 @@ import { StatCard } from '@/components';
 import { getCompanyStatistics, getCurrentCompany } from '@/services/company';
 import type { Company, CompanyStatistics } from '@/types';
 import EditCompanyModal from './components/EditCompanyModal';
+import { ProDescriptions, PageContainer } from '@ant-design/pro-components';
+
 
 export default function CompanySettings() {
   const intl = useIntl();

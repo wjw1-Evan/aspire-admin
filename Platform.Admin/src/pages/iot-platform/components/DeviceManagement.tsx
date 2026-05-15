@@ -7,27 +7,17 @@ import {
   PlusOutlined,
   SendOutlined,
 } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import {
-  ModalForm,
-  ProForm,
-  ProFormDigit,
-  ProFormSelect,
-  ProFormText,
-  ProFormTextArea,
-} from '@ant-design/pro-components/es/form';
-import { ActionType, type ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useIntl } from '@umijs/max';
-import { Alert, Button, Col, Drawer, Grid, Input, Modal, Popconfirm, Row, Space, Tabs, Tag } from 'antd';
+import { Alert, Button, Col, Drawer, Grid, Input, Modal, Popconfirm, Row, Space, Tabs, Tag, App } from 'antd';
 import dayjs from 'dayjs';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useMessage } from '@/hooks/useMessage';
 import { useModal } from '@/hooks/useModal';
 import { DeviceStatistics, GenerateApiKeyResult, IoTDevice, IoTGateway, iotService } from '@/services/iotService';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import CommandCenterPanel from './CommandCenterPanel';
 import DeviceTwinPanel from './DeviceTwinPanel';
+import { ProCard, ProDescriptions, ModalForm, ProForm, ProFormDigit, ProFormSelect, ProFormText, ProFormTextArea, ActionType, type ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 const { useBreakpoint } = Grid;
 
@@ -65,9 +55,9 @@ const statusConfig: Record<string, { color: string; label: string }> = {
 
 const DeviceManagement = React.forwardRef<DeviceManagementRef, any>((_props, _ref) => {
   const intl = useIntl();
+  const { message } = App.useApp();
   const { confirm } = useModal();
-  const message = useMessage();
-  const screens = useBreakpoint();
+    const screens = useBreakpoint();
   const isMobile = !screens.md;
   const actionRef = useRef<ActionType | undefined>(undefined);
   const [form] = ProForm.useForm();

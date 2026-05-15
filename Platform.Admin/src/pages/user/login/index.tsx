@@ -1,6 +1,4 @@
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
-import { ProForm, ProFormText } from '@ant-design/pro-components/es/form';
 import { FormattedMessage, getIntl, history, Link, useIntl, useModel } from '@umijs/max';
 import { Alert, App, Form } from 'antd';
 import { createStyles } from 'antd-style';
@@ -13,6 +11,8 @@ import * as API from '@/types';
 import { PasswordEncryption } from '@/utils/encryption';
 import { tokenUtils } from '@/utils/token';
 import Settings from '../../../../config/defaultSettings';
+import { ProCard, ProForm, ProFormText } from '@ant-design/pro-components';
+
 
 const useStyles = createStyles(({ token }) => {
   return {

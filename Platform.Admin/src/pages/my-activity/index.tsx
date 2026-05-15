@@ -1,13 +1,12 @@
 import { HistoryOutlined, SearchOutlined } from '@ant-design/icons';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { request, useIntl } from '@umijs/max';
 import { Drawer, Input, Space, Tag } from 'antd';
 import dayjs from 'dayjs';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ApiResponse, PagedResult } from '@/types';
 import { getActionTagColor, getActionText, getMethodColor, getStatusBadge } from '@/utils/activityLog';
+import { ProDescriptions, PageContainer, ActionType, ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 // ==================== Types ====================
 interface UserActivityLog {

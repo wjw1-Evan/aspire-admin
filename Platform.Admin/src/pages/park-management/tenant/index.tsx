@@ -1,14 +1,12 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined, UserOutlined } from '@ant-design/icons';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import { ModalForm, ProFormDatePicker, ProFormText } from '@ant-design/pro-components/es/form';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { request, useIntl } from '@umijs/max';
 import { App, Button, Col, Drawer, Empty, Input, Popconfirm, Rate, Row, Space, Tag, Typography } from 'antd';
 import dayjs from 'dayjs';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiResponse, PagedResult } from '@/types';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import { ProDescriptions, ModalForm, ProFormDatePicker, ProFormText, PageContainer, ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 interface ParkTenant {
   id: string;

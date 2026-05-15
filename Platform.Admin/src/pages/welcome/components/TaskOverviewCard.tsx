@@ -7,16 +7,16 @@ import {
   RocketOutlined,
   SafetyOutlined,
 } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
 import { history, useIntl } from '@umijs/max';
-import { Alert, Checkbox, Col, Row, Space, Tag, Typography, theme } from 'antd';
+import { Alert, Checkbox, Col, Row, Space, Tag, Typography, theme, App } from 'antd';
 import React, { useState } from 'react';
 import useCommonStyles from '@/hooks/useCommonStyles';
-import { useMessage } from '@/hooks/useMessage';
 import type { TaskDto, TaskStatistics } from '@/services/task/api';
 import { completeTask } from '@/services/task/api';
 import * as API from '@/types';
 import StatCard from './StatCard';
+import { ProCard } from '@ant-design/pro-components';
+
 
 const { Text } = Typography;
 
@@ -36,12 +36,12 @@ const TaskOverviewCard: React.FC<TaskOverviewCardProps> = ({
   onTaskComplete,
 }) => {
   const intl = useIntl();
-  const message = useMessage();
-  const { token } = theme.useToken();
+    const { token } = theme.useToken();
   const { styles } = useCommonStyles();
   const [completingTaskIds, setCompletingTaskIds] = useState<Set<string>>(new Set());
 
   const handleCompleteTask = async (taskId: string, e: React.MouseEvent) => {
+    const { message } = App.useApp();
     e.stopPropagation();
     if (completingTaskIds.has(taskId)) return;
 

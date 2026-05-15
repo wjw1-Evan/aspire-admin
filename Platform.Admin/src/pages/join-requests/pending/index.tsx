@@ -1,11 +1,11 @@
 import { CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useIntl, useModel } from '@umijs/max';
 import { App, Button, Input, Space } from 'antd';
 import dayjs from 'dayjs';
 import React, { useCallback, useRef, useState } from 'react';
 import { approveJoinRequest, getJoinRequests, rejectJoinRequest } from '@/services/company';
+import { PageContainer, ActionType, ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 const { TextArea } = Input;
 

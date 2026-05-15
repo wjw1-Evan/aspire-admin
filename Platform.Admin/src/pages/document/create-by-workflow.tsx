@@ -1,23 +1,8 @@
 import { PlayCircleOutlined, UploadOutlined } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
-import {
-  ProForm,
-  ProFormCheckbox,
-  ProFormDatePicker,
-  ProFormDateTimePicker,
-  ProFormDigit,
-  ProFormItem,
-  ProFormRadio,
-  ProFormSelect,
-  ProFormSwitch,
-  ProFormText,
-  ProFormTextArea,
-} from '@ant-design/pro-components/es/form';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { useIntl, useLocation, useNavigate } from '@umijs/max';
-import { Button, Upload } from 'antd';
+import { Button, Upload, App } from 'antd';
 import React, { useEffect, useMemo, useState } from 'react';
-import { useMessage } from '@/hooks/useMessage';
+import { ProCard, PageContainer, ProForm, ProFormCheckbox, ProFormDatePicker, ProFormDateTimePicker, ProFormDigit, ProFormItem, ProFormRadio, ProFormSelect, ProFormSwitch, ProFormText, ProFormTextArea } from '@ant-design/pro-components';
 import {
   createAndStartDocumentWorkflow,
   type FormDefinition,
@@ -28,9 +13,9 @@ import {
 } from '@/services/workflow/api';
 
 const CreateAndStartByWorkflow: React.FC = () => {
+  const { message } = App.useApp();
   const intl = useIntl();
-  const message = useMessage();
-  const navigate = useNavigate();
+    const navigate = useNavigate();
   const [_loading, setLoading] = useState(false);
   const [workflows, setWorkflows] = useState<{ label: string; value: string }[]>([]);
   const [definitionId, setDefinitionId] = useState<string | undefined>();
@@ -74,6 +59,7 @@ const CreateAndStartByWorkflow: React.FC = () => {
   }, [definitionId]);
 
   const renderField = (field: FormField) => {
+    const { message } = App.useApp();
     const name = ['values', field.dataKey] as const;
     const label = field.label;
     const rules = field.required
@@ -175,6 +161,7 @@ const CreateAndStartByWorkflow: React.FC = () => {
   };
 
   const handleSubmit = async (values: Record<string, any>) => {
+    const { message } = App.useApp();
     try {
       const formValues = values.values || {};
       const normalizedValues: Record<string, any> = { ...formValues };

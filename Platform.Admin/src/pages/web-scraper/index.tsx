@@ -6,16 +6,15 @@ import {
   PlayCircleOutlined,
   PlusOutlined,
 } from '@ant-design/icons';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { request, useIntl } from '@umijs/max';
-import { Button, Input, Popconfirm, Space, Switch, Tag } from 'antd';
+import { Button, Input, Popconfirm, Space, Switch, Tag, App } from 'antd';
 import dayjs from 'dayjs';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useMessage } from '@/hooks/useMessage';
 import { ApiResponse, PagedResult } from '@/types';
 import ResultPreview from './components/ResultPreview';
 import TaskForm from './components/TaskForm';
+import { PageContainer, ActionType, ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 interface WebScrapingTask {
   id: string;
@@ -145,9 +144,9 @@ const explainCron = (cron: string, intl: any): string => {
 };
 
 const WebScraper: React.FC = () => {
+  const { message } = App.useApp();
   const intl = useIntl();
-  const message = useMessage();
-  const actionRef = useRef<ActionType | undefined>(undefined);
+    const actionRef = useRef<ActionType | undefined>(undefined);
   const [formVisible, setFormVisible] = useState(false);
   const [editingTask, setEditingTask] = useState<WebScrapingTask | null>(null);
   const [previewVisible, setPreviewVisible] = useState(false);

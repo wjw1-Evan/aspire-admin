@@ -8,11 +8,6 @@ import {
   StarOutlined,
   UploadOutlined,
 } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import { ModalForm, ProFormSelect, ProFormText, ProFormTextArea } from '@ant-design/pro-components/es/form';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { history, request, useIntl, useSearchParams } from '@umijs/max';
 import type { UploadFile } from 'antd';
 import {
@@ -38,6 +33,8 @@ import dayjs from 'dayjs';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiResponse, PagedResult } from '@/types';
 import { tokenUtils } from '@/utils/token';
+import { ProCard, ProDescriptions, ModalForm, ProFormSelect, ProFormText, ProFormTextArea, PageContainer, ActionType, ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 const { Text } = Typography;
 

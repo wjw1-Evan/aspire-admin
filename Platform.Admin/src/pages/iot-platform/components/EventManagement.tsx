@@ -1,12 +1,11 @@
 import { AlertOutlined, CheckOutlined, SearchOutlined } from '@ant-design/icons';
-import { ModalForm, ProForm, ProFormTextArea } from '@ant-design/pro-components/es/form';
-import { ActionType, type ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useIntl } from '@umijs/max';
-import { Button, Grid, Input, Space, Tag } from 'antd';
+import { Button, Grid, Input, Space, Tag, App } from 'antd';
 import dayjs from 'dayjs';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useMessage } from '@/hooks/useMessage';
 import { IoTDevice, IoTDeviceEvent, iotService } from '@/services/iotService';
+import { ModalForm, ProForm, ProFormTextArea, ActionType, type ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 const { useBreakpoint } = Grid;
 
@@ -24,8 +23,8 @@ const LEVEL_MAP: Record<string, { color: string; label: string }> = {
 
 const EventManagement = React.forwardRef<EventManagementRef, any>((_props, _ref) => {
   const intl = useIntl();
-  const message = useMessage();
-  const screens = useBreakpoint();
+  const { message } = App.useApp();
+    const screens = useBreakpoint();
   const isMobile = !screens.md;
   const actionRef = useRef<ActionType | undefined>(undefined);
   const [form] = ProForm.useForm();

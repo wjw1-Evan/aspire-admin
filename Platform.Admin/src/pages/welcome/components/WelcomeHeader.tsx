@@ -1,5 +1,4 @@
 import { CrownOutlined, GlobalOutlined, UserOutlined } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
 import { useIntl } from '@umijs/max';
 import { Avatar, Col, Grid, Row, Space, Tag, Typography, theme } from 'antd';
 import React from 'react';
@@ -8,6 +7,8 @@ import * as API from '@/types';
 import { getUserAvatar } from '@/utils/avatar';
 import Settings from '../../../../config/defaultSettings';
 import { getGreeting } from '../utils';
+import { ProCard } from '@ant-design/pro-components';
+
 
 const { Title, Paragraph } = Typography;
 const { useBreakpoint } = Grid;

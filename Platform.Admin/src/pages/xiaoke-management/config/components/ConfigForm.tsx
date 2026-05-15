@@ -1,15 +1,6 @@
-import {
-  ModalForm,
-  ProFormDigit,
-  ProFormSelect,
-  ProFormSlider,
-  ProFormSwitch,
-  ProFormText,
-  ProFormTextArea,
-} from '@ant-design/pro-components/es/form';
+import { ModalForm, ProFormDigit, ProFormSelect, ProFormSlider, ProFormSwitch, ProFormText, ProFormTextArea } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import React from 'react';
-import { useMessage } from '@/hooks/useMessage';
 import {
   type CreateXiaokeConfigRequest,
   createXiaokeConfig,
@@ -18,6 +9,7 @@ import {
   type XiaokeConfig,
 } from '@/services/xiaoke/api';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import { App } from 'antd';
 
 interface ConfigFormProps {
   config?: XiaokeConfig | null;
@@ -27,15 +19,16 @@ interface ConfigFormProps {
 }
 
 const ConfigForm: React.FC<ConfigFormProps> = ({ config, open, onOpenChange, onSuccess }) => {
+  const { message } = App.useApp();
   const intl = useIntl();
-  const message = useMessage();
-  const [loading, setLoading] = React.useState(false);
+    const [loading, setLoading] = React.useState(false);
 
   const isEdit = !!config;
 
   const modelOptions = [{ label: 'gpt-4o-mini', value: 'gpt-4o-mini' }];
 
   const handleSubmit = async (values: any) => {
+    const { message } = App.useApp();
     setLoading(true);
     try {
       if (isEdit) {

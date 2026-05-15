@@ -9,15 +9,14 @@ import {
   UserAddOutlined,
   UserOutlined,
 } from '@ant-design/icons';
-import { ModalForm, ProFormSelect, ProFormSwitch, ProFormText, ProFormTextArea } from '@ant-design/pro-components/es/form';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { request, useIntl } from '@umijs/max';
 import { App, Badge, Button, Drawer, Grid, Input, Modal, Popconfirm, Space, Spin, Tag } from 'antd';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Role } from '@/services/role/api';
 import { ApiResponse, PagedResult } from '@/types';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import { ModalForm, ProFormSelect, ProFormSwitch, ProFormText, ProFormTextArea, PageContainer, ActionType, ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 const { useBreakpoint } = Grid;
 

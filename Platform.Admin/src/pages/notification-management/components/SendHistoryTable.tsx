@@ -1,11 +1,12 @@
 import { BellOutlined, EyeOutlined } from '@ant-design/icons';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useIntl } from '@umijs/max';
 import { Button, Space, Tag } from 'antd';
 import dayjs from 'dayjs';
 import React, { useRef } from 'react';
 import type { NotificationSendRecordDto } from '@/services/notification-manage/api';
 import { notificationManageApi } from '@/services/notification-manage/api';
+import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 interface Props {
   onViewDetail: (id: string) => void;

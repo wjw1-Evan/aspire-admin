@@ -1,6 +1,4 @@
 import { CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
 import { request, useIntl } from '@umijs/max';
 import { Badge, Button, Flex, Space, Spin, Tag, Timeline, Typography } from 'antd';
 import dayjs from 'dayjs';
@@ -9,6 +7,8 @@ import type { Role } from '@/services/role/api';
 import { getAllRoles } from '@/services/role/api';
 import type { UserActivityLog } from '@/types';
 import { getActionTagColor, getActionText } from '@/utils/activityLog';
+import { ProCard, ProDescriptions } from '@ant-design/pro-components';
+
 
 const { Text } = Typography;
 

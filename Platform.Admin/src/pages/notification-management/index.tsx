@@ -3,8 +3,6 @@ import {
   TeamOutlined,
   UserOutlined,
 } from '@ant-design/icons';
-import { ModalForm, ProFormSelect, ProFormText, ProFormTextArea } from '@ant-design/pro-components/es/form';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { useIntl } from '@umijs/max';
 import { Button, Form, Input, message, Modal, Radio, Space, Tag, Typography } from 'antd';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -13,6 +11,8 @@ import SendHistoryTable from './components/SendHistoryTable';
 import UserSelectorModal from './components/UserSelectorModal';
 import type { NotificationManageStatistics } from '@/services/notification-manage/api';
 import { NotificationCategory, NotificationLevel, notificationManageApi } from '@/services/notification-manage/api';
+import { ModalForm, ProFormSelect, ProFormText, ProFormTextArea, PageContainer } from '@ant-design/pro-components';
+
 
 const { Text } = Typography;
 

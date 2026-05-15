@@ -1,13 +1,11 @@
 import { DatabaseOutlined } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import { ActionType, type ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useIntl } from '@umijs/max';
-import { Drawer, Grid, Input, Space, Tag, Typography } from 'antd';
+import { Drawer, Grid, Input, Space, Tag, Typography, App } from 'antd';
 import dayjs from 'dayjs';
 import React, { useCallback, useRef, useState } from 'react';
-import { useMessage } from '@/hooks/useMessage';
 import { IoTDataRecord, iotService } from '@/services/iotService';
+import { ProCard, ProDescriptions, ActionType, type ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 const { useBreakpoint } = Grid;
 const { Paragraph } = Typography;
@@ -26,8 +24,8 @@ const dataTypeLabels: Record<string, string> = {
 
 const DataCenter = React.forwardRef<DataCenterRef, any>((_props, _ref) => {
   const intl = useIntl();
-  const message = useMessage();
-  const screens = useBreakpoint();
+  const { message } = App.useApp();
+    const screens = useBreakpoint();
   const isMobile = !screens.md;
   const actionRef = useRef<ActionType | undefined>(undefined);
 

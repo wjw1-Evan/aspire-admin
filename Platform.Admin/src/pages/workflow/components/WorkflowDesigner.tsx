@@ -16,8 +16,7 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import { BranchesOutlined, CheckCircleOutlined, SaveOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
-import { Button, Form } from 'antd';
-import { useMessage } from '@/hooks/useMessage';
+import { Button, Form, App } from 'antd';
 import { useModal } from '@/hooks/useModal';
 import type { FormDefinition } from '@/services/form/api';
 import { getFormList } from '@/services/form/api';
@@ -98,6 +97,7 @@ const nodeWidth = 250;
 const nodeHeight = 100;
 
 const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => {
+  const { message } = App.useApp();
   const isHorizontal = direction === 'LR';
   dagreGraph.setGraph({ rankdir: direction, nodesep: 120, ranksep: 120 });
   nodes.forEach((node) => dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight }));
@@ -116,9 +116,9 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => 
 };
 
 const WorkflowDesigner: React.FC<WorkflowDesignerProps> = React.memo(({ graph, onSave, onClose, readOnly = false }) => {
+  const { message } = App.useApp();
   const intl = useIntl();
-  const message = useMessage();
-  const { confirm } = useModal();
+    const { confirm } = useModal();
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
@@ -145,6 +145,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = React.memo(({ graph, o
 
   useEffect(() => {
     const loadData = async () => {
+      const { message } = App.useApp();
       try {
         const [usersResponse, rolesResponse, formsResponse] = await Promise.all([
           getUserList({ page: 1 }),
@@ -167,6 +168,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = React.memo(({ graph, o
   useEffect(() => {
     if (graph && !hasInitializedRef.current) {
       const initialNodes: Node[] = graph.nodes.map((node) => {
+        const { message } = App.useApp();
         const config = node.data?.config || {};
         let jumpLabel = '';
         if (node.type === 'condition' && config.condition?.targetNodeId) {
@@ -256,6 +258,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = React.memo(({ graph, o
   );
 
   const onDragStart = (event: React.DragEvent, nodeType: string) => {
+    const { message } = App.useApp();
     event.dataTransfer.setData('application/reactflow', nodeType);
     event.dataTransfer.effectAllowed = 'move';
   };
@@ -306,6 +309,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = React.memo(({ graph, o
       setConfigDrawerVisible(true);
       const config = node.data.config || {};
       const mapApprovalType = (type: any) => {
+        const { message } = App.useApp();
         if (typeof type === 'number') return type;
         const t = String(type).toLowerCase();
         if (t === 'all') return 0;
@@ -314,6 +318,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = React.memo(({ graph, o
         return 0;
       };
       const mapApproverType = (type: any) => {
+        const { message } = App.useApp();
         if (typeof type === 'number') return type;
         const t = String(type).toLowerCase();
         if (t === 'user') return 0;
@@ -442,6 +447,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = React.memo(({ graph, o
     (values: any, selectedNodeId: string, config: NodeConfig): Edge[] => {
       const newEdges: Edge[] = [];
       const addEdgeIfTarget = (targetId: string, overrides: Partial<Edge>) => {
+        const { message } = App.useApp();
         if (!targetId) return;
         const edgeId = `${selectedNodeId}-${overrides.sourceHandle || 'next'}-${targetId}`;
         newEdges.push({ id: edgeId, source: selectedNodeId, target: targetId, ...defaultEdgeOptions, ...overrides });

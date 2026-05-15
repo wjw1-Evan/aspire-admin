@@ -4,13 +4,14 @@ import {
   CloseCircleOutlined,
   MinusCircleOutlined,
 } from '@ant-design/icons';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
 import { useIntl } from '@umijs/max';
 import { Drawer, Progress, Space, Spin, Table, Tag, Typography } from 'antd';
 import dayjs from 'dayjs';
 import React, { useEffect, useState } from 'react';
 import type { NotificationSendDetailDto as DetailDto, RecipientReadStatusDto } from '@/services/notification-manage/api';
 import { notificationManageApi } from '@/services/notification-manage/api';
+import { ProDescriptions } from '@ant-design/pro-components';
+
 
 const { Text, Paragraph } = Typography;
 

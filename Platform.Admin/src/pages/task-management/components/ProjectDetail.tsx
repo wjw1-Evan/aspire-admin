@@ -1,4 +1,3 @@
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
 import { useIntl } from '@umijs/max';
 import { Drawer, Empty, Grid, Progress, Space, Spin, Tag, Tooltip } from 'antd';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -10,6 +9,8 @@ import dayjs from 'dayjs';
 import { getTaskTree, type TaskDto } from '@/services/task/api';
 import { type ProjectDto, ProjectPriority, ProjectStatus } from '@/services/task/project';
 import { getTaskPriorityColor, getTaskStatusColor } from '@/utils/task';
+import { ProDescriptions } from '@ant-design/pro-components';
+
 
 interface ProjectDetailProps {
   project: ProjectDto;

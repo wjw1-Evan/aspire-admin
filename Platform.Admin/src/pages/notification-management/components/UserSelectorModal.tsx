@@ -1,9 +1,10 @@
-import { ProTable } from '@ant-design/pro-components/es/table';
 import { useIntl } from '@umijs/max';
 import { Modal, Tag } from 'antd';
 import React, { useRef, useState } from 'react';
 import { getUserList } from '@/services/user/api';
-import type { ActionType, ProColumns } from '@ant-design/pro-components/es/table';
+import { ProTable } from '@ant-design/pro-components';
+import type { ActionType, ProColumns } from '@ant-design/pro-components';
+
 
 interface UserItem {
   id: string;

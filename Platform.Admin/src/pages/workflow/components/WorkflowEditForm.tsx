@@ -1,8 +1,7 @@
 import { InfoCircleOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
-import { Button, Result, Spin } from 'antd';
+import { Button, Result, Spin, App } from 'antd';
 import React, { useEffect, useState } from 'react';
-import { useMessage } from '@/hooks/useMessage';
 import {
   getWorkflowDetail,
   updateWorkflow,
@@ -19,9 +18,9 @@ interface WorkflowEditFormProps {
 }
 
 const WorkflowEditForm: React.FC<WorkflowEditFormProps> = ({ workflow, onSuccess, onCancel, readOnly }) => {
+  const { message } = App.useApp();
   const intl = useIntl();
-  const message = useMessage();
-  const [_loading, setLoading] = useState(false);
+    const [_loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(true);
   const [fullWorkflow, setFullWorkflow] = useState<WorkflowDefinition | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -29,6 +28,7 @@ const WorkflowEditForm: React.FC<WorkflowEditFormProps> = ({ workflow, onSuccess
   // 从详情 API 加载完整工作流数据
   useEffect(() => {
     const loadDetail = async () => {
+      const { message } = App.useApp();
       if (!workflow.id) {
         setLoadError('工作流 ID 不存在');
         setDetailLoading(false);
@@ -54,6 +54,7 @@ const WorkflowEditForm: React.FC<WorkflowEditFormProps> = ({ workflow, onSuccess
   }, [workflow.id]);
 
   const handleSave = async (graph: WorkflowGraph) => {
+    const { message } = App.useApp();
     if (readOnly || !fullWorkflow?.id) return;
     try {
       setLoading(true);

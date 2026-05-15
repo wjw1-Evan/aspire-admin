@@ -1,11 +1,12 @@
 import { FolderOutlined } from '@ant-design/icons';
-import { ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useAccess, useIntl, useNavigate } from '@umijs/max';
 import { Card, Empty, Progress, Space, Tag, Tooltip, Typography, theme } from 'antd';
 import type { ReactNode } from 'react';
 import React, { useEffect, useRef, useState } from 'react';
 import type { ProjectDto } from '@/services/task/project';
 import { getProjectList, ProjectPriority, ProjectStatus } from '@/services/task/project';
+import { ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 const { Text } = Typography;
 

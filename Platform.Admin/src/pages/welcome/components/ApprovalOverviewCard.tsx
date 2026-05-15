@@ -5,7 +5,6 @@ import {
   EyeOutlined,
   FileTextOutlined,
 } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
 import { history, useIntl } from '@umijs/max';
 import { Alert, Button, Col, Row, Space, Tag, Typography, theme } from 'antd';
 import dayjs from 'dayjs';
@@ -13,6 +12,8 @@ import React from 'react';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import type { DocumentStatistics } from '@/services/document/api';
 import StatCard from './StatCard';
+import { ProCard } from '@ant-design/pro-components';
+
 
 const { Text } = Typography;
 

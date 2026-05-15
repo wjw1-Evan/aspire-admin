@@ -1,9 +1,9 @@
-import { ProCard } from '@ant-design/pro-components/es/card';
 import { request, useIntl, useParams } from '@umijs/max';
-import { Button, Input, Result, Space, Spin, Tag, Typography } from 'antd';
+import { Button, Input, Result, Space, Spin, Tag, Typography, App } from 'antd';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useMessage } from '@/hooks/useMessage';
 import { ApiResponse } from '@/types';
+import { ProCard } from '@ant-design/pro-components';
+
 
 const { Title, Text } = Typography;
 
@@ -44,6 +44,7 @@ const api = {
 };
 
 const formatFileSize = (bytes?: number) => {
+  const { message } = App.useApp();
   if (!bytes || bytes <= 0) return '-';
   const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -52,9 +53,9 @@ const formatFileSize = (bytes?: number) => {
 };
 
 const SharePage: React.FC = () => {
+  const { message } = App.useApp();
   const intl = useIntl();
-  const message = useMessage();
-  const params = useParams();
+    const params = useParams();
   const token = params?.token as string | undefined;
 
   const [state, setState] = useState({
@@ -119,6 +120,7 @@ const SharePage: React.FC = () => {
   }, [state.shareInfo, intl]);
 
   const handleDownload = async () => {
+    const { message } = App.useApp();
     if (!state.shareInfo?.canDownload || !token) return;
     try {
       const response = await api.download(token, state.password, state.shareInfo.fileName);
@@ -164,6 +166,7 @@ const SharePage: React.FC = () => {
   };
 
   const renderContent = () => {
+    const { message } = App.useApp();
     if (state.loading) {
       return (
         <div style={{ textAlign: 'center', padding: 48 }}>

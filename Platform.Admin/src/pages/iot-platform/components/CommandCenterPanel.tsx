@@ -6,7 +6,6 @@ import {
   SendOutlined,
   StopOutlined,
 } from '@ant-design/icons';
-import { ProForm } from '@ant-design/pro-components/es/form';
 import { useIntl } from '@umijs/max';
 import {
   Button,
@@ -26,6 +25,8 @@ import {
 import dayjs from 'dayjs';
 import React, { useCallback, useState } from 'react';
 import { CommandStatus, IoTDeviceCommand, iotService } from '@/services/iotService';
+import { ProForm } from '@ant-design/pro-components';
+
 
 const { Text, Paragraph } = Typography;
 const { TextArea } = Input;

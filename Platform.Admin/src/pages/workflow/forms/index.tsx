@@ -28,12 +28,12 @@ import {
   RollbackOutlined,
   UploadOutlined,
 } from '@ant-design/icons';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useIntl } from '@umijs/max';
 import { api } from './api';
 import { FormDesigner } from './FormDesigner';
 import { FormDefinition, FormVersion } from './types';
+import { PageContainer, ActionType, ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 interface FormStatistics {
   totalForms: number;

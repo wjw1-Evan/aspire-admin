@@ -6,12 +6,12 @@ import {
   ReloadOutlined,
   WifiOutlined,
 } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { request, useIntl } from '@umijs/max';
 import { Button, Col, Grid, Row, Space, Spin, Tag } from 'antd';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ApiResponse } from '@/types';
+import { ProCard, PageContainer } from '@ant-design/pro-components';
+
 
 const { useBreakpoint } = Grid;
 

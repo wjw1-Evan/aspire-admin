@@ -1,10 +1,11 @@
 import { UserOutlined } from '@ant-design/icons';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
 import { useIntl } from '@umijs/max';
 import { Avatar, Drawer, Space, Tag } from 'antd';
 import dayjs from 'dayjs';
 import React from 'react';
 import type { ChatHistoryDetailResponse } from '@/services/xiaoke/api';
+import { ProDescriptions } from '@ant-design/pro-components';
+
 
 interface ChatHistoryDetailProps {
   open: boolean;

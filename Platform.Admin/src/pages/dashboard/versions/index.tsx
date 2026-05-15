@@ -8,10 +8,9 @@ import {
   SwapOutlined,
 } from '@ant-design/icons';
 import { useIntl, useNavigate, useParams } from '@umijs/max';
-import { Alert, Button, Descriptions, Modal, Popconfirm, Space, Table, Tag, Typography } from 'antd';
+import { Alert, Button, Descriptions, Modal, Popconfirm, Space, Table, Tag, Typography, App } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import React, { useCallback, useEffect, useState } from 'react';
-import { useMessage } from '@/hooks/useMessage';
 import type {
   DashboardVersion,
   DashboardVersionComparison,
@@ -22,9 +21,9 @@ import api from '@/services/dashboard-version/api';
 const { Text, Paragraph } = Typography;
 
 const DashboardVersionPage: React.FC = () => {
+  const { message } = App.useApp();
   const intl = useIntl();
-  const message = useMessage();
-  const navigate = useNavigate();
+    const navigate = useNavigate();
   const { dashboardId } = useParams<{ dashboardId: string }>();
 
   const [versions, setVersions] = useState<DashboardVersion[]>([]);
@@ -88,6 +87,7 @@ const DashboardVersionPage: React.FC = () => {
 
   // 创建版本
   const handleCreateVersion = async () => {
+    const { message } = App.useApp();
     if (!dashboardId) return;
     try {
       const res = await api.create(dashboardId, { comment: `手动创建快照 - ${new Date().toLocaleString()}` });
@@ -105,6 +105,7 @@ const DashboardVersionPage: React.FC = () => {
 
   // 恢复版本
   const handleRestore = async (versionNumber: number) => {
+    const { message } = App.useApp();
     if (!dashboardId) return;
     try {
       const res = await api.restore(dashboardId, versionNumber);
@@ -121,6 +122,7 @@ const DashboardVersionPage: React.FC = () => {
 
   // 删除版本
   const handleDelete = async (versionId: string) => {
+    const { message } = App.useApp();
     try {
       const res = await api.delete(versionId);
       if (res.success) {
@@ -137,6 +139,7 @@ const DashboardVersionPage: React.FC = () => {
 
   // 查看详情
   const handleViewDetail = async (versionId: string) => {
+    const { message } = App.useApp();
     try {
       const res = await api.get(versionId);
       if (res.success && res.data) {
@@ -150,6 +153,7 @@ const DashboardVersionPage: React.FC = () => {
 
   // 比较版本
   const handleCompare = async () => {
+    const { message } = App.useApp();
     if (selectedRowKeys.length !== 2) {
       message.warning(intl.formatMessage({ id: 'pages.dashboard.version.selectTwoVersions' }));
       return;
@@ -173,6 +177,7 @@ const DashboardVersionPage: React.FC = () => {
 
   // 返回看板列表
   const handleBack = () => {
+    const { message } = App.useApp();
     navigate('/dashboard');
   };
 

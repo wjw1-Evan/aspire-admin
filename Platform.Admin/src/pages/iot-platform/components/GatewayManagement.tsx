@@ -1,15 +1,12 @@
 import { CloudServerOutlined, DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import { ModalForm, ProForm, ProFormSelect, ProFormText } from '@ant-design/pro-components/es/form';
-import { ActionType, type ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useIntl } from '@umijs/max';
-import { Button, Drawer, Form, Grid, Input, Popconfirm, Space, Tag } from 'antd';
+import { Button, Drawer, Form, Grid, Input, Popconfirm, Space, Tag, App } from 'antd';
 import dayjs from 'dayjs';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useMessage } from '@/hooks/useMessage';
 import { useModal } from '@/hooks/useModal';
 import { GatewayStatistics, IoTDeviceStatus, IoTGateway, iotService } from '@/services/iotService';
+import { ProCard, ProDescriptions, ModalForm, ProForm, ProFormSelect, ProFormText, ActionType, type ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 const { useBreakpoint } = Grid;
 
@@ -31,9 +28,9 @@ const httpMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'PULL'];
 
 const GatewayManagement = React.forwardRef<GatewayManagementRef, any>((_props, _ref) => {
   const intl = useIntl();
+  const { message } = App.useApp();
   const { confirm } = useModal();
-  const message = useMessage();
-  const screens = useBreakpoint();
+    const screens = useBreakpoint();
   const isMobile = !screens.md;
   const actionRef = useRef<ActionType | undefined>(undefined);
   const [form] = ProForm.useForm();

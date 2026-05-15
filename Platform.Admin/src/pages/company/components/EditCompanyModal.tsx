@@ -1,10 +1,11 @@
-import { ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-components/es/form';
 import { useIntl } from '@umijs/max';
 import { Tooltip } from 'antd';
 import { updateCurrentCompany } from '@/services/company';
 import type { Company } from '@/types';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import Settings from '../../../../config/defaultSettings';
+import { ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-components';
+
 
 interface EditCompanyModalProps {
   open: boolean;

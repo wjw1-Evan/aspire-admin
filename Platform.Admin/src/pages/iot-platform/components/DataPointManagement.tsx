@@ -1,23 +1,12 @@
 import { DatabaseOutlined, DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import {
-  ModalForm,
-  ProForm,
-  ProFormDigit,
-  ProFormSelect,
-  ProFormSwitch,
-  ProFormText,
-  ProFormTextArea,
-} from '@ant-design/pro-components/es/form';
-import { ActionType, type ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useIntl } from '@umijs/max';
-import { Button, Col, Drawer, Grid, Input, Popconfirm, Row, Space, Tag } from 'antd';
+import { Button, Col, Drawer, Grid, Input, Popconfirm, Row, Space, Tag, App } from 'antd';
 import dayjs from 'dayjs';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useMessage } from '@/hooks/useMessage';
 import { useModal } from '@/hooks/useModal';
 import { IoTDataPoint, IoTDevice, iotService } from '@/services/iotService';
+import { ProCard, ProDescriptions, ModalForm, ProForm, ProFormDigit, ProFormSelect, ProFormSwitch, ProFormText, ProFormTextArea, ActionType, type ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 const { useBreakpoint } = Grid;
 
@@ -45,9 +34,9 @@ const DATA_TYPE_LABELS: Record<string, string> = {
 
 const DataPointManagement = React.forwardRef<DataPointManagementRef, any>((_props, _ref) => {
   const intl = useIntl();
+  const { message } = App.useApp();
   const { confirm } = useModal();
-  const message = useMessage();
-  const screens = useBreakpoint();
+    const screens = useBreakpoint();
   const isMobile = !screens.md;
   const actionRef = useRef<ActionType | undefined>(undefined);
   const [form] = ProForm.useForm();

@@ -1,10 +1,8 @@
 import { DeleteOutlined, MessageOutlined, SearchOutlined } from '@ant-design/icons';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useIntl } from '@umijs/max';
-import { Button, Input, Space, Tag } from 'antd';
+import { Button, Input, Space, Tag, App } from 'antd';
 import dayjs from 'dayjs';
 import React, { useCallback, useRef, useState } from 'react';
-import { useMessage } from '@/hooks/useMessage';
 import { useModal } from '@/hooks/useModal';
 import {
   type ChatHistoryDetailResponse,
@@ -15,11 +13,13 @@ import {
 } from '@/services/xiaoke/api';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import ChatHistoryDetail from './ChatHistoryDetail';
+import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 const ChatHistoryManagement: React.FC = () => {
+  const { message } = App.useApp();
   const intl = useIntl();
-  const message = useMessage();
-  const { confirm } = useModal();
+    const { confirm } = useModal();
   const actionRef = useRef<ActionType | undefined>(undefined);
   const [detailVisible, setDetailVisible] = useState(false);
   const [detailData, setDetailData] = useState<ChatHistoryDetailResponse | null>(null);

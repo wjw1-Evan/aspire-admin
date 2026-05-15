@@ -1,12 +1,12 @@
 import { ApiOutlined, DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useIntl } from '@umijs/max';
 import { App, Button, Drawer, Input, Space, Tag } from 'antd';
 import dayjs from 'dayjs';
 import React, { useRef, useState } from 'react';
 import { deleteWorkflow, getWorkflowList, type WorkflowDefinition } from '@/services/workflow/api';
 import WorkflowDesignerModal from './components/WorkflowDesignerModal';
+import { PageContainer, ActionType, ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 const WorkflowManagement: React.FC = () => {
   const intl = useIntl();

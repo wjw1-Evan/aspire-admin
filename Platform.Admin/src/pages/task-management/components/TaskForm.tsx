@@ -1,17 +1,9 @@
-import {
-  ModalForm,
-  ProFormDatePicker,
-  ProFormDigit,
-  ProFormSelect,
-  ProFormText,
-  ProFormTextArea,
-} from '@ant-design/pro-components/es/form';
+import { ModalForm, ProFormDatePicker, ProFormDigit, ProFormSelect, ProFormText, ProFormTextArea } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
-import { Col, Row, Spin } from 'antd';
+import { Col, Row, Spin, App } from 'antd';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import React, { useCallback, useEffect } from 'react';
-import { useMessage } from '@/hooks/useMessage';
 import {
   type CreateTaskRequest,
   createTask,
@@ -64,8 +56,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
   parentTaskId,
 }) => {
   const intl = useIntl();
-  const message = useMessage();
-  const [loading, setLoading] = React.useState(false);
+    const [loading, setLoading] = React.useState(false);
   const [users, setUsers] = React.useState<AppUser[]>([]);
   const [usersLoading, setUsersLoading] = React.useState(false);
   const [tasks, setTasks] = React.useState<TaskDto[]>([]);
@@ -90,6 +81,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
   }, [open, loadUsers]);
 
   const loadTasks = async (projId?: string) => {
+    const { message } = App.useApp();
     try {
       const response = await getTaskTree(projId);
       if (response.success && response.data) setTasks(response.data);
@@ -99,6 +91,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
   };
 
   const handleSubmit = async (values: TaskFormValues) => {
+    const { message } = App.useApp();
     setLoading(true);
     try {
       const assignedUserIds = values.assignedUserIds || [];

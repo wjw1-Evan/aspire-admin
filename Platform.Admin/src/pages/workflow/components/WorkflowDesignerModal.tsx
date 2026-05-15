@@ -1,8 +1,7 @@
 import { InfoCircleOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
-import { Button, Input, Result, Select, Spin, Switch } from 'antd';
+import { Button, Input, Result, Select, Spin, Switch, App } from 'antd';
 import React, { useEffect, useState } from 'react';
-import { useMessage } from '@/hooks/useMessage';
 import {
   createWorkflow,
   getWorkflowDetail,
@@ -20,9 +19,9 @@ interface WorkflowDesignerModalProps {
 }
 
 const WorkflowDesignerModal: React.FC<WorkflowDesignerModalProps> = ({ workflow, onSuccess, onCancel, readOnly }) => {
+  const { message } = App.useApp();
   const intl = useIntl();
-  const message = useMessage();
-  const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(!!workflow?.id);
   const [formData, setFormData] = useState({
     name: workflow?.name || '',
@@ -41,6 +40,7 @@ const WorkflowDesignerModal: React.FC<WorkflowDesignerModalProps> = ({ workflow,
     const shouldLoad = !!workflowId;
     if (shouldLoad) {
       const loadDetail = async () => {
+        const { message } = App.useApp();
         try {
           setDetailLoading(true);
           setLoadError(null);
@@ -70,6 +70,7 @@ const WorkflowDesignerModal: React.FC<WorkflowDesignerModalProps> = ({ workflow,
   }, [workflow?.id]);
 
   const handleSave = async (graph: WorkflowGraph) => {
+    const { message } = App.useApp();
     if (!formData.name) {
       message.error(intl.formatMessage({ id: 'pages.workflow.create.form.nameRequired' }));
       return;

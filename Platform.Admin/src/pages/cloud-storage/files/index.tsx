@@ -17,16 +17,6 @@ import {
   ShareAltOutlined,
   UploadOutlined,
 } from '@ant-design/icons';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import {
-  ModalForm,
-  ProFormDatePicker,
-  ProFormDigit,
-  ProFormSelect,
-  ProFormText,
-} from '@ant-design/pro-components/es/form';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { request, useIntl } from '@umijs/max';
 import type { UploadFile } from 'antd';
 import { App, Button, Card, Drawer, Dropdown, Image, Input, Modal, Popconfirm, Space, Tag, Upload } from 'antd';
@@ -34,6 +24,8 @@ import dayjs from 'dayjs';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiResponse, PagedResult } from '@/types';
 import { tokenUtils } from '@/utils/token';
+import { ProDescriptions, PageContainer, ActionType, ProColumns, ProTable, ModalForm, ProFormDatePicker, ProFormDigit, ProFormSelect, ProFormText } from '@ant-design/pro-components';
+
 
 // ==================== Types ====================
 interface FileItem {

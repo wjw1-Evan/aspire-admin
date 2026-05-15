@@ -15,9 +15,6 @@ import {
   UserSwitchOutlined,
   WarningOutlined,
 } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ProTable } from '@ant-design/pro-components/es/table';
 import { request, useIntl } from '@umijs/max';
 import { Button, Col, Empty, Modal, Progress, Row, Space, Spin, Statistic, Tabs, Tag, Typography } from 'antd';
 import type { Dayjs } from 'dayjs';
@@ -26,6 +23,8 @@ import { marked } from 'marked';
 import React, { useCallback, useEffect, useState } from 'react';
 import StatisticsPeriodSelector from '@/components/StatisticsPeriodSelector';
 import { ApiResponse } from '@/types';
+import { ProCard, PageContainer, ProTable } from '@ant-design/pro-components';
+
 
 const { Text } = Typography;
 

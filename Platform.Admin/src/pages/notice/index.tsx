@@ -6,13 +6,11 @@ import {
   SearchOutlined,
   WarningOutlined,
 } from '@ant-design/icons';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useIntl } from '@umijs/max';
 import { Badge, Button, Drawer, Input, message, Space, Tag, Typography } from 'antd';
 import dayjs from 'dayjs';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ProDescriptions, PageContainer, ActionType, ProColumns, ProTable } from '@ant-design/pro-components';
 import {
   AppNotification,
   getNotificationDetail,

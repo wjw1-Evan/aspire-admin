@@ -9,16 +9,6 @@ import WorkflowManagement from '../list';
 jest.mock('@/services/workflow/api');
 const mockWorkflowApi = jest.mocked(workflowApi);
 
-// Mock the hooks
-jest.mock('@/hooks/useMessage', () => ({
-  useMessage: () => ({
-    success: jest.fn(),
-    error: jest.fn(),
-    warning: jest.fn(),
-    info: jest.fn(),
-  }),
-}));
-
 jest.mock('@/hooks/useModal', () => ({
   useModal: () => ({
     confirm: jest.fn(),
@@ -32,6 +22,17 @@ jest.mock('antd', () => {
     Grid: {
       ...originalAntd.Grid,
       useBreakpoint: jest.fn(() => ({ md: true })),
+    },
+    App: {
+      ...originalAntd.App,
+      useApp: () => ({
+        message: {
+          success: jest.fn(),
+          error: jest.fn(),
+          warning: jest.fn(),
+          info: jest.fn(),
+        },
+      }),
     },
   };
 });

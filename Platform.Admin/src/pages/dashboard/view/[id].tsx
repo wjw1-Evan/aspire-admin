@@ -1,10 +1,10 @@
 import { ArrowLeftOutlined, ReloadOutlined } from '@ant-design/icons';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { history, request, useIntl, useNavigate, useParams } from '@umijs/max';
-import { Button, Card, Col, Empty, Grid, Result, Row, Space, Spin, Typography } from 'antd';
+import { Button, Card, Col, Empty, Grid, Result, Row, Space, Spin, Typography, App } from 'antd';
 import React, { useCallback, useEffect, useState } from 'react';
-import { useMessage } from '@/hooks/useMessage';
 import type { ApiResponse } from '@/types';
+import { PageContainer } from '@ant-design/pro-components';
+
 
 const { useBreakpoint } = Grid;
 const { Title } = Typography;
@@ -51,9 +51,9 @@ const api = {
 };
 
 const DashboardViewPage: React.FC = () => {
+  const { message } = App.useApp();
   const intl = useIntl();
-  const message = useMessage();
-  const _navigate = useNavigate();
+    const _navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const screens = useBreakpoint();
   const _isMobile = !screens.md;
@@ -66,6 +66,7 @@ const DashboardViewPage: React.FC = () => {
   const set = useCallback((partial: Partial<typeof state>) => setState((prev) => ({ ...prev, ...partial })), []);
 
   const loadDashboard = async () => {
+    const { message } = App.useApp();
     if (!id) return;
     try {
       set({ loading: true });
@@ -89,12 +90,14 @@ const DashboardViewPage: React.FC = () => {
   }, [id, loadDashboard]);
 
   const loadAllCardsData = async (cards: DashboardCard[]) => {
+    const { message } = App.useApp();
     for (const card of cards) {
       await loadCardData(card.id);
     }
   };
 
   const loadCardData = async (cardId: string) => {
+    const { message } = App.useApp();
     try {
       const res = await api.getCardData(cardId);
       if (res.success && res.data) {
@@ -109,6 +112,7 @@ const DashboardViewPage: React.FC = () => {
   };
 
   const handleRefresh = async (cardId: string) => {
+    const { message } = App.useApp();
     try {
       const res = await api.refreshCardData(cardId);
       if (res.success && res.data) {
@@ -124,6 +128,7 @@ const DashboardViewPage: React.FC = () => {
   };
 
   const handleRefreshAll = async () => {
+    const { message } = App.useApp();
     if (!state.dashboard) return;
     for (const card of state.dashboard.cards) {
       await handleRefresh(card.id);
@@ -131,6 +136,7 @@ const DashboardViewPage: React.FC = () => {
   };
 
   const renderCard = (card: DashboardCard) => {
+    const { message } = App.useApp();
     const cardData = state.cardDataMap.get(card.id);
 
     return (

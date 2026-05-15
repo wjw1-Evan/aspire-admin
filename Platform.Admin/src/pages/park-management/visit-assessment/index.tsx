@@ -1,13 +1,11 @@
 import { FileSearchOutlined, SearchOutlined, StarFilled, StarOutlined, TeamOutlined } from '@ant-design/icons';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import { ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-components/es/form';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { request, useIntl } from '@umijs/max';
 import { App, Button, Divider, Drawer, Input, Rate, Space, Tag, Typography } from 'antd';
 import dayjs from 'dayjs';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiResponse, PagedResult } from '@/types';
+import { ProDescriptions, ModalForm, ProFormText, ProFormTextArea, PageContainer, ActionType, ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 const { Text } = Typography;
 

@@ -6,9 +6,6 @@ import {
   ReloadOutlined,
   UserOutlined,
 } from '@ant-design/icons';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import { ModalForm, ProFormDigit, ProFormText } from '@ant-design/pro-components/es/form';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { request, useIntl } from '@umijs/max';
 import {
   Button,
@@ -33,8 +30,10 @@ import type { TreeSelectProps } from 'antd/es/tree-select';
 import dayjs from 'dayjs';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useCommonStyles from '@/hooks/useCommonStyles';
-import { useMessage } from '@/hooks/useMessage';
 import { ApiResponse } from '@/types';
+import { ProDescriptions, ModalForm, ProFormDigit, ProFormText, PageContainer } from '@ant-design/pro-components';
+import { App } from 'antd';
+
 
 const { Text } = Typography;
 const { Search } = Input;
@@ -153,6 +152,7 @@ const flattenTree = (nodes: OrgNode[]): Record<string, OrgNode> => {
 const collectDescendantIds = (node?: OrgNode): Set<string> => {
   const ids = new Set<string>();
   const traverse = (n?: OrgNode) => {
+    const { message } = App.useApp();
     if (!n?.children) return;
     n.children.forEach((c) => {
       if (c.id) ids.add(c.id);
@@ -190,6 +190,7 @@ const AssignUserModal: React.FC<{
   }, [open, orgId, form]);
 
   const handleSearch = (value: string) => {
+    const { message } = App.useApp();
     if (!orgId) return;
     setLoading(true);
     api
@@ -237,8 +238,8 @@ const AssignUserModal: React.FC<{
 
 // ==================== Main ====================
 const OrganizationPage: React.FC = () => {
-  const message = useMessage();
-  const intl = useIntl();
+  const { message } = App.useApp();
+    const intl = useIntl();
   const { styles } = useCommonStyles();
   const [state, setState] = useState({
     tree: [] as OrgNode[],
@@ -315,6 +316,7 @@ const OrganizationPage: React.FC = () => {
   }, [state.selectedId, fetchMembers]);
 
   const handleRemoveMember = async (userId: string) => {
+    const { message } = App.useApp();
     if (!state.selectedId) return;
     await api.removeUser({ userId, organizationUnitId: state.selectedId });
     message.success(intl.formatMessage({ id: 'pages.message.deleteSuccess' }));
@@ -323,6 +325,7 @@ const OrganizationPage: React.FC = () => {
 
   const disabledIds = useMemo(() => collectDescendantIds(state.editingNode || undefined), [state.editingNode]);
   const treeSelectData: TreeSelectProps['treeData'] = useMemo(() => {
+    const { message } = App.useApp();
     const build = (nodes: OrgNode[]): TreeSelectProps['treeData'] =>
       nodes.map((node) => ({
         title: node.name,
@@ -349,6 +352,7 @@ const OrganizationPage: React.FC = () => {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleDrop = async (info: any) => {
+    const { message } = App.useApp();
     const dragId = String(info.dragNode?.key);
     const targetId = String(info.node?.key);
     const dropToGap = !!info.dropToGap;

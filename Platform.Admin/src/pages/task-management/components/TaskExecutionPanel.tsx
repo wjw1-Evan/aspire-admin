@@ -1,10 +1,9 @@
-import { ProCard } from '@ant-design/pro-components/es/card';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import { ModalForm, ProFormSelect, ProFormSlider, ProFormText } from '@ant-design/pro-components/es/form';
 import { useIntl } from '@umijs/max';
 import { Alert, App, Divider, Spin, Tag } from 'antd';
 import React, { useState } from 'react';
 import { completeTask, executeTask, type TaskDto, TaskExecutionResult, TaskStatus } from '@/services/task/api';
+import { ProCard, ProDescriptions, ModalForm, ProFormSelect, ProFormSlider, ProFormText } from '@ant-design/pro-components';
+
 
 interface TaskExecutionPanelProps {
   open: boolean;

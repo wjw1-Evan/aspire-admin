@@ -1,10 +1,10 @@
 import { ReloadOutlined } from '@ant-design/icons';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { request, useIntl, useParams } from '@umijs/max';
-import { Button, Card, Col, Empty, Grid, Result, Row, Space, Spin, Typography } from 'antd';
+import { Button, Card, Col, Empty, Grid, Result, Row, Space, Spin, Typography, App } from 'antd';
 import React, { useCallback, useEffect, useState } from 'react';
-import { useMessage } from '@/hooks/useMessage';
 import type { ApiResponse } from '@/types';
+import { PageContainer } from '@ant-design/pro-components';
+
 
 const { useBreakpoint } = Grid;
 const { Title } = Typography;
@@ -51,9 +51,9 @@ const api = {
 };
 
 const DashboardSharePage: React.FC = () => {
+  const { message } = App.useApp();
   const intl = useIntl();
-  const message = useMessage();
-  const { token } = useParams<{ token: string }>();
+    const { token } = useParams<{ token: string }>();
   const screens = useBreakpoint();
   const _isMobile = !screens.md;
 
@@ -65,6 +65,7 @@ const DashboardSharePage: React.FC = () => {
   const set = useCallback((partial: Partial<typeof state>) => setState((prev) => ({ ...prev, ...partial })), []);
 
   const loadDashboard = async () => {
+    const { message } = App.useApp();
     if (!token) return;
     try {
       set({ loading: true });
@@ -88,12 +89,14 @@ const DashboardSharePage: React.FC = () => {
   }, [token, loadDashboard]);
 
   const loadAllCardsData = async (cards: DashboardCard[]) => {
+    const { message } = App.useApp();
     for (const card of cards) {
       await loadCardData(card.id);
     }
   };
 
   const loadCardData = async (cardId: string) => {
+    const { message } = App.useApp();
     try {
       const res = await api.getCardData(cardId);
       if (res.success && res.data) {
@@ -108,6 +111,7 @@ const DashboardSharePage: React.FC = () => {
   };
 
   const handleRefresh = async (cardId: string) => {
+    const { message } = App.useApp();
     try {
       const res = await api.refreshCardData(cardId);
       if (res.success && res.data) {
@@ -123,6 +127,7 @@ const DashboardSharePage: React.FC = () => {
   };
 
   const handleRefreshAll = async () => {
+    const { message } = App.useApp();
     if (!state.dashboard) return;
     for (const card of state.dashboard.cards) {
       await handleRefresh(card.id);
@@ -130,6 +135,7 @@ const DashboardSharePage: React.FC = () => {
   };
 
   const renderCard = (card: DashboardCard) => {
+    const { message } = App.useApp();
     const cardData = state.cardDataMap.get(card.id);
 
     return (

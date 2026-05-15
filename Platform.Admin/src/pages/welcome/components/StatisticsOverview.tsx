@@ -7,11 +7,12 @@ import {
   TeamOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
 import { useIntl } from '@umijs/max';
 import { Col, Row, Space, theme } from 'antd';
 import React from 'react';
 import StatCard from './StatCard';
+import { ProCard } from '@ant-design/pro-components';
+
 
 interface StatisticsOverviewProps {
   readonly statistics: any;

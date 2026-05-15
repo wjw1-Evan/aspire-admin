@@ -1,7 +1,8 @@
-import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { useIntl } from '@umijs/max';
 import React from 'react';
 import ConfigManagement from './components/ConfigManagement';
+import { PageContainer } from '@ant-design/pro-components';
+
 
 const ConfigPage: React.FC = () => {
   const _intl = useIntl();

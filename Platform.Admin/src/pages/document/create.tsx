@@ -1,17 +1,15 @@
 import { SaveOutlined, UploadOutlined } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
-import { ProForm, ProFormSelect } from '@ant-design/pro-components/es/form';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
 import { useIntl, useNavigate } from '@umijs/max';
-import { Button, Upload } from 'antd';
+import { Button, Upload, App } from 'antd';
 import React, { useState } from 'react';
-import { useMessage } from '@/hooks/useMessage';
 import { getWorkflowList } from '@/services/workflow/api';
+import { ProCard, ProForm, ProFormSelect, PageContainer } from '@ant-design/pro-components';
+
 
 const CreateDocument: React.FC = () => {
+  const { message } = App.useApp();
   const intl = useIntl();
-  const message = useMessage();
-  const navigate = useNavigate();
+    const navigate = useNavigate();
   const [_loading, setLoading] = useState(false);
 
   return (

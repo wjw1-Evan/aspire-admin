@@ -1,5 +1,4 @@
 import { DeleteOutlined, EditOutlined, InfoCircleOutlined, PlusOutlined, SaveOutlined } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
 import { useIntl } from '@umijs/max';
 import type { SelectProps } from 'antd';
 import {
@@ -31,6 +30,8 @@ import {
 } from '@/services/workflow/api';
 import FormDesignerDialog from './FormDesignerDialog';
 import { NODE_CONFIGS } from './WorkflowDesignerConstants';
+import { ProCard } from '@ant-design/pro-components';
+
 
 interface WorkflowFormField {
   id: string;

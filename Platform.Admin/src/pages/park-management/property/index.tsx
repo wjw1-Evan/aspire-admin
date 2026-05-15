@@ -6,10 +6,6 @@ import {
   SearchOutlined,
   UploadOutlined,
 } from '@ant-design/icons';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import { ModalForm, ProFormSelect, ProFormText } from '@ant-design/pro-components/es/form';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { request, useIntl } from '@umijs/max';
 import type { UploadFile } from 'antd';
 import { App, Button, Col, Drawer, Input, Popconfirm, Row, Space, Tag, Typography, Upload } from 'antd';
@@ -17,6 +13,8 @@ import dayjs from 'dayjs';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiResponse, PagedResult } from '@/types';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import { ProDescriptions, ModalForm, ProFormSelect, ProFormText, PageContainer, ActionType, ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 const { Text, Title } = Typography;
 

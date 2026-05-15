@@ -1,11 +1,10 @@
 import { DatabaseOutlined, EyeOutlined, FileTextOutlined, LinkOutlined, PictureOutlined } from '@ant-design/icons';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { request, useIntl } from '@umijs/max';
-import { Button, Card, Col, Descriptions, Input, Modal, Row, Space, Tabs, Tag } from 'antd';
+import { Button, Card, Col, Descriptions, Input, Modal, Row, Space, Tabs, Tag, App } from 'antd';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useMessage } from '@/hooks/useMessage';
 import { ApiResponse, PagedResult } from '@/types';
+import { PageContainer, ActionType, ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 interface WebScrapingResult {
   id: string;
@@ -57,8 +56,7 @@ const api = {
 };
 
 const WebScraperResults: React.FC = () => {
-  const _message = useMessage();
-  const actionRef = useRef<ActionType | undefined>(undefined);
+    const actionRef = useRef<ActionType | undefined>(undefined);
   const [detailVisible, setDetailVisible] = useState(false);
   const [currentResult, setCurrentResult] = useState<WebScrapingResult | null>(null);
   const [search, setSearch] = useState('');

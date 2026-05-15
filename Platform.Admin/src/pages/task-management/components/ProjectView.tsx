@@ -1,5 +1,4 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined, ProjectOutlined, SearchOutlined } from '@ant-design/icons';
-import { ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useIntl, useSearchParams } from '@umijs/max';
 import { App, Badge, Button, Input, Progress, Space, Tag } from 'antd';
 import dayjs from 'dayjs';
@@ -17,6 +16,8 @@ import {
 } from '@/services/task/project';
 import ProjectDetail from './ProjectDetail';
 import ProjectForm from './ProjectForm';
+import { ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 export interface ProjectViewRef {
   reload: () => void;

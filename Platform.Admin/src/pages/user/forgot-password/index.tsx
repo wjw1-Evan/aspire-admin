@@ -1,5 +1,4 @@
 import { LockOutlined, MailOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
 import { FormattedMessage, history, Link, useIntl } from '@umijs/max';
 import { App, Button, Form, Input, Space, Steps } from 'antd';
 import { createStyles } from 'antd-style';
@@ -8,6 +7,8 @@ import { Footer, SelectLang } from '@/components';
 import { resetPassword, sendResetCode } from '@/services/ant-design-pro/api';
 import * as API from '@/types';
 import { PasswordEncryption } from '@/utils/encryption';
+import { ProCard } from '@ant-design/pro-components';
+
 
 const useStyles = createStyles(({ token }) => {
   return {

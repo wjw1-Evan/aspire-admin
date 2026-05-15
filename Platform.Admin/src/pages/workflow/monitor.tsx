@@ -1,7 +1,4 @@
 import { EyeOutlined, FormOutlined, HistoryOutlined, MonitorOutlined } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useIntl, useLocation } from '@umijs/max';
 import { Button, Checkbox, Form, Input, InputNumber, Modal, Select, Space, Switch, Tag } from 'antd';
 import dayjs from 'dayjs';
@@ -22,6 +19,8 @@ import {
 } from '@/services/workflow/api';
 import { approvalActionMap, getStatusMeta, workflowStatusMap } from '@/utils/statusMaps';
 import WorkflowDesigner from './components/WorkflowDesigner';
+import { ProCard, PageContainer, ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 const WorkflowMonitor: React.FC = () => {
   const intl = useIntl();

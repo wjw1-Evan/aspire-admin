@@ -1,4 +1,3 @@
-import { ProCard } from '@ant-design/pro-components/es/card';
 import { useIntl } from '@umijs/max';
 import { Empty, Progress, Select, Space, Tag, Tooltip } from 'antd';
 import dayjs from 'dayjs';
@@ -6,6 +5,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { getCriticalPath, getTasksByProjectId, getTaskTree, type TaskDto } from '@/services/task/api';
 import { getProjectList, type ProjectDto } from '@/services/task/project';
 import { getTaskPriorityColor } from '@/utils/task';
+import { ProCard } from '@ant-design/pro-components';
+
 
 interface GanttChartProps {
   projectId?: string;

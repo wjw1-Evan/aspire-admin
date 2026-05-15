@@ -1,8 +1,7 @@
 import { ReloadOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
-import { Button, Image, Input, Space } from 'antd';
+import { Button, Image, Input, Space, App } from 'antd';
 import React, { forwardRef, useCallback, useImperativeHandle, useRef, useState } from 'react';
-import { useMessage } from '@/hooks/useMessage';
 import { getImageCaptcha, verifyImageCaptcha } from '@/services/ant-design-pro/api';
 
 interface ImageCaptchaProps {
@@ -22,8 +21,8 @@ export interface ImageCaptchaRef {
 const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(
   ({ value, onChange, onCaptchaIdChange, type = 'login', placeholder, size = 'large' }, ref) => {
     const intl = useIntl();
-    const message = useMessage();
-    const [captchaId, setCaptchaId] = useState<string>('');
+    const { message } = App.useApp();
+        const [captchaId, setCaptchaId] = useState<string>('');
     const [imageData, setImageData] = useState<string>('');
     const [loading, setLoading] = useState(false);
     const [verifying, setVerifying] = useState(false);
@@ -74,6 +73,7 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(
 
     // 验证图形验证码
     const _verifyCaptcha = async (answer: string) => {
+      const { message } = App.useApp();
       // 如果没有 captchaId 或验证码功能未启用，直接返回通过
       if (!captchaId || !answer) {
         return true;
@@ -103,12 +103,14 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(
 
     // 处理输入变化
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const { message } = App.useApp();
       const inputValue = e.target.value;
       onChange?.(inputValue);
     };
 
     // 处理回车键
     const handleKeyDown = async (_e: React.KeyboardEvent<HTMLInputElement>) => {
+      const { message } = App.useApp();
       // 回车时直接让表单提交，不再单独验证验证码
       // 验证码会在登录时由后端统一验证
     };

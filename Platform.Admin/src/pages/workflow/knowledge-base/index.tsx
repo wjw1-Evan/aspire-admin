@@ -6,15 +6,14 @@ import {
   PlusOutlined,
   SearchOutlined,
 } from '@ant-design/icons';
-import { ModalForm, ProFormSwitch, ProFormText, ProFormTextArea } from '@ant-design/pro-components/es/form';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { history, useIntl } from '@umijs/max';
 import { App, Button, Input, Modal, Popconfirm, Space, Tag } from 'antd';
 import React, { useRef, useState } from 'react';
 import type { KnowledgeBase } from '@/services/workflow/knowledge-base';
 import * as kbService from '@/services/workflow/knowledge-base';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import { ModalForm, ProFormSwitch, ProFormText, ProFormTextArea, PageContainer, ActionType, ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 const KnowledgeBaseManagement: React.FC = () => {
   const intl = useIntl();

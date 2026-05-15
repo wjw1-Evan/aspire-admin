@@ -3,7 +3,6 @@
  * 根据卡片类型提供不同的配置表单项
  */
 
-import { ModalForm, ProFormText } from '@ant-design/pro-components/es/form';
 import { useIntl } from '@umijs/max';
 import type { GetProps } from 'antd';
 import { Button, ColorPicker, Divider, Form, Input, InputNumber, Select, Tabs, Typography } from 'antd';
@@ -13,6 +12,8 @@ type DividerOrientation = GetProps<typeof Divider>['orientation'];
 
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import type { DashboardCardDto, StyleConfig } from './types';
+import { ModalForm, ProFormText } from '@ant-design/pro-components';
+
 
 const { Text } = Typography;
 

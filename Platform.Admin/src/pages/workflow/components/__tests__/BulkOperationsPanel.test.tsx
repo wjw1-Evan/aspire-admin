@@ -9,16 +9,6 @@ import BulkOperationsPanel from '../BulkOperationsPanel';
 jest.mock('@/services/workflow/api');
 const mockWorkflowApi = jest.mocked(workflowApi);
 
-// Mock the hooks
-jest.mock('@/hooks/useMessage', () => ({
-  useMessage: () => ({
-    success: jest.fn(),
-    error: jest.fn(),
-    warning: jest.fn(),
-    info: jest.fn(),
-  }),
-}));
-
 jest.mock('antd', () => {
   const originalAntd = jest.requireActual('antd');
   return {

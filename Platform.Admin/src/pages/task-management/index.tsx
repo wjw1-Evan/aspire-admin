@@ -6,10 +6,6 @@ import {
   ProjectOutlined,
   SearchOutlined,
 } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components/es/card';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
-import { PageContainer } from '@ant-design/pro-components/es/layout';
-import { ActionType, ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { request, useIntl, useLocation, useModel } from '@umijs/max';
 import { App, Button, Drawer, Empty, Grid, Input, Popconfirm, Progress, Space, Spin, Tag, Timeline } from 'antd';
 import dayjs from 'dayjs';
@@ -27,6 +23,8 @@ import { getErrorMessage } from '@/utils/getErrorMessage';
 import { getTaskPriorityColor, getTaskStatusColor } from '@/utils/task';
 import TaskExecutionPanel from './components/TaskExecutionPanel';
 import TaskForm from './components/TaskForm';
+import { ProCard, ProDescriptions, PageContainer, ActionType, ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 const { useBreakpoint } = Grid;
 

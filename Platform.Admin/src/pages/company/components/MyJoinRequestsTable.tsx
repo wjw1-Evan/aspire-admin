@@ -1,5 +1,4 @@
 import { TeamOutlined, UndoOutlined } from '@ant-design/icons';
-import { ProColumns, ProTable } from '@ant-design/pro-components/es/table';
 import { useIntl } from '@umijs/max';
 import { App, Button, Popconfirm, Space, Tag, theme } from 'antd';
 import dayjs from 'dayjs';
@@ -7,6 +6,8 @@ import React, { useCallback } from 'react';
 import { cancelJoinRequest, getMyJoinRequests } from '@/services/company';
 import type { JoinRequestDetail } from '@/types';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import { ProColumns, ProTable } from '@ant-design/pro-components';
+
 
 const MyJoinRequestsTable: React.FC = () => {
   const intl = useIntl();

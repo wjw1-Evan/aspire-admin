@@ -8,7 +8,6 @@ import {
   MobileOutlined,
   UserOutlined,
 } from '@ant-design/icons';
-import { ProDescriptions } from '@ant-design/pro-components/es/descriptions';
 import { FormattedMessage, request, useIntl, useModel } from '@umijs/max';
 import {
   Alert,
@@ -36,6 +35,8 @@ import { getUserAvatar } from '@/utils/avatar';
 import { PasswordEncryption } from '@/utils/encryption';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import Settings from '../../../../config/defaultSettings';
+import { ProDescriptions } from '@ant-design/pro-components';
+
 
 const { Title, Text } = Typography;
 

@@ -1,6 +1,7 @@
-import { PageContainer } from '@ant-design/pro-components/es/layout';
 import React from 'react';
 import GatewayManagement from './components/GatewayManagement';
+import { PageContainer } from '@ant-design/pro-components';
+
 
 const GatewayManagementPage: React.FC = () => {
   return (

@@ -19,13 +19,20 @@ export default function MenuItemCard({
   onPress,
   badge,
 }: MenuItemCardProps) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
+
+  const cardBg = isDark
+    ? 'rgba(28,28,30,0.85)'
+    : 'rgba(250, 250, 250, 0.85)';
+
   const styles = useMemo(() => StyleSheet.create({
     card: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: colors.cardBackground,
+      backgroundColor: cardBg,
       borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
       padding: AppStyles.spacing.md,
       marginBottom: AppStyles.spacing.sm,
     },

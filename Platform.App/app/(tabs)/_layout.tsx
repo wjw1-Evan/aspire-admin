@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { Platform, StyleSheet, View } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '@/contexts/ThemeContext';
 import FloatingActionMenu from '@/components/FloatingActionMenu';
@@ -16,6 +17,7 @@ function TabBarIcon(props: {
 
 export default function TabLayout() {
   const { colors, isDark } = useTheme();
+  const { t } = useTranslation();
 
   const tabBarStyles = useMemo(() => StyleSheet.create({
     tabBar: {
@@ -68,14 +70,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: '首页',
+          title: t('tabs.home'),
           tabBarIcon: ({ color }) => <TabBarIcon name="home-outline" color={color} />,
         }}
       />
       <Tabs.Screen
         name="tasks"
         options={{
-          title: '任务',
+          title: t('tabs.tasks'),
           tabBarIcon: ({ color }) => <TabBarIcon name="checkmark-done-outline" color={color} />,
         }}
       />
@@ -89,14 +91,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="projects"
         options={{
-          title: '项目',
+          title: t('tabs.projects'),
           tabBarIcon: ({ color }) => <TabBarIcon name="folder-outline" color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: '我的',
+          title: t('tabs.profile'),
           tabBarIcon: ({ color }) => <TabBarIcon name="person-outline" color={color} />,
         }}
       />

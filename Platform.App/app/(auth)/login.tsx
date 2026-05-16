@@ -18,10 +18,12 @@ import { LoginRequest } from '../../types/auth';
 import { reportUserLocation } from '../../utils/locationReporter';
 import PasswordEncryption from '../../utils/encryption';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { AppStyles } from '../../constants/AppStyles';
 
 export default function LoginScreen() {
     const { colors } = useTheme();
+    const { t } = useTranslation();
     const styles = useMemo(() => StyleSheet.create({
         container: {
             flex: 1,
@@ -159,7 +161,7 @@ export default function LoginScreen() {
     const showErrorToast = (message: string) => {
         Toast.show({
             type: 'error',
-            text1: '登录失败',
+            text1: t('auth.login_failed'),
             text2: message,
             position: 'top',
             visibilityTime: 3000,
@@ -169,7 +171,7 @@ export default function LoginScreen() {
 
     const handleLogin = async () => {
         if (!username.trim() || !password.trim()) {
-            showErrorToast('请输入用户名和密码');
+            showErrorToast(t('auth.login_failed_message'));
             return;
         }
 
@@ -196,13 +198,13 @@ export default function LoginScreen() {
 
                 authService.notifyLoginSuccess();
             } else {
-                const errorMsg = response.message || '登录失败，请检查后重试';
+                const errorMsg = response.message || t('auth.login_failed');
                 console.error('Login failed:', errorMsg);
                 showErrorToast(errorMsg);
             }
         } catch (error: any) {
             console.error('Login error:', error);
-            const errorMsg = error.message || '登录过程中发生错误，请稍后重试';
+            const errorMsg = error.message || t('common.error');
             showErrorToast(errorMsg);
         } finally {
             setLoading(false);
@@ -226,13 +228,13 @@ export default function LoginScreen() {
                     <View style={styles.logoContainer}>
                         <Ionicons name="shield-checkmark" size={40} color={colors.primary} />
                     </View>
-                    <Text style={styles.title}>欢迎回来</Text>
-                    <Text style={styles.subtitle}>登录您的账户开始使用</Text>
+                    <Text style={styles.title}>{t('auth.welcome_back')}</Text>
+                    <Text style={styles.subtitle}>{t('auth.login_subtitle')}</Text>
                 </View>
 
                 <View style={styles.formContainer}>
                     <View style={styles.inputContainer}>
-                        <Text style={styles.label}>用户名</Text>
+                        <Text style={styles.label}>{t('auth.username')}</Text>
                         <View style={[
                             styles.inputWrapper,
                             usernameFocused && styles.inputWrapperFocused
@@ -245,7 +247,7 @@ export default function LoginScreen() {
                             />
                             <TextInput
                                 style={styles.input}
-                                placeholder="请输入用户名"
+                                placeholder={t('auth.username_placeholder')}
                                 placeholderTextColor={colors.textTertiary}
                                 value={username}
                                 onChangeText={setUsername}
@@ -259,7 +261,7 @@ export default function LoginScreen() {
                     </View>
 
                     <View style={styles.inputContainer}>
-                        <Text style={styles.label}>密码</Text>
+                        <Text style={styles.label}>{t('auth.password')}</Text>
                         <View style={[
                             styles.inputWrapper,
                             passwordFocused && styles.inputWrapperFocused
@@ -272,7 +274,7 @@ export default function LoginScreen() {
                             />
                             <TextInput
                                 style={styles.input}
-                                placeholder="请输入密码"
+                                placeholder={t('auth.password_placeholder')}
                                 placeholderTextColor={colors.textTertiary}
                                 value={password}
                                 onChangeText={setPassword}
@@ -306,7 +308,7 @@ export default function LoginScreen() {
                                 <ActivityIndicator color="#fff" />
                             ) : (
                                 <View style={styles.buttonContent}>
-                                    <Text style={styles.buttonText}>登录</Text>
+                                    <Text style={styles.buttonText}>{t('auth.login_button')}</Text>
                                     <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 8 }} />
                                 </View>
                             )}
@@ -314,9 +316,9 @@ export default function LoginScreen() {
                     </TouchableOpacity>
 
                     <View style={styles.registerContainer}>
-                        <Text style={styles.registerText}>还没有账户？</Text>
+                        <Text style={styles.registerText}>{t('auth.no_account')}</Text>
                         <TouchableOpacity onPress={navigateToRegister} disabled={loading}>
-                            <Text style={styles.registerLink}>立即注册</Text>
+                            <Text style={styles.registerLink}>{t('auth.register_now')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

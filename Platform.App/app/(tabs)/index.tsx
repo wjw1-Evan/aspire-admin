@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { StyleSheet, ScrollView, RefreshControl, ActivityIndicator, View as RNView, Text as RNText, Platform, TouchableOpacity } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { AppStyles } from '../../constants/AppStyles';
 import { useTheme } from '../../utils/theme';
 import { authService } from '../../services/authService';
@@ -15,10 +16,13 @@ import { Link, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MenuItemCard from '../../components/ui/MenuItemCard';
+import { changeLanguage, getCurrentLanguage } from '../../utils/i18n';
 
 export default function HomeScreen() {
   const { colors, isDark } = useTheme();
+  const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
+  const [currentLang, setCurrentLang] = useState<'zh' | 'en'>(getCurrentLanguage());
   const styles = useMemo(() => StyleSheet.create({
     container: {
       flex: 1,
@@ -98,6 +102,12 @@ export default function HomeScreen() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [todoCount, setTodoCount] = useState(0);
   const [activeProjectCount, setActiveProjectCount] = useState(0);
+
+  const toggleLanguage = async () => {
+    const newLang = currentLang === 'zh' ? 'en' : 'zh';
+    await changeLanguage(newLang);
+    setCurrentLang(newLang);
+  };
 
   const fetchTodoCount = useCallback(async () => {
     try {
@@ -186,12 +196,17 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <RNView style={styles.headerTop}>
             <RNView>
-              <RNText style={styles.greeting}>欢迎回来</RNText>
+              <RNText style={styles.greeting}>{t('home.greeting')}</RNText>
               <RNText style={styles.userName}>
-                {user?.realName || user?.username || '用户'}
+                {user?.realName || user?.username || t('home.user')}
               </RNText>
             </RNView>
             <RNView style={styles.headerRight}>
+              <TouchableOpacity style={styles.noticeButton} onPress={toggleLanguage}>
+                <RNText style={{ fontSize: 14, fontWeight: '600', color: colors.primary }}>
+                  {currentLang === 'zh' ? 'EN' : '中'}
+                </RNText>
+              </TouchableOpacity>
               <Link href="/notifications" asChild>
                 <TouchableOpacity style={styles.noticeButton}>
                   <Ionicons name="notifications-outline" size={24} color={colors.text} />
@@ -214,40 +229,40 @@ export default function HomeScreen() {
         <View style={styles.contentSection}>
           <MenuItemCard
             icon="add-circle-outline"
-            title="创建任务"
-            description="快速创建新任务"
+            title={t('home.create_task')}
+            description={t('home.create_task_desc')}
             onPress={() => router.push('/task/create')}
           />
           <MenuItemCard
             icon="folder-open-outline"
-            title="创建项目"
-            description="开始新项目"
+            title={t('home.create_project')}
+            description={t('home.create_project_desc')}
             onPress={() => router.push('/project/create')}
           />
           <MenuItemCard
             icon="checkbox-outline"
-            title="我的待办"
-            description="查看待办任务"
+            title={t('home.my_todo')}
+            description={t('home.my_todo_desc')}
             badge={todoCount}
             onPress={() => router.push('/(tabs)/tasks')}
           />
           <MenuItemCard
             icon="folder-outline"
-            title="进行中项目"
-            description="查看活跃项目"
+            title={t('home.active_projects')}
+            description={t('home.active_projects_desc')}
             badge={activeProjectCount}
             onPress={() => router.push('/(tabs)/projects')}
           />
           <MenuItemCard
             icon="list-outline"
-            title="全部任务"
-            description="浏览所有任务"
+            title={t('home.all_tasks')}
+            description={t('home.all_tasks_desc')}
             onPress={() => router.push('/(tabs)/tasks')}
           />
           <MenuItemCard
             icon="briefcase-outline"
-            title="全部项目"
-            description="浏览所有项目"
+            title={t('home.all_projects')}
+            description={t('home.all_projects_desc')}
             onPress={() => router.push('/(tabs)/projects')}
           />
         </View>

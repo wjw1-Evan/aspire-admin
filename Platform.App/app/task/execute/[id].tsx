@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import Toast from 'react-native-toast-message';
+import { useTranslation } from 'react-i18next';
 import { taskService } from '../../../services/taskService';
 import { TaskDto, TaskExecutionResult } from '../../../types/task';
 import TaskExecutionForm from '../../../components/task/TaskExecutionForm';
 import LoadingView from '../../../components/ui/LoadingView';
 
 export default function ExecuteTaskScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [task, setTask] = useState<TaskDto | null>(null);
@@ -29,10 +31,10 @@ export default function ExecuteTaskScreen() {
     setSaving(true);
     try {
       await taskService.executeTask({ taskId: id, completionPercentage: percentage, message });
-      Toast.show({ type: 'success', text1: '进度更新成功', position: 'top', visibilityTime: 2000 });
+      Toast.show({ type: 'success', text1: t('task_execution.progress_updated'), position: 'top', visibilityTime: 2000 });
       router.back();
     } catch (err: any) {
-      Toast.show({ type: 'error', text1: '更新失败', text2: err?.message, position: 'top' });
+      Toast.show({ type: 'error', text1: t('task_execution.update_failed'), text2: err?.message, position: 'top' });
     } finally {
       setSaving(false);
     }
@@ -51,10 +53,10 @@ export default function ExecuteTaskScreen() {
         remarks,
         errorMessage,
       });
-      Toast.show({ type: 'success', text1: '任务已完成', position: 'top', visibilityTime: 2000 });
+      Toast.show({ type: 'success', text1: t('task_execution.task_completed'), position: 'top', visibilityTime: 2000 });
       router.back();
     } catch (err: any) {
-      Toast.show({ type: 'error', text1: '操作失败', text2: err?.message, position: 'top' });
+      Toast.show({ type: 'error', text1: t('task_execution.operation_failed'), text2: err?.message, position: 'top' });
     } finally {
       setSaving(false);
     }

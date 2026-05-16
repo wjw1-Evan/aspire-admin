@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { AppStyles } from '../../constants/AppStyles';
 import { useTheme } from '../../utils/theme';
 
@@ -10,10 +11,12 @@ interface ErrorViewProps {
 }
 
 export default function ErrorView({
-  message = '加载失败，请稍后重试',
+  message,
   onRetry,
 }: ErrorViewProps) {
   const { colors } = useTheme();
+  const { t } = useTranslation();
+  const resolvedMessage = message || t('common.error');
   const styles = useMemo(() => StyleSheet.create({
     container: {
       flex: 1,
@@ -60,11 +63,11 @@ export default function ErrorView({
       <View style={styles.iconContainer}>
         <Ionicons name="alert-circle-outline" size={36} color={colors.error} />
       </View>
-      <Text style={styles.message}>{message}</Text>
+      <Text style={styles.message}>{resolvedMessage}</Text>
       {onRetry && (
         <TouchableOpacity style={styles.button} onPress={onRetry}>
           <Ionicons name="refresh" size={16} color={colors.cardBackground} style={{ marginRight: 6 }} />
-          <Text style={styles.buttonText}>重试</Text>
+          <Text style={styles.buttonText}>{t('common.retry')}</Text>
         </TouchableOpacity>
       )}
     </View>

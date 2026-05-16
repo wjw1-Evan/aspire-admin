@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppStyles } from '../../constants/AppStyles';
 import { TaskExecutionResult } from '../../types/task';
 import { useTheme } from '../../utils/theme';
+import { useTranslation } from 'react-i18next';
 
 type Mode = 'progress' | 'complete';
 
@@ -35,6 +36,7 @@ export default function TaskExecutionForm({
   saving,
 }: TaskExecutionFormProps) {
   const { colors, isDark } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => StyleSheet.create({
     container: {
       flex: 1,
@@ -218,9 +220,9 @@ export default function TaskExecutionForm({
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={onCancel} disabled={saving}>
-          <Text style={styles.cancelText}>取消</Text>
+          <Text style={styles.cancelText}>{t('task_execution.cancel')}</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>执行任务</Text>
+        <Text style={styles.title}>{t('task_execution.title')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -234,7 +236,7 @@ export default function TaskExecutionForm({
             disabled={saving}
           >
             <Text style={[styles.segmentText, mode === 'progress' && styles.segmentTextActive]}>
-              更新进度
+              {t('task_execution.update_progress')}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -243,7 +245,7 @@ export default function TaskExecutionForm({
             disabled={saving}
           >
             <Text style={[styles.segmentText, mode === 'complete' && styles.segmentTextActive]}>
-              完成任务
+              {t('task_execution.complete_task')}
             </Text>
           </TouchableOpacity>
         </View>

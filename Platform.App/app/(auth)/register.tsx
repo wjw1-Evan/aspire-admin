@@ -16,9 +16,11 @@ import Toast from 'react-native-toast-message';
 import { authService } from '../../services/authService';
 import { RegisterRequest } from '../../types/auth';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 export default function RegisterScreen() {
     const { colors } = useTheme();
+    const { t } = useTranslation();
     const styles = useMemo(() => StyleSheet.create({
         container: {
             flex: 1,
@@ -147,13 +149,13 @@ export default function RegisterScreen() {
     const [loading, setLoading] = useState(false);
 
     const validateForm = (): string | null => {
-        if (!username.trim()) return '请输入用户名';
-        if (username.length < 3) return '用户名至少3个字符';
-        if (!password) return '请输入密码';
-        if (password.length < 6) return '密码至少6个字符';
-        if (password !== confirmPassword) return '两次输入的密码不一致';
-        if (!email.trim()) return '请输入邮箱';
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return '邮箱格式不正确';
+        if (!username.trim()) return t('auth.username_required');
+        if (username.length < 3) return t('auth.username_min_length');
+        if (!password) return t('auth.password_required');
+        if (password.length < 6) return t('auth.password_min_length');
+        if (password !== confirmPassword) return t('auth.password_mismatch');
+        if (!email.trim()) return t('auth.email_required');
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return t('auth.email_invalid');
         return null;
     };
 
@@ -162,7 +164,7 @@ export default function RegisterScreen() {
         if (error) {
             Toast.show({
                 type: 'error',
-                text1: '验证失败',
+                text1: t('auth.validation_failed'),
                 text2: error,
                 position: 'top',
                 visibilityTime: 3000,
@@ -186,8 +188,8 @@ export default function RegisterScreen() {
             if (response.success) {
                 Toast.show({
                     type: 'success',
-                    text1: '注册成功',
-                    text2: '您的账户已创建，请登录',
+                    text1: t('auth.register_success'),
+                    text2: t('auth.register_success_message'),
                     position: 'top',
                     visibilityTime: 2000,
                     onHide: () => {
@@ -196,9 +198,9 @@ export default function RegisterScreen() {
                 });
             } else {
                 Toast.show({
-                    type: 'error',
-                    text1: '注册失败',
-                    text2: response.message || '注册失败，请稍后重试',
+                type: 'error',
+                text1: t('auth.register_failed'),
+                text2: response.message || t('auth.register_failed_message'),
                     position: 'top',
                     visibilityTime: 3000,
                 });
@@ -207,8 +209,8 @@ export default function RegisterScreen() {
             console.error('Register error:', error);
             Toast.show({
                 type: 'error',
-                text1: '注册失败',
-                text2: error.message || '注册过程中发生错误，请稍后重试',
+                text1: t('auth.register_failed'),
+                text2: error.message || t('auth.register_failed_message'),
                 position: 'top',
                 visibilityTime: 3000,
             });
@@ -234,20 +236,20 @@ export default function RegisterScreen() {
                     <View style={styles.logoContainer}>
                         <Ionicons name="person-add" size={40} color={colors.primary} />
                     </View>
-                    <Text style={styles.title}>创建账户</Text>
-                    <Text style={styles.subtitle}>填写您的信息以开始使用</Text>
+                    <Text style={styles.title}>{t('auth.create_account')}</Text>
+                    <Text style={styles.subtitle}>{t('auth.register_subtitle')}</Text>
                 </View>
 
                 <View style={styles.formContainer}>
                     <View style={styles.inputContainer}>
                         <Text style={styles.label}>
-                            用户名 <Text style={styles.required}>*</Text>
+                            {t('auth.username')} <Text style={styles.required}>*</Text>
                         </Text>
                         <View style={styles.inputWrapper}>
                             <Ionicons name="person-outline" size={20} color={colors.textTertiary} style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
-                                placeholder="请输入用户名（至少3个字符）"
+                                placeholder={t('auth.username_placeholder')}
                                 placeholderTextColor={colors.textTertiary}
                                 value={username}
                                 onChangeText={setUsername}
@@ -260,13 +262,13 @@ export default function RegisterScreen() {
 
                     <View style={styles.inputContainer}>
                         <Text style={styles.label}>
-                            邮箱 <Text style={styles.required}>*</Text>
+                            {t('auth.email')} <Text style={styles.required}>*</Text>
                         </Text>
                         <View style={styles.inputWrapper}>
                             <Ionicons name="mail-outline" size={20} color={colors.textTertiary} style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
-                                placeholder="请输入邮箱地址"
+                                placeholder={t('auth.email_placeholder')}
                                 placeholderTextColor={colors.textTertiary}
                                 value={email}
                                 onChangeText={setEmail}
@@ -280,13 +282,13 @@ export default function RegisterScreen() {
 
                     <View style={styles.inputContainer}>
                         <Text style={styles.label}>
-                            密码 <Text style={styles.required}>*</Text>
+                            {t('auth.password')} <Text style={styles.required}>*</Text>
                         </Text>
                         <View style={styles.inputWrapper}>
                             <Ionicons name="lock-closed-outline" size={20} color={colors.textTertiary} style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
-                                placeholder="请输入密码（至少6个字符）"
+                                placeholder={t('auth.password_placeholder')}
                                 placeholderTextColor={colors.textTertiary}
                                 value={password}
                                 onChangeText={setPassword}
@@ -299,13 +301,13 @@ export default function RegisterScreen() {
 
                     <View style={styles.inputContainer}>
                         <Text style={styles.label}>
-                            确认密码 <Text style={styles.required}>*</Text>
+                            {t('auth.confirm_password')} <Text style={styles.required}>*</Text>
                         </Text>
                         <View style={styles.inputWrapper}>
                             <Ionicons name="lock-open-outline" size={20} color={colors.textTertiary} style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
-                                placeholder="请再次输入密码"
+                                placeholder={t('auth.confirm_password_placeholder')}
                                 placeholderTextColor={colors.textTertiary}
                                 value={confirmPassword}
                                 onChangeText={setConfirmPassword}
@@ -317,12 +319,12 @@ export default function RegisterScreen() {
                     </View>
 
                     <View style={styles.inputContainer}>
-                        <Text style={styles.label}>真实姓名</Text>
+                        <Text style={styles.label}>{t('auth.real_name')}</Text>
                         <View style={styles.inputWrapper}>
                             <Ionicons name="person" size={20} color={colors.textTertiary} style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
-                                placeholder="请输入您的真实姓名（可选）"
+                                placeholder={t('auth.real_name_placeholder')}
                                 placeholderTextColor={colors.textTertiary}
                                 value={realName}
                                 onChangeText={setRealName}
@@ -332,12 +334,12 @@ export default function RegisterScreen() {
                     </View>
 
                     <View style={styles.inputContainer}>
-                        <Text style={styles.label}>手机号</Text>
+                        <Text style={styles.label}>{t('auth.phone')}</Text>
                         <View style={styles.inputWrapper}>
                             <Ionicons name="call-outline" size={20} color={colors.textTertiary} style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
-                                placeholder="请输入手机号（可选）"
+                                placeholder={t('auth.phone_placeholder')}
                                 placeholderTextColor={colors.textTertiary}
                                 value={phone}
                                 onChangeText={setPhone}
@@ -357,7 +359,7 @@ export default function RegisterScreen() {
                                 <ActivityIndicator color="#fff" />
                             ) : (
                                 <View style={styles.buttonContent}>
-                                    <Text style={styles.buttonText}>注册</Text>
+                                    <Text style={styles.buttonText}>{t('auth.register_button')}</Text>
                                     <Ionicons name="checkmark" size={20} color="#fff" style={{ marginLeft: 8 }} />
                                 </View>
                             )}
@@ -365,9 +367,9 @@ export default function RegisterScreen() {
                     </TouchableOpacity>
 
                     <View style={styles.loginContainer}>
-                        <Text style={styles.loginText}>已有账户？</Text>
+                        <Text style={styles.loginText}>{t('auth.has_account')}</Text>
                         <TouchableOpacity onPress={navigateToLogin} disabled={loading}>
-                            <Text style={styles.loginLink}>立即登录</Text>
+                            <Text style={styles.loginLink}>{t('auth.login_now')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

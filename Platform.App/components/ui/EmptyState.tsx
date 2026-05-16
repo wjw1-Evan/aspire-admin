@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { AppStyles } from '../../constants/AppStyles';
 import { useTheme } from '../../utils/theme';
 
@@ -14,12 +15,14 @@ interface EmptyStateProps {
 
 export default function EmptyState({
   icon = 'folder-open-outline',
-  title = '暂无数据',
+  title,
   message,
   actionText,
   onAction,
 }: EmptyStateProps) {
   const { colors } = useTheme();
+  const { t } = useTranslation();
+  const resolvedTitle = title || t('common.empty');
   const styles = useMemo(() => StyleSheet.create({
     container: {
       flex: 1,
@@ -71,7 +74,7 @@ export default function EmptyState({
       <View style={styles.iconContainer}>
         <Ionicons name={icon} size={36} color={colors.textTertiary} />
       </View>
-      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.title}>{resolvedTitle}</Text>
       {message && <Text style={styles.message}>{message}</Text>}
       {actionText && onAction && (
         <TouchableOpacity style={styles.button} onPress={onAction}>

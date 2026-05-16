@@ -20,6 +20,7 @@ import {
   UpdateTaskRequest,
 } from '../../types/task';
 import { useTheme } from '../../utils/theme';
+import { useTranslation } from 'react-i18next';
 
 interface TaskFormProps {
   initialValues?: TaskDto;
@@ -29,13 +30,6 @@ interface TaskFormProps {
   saving?: boolean;
 }
 
-const TASK_TYPES = ['开发', '设计', '测试', '文档', '其他'];
-const PRIORITY_OPTIONS = [
-  { value: TaskPriority.Low, label: '低' },
-  { value: TaskPriority.Medium, label: '中' },
-  { value: TaskPriority.High, label: '高' },
-  { value: TaskPriority.Urgent, label: '紧急' },
-];
 const TAG_OPTIONS = ['UI', 'API', 'Bug', 'Feature', 'Performance'];
 
 export default function TaskForm({
@@ -46,6 +40,16 @@ export default function TaskForm({
   saving,
 }: TaskFormProps) {
   const { colors, isDark } = useTheme();
+  const { t } = useTranslation();
+
+  const TASK_TYPES = [t('task_form.type_dev'), t('task_form.type_design'), t('task_form.type_test'), t('task_form.type_doc'), t('task_form.type_other')];
+  const PRIORITY_OPTIONS = [
+    { value: TaskPriority.Low, label: t('task_form.priority_low') },
+    { value: TaskPriority.Medium, label: t('task_form.priority_medium') },
+    { value: TaskPriority.High, label: t('task_form.priority_high') },
+    { value: TaskPriority.Urgent, label: t('task_form.priority_urgent') },
+  ];
+
   const styles = useMemo(() => StyleSheet.create({
     container: {
       flex: 1,
@@ -240,33 +244,33 @@ export default function TaskForm({
     >
       <View style={styles.header}>
         <TouchableOpacity onPress={onCancel} disabled={saving}>
-          <Text style={styles.cancelText}>取消</Text>
+          <Text style={styles.cancelText}>{t('task_form.back')}</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>{isEditing ? '编辑任务' : '创建任务'}</Text>
+        <Text style={styles.title}>{isEditing ? t('task_form.title_edit') : t('task_form.title_create')}</Text>
         <TouchableOpacity onPress={handleSave} disabled={!canSave}>
           {saving ? (
             <ActivityIndicator size="small" color={colors.primary} />
           ) : (
-            <Text style={[styles.saveText, !canSave && styles.saveTextDisabled]}>保存</Text>
+            <Text style={[styles.saveText, !canSave && styles.saveTextDisabled]}>{t('task_form.save')}</Text>
           )}
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.form} keyboardShouldPersistTaps="handled">
         <View style={styles.field}>
-          <Text style={styles.label}>任务名称 *</Text>
+          <Text style={styles.label}>{t('task_form.task_name')} *</Text>
           <TextInput
             style={styles.input}
             value={taskName}
             onChangeText={setTaskName}
-            placeholder="请输入任务名称"
+            placeholder={t('task_form.task_name_placeholder')}
             placeholderTextColor={colors.textTertiary}
             editable={!saving}
           />
         </View>
 
         <View style={styles.field}>
-          <Text style={styles.label}>任务类型</Text>
+          <Text style={styles.label}>{t('task_form.task_type')}</Text>
           <View style={styles.chipRow}>
             {TASK_TYPES.map(type => (
               <TouchableOpacity
@@ -284,7 +288,7 @@ export default function TaskForm({
         </View>
 
         <View style={styles.field}>
-          <Text style={styles.label}>优先级</Text>
+          <Text style={styles.label}>{t('task_form.priority')}</Text>
           <View style={styles.chipRow}>
             {PRIORITY_OPTIONS.map(opt => (
               <TouchableOpacity
@@ -303,7 +307,7 @@ export default function TaskForm({
 
         {projects.length > 0 && (
           <View style={styles.field}>
-            <Text style={styles.label}>关联项目</Text>
+            <Text style={styles.label}>{t('task_form.project')}</Text>
             <TouchableOpacity
               style={styles.picker}
               onPress={() => setShowProjectPicker(!showProjectPicker)}
@@ -311,8 +315,8 @@ export default function TaskForm({
             >
               <Text style={[styles.pickerText, !projectId && styles.placeholderText]}>
                 {projectId
-                  ? projects.find(p => p.id === projectId)?.name || '未知项目'
-                  : '选择关联项目'}
+                  ? projects.find(p => p.id === projectId)?.name || t('task_form.no_project')
+                  : t('task_form.select_project')}
               </Text>
               <Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
             </TouchableOpacity>
@@ -322,7 +326,7 @@ export default function TaskForm({
                   style={styles.pickerOption}
                   onPress={() => { setProjectId(''); setShowProjectPicker(false); }}
                 >
-                  <Text style={styles.pickerOptionText}>不关联项目</Text>
+                  <Text style={styles.pickerOptionText}>{t('task_form.no_project')}</Text>
                 </TouchableOpacity>
                 {projects.map(p => (
                   <TouchableOpacity
@@ -341,12 +345,12 @@ export default function TaskForm({
         )}
 
         <View style={styles.field}>
-          <Text style={styles.label}>描述</Text>
+          <Text style={styles.label}>{t('task_form.description')}</Text>
           <TextInput
             style={[styles.input, styles.textArea]}
             value={description}
             onChangeText={setDescription}
-            placeholder="请输入任务描述"
+            placeholder={t('task_form.description_placeholder')}
             placeholderTextColor={colors.textTertiary}
             multiline
             numberOfLines={3}
@@ -357,7 +361,7 @@ export default function TaskForm({
 
         <View style={styles.row}>
           <View style={[styles.field, styles.halfField]}>
-            <Text style={styles.label}>计划开始</Text>
+            <Text style={styles.label}>{t('task_form.planned_start')}</Text>
             <TextInput
               style={styles.input}
               value={plannedStartTime}
@@ -369,7 +373,7 @@ export default function TaskForm({
           </View>
           <View style={styles.fieldGap} />
           <View style={[styles.field, styles.halfField]}>
-            <Text style={styles.label}>计划结束</Text>
+            <Text style={styles.label}>{t('task_form.planned_end')}</Text>
             <TextInput
               style={styles.input}
               value={plannedEndTime}
@@ -382,12 +386,12 @@ export default function TaskForm({
         </View>
 
         <View style={styles.field}>
-          <Text style={styles.label}>预估时长（分钟）</Text>
+          <Text style={styles.label}>{t('task_form.estimated_duration')}</Text>
           <TextInput
             style={styles.input}
             value={estimatedDuration}
             onChangeText={setEstimatedDuration}
-            placeholder="请输入预估时长"
+            placeholder={t('task_form.estimated_duration')}
             placeholderTextColor={colors.textTertiary}
             keyboardType="number-pad"
             editable={!saving}
@@ -395,7 +399,7 @@ export default function TaskForm({
         </View>
 
         <View style={styles.field}>
-          <Text style={styles.label}>标签</Text>
+          <Text style={styles.label}>{t('task_form.tags')}</Text>
           <View style={styles.chipRow}>
             {TAG_OPTIONS.map(tag => (
               <TouchableOpacity
@@ -413,12 +417,12 @@ export default function TaskForm({
         </View>
 
         <View style={styles.field}>
-          <Text style={styles.label}>备注</Text>
+          <Text style={styles.label}>{t('task_form.remarks')}</Text>
           <TextInput
             style={[styles.input, styles.textArea]}
             value={remarks}
             onChangeText={setRemarks}
-            placeholder="请输入备注"
+            placeholder={t('task_form.remarks_placeholder')}
             placeholderTextColor={colors.textTertiary}
             multiline
             numberOfLines={3}

@@ -10,6 +10,7 @@ import {
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { AppStyles } from '../../../constants/AppStyles';
 import { useTheme } from '../../../utils/theme';
 import { taskService } from '../../../services/taskService';
@@ -23,15 +24,16 @@ import ErrorView from '../../../components/ui/ErrorView';
 import StatCard from '../../../components/ui/StatCard';
 import { useRefresh } from '../../../hooks/useRefresh';
 
-const STATUS_TABS = [
-  { value: undefined, label: '全部' },
-  { value: TaskStatus.InProgress, label: '进行中' },
-  { value: TaskStatus.Pending, label: '待办' },
-  { value: TaskStatus.Completed, label: '已完成' },
+const STATUS_TABS = (t: any) => [
+  { value: undefined, label: t('tasks.all') },
+  { value: TaskStatus.InProgress, label: t('tasks.in_progress') },
+  { value: TaskStatus.Pending, label: t('tasks.pending') },
+  { value: TaskStatus.Completed, label: t('tasks.completed') },
 ];
 
 export default function TasksListScreen() {
   const { colors, isDark } = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => StyleSheet.create({
     container: {
@@ -137,10 +139,10 @@ export default function TasksListScreen() {
         setHasMore(pageNum < res.data.pageCount);
         setTotalTasks(res.data.rowCount);
       } else {
-        setError(res.message || '加载失败');
+        setError(res.message || t('common.error'));
       }
     } catch (err: any) {
-      setError(err?.message || '网络错误');
+      setError(err?.message || t('common.network_error'));
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -203,18 +205,18 @@ export default function TasksListScreen() {
 
   const renderHeader = () => (
     <View>
-      <SearchBar onSearch={handleSearch} placeholder="搜索任务名称" />
+      <SearchBar onSearch={handleSearch} placeholder={t('tasks.search_placeholder')} />
       <View style={styles.statRow}>
-        <StatCard title="全部任务" value={totalTasks} icon="list-outline" />
+        <StatCard title={t('tasks.all_tasks')} value={totalTasks} icon="list-outline" />
         <View style={styles.statGap} />
-        <StatCard title="进行中" value={inProgressCount} icon="play-circle-outline" color={colors.primary} />
+        <StatCard title={t('tasks.in_progress')} value={inProgressCount} icon="play-circle-outline" color={colors.primary} />
         <View style={styles.statGap} />
-        <StatCard title="已完成" value={completedCount} icon="checkmark-circle-outline" color={colors.success} />
+        <StatCard title={t('tasks.completed')} value={completedCount} icon="checkmark-circle-outline" color={colors.success} />
       </View>
       <View style={styles.tabRow}>
-        {STATUS_TABS.map(tab => (
+        {STATUS_TABS(t).map(tab => (
           <TouchableOpacity
-            key={tab.label}
+            key={tab.value ?? 'all'}
             style={[styles.tab, statusFilter === tab.value && styles.tabActive]}
             onPress={() => setStatusFilter(tab.value)}
           >
@@ -261,7 +263,7 @@ export default function TasksListScreen() {
           </View>
         )}
         ListHeaderComponent={renderHeader}
-        ListEmptyComponent={<EmptyState title="暂无任务" message="点击右上角 + 创建新任务" />}
+        ListEmptyComponent={<EmptyState title={t('tasks.no_tasks')} message={t('tasks.create_task_hint')} />}
         contentContainerStyle={styles.list}
         refreshing={refreshing}
         onRefresh={onRefresh}

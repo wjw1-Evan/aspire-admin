@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -21,15 +22,15 @@ import ErrorView from '../../../components/ui/ErrorView';
 import StatCard from '../../../components/ui/StatCard';
 import { useRefresh } from '../../../hooks/useRefresh';
 
-const STATUS_TABS = [
-  { value: undefined, label: '全部' },
-  { value: ProjectStatus.InProgress, label: '进行中' },
-  { value: ProjectStatus.Completed, label: '已完成' },
-  { value: ProjectStatus.Planning, label: '规划中' },
-];
-
 export default function ProjectsListScreen() {
   const { colors, isDark } = useTheme();
+  const { t } = useTranslation();
+  const STATUS_TABS = [
+    { value: undefined, label: t('projects.all') },
+    { value: ProjectStatus.InProgress, label: t('projects.in_progress') },
+    { value: ProjectStatus.Completed, label: t('projects.completed') },
+    { value: ProjectStatus.Planning, label: t('projects.planning') },
+  ];
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => StyleSheet.create({
     container: {
@@ -134,10 +135,10 @@ export default function ProjectsListScreen() {
         setHasMore(pageNum < res.data.pageCount);
         setTotalProjects(res.data.rowCount);
       } else {
-        setError(res.message || '加载失败');
+        setError(res.message || t('common.error'));
       }
     } catch (err: any) {
-      setError(err?.message || '网络错误');
+      setError(err?.message || t('common.network_error'));
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -190,13 +191,13 @@ export default function ProjectsListScreen() {
 
   const renderHeader = () => (
     <View>
-      <SearchBar onSearch={handleSearch} placeholder="搜索项目名称" />
+      <SearchBar onSearch={handleSearch} placeholder={t('projects.search_placeholder')} />
       <View style={styles.statRow}>
-        <StatCard title="全部项目" value={totalProjects} icon="folder-outline" />
+        <StatCard title={t('projects.all_projects')} value={totalProjects} icon="folder-outline" />
         <View style={styles.statGap} />
-        <StatCard title="进行中" value={inProgressCount} icon="play-circle-outline" color={colors.primary} />
+        <StatCard title={t('projects.in_progress')} value={inProgressCount} icon="play-circle-outline" color={colors.primary} />
         <View style={styles.statGap} />
-        <StatCard title="已完成" value={completedCount} icon="checkmark-circle-outline" color={colors.success} />
+        <StatCard title={t('projects.completed')} value={completedCount} icon="checkmark-circle-outline" color={colors.success} />
       </View>
       <View style={styles.tabRow}>
         {STATUS_TABS.map(tab => (
@@ -248,7 +249,7 @@ export default function ProjectsListScreen() {
           </View>
         )}
         ListHeaderComponent={renderHeader}
-        ListEmptyComponent={<EmptyState title="暂无项目" message="点击右上角 + 创建新项目" />}
+        ListEmptyComponent={<EmptyState title={t('projects.no_projects')} message={t('projects.create_project_hint')} />}
         contentContainerStyle={styles.list}
         refreshing={refreshing}
         onRefresh={onRefresh}

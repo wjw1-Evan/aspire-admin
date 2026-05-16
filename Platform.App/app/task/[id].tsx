@@ -13,6 +13,7 @@ import { AppStyles, createCommonStyles } from '../../constants/AppStyles';
 import { useTheme } from '../../utils/theme';
 import { taskService } from '../../services/taskService';
 import { TaskDto, TaskStatus, TaskExecutionLogDto } from '../../types/task';
+import { useTranslation } from 'react-i18next';
 import StatusTag from '../../components/ui/StatusTag';
 import PriorityTag from '../../components/ui/PriorityTag';
 import ProgressBar from '../../components/ui/ProgressBar';
@@ -29,6 +30,7 @@ import {
 
 export default function TaskDetailScreen() {
   const { colors, isDark } = useTheme();
+  const { t } = useTranslation();
   const comStyles = useMemo(() => createCommonStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => StyleSheet.create({
@@ -254,14 +256,14 @@ export default function TaskDetailScreen() {
       if (taskRes.success && taskRes.data) {
         setTask(taskRes.data);
       } else {
-        setError(taskRes.message || '加载任务失败');
+        setError(taskRes.message || t('tasks.load_failed'));
       }
 
       if (logsRes.success && logsRes.data) {
         setLogs(logsRes.data);
       }
     } catch (err: any) {
-      setError(err?.message || '网络错误');
+      setError(err?.message || t('common.network_error'));
     } finally {
       setLoading(false);
     }
@@ -300,7 +302,7 @@ export default function TaskDetailScreen() {
 
   if (loading) return <LoadingView />;
   if (error) return <ErrorView message={error} onRetry={loadData} />;
-  if (!task) return <ErrorView message="任务不存在" />;
+  if (!task) return <ErrorView message={t('tasks.not_found')} />;
 
   return (
     <>
@@ -339,15 +341,15 @@ export default function TaskDetailScreen() {
         </View>
 
         <View style={comStyles.card}>
-          <Text style={styles.sectionTitle}>进度</Text>
+          <Text style={styles.sectionTitle}>{t('tasks.progress')}</Text>
           <ProgressBar percentage={task.completionPercentage} height={10} />
         </View>
 
         <View style={comStyles.card}>
-          <Text style={styles.sectionTitle}>基本信息</Text>
+          <Text style={styles.sectionTitle}>{t('tasks.basic_info')}</Text>
           {task.description && (
             <View style={styles.descBlock}>
-              <Text style={styles.descLabel}>描述</Text>
+              <Text style={styles.descLabel}>{t('tasks.description')}</Text>
               <Text style={styles.descText}>{task.description}</Text>
             </View>
           )}
@@ -355,22 +357,22 @@ export default function TaskDetailScreen() {
             <View style={styles.infoIconContainer}>
               <Ionicons name="person-outline" size={16} color={colors.textSecondary} />
             </View>
-            <Text style={styles.infoLabel}>创建人</Text>
+            <Text style={styles.infoLabel}>{t('tasks.creator')}</Text>
             <Text style={styles.infoValue}>{task.createdByName || '-'}</Text>
           </View>
           <View style={styles.infoRow}>
             <View style={styles.infoIconContainer}>
               <Ionicons name="person-circle-outline" size={16} color={colors.textSecondary} />
             </View>
-            <Text style={styles.infoLabel}>负责人</Text>
-            <Text style={styles.infoValue}>{task.assignedToName || '未分配'}</Text>
+            <Text style={styles.infoLabel}>{t('tasks.assignee')}</Text>
+            <Text style={styles.infoValue}>{task.assignedToName || t('tasks.unassigned')}</Text>
           </View>
           {task.projectName && (
             <View style={styles.infoRow}>
               <View style={styles.infoIconContainer}>
                 <Ionicons name="folder-outline" size={16} color={colors.textSecondary} />
               </View>
-              <Text style={styles.infoLabel}>关联项目</Text>
+              <Text style={styles.infoLabel}>{t('tasks.related_project')}</Text>
               <TouchableOpacity onPress={() => task.projectId && router.push(`/project/${task.projectId}`)}>
                 <Text style={[styles.infoValue, { color: colors.primary }]}>
                   {task.projectName}
@@ -381,34 +383,34 @@ export default function TaskDetailScreen() {
         </View>
 
         <View style={comStyles.card}>
-          <Text style={styles.sectionTitle}>时间信息</Text>
+          <Text style={styles.sectionTitle}>{t('tasks.time_info')}</Text>
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>计划开始</Text>
+            <Text style={styles.infoLabel}>{t('tasks.planned_start')}</Text>
             <Text style={styles.infoValue}>{formatDate(task.plannedStartTime)}</Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>计划结束</Text>
+            <Text style={styles.infoLabel}>{t('tasks.planned_end')}</Text>
             <Text style={styles.infoValue}>{formatDate(task.plannedEndTime)}</Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>实际开始</Text>
+            <Text style={styles.infoLabel}>{t('tasks.actual_start')}</Text>
             <Text style={styles.infoValue}>{formatDate(task.actualStartTime)}</Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>实际结束</Text>
+            <Text style={styles.infoLabel}>{t('tasks.actual_end')}</Text>
             <Text style={styles.infoValue}>{formatDate(task.actualEndTime)}</Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>预估时长</Text>
+            <Text style={styles.infoLabel}>{t('tasks.estimated_duration')}</Text>
             <Text style={styles.infoValue}>
-              {task.estimatedDuration ? `${task.estimatedDuration} 分钟` : '-'}
+              {task.estimatedDuration ? `${task.estimatedDuration} ${t('tasks.minutes')}` : '-'}
             </Text>
           </View>
         </View>
 
         {task.participants && task.participants.length > 0 && (
           <View style={comStyles.card}>
-            <Text style={styles.sectionTitle}>参与者</Text>
+            <Text style={styles.sectionTitle}>{t('tasks.participants')}</Text>
             <View style={styles.participantsRow}>
               {task.participants.map((p, i) => (
                 <View key={p.userId || i} style={styles.participantTag}>
@@ -421,7 +423,7 @@ export default function TaskDetailScreen() {
 
         {task.tags && task.tags.length > 0 && (
           <View style={comStyles.card}>
-            <Text style={styles.sectionTitle}>标签</Text>
+            <Text style={styles.sectionTitle}>{t('tasks.tags')}</Text>
             <View style={styles.tagsContainer}>
               {task.tags.map((tag, i) => (
                 <View key={i} style={styles.tagItem}>
@@ -434,20 +436,20 @@ export default function TaskDetailScreen() {
 
         {task.remarks && (
           <View style={comStyles.card}>
-            <Text style={styles.sectionTitle}>备注</Text>
+            <Text style={styles.sectionTitle}>{t('tasks.remarks')}</Text>
             <Text style={styles.remarksText}>{task.remarks}</Text>
           </View>
         )}
 
         {logs.length > 0 && (
           <View style={comStyles.card}>
-            <Text style={styles.sectionTitle}>执行日志</Text>
+            <Text style={styles.sectionTitle}>{t('tasks.execution_logs')}</Text>
             {logs.map((log, i) => (
               <View key={log.id || i} style={styles.logItem}>
                 <View style={styles.logDot} />
                 <View style={styles.logContent}>
                   <View style={styles.logHeader}>
-                    <Text style={styles.logUser}>{log.executedByName || '系统'}</Text>
+                    <Text style={styles.logUser}>{log.executedByName || t('tasks.system')}</Text>
                     <Text style={styles.logTime}>{formatDate(log.createdAt)}</Text>
                   </View>
                   <StatusTag
@@ -459,7 +461,7 @@ export default function TaskDetailScreen() {
                   {log.errorMessage && (
                     <Text style={styles.logError}>{log.errorMessage}</Text>
                   )}
-                  <Text style={styles.logProgress}>进度: {log.progressPercentage}%</Text>
+                  <Text style={styles.logProgress}>{t('tasks.log_progress')}: {log.progressPercentage}%</Text>
                 </View>
               </View>
             ))}
@@ -474,7 +476,7 @@ export default function TaskDetailScreen() {
             onPress={() => router.push(`/task/execute/${id}`)}
           >
             <Ionicons name="play-circle-outline" size={18} color="#fff" />
-            <Text style={styles.primaryButtonText}>执行任务</Text>
+            <Text style={styles.primaryButtonText}>{t('tasks.execute_task')}</Text>
           </TouchableOpacity>
         )}
         {canCancel && (
@@ -482,18 +484,18 @@ export default function TaskDetailScreen() {
             style={styles.dangerButton}
             onPress={() => setCancelConfirmVisible(true)}
           >
-            <Text style={styles.dangerButtonText}>取消任务</Text>
+            <Text style={styles.dangerButtonText}>{t('tasks.cancel_task')}</Text>
           </TouchableOpacity>
         )}
       </View>
 
       <ConfirmModal
         visible={cancelConfirmVisible}
-        title="取消任务"
-        message={`确定要取消任务「${task.taskName}」吗？`}
+        title={t('tasks.cancel_confirm_title')}
+        message={t('tasks.cancel_confirm_message', { name: task.taskName })}
         icon="close-circle-outline"
         iconColor={colors.warning}
-        confirmText="确定取消"
+        confirmText={t('tasks.cancel_confirm_btn')}
         confirmColor={colors.warning}
         onConfirm={handleCancel}
         onCancel={() => setCancelConfirmVisible(false)}
@@ -501,11 +503,11 @@ export default function TaskDetailScreen() {
 
       <ConfirmModal
         visible={deleteConfirmVisible}
-        title="删除任务"
-        message={`确定要删除任务「${task.taskName}」吗？此操作不可撤销。`}
+        title={t('tasks.delete_confirm_title')}
+        message={t('tasks.delete_confirm_message', { name: task.taskName })}
         icon="trash-outline"
         iconColor={colors.error}
-        confirmText="删除"
+        confirmText={t('tasks.delete_confirm_btn')}
         confirmColor={colors.error}
         onConfirm={handleDelete}
         onCancel={() => setDeleteConfirmVisible(false)}

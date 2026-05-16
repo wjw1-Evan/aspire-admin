@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { AppStyles, createCommonStyles } from '../../constants/AppStyles';
@@ -28,6 +29,7 @@ import ProjectMemberList from '../../components/project/ProjectMemberList';
 import { getProjectStatusColor, getProjectStatusBgColor, formatDate } from '../../utils/task';
 
 export default function ProjectDetailScreen() {
+  const { t } = useTranslation();
   const { colors, isDark } = useTheme();
   const comStyles = useMemo(() => createCommonStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
@@ -159,7 +161,7 @@ export default function ProjectDetailScreen() {
       if (projectRes.success && projectRes.data) {
         setProject(projectRes.data);
       } else {
-        setError(projectRes.message || '加载项目失败');
+        setError(projectRes.message || t('projects.load_failed'));
       }
 
       if (membersRes.success && membersRes.data) {
@@ -170,7 +172,7 @@ export default function ProjectDetailScreen() {
         setTasks(tasksRes.data);
       }
     } catch (err: any) {
-      setError(err?.message || '网络错误');
+      setError(err?.message || t('common.network_error'));
     } finally {
       setLoading(false);
     }
@@ -190,7 +192,7 @@ export default function ProjectDetailScreen() {
 
   if (loading) return <LoadingView />;
   if (error) return <ErrorView message={error} onRetry={loadData} />;
-  if (!project) return <ErrorView message="项目不存在" />;
+  if (!project) return <ErrorView message={t('projects.not_found')} />;
 
   const activeTasks = tasks.filter(
     t => t.status === 0 || t.status === 2
@@ -241,18 +243,18 @@ export default function ProjectDetailScreen() {
         </View>
 
         <View style={comStyles.card}>
-          <Text style={styles.sectionTitle}>进度</Text>
+          <Text style={styles.sectionTitle}>{t('projects.progress')}</Text>
           <ProgressBar percentage={project.progress} height={10} />
         </View>
 
         <View style={comStyles.card}>
-          <Text style={styles.sectionTitle}>基本信息</Text>
+          <Text style={styles.sectionTitle}>{t('projects.basic_info')}</Text>
           {project.startDate && (
             <View style={styles.infoRow}>
               <View style={styles.infoIconContainer}>
                 <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} />
               </View>
-              <Text style={styles.infoLabel}>时间</Text>
+              <Text style={styles.infoLabel}>{t('projects.time')}</Text>
               <Text style={styles.infoValue}>
                 {formatDate(project.startDate, 'date')}
                 {project.endDate ? ` ~ ${formatDate(project.endDate, 'date')}` : ''}
@@ -264,13 +266,13 @@ export default function ProjectDetailScreen() {
               <View style={styles.infoIconContainer}>
                 <Ionicons name="cash-outline" size={16} color={colors.textSecondary} />
               </View>
-              <Text style={styles.infoLabel}>预算</Text>
+              <Text style={styles.infoLabel}>{t('projects.budget')}</Text>
               <Text style={styles.infoValue}>¥{project.budget.toLocaleString()}</Text>
             </View>
           )}
           {project.description && (
             <View style={styles.descRow}>
-              <Text style={styles.infoLabel}>描述</Text>
+              <Text style={styles.infoLabel}>{t('projects.description')}</Text>
               <Text style={styles.descText}>{project.description}</Text>
             </View>
           )}
@@ -278,37 +280,37 @@ export default function ProjectDetailScreen() {
             <View style={styles.infoIconContainer}>
               <Ionicons name="person-outline" size={16} color={colors.textSecondary} />
             </View>
-            <Text style={styles.infoLabel}>创建人</Text>
+            <Text style={styles.infoLabel}>{t('projects.creator')}</Text>
             <Text style={styles.infoValue}>{project.createdByName || '-'}</Text>
           </View>
           <View style={styles.infoRow}>
             <View style={styles.infoIconContainer}>
               <Ionicons name="time-outline" size={16} color={colors.textSecondary} />
             </View>
-            <Text style={styles.infoLabel}>创建时间</Text>
+            <Text style={styles.infoLabel}>{t('projects.created_at')}</Text>
             <Text style={styles.infoValue}>{formatDate(project.createdAt)}</Text>
           </View>
         </View>
 
         <View style={comStyles.card}>
-          <Text style={styles.sectionTitle}>项目成员</Text>
+          <Text style={styles.sectionTitle}>{t('projects.members')}</Text>
           <ProjectMemberList members={members} />
         </View>
 
         <View style={comStyles.card}>
-          <Text style={styles.sectionTitle}>任务概览</Text>
+          <Text style={styles.sectionTitle}>{t('projects.task_overview')}</Text>
           <View style={styles.taskStatsRow}>
             <View style={styles.taskStat}>
               <Text style={styles.taskStatValue}>{tasks.length}</Text>
-              <Text style={styles.taskStatLabel}>全部</Text>
+              <Text style={styles.taskStatLabel}>{t('projects.all_tasks')}</Text>
             </View>
             <View style={styles.taskStat}>
               <Text style={[styles.taskStatValue, { color: colors.primary }]}>{activeTasks}</Text>
-              <Text style={styles.taskStatLabel}>进行中</Text>
+              <Text style={styles.taskStatLabel}>{t('projects.active_tasks')}</Text>
             </View>
             <View style={styles.taskStat}>
               <Text style={[styles.taskStatValue, { color: colors.success }]}>{completedTasks}</Text>
-              <Text style={styles.taskStatLabel}>已完成</Text>
+              <Text style={styles.taskStatLabel}>{t('projects.completed_tasks')}</Text>
             </View>
           </View>
           {tasks.length > 0 && (
@@ -316,7 +318,7 @@ export default function ProjectDetailScreen() {
               style={styles.viewTasksButton}
               onPress={() => router.push('/(tabs)/tasks')}
             >
-              <Text style={styles.viewTasksText}>查看全部任务</Text>
+              <Text style={styles.viewTasksText}>{t('projects.view_all_tasks')}</Text>
               <Ionicons name="arrow-forward" size={16} color={colors.primary} />
             </TouchableOpacity>
           )}
@@ -325,11 +327,11 @@ export default function ProjectDetailScreen() {
 
       <ConfirmModal
         visible={deleteConfirmVisible}
-        title="删除项目"
-        message={`确定要删除项目「${project.name}」吗？此操作不可撤销。`}
+        title={t('projects.delete_confirm_title')}
+        message={t('projects.delete_confirm_message', { name: project.name })}
         icon="trash-outline"
         iconColor={colors.error}
-        confirmText="删除"
+        confirmText={t('projects.delete_confirm_btn')}
         confirmColor={colors.error}
         onConfirm={handleDelete}
         onCancel={() => setDeleteConfirmVisible(false)}

@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { AppStyles } from '../../constants/AppStyles';
 import { useTheme } from '../../utils/theme';
 
@@ -22,8 +23,8 @@ export default function ConfirmModal({
   visible,
   title,
   message,
-  confirmText = '确定',
-  cancelText = '取消',
+  confirmText,
+  cancelText,
   confirmColor: confirmColorProp,
   icon,
   iconColor: iconColorProp,
@@ -32,6 +33,9 @@ export default function ConfirmModal({
   onCancel,
 }: ConfirmModalProps) {
   const { colors } = useTheme();
+  const { t } = useTranslation();
+  const resolvedConfirmText = confirmText || t('common.confirm');
+  const resolvedCancelText = cancelText || t('common.cancel');
   const confirmColor = confirmColorProp ?? colors.primary;
   const iconColor = iconColorProp ?? colors.primary;
   const styles = useMemo(() => StyleSheet.create({
@@ -121,7 +125,7 @@ export default function ConfirmModal({
               onPress={onCancel}
               disabled={loading}
             >
-              <Text style={styles.cancelText}>{cancelText}</Text>
+              <Text style={styles.cancelText}>{resolvedCancelText}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.button, { backgroundColor: confirmColor }]}
@@ -131,7 +135,7 @@ export default function ConfirmModal({
               {loading ? (
                 <ActivityIndicator size="small" color={colors.cardBackground} />
               ) : (
-                <Text style={styles.confirmText}>{confirmText}</Text>
+                <Text style={styles.confirmText}>{resolvedConfirmText}</Text>
               )}
             </TouchableOpacity>
           </View>

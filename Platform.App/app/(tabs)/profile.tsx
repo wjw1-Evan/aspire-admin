@@ -24,6 +24,8 @@ import { User, UpdateProfileRequest } from '../../types/auth';
 import { Company, UserCompany } from '../../types/company';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MenuItemCard from '../../components/ui/MenuItemCard';
+import { useTranslation } from 'react-i18next';
+import { changeLanguage, getCurrentLanguage } from '../../utils/i18n';
 
 export default function ProfileScreen() {
     const [user, setUser] = useState<User | null>(null);
@@ -41,6 +43,8 @@ export default function ProfileScreen() {
     const [logoutModalVisible, setLogoutModalVisible] = useState(false);
 
     const { mode, setThemeMode, colors: themeColors } = useTheme();
+    const { t } = useTranslation();
+    const [currentLang, setCurrentLang] = useState<'zh' | 'en'>(getCurrentLanguage());
     const insets = useSafeAreaInsets();
     const comStyles = useMemo(() => createCommonStyles(themeColors), [themeColors]);
     const styles = useMemo(() => StyleSheet.create({
@@ -403,8 +407,8 @@ export default function ProfileScreen() {
             } else {
                 Toast.show({
                     type: 'error',
-                    text1: '切换企业失败',
-                    text2: response?.message || '请稍后重试',
+                    text1: t('profile.switch_company_failed'),
+                    text2: response?.message || t('common.retry'),
                     position: 'top',
                     visibilityTime: 3000,
                 });
@@ -413,8 +417,8 @@ export default function ProfileScreen() {
             console.error('SwitchCompany error:', error);
             Toast.show({
                 type: 'error',
-                text1: '切换企业失败',
-                text2: error?.message || '切换企业时发生错误',
+                text1: t('profile.switch_company_failed'),
+                text2: error?.message || t('profile.switch_company_error'),
                 position: 'top',
                 visibilityTime: 3000,
             });
@@ -436,8 +440,8 @@ export default function ProfileScreen() {
         if (!editForm.realName) {
             Toast.show({
                 type: 'error',
-                text1: '验证失败',
-                text2: '请输入真实姓名',
+                text1: t('profile.validation_failed'),
+                text2: t('profile.name_required'),
                 position: 'top',
                 visibilityTime: 3000,
             });
@@ -452,16 +456,16 @@ export default function ProfileScreen() {
                 loadData();
                 Toast.show({
                     type: 'success',
-                    text1: '更新成功',
-                    text2: '个人信息已更新',
+                    text1: t('profile.update_success'),
+                    text2: t('profile.update_success_message'),
                     position: 'top',
                     visibilityTime: 2000,
                 });
             } else {
                 Toast.show({
                     type: 'error',
-                    text1: '更新失败',
-                    text2: response.message || '请稍后重试',
+                    text1: t('profile.update_failed'),
+                    text2: response.message || t('common.retry'),
                     position: 'top',
                     visibilityTime: 3000,
                 });
@@ -469,8 +473,8 @@ export default function ProfileScreen() {
         } catch (error: any) {
             Toast.show({
                 type: 'error',
-                text1: '更新失败',
-                text2: error.message || '更新时发生错误',
+                text1: t('profile.update_failed'),
+                text2: error.message || t('profile.update_failed'),
                 position: 'top',
                 visibilityTime: 3000,
             });
@@ -515,7 +519,7 @@ export default function ProfileScreen() {
                 <View style={styles.contentSection}>
                     {/* Current Company Section */}
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>当前企业</Text>
+                        <Text style={styles.sectionTitle}>{t('profile.current_company')}</Text>
                         {currentCompany ? (
                             <View style={comStyles.card}>
                                 <RNView style={styles.companyCardContent}>
@@ -524,14 +528,14 @@ export default function ProfileScreen() {
                                     </RNView>
                                     <RNView style={styles.companyInfo}>
                                         <RNText style={styles.companyName}>{currentCompany.name}</RNText>
-                                        <RNText style={styles.companyCode}>编码: {currentCompany.code}</RNText>
+                                        <RNText style={styles.companyCode}>{t('profile.company_code')}: {currentCompany.code}</RNText>
                                     </RNView>
                                     <Ionicons name="checkmark-circle" size={24} color={themeColors.primary} />
                                 </RNView>
                             </View>
                         ) : (
                             <View style={[comStyles.card, { alignItems: 'center', borderWidth: 1, borderColor: themeColors.border, borderStyle: 'dashed' }]}>
-                                <RNText style={{ color: themeColors.textTertiary, fontSize: AppStyles.fontSize.sm }}>未加入任何企业</RNText>
+                                <RNText style={{ color: themeColors.textTertiary, fontSize: AppStyles.fontSize.sm }}>{t('profile.no_company')}</RNText>
                             </View>
                         )}
                     </View>
@@ -539,7 +543,7 @@ export default function ProfileScreen() {
                     {/* Switch Company Section */}
                     {companies.length > 1 && (
                         <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>切换企业</Text>
+                            <Text style={styles.sectionTitle}>{t('profile.switch_company')}</Text>
                             {companies
                                 .filter(company => company.companyId !== currentCompany?.id)
                                 .map((company, index) => (
@@ -577,7 +581,7 @@ export default function ProfileScreen() {
                                         </RNView>
                                         {company.companyId === currentCompany?.id && (
                                             <RNView style={styles.activeTag}>
-                                                <RNText style={styles.activeTagText}>当前</RNText>
+                                                <RNText style={styles.activeTagText}>{t('profile.current')}</RNText>
                                             </RNView>
                                         )}
                                     </TouchableOpacity>
@@ -587,15 +591,25 @@ export default function ProfileScreen() {
 
                     {/* Theme Settings Section */}
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>设置</Text>
+                        <Text style={styles.sectionTitle}>{t('profile.settings')}</Text>
                         <MenuItemCard
                             icon={mode === 'dark' ? 'moon-outline' : mode === 'auto' ? 'settings-outline' : 'sunny-outline'}
-                            title="主题模式"
-                            description={mode === 'light' ? '浅色' : mode === 'dark' ? '深色' : '自动'}
+                            title={t('profile.theme_mode')}
+                            description={mode === 'light' ? t('profile.light') : mode === 'dark' ? t('profile.dark') : t('profile.auto')}
                             onPress={() => {
                                 const order: ThemeMode[] = ['light', 'dark', 'auto'];
                                 const nextIndex = (order.indexOf(mode) + 1) % order.length;
                                 setThemeMode(order[nextIndex]);
+                            }}
+                        />
+                        <MenuItemCard
+                            icon="language-outline"
+                            title={t('home.language')}
+                            description={currentLang === 'zh' ? t('home.language_en') : t('home.language_zh')}
+                            onPress={async () => {
+                                const newLang = currentLang === 'zh' ? 'en' : 'zh';
+                                await changeLanguage(newLang);
+                                setCurrentLang(newLang);
                             }}
                         />
                     </View>
@@ -604,7 +618,7 @@ export default function ProfileScreen() {
                     <View style={styles.section}>
                         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
                             <Ionicons name="log-out-outline" size={20} color={themeColors.error} style={{ marginRight: 8 }} />
-                            <RNText style={styles.logoutButtonText}>退出登录</RNText>
+                            <RNText style={styles.logoutButtonText}>{t('profile.logout')}</RNText>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -623,7 +637,7 @@ export default function ProfileScreen() {
                 >
                     <View style={styles.modalContent}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>修改个人信息</Text>
+                            <Text style={styles.modalTitle}>{t('profile.edit_profile')}</Text>
                             <TouchableOpacity onPress={() => setEditModalVisible(false)}>
                                 <Ionicons name="close" size={24} color={themeColors.textSecondary} />
                             </TouchableOpacity>
@@ -631,23 +645,23 @@ export default function ProfileScreen() {
 
                         <ScrollView style={styles.formContainer}>
                             <View style={styles.formGroup}>
-                                <Text style={styles.label}>真实姓名</Text>
+                                <Text style={styles.label}>{t('profile.real_name')}</Text>
                                 <TextInput
                                     style={styles.input}
                                     value={editForm.realName}
                                     onChangeText={(text) => setEditForm({ ...editForm, realName: text })}
-                                    placeholder="请输入真实姓名"
+                                    placeholder={t('profile.real_name_placeholder')}
                                     placeholderTextColor={themeColors.textTertiary}
                                 />
                             </View>
 
                             <View style={styles.formGroup}>
-                                <Text style={styles.label}>邮箱</Text>
+                                <Text style={styles.label}>{t('profile.email')}</Text>
                                 <TextInput
                                     style={styles.input}
                                     value={editForm.email}
                                     onChangeText={(text) => setEditForm({ ...editForm, email: text })}
-                                    placeholder="请输入邮箱"
+                                    placeholder={t('profile.email_placeholder')}
                                     placeholderTextColor={themeColors.textTertiary}
                                     keyboardType="email-address"
                                     autoCapitalize="none"
@@ -655,12 +669,12 @@ export default function ProfileScreen() {
                             </View>
 
                             <View style={styles.formGroup}>
-                                <Text style={styles.label}>手机号</Text>
+                                <Text style={styles.label}>{t('profile.phone')}</Text>
                                 <TextInput
                                     style={styles.input}
                                     value={editForm.phone}
                                     onChangeText={(text) => setEditForm({ ...editForm, phone: text })}
-                                    placeholder="请输入手机号"
+                                    placeholder={t('profile.phone_placeholder')}
                                     placeholderTextColor={themeColors.textTertiary}
                                     keyboardType="phone-pad"
                                 />
@@ -672,7 +686,7 @@ export default function ProfileScreen() {
                                 style={styles.cancelButton}
                                 onPress={() => setEditModalVisible(false)}
                             >
-                                <Text style={styles.cancelButtonText}>取消</Text>
+                                <Text style={styles.cancelButtonText}>{t('profile.cancel')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={[styles.saveButton, saving && styles.saveButtonDisabled]}
@@ -682,7 +696,7 @@ export default function ProfileScreen() {
                                 {saving ? (
                                     <ActivityIndicator size="small" color="#fff" />
                                 ) : (
-                                    <Text style={styles.saveButtonText}>保存</Text>
+                                    <Text style={styles.saveButtonText}>{t('profile.save')}</Text>
                                 )}
                             </TouchableOpacity>
                         </View>
@@ -702,20 +716,20 @@ export default function ProfileScreen() {
                         <RNView style={styles.logoutModalIcon}>
                             <Ionicons name="log-out-outline" size={48} color={themeColors.error} />
                         </RNView>
-                        <RNText style={styles.logoutModalTitle}>退出登录</RNText>
-                        <RNText style={styles.logoutModalMessage}>确定要退出登录吗？</RNText>
+                        <RNText style={styles.logoutModalTitle}>{t('profile.logout')}</RNText>
+                        <RNText style={styles.logoutModalMessage}>{t('auth.logout_message')}</RNText>
                         <RNView style={styles.logoutModalActions}>
                             <TouchableOpacity
                                 style={styles.logoutModalCancelButton}
                                 onPress={() => setLogoutModalVisible(false)}
                             >
-                                <RNText style={styles.logoutModalCancelText}>取消</RNText>
+                                <RNText style={styles.logoutModalCancelText}>{t('common.cancel')}</RNText>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={styles.logoutModalConfirmButton}
                                 onPress={confirmLogout}
                             >
-                                <RNText style={styles.logoutModalConfirmText}>确定</RNText>
+                                <RNText style={styles.logoutModalConfirmText}>{t('common.confirm')}</RNText>
                             </TouchableOpacity>
                         </RNView>
                     </RNView>

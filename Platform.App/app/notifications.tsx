@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { View, Text } from '@/components/Themed';
 import { AppStyles, createCommonStyles } from '@/constants/AppStyles';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/contexts/ThemeContext';
 import { notificationService } from '@/services/notificationService';
 import { AppNotification, NotificationLevel, NotificationCategory } from '@/types/notification';
@@ -19,7 +20,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 const PAGE_SIZE = 50;
 
-const formatRelativeTime = (input: string) => {
+const formatRelativeTime = (input: string, t: (key: string, options?: any) => string) => {
     const date = new Date(input);
     const now = Date.now();
     const diff = now - date.getTime();
@@ -29,10 +30,10 @@ const formatRelativeTime = (input: string) => {
     const hour = 60 * minute;
     const day = 24 * hour;
 
-    if (diff < minute) return '刚刚';
-    if (diff < hour) return `${Math.floor(diff / minute)} 分钟前`;
-    if (diff < day) return `${Math.floor(diff / hour)} 小时前`;
-    if (diff < 7 * day) return `${Math.floor(diff / day)} 天前`;
+    if (diff < minute) return t('notifications.just_now');
+    if (diff < hour) return t('notifications.minutes_ago', { count: Math.floor(diff / minute) });
+    if (diff < day) return t('notifications.hours_ago', { count: Math.floor(diff / hour) });
+    if (diff < 7 * day) return t('notifications.days_ago', { count: Math.floor(diff / day) });
     return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date
         .getDate()
         .toString()
@@ -52,17 +53,18 @@ const getCategoryMeta = (category: NotificationCategory, colors: any) => {
     }
 };
 
-const getLevelMeta = (level: NotificationLevel, colors: any) => {
+const getLevelMeta = (level: NotificationLevel, colors: any, t: (key: string, options?: any) => string) => {
   switch (level) {
-    case NotificationLevel.Success: return { label: '成功', color: colors.success, bg: colors.success + '20' };
-    case NotificationLevel.Warning: return { label: '警告', color: colors.warning, bg: colors.warning + '20' };
-    case NotificationLevel.Error: return { label: '错误', color: colors.error, bg: colors.error + '20' };
+    case NotificationLevel.Success: return { label: t('notifications.level_success'), color: colors.success, bg: colors.success + '20' };
+    case NotificationLevel.Warning: return { label: t('notifications.level_warning'), color: colors.warning, bg: colors.warning + '20' };
+    case NotificationLevel.Error: return { label: t('notifications.level_error'), color: colors.error, bg: colors.error + '20' };
     default: return null;
   }
 }
 
 export default function NotificationsScreen() {
     const { colors } = useTheme();
+    const { t } = useTranslation();
     const comStyles = useMemo(() => createCommonStyles(colors), [colors]);
     const styles = useMemo(() => StyleSheet.create({
         listContent: { padding: AppStyles.spacing.lg },
@@ -134,8 +136,8 @@ export default function NotificationsScreen() {
             } catch (error: any) {
                 Toast.show({
                     type: 'error',
-                    text1: '加载通知失败',
-                    text2: error?.message || '网络异常',
+                    text1: t('notifications.load_failed'),
+                    text2: error?.message || t('common.network_error'),
                 });
             } finally {
                 setLoading(false);
@@ -182,7 +184,7 @@ export default function NotificationsScreen() {
 
     const renderItem = ({ item }: { item: AppNotification }) => {
         const meta = getCategoryMeta(item.category, colors);
-        const levelMeta = getLevelMeta(item.level, colors);
+        const levelMeta = getLevelMeta(item.level, colors, t);
         const isRead = item.status === 1;
 
         return (
@@ -199,7 +201,7 @@ export default function NotificationsScreen() {
                         <RNText style={styles.title} numberOfLines={1}>{item.title}</RNText>
                         {!isRead && <RNView style={styles.unreadDot} />}
                     </RNView>
-                    <RNText style={styles.time}>{formatRelativeTime(item.datetime)}</RNText>
+                    <RNText style={styles.time}>{formatRelativeTime(item.datetime, t)}</RNText>
                 </RNView>
                 {!!item.content && (
                     <RNText style={styles.desc} numberOfLines={2}>
@@ -219,8 +221,8 @@ export default function NotificationsScreen() {
         <View style={comStyles.pageContainer}>
             <View style={styles.filterBar}>
                 {[
-                  { key: 'all' as const, label: '全部' },
-                  { key: 'unread' as const, label: '未读' },
+                  { key: 'all' as const, label: t('notifications.all') },
+                  { key: 'unread' as const, label: t('notifications.unread') },
                 ].map((item) => {
                     const active = filterType === item.key;
                     return (
@@ -257,7 +259,7 @@ export default function NotificationsScreen() {
                     ListEmptyComponent={
                         <View style={styles.emptyWrap}>
                             <Ionicons name="notifications-off-outline" size={36} color={colors.textSecondary} />
-                            <Text style={styles.emptyText}>暂时没有通知</Text>
+                            <Text style={styles.emptyText}>{t('notifications.no_notifications')}</Text>
                         </View>
                     }
                 />

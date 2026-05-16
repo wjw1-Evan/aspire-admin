@@ -21,6 +21,7 @@ import {
   UpdateProjectRequest,
 } from '../../types/project';
 import { useTheme } from '../../utils/theme';
+import { useTranslation } from 'react-i18next';
 
 interface ProjectFormProps {
   initialValues?: ProjectDto;
@@ -29,20 +30,6 @@ interface ProjectFormProps {
   saving?: boolean;
 }
 
-const STATUS_OPTIONS = [
-  { value: ProjectStatus.Planning, label: '规划中' },
-  { value: ProjectStatus.InProgress, label: '进行中' },
-  { value: ProjectStatus.OnHold, label: '暂停' },
-  { value: ProjectStatus.Completed, label: '已完成' },
-  { value: ProjectStatus.Cancelled, label: '已取消' },
-];
-
-const PRIORITY_OPTIONS = [
-  { value: ProjectPriority.Low, label: '低' },
-  { value: ProjectPriority.Medium, label: '中' },
-  { value: ProjectPriority.High, label: '高' },
-];
-
 export default function ProjectForm({
   initialValues,
   onSave,
@@ -50,6 +37,22 @@ export default function ProjectForm({
   saving,
 }: ProjectFormProps) {
   const { colors, isDark } = useTheme();
+  const { t } = useTranslation();
+
+  const STATUS_OPTIONS = [
+    { value: ProjectStatus.Planning, label: t('project_form.status_planning') },
+    { value: ProjectStatus.InProgress, label: t('project_form.status_in_progress') },
+    { value: ProjectStatus.OnHold, label: t('project_form.status_on_hold') },
+    { value: ProjectStatus.Completed, label: t('project_form.status_completed') },
+    { value: ProjectStatus.Cancelled, label: t('project_form.status_cancelled') },
+  ];
+
+  const PRIORITY_OPTIONS = [
+    { value: ProjectPriority.Low, label: t('project_form.priority_low') },
+    { value: ProjectPriority.Medium, label: t('project_form.priority_medium') },
+    { value: ProjectPriority.High, label: t('project_form.priority_high') },
+  ];
+
   const styles = useMemo(() => StyleSheet.create({
     container: {
       flex: 1,
@@ -192,40 +195,40 @@ export default function ProjectForm({
     >
       <View style={styles.header}>
         <TouchableOpacity onPress={onCancel} disabled={saving}>
-          <Text style={styles.cancelText}>取消</Text>
+          <Text style={styles.cancelText}>{t('project_form.back')}</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>{isEditing ? '编辑项目' : '创建项目'}</Text>
+        <Text style={styles.title}>{isEditing ? t('project_form.title_edit') : t('project_form.title_create')}</Text>
         <TouchableOpacity onPress={handleSave} disabled={!canSave}>
           {saving ? (
             <ActivityIndicator size="small" color={colors.primary} />
           ) : (
-            <Text style={[styles.saveText, !canSave && styles.saveTextDisabled]}>保存</Text>
+            <Text style={[styles.saveText, !canSave && styles.saveTextDisabled]}>{t('project_form.save')}</Text>
           )}
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.form} keyboardShouldPersistTaps="handled">
         <View style={styles.field}>
-          <Text style={styles.label}>项目名称 *</Text>
+          <Text style={styles.label}>{t('project_form.project_name')} *</Text>
           <TextInput
             style={styles.input}
             value={name}
             onChangeText={setName}
-            placeholder="请输入项目名称"
+            placeholder={t('project_form.project_name_placeholder')}
             placeholderTextColor={colors.textTertiary}
             editable={!saving}
           />
         </View>
 
         <View style={styles.field}>
-          <Text style={styles.label}>状态</Text>
+          <Text style={styles.label}>{t('project_form.status')}</Text>
           <TouchableOpacity
             style={styles.picker}
             onPress={() => setShowStatusPicker(!showStatusPicker)}
             disabled={saving}
           >
             <Text style={styles.pickerText}>
-              {STATUS_OPTIONS.find(s => s.value === status)?.label || '选择状态'}
+              {STATUS_OPTIONS.find(s => s.value === status)?.label || t('project_form.status')}
             </Text>
             <Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
@@ -247,14 +250,14 @@ export default function ProjectForm({
         </View>
 
         <View style={styles.field}>
-          <Text style={styles.label}>优先级</Text>
+          <Text style={styles.label}>{t('project_form.priority')}</Text>
           <TouchableOpacity
             style={styles.picker}
             onPress={() => setShowPriorityPicker(!showPriorityPicker)}
             disabled={saving}
           >
             <Text style={styles.pickerText}>
-              {PRIORITY_OPTIONS.find(p => p.value === priority)?.label || '选择优先级'}
+              {PRIORITY_OPTIONS.find(p => p.value === priority)?.label || t('project_form.priority')}
             </Text>
             <Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
@@ -276,12 +279,12 @@ export default function ProjectForm({
         </View>
 
         <View style={styles.field}>
-          <Text style={styles.label}>描述</Text>
+          <Text style={styles.label}>{t('project_form.description')}</Text>
           <TextInput
             style={[styles.input, styles.textArea]}
             value={description}
             onChangeText={setDescription}
-            placeholder="请输入项目描述"
+            placeholder={t('project_form.description_placeholder')}
             placeholderTextColor={colors.textTertiary}
             multiline
             numberOfLines={4}
@@ -291,7 +294,7 @@ export default function ProjectForm({
         </View>
 
         <View style={styles.field}>
-          <Text style={styles.label}>开始日期</Text>
+          <Text style={styles.label}>{t('project_form.start_date')}</Text>
           <TextInput
             style={styles.input}
             value={startDate}
@@ -303,7 +306,7 @@ export default function ProjectForm({
         </View>
 
         <View style={styles.field}>
-          <Text style={styles.label}>结束日期</Text>
+          <Text style={styles.label}>{t('project_form.end_date')}</Text>
           <TextInput
             style={styles.input}
             value={endDate}
@@ -315,12 +318,12 @@ export default function ProjectForm({
         </View>
 
         <View style={styles.field}>
-          <Text style={styles.label}>预算</Text>
+          <Text style={styles.label}>{t('project_form.budget')}</Text>
           <TextInput
             style={styles.input}
             value={budget}
             onChangeText={setBudget}
-            placeholder="请输入预算金额"
+            placeholder={t('project_form.budget_placeholder')}
             placeholderTextColor={colors.textTertiary}
             keyboardType="decimal-pad"
             editable={!saving}

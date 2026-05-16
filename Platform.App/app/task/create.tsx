@@ -1,11 +1,13 @@
 import React from 'react';
 import { useRouter, Stack } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { projectService } from '../../services/projectService';
 import { taskService } from '../../services/taskService';
 import { CreateTaskRequest } from '../../types/task';
 import TaskForm from '../../components/task/TaskForm';
 
 export default function CreateTaskScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [projects, setProjects] = React.useState<{ id: string; name: string }[]>([]);
 
@@ -24,7 +26,7 @@ export default function CreateTaskScreen() {
     if (res.success) {
       router.back();
     } else {
-      throw new Error(res.message || '创建失败');
+      throw new Error(res.message || t('tasks.create_failed'));
     }
   };
 

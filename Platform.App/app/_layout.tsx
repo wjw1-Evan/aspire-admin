@@ -8,9 +8,11 @@ import { View, Text, StyleSheet } from 'react-native';
 import 'react-native-reanimated';
 import Toast from 'react-native-toast-message';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { AppStyles } from '../constants/AppStyles';
 import { AppThemeProvider, useTheme } from '../contexts/ThemeContext';
 import { authService } from '../services/authService';
+import { initLanguage } from '../utils/i18n';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -59,12 +61,15 @@ function RootLayoutNav() {
 
 function RootLayoutNavInner() {
   const { resolvedTheme, colors } = useTheme();
+  const { t } = useTranslation();
   const router = useRouter();
   const segments = useSegments();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   // Check authentication status on app load
   useEffect(() => {
+    initLanguage();
+
     const checkAuth = async () => {
       const authenticated = await authService.isAuthenticated();
       setIsAuthenticated(authenticated);
@@ -162,12 +167,12 @@ function RootLayoutNavInner() {
       <Stack>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="notifications" options={{ title: '通知中心' }} />
+        <Stack.Screen name="notifications" options={{ title: t('notifications.title') }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="project/[id]" options={{ title: '项目详情' }} />
+        <Stack.Screen name="project/[id]" options={{ title: t('projects.detail') }} />
         <Stack.Screen name="project/create" options={{ headerShown: false }} />
         <Stack.Screen name="project/edit/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="task/[id]" options={{ title: '任务详情' }} />
+        <Stack.Screen name="task/[id]" options={{ title: t('tasks.detail') }} />
         <Stack.Screen name="task/create" options={{ headerShown: false }} />
         <Stack.Screen name="task/edit/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="task/execute/[id]" options={{ headerShown: false }} />

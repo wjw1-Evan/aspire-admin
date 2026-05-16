@@ -1,8 +1,10 @@
 import { Stack } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/ThemeContext';
 
 export default function AuthLayout() {
     const { colors } = useTheme();
+    const { t } = useTranslation();
     return (
         <Stack
             screenOptions={{
@@ -18,14 +20,14 @@ export default function AuthLayout() {
             <Stack.Screen
                 name="login"
                 options={{
-                    title: '登录',
+                    title: t('auth.login'),
                     headerShown: false,
                 }}
             />
             <Stack.Screen
                 name="register"
                 options={{
-                    title: '注册',
+                    title: t('auth.register'),
                 }}
             />
         </Stack>

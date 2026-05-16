@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { AppStyles } from '../../constants/AppStyles';
 import { ProjectMemberDto, ProjectMemberRole } from '../../types/project';
 import { useTheme } from '../../utils/theme';
@@ -9,14 +10,15 @@ interface ProjectMemberListProps {
   members: ProjectMemberDto[];
 }
 
-const roleLabels: Record<number, string> = {
-  [ProjectMemberRole.Manager]: '管理员',
-  [ProjectMemberRole.Member]: '成员',
-  [ProjectMemberRole.Viewer]: '观察者',
-};
-
 export default function ProjectMemberList({ members }: ProjectMemberListProps) {
   const { colors } = useTheme();
+  const { t } = useTranslation();
+
+  const roleLabels: Record<number, string> = {
+    [ProjectMemberRole.Manager]: t('project_form.role_manager'),
+    [ProjectMemberRole.Member]: t('project_form.role_member'),
+    [ProjectMemberRole.Viewer]: t('project_form.role_viewer'),
+  };
   const styles = useMemo(() => StyleSheet.create({
     scroll: {
       marginHorizontal: -AppStyles.spacing.xs,
@@ -68,7 +70,7 @@ export default function ProjectMemberList({ members }: ProjectMemberListProps) {
     return (
       <View style={styles.emptyContainer}>
         <Ionicons name="people-outline" size={32} color={colors.border} />
-        <Text style={styles.emptyText}>暂无成员</Text>
+        <Text style={styles.emptyText}>{t('project_form.no_members')}</Text>
       </View>
     );
   }
@@ -82,8 +84,8 @@ export default function ProjectMemberList({ members }: ProjectMemberListProps) {
               {(member.userName || '?').charAt(0).toUpperCase()}
             </Text>
           </View>
-          <Text style={styles.name} numberOfLines={1}>{member.userName || '未知'}</Text>
-          <Text style={styles.role}>{roleLabels[member.role] || '成员'}</Text>
+          <Text style={styles.name} numberOfLines={1}>{member.userName || t('common.empty')}</Text>
+          <Text style={styles.role}>{roleLabels[member.role] || t('project_form.role_member')}</Text>
         </View>
       ))}
     </ScrollView>

@@ -176,6 +176,10 @@ function RootLayoutNavInner() {
         <Stack.Screen name="task/create" options={{ headerShown: false }} />
         <Stack.Screen name="task/edit/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="task/execute/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="enterprise-service/index" options={{ title: t('enterprise_service.title'), animation: 'slide_from_right' }} />
+        <Stack.Screen name="enterprise-service/create" options={{ headerShown: false, animation: 'slide_from_right' }} />
+        <Stack.Screen name="enterprise-service/[id]" options={{ title: t('enterprise_service.detail'), animation: 'slide_from_right' }} />
+        <Stack.Screen name="enterprise-service/edit/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
       </Stack>
       <Toast
         config={{

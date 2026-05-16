@@ -31,7 +31,7 @@ export default function MenuItemCard({
       alignItems: 'center',
       backgroundColor: cardBg,
       borderRadius: 20,
-      borderWidth: 1,
+      borderWidth: 0,
       borderColor: colors.border,
       padding: AppStyles.spacing.md,
       marginBottom: AppStyles.spacing.sm,

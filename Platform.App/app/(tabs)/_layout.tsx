@@ -1,10 +1,10 @@
 import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { Platform, StyleSheet } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
+import { BlurView } from 'expo-blur';
 
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof Ionicons>['name'];
@@ -14,35 +14,25 @@ function TabBarIcon(props: {
 }
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme === 'dark' ? 'dark' : 'light'];
+  const { colors, isDark } = useTheme();
 
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.tint,
-        tabBarInactiveTintColor: colorScheme === 'dark' ? '#636366' : '#aeaeb2',
+        tabBarInactiveTintColor: isDark ? '#636366' : '#aeaeb2',
         headerShown: false,
-        tabBarStyle: {
-          position: 'absolute',
-          borderTopWidth: 0,
-          elevation: 0,
-          backgroundColor: colorScheme === 'dark' ? '#1c1c1e' : '#ffffff',
-          borderTopColor: colorScheme === 'dark' ? '#2c2c2e' : '#e5e5ea',
-          height: 80,
-          paddingBottom: 8,
-          paddingTop: 8,
-          ...Platform.select({
-            web: {
-              position: 'relative' as const,
-            },
-            default: {},
-          }),
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '500',
-        },
+        tabBarStyle: styles.tabBar,
+        tabBarBackground: () => (
+          <View style={styles.tabBarBackground}>
+            <BlurView
+              tint={isDark ? 'dark' : 'light'}
+              intensity={80}
+              style={StyleSheet.absoluteFill}
+            />
+          </View>
+        ),
+        tabBarLabelStyle: styles.tabBarLabel,
       }}>
       <Tabs.Screen
         name="index"
@@ -81,3 +71,40 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  tabBar: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 16,
+    height: 72,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    overflow: 'hidden',
+    elevation: 0,
+    backgroundColor: 'transparent',
+    paddingBottom: 8,
+    paddingTop: 8,
+    ...Platform.select({
+      web: {
+        position: 'relative' as const,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        borderRadius: 0,
+        borderWidth: 0,
+      },
+      default: {},
+    }),
+  },
+  tabBarBackground: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'transparent',
+  },
+  tabBarLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+});

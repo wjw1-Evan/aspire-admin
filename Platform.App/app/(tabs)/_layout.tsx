@@ -5,6 +5,7 @@ import { Platform, StyleSheet, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 
 import { useTheme } from '@/contexts/ThemeContext';
+import FloatingActionMenu from '@/components/FloatingActionMenu';
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof Ionicons>['name'];
@@ -51,7 +52,6 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.tint,
-        tabBarInactiveTintColor: isDark ? '#636366' : '#aeaeb2',
         headerShown: false,
         tabBarStyle: tabBarStyles.tabBar,
         tabBarBackground: () => (
@@ -80,6 +80,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="add"
+        options={{
+          title: '',
+          tabBarButton: () => <FloatingActionMenu />,
+        }}
+      />
+      <Tabs.Screen
         name="projects"
         options={{
           title: '项目',
@@ -93,12 +100,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <TabBarIcon name="person-outline" color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="two"
-        options={{
-          href: null,
-        }}
-      />
+
     </Tabs>
   );
 }

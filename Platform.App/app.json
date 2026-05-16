@@ -45,7 +45,8 @@
           "locationAlwaysAndWhenInUsePermission": "我们需要访问您的位置信息，以便为您提供附近的人、位置分享等社交功能。"
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true

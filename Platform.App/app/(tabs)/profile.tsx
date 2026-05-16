@@ -518,20 +518,20 @@ export default function ProfileScreen() {
                         <Text style={styles.sectionTitle}>当前企业</Text>
                         {currentCompany ? (
                             <View style={comStyles.card}>
-                                <View style={styles.companyCardContent}>
-                                    <View style={styles.companyIcon}>
+                                <RNView style={styles.companyCardContent}>
+                                    <RNView style={styles.companyIcon}>
                                         <Ionicons name="business-outline" size={22} color={themeColors.primary} />
-                                    </View>
-                                    <View style={styles.companyInfo}>
-                                        <Text style={styles.companyName}>{currentCompany.name}</Text>
-                                        <Text style={styles.companyCode}>编码: {currentCompany.code}</Text>
-                                    </View>
+                                    </RNView>
+                                    <RNView style={styles.companyInfo}>
+                                        <RNText style={styles.companyName}>{currentCompany.name}</RNText>
+                                        <RNText style={styles.companyCode}>编码: {currentCompany.code}</RNText>
+                                    </RNView>
                                     <Ionicons name="checkmark-circle" size={24} color={themeColors.primary} />
-                                </View>
+                                </RNView>
                             </View>
                         ) : (
                             <View style={[comStyles.card, { alignItems: 'center', borderWidth: 1, borderColor: themeColors.border, borderStyle: 'dashed' }]}>
-                                <Text style={{ color: themeColors.textTertiary, fontSize: AppStyles.fontSize.sm }}>未加入任何企业</Text>
+                                <RNText style={{ color: themeColors.textTertiary, fontSize: AppStyles.fontSize.sm }}>未加入任何企业</RNText>
                             </View>
                         )}
                     </View>
@@ -553,32 +553,32 @@ export default function ProfileScreen() {
                                         }}
                                         disabled={switchingCompany || company.companyId === currentCompany?.id}
                                     >
-                                        <View style={styles.companyItemLeft}>
-                                            <View style={[
+                                        <RNView style={styles.companyItemLeft}>
+                                            <RNView style={[
                                                 styles.companyItemIcon,
                                                 company.companyId === currentCompany?.id && styles.companyItemIconActive
                                             ]}>
-                                                <Text style={[
+                                                <RNText style={[
                                                     styles.companyItemIconText,
                                                     company.companyId === currentCompany?.id && styles.companyItemIconTextActive
                                                 ]}>
                                                     {company.companyName?.charAt(0) || '?'}
-                                                </Text>
-                                            </View>
-                                            <View>
-                                                <Text style={[
+                                                </RNText>
+                                            </RNView>
+                                            <RNView>
+                                                <RNText style={[
                                                     styles.companyItemName,
                                                     company.companyId === currentCompany?.id && styles.companyItemNameActive
                                                 ]}>
                                                     {company.companyName}
-                                                </Text>
-                                                <Text style={styles.companyItemCode}>{company.companyCode}</Text>
-                                            </View>
-                                        </View>
+                                                </RNText>
+                                                <RNText style={styles.companyItemCode}>{company.companyCode}</RNText>
+                                            </RNView>
+                                        </RNView>
                                         {company.companyId === currentCompany?.id && (
-                                            <View style={styles.activeTag}>
-                                                <Text style={styles.activeTagText}>当前</Text>
-                                            </View>
+                                            <RNView style={styles.activeTag}>
+                                                <RNText style={styles.activeTagText}>当前</RNText>
+                                            </RNView>
                                         )}
                                     </TouchableOpacity>
                                 ))}
@@ -604,7 +604,7 @@ export default function ProfileScreen() {
                     <View style={styles.section}>
                         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
                             <Ionicons name="log-out-outline" size={20} color={themeColors.error} style={{ marginRight: 8 }} />
-                            <Text style={styles.logoutButtonText}>退出登录</Text>
+                            <RNText style={styles.logoutButtonText}>退出登录</RNText>
                         </TouchableOpacity>
                     </View>
                 </View>

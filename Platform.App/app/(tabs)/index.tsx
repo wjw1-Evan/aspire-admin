@@ -73,22 +73,6 @@ export default function HomeScreen() {
       fontSize: AppStyles.fontSize.xs,
       fontWeight: '700',
     },
-    avatarContainer: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
-      borderWidth: 1.5,
-      borderColor: colors.border,
-      backgroundColor: colors.cardBackground,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginLeft: 8,
-    },
-    avatarText: {
-      fontSize: AppStyles.fontSize.lg,
-      fontWeight: 'bold',
-      color: colors.text,
-    },
     contentSection: {
       paddingHorizontal: AppStyles.spacing.lg,
       paddingBottom: 100,
@@ -217,11 +201,6 @@ export default function HomeScreen() {
                   )}
                 </TouchableOpacity>
               </Link>
-              <RNView style={styles.avatarContainer}>
-                <RNText style={styles.avatarText}>
-                  {(user?.realName || user?.username || 'U').charAt(0).toUpperCase()}
-                </RNText>
-              </RNView>
             </RNView>
           </RNView>
         </View>

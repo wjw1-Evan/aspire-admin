@@ -4,9 +4,13 @@ import { storage } from '../utils/storage';
 import { ApiResponse, ErrorResponse } from '../types/api';
 import { tokenUtils } from '../utils/token';
 import TokenRefreshManager from '../utils/tokenRefreshManager';
-import { authService } from './authService';
 
 let tokenCache: string | null = null;
+let logoutCallback: (() => void) | null = null;
+
+export const setLogoutCallback = (cb: () => void) => {
+  logoutCallback = cb;
+};
 
 export const setToken = async (token: string): Promise<void> => {
   tokenCache = token;
@@ -75,7 +79,7 @@ const createApiInstance = (): AxiosInstance => {
 
         if (isRefreshTokenRequest || isRetryRequest) {
           await tokenUtils.clearAllTokens();
-          authService.notifyLogout();
+          logoutCallback?.();
           return Promise.reject({
             success: false,
             errorCode: 'TOKEN_EXPIRED',
@@ -94,7 +98,7 @@ const createApiInstance = (): AxiosInstance => {
         }
 
         await tokenUtils.clearAllTokens();
-        authService.notifyLogout();
+        logoutCallback?.();
       }
 
       return Promise.reject({
@@ -110,3 +114,4 @@ const createApiInstance = (): AxiosInstance => {
 };
 
 export const apiClient = createApiInstance();
+TokenRefreshManager.setApiClient(apiClient);

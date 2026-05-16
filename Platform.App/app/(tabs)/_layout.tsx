@@ -28,10 +28,7 @@ export default function TabLayout() {
       borderRadius: 36,
       borderWidth: 1,
 
-      shadowOpacity: 0,
-      shadowColor: 'transparent',
-      shadowRadius: 0,
-      shadowOffset: { width: 0, height: 0 },
+      boxShadow: 'none',
       elevation: 0,
       overflow: 'hidden',
       paddingTop: 8,

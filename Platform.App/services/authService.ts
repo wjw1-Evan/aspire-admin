@@ -1,4 +1,4 @@
-import { apiClient, setToken, clearToken, getToken } from './api';
+import { apiClient, setToken, clearToken, getToken, setLogoutCallback } from './api';
 import { storage } from '../utils/storage';
 import { STORAGE_KEYS } from '../utils/constants';
 import { tokenUtils } from '../utils/token';
@@ -14,10 +14,11 @@ import { ApiResponse } from '../types/api';
 
 type AuthListener = (isAuthenticated: boolean) => void;
 const listeners: AuthListener[] = [];
-
 const notifyListeners = (isAuthenticated: boolean) => {
   listeners.forEach(listener => listener(isAuthenticated));
 };
+
+setLogoutCallback(() => notifyListeners(false));
 
 export const authService = {
   addAuthListener: (listener: AuthListener) => {

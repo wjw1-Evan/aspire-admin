@@ -84,7 +84,7 @@ export default function FloatingActionMenu() {
               ]}
             />
           </Pressable>
-          <View style={styles.actionsContainer} pointerEvents="box-none">
+          <View style={[styles.actionsContainer, { pointerEvents: 'box-none' }]}>
             {ACTIONS.map((action, index) => {
               const rad = (action.angle * Math.PI) / 180;
               const finalX = Math.sin(rad) * RADIUS;
@@ -157,10 +157,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
     elevation: 8,
   },
   backdrop: {
@@ -194,10 +191,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     opacity: 0.85,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
+    boxShadow: '0 2px 4px rgba(0,0,0,0.25)',
     elevation: 4,
   },
 });

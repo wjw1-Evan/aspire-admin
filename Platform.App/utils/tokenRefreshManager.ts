@@ -1,4 +1,4 @@
-import { apiClient } from '../services/api';
+import { AxiosInstance } from 'axios';
 import { tokenUtils } from './token';
 import { RefreshTokenRequest, RefreshTokenResult } from '../types/auth';
 import { ApiResponse } from '../types/api';
@@ -11,7 +11,12 @@ interface TokenRefreshResult {
 }
 
 class TokenRefreshManager {
+  private static httpClient: AxiosInstance | null = null;
   private static refreshPromise: Promise<TokenRefreshResult | null> | null = null;
+
+  static setApiClient(client: AxiosInstance) {
+    this.httpClient = client;
+  }
 
   static async refresh(refreshToken: string): Promise<TokenRefreshResult | null> {
     if (this.refreshPromise) {
@@ -29,7 +34,7 @@ class TokenRefreshManager {
 
   private static async doRefresh(refreshToken: string): Promise<TokenRefreshResult | null> {
     try {
-      const response = await apiClient.post<RefreshTokenRequest, ApiResponse<RefreshTokenResult>>(
+      const response = await this.httpClient!.post<RefreshTokenRequest, ApiResponse<RefreshTokenResult>>(
         '/api/auth/refresh-token',
         { refreshToken } as RefreshTokenRequest
       );
@@ -67,7 +72,7 @@ class TokenRefreshManager {
       ...originalRequest.headers,
       Authorization: `Bearer ${newToken}`,
     };
-    return apiClient(originalRequest);
+    return this.httpClient!(originalRequest);
   }
 
   static isRefreshing(): boolean {

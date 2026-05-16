@@ -16,7 +16,7 @@
 | **新增一个 API** | [后端规范](docs/agents/modules/backend.md) | `PasswordBookController.cs` |
 | **给页面加国际化** | [前端规范 → 7.8](docs/agents/modules/frontend.md#78-国际化-i18n) | `src/locales/zh-CN/modules/` |
 | **写一个测试** | [测试规范](docs/agents/modules/testing.md) | `tests/e2e/task/` |
-| **对接移动端** | [多端规范](docs/agents/modules/mobile.md) | `Platform.App/services/api.ts` |
+| **开发 App 页面** | [App 端规范](docs/agents/modules/mobile.md) | `Platform.App/app/(tabs)/index.tsx` |
 | **给 AI 加个工具** | [MCP 集成](docs/agents/modules/mcp.md) + [后端规范](docs/agents/modules/backend.md) | `McpToolHandler` 模板 |
 | **改小科 AI 行为** | [小科 AI 系统](docs/agents/modules/xiaoke.md) | `ChatAiService.cs` |
 | **做跨模块功能** | [架构规范](docs/agents/modules/architecture.md) | 理解服务之间的调用关系 |
@@ -89,7 +89,7 @@
 | **🎨 前端开发** | [前端规范](docs/agents/modules/frontend.md) | React 页面、API 调用、国际化 |
 | **🤖 MCP 服务** | [MCP 集成](docs/agents/modules/mcp.md) | MCP Handlers、AI 工具调用 |
 | **🧪 测试相关** | [测试规范](docs/agents/modules/testing.md) | Playwright 测试、测试账号 |
-| **📱 移动端/小程序** | [多端规范](docs/agents/modules/mobile.md) | Expo App、微信小程序 |
+| **📱 移动端/小程序** | [App 端规范](docs/agents/modules/mobile.md) | Expo App（全部使用 Expo 开发）|
 | **💬 小科 AI** | [AI 聊天系统](docs/agents/modules/xiaoke.md) | 聊天服务、LLM 集成 |
 | **🏗️ 架构与代码位置** | [架构规范](docs/agents/modules/architecture.md) | 项目结构、技术栈、已重构页面清单 |
 | **🔄 Git 提交** | [交互规范](#2-交互与-git-提交规范) | 提交格式、自动推送 |
@@ -102,7 +102,7 @@
 
 - **后端**：`.NET 10` + `Aspire` 微服务编排 + `MongoDB`
 - **前端后台**：`React 19.2.6` + `Ant Design 6.3.7` + `UmiJS 4.6.42`（Ant Design Pro V6 模式）
-- **移动端应用**：`Expo 54.0.31` + `React Native 0.83.1`
+- **移动端应用**：`Expo 54.0.31` + `React Native 0.83.1`（**全部使用 Expo 开发**，禁止引入原生 RN 项目）
 - **微信小程序**：`Platform.MiniApp` 微信原生开发
 - **数据库**：MongoDB.EntityFrameworkCore + MongoDB.Driver
 
@@ -118,7 +118,7 @@ aspire-admin/
 ├── Platform.ServiceDefaults/     # 共享基础设施层
 ├── Platform.DataInitializer/     # 数据初始化 + 菜单配置
 ├── Platform.Admin/              # React 管理后台
-├── Platform.App/                # Expo 移动端 App
+├── Platform.App/                # Expo 移动端 App（全部使用 Expo 开发）
 └── Platform.MiniApp/            # 微信小程序
 ```
 
@@ -236,7 +236,7 @@ git push origin HEAD
 |------|---------|---------|
 | 6 | [后端开发规范](docs/agents/modules/backend.md) | 控制器、服务层、数据库、权限、异常处理、SSE |
 | 7 | [前端开发规范](docs/agents/modules/frontend.md) | React 页面、路由、API、状态管理、表单、国际化 |
-| 8 | [移动端与小程序](docs/agents/modules/mobile.md) | Expo App、微信小程序、API 对接 |
+| 8 | [App 端开发规范](docs/agents/modules/mobile.md) | Expo App（全部使用 Expo 开发）、API 对接 |
 | 9 | [测试规范](docs/agents/modules/testing.md) | Playwright 测试、测试账号、调试技巧 |
 | 10 | [MCP 集成](docs/agents/modules/mcp.md) | MCP Handlers、AI 工具调用 |
 | 11 | [小科 AI 系统](docs/agents/modules/xiaoke.md) | 聊天服务、LLM 集成、消息流程 |
@@ -253,7 +253,7 @@ git push origin HEAD
 | **前端开发规范** | `docs/agents/modules/frontend.md` | React 页面、路由、API、状态管理、表单、国际化 |
 | **MCP 服务集成** | `docs/agents/modules/mcp.md` | MCP Handlers、工具调用、AI 能力投射 |
 | **测试规范** | `docs/agents/modules/testing.md` | Playwright 测试、测试账号、调试技巧 |
-| **移动端与小程序** | `docs/agents/modules/mobile.md` | Expo App、微信小程序、API 对接 |
+| **App 端开发规范** | `docs/agents/modules/mobile.md` | Expo App（全部使用 Expo 开发）、API 对接 |
 | **小科 AI 系统** | `docs/agents/modules/xiaoke.md` | 聊天服务、LLM 集成、消息流程 |
 | **架构与代码位置** | `docs/agents/modules/architecture.md` | 项目结构、技术栈、已重构页面清单 |
 

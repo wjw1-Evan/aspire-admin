@@ -10,7 +10,7 @@ function TabBarIcon(props: {
   name: React.ComponentProps<typeof Ionicons>['name'];
   color: string;
 }) {
-  return <Ionicons size={22} {...props} />;
+  return <Ionicons size={24} {...props} />;
 }
 
 export default function TabLayout() {
@@ -19,44 +19,31 @@ export default function TabLayout() {
   const tabBarStyles = useMemo(() => StyleSheet.create({
     tabBar: {
       position: 'absolute',
-      left: 20,
-      right: 20,
-      bottom: 20,
-      height: 68,
-      borderRadius: 34,
+
+
+      height: 72,
+      borderRadius: 36,
       borderWidth: 1,
-      borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-      overflow: 'hidden',
+
+      shadowOpacity: 0,
+      shadowColor: 'transparent',
+      shadowRadius: 0,
+      shadowOffset: { width: 0, height: 0 },
       elevation: 0,
-      backgroundColor: 'transparent',
-      paddingBottom: 8,
+      overflow: 'hidden',
       paddingTop: 8,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: isDark ? 0.3 : 0.1,
-      shadowRadius: 12,
-      ...Platform.select({
-        web: {
-          position: 'relative' as const,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          borderRadius: 0,
-          borderWidth: 0,
-          shadowColor: 'transparent',
-        },
-        default: {},
-      }),
+      margin: 10,
+
     },
     tabBarBackground: {
       ...StyleSheet.absoluteFillObject,
-      borderRadius: 34,
+      borderRadius: 36,
       overflow: 'hidden',
+
     },
     tabBarLabel: {
-      fontSize: 10,
+      fontSize: 11,
       fontWeight: '500',
-      marginTop: 2,
     },
   }), [isDark]);
 
@@ -64,22 +51,19 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.tint,
-        tabBarInactiveTintColor: isDark ? '#8e8e93' : '#999999',
+        tabBarInactiveTintColor: isDark ? '#636366' : '#aeaeb2',
         headerShown: false,
         tabBarStyle: tabBarStyles.tabBar,
         tabBarBackground: () => (
           <View style={tabBarStyles.tabBarBackground}>
             <BlurView
               tint={isDark ? 'dark' : 'light'}
-              intensity={isDark ? 60 : 80}
+              intensity={90}
               style={StyleSheet.absoluteFill}
             />
           </View>
         ),
         tabBarLabelStyle: tabBarStyles.tabBarLabel,
-        tabBarIconStyle: {
-          marginTop: 4,
-        },
       }}>
       <Tabs.Screen
         name="index"

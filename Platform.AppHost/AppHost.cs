@@ -78,7 +78,7 @@ var adminbuilder = builder.AddJavaScriptApp("admin", "../Platform.Admin")
 if (builder.Environment.IsDevelopment())
 {
     builder.AddJavaScriptApp("app", "../Platform.App")
-        .WithHttpEndpoint(env: "PORT")
+        .WithHttpEndpoint(port: 18000, env: "PORT")
         .WithBuildScript("npx expo export:embed --platform web --output-dir dist");
 }
 

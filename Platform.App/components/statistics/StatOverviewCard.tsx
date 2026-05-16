@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppStyles } from '../../constants/AppStyles';
+import { useTheme } from '../../utils/theme';
 
 interface StatOverviewCardProps {
   title: string;
@@ -14,6 +15,49 @@ interface StatOverviewCardProps {
 }
 
 export default function StatOverviewCard({ title, items }: StatOverviewCardProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+    card: {
+      backgroundColor: colors.cardBackground,
+      borderRadius: AppStyles.borderRadius.lg,
+      padding: AppStyles.spacing.md,
+      marginBottom: AppStyles.spacing.md,
+      ...AppStyles.shadows.md,
+    },
+    title: {
+      fontSize: AppStyles.fontSize.md,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: AppStyles.spacing.md,
+    },
+    grid: {},
+    item: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: AppStyles.spacing.sm,
+    },
+    itemBorder: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.borderLight,
+    },
+    itemLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    itemIcon: {
+      marginRight: AppStyles.spacing.sm,
+    },
+    itemLabel: {
+      fontSize: AppStyles.fontSize.sm,
+      color: colors.textSecondary,
+    },
+    itemValue: {
+      fontSize: AppStyles.fontSize.md,
+      fontWeight: '600',
+    },
+  }), [colors]);
+
   return (
     <View style={styles.card}>
       <Text style={styles.title}>{title}</Text>
@@ -25,13 +69,13 @@ export default function StatOverviewCard({ title, items }: StatOverviewCardProps
                 <Ionicons
                   name={item.icon}
                   size={16}
-                  color={item.color || AppStyles.colors.primary}
+                  color={item.color || colors.primary}
                   style={styles.itemIcon}
                 />
               )}
               <Text style={styles.itemLabel}>{item.label}</Text>
             </View>
-            <Text style={[styles.itemValue, { color: item.color || AppStyles.colors.text }]}>
+            <Text style={[styles.itemValue, { color: item.color || colors.text }]}>
               {item.value}
             </Text>
           </View>
@@ -40,45 +84,3 @@ export default function StatOverviewCard({ title, items }: StatOverviewCardProps
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: AppStyles.colors.cardBackground,
-    borderRadius: AppStyles.borderRadius.lg,
-    padding: AppStyles.spacing.md,
-    marginBottom: AppStyles.spacing.md,
-    ...AppStyles.shadows.md,
-  },
-  title: {
-    fontSize: AppStyles.fontSize.md,
-    fontWeight: '600',
-    color: AppStyles.colors.text,
-    marginBottom: AppStyles.spacing.md,
-  },
-  grid: {},
-  item: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: AppStyles.spacing.sm,
-  },
-  itemBorder: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: AppStyles.colors.borderLight,
-  },
-  itemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  itemIcon: {
-    marginRight: AppStyles.spacing.sm,
-  },
-  itemLabel: {
-    fontSize: AppStyles.fontSize.sm,
-    color: AppStyles.colors.textSecondary,
-  },
-  itemValue: {
-    fontSize: AppStyles.fontSize.md,
-    fontWeight: '600',
-  },
-});

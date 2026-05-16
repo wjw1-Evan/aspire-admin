@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { AppStyles } from '../../../constants/AppStyles';
+import { useTheme } from '../../../utils/theme';
 import { taskService } from '../../../services/taskService';
 import { projectService } from '../../../services/projectService';
 import { TaskDto, TaskStatus, TaskQueryParams } from '../../../types/task';
@@ -30,8 +31,76 @@ const STATUS_TABS = [
 ];
 
 export default function TasksListScreen() {
-  const router = useRouter();
+  const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    fab: {
+      position: 'absolute',
+      right: AppStyles.spacing.lg,
+      bottom: insets.bottom + 90,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...AppStyles.shadows.lg,
+    },
+    list: {
+      paddingBottom: 100,
+    },
+    itemWrapper: {
+      marginHorizontal: AppStyles.spacing.md,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    statRow: {
+      flexDirection: 'row',
+      paddingHorizontal: AppStyles.spacing.md,
+      paddingVertical: AppStyles.spacing.sm,
+    },
+    statGap: {
+      width: AppStyles.spacing.sm,
+    },
+    tabRow: {
+      flexDirection: 'row',
+      paddingHorizontal: AppStyles.spacing.md,
+      marginBottom: AppStyles.spacing.sm,
+    },
+    tab: {
+      paddingHorizontal: AppStyles.spacing.md,
+      paddingVertical: AppStyles.spacing.sm - 2,
+      borderRadius: AppStyles.borderRadius.full,
+      marginRight: AppStyles.spacing.sm,
+      backgroundColor: colors.cardBackground,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    tabActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    tabText: {
+      fontSize: AppStyles.fontSize.xs,
+      color: colors.textSecondary,
+      fontWeight: '500',
+    },
+    tabTextActive: {
+      color: '#fff',
+    },
+    footerLoader: {
+      paddingVertical: AppStyles.spacing.lg,
+    },
+  }), [colors, insets]);
+  
+  const router = useRouter();
   const [tasks, setTasks] = useState<TaskDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -138,9 +207,9 @@ export default function TasksListScreen() {
       <View style={styles.statRow}>
         <StatCard title="全部任务" value={totalTasks} icon="list-outline" />
         <View style={styles.statGap} />
-        <StatCard title="进行中" value={inProgressCount} icon="play-circle-outline" color="#1890ff" />
+        <StatCard title="进行中" value={inProgressCount} icon="play-circle-outline" color={colors.primary} />
         <View style={styles.statGap} />
-        <StatCard title="已完成" value={completedCount} icon="checkmark-circle-outline" color="#10b981" />
+        <StatCard title="已完成" value={completedCount} icon="checkmark-circle-outline" color={colors.success} />
       </View>
       <View style={styles.tabRow}>
         {STATUS_TABS.map(tab => (
@@ -163,7 +232,7 @@ export default function TasksListScreen() {
       <View style={[styles.container, { paddingTop: insets.top }]}>
         {renderHeader()}
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={AppStyles.colors.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </View>
     );
@@ -200,13 +269,13 @@ export default function TasksListScreen() {
         onEndReachedThreshold={0.3}
         ListFooterComponent={
           loadingMore ? (
-            <ActivityIndicator style={styles.footerLoader} size="small" color={AppStyles.colors.primary} />
+            <ActivityIndicator style={styles.footerLoader} size="small" color={colors.primary} />
           ) : null
         }
         showsVerticalScrollIndicator={false}
       />
       <TouchableOpacity
-        style={[styles.fab, { bottom: insets.bottom + AppStyles.spacing.lg }]}
+        style={styles.fab}
         onPress={() => router.push({ pathname: '/task/create', params: { projects: JSON.stringify(projects) } })}
         activeOpacity={0.8}
       >
@@ -215,70 +284,3 @@ export default function TasksListScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: AppStyles.colors.cardBackground,
-  },
-  fab: {
-    position: 'absolute',
-    right: AppStyles.spacing.lg,
-    bottom: AppStyles.spacing.lg,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: AppStyles.colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...AppStyles.shadows.lg,
-  },
-  list: {
-    paddingBottom: 80,
-  },
-  itemWrapper: {
-    marginHorizontal: AppStyles.spacing.md,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  statRow: {
-    flexDirection: 'row',
-    paddingHorizontal: AppStyles.spacing.md,
-    paddingVertical: AppStyles.spacing.sm,
-  },
-  statGap: {
-    width: AppStyles.spacing.sm,
-  },
-  tabRow: {
-    flexDirection: 'row',
-    paddingHorizontal: AppStyles.spacing.md,
-    marginBottom: AppStyles.spacing.sm,
-  },
-  tab: {
-    paddingHorizontal: AppStyles.spacing.md,
-    paddingVertical: AppStyles.spacing.sm - 2,
-    borderRadius: AppStyles.borderRadius.full,
-    marginRight: AppStyles.spacing.sm,
-    backgroundColor: AppStyles.colors.cardBackground,
-    borderWidth: 1,
-    borderColor: AppStyles.colors.border,
-  },
-  tabActive: {
-    backgroundColor: AppStyles.colors.primary,
-    borderColor: AppStyles.colors.primary,
-  },
-  tabText: {
-    fontSize: AppStyles.fontSize.xs,
-    color: AppStyles.colors.textSecondary,
-    fontWeight: '500',
-  },
-  tabTextActive: {
-    color: '#fff',
-  },
-  footerLoader: {
-    paddingVertical: AppStyles.spacing.lg,
-  },
-});

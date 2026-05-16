@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     StyleSheet,
     ScrollView,
@@ -14,14 +14,16 @@ import {
 import { Text, View } from '@/components/Themed';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import Toast from 'react-native-toast-message';
-import { AppStyles, commonStyles } from '../../constants/AppStyles';
+import { AppStyles, createCommonStyles } from '../../constants/AppStyles';
+import { useTheme, ThemeMode } from '../../contexts/ThemeContext';
 import { authService } from '../../services/authService';
 import { companyService } from '../../services/companyService';
 import { userService } from '../../services/userService';
 import { User, UpdateProfileRequest } from '../../types/auth';
 import { Company, UserCompany } from '../../types/company';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import MenuItemCard from '../../components/ui/MenuItemCard';
 
 export default function ProfileScreen() {
     const [user, setUser] = useState<User | null>(null);
@@ -37,6 +39,316 @@ export default function ProfileScreen() {
     
     // Logout Confirmation Modal State
     const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+
+    const { mode, setThemeMode, colors: themeColors } = useTheme();
+    const insets = useSafeAreaInsets();
+    const comStyles = useMemo(() => createCommonStyles(themeColors), [themeColors]);
+    const styles = useMemo(() => StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: themeColors.background,
+        },
+        header: {
+            paddingHorizontal: AppStyles.spacing.lg,
+            paddingTop: insets.top + AppStyles.spacing.lg,
+            paddingBottom: AppStyles.spacing.lg,
+        },
+        headerTop: {
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
+        avatarContainer: {
+            width: 64,
+            height: 64,
+            borderRadius: 32,
+            borderWidth: 2,
+            borderColor: themeColors.border,
+            backgroundColor: themeColors.cardBackground,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        avatarText: {
+            fontSize: 28,
+            fontWeight: 'bold',
+            color: themeColors.text,
+        },
+        userInfo: {
+            flex: 1,
+            marginLeft: 16,
+        },
+        userName: {
+            fontSize: 24,
+            fontWeight: 'bold',
+            color: themeColors.text,
+            marginBottom: 4,
+        },
+        userRole: {
+            fontSize: 14,
+            color: themeColors.textSecondary,
+        },
+        editButton: {
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            backgroundColor: themeColors.cardBackground,
+            borderWidth: 1.5,
+            borderColor: themeColors.border,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        contentSection: {
+            padding: AppStyles.spacing.lg,
+            paddingTop: 0,
+        },
+        section: {
+            marginBottom: AppStyles.spacing.lg,
+        },
+        sectionTitle: {
+            fontSize: AppStyles.fontSize.sm,
+            fontWeight: '600',
+            color: themeColors.textSecondary,
+            marginBottom: AppStyles.spacing.sm,
+            marginLeft: AppStyles.spacing.xs,
+            textTransform: 'uppercase',
+            letterSpacing: 0.5,
+        },
+        companyCardContent: {
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
+        companyIcon: {
+            width: 44,
+            height: 44,
+            borderRadius: 22,
+            borderWidth: 1.5,
+            borderColor: themeColors.border,
+            backgroundColor: themeColors.cardBackground,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: AppStyles.spacing.md,
+        },
+        companyInfo: {
+            flex: 1,
+        },
+        companyName: {
+            fontSize: AppStyles.fontSize.md,
+            fontWeight: '600',
+            color: themeColors.text,
+            marginBottom: 2,
+        },
+        companyCode: {
+            fontSize: AppStyles.fontSize.sm,
+            color: themeColors.textSecondary,
+        },
+        companyItem: {
+            marginBottom: AppStyles.spacing.sm,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+        },
+        companyItemLeft: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            flex: 1,
+        },
+        companyItemIcon: {
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            borderWidth: 1.5,
+            borderColor: themeColors.border,
+            backgroundColor: themeColors.cardBackground,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 12,
+        },
+        companyItemIconActive: {
+            borderColor: themeColors.primary,
+            backgroundColor: themeColors.primary + '15',
+        },
+        companyItemIconText: {
+            fontSize: 18,
+            fontWeight: 'bold',
+            color: themeColors.textSecondary,
+        },
+        companyItemIconTextActive: {
+            color: themeColors.primary,
+        },
+        companyItemName: {
+            fontSize: AppStyles.fontSize.md,
+            fontWeight: '600',
+            color: themeColors.text,
+            marginBottom: 2,
+        },
+        companyItemNameActive: {
+            color: themeColors.primary,
+        },
+        companyItemCode: {
+            fontSize: AppStyles.fontSize.sm,
+            color: themeColors.textSecondary,
+        },
+        activeTag: {
+            backgroundColor: themeColors.primary,
+            paddingHorizontal: AppStyles.spacing.sm,
+            paddingVertical: AppStyles.spacing.xs,
+            borderRadius: AppStyles.borderRadius.sm,
+        },
+        activeTagText: {
+            color: '#fff',
+            fontSize: AppStyles.fontSize.xs,
+            fontWeight: 'bold',
+        },
+        logoutButton: {
+            backgroundColor: themeColors.cardBackground,
+            borderRadius: AppStyles.borderRadius.lg,
+            padding: AppStyles.spacing.md,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 1.5,
+            borderColor: themeColors.error,
+        },
+        logoutButtonText: {
+            color: themeColors.error,
+            fontSize: AppStyles.fontSize.md,
+            fontWeight: '600',
+        },
+        // Modal Styles
+        modalContainer: {
+            flex: 1,
+            backgroundColor: themeColors.overlay,
+            justifyContent: 'flex-end',
+        },
+        modalContent: {
+            backgroundColor: themeColors.cardBackground,
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            padding: 24,
+            maxHeight: '80%',
+        },
+        modalHeader: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 24,
+        },
+        modalTitle: {
+            fontSize: 20,
+            fontWeight: 'bold',
+            color: themeColors.text,
+        },
+        formContainer: {
+            marginBottom: 24,
+        },
+        formGroup: {
+            marginBottom: 20,
+        },
+        label: {
+            fontSize: 14,
+            fontWeight: '600',
+            color: themeColors.textSecondary,
+            marginBottom: 8,
+        },
+        input: {
+            backgroundColor: themeColors.background,
+            borderRadius: 14,
+            borderWidth: 1.5,
+            borderColor: themeColors.border,
+            padding: 16,
+            fontSize: 16,
+            color: themeColors.text,
+        },
+        modalFooter: {
+            flexDirection: 'row',
+            gap: 12,
+        },
+        cancelButton: {
+            flex: 1,
+            backgroundColor: themeColors.borderLight,
+            borderRadius: 14,
+            padding: 16,
+            alignItems: 'center',
+        },
+        cancelButtonText: {
+            fontSize: 16,
+            fontWeight: '600',
+            color: themeColors.textSecondary,
+        },
+        saveButton: {
+            flex: 1,
+            backgroundColor: themeColors.primary,
+            borderRadius: 14,
+            padding: 16,
+            alignItems: 'center',
+        },
+        saveButtonDisabled: {
+            opacity: 0.7,
+        },
+        saveButtonText: {
+            fontSize: 16,
+            fontWeight: '600',
+            color: '#fff',
+        },
+        // Logout Modal Styles
+        logoutModalOverlay: {
+            flex: 1,
+            backgroundColor: themeColors.overlay,
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        logoutModalContent: {
+            backgroundColor: themeColors.cardBackground,
+            borderRadius: 20,
+            padding: 24,
+            width: '85%',
+            maxWidth: 400,
+            alignItems: 'center',
+        },
+        logoutModalIcon: {
+            marginBottom: 16,
+        },
+        logoutModalTitle: {
+            fontSize: 20,
+            fontWeight: 'bold',
+            color: themeColors.text,
+            marginBottom: 8,
+        },
+        logoutModalMessage: {
+            fontSize: 16,
+            color: themeColors.textSecondary,
+            textAlign: 'center',
+            marginBottom: 24,
+        },
+        logoutModalActions: {
+            flexDirection: 'row',
+            gap: 12,
+            width: '100%',
+        },
+        logoutModalCancelButton: {
+            flex: 1,
+            backgroundColor: themeColors.borderLight,
+            borderRadius: 14,
+            padding: 14,
+            alignItems: 'center',
+        },
+        logoutModalCancelText: {
+            fontSize: 16,
+            fontWeight: '600',
+            color: themeColors.textSecondary,
+        },
+        logoutModalConfirmButton: {
+            flex: 1,
+            backgroundColor: themeColors.error,
+            borderRadius: 14,
+            padding: 14,
+            alignItems: 'center',
+        },
+        logoutModalConfirmText: {
+            fontSize: 16,
+            fontWeight: '600',
+            color: '#fff',
+        },
+    }), [themeColors, insets]);
 
     const loadData = async () => {
         try {
@@ -169,139 +481,132 @@ export default function ProfileScreen() {
 
     if (loading) {
         return (
-            <View style={commonStyles.pageContainer}>
-                <ActivityIndicator size="large" color={AppStyles.colors.primary} />
+            <View style={styles.container}>
+                <ActivityIndicator size="large" color={themeColors.primary} />
             </View>
         );
     }
 
     return (
-        <View style={commonStyles.pageContainer}>
-            <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
-                <LinearGradient
-                    colors={AppStyles.gradients.primary as unknown as readonly [string, string, ...string[]]}
-                    style={commonStyles.gradientHeader}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    locations={[0, 0.5, 1]}
-                >
-                    <RNView style={styles.headerContent}>
-                        <RNView style={styles.headerTop}>
-                            <RNView style={styles.avatarContainer}>
-                                <RNText style={styles.avatarText}>
-                                    {user?.realName?.charAt(0) || user?.name?.charAt(0) || user?.username?.charAt(0) || 'U'}
-                                </RNText>
-                            </RNView>
-                            <RNView style={styles.userInfo}>
-                                <RNText style={styles.userName}>{user?.realName || user?.name || user?.username}</RNText>
-                                <RNText style={styles.userRole}>{user?.username}</RNText>
-                            </RNView>
-                            <TouchableOpacity
-                                style={styles.editButton}
-                                onPress={() => setEditModalVisible(true)}
-                            >
-                                <Ionicons name="pencil" size={20} color="#fff" />
-                            </TouchableOpacity>
+        <View style={styles.container}>
+            <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}>
+                {/* Header */}
+                <View style={styles.header}>
+                    <RNView style={styles.headerTop}>
+                        <RNView style={styles.avatarContainer}>
+                            <RNText style={styles.avatarText}>
+                                {user?.realName?.charAt(0) || user?.name?.charAt(0) || user?.username?.charAt(0) || 'U'}
+                            </RNText>
                         </RNView>
-
-                        <RNView style={styles.statsContainer}>
-                            <RNView style={styles.statItem}>
-                                <RNText style={styles.statLabel}>邮箱</RNText>
-                                <RNText style={styles.statValue}>{user?.email || '未设置'}</RNText>
-                            </RNView>
-                            <RNView style={styles.statDivider} />
-                            <RNView style={styles.statItem}>
-                                <RNText style={styles.statLabel}>手机号</RNText>
-                                <RNText style={styles.statValue}>{user?.phone || '未设置'}</RNText>
-                            </RNView>
+                        <RNView style={styles.userInfo}>
+                            <RNText style={styles.userName}>{user?.realName || user?.name || user?.username}</RNText>
+                            <RNText style={styles.userRole}>{user?.username}</RNText>
                         </RNView>
+                        <TouchableOpacity
+                            style={styles.editButton}
+                            onPress={() => setEditModalVisible(true)}
+                        >
+                            <Ionicons name="pencil" size={20} color={themeColors.text} />
+                        </TouchableOpacity>
                     </RNView>
-                </LinearGradient>
+                </View>
+
                 {/* Content Section */}
                 <View style={styles.contentSection}>
-                {/* Current Company Section */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>当前企业</Text>
-                    {currentCompany ? (
-                        <View style={commonStyles.card}>
-                            <View style={styles.companyCardContent}>
-                                <View style={styles.companyIcon}>
-                                    <Ionicons name="business" size={24} color={AppStyles.colors.primary} />
+                    {/* Current Company Section */}
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>当前企业</Text>
+                        {currentCompany ? (
+                            <View style={comStyles.card}>
+                                <View style={styles.companyCardContent}>
+                                    <View style={styles.companyIcon}>
+                                        <Ionicons name="business-outline" size={22} color={themeColors.primary} />
+                                    </View>
+                                    <View style={styles.companyInfo}>
+                                        <Text style={styles.companyName}>{currentCompany.name}</Text>
+                                        <Text style={styles.companyCode}>编码: {currentCompany.code}</Text>
+                                    </View>
+                                    <Ionicons name="checkmark-circle" size={24} color={themeColors.primary} />
                                 </View>
-                                <View style={styles.companyInfo}>
-                                    <Text style={styles.companyName}>{currentCompany.name}</Text>
-                                    <Text style={styles.companyCode}>编码: {currentCompany.code}</Text>
-                                </View>
-                                <Ionicons name="checkmark-circle" size={24} color={AppStyles.colors.primary} />
                             </View>
-                        </View>
-                    ) : (
-                        <View style={[commonStyles.card, styles.emptyCard]}>
-                            <Text style={styles.emptyText}>未加入任何企业</Text>
+                        ) : (
+                            <View style={[comStyles.card, { alignItems: 'center', borderWidth: 1, borderColor: themeColors.border, borderStyle: 'dashed' }]}>
+                                <Text style={{ color: themeColors.textTertiary, fontSize: AppStyles.fontSize.sm }}>未加入任何企业</Text>
+                            </View>
+                        )}
+                    </View>
+
+                    {/* Switch Company Section */}
+                    {companies.length > 1 && (
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>切换企业</Text>
+                            {companies
+                                .filter(company => company.companyId !== currentCompany?.id)
+                                .map((company, index) => (
+                                    <TouchableOpacity
+                                        key={`${company.companyId || 'company'}-${index}`}
+                                        style={[comStyles.card, styles.companyItem]}
+                                        onPress={() => {
+                                            console.log('调试', `点击了 ${company.companyName}`);
+                                            console.log('Company item pressed:', company.companyId, company.companyName);
+                                            handleSwitchCompany(company.companyId, company.companyName);
+                                        }}
+                                        disabled={switchingCompany || company.companyId === currentCompany?.id}
+                                    >
+                                        <View style={styles.companyItemLeft}>
+                                            <View style={[
+                                                styles.companyItemIcon,
+                                                company.companyId === currentCompany?.id && styles.companyItemIconActive
+                                            ]}>
+                                                <Text style={[
+                                                    styles.companyItemIconText,
+                                                    company.companyId === currentCompany?.id && styles.companyItemIconTextActive
+                                                ]}>
+                                                    {company.companyName?.charAt(0) || '?'}
+                                                </Text>
+                                            </View>
+                                            <View>
+                                                <Text style={[
+                                                    styles.companyItemName,
+                                                    company.companyId === currentCompany?.id && styles.companyItemNameActive
+                                                ]}>
+                                                    {company.companyName}
+                                                </Text>
+                                                <Text style={styles.companyItemCode}>{company.companyCode}</Text>
+                                            </View>
+                                        </View>
+                                        {company.companyId === currentCompany?.id && (
+                                            <View style={styles.activeTag}>
+                                                <Text style={styles.activeTagText}>当前</Text>
+                                            </View>
+                                        )}
+                                    </TouchableOpacity>
+                                ))}
                         </View>
                     )}
-                </View>
 
-                {/* Switch Company Section */}
-                {companies.length > 1 && (
+                    {/* Theme Settings Section */}
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>切换企业</Text>
-                        {companies
-                            .filter(company => company.companyId !== currentCompany?.id)
-                            .map((company, index) => (
-                                <TouchableOpacity
-                                    key={`${company.companyId || 'company'}-${index}`}
-                                    style={[
-                                        commonStyles.card,
-                                        styles.companyItem,
-                                        company.companyId === currentCompany?.id && styles.companyItemActive,
-                                    ]}
-                                    onPress={() => {
-                                        console.log('调试', `点击了 ${company.companyName}`);
-                                        console.log('Company item pressed:', company.companyId, company.companyName);
-                                        handleSwitchCompany(company.companyId, company.companyName);
-                                    }}
-                                    disabled={switchingCompany || company.companyId === currentCompany?.id}
-                                >
-                                    <View style={styles.companyItemLeft}>
-                                        <View style={[
-                                            styles.companyItemIcon,
-                                            company.companyId === currentCompany?.id && styles.companyItemIconActive
-                                        ]}>
-                                            <Text style={[
-                                                styles.companyItemIconText,
-                                                company.companyId === currentCompany?.id && styles.companyItemIconTextActive
-                                            ]}>
-                                                {company.companyName?.charAt(0) || '?'}
-                                            </Text>
-                                        </View>
-                                        <View>
-                                            <Text style={[
-                                                styles.companyItemName,
-                                                company.companyId === currentCompany?.id && styles.companyItemNameActive
-                                            ]}>
-                                                {company.companyName}
-                                            </Text>
-                                            <Text style={styles.companyItemCode}>{company.companyCode}</Text>
-                                        </View>
-                                    </View>
-                                    {company.companyId === currentCompany?.id && (
-                                        <View style={styles.activeTag}>
-                                            <Text style={styles.activeTagText}>当前</Text>
-                                        </View>
-                                    )}
-                                </TouchableOpacity>
-                            ))}
+                        <Text style={styles.sectionTitle}>设置</Text>
+                        <MenuItemCard
+                            icon={mode === 'dark' ? 'moon-outline' : mode === 'auto' ? 'settings-outline' : 'sunny-outline'}
+                            title="主题模式"
+                            description={mode === 'light' ? '浅色' : mode === 'dark' ? '深色' : '自动'}
+                            onPress={() => {
+                                const order: ThemeMode[] = ['light', 'dark', 'auto'];
+                                const nextIndex = (order.indexOf(mode) + 1) % order.length;
+                                setThemeMode(order[nextIndex]);
+                            }}
+                        />
                     </View>
-                )}
 
-                {/* Actions Section */}
-                <View style={styles.section}>
-                    <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                        <Ionicons name="log-out-outline" size={20} color="#ff4d4f" style={{ marginRight: 8 }} />
-                        <Text style={styles.logoutButtonText}>退出登录</Text>
-                    </TouchableOpacity>
-                </View>
+                    {/* Actions Section */}
+                    <View style={styles.section}>
+                        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                            <Ionicons name="log-out-outline" size={20} color={themeColors.error} style={{ marginRight: 8 }} />
+                            <Text style={styles.logoutButtonText}>退出登录</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </ScrollView>
 
@@ -320,7 +625,7 @@ export default function ProfileScreen() {
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>修改个人信息</Text>
                             <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-                                <Ionicons name="close" size={24} color="#666" />
+                                <Ionicons name="close" size={24} color={themeColors.textSecondary} />
                             </TouchableOpacity>
                         </View>
 
@@ -332,6 +637,7 @@ export default function ProfileScreen() {
                                     value={editForm.realName}
                                     onChangeText={(text) => setEditForm({ ...editForm, realName: text })}
                                     placeholder="请输入真实姓名"
+                                    placeholderTextColor={themeColors.textTertiary}
                                 />
                             </View>
 
@@ -342,6 +648,7 @@ export default function ProfileScreen() {
                                     value={editForm.email}
                                     onChangeText={(text) => setEditForm({ ...editForm, email: text })}
                                     placeholder="请输入邮箱"
+                                    placeholderTextColor={themeColors.textTertiary}
                                     keyboardType="email-address"
                                     autoCapitalize="none"
                                 />
@@ -354,6 +661,7 @@ export default function ProfileScreen() {
                                     value={editForm.phone}
                                     onChangeText={(text) => setEditForm({ ...editForm, phone: text })}
                                     placeholder="请输入手机号"
+                                    placeholderTextColor={themeColors.textTertiary}
                                     keyboardType="phone-pad"
                                 />
                             </View>
@@ -392,7 +700,7 @@ export default function ProfileScreen() {
                 <RNView style={styles.logoutModalOverlay}>
                     <RNView style={styles.logoutModalContent}>
                         <RNView style={styles.logoutModalIcon}>
-                            <Ionicons name="log-out-outline" size={48} color="#ff4d4f" />
+                            <Ionicons name="log-out-outline" size={48} color={themeColors.error} />
                         </RNView>
                         <RNText style={styles.logoutModalTitle}>退出登录</RNText>
                         <RNText style={styles.logoutModalMessage}>确定要退出登录吗？</RNText>
@@ -413,361 +721,6 @@ export default function ProfileScreen() {
                     </RNView>
                 </RNView>
             </Modal>
-    </View>
+        </View>
     );
 }
-
-const styles = StyleSheet.create({
-    headerContent: {
-        backgroundColor: 'transparent',
-    },
-    scrollView: {
-        flex: 1,
-        width: '100%',
-        ...Platform.select({
-            web: {
-                overflowY: 'auto',
-                maxWidth: '100%',
-            },
-            default: {},
-        }),
-    },
-    contentContainer: {
-        flexGrow: 1,
-        width: '100%',
-        paddingBottom: AppStyles.spacing.md,
-        ...Platform.select({
-            web: {
-                maxWidth: '100%',
-            },
-            default: {},
-        }),
-    },
-    contentSection: {
-        padding: AppStyles.spacing.lg,
-        paddingTop: AppStyles.spacing.lg,
-    },
-    headerTop: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 24,
-    },
-    avatarContainer: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 2,
-        borderColor: 'rgba(255,255,255,0.4)',
-    },
-    avatarText: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: '#fff',
-    },
-    userInfo: {
-        flex: 1,
-        marginLeft: 16,
-    },
-    userName: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#fff',
-        marginBottom: 4,
-    },
-    userRole: {
-        fontSize: 14,
-        color: 'rgba(255,255,255,0.8)',
-    },
-    editButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    statsContainer: {
-        flexDirection: 'row',
-        backgroundColor: 'rgba(255,255,255,0.1)',
-        borderRadius: 12,
-        padding: 16,
-    },
-    statItem: {
-        flex: 1,
-        alignItems: 'center',
-    },
-    statDivider: {
-        width: 1,
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        marginHorizontal: 16,
-    },
-    statLabel: {
-        fontSize: 12,
-        color: 'rgba(255,255,255,0.7)',
-        marginBottom: 4,
-    },
-    statValue: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#fff',
-    },
-    section: {
-        marginBottom: AppStyles.spacing.lg,
-    },
-    sectionTitle: {
-        fontSize: AppStyles.fontSize.lg,
-        fontWeight: 'bold',
-        color: AppStyles.colors.text,
-        marginBottom: AppStyles.spacing.md,
-        marginLeft: AppStyles.spacing.xs,
-    },
-    companyCardContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    companyIcon: {
-        width: 48,
-        height: 48,
-        borderRadius: AppStyles.borderRadius.md,
-        backgroundColor: '#f5f7ff',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: AppStyles.spacing.md,
-    },
-    companyInfo: {
-        flex: 1,
-    },
-    companyName: {
-        fontSize: AppStyles.fontSize.lg,
-        fontWeight: 'bold',
-        color: AppStyles.colors.text,
-        marginBottom: AppStyles.spacing.xs,
-    },
-    companyCode: {
-        fontSize: AppStyles.fontSize.sm,
-        color: AppStyles.colors.textSecondary,
-    },
-    emptyCard: {
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: AppStyles.colors.border,
-        borderStyle: 'dashed',
-    },
-    emptyText: {
-        color: AppStyles.colors.textTertiary,
-        fontSize: AppStyles.fontSize.sm,
-    },
-    companyItem: {
-        marginBottom: AppStyles.spacing.md,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        borderWidth: 1,
-        borderColor: 'transparent',
-    },
-    companyItemActive: {
-        borderColor: AppStyles.colors.primary,
-        backgroundColor: '#f5f7ff',
-    },
-    companyItemLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
-    },
-    companyItemIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#f5f5f5',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 12,
-    },
-    companyItemIconActive: {
-        backgroundColor: '#667eea',
-    },
-    companyItemIconText: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#666',
-    },
-    companyItemIconTextActive: {
-        color: '#fff',
-    },
-    companyItemName: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#333',
-        marginBottom: 2,
-    },
-    companyItemNameActive: {
-        color: '#667eea',
-    },
-    companyItemCode: {
-        fontSize: 12,
-        color: '#999',
-    },
-    activeTag: {
-        backgroundColor: AppStyles.colors.primary,
-        paddingHorizontal: AppStyles.spacing.sm,
-        paddingVertical: AppStyles.spacing.xs,
-        borderRadius: AppStyles.borderRadius.sm,
-    },
-    activeTagText: {
-        color: '#fff',
-        fontSize: AppStyles.fontSize.xs,
-        fontWeight: 'bold',
-    },
-    logoutButton: {
-        backgroundColor: AppStyles.colors.cardBackground,
-        borderRadius: AppStyles.borderRadius.lg,
-        padding: AppStyles.spacing.md,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: AppStyles.colors.error,
-        ...AppStyles.shadows.md,
-    },
-    logoutButtonText: {
-        color: AppStyles.colors.error,
-        fontSize: AppStyles.fontSize.md,
-        fontWeight: '600',
-    },
-    // Modal Styles
-    modalContainer: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        justifyContent: 'flex-end',
-    },
-    modalContent: {
-        backgroundColor: '#fff',
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        padding: 24,
-        maxHeight: '80%',
-    },
-    modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 24,
-    },
-    modalTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    formContainer: {
-        marginBottom: 24,
-    },
-    formGroup: {
-        marginBottom: 20,
-    },
-    label: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#666',
-        marginBottom: 8,
-    },
-    input: {
-        backgroundColor: '#f5f7fa',
-        borderRadius: 12,
-        padding: 16,
-        fontSize: 16,
-        color: '#333',
-    },
-    modalFooter: {
-        flexDirection: 'row',
-        gap: 12,
-    },
-    cancelButton: {
-        flex: 1,
-        backgroundColor: '#f5f5f5',
-        borderRadius: 12,
-        padding: 16,
-        alignItems: 'center',
-    },
-    cancelButtonText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#666',
-    },
-    saveButton: {
-        flex: 1,
-        backgroundColor: '#667eea',
-        borderRadius: 12,
-        padding: 16,
-        alignItems: 'center',
-    },
-    saveButtonDisabled: {
-        opacity: 0.7,
-    },
-    saveButtonText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#fff',
-    },
-    // Logout Modal Styles
-    logoutModalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    logoutModalContent: {
-        backgroundColor: '#fff',
-        borderRadius: 16,
-        padding: 24,
-        width: '85%',
-        maxWidth: 400,
-        alignItems: 'center',
-    },
-    logoutModalIcon: {
-        marginBottom: 16,
-    },
-    logoutModalTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 8,
-    },
-    logoutModalMessage: {
-        fontSize: 16,
-        color: '#666',
-        textAlign: 'center',
-        marginBottom: 24,
-    },
-    logoutModalActions: {
-        flexDirection: 'row',
-        gap: 12,
-        width: '100%',
-    },
-    logoutModalCancelButton: {
-        flex: 1,
-        backgroundColor: '#f5f5f5',
-        borderRadius: 12,
-        padding: 14,
-        alignItems: 'center',
-    },
-    logoutModalCancelText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#666',
-    },
-    logoutModalConfirmButton: {
-        flex: 1,
-        backgroundColor: '#ff4d4f',
-        borderRadius: 12,
-        padding: 14,
-        alignItems: 'center',
-    },
-    logoutModalConfirmText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#fff',
-    },
-});

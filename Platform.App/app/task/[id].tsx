@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,8 @@ import {
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { AppStyles, commonStyles } from '../../constants/AppStyles';
+import { AppStyles, createCommonStyles } from '../../constants/AppStyles';
+import { useTheme } from '../../utils/theme';
 import { taskService } from '../../services/taskService';
 import { TaskDto, TaskStatus, TaskExecutionLogDto } from '../../types/task';
 import StatusTag from '../../components/ui/StatusTag';
@@ -27,6 +28,211 @@ import {
 } from '../../utils/task';
 
 export default function TaskDetailScreen() {
+  const { colors, isDark } = useTheme();
+  const comStyles = useMemo(() => createCommonStyles(colors), [colors]);
+  const insets = useSafeAreaInsets();
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    content: {
+      padding: AppStyles.spacing.md,
+      paddingBottom: 100,
+    },
+    header: {
+      marginBottom: AppStyles.spacing.md,
+    },
+    name: {
+      fontSize: AppStyles.fontSize.xxl,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginBottom: AppStyles.spacing.sm,
+    },
+    tagsRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+    },
+    typeTag: {
+      marginLeft: AppStyles.spacing.sm,
+      paddingHorizontal: AppStyles.spacing.sm,
+      paddingVertical: 3,
+      borderRadius: AppStyles.borderRadius.sm,
+      backgroundColor: colors.primary + '15',
+    },
+    typeText: {
+      fontSize: AppStyles.fontSize.xs,
+      color: colors.primary,
+      fontWeight: '500',
+    },
+    sectionTitle: {
+      fontSize: AppStyles.fontSize.md,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: AppStyles.spacing.md,
+    },
+    infoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: AppStyles.spacing.sm,
+    },
+    infoIconContainer: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: AppStyles.spacing.sm,
+    },
+    infoLabel: {
+      fontSize: AppStyles.fontSize.sm,
+      color: colors.textSecondary,
+      flex: 1,
+    },
+    infoValue: {
+      fontSize: AppStyles.fontSize.sm,
+      color: colors.text,
+      fontWeight: '500',
+      flex: 2,
+      textAlign: 'right',
+    },
+    descBlock: {
+      marginBottom: AppStyles.spacing.sm,
+    },
+    descLabel: {
+      fontSize: AppStyles.fontSize.sm,
+      color: colors.textSecondary,
+      marginBottom: AppStyles.spacing.xs,
+    },
+    descText: {
+      fontSize: AppStyles.fontSize.sm,
+      color: colors.text,
+      lineHeight: 22,
+    },
+    participantsRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: AppStyles.spacing.sm,
+    },
+    participantTag: {
+      paddingHorizontal: AppStyles.spacing.md,
+      paddingVertical: AppStyles.spacing.xs + 2,
+      borderRadius: AppStyles.borderRadius.full,
+      backgroundColor: colors.primary + '15',
+    },
+    participantText: {
+      fontSize: AppStyles.fontSize.xs,
+      color: colors.primary,
+      fontWeight: '500',
+    },
+    tagsContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: AppStyles.spacing.sm,
+    },
+    tagItem: {
+      paddingHorizontal: AppStyles.spacing.sm,
+      paddingVertical: 3,
+      borderRadius: AppStyles.borderRadius.sm,
+      backgroundColor: colors.primary + '15',
+    },
+    tagText: {
+      fontSize: AppStyles.fontSize.xs,
+      color: colors.primary,
+      fontWeight: '500',
+    },
+    remarksText: {
+      fontSize: AppStyles.fontSize.sm,
+      color: colors.text,
+      lineHeight: 22,
+    },
+    logItem: {
+      flexDirection: 'row',
+      marginBottom: AppStyles.spacing.md,
+    },
+    logDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: colors.primary,
+      marginTop: 4,
+      marginRight: AppStyles.spacing.md,
+    },
+    logContent: {
+      flex: 1,
+    },
+    logHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 4,
+    },
+    logUser: {
+      fontSize: AppStyles.fontSize.sm,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    logTime: {
+      fontSize: AppStyles.fontSize.xs,
+      color: colors.textTertiary,
+    },
+    logMessage: {
+      fontSize: AppStyles.fontSize.sm,
+      color: colors.text,
+      marginTop: 4,
+    },
+    logError: {
+      fontSize: AppStyles.fontSize.sm,
+      color: colors.error,
+      marginTop: 4,
+    },
+    logProgress: {
+      fontSize: AppStyles.fontSize.xs,
+      color: colors.textTertiary,
+      marginTop: 4,
+    },
+    bottomBar: {
+      flexDirection: 'row',
+      padding: AppStyles.spacing.md,
+      backgroundColor: colors.cardBackground,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.border,
+      gap: AppStyles.spacing.sm,
+    },
+    primaryButton: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.primary,
+      paddingVertical: AppStyles.spacing.md - 2,
+      borderRadius: AppStyles.borderRadius.md,
+      gap: 6,
+    },
+    primaryButtonText: {
+      color: '#fff',
+      fontSize: AppStyles.fontSize.md,
+      fontWeight: '600',
+    },
+    dangerButton: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.error + '10',
+      paddingVertical: AppStyles.spacing.md - 2,
+      borderRadius: AppStyles.borderRadius.md,
+      borderWidth: 1,
+      borderColor: colors.error,
+    },
+    dangerButtonText: {
+      color: colors.error,
+      fontSize: AppStyles.fontSize.md,
+      fontWeight: '600',
+    },
+  }), [colors]);
+  
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [task, setTask] = useState<TaskDto | null>(null);
@@ -35,7 +241,6 @@ export default function TaskDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [cancelConfirmVisible, setCancelConfirmVisible] = useState(false);
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
-  const insets = useSafeAreaInsets();
 
   const loadData = async () => {
     try {
@@ -107,12 +312,12 @@ export default function TaskDetailScreen() {
               onPress={() => router.push(`/task/edit/${id}`)}
               style={{ padding: 8 }}
             >
-              <Ionicons name="pencil-outline" size={22} color={AppStyles.colors.primary} />
+              <Ionicons name="pencil-outline" size={22} color={colors.primary} />
             </TouchableOpacity>
           ),
         }}
       />
-      <ScrollView style={[styles.container, { paddingTop: insets.top }]} contentContainerStyle={{ padding: AppStyles.spacing.md, paddingBottom: 80 }} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.name}>{task.taskName}</Text>
           <View style={styles.tagsRow}>
@@ -133,12 +338,12 @@ export default function TaskDetailScreen() {
           </View>
         </View>
 
-        <View style={commonStyles.card}>
+        <View style={comStyles.card}>
           <Text style={styles.sectionTitle}>进度</Text>
           <ProgressBar percentage={task.completionPercentage} height={10} />
         </View>
 
-        <View style={commonStyles.card}>
+        <View style={comStyles.card}>
           <Text style={styles.sectionTitle}>基本信息</Text>
           {task.description && (
             <View style={styles.descBlock}>
@@ -147,21 +352,27 @@ export default function TaskDetailScreen() {
             </View>
           )}
           <View style={styles.infoRow}>
-            <Ionicons name="person-outline" size={16} color={AppStyles.colors.textSecondary} />
+            <View style={styles.infoIconContainer}>
+              <Ionicons name="person-outline" size={16} color={colors.textSecondary} />
+            </View>
             <Text style={styles.infoLabel}>创建人</Text>
             <Text style={styles.infoValue}>{task.createdByName || '-'}</Text>
           </View>
           <View style={styles.infoRow}>
-            <Ionicons name="person-circle-outline" size={16} color={AppStyles.colors.textSecondary} />
+            <View style={styles.infoIconContainer}>
+              <Ionicons name="person-circle-outline" size={16} color={colors.textSecondary} />
+            </View>
             <Text style={styles.infoLabel}>负责人</Text>
             <Text style={styles.infoValue}>{task.assignedToName || '未分配'}</Text>
           </View>
           {task.projectName && (
             <View style={styles.infoRow}>
-              <Ionicons name="folder-outline" size={16} color={AppStyles.colors.textSecondary} />
+              <View style={styles.infoIconContainer}>
+                <Ionicons name="folder-outline" size={16} color={colors.textSecondary} />
+              </View>
               <Text style={styles.infoLabel}>关联项目</Text>
               <TouchableOpacity onPress={() => task.projectId && router.push(`/project/${task.projectId}`)}>
-                <Text style={[styles.infoValue, { color: AppStyles.colors.primary }]}>
+                <Text style={[styles.infoValue, { color: colors.primary }]}>
                   {task.projectName}
                 </Text>
               </TouchableOpacity>
@@ -169,7 +380,7 @@ export default function TaskDetailScreen() {
           )}
         </View>
 
-        <View style={commonStyles.card}>
+        <View style={comStyles.card}>
           <Text style={styles.sectionTitle}>时间信息</Text>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>计划开始</Text>
@@ -196,7 +407,7 @@ export default function TaskDetailScreen() {
         </View>
 
         {task.participants && task.participants.length > 0 && (
-          <View style={commonStyles.card}>
+          <View style={comStyles.card}>
             <Text style={styles.sectionTitle}>参与者</Text>
             <View style={styles.participantsRow}>
               {task.participants.map((p, i) => (
@@ -209,7 +420,7 @@ export default function TaskDetailScreen() {
         )}
 
         {task.tags && task.tags.length > 0 && (
-          <View style={commonStyles.card}>
+          <View style={comStyles.card}>
             <Text style={styles.sectionTitle}>标签</Text>
             <View style={styles.tagsContainer}>
               {task.tags.map((tag, i) => (
@@ -222,14 +433,14 @@ export default function TaskDetailScreen() {
         )}
 
         {task.remarks && (
-          <View style={commonStyles.card}>
+          <View style={comStyles.card}>
             <Text style={styles.sectionTitle}>备注</Text>
             <Text style={styles.remarksText}>{task.remarks}</Text>
           </View>
         )}
 
         {logs.length > 0 && (
-          <View style={commonStyles.card}>
+          <View style={comStyles.card}>
             <Text style={styles.sectionTitle}>执行日志</Text>
             {logs.map((log, i) => (
               <View key={log.id || i} style={styles.logItem}>
@@ -281,9 +492,9 @@ export default function TaskDetailScreen() {
         title="取消任务"
         message={`确定要取消任务「${task.taskName}」吗？`}
         icon="close-circle-outline"
-        iconColor={AppStyles.colors.warning}
+        iconColor={colors.warning}
         confirmText="确定取消"
-        confirmColor={AppStyles.colors.warning}
+        confirmColor={colors.warning}
         onConfirm={handleCancel}
         onCancel={() => setCancelConfirmVisible(false)}
       />
@@ -293,201 +504,12 @@ export default function TaskDetailScreen() {
         title="删除任务"
         message={`确定要删除任务「${task.taskName}」吗？此操作不可撤销。`}
         icon="trash-outline"
-        iconColor={AppStyles.colors.error}
+        iconColor={colors.error}
         confirmText="删除"
-        confirmColor={AppStyles.colors.error}
+        confirmColor={colors.error}
         onConfirm={handleDelete}
         onCancel={() => setDeleteConfirmVisible(false)}
       />
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: AppStyles.colors.background,
-  },
-  header: {
-    marginBottom: AppStyles.spacing.md,
-  },
-  name: {
-    fontSize: AppStyles.fontSize.xxl,
-    fontWeight: 'bold',
-    color: AppStyles.colors.text,
-    marginBottom: AppStyles.spacing.sm,
-  },
-  tagsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-  },
-  typeTag: {
-    marginLeft: AppStyles.spacing.sm,
-    paddingHorizontal: AppStyles.spacing.sm,
-    paddingVertical: 3,
-    borderRadius: AppStyles.borderRadius.sm,
-    backgroundColor: '#f0f5ff',
-  },
-  typeText: {
-    fontSize: AppStyles.fontSize.xs,
-    color: '#667eea',
-    fontWeight: '500',
-  },
-  sectionTitle: {
-    fontSize: AppStyles.fontSize.md,
-    fontWeight: '600',
-    color: AppStyles.colors.text,
-    marginBottom: AppStyles.spacing.md,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: AppStyles.spacing.sm,
-  },
-  infoLabel: {
-    fontSize: AppStyles.fontSize.sm,
-    color: AppStyles.colors.textSecondary,
-    marginLeft: AppStyles.spacing.sm,
-    flex: 1,
-  },
-  infoValue: {
-    fontSize: AppStyles.fontSize.sm,
-    color: AppStyles.colors.text,
-    fontWeight: '500',
-    flex: 2,
-    textAlign: 'right',
-  },
-  descBlock: {
-    marginBottom: AppStyles.spacing.sm,
-  },
-  descLabel: {
-    fontSize: AppStyles.fontSize.sm,
-    color: AppStyles.colors.textSecondary,
-    marginBottom: AppStyles.spacing.xs,
-  },
-  descText: {
-    fontSize: AppStyles.fontSize.sm,
-    color: AppStyles.colors.text,
-    lineHeight: 22,
-  },
-  participantsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: AppStyles.spacing.sm,
-  },
-  participantTag: {
-    paddingHorizontal: AppStyles.spacing.md,
-    paddingVertical: AppStyles.spacing.xs + 2,
-    borderRadius: AppStyles.borderRadius.full,
-    backgroundColor: AppStyles.colors.primary + '15',
-  },
-  participantText: {
-    fontSize: AppStyles.fontSize.xs,
-    color: AppStyles.colors.primary,
-    fontWeight: '500',
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: AppStyles.spacing.sm,
-  },
-  tagItem: {
-    paddingHorizontal: AppStyles.spacing.sm,
-    paddingVertical: 3,
-    borderRadius: AppStyles.borderRadius.sm,
-    backgroundColor: '#e6f7ff',
-  },
-  tagText: {
-    fontSize: AppStyles.fontSize.xs,
-    color: '#1890ff',
-    fontWeight: '500',
-  },
-  remarksText: {
-    fontSize: AppStyles.fontSize.sm,
-    color: AppStyles.colors.text,
-    lineHeight: 22,
-  },
-  logItem: {
-    flexDirection: 'row',
-    marginBottom: AppStyles.spacing.md,
-  },
-  logDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: AppStyles.colors.primary,
-    marginTop: 4,
-    marginRight: AppStyles.spacing.md,
-  },
-  logContent: {
-    flex: 1,
-  },
-  logHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  logUser: {
-    fontSize: AppStyles.fontSize.sm,
-    fontWeight: '600',
-    color: AppStyles.colors.text,
-  },
-  logTime: {
-    fontSize: AppStyles.fontSize.xs,
-    color: AppStyles.colors.textTertiary,
-  },
-  logMessage: {
-    fontSize: AppStyles.fontSize.sm,
-    color: AppStyles.colors.text,
-    marginTop: 4,
-  },
-  logError: {
-    fontSize: AppStyles.fontSize.sm,
-    color: AppStyles.colors.error,
-    marginTop: 4,
-  },
-  logProgress: {
-    fontSize: AppStyles.fontSize.xs,
-    color: AppStyles.colors.textTertiary,
-    marginTop: 4,
-  },
-  bottomBar: {
-    flexDirection: 'row',
-    padding: AppStyles.spacing.md,
-    backgroundColor: AppStyles.colors.cardBackground,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: AppStyles.colors.border,
-    gap: AppStyles.spacing.sm,
-  },
-  primaryButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: AppStyles.colors.primary,
-    paddingVertical: AppStyles.spacing.md - 2,
-    borderRadius: AppStyles.borderRadius.md,
-    gap: 6,
-  },
-  primaryButtonText: {
-    color: '#fff',
-    fontSize: AppStyles.fontSize.md,
-    fontWeight: '600',
-  },
-  dangerButton: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: AppStyles.colors.error + '10',
-    paddingVertical: AppStyles.spacing.md - 2,
-    borderRadius: AppStyles.borderRadius.md,
-    borderWidth: 1,
-    borderColor: AppStyles.colors.error,
-  },
-  dangerButtonText: {
-    color: AppStyles.colors.error,
-    fontSize: AppStyles.fontSize.md,
-    fontWeight: '600',
-  },
-});

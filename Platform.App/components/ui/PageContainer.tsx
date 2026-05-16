@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, ScrollView, StyleSheet, Platform, RefreshControl, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppStyles } from '../../constants/AppStyles';
+import { useTheme } from '../../utils/theme';
 
 interface PageContainerProps {
   children: React.ReactNode;
@@ -19,6 +20,20 @@ export default function PageContainer({
   style,
 }: PageContainerProps) {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    contentContainer: {
+      flexGrow: 1,
+      paddingBottom: AppStyles.spacing.xl,
+    },
+  }), [colors]);
 
   if (!scroll) {
     return (
@@ -40,7 +55,7 @@ export default function PageContainer({
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={AppStyles.colors.primary}
+              tintColor={colors.primary}
             />
           ) : undefined
         }
@@ -50,17 +65,3 @@ export default function PageContainer({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: AppStyles.colors.background,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  contentContainer: {
-    flexGrow: 1,
-    paddingBottom: AppStyles.spacing.xl,
-  },
-});

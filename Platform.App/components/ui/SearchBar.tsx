@@ -1,7 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppStyles } from '../../constants/AppStyles';
+import { useTheme } from '../../utils/theme';
 
 interface SearchBarProps {
   placeholder?: string;
@@ -17,6 +18,40 @@ export default function SearchBar({
   const [keyword, setKeyword] = useState(defaultValue);
   const [focused, setFocused] = useState(false);
   const inputRef = useRef<TextInput>(null);
+  const { colors } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      paddingVertical: AppStyles.spacing.sm,
+      paddingHorizontal: AppStyles.spacing.md,
+      backgroundColor: colors.background,
+    },
+    inputWrapper: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.cardBackground,
+      borderRadius: AppStyles.borderRadius.md,
+      paddingHorizontal: AppStyles.spacing.md,
+      height: 44,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+    },
+    inputWrapperFocused: {
+      borderColor: colors.primary,
+    },
+    icon: {
+      marginRight: AppStyles.spacing.sm,
+    },
+    input: {
+      flex: 1,
+      fontSize: AppStyles.fontSize.sm,
+      color: colors.text,
+      paddingVertical: 0,
+    },
+    clearButton: {
+      padding: 4,
+      marginLeft: 4,
+    },
+  }), [colors]);
 
   const handleSubmit = () => {
     onSearch(keyword.trim());
@@ -34,14 +69,14 @@ export default function SearchBar({
         <Ionicons
           name="search"
           size={18}
-          color={focused ? AppStyles.colors.primary : AppStyles.colors.textTertiary}
+          color={focused ? colors.primary : colors.textTertiary}
           style={styles.icon}
         />
         <TextInput
           ref={inputRef}
           style={styles.input}
           placeholder={placeholder}
-          placeholderTextColor={AppStyles.colors.textTertiary}
+          placeholderTextColor={colors.textTertiary}
           value={keyword}
           onChangeText={setKeyword}
           onFocus={() => setFocused(true)}
@@ -53,45 +88,10 @@ export default function SearchBar({
         />
         {keyword.length > 0 && (
           <TouchableOpacity onPress={handleClear} style={styles.clearButton}>
-            <Ionicons name="close-circle" size={18} color={AppStyles.colors.textTertiary} />
+            <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
           </TouchableOpacity>
         )}
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    paddingVertical: AppStyles.spacing.sm,
-    paddingHorizontal: AppStyles.spacing.md,
-    backgroundColor: AppStyles.colors.cardBackground,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: AppStyles.colors.background,
-    borderRadius: AppStyles.borderRadius.md,
-    paddingHorizontal: AppStyles.spacing.md,
-    height: 40,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  inputWrapperFocused: {
-    borderColor: AppStyles.colors.primary,
-    backgroundColor: AppStyles.colors.cardBackground,
-  },
-  icon: {
-    marginRight: AppStyles.spacing.sm,
-  },
-  input: {
-    flex: 1,
-    fontSize: AppStyles.fontSize.sm,
-    color: AppStyles.colors.text,
-    paddingVertical: 0,
-  },
-  clearButton: {
-    padding: 4,
-    marginLeft: 4,
-  },
-});

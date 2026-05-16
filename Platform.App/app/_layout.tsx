@@ -1,16 +1,15 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import 'react-native-reanimated';
 import Toast from 'react-native-toast-message';
 import { Ionicons } from '@expo/vector-icons';
 import { AppStyles } from '../constants/AppStyles';
-
-import { useColorScheme } from '@/components/useColorScheme';
+import { AppThemeProvider, useTheme } from '../contexts/ThemeContext';
 import { authService } from '../services/authService';
 
 export {
@@ -51,7 +50,15 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
+  return (
+    <AppThemeProvider>
+      <RootLayoutNavInner />
+    </AppThemeProvider>
+  );
+}
+
+function RootLayoutNavInner() {
+  const { resolvedTheme, colors } = useTheme();
   const router = useRouter();
   const segments = useSegments();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -89,10 +96,69 @@ function RootLayoutNav() {
       // Redirect to main app if authenticated
       router.replace('/');
     }
-  }, [isAuthenticated, segments]);
+    }, [isAuthenticated, segments]);
+
+  const toastStyles = useMemo(() => StyleSheet.create({
+    successContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.cardBackground,
+      borderRadius: AppStyles.borderRadius.lg,
+      padding: AppStyles.spacing.md,
+      minHeight: 60,
+      width: '90%',
+      maxWidth: 400,
+      borderLeftWidth: 4,
+      borderLeftColor: colors.success,
+      ...AppStyles.shadows.lg,
+    },
+    errorContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.cardBackground,
+      borderRadius: AppStyles.borderRadius.lg,
+      padding: AppStyles.spacing.md,
+      minHeight: 60,
+      width: '90%',
+      maxWidth: 400,
+      borderLeftWidth: 4,
+      borderLeftColor: colors.error,
+      ...AppStyles.shadows.lg,
+    },
+    infoContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.cardBackground,
+      borderRadius: AppStyles.borderRadius.lg,
+      padding: AppStyles.spacing.md,
+      minHeight: 60,
+      width: '90%',
+      maxWidth: 400,
+      borderLeftWidth: 4,
+      borderLeftColor: colors.primary,
+      ...AppStyles.shadows.lg,
+    },
+    iconContainer: {
+      marginRight: AppStyles.spacing.md,
+    },
+    textContainer: {
+      flex: 1,
+    },
+    text1: {
+      fontSize: AppStyles.fontSize.md,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 2,
+    },
+    text2: {
+      fontSize: AppStyles.fontSize.sm,
+      color: colors.textSecondary,
+      lineHeight: 18,
+    },
+  }), [colors]);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <NavigationThemeProvider value={resolvedTheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -111,7 +177,7 @@ function RootLayoutNav() {
           success: ({ text1, text2 }) => (
             <View style={toastStyles.successContainer}>
               <View style={toastStyles.iconContainer}>
-                <Ionicons name="checkmark-circle" size={24} color="#10b981" />
+                <Ionicons name="checkmark-circle" size={24} color={colors.success} />
               </View>
               <View style={toastStyles.textContainer}>
                 <Text style={toastStyles.text1}>{text1}</Text>
@@ -122,7 +188,7 @@ function RootLayoutNav() {
           error: ({ text1, text2 }) => (
             <View style={toastStyles.errorContainer}>
               <View style={toastStyles.iconContainer}>
-                <Ionicons name="close-circle" size={24} color="#ff4d4f" />
+                <Ionicons name="close-circle" size={24} color={colors.error} />
               </View>
               <View style={toastStyles.textContainer}>
                 <Text style={toastStyles.text1}>{text1}</Text>
@@ -133,7 +199,7 @@ function RootLayoutNav() {
           info: ({ text1, text2 }) => (
             <View style={toastStyles.infoContainer}>
               <View style={toastStyles.iconContainer}>
-                <Ionicons name="information-circle" size={24} color="#667eea" />
+                <Ionicons name="information-circle" size={24} color={colors.primary} />
               </View>
               <View style={toastStyles.textContainer}>
                 <Text style={toastStyles.text1}>{text1}</Text>
@@ -143,67 +209,9 @@ function RootLayoutNav() {
           ),
         }}
       />
-    </ThemeProvider>
+    </NavigationThemeProvider>
   );
 }
 
-// Toast 自定义样式（参考退出登录 Modal 的设计风格）
-const toastStyles = StyleSheet.create({
-  successContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: AppStyles.borderRadius.lg,
-    padding: AppStyles.spacing.md,
-    minHeight: 60,
-    width: '90%',
-    maxWidth: 400,
-    borderLeftWidth: 4,
-    borderLeftColor: AppStyles.colors.success,
-    ...AppStyles.shadows.lg,
-  },
-  errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: AppStyles.borderRadius.lg,
-    padding: AppStyles.spacing.md,
-    minHeight: 60,
-    width: '90%',
-    maxWidth: 400,
-    borderLeftWidth: 4,
-    borderLeftColor: '#ff4d4f',
-    ...AppStyles.shadows.lg,
-  },
-  infoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: AppStyles.borderRadius.lg,
-    padding: AppStyles.spacing.md,
-    minHeight: 60,
-    width: '90%',
-    maxWidth: 400,
-    borderLeftWidth: 4,
-    borderLeftColor: AppStyles.colors.primary,
-    ...AppStyles.shadows.lg,
-  },
-  iconContainer: {
-    marginRight: AppStyles.spacing.md,
-  },
-  textContainer: {
-    flex: 1,
-  },
-  text1: {
-    fontSize: AppStyles.fontSize.md,
-    fontWeight: '600',
-    color: AppStyles.colors.text,
-    marginBottom: 2,
-  },
-  text2: {
-    fontSize: AppStyles.fontSize.sm,
-    color: AppStyles.colors.textSecondary,
-    lineHeight: 18,
-  },
-});
+
 

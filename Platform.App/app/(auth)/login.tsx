@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     View,
     Text,
@@ -12,14 +12,143 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import Toast from 'react-native-toast-message';
 import { authService } from '../../services/authService';
 import { LoginRequest } from '../../types/auth';
 import { reportUserLocation } from '../../utils/locationReporter';
 import PasswordEncryption from '../../utils/encryption';
+import { useTheme } from '../../contexts/ThemeContext';
+import { AppStyles } from '../../constants/AppStyles';
 
 export default function LoginScreen() {
+    const { colors } = useTheme();
+    const styles = useMemo(() => StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: colors.background,
+            width: '100%',
+            ...Platform.select({
+                web: {
+                    maxWidth: '100%',
+                },
+                default: {},
+            }),
+        },
+        scrollContent: {
+            flexGrow: 1,
+            width: '100%',
+            ...Platform.select({
+                web: {
+                    maxWidth: '100%',
+                },
+                default: {},
+            }),
+        },
+        header: {
+            paddingTop: Platform.OS === 'ios' ? 80 : 60,
+            paddingBottom: 40,
+            paddingHorizontal: 20,
+            alignItems: 'center',
+        },
+        logoContainer: {
+            width: 80,
+            height: 80,
+            borderRadius: 40,
+            borderWidth: 2,
+            borderColor: colors.border,
+            backgroundColor: colors.cardBackground,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 24,
+        },
+        title: {
+            fontSize: 28,
+            fontWeight: 'bold',
+            color: colors.text,
+            marginBottom: 8,
+            textAlign: 'center',
+        },
+        subtitle: {
+            fontSize: 16,
+            color: colors.textSecondary,
+            textAlign: 'center',
+        },
+        formContainer: {
+            padding: 24,
+        },
+        inputContainer: {
+            marginBottom: 20,
+        },
+        label: {
+            fontSize: 14,
+            fontWeight: '600',
+            color: colors.text,
+            marginBottom: 8,
+        },
+        inputWrapper: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: colors.cardBackground,
+            borderRadius: 14,
+            borderWidth: 1.5,
+            borderColor: colors.border,
+            paddingHorizontal: 16,
+            minHeight: 52,
+        },
+        inputWrapperFocused: {
+            borderColor: colors.primary,
+            borderWidth: 2,
+        },
+        inputIcon: {
+            marginRight: 12,
+        },
+        input: {
+            flex: 1,
+            paddingVertical: 14,
+            paddingHorizontal: 4,
+            fontSize: 16,
+            color: colors.text,
+        },
+        eyeIcon: {
+            padding: 4,
+            marginLeft: 8,
+        },
+        button: {
+            borderRadius: 14,
+            padding: 16,
+            alignItems: 'center',
+            marginTop: 12,
+            backgroundColor: colors.primary,
+        },
+        buttonContent: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        buttonText: {
+            color: '#fff',
+            fontSize: 16,
+            fontWeight: '600',
+        },
+        registerContainer: {
+            flexDirection: 'row',
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginTop: 24,
+            paddingVertical: 8,
+        },
+        registerText: {
+            fontSize: 14,
+            color: colors.textSecondary,
+        },
+        registerLink: {
+            fontSize: 14,
+            color: colors.primary,
+            fontWeight: '600',
+            marginLeft: 4,
+        },
+    }), [colors]);
+    
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -27,7 +156,6 @@ export default function LoginScreen() {
     const [usernameFocused, setUsernameFocused] = useState(false);
     const [passwordFocused, setPasswordFocused] = useState(false);
 
-    // 显示错误消息（参考退出登录 Modal 的样式设计）
     const showErrorToast = (message: string) => {
         Toast.show({
             type: 'error',
@@ -40,7 +168,6 @@ export default function LoginScreen() {
     };
 
     const handleLogin = async () => {
-        // Basic validation
         if (!username.trim() || !password.trim()) {
             showErrorToast('请输入用户名和密码');
             return;
@@ -49,7 +176,6 @@ export default function LoginScreen() {
         setLoading(true);
 
         try {
-            // 🔒 使用国密 SM2 加密密码
             const encryptedPassword = await PasswordEncryption.encrypt(password);
 
             const request: LoginRequest = {
@@ -62,31 +188,21 @@ export default function LoginScreen() {
             console.log('Login response:', response);
 
             if (response.success) {
-                // Fetch user info after successful login
                 await authService.getCurrentUser();
 
-                // Request location permission and report location (silently, don't block login)
                 reportUserLocation().catch((error) => {
                     console.warn('位置上报失败，不影响登录:', error);
                 });
 
-                // Notify auth listeners to trigger redirect in _layout
                 authService.notifyLoginSuccess();
             } else {
-                // Display error message from backend
                 const errorMsg = response.message || '登录失败，请检查后重试';
                 console.error('Login failed:', errorMsg);
-
-                // Show error message using Toast
                 showErrorToast(errorMsg);
             }
         } catch (error: any) {
             console.error('Login error:', error);
-            // Display error message - could be from network error or API error
-            const errorMsg = error.message
-                || '登录过程中发生错误，请稍后重试';
-
-            // Show error message using Toast
+            const errorMsg = error.message || '登录过程中发生错误，请稍后重试';
             showErrorToast(errorMsg);
         } finally {
             setLoading(false);
@@ -106,20 +222,13 @@ export default function LoginScreen() {
                 contentContainerStyle={styles.scrollContent}
                 keyboardShouldPersistTaps="handled"
             >
-                {/* Gradient Header */}
-                <LinearGradient
-                    colors={['#667eea', '#764ba2', '#f093fb']}
-                    style={styles.header}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    locations={[0, 0.5, 1]}
-                >
+                <View style={styles.header}>
                     <View style={styles.logoContainer}>
-                        <Ionicons name="shield-checkmark" size={60} color="#fff" />
+                        <Ionicons name="shield-checkmark" size={40} color={colors.primary} />
                     </View>
                     <Text style={styles.title}>欢迎回来</Text>
                     <Text style={styles.subtitle}>登录您的账户开始使用</Text>
-                </LinearGradient>
+                </View>
 
                 <View style={styles.formContainer}>
                     <View style={styles.inputContainer}>
@@ -131,13 +240,13 @@ export default function LoginScreen() {
                             <Ionicons
                                 name="person-outline"
                                 size={20}
-                                color={usernameFocused ? '#667eea' : '#999'}
+                                color={usernameFocused ? colors.primary : colors.textTertiary}
                                 style={styles.inputIcon}
                             />
                             <TextInput
                                 style={styles.input}
                                 placeholder="请输入用户名"
-                                placeholderTextColor="#999"
+                                placeholderTextColor={colors.textTertiary}
                                 value={username}
                                 onChangeText={setUsername}
                                 onFocus={() => setUsernameFocused(true)}
@@ -158,13 +267,13 @@ export default function LoginScreen() {
                             <Ionicons
                                 name="lock-closed-outline"
                                 size={20}
-                                color={passwordFocused ? '#667eea' : '#999'}
+                                color={passwordFocused ? colors.primary : colors.textTertiary}
                                 style={styles.inputIcon}
                             />
                             <TextInput
                                 style={styles.input}
                                 placeholder="请输入密码"
-                                placeholderTextColor="#999"
+                                placeholderTextColor={colors.textTertiary}
                                 value={password}
                                 onChangeText={setPassword}
                                 onFocus={() => setPasswordFocused(true)}
@@ -181,7 +290,7 @@ export default function LoginScreen() {
                                 <Ionicons
                                     name={showPassword ? 'eye-outline' : 'eye-off-outline'}
                                     size={20}
-                                    color="#999"
+                                    color={colors.textTertiary}
                                 />
                             </TouchableOpacity>
                         </View>
@@ -192,13 +301,7 @@ export default function LoginScreen() {
                         onPress={handleLogin}
                         disabled={loading}
                     >
-                        <LinearGradient
-                            colors={loading ? ['#cbd5e0', '#a0aec0'] : ['#667eea', '#764ba2', '#f093fb']}
-                            style={styles.button}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            locations={loading ? undefined : [0, 0.5, 1]}
-                        >
+                        <View style={[styles.button, loading && { opacity: 0.7 }]}>
                             {loading ? (
                                 <ActivityIndicator color="#fff" />
                             ) : (
@@ -207,7 +310,7 @@ export default function LoginScreen() {
                                     <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 8 }} />
                                 </View>
                             )}
-                        </LinearGradient>
+                        </View>
                     </TouchableOpacity>
 
                     <View style={styles.registerContainer}>
@@ -221,209 +324,3 @@ export default function LoginScreen() {
         </KeyboardAvoidingView>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#f5f7fa',
-        width: '100%',
-        ...Platform.select({
-            web: {
-                maxWidth: '100%',
-            },
-            default: {},
-        }),
-    },
-    scrollContent: {
-        flexGrow: 1,
-        width: '100%',
-        ...Platform.select({
-            web: {
-                maxWidth: '100%',
-            },
-            default: {},
-        }),
-    },
-    header: {
-        paddingTop: Platform.OS === 'ios' ? 70 : 50,
-        paddingBottom: 50,
-        paddingHorizontal: 20,
-        alignItems: 'center',
-        borderBottomLeftRadius: 35,
-        borderBottomRightRadius: 35,
-        marginBottom: 30,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 5,
-    },
-    logoContainer: {
-        width: 110,
-        height: 110,
-        borderRadius: 55,
-        backgroundColor: 'rgba(255,255,255,0.25)',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 20,
-        borderWidth: 3,
-        borderColor: 'rgba(255,255,255,0.4)',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    title: {
-        fontSize: 36,
-        fontWeight: '800',
-        color: '#fff',
-        marginBottom: 10,
-        textAlign: 'center',
-        letterSpacing: 0.5,
-    },
-    subtitle: {
-        fontSize: 16,
-        color: 'rgba(255,255,255,0.95)',
-        textAlign: 'center',
-        fontWeight: '400',
-    },
-    formContainer: {
-        padding: 28,
-        paddingTop: 48,
-        marginTop: -25,
-    },
-    inputContainer: {
-        marginBottom: 22,
-    },
-    label: {
-        fontSize: 15,
-        fontWeight: '600',
-        color: '#2d3748',
-        marginBottom: 10,
-        letterSpacing: 0.3,
-    },
-    inputWrapper: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#fff',
-        borderRadius: 14,
-        borderWidth: 1.5,
-        borderColor: '#e2e8f0',
-        paddingHorizontal: 18,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 4,
-        elevation: 2,
-        minHeight: 56,
-    },
-    inputWrapperFocused: {
-        borderColor: '#667eea',
-        borderWidth: 2,
-        shadowColor: '#667eea',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-        elevation: 4,
-    },
-    inputIcon: {
-        marginRight: 14,
-    },
-    input: {
-        flex: 1,
-        paddingVertical: 16,
-        paddingHorizontal: 4,
-        fontSize: 16,
-        color: '#1a202c',
-        fontWeight: '400',
-    },
-    eyeIcon: {
-        padding: 4,
-        marginLeft: 8,
-    },
-    button: {
-        borderRadius: 14,
-        padding: 18,
-        alignItems: 'center',
-        marginTop: 16,
-        shadowColor: '#667eea',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.35,
-        shadowRadius: 12,
-        elevation: 8,
-    },
-    buttonContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    buttonText: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: '700',
-        letterSpacing: 0.5,
-    },
-    registerContainer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: 28,
-        paddingVertical: 8,
-    },
-    registerText: {
-        fontSize: 15,
-        color: '#64748b',
-        fontWeight: '400',
-    },
-    registerLink: {
-        fontSize: 15,
-        color: '#667eea',
-        fontWeight: '700',
-        marginLeft: 6,
-        textDecorationLine: 'underline',
-    },
-    captchaContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 14,
-    },
-    captchaImageContainer: {
-        width: 130,
-        height: 56,
-        borderWidth: 1.5,
-        borderColor: '#e2e8f0',
-        borderRadius: 14,
-        backgroundColor: '#fff',
-        justifyContent: 'center',
-        alignItems: 'center',
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 4,
-        elevation: 2,
-    },
-    captchaImage: {
-        width: '100%',
-        height: '100%',
-    },
-    captchaPlaceholderContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 4,
-    },
-    captchaPlaceholder: {
-        fontSize: 11,
-        color: '#94a3b8',
-        fontWeight: '500',
-        marginTop: 2,
-    },
-    captchaHint: {
-        fontSize: 12,
-        color: '#94a3b8',
-        marginTop: 6,
-        textAlign: 'center',
-        fontStyle: 'italic',
-    },
-});

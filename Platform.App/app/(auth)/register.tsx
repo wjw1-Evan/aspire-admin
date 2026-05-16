@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     View,
     Text,
@@ -12,12 +12,132 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import Toast from 'react-native-toast-message';
 import { authService } from '../../services/authService';
 import { RegisterRequest } from '../../types/auth';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function RegisterScreen() {
+    const { colors } = useTheme();
+    const styles = useMemo(() => StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: colors.background,
+            width: '100%',
+            ...Platform.select({
+                web: {
+                    maxWidth: '100%',
+                },
+                default: {},
+            }),
+        },
+        scrollContent: {
+            flexGrow: 1,
+            width: '100%',
+            ...Platform.select({
+                web: {
+                    maxWidth: '100%',
+                },
+                default: {},
+            }),
+        },
+        header: {
+            paddingTop: Platform.OS === 'ios' ? 80 : 60,
+            paddingBottom: 40,
+            paddingHorizontal: 20,
+            alignItems: 'center',
+        },
+        logoContainer: {
+            width: 80,
+            height: 80,
+            borderRadius: 40,
+            borderWidth: 2,
+            borderColor: colors.border,
+            backgroundColor: colors.cardBackground,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 24,
+        },
+        title: {
+            fontSize: 28,
+            fontWeight: 'bold',
+            color: colors.text,
+            marginBottom: 8,
+            textAlign: 'center',
+        },
+        subtitle: {
+            fontSize: 16,
+            color: colors.textSecondary,
+            textAlign: 'center',
+        },
+        formContainer: {
+            padding: 24,
+        },
+        inputContainer: {
+            marginBottom: 16,
+        },
+        label: {
+            fontSize: 14,
+            fontWeight: '600',
+            color: colors.text,
+            marginBottom: 8,
+        },
+        required: {
+            color: colors.error,
+        },
+        inputWrapper: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: colors.cardBackground,
+            borderRadius: 14,
+            borderWidth: 1.5,
+            borderColor: colors.border,
+            paddingHorizontal: 16,
+            minHeight: 52,
+        },
+        inputIcon: {
+            marginRight: 12,
+        },
+        input: {
+            flex: 1,
+            paddingVertical: 14,
+            paddingHorizontal: 4,
+            fontSize: 16,
+            color: colors.text,
+        },
+        button: {
+            borderRadius: 14,
+            padding: 16,
+            alignItems: 'center',
+            marginTop: 12,
+            backgroundColor: colors.primary,
+        },
+        buttonContent: {
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
+        buttonText: {
+            color: '#fff',
+            fontSize: 16,
+            fontWeight: '600',
+        },
+        loginContainer: {
+            flexDirection: 'row',
+            justifyContent: 'center',
+            marginTop: 24,
+        },
+        loginText: {
+            fontSize: 14,
+            color: colors.textSecondary,
+        },
+        loginLink: {
+            fontSize: 14,
+            color: colors.primary,
+            fontWeight: '600',
+            marginLeft: 4,
+        },
+    }), [colors]);
+    
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -110,19 +230,13 @@ export default function RegisterScreen() {
                 contentContainerStyle={styles.scrollContent}
                 keyboardShouldPersistTaps="handled"
             >
-                {/* Gradient Header */}
-                <LinearGradient
-                    colors={['#667eea', '#764ba2']}
-                    style={styles.header}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                >
+                <View style={styles.header}>
                     <View style={styles.logoContainer}>
-                        <Ionicons name="person-add" size={60} color="#fff" />
+                        <Ionicons name="person-add" size={40} color={colors.primary} />
                     </View>
                     <Text style={styles.title}>创建账户</Text>
                     <Text style={styles.subtitle}>填写您的信息以开始使用</Text>
-                </LinearGradient>
+                </View>
 
                 <View style={styles.formContainer}>
                     <View style={styles.inputContainer}>
@@ -130,11 +244,11 @@ export default function RegisterScreen() {
                             用户名 <Text style={styles.required}>*</Text>
                         </Text>
                         <View style={styles.inputWrapper}>
-                            <Ionicons name="person-outline" size={20} color="#999" style={styles.inputIcon} />
+                            <Ionicons name="person-outline" size={20} color={colors.textTertiary} style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
                                 placeholder="请输入用户名（至少3个字符）"
-                                placeholderTextColor="#999"
+                                placeholderTextColor={colors.textTertiary}
                                 value={username}
                                 onChangeText={setUsername}
                                 autoCapitalize="none"
@@ -149,11 +263,11 @@ export default function RegisterScreen() {
                             邮箱 <Text style={styles.required}>*</Text>
                         </Text>
                         <View style={styles.inputWrapper}>
-                            <Ionicons name="mail-outline" size={20} color="#999" style={styles.inputIcon} />
+                            <Ionicons name="mail-outline" size={20} color={colors.textTertiary} style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
                                 placeholder="请输入邮箱地址"
-                                placeholderTextColor="#999"
+                                placeholderTextColor={colors.textTertiary}
                                 value={email}
                                 onChangeText={setEmail}
                                 keyboardType="email-address"
@@ -169,11 +283,11 @@ export default function RegisterScreen() {
                             密码 <Text style={styles.required}>*</Text>
                         </Text>
                         <View style={styles.inputWrapper}>
-                            <Ionicons name="lock-closed-outline" size={20} color="#999" style={styles.inputIcon} />
+                            <Ionicons name="lock-closed-outline" size={20} color={colors.textTertiary} style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
                                 placeholder="请输入密码（至少6个字符）"
-                                placeholderTextColor="#999"
+                                placeholderTextColor={colors.textTertiary}
                                 value={password}
                                 onChangeText={setPassword}
                                 secureTextEntry
@@ -188,11 +302,11 @@ export default function RegisterScreen() {
                             确认密码 <Text style={styles.required}>*</Text>
                         </Text>
                         <View style={styles.inputWrapper}>
-                            <Ionicons name="lock-open-outline" size={20} color="#999" style={styles.inputIcon} />
+                            <Ionicons name="lock-open-outline" size={20} color={colors.textTertiary} style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
                                 placeholder="请再次输入密码"
-                                placeholderTextColor="#999"
+                                placeholderTextColor={colors.textTertiary}
                                 value={confirmPassword}
                                 onChangeText={setConfirmPassword}
                                 secureTextEntry
@@ -205,11 +319,11 @@ export default function RegisterScreen() {
                     <View style={styles.inputContainer}>
                         <Text style={styles.label}>真实姓名</Text>
                         <View style={styles.inputWrapper}>
-                            <Ionicons name="person" size={20} color="#999" style={styles.inputIcon} />
+                            <Ionicons name="person" size={20} color={colors.textTertiary} style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
                                 placeholder="请输入您的真实姓名（可选）"
-                                placeholderTextColor="#999"
+                                placeholderTextColor={colors.textTertiary}
                                 value={realName}
                                 onChangeText={setRealName}
                                 editable={!loading}
@@ -220,11 +334,11 @@ export default function RegisterScreen() {
                     <View style={styles.inputContainer}>
                         <Text style={styles.label}>手机号</Text>
                         <View style={styles.inputWrapper}>
-                            <Ionicons name="call-outline" size={20} color="#999" style={styles.inputIcon} />
+                            <Ionicons name="call-outline" size={20} color={colors.textTertiary} style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
                                 placeholder="请输入手机号（可选）"
-                                placeholderTextColor="#999"
+                                placeholderTextColor={colors.textTertiary}
                                 value={phone}
                                 onChangeText={setPhone}
                                 keyboardType="phone-pad"
@@ -238,12 +352,7 @@ export default function RegisterScreen() {
                         onPress={handleRegister}
                         disabled={loading}
                     >
-                        <LinearGradient
-                            colors={loading ? ['#999', '#999'] : ['#667eea', '#764ba2']}
-                            style={styles.button}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                        >
+                        <View style={[styles.button, loading && { opacity: 0.7 }]}>
                             {loading ? (
                                 <ActivityIndicator color="#fff" />
                             ) : (
@@ -252,7 +361,7 @@ export default function RegisterScreen() {
                                     <Ionicons name="checkmark" size={20} color="#fff" style={{ marginLeft: 8 }} />
                                 </View>
                             )}
-                        </LinearGradient>
+                        </View>
                     </TouchableOpacity>
 
                     <View style={styles.loginContainer}>
@@ -266,133 +375,3 @@ export default function RegisterScreen() {
         </KeyboardAvoidingView>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#f8f9fa',
-        width: '100%',
-        ...Platform.select({
-            web: {
-                maxWidth: '100%',
-            },
-            default: {},
-        }),
-    },
-    scrollContent: {
-        flexGrow: 1,
-        width: '100%',
-        ...Platform.select({
-            web: {
-                maxWidth: '100%',
-            },
-            default: {},
-        }),
-    },
-    header: {
-        paddingTop: Platform.OS === 'ios' ? 60 : 40,
-        paddingBottom: 40,
-        paddingHorizontal: 20,
-        alignItems: 'center',
-        borderBottomLeftRadius: 30,
-        borderBottomRightRadius: 30,
-        marginBottom: 30,
-    },
-    logoContainer: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 20,
-        borderWidth: 3,
-        borderColor: 'rgba(255,255,255,0.3)',
-    },
-    title: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        color: '#fff',
-        marginBottom: 8,
-        textAlign: 'center',
-    },
-    subtitle: {
-        fontSize: 16,
-        color: 'rgba(255,255,255,0.9)',
-        textAlign: 'center',
-    },
-    formContainer: {
-        padding: 24,
-        marginTop: -20,
-    },
-    inputContainer: {
-        marginBottom: 16,
-    },
-    label: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#333',
-        marginBottom: 8,
-    },
-    required: {
-        color: '#ff4d4f',
-    },
-    inputWrapper: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#e1e8ed',
-        paddingHorizontal: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 3,
-        elevation: 2,
-    },
-    inputIcon: {
-        marginRight: 12,
-    },
-    input: {
-        flex: 1,
-        padding: 16,
-        fontSize: 16,
-        color: '#333',
-    },
-    button: {
-        borderRadius: 12,
-        padding: 18,
-        alignItems: 'center',
-        marginTop: 12,
-        shadowColor: '#667eea',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 5,
-    },
-    buttonContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    buttonText: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    loginContainer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        marginTop: 24,
-    },
-    loginText: {
-        fontSize: 14,
-        color: '#666',
-    },
-    loginLink: {
-        fontSize: 14,
-        color: '#667eea',
-        fontWeight: '600',
-        marginLeft: 4,
-    },
-});

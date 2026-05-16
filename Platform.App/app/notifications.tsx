@@ -9,7 +9,8 @@ import {
     Text as RNText,
 } from 'react-native';
 import { View, Text } from '@/components/Themed';
-import { AppStyles, commonStyles } from '@/constants/AppStyles';
+import { AppStyles, createCommonStyles } from '@/constants/AppStyles';
+import { useTheme } from '@/contexts/ThemeContext';
 import { notificationService } from '@/services/notificationService';
 import { AppNotification, NotificationLevel, NotificationCategory } from '@/types/notification';
 import { Ionicons } from '@expo/vector-icons';
@@ -38,29 +39,69 @@ const formatRelativeTime = (input: string) => {
         .padStart(2, '0')}`;
 };
 
-const getCategoryMeta = (category: NotificationCategory) => {
+const getCategoryMeta = (category: NotificationCategory, colors: any) => {
     switch (category) {
         case NotificationCategory.Work:
-            return { icon: 'briefcase-outline' as const, color: '#1890ff', bg: '#e6f4ff' };
+            return { icon: 'briefcase-outline' as const, color: colors.primary, bg: colors.primary + '20' };
         case NotificationCategory.System:
-            return { icon: 'alert-circle-outline' as const, color: '#faad14', bg: '#fff7e6' };
+            return { icon: 'alert-circle-outline' as const, color: colors.warning, bg: colors.warning + '20' };
         case NotificationCategory.Security:
-            return { icon: 'shield-checkmark-outline' as const, color: '#ff4d4f', bg: '#fff1f0' };
+            return { icon: 'shield-checkmark-outline' as const, color: colors.error, bg: colors.error + '20' };
         default:
-            return { icon: 'notifications-outline' as const, color: '#52c41a', bg: '#f6ffed' };
+            return { icon: 'notifications-outline' as const, color: colors.success, bg: colors.success + '20' };
     }
 };
 
-const getLevelMeta = (level: NotificationLevel) => {
+const getLevelMeta = (level: NotificationLevel, colors: any) => {
   switch (level) {
-    case NotificationLevel.Success: return { label: '成功', color: '#52c41a', bg: '#f6ffed' };
-    case NotificationLevel.Warning: return { label: '警告', color: '#fa8c16', bg: '#fff7e6' };
-    case NotificationLevel.Error: return { label: '错误', color: '#ff4d4f', bg: '#fff1f0' };
+    case NotificationLevel.Success: return { label: '成功', color: colors.success, bg: colors.success + '20' };
+    case NotificationLevel.Warning: return { label: '警告', color: colors.warning, bg: colors.warning + '20' };
+    case NotificationLevel.Error: return { label: '错误', color: colors.error, bg: colors.error + '20' };
     default: return null;
   }
 }
 
 export default function NotificationsScreen() {
+    const { colors } = useTheme();
+    const comStyles = useMemo(() => createCommonStyles(colors), [colors]);
+    const styles = useMemo(() => StyleSheet.create({
+        listContent: { padding: AppStyles.spacing.lg },
+        filterBar: { flexDirection: 'row', padding: AppStyles.spacing.lg, alignItems: 'center' },
+        filterChip: {
+            paddingHorizontal: AppStyles.spacing.md,
+            paddingVertical: AppStyles.spacing.sm,
+            borderRadius: AppStyles.borderRadius.md,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.cardBackground,
+            marginRight: AppStyles.spacing.sm,
+        },
+        filterChipActive: { borderColor: colors.primary, backgroundColor: colors.primary + '20' },
+        filterChipText: { color: colors.text, fontSize: AppStyles.fontSize.md, fontWeight: '600' },
+        filterChipTextActive: { color: colors.primary },
+        separator: { height: AppStyles.spacing.sm },
+        card: {
+            backgroundColor: colors.cardBackground,
+            borderRadius: AppStyles.borderRadius.lg,
+            padding: AppStyles.spacing.md,
+            borderWidth: 1,
+            borderColor: colors.borderLight,
+            ...AppStyles.shadows.sm,
+        },
+        unreadCard: { borderColor: colors.primary, backgroundColor: colors.primary + '20' },
+        rowHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: AppStyles.spacing.sm },
+        leftWrap: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+        iconWrap: { width: 32, height: 32, borderRadius: AppStyles.borderRadius.full, alignItems: 'center', justifyContent: 'center', marginRight: AppStyles.spacing.sm },
+        title: { flex: 1, fontSize: AppStyles.fontSize.lg, fontWeight: '600', color: colors.text },
+        unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary, marginLeft: 4 },
+        time: { marginLeft: AppStyles.spacing.sm, fontSize: AppStyles.fontSize.sm, color: colors.textSecondary },
+        desc: { fontSize: AppStyles.fontSize.md, color: colors.textSecondary, lineHeight: 20 },
+        levelTag: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+        emptyWrap: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80 },
+        emptyText: { marginTop: AppStyles.spacing.sm, color: colors.textSecondary },
+        loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    }), [colors]);
+    
     const [notifications, setNotifications] = useState<AppNotification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [total, setTotal] = useState(0);
@@ -140,8 +181,8 @@ export default function NotificationsScreen() {
     };
 
     const renderItem = ({ item }: { item: AppNotification }) => {
-        const meta = getCategoryMeta(item.category);
-        const levelMeta = getLevelMeta(item.level);
+        const meta = getCategoryMeta(item.category, colors);
+        const levelMeta = getLevelMeta(item.level, colors);
         const isRead = item.status === 1;
 
         return (
@@ -175,7 +216,7 @@ export default function NotificationsScreen() {
     };
 
     return (
-        <View style={commonStyles.pageContainer}>
+        <View style={comStyles.pageContainer}>
             <View style={styles.filterBar}>
                 {[
                   { key: 'all' as const, label: '全部' },
@@ -201,7 +242,7 @@ export default function NotificationsScreen() {
 
             {loading && notifications.length === 0 ? (
                 <View style={styles.loadingWrap}>
-                    <ActivityIndicator size="large" color={AppStyles.colors.primary} />
+                    <ActivityIndicator size="large" color={colors.primary} />
                 </View>
             ) : (
                 <FlatList
@@ -215,7 +256,7 @@ export default function NotificationsScreen() {
                     }
                     ListEmptyComponent={
                         <View style={styles.emptyWrap}>
-                            <Ionicons name="notifications-off-outline" size={36} color={AppStyles.colors.textSecondary} />
+                            <Ionicons name="notifications-off-outline" size={36} color={colors.textSecondary} />
                             <Text style={styles.emptyText}>暂时没有通知</Text>
                         </View>
                     }
@@ -224,41 +265,3 @@ export default function NotificationsScreen() {
         </View>
     );
 }
-
-const styles = StyleSheet.create({
-    listContent: { padding: AppStyles.spacing.lg },
-    filterBar: { flexDirection: 'row', padding: AppStyles.spacing.lg, alignItems: 'center' },
-    filterChip: {
-        paddingHorizontal: AppStyles.spacing.md,
-        paddingVertical: AppStyles.spacing.sm,
-        borderRadius: AppStyles.borderRadius.md,
-        borderWidth: 1,
-        borderColor: AppStyles.colors.border,
-        backgroundColor: AppStyles.colors.cardBackground,
-        marginRight: AppStyles.spacing.sm,
-    },
-    filterChipActive: { borderColor: AppStyles.colors.primary, backgroundColor: '#f5f7ff' },
-    filterChipText: { color: AppStyles.colors.text, fontSize: AppStyles.fontSize.md, fontWeight: '600' },
-    filterChipTextActive: { color: AppStyles.colors.primary },
-    separator: { height: AppStyles.spacing.sm },
-    card: {
-        backgroundColor: AppStyles.colors.cardBackground,
-        borderRadius: AppStyles.borderRadius.lg,
-        padding: AppStyles.spacing.md,
-        borderWidth: 1,
-        borderColor: AppStyles.colors.borderLight,
-        ...AppStyles.shadows.sm,
-    },
-    unreadCard: { borderColor: AppStyles.colors.primary, backgroundColor: '#f5f7ff' },
-    rowHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: AppStyles.spacing.sm },
-    leftWrap: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-    iconWrap: { width: 32, height: 32, borderRadius: AppStyles.borderRadius.full, alignItems: 'center', justifyContent: 'center', marginRight: AppStyles.spacing.sm },
-    title: { flex: 1, fontSize: AppStyles.fontSize.lg, fontWeight: '600', color: AppStyles.colors.text },
-    unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: AppStyles.colors.primary, marginLeft: 4 },
-    time: { marginLeft: AppStyles.spacing.sm, fontSize: AppStyles.fontSize.sm, color: AppStyles.colors.textSecondary },
-    desc: { fontSize: AppStyles.fontSize.md, color: AppStyles.colors.textSecondary, lineHeight: 20 },
-    levelTag: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-    emptyWrap: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80 },
-    emptyText: { marginTop: AppStyles.spacing.sm, color: AppStyles.colors.textSecondary },
-    loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-});

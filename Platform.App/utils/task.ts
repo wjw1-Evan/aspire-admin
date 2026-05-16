@@ -1,4 +1,3 @@
-import { AppStyles } from '../constants/AppStyles';
 import { TaskStatus, TaskPriority } from '../types/task';
 import { ProjectStatus, ProjectPriority } from '../types/project';
 
@@ -7,23 +6,43 @@ export function getTaskStatusColor(status: TaskStatus): string {
     case TaskStatus.Pending:
       return '#999';
     case TaskStatus.Assigned:
-      return '#667eea';
+      return '#818cf8';
     case TaskStatus.InProgress:
-      return '#1890ff';
+      return '#60a5fa';
     case TaskStatus.Completed:
-      return '#10b981';
+      return '#34d399';
     case TaskStatus.Cancelled:
-      return '#ef4444';
+      return '#f87171';
     case TaskStatus.Failed:
-      return '#ff4d4f';
+      return '#f87171';
     case TaskStatus.Paused:
-      return '#f59e0b';
+      return '#fbbf24';
     default:
       return '#999';
   }
 }
 
-export function getTaskStatusBgColor(status: TaskStatus): string {
+export function getTaskStatusBgColor(status: TaskStatus, isDark = false): string {
+  if (isDark) {
+    switch (status) {
+      case TaskStatus.Pending:
+        return '#2d2d2d';
+      case TaskStatus.Assigned:
+        return '#1e1b4b';
+      case TaskStatus.InProgress:
+        return '#172554';
+      case TaskStatus.Completed:
+        return '#052e16';
+      case TaskStatus.Cancelled:
+        return '#450a0a';
+      case TaskStatus.Failed:
+        return '#450a0a';
+      case TaskStatus.Paused:
+        return '#422006';
+      default:
+        return '#2d2d2d';
+    }
+  }
   switch (status) {
     case TaskStatus.Pending:
       return '#f5f5f5';
@@ -49,17 +68,31 @@ export function getTaskPriorityColor(priority: TaskPriority): string {
     case TaskPriority.Low:
       return '#999';
     case TaskPriority.Medium:
-      return '#1890ff';
+      return '#60a5fa';
     case TaskPriority.High:
-      return '#ff4d4f';
+      return '#f87171';
     case TaskPriority.Urgent:
-      return '#ff0000';
+      return '#ef4444';
     default:
       return '#999';
   }
 }
 
-export function getTaskPriorityBgColor(priority: TaskPriority): string {
+export function getTaskPriorityBgColor(priority: TaskPriority, isDark = false): string {
+  if (isDark) {
+    switch (priority) {
+      case TaskPriority.Low:
+        return '#2d2d2d';
+      case TaskPriority.Medium:
+        return '#172554';
+      case TaskPriority.High:
+        return '#450a0a';
+      case TaskPriority.Urgent:
+        return '#7f1d1d';
+      default:
+        return '#2d2d2d';
+    }
+  }
   switch (priority) {
     case TaskPriority.Low:
       return '#f5f5f5';
@@ -79,19 +112,35 @@ export function getProjectStatusColor(status: ProjectStatus): string {
     case ProjectStatus.Planning:
       return '#999';
     case ProjectStatus.InProgress:
-      return '#1890ff';
+      return '#60a5fa';
     case ProjectStatus.OnHold:
-      return '#f59e0b';
+      return '#fbbf24';
     case ProjectStatus.Completed:
-      return '#10b981';
+      return '#34d399';
     case ProjectStatus.Cancelled:
-      return '#ef4444';
+      return '#f87171';
     default:
       return '#999';
   }
 }
 
-export function getProjectStatusBgColor(status: ProjectStatus): string {
+export function getProjectStatusBgColor(status: ProjectStatus, isDark = false): string {
+  if (isDark) {
+    switch (status) {
+      case ProjectStatus.Planning:
+        return '#2d2d2d';
+      case ProjectStatus.InProgress:
+        return '#172554';
+      case ProjectStatus.OnHold:
+        return '#422006';
+      case ProjectStatus.Completed:
+        return '#052e16';
+      case ProjectStatus.Cancelled:
+        return '#450a0a';
+      default:
+        return '#2d2d2d';
+    }
+  }
   switch (status) {
     case ProjectStatus.Planning:
       return '#f5f5f5';
@@ -113,19 +162,19 @@ export function getProjectPriorityColor(priority: ProjectPriority): string {
     case ProjectPriority.Low:
       return '#999';
     case ProjectPriority.Medium:
-      return '#1890ff';
+      return '#60a5fa';
     case ProjectPriority.High:
-      return '#ff4d4f';
+      return '#f87171';
     default:
       return '#999';
   }
 }
 
-export function getProgressColor(percentage: number): string {
-  if (percentage >= 100) return '#10b981';
-  if (percentage >= 60) return '#1890ff';
-  if (percentage >= 30) return '#f59e0b';
-  return '#ef4444';
+export function getProgressColor(percentage: number, isDark = false): string {
+  if (percentage >= 100) return isDark ? '#4ade80' : '#10b981';
+  if (percentage >= 60) return isDark ? '#60a5fa' : '#1890ff';
+  if (percentage >= 30) return isDark ? '#fbbf24' : '#f59e0b';
+  return isDark ? '#f87171' : '#ef4444';
 }
 
 export function formatDate(dateStr?: string, format: 'date' | 'datetime' = 'datetime'): string {

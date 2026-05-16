@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { AppStyles } from '../../constants/AppStyles';
+import { useTheme } from '../../utils/theme';
 import { getProgressColor } from '../../utils/task';
 
 interface ProgressBarProps {
@@ -16,8 +17,31 @@ export default function ProgressBar({
   height = 8,
   color,
 }: ProgressBarProps) {
+  const { colors } = useTheme();
   const barColor = color || getProgressColor(percentage);
   const clampedPercentage = Math.max(0, Math.min(100, percentage));
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    track: {
+      flex: 1,
+      backgroundColor: colors.borderLight,
+      borderRadius: height / 2,
+      overflow: 'hidden',
+    },
+    fill: {
+      borderRadius: height / 2,
+    },
+    label: {
+      marginLeft: AppStyles.spacing.sm,
+      fontSize: AppStyles.fontSize.xs,
+      fontWeight: '600',
+      minWidth: 36,
+      textAlign: 'right',
+    },
+  }), [colors, height]);
 
   return (
     <View style={styles.container}>
@@ -41,26 +65,3 @@ export default function ProgressBar({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  track: {
-    flex: 1,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  fill: {
-    borderRadius: 4,
-  },
-  label: {
-    marginLeft: AppStyles.spacing.sm,
-    fontSize: AppStyles.fontSize.xs,
-    fontWeight: '600',
-    minWidth: 36,
-    textAlign: 'right',
-  },
-});

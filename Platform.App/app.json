@@ -17,7 +17,10 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "我们需要访问您的位置信息，以便为您提供附近的人、位置分享等社交功能。",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "我们需要访问您的位置信息，以便为您提供附近的人、位置分享等社交功能。"
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "我们需要访问您的位置信息，以便为您提供附近的人、位置分享等社交功能。",
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        }
       }
     },
     "android": {

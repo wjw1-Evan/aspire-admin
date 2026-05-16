@@ -9,7 +9,7 @@ class PasswordEncryption {
     /**
      * Get valid public key from backend or cache
      */
-    private static async getValidPublicKey(): Promise<string> {
+    private static async getValidPublicKey(): Promise<string | null> {
         const now = Date.now();
         if (this.publicKey && (now - this.lastFetchTime < this.CACHE_DURATION)) {
             return this.publicKey;
@@ -23,11 +23,10 @@ class PasswordEncryption {
                 this.lastFetchTime = now;
                 return this.publicKey;
             }
-            throw new Error('Failed to fetch public key');
         } catch (error) {
             console.error('Error fetching public key:', error);
-            throw error;
         }
+        return this.publicKey;
     }
 
     /**
@@ -39,11 +38,12 @@ class PasswordEncryption {
         try {
             const pubKey = await this.getValidPublicKey();
 
-            // SM2 encryption requires the key without "04" prefix if it's there
-            // Usually the backend returns it explicitly but we handle common format
+            if (!pubKey) {
+                return password;
+            }
+
             let hexKey = pubKey;
 
-            // Generate SM2 encrypted string with cipherMode 1 (C1C3C2)
             let encrypted = sm2.doEncrypt(password, hexKey, 1);
 
             if (!encrypted) {
@@ -51,7 +51,6 @@ class PasswordEncryption {
                 return password;
             }
 
-            // Ensure our encrypted string starts with '04' to indicate uncompressed format
             if (!encrypted.startsWith('04')) {
                 encrypted = '04' + encrypted;
             }
@@ -59,7 +58,7 @@ class PasswordEncryption {
             return encrypted;
         } catch (err) {
             console.error('Encryption process error:', err);
-            return password; // Fallback to plaintext if error
+            return password;
         }
     }
 }

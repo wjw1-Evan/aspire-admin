@@ -59,6 +59,7 @@ class SseService {
   private connectRN(url: string, handlers: SseEventHandlers) {
     let buffer = '';
     let lastIndex = 0;
+    let timedOut = false;
 
     const xhr = new XMLHttpRequest();
     this.xhr = xhr;
@@ -66,7 +67,14 @@ class SseService {
     xhr.setRequestHeader('Accept', 'text/event-stream');
     xhr.setRequestHeader('Cache-Control', 'no-cache');
 
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      xhr.abort();
+      this.xhr = null;
+    }, 10000);
+
     xhr.onprogress = () => {
+      clearTimeout(timeout);
       const newData = xhr.responseText.substring(lastIndex);
       lastIndex = xhr.responseText.length;
       buffer += newData;
@@ -80,12 +88,16 @@ class SseService {
     };
 
     xhr.onerror = () => {
-      handlers.onError?.(new Error('SSE connection error'));
+      clearTimeout(timeout);
+      if (!timedOut) {
+        handlers.onError?.(new Error('SSE connection error'));
+      }
     };
 
     xhr.send();
 
     this.cleanup = () => {
+      clearTimeout(timeout);
       xhr.abort();
       this.xhr = null;
     };

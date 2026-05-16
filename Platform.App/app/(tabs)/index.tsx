@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { StyleSheet, ScrollView, RefreshControl, ActivityIndicator, View as RNView, Text as RNText, Platform, TouchableOpacity } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +16,7 @@ import { Link, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MenuItemCard from '../../components/ui/MenuItemCard';
+import ErrorView from '../../components/ui/ErrorView';
 import { changeLanguage, getCurrentLanguage } from '../../utils/i18n';
 
 export default function HomeScreen() {
@@ -82,6 +83,8 @@ export default function HomeScreen() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingTimedOut, setLoadingTimedOut] = useState(false);
+  const loadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [todoCount, setTodoCount] = useState(0);
@@ -138,7 +141,12 @@ export default function HomeScreen() {
         setUnreadCount(stats.UnreadTotal ?? stats.Total ?? 0);
       },
     });
-    return () => sseService.disconnect();
+    return () => {
+      sseService.disconnect();
+      if (loadingTimerRef.current) {
+        clearTimeout(loadingTimerRef.current);
+      }
+    };
   }, []);
 
   useFocusEffect(
@@ -161,7 +169,37 @@ export default function HomeScreen() {
     fetchActiveProjectCount();
   };
 
+  useEffect(() => {
+    if (loading) {
+      loadingTimerRef.current = setTimeout(() => {
+        setLoadingTimedOut(true);
+      }, 15000);
+    } else {
+      if (loadingTimerRef.current) {
+        clearTimeout(loadingTimerRef.current);
+        loadingTimerRef.current = null;
+      }
+    }
+    return () => {
+      if (loadingTimerRef.current) {
+        clearTimeout(loadingTimerRef.current);
+      }
+    };
+  }, [loading]);
+
   if (loading) {
+    if (loadingTimedOut) {
+      return (
+        <ErrorView
+          message="加载超时，请检查网络连接后重试"
+          onRetry={() => {
+            setLoadingTimedOut(false);
+            setLoading(true);
+            loadData();
+          }}
+        />
+      );
+    }
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -243,6 +281,12 @@ export default function HomeScreen() {
             title={t('home.all_projects')}
             description={t('home.all_projects_desc')}
             onPress={() => router.push('/(tabs)/projects')}
+          />
+          <MenuItemCard
+            icon="business-outline"
+            title={t('enterprise_service.title')}
+            description={t('enterprise_service.list_title')}
+            onPress={() => router.push('/enterprise-service')}
           />
         </View>
       </ScrollView>

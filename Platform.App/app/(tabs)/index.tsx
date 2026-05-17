@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { StyleSheet, ScrollView, RefreshControl, ActivityIndicator, View as RNView, Text as RNText, Platform, TouchableOpacity } from 'react-native';
+import { StyleSheet, ScrollView, RefreshControl, ActivityIndicator, View as RNView, Text as RNText, TouchableOpacity } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -10,8 +10,7 @@ import { taskService } from '../../services/taskService';
 import { projectService } from '../../services/projectService';
 import { sseService } from '../../services/sseService';
 import { User } from '../../types/auth';
-import { TaskDto, TaskStatus } from '../../types/task';
-import { ProjectDto, ProjectStatus } from '../../types/project';
+import { ProjectStatus } from '../../types/project';
 import { Link, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -89,6 +88,7 @@ export default function HomeScreen() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [todoCount, setTodoCount] = useState(0);
   const [activeProjectCount, setActiveProjectCount] = useState(0);
+  const [focusCount, setFocusCount] = useState(0);
 
   const toggleLanguage = async () => {
     const newLang = currentLang === 'zh' ? 'en' : 'zh';
@@ -151,6 +151,7 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      setFocusCount(c => c + 1);
       fetchTodoCount();
       fetchActiveProjectCount();
     }, [fetchTodoCount, fetchActiveProjectCount])
@@ -202,12 +203,11 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} pointerEvents="auto" key={`home-${focusCount}`}>
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        keyboardShouldPersistTaps="always"
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <View style={styles.header}>
           <RNView style={styles.headerTop}>
@@ -284,8 +284,8 @@ export default function HomeScreen() {
           />
           <MenuItemCard
             icon="chatbubbles-outline"
-            title="小科"
-            description="AI 智能助手"
+            title={t('xiaoke.title')}
+            description={t('xiaoke.subtitle')}
             onPress={() => router.push('/xiaoke')}
           />
         </View>

@@ -12,7 +12,6 @@ import {
     Text as RNText,
 } from 'react-native';
 import { Text, View } from '@/components/Themed';
-import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { AppStyles, createCommonStyles } from '../../constants/AppStyles';
@@ -65,8 +64,6 @@ export default function ProfileScreen() {
             width: 64,
             height: 64,
             borderRadius: 32,
-            borderWidth: 2,
-            borderColor: themeColors.border,
             backgroundColor: themeColors.cardBackground,
             alignItems: 'center',
             justifyContent: 'center',
@@ -95,7 +92,7 @@ export default function ProfileScreen() {
             height: 40,
             borderRadius: 20,
             backgroundColor: themeColors.cardBackground,
-            borderWidth: 1.5,
+            borderWidth: 1,
             borderColor: themeColors.border,
             alignItems: 'center',
             justifyContent: 'center',
@@ -113,18 +110,12 @@ export default function ProfileScreen() {
             color: themeColors.textSecondary,
             marginBottom: AppStyles.spacing.sm,
             marginLeft: AppStyles.spacing.xs,
-            textTransform: 'uppercase',
-            letterSpacing: 0.5,
-        },
-        companyCardContent: {
-            flexDirection: 'row',
-            alignItems: 'center',
         },
         companyIcon: {
             width: 44,
             height: 44,
             borderRadius: 22,
-            borderWidth: 1.5,
+            borderWidth: 1,
             borderColor: themeColors.border,
             backgroundColor: themeColors.cardBackground,
             alignItems: 'center',
@@ -138,14 +129,12 @@ export default function ProfileScreen() {
             fontSize: AppStyles.fontSize.md,
             fontWeight: '600',
             color: themeColors.text,
-            marginBottom: 2,
         },
         companyCode: {
             fontSize: AppStyles.fontSize.sm,
             color: themeColors.textSecondary,
         },
         companyItem: {
-            marginBottom: AppStyles.spacing.sm,
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -159,48 +148,17 @@ export default function ProfileScreen() {
             width: 40,
             height: 40,
             borderRadius: 20,
-            borderWidth: 1.5,
+            borderWidth: 1,
             borderColor: themeColors.border,
             backgroundColor: themeColors.cardBackground,
             alignItems: 'center',
             justifyContent: 'center',
             marginRight: 12,
         },
-        companyItemIconActive: {
-            borderColor: themeColors.primary,
-            backgroundColor: themeColors.primary + '15',
-        },
         companyItemIconText: {
             fontSize: 18,
             fontWeight: 'bold',
             color: themeColors.textSecondary,
-        },
-        companyItemIconTextActive: {
-            color: themeColors.primary,
-        },
-        companyItemName: {
-            fontSize: AppStyles.fontSize.md,
-            fontWeight: '600',
-            color: themeColors.text,
-            marginBottom: 2,
-        },
-        companyItemNameActive: {
-            color: themeColors.primary,
-        },
-        companyItemCode: {
-            fontSize: AppStyles.fontSize.sm,
-            color: themeColors.textSecondary,
-        },
-        activeTag: {
-            backgroundColor: themeColors.primary,
-            paddingHorizontal: AppStyles.spacing.sm,
-            paddingVertical: AppStyles.spacing.xs,
-            borderRadius: AppStyles.borderRadius.sm,
-        },
-        activeTagText: {
-            color: themeColors.white,
-            fontSize: AppStyles.fontSize.xs,
-            fontWeight: 'bold',
         },
         logoutButton: {
             backgroundColor: themeColors.primary,
@@ -223,8 +181,8 @@ export default function ProfileScreen() {
         },
         modalContent: {
             backgroundColor: themeColors.cardBackground,
-            borderTopLeftRadius: 24,
-            borderTopRightRadius: 24,
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
             padding: 24,
             maxHeight: '80%',
         },
@@ -239,9 +197,6 @@ export default function ProfileScreen() {
             fontWeight: 'bold',
             color: themeColors.text,
         },
-        formContainer: {
-            marginBottom: 24,
-        },
         formGroup: {
             marginBottom: 20,
         },
@@ -253,21 +208,17 @@ export default function ProfileScreen() {
         },
         input: {
             backgroundColor: themeColors.background,
-            borderRadius: 14,
-            borderWidth: 1.5,
+            borderRadius: 12,
+            borderWidth: 1,
             borderColor: themeColors.border,
             padding: 16,
             fontSize: 16,
             color: themeColors.text,
         },
-        modalFooter: {
-            flexDirection: 'row',
-            gap: 12,
-        },
         cancelButton: {
             flex: 1,
             backgroundColor: themeColors.borderLight,
-            borderRadius: 14,
+            borderRadius: 12,
             padding: 16,
             alignItems: 'center',
         },
@@ -279,19 +230,15 @@ export default function ProfileScreen() {
         saveButton: {
             flex: 1,
             backgroundColor: themeColors.primary,
-            borderRadius: 14,
+            borderRadius: 12,
             padding: 16,
             alignItems: 'center',
-        },
-        saveButtonDisabled: {
-            opacity: 0.7,
         },
         saveButtonText: {
             fontSize: 16,
             fontWeight: '600',
             color: themeColors.white,
         },
-        // Logout Modal Styles
         logoutModalOverlay: {
             flex: 1,
             backgroundColor: themeColors.overlay,
@@ -300,14 +247,11 @@ export default function ProfileScreen() {
         },
         logoutModalContent: {
             backgroundColor: themeColors.cardBackground,
-            borderRadius: 20,
+            borderRadius: 16,
             padding: 24,
             width: '85%',
             maxWidth: 400,
             alignItems: 'center',
-        },
-        logoutModalIcon: {
-            marginBottom: 16,
         },
         logoutModalTitle: {
             fontSize: 20,
@@ -320,35 +264,6 @@ export default function ProfileScreen() {
             color: themeColors.textSecondary,
             textAlign: 'center',
             marginBottom: 24,
-        },
-        logoutModalActions: {
-            flexDirection: 'row',
-            gap: 12,
-            width: '100%',
-        },
-        logoutModalCancelButton: {
-            flex: 1,
-            backgroundColor: themeColors.borderLight,
-            borderRadius: 14,
-            padding: 14,
-            alignItems: 'center',
-        },
-        logoutModalCancelText: {
-            fontSize: 16,
-            fontWeight: '600',
-            color: themeColors.textSecondary,
-        },
-        logoutModalConfirmButton: {
-            flex: 1,
-            backgroundColor: themeColors.primary,
-            borderRadius: 14,
-            padding: 14,
-            alignItems: 'center',
-        },
-        logoutModalConfirmText: {
-            fontSize: 16,
-            fontWeight: '600',
-            color: themeColors.white,
         },
     }), [themeColors, insets]);
 
@@ -388,16 +303,13 @@ export default function ProfileScreen() {
         loadData();
     }, []);
 
-    const handleSwitchCompany = async (companyId: string, companyName: string) => {
-        console.log('Attempting to switch company:', companyId, companyName);
+    const handleSwitchCompany = async (companyId: string) => {
         if (companyId === currentCompany?.id) {
-            return; // Already on this company
+            return;
         }
         setSwitchingCompany(true);
-        console.log('Calling switchCompany API with id:', companyId);
         try {
             const response = await companyService.switchCompany(companyId);
-            console.log('SwitchCompany response:', response);
             if (response && response.success) {
                 // Refresh user info (including currentCompanyId)
                 await authService.getCurrentUser();
@@ -520,7 +432,7 @@ export default function ProfileScreen() {
                         <Text style={styles.sectionTitle}>{t('profile.current_company')}</Text>
                         {currentCompany ? (
                             <View style={comStyles.card}>
-                                <RNView style={styles.companyCardContent}>
+                                <RNView style={{ flexDirection: 'row', alignItems: 'center' }}>
                                     <RNView style={styles.companyIcon}>
                                         <Ionicons name="business-outline" size={22} color={themeColors.primary} />
                                     </RNView>
@@ -548,40 +460,20 @@ export default function ProfileScreen() {
                                     <TouchableOpacity
                                         key={`${company.companyId || 'company'}-${index}`}
                                         style={[comStyles.card, styles.companyItem]}
-                                        onPress={() => {
-                                            console.log('调试', `点击了 ${company.companyName}`);
-                                            console.log('Company item pressed:', company.companyId, company.companyName);
-                                            handleSwitchCompany(company.companyId, company.companyName);
-                                        }}
+                                        onPress={() => handleSwitchCompany(company.companyId)}
                                         disabled={switchingCompany || company.companyId === currentCompany?.id}
                                     >
                                         <RNView style={styles.companyItemLeft}>
-                                            <RNView style={[
-                                                styles.companyItemIcon,
-                                                company.companyId === currentCompany?.id && styles.companyItemIconActive
-                                            ]}>
-                                                <RNText style={[
-                                                    styles.companyItemIconText,
-                                                    company.companyId === currentCompany?.id && styles.companyItemIconTextActive
-                                                ]}>
+                                            <RNView style={styles.companyItemIcon}>
+                                                <RNText style={styles.companyItemIconText}>
                                                     {company.companyName?.charAt(0) || '?'}
                                                 </RNText>
                                             </RNView>
                                             <RNView>
-                                                <RNText style={[
-                                                    styles.companyItemName,
-                                                    company.companyId === currentCompany?.id && styles.companyItemNameActive
-                                                ]}>
-                                                    {company.companyName}
-                                                </RNText>
-                                                <RNText style={styles.companyItemCode}>{company.companyCode}</RNText>
+                                                <RNText style={styles.companyName}>{company.companyName}</RNText>
+                                                <RNText style={styles.companyCode}>{company.companyCode}</RNText>
                                             </RNView>
                                         </RNView>
-                                        {company.companyId === currentCompany?.id && (
-                                            <RNView style={styles.activeTag}>
-                                                <RNText style={styles.activeTagText}>{t('profile.current')}</RNText>
-                                            </RNView>
-                                        )}
                                     </TouchableOpacity>
                                 ))}
                         </View>
@@ -641,7 +533,7 @@ export default function ProfileScreen() {
                             </TouchableOpacity>
                         </View>
 
-                        <ScrollView style={styles.formContainer}>
+                        <ScrollView>
                             <View style={styles.formGroup}>
                                 <Text style={styles.label}>{t('profile.real_name')}</Text>
                                 <TextInput
@@ -679,7 +571,7 @@ export default function ProfileScreen() {
                             </View>
                         </ScrollView>
 
-                        <View style={styles.modalFooter}>
+                        <View style={{ flexDirection: 'row', gap: 12 }}>
                             <TouchableOpacity
                                 style={styles.cancelButton}
                                 onPress={() => setEditModalVisible(false)}
@@ -687,7 +579,7 @@ export default function ProfileScreen() {
                                 <Text style={styles.cancelButtonText}>{t('profile.cancel')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+                                style={[styles.saveButton, saving && { opacity: 0.7 }]}
                                 onPress={handleUpdateProfile}
                                 disabled={saving}
                             >
@@ -711,23 +603,21 @@ export default function ProfileScreen() {
             >
                 <RNView style={styles.logoutModalOverlay}>
                     <RNView style={styles.logoutModalContent}>
-                        <RNView style={styles.logoutModalIcon}>
-                            <Ionicons name="log-out-outline" size={48} color={themeColors.primary} />
-                        </RNView>
+                        <Ionicons name="log-out-outline" size={48} color={themeColors.primary} style={{ marginBottom: 16 }} />
                         <RNText style={styles.logoutModalTitle}>{t('profile.logout')}</RNText>
                         <RNText style={styles.logoutModalMessage}>{t('auth.logout_message')}</RNText>
-                        <RNView style={styles.logoutModalActions}>
+                        <RNView style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
                             <TouchableOpacity
-                                style={styles.logoutModalCancelButton}
+                                style={styles.cancelButton}
                                 onPress={() => setLogoutModalVisible(false)}
                             >
-                                <RNText style={styles.logoutModalCancelText}>{t('common.cancel')}</RNText>
+                                <RNText style={styles.cancelButtonText}>{t('common.cancel')}</RNText>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={styles.logoutModalConfirmButton}
+                                style={styles.saveButton}
                                 onPress={confirmLogout}
                             >
-                                <RNText style={styles.logoutModalConfirmText}>{t('common.confirm')}</RNText>
+                                <RNText style={styles.saveButtonText}>{t('common.confirm')}</RNText>
                             </TouchableOpacity>
                         </RNView>
                     </RNView>

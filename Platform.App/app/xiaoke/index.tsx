@@ -23,11 +23,7 @@ import {
   ASSISTANT_USER_ID,
 } from '../../types/xiaoke';
 
-const SUGGESTIONS = [
-  '你好',
-  '帮我分析一下数据',
-  '今天有什么任务',
-];
+
 
 function TypingDots() {
   const { colors } = useTheme();
@@ -413,7 +409,7 @@ export default function XiaokeChatScreen() {
               id: data.messageId,
               sessionId: data.sessionId,
               senderId: ASSISTANT_USER_ID,
-              senderName: '小科',
+              senderName: t('xiaoke.assistant_name'),
               type: 'Text',
               content: data.delta,
               isRecalled: false,
@@ -575,7 +571,7 @@ export default function XiaokeChatScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <Stack.Screen options={{ title: '小科' }} />
+        <Stack.Screen options={{ title: t('xiaoke.title'), headerBackButtonDisplayMode: 'minimal' }} />
         <ActivityIndicator size="large" color={colors.primary} />
         <Text style={{ marginTop: 12, color: colors.textSecondary, fontSize: 14 }}>
           {t('common.loading')}
@@ -588,22 +584,23 @@ export default function XiaokeChatScreen() {
     <View style={styles.container}>
       <Stack.Screen
         options={{
-          title: '小科',
+          title: t('xiaoke.title'),
+
           headerRight: () => (
             <TouchableOpacity
               onPress={handleNewChat}
-              style={{ marginRight: 4 }}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons name="add-circle-outline" size={26} color={colors.primary} />
+              <Ionicons name="add" size={26} color={colors.primary} />
             </TouchableOpacity>
           ),
         }}
       />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'height' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        key="keyboard-avoid-view"
       >
         {messages.length === 0 && !aiResponding ? (
           <ScrollView
@@ -614,12 +611,14 @@ export default function XiaokeChatScreen() {
               <View style={styles.emptyAvatar}>
                 <Ionicons name="chatbubbles" size={32} color={colors.primary} />
               </View>
-              <Text style={styles.emptyTitle}>小科</Text>
-              <Text style={styles.emptyDesc}>
-                你好！我是小科，你的智能AI助手。{'\n'}有什么可以帮助你的吗？
-              </Text>
+              <Text style={styles.emptyTitle}>{t('xiaoke.welcome_title')}</Text>
+              <Text style={styles.emptyDesc}>{t('xiaoke.welcome_desc')}</Text>
               <View style={styles.suggestionRow}>
-                {SUGGESTIONS.map((s, i) => (
+                {[
+                  t('xiaoke.suggestion_1'),
+                  t('xiaoke.suggestion_2'),
+                  t('xiaoke.suggestion_3'),
+                ].map((s, i) => (
                   <TouchableOpacity
                     key={i}
                     style={styles.suggestionChip}
@@ -660,7 +659,7 @@ export default function XiaokeChatScreen() {
                   )}
                   <View style={styles.bubbleWrapper}>
                     {!isUser && (
-                      <Text style={styles.senderName}>小科</Text>
+                      <Text style={styles.senderName}>{t('xiaoke.assistant_name')}</Text>
                     )}
                     <View
                       style={[
@@ -697,7 +696,7 @@ export default function XiaokeChatScreen() {
                   <Text style={styles.avatarText}>科</Text>
                 </View>
                 <View style={styles.bubbleWrapper}>
-                  <Text style={styles.senderName}>小科</Text>
+                  <Text style={styles.senderName}>{t('xiaoke.assistant_name')}</Text>
                   <View style={styles.aiBubble}>
                     <TypingDots />
                   </View>

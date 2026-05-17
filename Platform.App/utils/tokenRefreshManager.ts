@@ -12,10 +12,15 @@ interface TokenRefreshResult {
 
 class TokenRefreshManager {
   private static httpClient: AxiosInstance | null = null;
+  private static retryClient: AxiosInstance | null = null;
   private static refreshPromise: Promise<TokenRefreshResult | null> | null = null;
 
   static setApiClient(client: AxiosInstance) {
     this.httpClient = client;
+  }
+
+  static setRetryClient(client: AxiosInstance) {
+    this.retryClient = client;
   }
 
   static async refresh(refreshToken: string): Promise<TokenRefreshResult | null> {
@@ -72,7 +77,7 @@ class TokenRefreshManager {
       ...originalRequest.headers,
       Authorization: `Bearer ${newToken}`,
     };
-    return this.httpClient!(originalRequest);
+    return this.retryClient!(originalRequest);
   }
 
   static isRefreshing(): boolean {

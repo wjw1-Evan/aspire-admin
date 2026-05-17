@@ -371,6 +371,20 @@
     "select_priority": "选择优先级",
     "select_tenant": "选择租户"
   },
+  "xiaoke": {
+    "title": "小科",
+    "subtitle": "AI 智能助手",
+    "input_placeholder": "输入消息...",
+    "new_chat": "新对话",
+    "suggestion_1": "你好",
+    "suggestion_2": "帮我分析一下数据",
+    "suggestion_3": "今天有什么任务",
+    "welcome_title": "小科",
+    "welcome_desc": "你好！我是小科，你的智能AI助手。\n有什么可以帮助你的吗？",
+    "retry": "重试",
+    "send_failed": "发送失败",
+    "assistant_name": "小科"
+  },
   "not_found": {
     "title": "Oops!",
     "message": "This screen doesn't exist.",

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 export interface UseApiState<T> {
   data: T | null;
@@ -13,6 +13,12 @@ export function useApi<T>() {
     error: null,
   });
   const mountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const execute = useCallback(async (apiCall: () => Promise<{ success: boolean; data?: T; message?: string }>) => {
     setState(prev => ({ ...prev, loading: true, error: null }));

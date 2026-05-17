@@ -6,7 +6,7 @@ import { Platform } from 'react-native';
 import { getDevServerOrigin } from '../constants/env-config';
 
 // API Configuration
-// - Web 开发：同源代理（UmiJS 等 dev server 自动转发）
+// - Web 开发：同源代理（通过 Metro proxy / UmiJS 等 dev server 自动转发）
 // - 原生开发：通过 Metro proxy 转发（Expo Go 只允许连接 bundle origin）
 export const API_BASE_URL = __DEV__
   ? Platform.OS === 'web'

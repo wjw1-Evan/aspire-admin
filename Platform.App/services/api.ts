@@ -44,9 +44,11 @@ const createApiInstance = (): AxiosInstance => {
         if (refreshToken) {
           const refreshResult = await TokenRefreshManager.refresh(refreshToken);
           if (refreshResult?.success && refreshResult.token) {
+            tokenCache = refreshResult.token;
             config.headers.Authorization = `Bearer ${refreshResult.token}`;
             return config;
           }
+          tokenCache = null;
           await tokenUtils.clearAllTokens();
           logoutCallback?.();
           return Promise.reject({
@@ -55,6 +57,7 @@ const createApiInstance = (): AxiosInstance => {
             message: '登录已过期，请重新登录',
           } as ErrorResponse);
         }
+        tokenCache = null;
         await tokenUtils.clearAllTokens();
         logoutCallback?.();
         return Promise.reject({
@@ -92,6 +95,7 @@ const createApiInstance = (): AxiosInstance => {
         const isRetryRequest = originalRequest?._retry;
 
         if (isRefreshTokenRequest || isRetryRequest) {
+          tokenCache = null;
           await tokenUtils.clearAllTokens();
           logoutCallback?.();
           return Promise.reject({
@@ -105,12 +109,14 @@ const createApiInstance = (): AxiosInstance => {
         if (refreshToken) {
           const refreshResult = await TokenRefreshManager.refresh(refreshToken);
           if (refreshResult?.success && refreshResult.token && originalRequest) {
+            tokenCache = refreshResult.token;
             try {
               return await TokenRefreshManager.retryRequest(originalRequest, refreshResult.token);
             } catch {}
           }
         }
 
+        tokenCache = null;
         await tokenUtils.clearAllTokens();
         logoutCallback?.();
       }
@@ -128,4 +134,15 @@ const createApiInstance = (): AxiosInstance => {
 };
 
 export const apiClient = createApiInstance();
-TokenRefreshManager.setApiClient(apiClient);
+
+// 独立的 Axios 实例用于刷新 token，不携带任何拦截器
+// 避免刷新请求进入请求拦截器后因等待 refreshPromise 而形成死锁
+const refreshClient = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: APP_CONFIG.REQUEST_TIMEOUT,
+  headers: { 'Content-Type': 'application/json' },
+});
+TokenRefreshManager.setApiClient(refreshClient);
+
+// retryRequest 需要走完整拦截器链（包括 response.data 转换）
+TokenRefreshManager.setRetryClient(apiClient);

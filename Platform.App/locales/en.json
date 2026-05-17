@@ -371,6 +371,20 @@
     "select_priority": "Select priority",
     "select_tenant": "Select tenant"
   },
+  "xiaoke": {
+    "title": "XiaoKe",
+    "subtitle": "AI Assistant",
+    "input_placeholder": "Type a message...",
+    "new_chat": "New Chat",
+    "suggestion_1": "Hello",
+    "suggestion_2": "Analyze my data",
+    "suggestion_3": "What tasks today",
+    "welcome_title": "XiaoKe",
+    "welcome_desc": "Hello! I'm XiaoKe, your AI assistant.\nHow can I help you?",
+    "retry": "Retry",
+    "send_failed": "Send Failed",
+    "assistant_name": "XiaoKe"
+  },
   "not_found": {
     "title": "Oops!",
     "message": "This screen doesn't exist.",

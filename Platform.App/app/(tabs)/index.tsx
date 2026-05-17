@@ -153,12 +153,6 @@ export default function HomeScreen() {
     useCallback(() => {
       fetchTodoCount();
       fetchActiveProjectCount();
-      sseService.connect({
-        onStats: (stats) => {
-          setUnreadCount(stats.UnreadTotal ?? stats.Total ?? 0);
-        },
-      });
-      return () => sseService.disconnect();
     }, [fetchTodoCount, fetchActiveProjectCount])
   );
 
@@ -287,6 +281,12 @@ export default function HomeScreen() {
             title={t('enterprise_service.title')}
             description={t('enterprise_service.list_title')}
             onPress={() => router.push('/enterprise-service')}
+          />
+          <MenuItemCard
+            icon="chatbubbles-outline"
+            title="小科"
+            description="AI 智能助手"
+            onPress={() => router.push('/xiaoke')}
           />
         </View>
       </ScrollView>

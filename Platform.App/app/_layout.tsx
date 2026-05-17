@@ -180,6 +180,7 @@ function RootLayoutNavInner() {
         <Stack.Screen name="enterprise-service/create" options={{ headerShown: false, animation: 'slide_from_right' }} />
         <Stack.Screen name="enterprise-service/[id]" options={{ title: t('enterprise_service.detail'), animation: 'slide_from_right' }} />
         <Stack.Screen name="enterprise-service/edit/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
+        <Stack.Screen name="xiaoke/index" options={{ title: '小科', animation: 'slide_from_right' }} />
       </Stack>
       <Toast
         config={{

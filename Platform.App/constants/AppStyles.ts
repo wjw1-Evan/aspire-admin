@@ -8,9 +8,9 @@ import Colors from './Colors';
 
 export const AppStyles = {
     colors: {
-        primary: '#667eea',
-        primaryDark: '#764ba2',
-        primaryLight: '#f093fb',
+        primary: '#4A7C59',
+        primaryDark: '#3A6347',
+        primaryLight: '#6BAF8D',
         background: '#ffffff',
         cardBackground: '#f2f2f7',
         text: '#000000',

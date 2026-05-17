@@ -6,7 +6,7 @@ export function getTaskStatusColor(status: TaskStatus): string {
     case TaskStatus.Pending:
       return '#999';
     case TaskStatus.Assigned:
-      return '#818cf8';
+      return '#4A7C59';
     case TaskStatus.InProgress:
       return '#60a5fa';
     case TaskStatus.Completed:
@@ -28,7 +28,7 @@ export function getTaskStatusBgColor(status: TaskStatus, isDark = false): string
       case TaskStatus.Pending:
         return '#2d2d2d';
       case TaskStatus.Assigned:
-        return '#1e1b4b';
+        return '#1a3a2a';
       case TaskStatus.InProgress:
         return '#172554';
       case TaskStatus.Completed:
@@ -47,7 +47,7 @@ export function getTaskStatusBgColor(status: TaskStatus, isDark = false): string
     case TaskStatus.Pending:
       return '#f5f5f5';
     case TaskStatus.Assigned:
-      return '#f0f5ff';
+      return '#e8f5ec';
     case TaskStatus.InProgress:
       return '#e6f7ff';
     case TaskStatus.Completed:

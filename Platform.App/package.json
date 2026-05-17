@@ -9,7 +9,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web --port ${PORT:-8081}",
     "install": "npx expo install --fix",
-    "doctor": "npx expo-doctor"
+    "doctor": "npx expo-doctor",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
@@ -47,6 +48,8 @@
   "devDependencies": {
     "@types/react": "^19.2.14",
     "@types/sm-crypto": "^0.3.4",
+    "patch-package": "^8.0.1",
+    "postinstall-postinstall": "^2.1.0",
     "react-test-renderer": "19.2.0",
     "typescript": "~5.9.2"
   },

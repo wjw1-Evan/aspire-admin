@@ -1,0 +1,42 @@
+diff --git a/node_modules/react-native-screens/lib/commonjs/components/ScreenStackHeaderConfig.js b/node_modules/react-native-screens/lib/commonjs/components/ScreenStackHeaderConfig.js
+index e800f83..895a00e 100644
+--- a/node_modules/react-native-screens/lib/commonjs/components/ScreenStackHeaderConfig.js
++++ b/node_modules/react-native-screens/lib/commonjs/components/ScreenStackHeaderConfig.js
+@@ -69,8 +69,7 @@ const ScreenStackHeaderConfig = exports.ScreenStackHeaderConfig = /*#__PURE__*/_
+     onPressHeaderBarButtonItem: onPressHeaderBarButtonItem,
+     onPressHeaderBarButtonMenuItem: onPressHeaderBarButtonMenuItem,
+     ref: ref,
+-    style: styles.headerConfig,
+-    pointerEvents: "box-none",
++    style: [styles.headerConfig, { pointerEvents: "box-none" }],
+     synchronousShadowStateUpdatesEnabled: _flags.default.experiment.synchronousHeaderConfigUpdatesEnabled
+   }));
+ });
+diff --git a/node_modules/react-native-screens/lib/module/components/ScreenStackHeaderConfig.js b/node_modules/react-native-screens/lib/module/components/ScreenStackHeaderConfig.js
+index 71cd007..0f47b04 100644
+--- a/node_modules/react-native-screens/lib/module/components/ScreenStackHeaderConfig.js
++++ b/node_modules/react-native-screens/lib/module/components/ScreenStackHeaderConfig.js
+@@ -65,8 +65,7 @@ export const ScreenStackHeaderConfig = /*#__PURE__*/React.forwardRef((props, ref
+     onPressHeaderBarButtonItem: onPressHeaderBarButtonItem,
+     onPressHeaderBarButtonMenuItem: onPressHeaderBarButtonMenuItem,
+     ref: ref,
+-    style: styles.headerConfig,
+-    pointerEvents: "box-none",
++    style: [styles.headerConfig, { pointerEvents: "box-none" }],
+     synchronousShadowStateUpdatesEnabled: featureFlags.experiment.synchronousHeaderConfigUpdatesEnabled
+   }));
+ });
+diff --git a/node_modules/react-native-screens/src/components/ScreenStackHeaderConfig.tsx b/node_modules/react-native-screens/src/components/ScreenStackHeaderConfig.tsx
+index 6ca8ed7..2bb2dfb 100644
+--- a/node_modules/react-native-screens/src/components/ScreenStackHeaderConfig.tsx
++++ b/node_modules/react-native-screens/src/components/ScreenStackHeaderConfig.tsx
+@@ -118,8 +118,7 @@ export const ScreenStackHeaderConfig = React.forwardRef<
+       onPressHeaderBarButtonItem={onPressHeaderBarButtonItem}
+       onPressHeaderBarButtonMenuItem={onPressHeaderBarButtonMenuItem}
+       ref={ref}
+-      style={styles.headerConfig}
+-      pointerEvents="box-none"
++      style={[styles.headerConfig, { pointerEvents: 'box-none' }]}
+       synchronousShadowStateUpdatesEnabled={
+         featureFlags.experiment.synchronousHeaderConfigUpdatesEnabled
+       }

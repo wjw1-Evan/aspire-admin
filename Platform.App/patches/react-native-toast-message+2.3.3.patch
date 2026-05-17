@@ -1,0 +1,32 @@
+diff --git a/node_modules/react-native-toast-message/lib/src/components/AnimatedContainer.js b/node_modules/react-native-toast-message/lib/src/components/AnimatedContainer.js
+index f9f2a10..ee50fc9 100644
+--- a/node_modules/react-native-toast-message/lib/src/components/AnimatedContainer.js
++++ b/node_modules/react-native-toast-message/lib/src/components/AnimatedContainer.js
+@@ -86,10 +86,10 @@ export function AnimatedContainer({ children, isVisible, position, topOffset, bo
+         const newAnimationValue = isVisible ? 1 : 0;
+         animate(newAnimationValue);
+     }, [animate, isVisible]);
+-    return (<Animated.View testID={getTestId('AnimatedContainer')} onLayout={computeViewDimensions} style={[styles.base, styles[position], animationStyles]} 
++    return (<Animated.View testID={getTestId('AnimatedContainer')} onLayout={computeViewDimensions} style={[styles.base, styles[position], animationStyles, { pointerEvents: 'box-none' }]} 
+     // This container View is never the target of touch events but its subviews can be.
+     // By doing this, tapping buttons behind the Toast is allowed
+-    pointerEvents='box-none' {...panResponder.panHandlers}>
++    {...panResponder.panHandlers}>
+       {children}
+     </Animated.View>);
+ }
+diff --git a/node_modules/react-native-toast-message/lib/src/components/BaseToast.styles.js b/node_modules/react-native-toast-message/lib/src/components/BaseToast.styles.js
+index 105748b..1bc0fff 100644
+--- a/node_modules/react-native-toast-message/lib/src/components/BaseToast.styles.js
++++ b/node_modules/react-native-toast-message/lib/src/components/BaseToast.styles.js
+@@ -8,9 +8,7 @@ export const styles = StyleSheet.create({
+         height: HEIGHT,
+         width: WIDTH,
+         borderRadius: BORDER_RADIUS,
+-        shadowOffset: { width: 0, height: 0 },
+-        shadowOpacity: 0.1,
+-        shadowRadius: BORDER_RADIUS,
++        boxShadow: '0 0 ' + BORDER_RADIUS + 'px rgba(0,0,0,0.1)',
+         elevation: 2,
+         backgroundColor: '#FFF'
+     },

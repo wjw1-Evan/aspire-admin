@@ -178,59 +178,10 @@ if (user == null)
                 .OrderByDescending(rt => rt.RevokedAt)
                 .FirstOrDefaultAsync();
 
-            if (revokedToken != null
-                && revokedToken.RevokedAt.HasValue
-                && revokedToken.RevokedReason == "Token轮换"
-                && (DateTime.UtcNow - revokedToken.RevokedAt.Value).TotalSeconds <= 30)
+            if (revokedToken != null)
             {
-                _logger.LogWarning("[RefreshToken] 检测到并发刷新（token在30秒内被轮换），从最新有效token重新签发");
-
-                var latestToken = await _context.Set<RefreshToken>()
-                    .Where(rt => rt.UserId == userId && rt.IsRevoked == false)
-                    .OrderByDescending(rt => rt.CreatedAt)
-                    .FirstOrDefaultAsync();
-
-                if (latestToken != null)
-                {
-                    var userForRace = await _context.Set<AppUser>().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive == true);
-                    if (userForRace != null)
-                    {
-                        var raceNewToken = _jwtService.GenerateToken(userForRace.Id!, userForRace.CurrentCompanyId!);
-                        var raceNewRefreshToken = _jwtService.GenerateRefreshToken(userForRace.Id!, userForRace.CurrentCompanyId!);
-
-                        latestToken.IsRevoked = true;
-                        latestToken.RevokedAt = DateTime.UtcNow;
-                        latestToken.RevokedReason = "Token轮换(并发)";
-                        await _context.SaveChangesAsync();
-
-                        var raceNewTokenEntity = new RefreshToken
-                        {
-                            UserId = userId,
-                            Token = raceNewRefreshToken,
-                            PreviousToken = latestToken.Token,
-                            ExpiresAt = DateTime.UtcNow.AddDays(JwtService.RefreshTokenExpirationDays),
-                            IpAddress = ipAddress,
-                            UserAgent = userAgent,
-                            LastUsedAt = DateTime.UtcNow,
-                            IsRevoked = false
-                        };
-                        await _context.Set<RefreshToken>().AddAsync(raceNewTokenEntity);
-                        await _context.SaveChangesAsync();
-
-                        await _userService.LogUserActivityAsync(userId, "refresh_token", "刷新访问token(并发)", ipAddress, userAgent);
-
-                        _logger.LogInformation("[RefreshToken] 并发刷新成功! 新 token 前10位: {TokenPrefix}", 
-                            raceNewToken.Length > 10 ? raceNewToken[..10] : raceNewToken);
-
-                        return new RefreshTokenResult
-                        {
-                            Status = "ok",
-                            Token = raceNewToken,
-                            RefreshToken = raceNewRefreshToken,
-                            ExpiresAt = DateTime.UtcNow.AddMinutes(JwtService.AccessTokenExpirationMinutes)
-                        };
-                    }
-                }
+                _logger.LogWarning("[RefreshToken] 用户 {UserId} 使用了已撤销的 token（原因: {Reason}），仅拒绝此请求，不影响其他端", userId, revokedToken.RevokedReason);
+                throw new ArgumentException("刷新token已使用或已过期，请重新登录");
             }
 
             _logger.LogWarning("[RefreshToken] 数据库中未找到有效 token，检查是否有旧 token");

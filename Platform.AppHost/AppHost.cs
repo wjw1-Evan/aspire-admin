@@ -74,13 +74,13 @@ var adminbuilder = builder.AddJavaScriptApp("admin", "../Platform.Admin")
     .WithBuildScript("npm run build")
     .WithHttpEndpoint(env: "PORT");
 
-// 添加移动端应用 (Expo) - 仅开发环境
-if (builder.Environment.IsDevelopment())
-{
-    builder.AddJavaScriptApp("app", "../Platform.App")
-        .WithHttpEndpoint(port: 18000, env: "PORT")
-        .WithBuildScript("npx expo export:embed --platform web --output-dir dist");
-}
+// // 添加移动端应用 (Expo) - 仅开发环境
+// if (builder.Environment.IsDevelopment())
+// {
+//     builder.AddJavaScriptApp("app", "../Platform.App")
+//         .WithHttpEndpoint(port: 18000, env: "PORT")
+//         .WithBuildScript("npx expo export:embed --platform web --output-dir dist");
+// }
 
 // 微信小程序 (WeChat Mini Program) - 无需 Docker 化部署
 // 小程序直接在微信开发者工具中预览/发布，不参与容器编排

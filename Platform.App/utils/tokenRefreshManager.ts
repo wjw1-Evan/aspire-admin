@@ -14,6 +14,7 @@ class TokenRefreshManager {
   private static httpClient: AxiosInstance | null = null;
   private static retryClient: AxiosInstance | null = null;
   private static refreshPromise: Promise<TokenRefreshResult | null> | null = null;
+  private static currentRefreshToken: string | null = null;
 
   static setApiClient(client: AxiosInstance) {
     this.httpClient = client;
@@ -23,17 +24,24 @@ class TokenRefreshManager {
     this.retryClient = client;
   }
 
-  static async refresh(refreshToken: string): Promise<TokenRefreshResult | null> {
+  static async refresh(forcedRefreshToken?: string): Promise<TokenRefreshResult | null> {
     if (this.refreshPromise) {
       return this.refreshPromise;
     }
 
+    const refreshToken = forcedRefreshToken || await tokenUtils.getRefreshToken();
+    if (!refreshToken) {
+      return { success: false };
+    }
+
     this.refreshPromise = this.doRefresh(refreshToken);
+    this.currentRefreshToken = refreshToken;
 
     try {
       return await this.refreshPromise;
     } finally {
       this.refreshPromise = null;
+      this.currentRefreshToken = null;
     }
   }
 

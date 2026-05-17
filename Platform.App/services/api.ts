@@ -40,29 +40,18 @@ const createApiInstance = (): AxiosInstance => {
     async (config: InternalAxiosRequestConfig) => {
       const isExpired = await tokenUtils.isTokenExpired();
       if (isExpired) {
-        const refreshToken = await tokenUtils.getRefreshToken();
-        if (refreshToken) {
-          const refreshResult = await TokenRefreshManager.refresh(refreshToken);
-          if (refreshResult?.success && refreshResult.token) {
-            tokenCache = refreshResult.token;
-            config.headers.Authorization = `Bearer ${refreshResult.token}`;
-            return config;
-          }
-          tokenCache = null;
-          await tokenUtils.clearAllTokens();
-          logoutCallback?.();
-          return Promise.reject({
-            success: false,
-            errorCode: 'TOKEN_REFRESH_FAILED',
-            message: '登录已过期，请重新登录',
-          } as ErrorResponse);
+        const refreshResult = await TokenRefreshManager.refresh();
+        if (refreshResult?.success && refreshResult.token) {
+          tokenCache = refreshResult.token;
+          config.headers.Authorization = `Bearer ${refreshResult.token}`;
+          return config;
         }
         tokenCache = null;
         await tokenUtils.clearAllTokens();
         logoutCallback?.();
         return Promise.reject({
           success: false,
-          errorCode: 'TOKEN_EXPIRED',
+          errorCode: 'TOKEN_REFRESH_FAILED',
           message: '登录已过期，请重新登录',
         } as ErrorResponse);
       }
@@ -105,15 +94,12 @@ const createApiInstance = (): AxiosInstance => {
           } as ErrorResponse);
         }
 
-        const refreshToken = await tokenUtils.getRefreshToken();
-        if (refreshToken) {
-          const refreshResult = await TokenRefreshManager.refresh(refreshToken);
-          if (refreshResult?.success && refreshResult.token && originalRequest) {
-            tokenCache = refreshResult.token;
-            try {
-              return await TokenRefreshManager.retryRequest(originalRequest, refreshResult.token);
-            } catch {}
-          }
+        const refreshResult = await TokenRefreshManager.refresh();
+        if (refreshResult?.success && refreshResult.token && originalRequest) {
+          tokenCache = refreshResult.token;
+          try {
+            return await TokenRefreshManager.retryRequest(originalRequest, refreshResult.token);
+          } catch {}
         }
 
         tokenCache = null;

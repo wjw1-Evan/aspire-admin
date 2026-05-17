@@ -52,16 +52,8 @@ class SseService {
 
     const isExpired = await tokenUtils.isTokenExpired();
     if (isExpired) {
-      const refreshToken = await tokenUtils.getRefreshToken();
-      if (refreshToken) {
-        const result = await TokenRefreshManager.refresh(refreshToken);
-        if (!result?.success) {
-          await clearToken();
-          await tokenUtils.clearAllTokens();
-          authService.notifyLogout();
-          return;
-        }
-      } else {
+      const result = await TokenRefreshManager.refresh();
+      if (!result?.success) {
         await clearToken();
         await tokenUtils.clearAllTokens();
         authService.notifyLogout();

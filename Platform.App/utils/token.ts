@@ -3,6 +3,8 @@ import { STORAGE_KEYS } from './constants';
 
 const TOKEN_EXPIRY_BUFFER = 5 * 60 * 1000;
 
+let _refreshTokenCache: string | null = null;
+
 export const tokenUtils = {
   setToken: async (token: string): Promise<void> => {
     await storage.set(STORAGE_KEYS.ACCESS_TOKEN, token);
@@ -22,14 +24,19 @@ export const tokenUtils = {
   },
 
   setRefreshToken: async (refreshToken: string): Promise<void> => {
+    _refreshTokenCache = refreshToken;
     await storage.set(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
   },
 
   getRefreshToken: async (): Promise<string | null> => {
-    return await storage.get<string>(STORAGE_KEYS.REFRESH_TOKEN);
+    if (_refreshTokenCache) return _refreshTokenCache;
+    const token = await storage.get<string>(STORAGE_KEYS.REFRESH_TOKEN);
+    if (token) _refreshTokenCache = token;
+    return token;
   },
 
   removeRefreshToken: async (): Promise<void> => {
+    _refreshTokenCache = null;
     await storage.remove(STORAGE_KEYS.REFRESH_TOKEN);
   },
 
@@ -46,6 +53,7 @@ export const tokenUtils = {
   },
 
   setTokens: async (token: string, refreshToken: string, expiresAt?: number): Promise<void> => {
+    _refreshTokenCache = refreshToken;
     await storage.set(STORAGE_KEYS.ACCESS_TOKEN, token);
     await storage.set(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
     if (expiresAt) {
@@ -54,6 +62,7 @@ export const tokenUtils = {
   },
 
   clearAllTokens: async (): Promise<void> => {
+    _refreshTokenCache = null;
     await storage.remove(STORAGE_KEYS.ACCESS_TOKEN);
     await storage.remove(STORAGE_KEYS.REFRESH_TOKEN);
     await storage.remove(STORAGE_KEYS.TOKEN_EXPIRES);

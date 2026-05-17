@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { StyleSheet, ScrollView, RefreshControl, ActivityIndicator, View as RNView, Text as RNText, TouchableOpacity } from 'react-native';
+import { StyleSheet, ScrollView, RefreshControl, ActivityIndicator, View as RNView, Text as RNText, TouchableOpacity, Platform } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -11,7 +11,7 @@ import { projectService } from '../../services/projectService';
 import { sseService } from '../../services/sseService';
 import { User } from '../../types/auth';
 import { ProjectStatus } from '../../types/project';
-import { Link, useRouter } from 'expo-router';
+import { Link, useRouter, usePathname } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MenuItemCard from '../../components/ui/MenuItemCard';
@@ -19,6 +19,7 @@ import ErrorView from '../../components/ui/ErrorView';
 import { changeLanguage, getCurrentLanguage } from '../../utils/i18n';
 
 export default function HomeScreen() {
+  const pathname = usePathname();
   const { colors, isDark } = useTheme();
   const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -181,6 +182,10 @@ export default function HomeScreen() {
       }
     };
   }, [loading]);
+
+  if (Platform.OS === 'web' && pathname !== '/') {
+    return null;
+  }
 
   if (loading) {
     if (loadingTimedOut) {

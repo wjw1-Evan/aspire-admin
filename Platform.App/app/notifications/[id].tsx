@@ -13,6 +13,7 @@ import { AppStyles } from '../../constants/AppStyles';
 import { useTheme } from '../../utils/theme';
 import { notificationService } from '../../services/notificationService';
 import { AppNotification, NotificationLevel, NotificationCategory } from '../../types/notification';
+import { getCurrentLanguage } from '../../utils/i18n';
 
 const getCategoryMeta = (category: NotificationCategory, colors: any) => {
   switch (category) {
@@ -216,6 +217,16 @@ export default function NotificationDetailScreen() {
     );
   }
 
+  const formatLocalDateTime = (iso: string) => {
+    const date = new Date(iso);
+    const lang = getCurrentLanguage();
+    const locale = lang === 'zh' ? 'zh-CN' : 'en-US';
+    return date.toLocaleDateString(locale, {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit',
+    });
+  };
+
   const categoryMeta = getCategoryMeta(notification.category, colors);
   const levelMeta = getLevelMeta(notification.level, colors, t);
 
@@ -260,20 +271,13 @@ export default function NotificationDetailScreen() {
                 </Text>
               </View>
             </View>
-            <View style={styles.metaRow}>
-              <View style={styles.metaIcon}>
-                <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
-              </View>
-              <Text style={styles.metaLabel}>{t('notifications.received_at')}</Text>
-              <Text style={styles.metaValue}>{notification.datetime}</Text>
-            </View>
             {notification.readAt && (
               <View style={styles.metaRow}>
                 <View style={styles.metaIcon}>
                   <Ionicons name="checkmark-circle-outline" size={14} color={colors.success} />
                 </View>
                 <Text style={styles.metaLabel}>{t('notifications.read_at')}</Text>
-                <Text style={styles.metaValue}>{notification.readAt}</Text>
+                <Text style={styles.metaValue}>{formatLocalDateTime(notification.readAt)}</Text>
               </View>
             )}
           </View>

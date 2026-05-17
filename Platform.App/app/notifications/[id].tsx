@@ -241,7 +241,7 @@ export default function NotificationDetailScreen() {
             </View>
             <View style={styles.headerInfo}>
               <Text style={styles.title}>{notification.title}</Text>
-              <Text style={styles.time}>{notification.datetime}</Text>
+              <Text style={styles.time}>{formatLocalDateTime(notification.createdAt)}</Text>
             </View>
           </View>
 
@@ -276,7 +276,7 @@ export default function NotificationDetailScreen() {
                 <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
               </View>
               <Text style={styles.metaLabel}>{t('notifications.received_at')}</Text>
-              <Text style={styles.metaValue}>{formatLocalDateTime(notification.datetime)}</Text>
+              <Text style={styles.metaValue}>{formatLocalDateTime(notification.createdAt)}</Text>
             </View>
             {notification.readAt && (
               <View style={styles.metaRow}>

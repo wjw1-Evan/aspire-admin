@@ -25,7 +25,8 @@ export interface AppNotification {
   actionUrl?: string;
   status: string; // "unread" | "read" | "archived"
   metadata: Record<string, string>;
-  datetime: string;
+  createdAt: string;
+  datetime?: string;
   readAt?: string;
 }
 

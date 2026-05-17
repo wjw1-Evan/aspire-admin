@@ -227,7 +227,7 @@ export default function NotificationsScreen() {
           <View style={styles.cardHeader}>
             <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
             {!isRead && <View style={styles.unreadDot} />}
-            <Text style={styles.time}>{formatRelativeTime(item.datetime, t)}</Text>
+            <Text style={styles.time}>{formatRelativeTime(item.createdAt || item.datetime || '', t)}</Text>
           </View>
           {!!item.content && (
             <Text style={styles.content} numberOfLines={2}>

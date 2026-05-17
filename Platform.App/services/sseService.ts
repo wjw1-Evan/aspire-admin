@@ -1,6 +1,9 @@
 import { Platform } from 'react-native';
 import { API_BASE_URL } from '../utils/constants';
 import { getToken } from './api';
+import { tokenUtils } from '../utils/token';
+import TokenRefreshManager from '../utils/tokenRefreshManager';
+import { authService } from './authService';
 
 type SseEventHandler = (data: any) => void;
 
@@ -17,6 +20,24 @@ class SseService {
 
   async connect(handlers: SseEventHandlers) {
     this.disconnect();
+
+    const isExpired = await tokenUtils.isTokenExpired();
+    if (isExpired) {
+      const refreshToken = await tokenUtils.getRefreshToken();
+      if (refreshToken) {
+        const result = await TokenRefreshManager.refresh(refreshToken);
+        if (!result?.success) {
+          await tokenUtils.clearAllTokens();
+          authService.notifyLogout();
+          return;
+        }
+      } else {
+        await tokenUtils.clearAllTokens();
+        authService.notifyLogout();
+        return;
+      }
+    }
+
     const token = await getToken();
     if (!token) return;
 

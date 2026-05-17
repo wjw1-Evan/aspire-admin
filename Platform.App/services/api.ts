@@ -47,12 +47,16 @@ const createApiInstance = (): AxiosInstance => {
             config.headers.Authorization = `Bearer ${refreshResult.token}`;
             return config;
           }
+          await tokenUtils.clearAllTokens();
+          logoutCallback?.();
           return Promise.reject({
             success: false,
             errorCode: 'TOKEN_REFRESH_FAILED',
             message: '登录已过期，请重新登录',
           } as ErrorResponse);
         }
+        await tokenUtils.clearAllTokens();
+        logoutCallback?.();
         return Promise.reject({
           success: false,
           errorCode: 'TOKEN_EXPIRED',

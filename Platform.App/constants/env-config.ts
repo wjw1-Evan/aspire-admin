@@ -1,9 +1,18 @@
 import Constants from 'expo-constants';
-import { NativeModules } from 'react-native';
 
 export function getDevServerOrigin(): string {
-  // Method 1: Extract from bundle URL (most reliable in Expo Go)
+  // Method 1: RN internal getDevServer (works in RN 0.83+ / Fabric)
   try {
+    const getDevServer = require('react-native/Libraries/Core/Devtools/getDevServer').default;
+    const devServer = getDevServer();
+    if (devServer?.url && devServer.bundleLoadedFromServer) {
+      return devServer.url.replace(/\/$/, '');
+    }
+  } catch {}
+
+  // Method 2: NativeModules.SourceCode (legacy RN)
+  try {
+    const { NativeModules } = require('react-native');
     const scriptURL = NativeModules.SourceCode?.scriptURL;
     if (scriptURL) {
       const origin = scriptURL.split('/').slice(0, 3).join('/');
@@ -13,7 +22,7 @@ export function getDevServerOrigin(): string {
     }
   } catch {}
 
-  // Method 2: Constants.hostUri (works in some Expo SDK versions)
+  // Method 3: Constants.hostUri (Expo managed workflow)
   try {
     const hostUri = Constants.expoConfig?.hostUri || Constants.manifest?.hostUri;
     if (hostUri) {
@@ -21,8 +30,8 @@ export function getDevServerOrigin(): string {
     }
   } catch {}
 
-  // Fallback
-  return 'http://localhost:8081';
+  // Fallback: Aspire AppHost fixed port 18000
+  return 'http://localhost:18000';
 }
 
 export const APIGATEWAY_URL = 'http://localhost:15000';

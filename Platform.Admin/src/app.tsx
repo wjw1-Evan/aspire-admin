@@ -513,20 +513,15 @@ pageTitleRender: false,
       const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
       return (
-        <button
-          type="button"
+        <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            cursor: 'pointer',
             padding: '4px 0',
             lineHeight: 1,
             maxWidth: isMobile ? '160px' : 'none',
             width: 'fit-content',
-            border: 'none',
-            background: 'none',
           }}
-          onClick={() => history.push('/')}
         >
           {logo}
           <div
@@ -564,11 +559,11 @@ pageTitleRender: false,
               </span>
             )}
           </div>
-        </button>
+        </div>
       );
     },
     menuHeaderRender: false,
-    onMenuHeaderClick: undefined,
+    onMenuHeaderClick: () => {},
     // 🔧 自定义子文件夹渲染
     subMenuItemRender: (item: any, dom: React.ReactNode) => {
       // 如果没有 icon 属性但有 rawIcon，说明是需要手动显示的二级文件夹

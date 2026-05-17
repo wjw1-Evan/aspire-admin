@@ -14,6 +14,7 @@ import { AppStyles } from '../constants/AppStyles';
 import { AppThemeProvider, useTheme } from '../contexts/ThemeContext';
 import { authService } from '../services/authService';
 import { initLanguage } from '../utils/i18n';
+import SplashScreenComponent from '../components/SplashScreen';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -33,20 +34,23 @@ export default function RootLayout() {
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     ...FontAwesome.font,
   });
+  const [splashAnimationComplete, setSplashAnimationComplete] = useState(false);
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
     if (error) throw error;
   }, [error]);
 
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
+  const handleSplashComplete = () => {
+    setSplashAnimationComplete(true);
+  };
 
   if (!loaded) {
     return null;
+  }
+
+  if (!splashAnimationComplete) {
+    return <SplashScreenComponent onAnimationComplete={handleSplashComplete} />;
   }
 
   return <RootLayoutNav />;

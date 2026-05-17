@@ -30,9 +30,10 @@ export default function TabLayout() {
 
       boxShadow: 'none',
       elevation: 0,
-      overflow: 'hidden',
+      overflow: 'visible',
       paddingTop: 8,
       margin: 10,
+      paddingVertical: 0,
 
     },
     tabBarBackground: {

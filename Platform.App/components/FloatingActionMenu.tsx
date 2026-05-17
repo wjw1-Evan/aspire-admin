@@ -146,10 +146,12 @@ export default function FloatingActionMenu() {
 
 const styles = StyleSheet.create({
   fabWrapper: {
-    flex: 1,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: -8,
+    justifyContent: 'flex-start',
   },
   fab: {
     width: 48,

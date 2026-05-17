@@ -190,8 +190,8 @@ export default function NotificationsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      onRefresh();
-    }, [onRefresh])
+      loadData();
+    }, [loadData])
   );
 
   const handlePress = async (item: AppNotification) => {

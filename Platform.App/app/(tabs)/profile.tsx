@@ -203,17 +203,15 @@ export default function ProfileScreen() {
             fontWeight: 'bold',
         },
         logoutButton: {
-            backgroundColor: themeColors.cardBackground,
+            backgroundColor: themeColors.primary,
             borderRadius: AppStyles.borderRadius.lg,
             padding: AppStyles.spacing.md,
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            borderWidth: 1.5,
-            borderColor: themeColors.error,
         },
         logoutButtonText: {
-            color: themeColors.error,
+            color: '#fff',
             fontSize: AppStyles.fontSize.md,
             fontWeight: '600',
         },
@@ -342,7 +340,7 @@ export default function ProfileScreen() {
         },
         logoutModalConfirmButton: {
             flex: 1,
-            backgroundColor: themeColors.error,
+            backgroundColor: themeColors.primary,
             borderRadius: 14,
             padding: 14,
             alignItems: 'center',
@@ -617,7 +615,7 @@ export default function ProfileScreen() {
                     {/* Actions Section */}
                     <View style={styles.section}>
                         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                            <Ionicons name="log-out-outline" size={20} color={themeColors.error} style={{ marginRight: 8 }} />
+                            <Ionicons name="log-out-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
                             <RNText style={styles.logoutButtonText}>{t('profile.logout')}</RNText>
                         </TouchableOpacity>
                     </View>
@@ -714,7 +712,7 @@ export default function ProfileScreen() {
                 <RNView style={styles.logoutModalOverlay}>
                     <RNView style={styles.logoutModalContent}>
                         <RNView style={styles.logoutModalIcon}>
-                            <Ionicons name="log-out-outline" size={48} color={themeColors.error} />
+                            <Ionicons name="log-out-outline" size={48} color={themeColors.primary} />
                         </RNView>
                         <RNText style={styles.logoutModalTitle}>{t('profile.logout')}</RNText>
                         <RNText style={styles.logoutModalMessage}>{t('auth.logout_message')}</RNText>

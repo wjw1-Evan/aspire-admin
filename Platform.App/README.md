@@ -57,7 +57,7 @@ Platform.App/
 │   └── company.ts        # 企业相关类型
 ├── utils/                 # 工具函数
 │   ├── constants.ts      # 常量配置
-│   └── storage.ts        # AsyncStorage 封装
+│   └── storage.ts        # SecureStore 封装
 └── components/           # 可复用组件
 
 ## 🔗 API 配置

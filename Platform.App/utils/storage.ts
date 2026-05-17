@@ -1,19 +1,34 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
-/**
- * Utility functions for AsyncStorage operations
- */
+const sanitizeKey = (key: string) => key.replace(/[^a-zA-Z0-9._-]/g, '_');
+
+let nativeStore: typeof import('expo-secure-store') | null = null;
+
+async function getNativeStore() {
+    if (!nativeStore) {
+        nativeStore = await import('expo-secure-store');
+    }
+    return nativeStore;
+}
+
+const isWeb = Platform.OS === 'web';
 
 export const storage = {
-    /**
-     * Get a value from storage
-     */
     async get<T = string>(key: string): Promise<T | null> {
         try {
-            const value = await AsyncStorage.getItem(key);
+            const sk = sanitizeKey(key);
+            if (isWeb) {
+                const value = localStorage.getItem(sk);
+                if (value === null) return null;
+                try {
+                    return JSON.parse(value) as T;
+                } catch {
+                    return value as T;
+                }
+            }
+            const store = await getNativeStore();
+            const value = await store.getItemAsync(sk);
             if (value === null) return null;
-
-            // Try to parse as JSON, fallback to string
             try {
                 return JSON.parse(value) as T;
             } catch {
@@ -25,63 +40,95 @@ export const storage = {
         }
     },
 
-    /**
-     * Set a value in storage
-     */
     async set(key: string, value: any): Promise<void> {
         try {
-            const stringValue = typeof value === 'string'
-                ? value
-                : JSON.stringify(value);
-            await AsyncStorage.setItem(key, stringValue);
+            const sk = sanitizeKey(key);
+            const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
+            if (isWeb) {
+                localStorage.setItem(sk, stringValue);
+                return;
+            }
+            const store = await getNativeStore();
+            await store.setItemAsync(sk, stringValue);
         } catch (error) {
             console.error('Storage set error:', error);
             throw error;
         }
     },
 
-    /**
-     * Remove a value from storage
-     */
     async remove(key: string): Promise<void> {
         try {
-            await AsyncStorage.removeItem(key);
+            const sk = sanitizeKey(key);
+            if (isWeb) {
+                localStorage.removeItem(sk);
+                return;
+            }
+            const store = await getNativeStore();
+            await store.deleteItemAsync(sk);
         } catch (error) {
             console.error('Storage remove error:', error);
             throw error;
         }
     },
 
-    /**
-     * Clear all storage
-     */
     async clear(): Promise<void> {
         try {
-            await AsyncStorage.clear();
+            const keys = [
+                '@aspire_access_token',
+                '@aspire_refresh_token',
+                '@aspire_user_info',
+                '@aspire_current_company_id',
+                '@aspire_token_expires_at',
+                'app_language',
+                'theme_mode',
+            ];
+            const sanitized = keys.map(sanitizeKey);
+            if (isWeb) {
+                sanitized.forEach(k => localStorage.removeItem(k));
+                return;
+            }
+            const store = await getNativeStore();
+            await Promise.all(sanitized.map(k => store.deleteItemAsync(k)));
         } catch (error) {
             console.error('Storage clear error:', error);
             throw error;
         }
     },
 
-    /**
-     * Get multiple values
-     */
     async multiGet(keys: string[]): Promise<Record<string, any>> {
         try {
-            const pairs = await AsyncStorage.multiGet(keys);
+            const sanitized = keys.map(sanitizeKey);
+            if (isWeb) {
+                const result: Record<string, any> = {};
+                sanitized.forEach((sk, i) => {
+                    const value = localStorage.getItem(sk);
+                    if (value !== null) {
+                        try {
+                            result[keys[i]] = JSON.parse(value);
+                        } catch {
+                            result[keys[i]] = value;
+                        }
+                    }
+                });
+                return result;
+            }
+            const store = await getNativeStore();
+            const entries = await Promise.all(
+                sanitized.map(async (sk) => {
+                    const value = await store.getItemAsync(sk);
+                    return [sk, value] as const;
+                })
+            );
             const result: Record<string, any> = {};
-
-            pairs.forEach(([key, value]) => {
+            entries.forEach(([sk, value]) => {
                 if (value !== null) {
                     try {
-                        result[key] = JSON.parse(value);
+                        result[sk] = JSON.parse(value);
                     } catch {
-                        result[key] = value;
+                        result[sk] = value;
                     }
                 }
             });
-
             return result;
         } catch (error) {
             console.error('Storage multiGet error:', error);

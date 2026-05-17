@@ -21,6 +21,7 @@ export const AppStyles = {
         error: '#ef4444',
         success: '#10b981',
         warning: '#f59e0b',
+        white: '#ffffff',
     },
 
     // 间距
@@ -167,7 +168,7 @@ export function createCommonStyles(colors: typeof Colors.light) {
             ...AppStyles.shadows.lg,
         },
         buttonText: {
-            color: '#fff',
+            color: colors.white,
             fontSize: AppStyles.fontSize.lg,
             fontWeight: '700',
             letterSpacing: 0.5,

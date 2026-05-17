@@ -70,7 +70,7 @@ export default function FloatingActionMenu() {
           accessibilityRole="button"
         >
           <Animated.View style={{ transform: [{ rotate: rotation }] }}>
-            <Ionicons name="add" size={28} color="#fff" />
+            <Ionicons name="add" size={28} color={colors.white} />
           </Animated.View>
         </TouchableOpacity>
       </View>
@@ -80,7 +80,7 @@ export default function FloatingActionMenu() {
             <Animated.View
               style={[
                 StyleSheet.absoluteFill,
-                { backgroundColor: '#000', opacity: backdropOpacity },
+                { backgroundColor: colors.text, opacity: backdropOpacity },
               ]}
             />
           </Pressable>
@@ -132,7 +132,7 @@ export default function FloatingActionMenu() {
                     activeOpacity={0.8}
                     accessibilityLabel={action.name}
                   >
-                    <Ionicons name={action.icon} size={24} color="#fff" />
+                    <Ionicons name={action.icon} size={24} color={colors.white} />
                   </TouchableOpacity>
                 </Animated.View>
               );

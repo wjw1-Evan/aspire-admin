@@ -80,7 +80,7 @@ export default function ProjectsListScreen() {
       fontWeight: '500',
     },
     tabTextActive: {
-      color: '#fff',
+      color: colors.white,
     },
     footerLoader: {
       paddingVertical: AppStyles.spacing.lg,
@@ -267,7 +267,7 @@ export default function ProjectsListScreen() {
         onPress={() => router.push('/project/create')}
         activeOpacity={0.8}
       >
-        <Ionicons name="add" size={28} color="#fff" />
+        <Ionicons name="add" size={28} color={colors.white} />
       </TouchableOpacity>
     </View>
   );

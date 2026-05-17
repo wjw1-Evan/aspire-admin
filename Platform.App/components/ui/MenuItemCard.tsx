@@ -73,7 +73,7 @@ export default function MenuItemCard({
     badgeText: {
       fontSize: AppStyles.fontSize.xs,
       fontWeight: '600',
-      color: '#fff',
+      color: colors.white,
     },
     arrow: {
       marginLeft: 4,

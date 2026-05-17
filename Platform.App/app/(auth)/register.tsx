@@ -119,7 +119,7 @@ export default function RegisterScreen() {
             alignItems: 'center',
         },
         buttonText: {
-            color: '#fff',
+            color: colors.white,
             fontSize: 16,
             fontWeight: '600',
         },
@@ -356,11 +356,11 @@ export default function RegisterScreen() {
                     >
                         <View style={[styles.button, loading && { opacity: 0.7 }]}>
                             {loading ? (
-                                <ActivityIndicator color="#fff" />
+                                <ActivityIndicator color={colors.white} />
                             ) : (
                                 <View style={styles.buttonContent}>
                                     <Text style={styles.buttonText}>{t('auth.register_button')}</Text>
-                                    <Ionicons name="checkmark" size={20} color="#fff" style={{ marginLeft: 8 }} />
+                                    <Ionicons name="checkmark" size={20} color={colors.white} style={{ marginLeft: 8 }} />
                                 </View>
                             )}
                         </View>

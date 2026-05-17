@@ -128,7 +128,7 @@ export default function LoginScreen() {
             justifyContent: 'center',
         },
         buttonText: {
-            color: '#fff',
+            color: colors.white,
             fontSize: 16,
             fontWeight: '600',
         },
@@ -305,11 +305,11 @@ export default function LoginScreen() {
                     >
                         <View style={[styles.button, loading && { opacity: 0.7 }]}>
                             {loading ? (
-                                <ActivityIndicator color="#fff" />
+                                <ActivityIndicator color={colors.white} />
                             ) : (
                                 <View style={styles.buttonContent}>
                                     <Text style={styles.buttonText}>{t('auth.login_button')}</Text>
-                                    <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 8 }} />
+                                    <Ionicons name="arrow-forward" size={20} color={colors.white} style={{ marginLeft: 8 }} />
                                 </View>
                             )}
                         </View>

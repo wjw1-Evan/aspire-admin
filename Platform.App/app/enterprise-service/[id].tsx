@@ -629,9 +629,9 @@ export default function EnterpriseServiceDetailScreen() {
                 disabled={submitting || !selectedStatus}
               >
                 {submitting ? (
-                  <ActivityIndicator size="small" color="#fff" />
+                  <ActivityIndicator size="small" color={colors.white} />
                 ) : (
-                  <Text style={{ fontSize: AppStyles.fontSize.md, fontWeight: '600', color: '#fff' }}>
+                  <Text style={{ fontSize: AppStyles.fontSize.md, fontWeight: '600', color: colors.white }}>
                     {t('common.confirm')}
                   </Text>
                 )}
@@ -684,9 +684,9 @@ export default function EnterpriseServiceDetailScreen() {
                 disabled={submitting || rating === 0}
               >
                 {submitting ? (
-                  <ActivityIndicator size="small" color="#fff" />
+                  <ActivityIndicator size="small" color={colors.white} />
                 ) : (
-                  <Text style={{ fontSize: AppStyles.fontSize.md, fontWeight: '600', color: '#fff' }}>
+                  <Text style={{ fontSize: AppStyles.fontSize.md, fontWeight: '600', color: colors.white }}>
                     {t('common.confirm')}
                   </Text>
                 )}

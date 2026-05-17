@@ -20,6 +20,7 @@ export const Colors = {
     success: '#10b981',
     warning: '#f59e0b',
     overlay: 'rgba(0,0,0,0.5)',
+    white: '#ffffff',
   },
   dark: {
     text: '#ffffff',
@@ -39,6 +40,7 @@ export const Colors = {
     success: '#34d399',
     warning: '#fbbf24',
     overlay: 'rgba(0,0,0,0.7)',
+    white: '#ffffff',
   },
 };
 

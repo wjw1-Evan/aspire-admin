@@ -160,7 +160,7 @@ export default function CreateEnterpriseServiceScreen() {
     submitButtonText: {
       fontSize: AppStyles.fontSize.md,
       fontWeight: '700',
-      color: '#fff',
+      color: colors.white,
     },
     categorizingRow: {
       flexDirection: 'row',
@@ -355,7 +355,7 @@ export default function CreateEnterpriseServiceScreen() {
                     style={styles.removeAttachment}
                     onPress={() => handleRemoveFile(file.id)}
                   >
-                    <Ionicons name="close" size={14} color="#fff" />
+                    <Ionicons name="close" size={14} color={colors.white} />
                   </TouchableOpacity>
                 </View>
               ))}
@@ -479,7 +479,7 @@ export default function CreateEnterpriseServiceScreen() {
             disabled={!description.trim() || submitting}
           >
             {submitting ? (
-              <ActivityIndicator size="small" color="#fff" />
+              <ActivityIndicator size="small" color={colors.white} />
             ) : (
               <Text style={styles.submitButtonText}>{t('common.save')}</Text>
             )}

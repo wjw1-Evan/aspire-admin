@@ -95,7 +95,7 @@ export default function TasksListScreen() {
       fontWeight: '500',
     },
     tabTextActive: {
-      color: '#fff',
+      color: colors.white,
     },
     footerLoader: {
       paddingVertical: AppStyles.spacing.lg,
@@ -281,7 +281,7 @@ export default function TasksListScreen() {
         onPress={() => router.push({ pathname: '/task/create', params: { projects: JSON.stringify(projects) } })}
         activeOpacity={0.8}
       >
-        <Ionicons name="add" size={28} color="#fff" />
+        <Ionicons name="add" size={28} color={colors.white} />
       </TouchableOpacity>
     </View>
   );

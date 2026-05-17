@@ -70,7 +70,7 @@ export default function HomeScreen() {
       paddingHorizontal: 4,
     },
     noticeBadgeText: {
-      color: '#fff',
+      color: colors.white,
       fontSize: AppStyles.fontSize.xs,
       fontWeight: '700',
     },

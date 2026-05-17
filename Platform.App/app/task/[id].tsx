@@ -214,7 +214,7 @@ export default function TaskDetailScreen() {
       gap: 6,
     },
     primaryButtonText: {
-      color: '#fff',
+      color: colors.white,
       fontSize: AppStyles.fontSize.md,
       fontWeight: '600',
     },
@@ -475,7 +475,7 @@ export default function TaskDetailScreen() {
             style={styles.primaryButton}
             onPress={() => router.push(`/task/execute/${id}`)}
           >
-            <Ionicons name="play-circle-outline" size={18} color="#fff" />
+            <Ionicons name="play-circle-outline" size={18} color={colors.white} />
             <Text style={styles.primaryButtonText}>{t('tasks.execute_task')}</Text>
           </TouchableOpacity>
         )}

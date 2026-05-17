@@ -198,7 +198,7 @@ export default function ProfileScreen() {
             borderRadius: AppStyles.borderRadius.sm,
         },
         activeTagText: {
-            color: '#fff',
+            color: themeColors.white,
             fontSize: AppStyles.fontSize.xs,
             fontWeight: 'bold',
         },
@@ -211,7 +211,7 @@ export default function ProfileScreen() {
             justifyContent: 'center',
         },
         logoutButtonText: {
-            color: '#fff',
+            color: themeColors.white,
             fontSize: AppStyles.fontSize.md,
             fontWeight: '600',
         },
@@ -289,7 +289,7 @@ export default function ProfileScreen() {
         saveButtonText: {
             fontSize: 16,
             fontWeight: '600',
-            color: '#fff',
+            color: themeColors.white,
         },
         // Logout Modal Styles
         logoutModalOverlay: {
@@ -348,7 +348,7 @@ export default function ProfileScreen() {
         logoutModalConfirmText: {
             fontSize: 16,
             fontWeight: '600',
-            color: '#fff',
+            color: themeColors.white,
         },
     }), [themeColors, insets]);
 
@@ -615,7 +615,7 @@ export default function ProfileScreen() {
                     {/* Actions Section */}
                     <View style={styles.section}>
                         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                            <Ionicons name="log-out-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
+                            <Ionicons name="log-out-outline" size={20} color={themeColors.white} style={{ marginRight: 8 }} />
                             <RNText style={styles.logoutButtonText}>{t('profile.logout')}</RNText>
                         </TouchableOpacity>
                     </View>
@@ -692,7 +692,7 @@ export default function ProfileScreen() {
                                 disabled={saving}
                             >
                                 {saving ? (
-                                    <ActivityIndicator size="small" color="#fff" />
+                                    <ActivityIndicator size="small" color={themeColors.white} />
                                 ) : (
                                     <Text style={styles.saveButtonText}>{t('profile.save')}</Text>
                                 )}

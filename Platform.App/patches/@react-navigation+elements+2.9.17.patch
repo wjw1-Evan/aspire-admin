@@ -1,0 +1,296 @@
+diff --git a/node_modules/@react-navigation/elements/lib/module/Header/Header.js b/node_modules/@react-navigation/elements/lib/module/Header/Header.js
+index db27170..b8c8e8c 100644
+--- a/node_modules/@react-navigation/elements/lib/module/Header/Header.js
++++ b/node_modules/@react-navigation/elements/lib/module/Header/Header.js
+@@ -244,43 +244,46 @@ export function Header(props) {
+     ...props
+   }) : customTitle;
+   return /*#__PURE__*/_jsxs(Animated.View, {
+-    pointerEvents: "box-none",
+     style: [{
+       height,
+       minHeight,
+       maxHeight,
+       opacity,
+-      transform
++      transform,
++      pointerEvents: "box-none"
+     }],
+     children: [/*#__PURE__*/_jsx(Animated.View, {
+-      pointerEvents: "box-none",
+-      style: [StyleSheet.absoluteFill, backgroundContainerStyle],
++      style: [StyleSheet.absoluteFill, backgroundContainerStyle, {
++        pointerEvents: "box-none"
++      }],
+       children: headerBackground ? headerBackground({
+         style: backgroundStyle
+       }) : /*#__PURE__*/_jsx(HeaderBackground, {
+-        pointerEvents:
+-        // Allow touch through the header when background color is transparent
+-        headerTransparent && (backgroundStyle.backgroundColor === 'transparent' || Color(backgroundStyle.backgroundColor).alpha() === 0) ? 'none' : 'auto',
+-        style: backgroundStyle
++        style: [backgroundStyle, {
++          pointerEvents:
++          // Allow touch through the header when background color is transparent
++          headerTransparent && (backgroundStyle.backgroundColor === 'transparent' || Color(backgroundStyle.backgroundColor).alpha() === 0) ? 'none' : 'auto'
++        }]
+       })
+     }), /*#__PURE__*/_jsx(View, {
+-      pointerEvents: "none",
+       style: {
+-        height: headerStatusBarHeight
++        height: headerStatusBarHeight,
++        pointerEvents: "none"
+       }
+     }), /*#__PURE__*/_jsxs(View, {
+-      pointerEvents: "box-none",
+-      style: [styles.content, Platform.OS === 'ios' && frame.width >= IPAD_MINI_MEDIUM_WIDTH ? styles.large : null],
++      style: [styles.content, Platform.OS === 'ios' && frame.width >= IPAD_MINI_MEDIUM_WIDTH ? styles.large : null, {
++        pointerEvents: "box-none"
++      }],
+       children: [/*#__PURE__*/_jsx(Animated.View, {
+-        pointerEvents: "box-none",
+         style: [styles.start, !searchBarVisible && headerTitleAlign === 'center' && styles.expand, {
+-          marginStart: insets.left
++          marginStart: insets.left,
++          pointerEvents: "box-none"
+         }, leftContainerStyle],
+         children: leftButton
+       }), Platform.OS === 'ios' || !searchBarVisible ? /*#__PURE__*/_jsxs(_Fragment, {
+         children: [/*#__PURE__*/_jsx(Animated.View, {
+-          pointerEvents: "box-none",
+           style: [styles.title, {
++            pointerEvents: "box-none",
+             // Avoid the title from going offscreen or overlapping buttons
+             maxWidth: headerTitleAlign === 'center' ? layout.width - ((leftButton ? headerBackButtonDisplayMode !== 'minimal' ? 80 : 32 : 16) + (rightButton || headerSearchBarOptions ? 16 : 0) + Math.max(insets.left, insets.right)) * 2 : layout.width - ((leftButton ? 52 : 16) + (rightButton || headerSearchBarOptions ? 52 : 16) + insets.left - insets.right)
+           }, headerTitleAlign === 'left' && leftButton ? {
+@@ -296,9 +299,9 @@ export function Header(props) {
+             style: titleStyle
+           })
+         }), /*#__PURE__*/_jsxs(Animated.View, {
+-          pointerEvents: "box-none",
+           style: [styles.end, styles.expand, {
+-            marginEnd: insets.right
++            marginEnd: insets.right,
++            pointerEvents: "box-none"
+           }, rightContainerStyle],
+           children: [rightButton, headerSearchBarOptions ? /*#__PURE__*/_jsx(HeaderButton, {
+             tintColor: iconTintColor,
+diff --git a/node_modules/@react-navigation/elements/lib/module/Header/HeaderSearchBar.js b/node_modules/@react-navigation/elements/lib/module/Header/HeaderSearchBar.js
+index c60c74f..07fae71 100644
+--- a/node_modules/@react-navigation/elements/lib/module/Header/HeaderSearchBar.js
++++ b/node_modules/@react-navigation/elements/lib/module/Header/HeaderSearchBar.js
+@@ -125,11 +125,11 @@ function HeaderSearchBarInternal({
+   }
+   const textColor = tintColor ?? colors.text;
+   return /*#__PURE__*/_jsxs(Animated.View, {
+-    pointerEvents: visible ? 'auto' : 'none',
+     "aria-live": "polite",
+     "aria-hidden": !visible,
+     style: [styles.container, {
+-      opacity: visibleAnim
++      opacity: visibleAnim,
++      pointerEvents: visible ? 'auto' : 'none'
+     }, style],
+     children: [/*#__PURE__*/_jsxs(View, {
+       style: styles.searchbarContainer,
+diff --git a/node_modules/@react-navigation/elements/lib/module/ResourceSavingView.js b/node_modules/@react-navigation/elements/lib/module/ResourceSavingView.js
+index eb063ab..b884610 100644
+--- a/node_modules/@react-navigation/elements/lib/module/ResourceSavingView.js
++++ b/node_modules/@react-navigation/elements/lib/module/ResourceSavingView.js
+@@ -18,25 +18,28 @@ export function ResourceSavingView({
+       hidden: !visible,
+       style: [{
+         display: visible ? 'flex' : 'none'
+-      }, styles.container, style],
+-      pointerEvents: visible ? 'auto' : 'none',
++      }, styles.container, style, {
++        pointerEvents: visible ? 'auto' : 'none'
++      }],
+       ...rest,
+       children: children
+     });
+   }
+   return /*#__PURE__*/_jsx(View, {
+-    style: [styles.container, style]
++    style: [styles.container, style, {
++      pointerEvents: visible ? 'auto' : 'none'
++    }]
+     // box-none doesn't seem to work properly on Android
+     ,
+-    pointerEvents: visible ? 'auto' : 'none',
+     children: /*#__PURE__*/_jsx(View, {
+       collapsable: false,
+       removeClippedSubviews:
+       // On iOS & macOS, set removeClippedSubviews to true only when not focused
+       // This is an workaround for a bug where the clipped view never re-appears
+       Platform.OS === 'ios' || Platform.OS === 'macos' ? !visible : true,
+-      pointerEvents: visible ? 'auto' : 'none',
+-      style: visible ? styles.attached : styles.detached,
++      style: [visible ? styles.attached : styles.detached, {
++        pointerEvents: visible ? 'auto' : 'none'
++      }],
+       children: children
+     })
+   });
+diff --git a/node_modules/@react-navigation/elements/lib/module/Screen.js b/node_modules/@react-navigation/elements/lib/module/Screen.js
+index e4ff174..ba78d5f 100644
+--- a/node_modules/@react-navigation/elements/lib/module/Screen.js
++++ b/node_modules/@react-navigation/elements/lib/module/Screen.js
+@@ -52,7 +52,9 @@ export function Screen(props) {
+         }] : null],
+         children: /*#__PURE__*/_jsx(View, {
+           ref: headerRef,
+-          pointerEvents: "box-none",
++          style: {
++            pointerEvents: "box-none"
++          },
+           onLayout: e => {
+             const {
+               height
+diff --git a/node_modules/@react-navigation/elements/src/Header/Header.tsx b/node_modules/@react-navigation/elements/src/Header/Header.tsx
+index ff00094..eae2ec5 100644
+--- a/node_modules/@react-navigation/elements/src/Header/Header.tsx
++++ b/node_modules/@react-navigation/elements/src/Header/Header.tsx
+@@ -309,45 +309,45 @@ export function Header(props: Props) {
+ 
+   return (
+     <Animated.View
+-      pointerEvents="box-none"
+-      style={[{ height, minHeight, maxHeight, opacity, transform }]}
++      style={[{ height, minHeight, maxHeight, opacity, transform, pointerEvents: 'box-none' }]}
+     >
+       <Animated.View
+-        pointerEvents="box-none"
+-        style={[StyleSheet.absoluteFill, backgroundContainerStyle]}
++        style={[StyleSheet.absoluteFill, backgroundContainerStyle, { pointerEvents: 'box-none' }]}
+       >
+         {headerBackground ? (
+           headerBackground({ style: backgroundStyle })
+         ) : (
+           <HeaderBackground
+-            pointerEvents={
+-              // Allow touch through the header when background color is transparent
+-              headerTransparent &&
+-              (backgroundStyle.backgroundColor === 'transparent' ||
+-                Color(backgroundStyle.backgroundColor).alpha() === 0)
+-                ? 'none'
+-                : 'auto'
+-            }
+-            style={backgroundStyle}
++            style={[
++              backgroundStyle,
++              {
++                pointerEvents:
++                  // Allow touch through the header when background color is transparent
++                  headerTransparent &&
++                  (backgroundStyle.backgroundColor === 'transparent' ||
++                    Color(backgroundStyle.backgroundColor).alpha() === 0)
++                    ? 'none'
++                    : 'auto',
++              },
++            ]}
+           />
+         )}
+       </Animated.View>
+-      <View pointerEvents="none" style={{ height: headerStatusBarHeight }} />
++      <View style={{ height: headerStatusBarHeight, pointerEvents: 'none' }} />
+       <View
+-        pointerEvents="box-none"
+         style={[
+           styles.content,
+           Platform.OS === 'ios' && frame.width >= IPAD_MINI_MEDIUM_WIDTH
+             ? styles.large
+             : null,
++          { pointerEvents: 'box-none' },
+         ]}
+       >
+         <Animated.View
+-          pointerEvents="box-none"
+           style={[
+             styles.start,
+             !searchBarVisible && headerTitleAlign === 'center' && styles.expand,
+-            { marginStart: insets.left },
++            { marginStart: insets.left, pointerEvents: 'box-none' },
+             leftContainerStyle,
+           ]}
+         >
+@@ -356,10 +356,10 @@ export function Header(props: Props) {
+         {Platform.OS === 'ios' || !searchBarVisible ? (
+           <>
+             <Animated.View
+-              pointerEvents="box-none"
+               style={[
+                 styles.title,
+                 {
++                  pointerEvents: 'box-none',
+                   // Avoid the title from going offscreen or overlapping buttons
+                   maxWidth:
+                     headerTitleAlign === 'center'
+@@ -393,11 +393,10 @@ export function Header(props: Props) {
+               })}
+             </Animated.View>
+             <Animated.View
+-              pointerEvents="box-none"
+               style={[
+                 styles.end,
+                 styles.expand,
+-                { marginEnd: insets.right },
++                { marginEnd: insets.right, pointerEvents: 'box-none' },
+                 rightContainerStyle,
+               ]}
+             >
+diff --git a/node_modules/@react-navigation/elements/src/Header/HeaderSearchBar.tsx b/node_modules/@react-navigation/elements/src/Header/HeaderSearchBar.tsx
+index 9310f86..033ac00 100644
+--- a/node_modules/@react-navigation/elements/src/Header/HeaderSearchBar.tsx
++++ b/node_modules/@react-navigation/elements/src/Header/HeaderSearchBar.tsx
+@@ -157,10 +157,9 @@ function HeaderSearchBarInternal(
+ 
+   return (
+     <Animated.View
+-      pointerEvents={visible ? 'auto' : 'none'}
+       aria-live="polite"
+       aria-hidden={!visible}
+-      style={[styles.container, { opacity: visibleAnim }, style]}
++      style={[styles.container, { opacity: visibleAnim, pointerEvents: visible ? 'auto' : 'none' }, style]}
+     >
+       <View style={styles.searchbarContainer}>
+         <HeaderIcon
+diff --git a/node_modules/@react-navigation/elements/src/ResourceSavingView.tsx b/node_modules/@react-navigation/elements/src/ResourceSavingView.tsx
+index 63e1dc0..51c25bb 100644
+--- a/node_modules/@react-navigation/elements/src/ResourceSavingView.tsx
++++ b/node_modules/@react-navigation/elements/src/ResourceSavingView.tsx
+@@ -30,8 +30,8 @@ export function ResourceSavingView({
+           { display: visible ? 'flex' : 'none' },
+           styles.container,
+           style,
++          { pointerEvents: visible ? 'auto' : 'none' },
+         ]}
+-        pointerEvents={visible ? 'auto' : 'none'}
+         {...rest}
+       >
+         {children}
+@@ -41,9 +41,8 @@ export function ResourceSavingView({
+ 
+   return (
+     <View
+-      style={[styles.container, style]}
++      style={[styles.container, style, { pointerEvents: visible ? 'auto' : 'none' }]}
+       // box-none doesn't seem to work properly on Android
+-      pointerEvents={visible ? 'auto' : 'none'}
+     >
+       <View
+         collapsable={false}
+diff --git a/node_modules/@react-navigation/elements/src/Screen.tsx b/node_modules/@react-navigation/elements/src/Screen.tsx
+index 68455b1..4fee897 100644
+--- a/node_modules/@react-navigation/elements/src/Screen.tsx
++++ b/node_modules/@react-navigation/elements/src/Screen.tsx
+@@ -90,7 +90,7 @@ export function Screen(props: Props) {
+           >
+             <View
+               ref={headerRef}
+-              pointerEvents="box-none"
++              style={{ pointerEvents: 'box-none' }}
+               onLayout={(e) => {
+                 const { height } = e.nativeEvent.layout;
+ 

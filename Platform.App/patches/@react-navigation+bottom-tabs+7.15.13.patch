@@ -1,0 +1,70 @@
+diff --git a/node_modules/@react-navigation/bottom-tabs/lib/module/views/BottomTabBar.js b/node_modules/@react-navigation/bottom-tabs/lib/module/views/BottomTabBar.js
+index b4c78af..6ba1cc2 100644
+--- a/node_modules/@react-navigation/bottom-tabs/lib/module/views/BottomTabBar.js
++++ b/node_modules/@react-navigation/bottom-tabs/lib/module/views/BottomTabBar.js
+@@ -252,8 +252,7 @@ export function BottomTabBar({
+       paddingBottom: tabBarPosition === 'bottom' ? insets.bottom : 0,
+       paddingTop: tabBarPosition === 'top' ? insets.top : 0,
+       paddingHorizontal: Math.max(insets.left, insets.right)
+-    }], tabBarStyle],
+-    pointerEvents: isTabBarHidden ? 'none' : 'auto',
++    }, { pointerEvents: isTabBarHidden ? 'none' : 'auto' }], tabBarStyle],
+     onLayout: sidebar ? undefined : handleLayout,
+     children: [/*#__PURE__*/_jsx(View, {
+       pointerEvents: "none",
+diff --git a/node_modules/@react-navigation/bottom-tabs/lib/module/views/BottomTabView.js b/node_modules/@react-navigation/bottom-tabs/lib/module/views/BottomTabView.js
+index 7f3b7bd..9854f27 100644
+--- a/node_modules/@react-navigation/bottom-tabs/lib/module/views/BottomTabView.js
++++ b/node_modules/@react-navigation/bottom-tabs/lib/module/views/BottomTabView.js
+@@ -216,13 +216,13 @@ export function BottomTabView(props) {
+         }) : STATE_INACTIVE;
+         return /*#__PURE__*/_jsx(MaybeScreen, {
+           style: [StyleSheet.absoluteFill, {
+-            zIndex: isFocused ? 0 : -1
++            zIndex: isFocused ? 0 : -1,
++            pointerEvents: isFocused ? 'box-none' : 'none'
+           }],
+           active: activityState,
+           enabled: detachInactiveScreens,
+           freezeOnBlur: freezeOnBlur,
+           shouldFreeze: activityState === STATE_INACTIVE && !isPreloaded,
+-          pointerEvents: isFocused ? 'box-none' : 'none',
+           children: /*#__PURE__*/_jsx(BottomTabBarHeightContext.Provider, {
+             value: tabBarPosition === 'bottom' ? tabBarHeight : 0,
+             children: /*#__PURE__*/_jsx(Screen, {
+diff --git a/node_modules/@react-navigation/bottom-tabs/src/views/BottomTabBar.tsx b/node_modules/@react-navigation/bottom-tabs/src/views/BottomTabBar.tsx
+index ba17a4a..05bc7b8 100644
+--- a/node_modules/@react-navigation/bottom-tabs/src/views/BottomTabBar.tsx
++++ b/node_modules/@react-navigation/bottom-tabs/src/views/BottomTabBar.tsx
+@@ -381,11 +381,11 @@ export function BottomTabBar({
+               },
+             ],
+         tabBarStyle,
++        { pointerEvents: isTabBarHidden ? 'none' : 'auto' },
+       ]}
+-      pointerEvents={isTabBarHidden ? 'none' : 'auto'}
+       onLayout={sidebar ? undefined : handleLayout}
+     >
+-      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
++      <View style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}>
+         {tabBarBackgroundElement}
+       </View>
+       <View
+diff --git a/node_modules/@react-navigation/bottom-tabs/src/views/BottomTabView.tsx b/node_modules/@react-navigation/bottom-tabs/src/views/BottomTabView.tsx
+index 3476534..5626d2d 100644
+--- a/node_modules/@react-navigation/bottom-tabs/src/views/BottomTabView.tsx
++++ b/node_modules/@react-navigation/bottom-tabs/src/views/BottomTabView.tsx
+@@ -318,12 +318,11 @@ export function BottomTabView(props: Props) {
+           return (
+             <MaybeScreen
+               key={route.key}
+-              style={[StyleSheet.absoluteFill, { zIndex: isFocused ? 0 : -1 }]}
++              style={[StyleSheet.absoluteFill, { zIndex: isFocused ? 0 : -1, pointerEvents: isFocused ? 'box-none' : 'none' }]}
+               active={activityState}
+               enabled={detachInactiveScreens}
+               freezeOnBlur={freezeOnBlur}
+               shouldFreeze={activityState === STATE_INACTIVE && !isPreloaded}
+-              pointerEvents={isFocused ? 'box-none' : 'none'}
+             >
+               <BottomTabBarHeightContext.Provider
+                 value={tabBarPosition === 'bottom' ? tabBarHeight : 0}

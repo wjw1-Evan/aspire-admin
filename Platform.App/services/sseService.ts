@@ -37,6 +37,10 @@ class SseService {
     this.chatHandlers = null;
   }
 
+  setBaseHandlers(handlers: SseEventHandlers) {
+    this.baseHandlers = handlers;
+  }
+
   isConnected(): boolean {
     return this.connected;
   }
@@ -86,7 +90,7 @@ class SseService {
     es.addEventListener('stats', (event) => {
       try {
         const data = JSON.parse(event.data);
-        h.onStats?.(data.Statistics);
+        h.onStats?.(data.statistics);
       } catch {}
     });
 
@@ -205,7 +209,7 @@ class SseService {
     try {
       const data = JSON.parse(dataStr);
       if (eventType === 'stats') {
-        h.onStats?.(data.Statistics);
+        h.onStats?.(data.statistics);
       } else if (eventType === 'connected') {
         h.onConnected?.(data);
       } else if (eventType === 'ReceiveMessage') {

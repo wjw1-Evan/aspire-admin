@@ -23,7 +23,7 @@ export interface AppNotification {
   title: string;
   content?: string;
   actionUrl?: string;
-  status: number; // 0=Unread, 1=Read
+  status: string; // "unread" | "read" | "archived"
   metadata: Record<string, string>;
   datetime: string;
   readAt?: string;
@@ -34,6 +34,7 @@ export interface NotificationStatistics {
   Work: number;
   Social: number;
   Security: number;
+  UnreadTotal: number;
   Total: number;
 }
 

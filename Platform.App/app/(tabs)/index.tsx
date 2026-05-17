@@ -12,6 +12,7 @@ import { projectService } from '../../services/projectService';
 import { ProjectStatus } from '../../types/project';
 import MenuItemCard from '../../components/ui/MenuItemCard';
 import { changeLanguage, getCurrentLanguage } from '../../utils/i18n';
+import { useNotification } from '../../contexts/NotificationContext';
 
 export default function HomeScreen() {
   const { colors } = useTheme();
@@ -25,6 +26,7 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lang, setLang] = useState<'zh' | 'en'>(getCurrentLanguage());
+  const { unreadCount } = useNotification();
 
   const fetchData = () => {
     authService.getCurrentUser().then(r => { if (r.success && r.data) setUser(r.data); }).finally(() => setLoading(false));
@@ -75,7 +77,14 @@ export default function HomeScreen() {
                 <Text style={[s.langText, { color: colors.primary }]}>{lang === 'zh' ? 'EN' : '中'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.iconBtn} onPress={() => router.push('/notifications')}>
-                <Ionicons name="notifications-outline" size={24} color={colors.text} />
+                <View>
+                  <Ionicons name="notifications-outline" size={24} color={colors.text} />
+                  {unreadCount > 0 && (
+                    <View style={s.badge}>
+                      <Text style={s.badgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+                    </View>
+                  )}
+                </View>
               </TouchableOpacity>
             </View>
           </View>
@@ -104,5 +113,22 @@ const s = StyleSheet.create({
   greeting: { fontSize: AppStyles.fontSize.sm, marginBottom: 4 },
   name: { fontSize: AppStyles.fontSize.xxxl, fontWeight: 'bold' },
   langText: { fontSize: 14, fontWeight: '600' },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#ff4d4f',
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
   actions: { paddingHorizontal: AppStyles.spacing.lg, paddingBottom: 100 },
 });

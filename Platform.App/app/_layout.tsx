@@ -14,6 +14,7 @@ import { AppStyles } from '../constants/AppStyles';
 import { AppThemeProvider, useTheme } from '../contexts/ThemeContext';
 import { authService } from '../services/authService';
 import { initLanguage } from '../utils/i18n';
+import { NotificationProvider } from '../contexts/NotificationContext';
 import SplashScreenComponent from '../components/SplashScreen';
 
 export {
@@ -59,7 +60,9 @@ export default function RootLayout() {
 function RootLayoutNav() {
   return (
     <AppThemeProvider>
-      <RootLayoutNavInner />
+      <NotificationProvider>
+        <RootLayoutNavInner />
+      </NotificationProvider>
     </AppThemeProvider>
   );
 }
@@ -181,6 +184,7 @@ function RootLayoutNavInner() {
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="notifications" options={{ title: t('notifications.title') }} />
+        <Stack.Screen name="notifications/[id]" options={{ title: t('notifications.detail'), animation: 'slide_from_right' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
         <Stack.Screen name="project/[id]" options={{ title: t('projects.detail') }} />
         <Stack.Screen name="project/create" options={{ headerShown: false }} />

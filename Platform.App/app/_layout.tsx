@@ -6,6 +6,8 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import 'react-native-reanimated';
+import { enableScreens } from 'react-native-screens';
+enableScreens(true);
 import Toast from 'react-native-toast-message';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';

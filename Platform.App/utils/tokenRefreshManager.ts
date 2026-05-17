@@ -25,13 +25,13 @@ class TokenRefreshManager {
   }
 
   static async refresh(forcedRefreshToken?: string): Promise<TokenRefreshResult | null> {
-    if (this.refreshPromise) {
-      return this.refreshPromise;
-    }
-
     const refreshToken = forcedRefreshToken || await tokenUtils.getRefreshToken();
     if (!refreshToken) {
       return { success: false };
+    }
+
+    if (this.refreshPromise) {
+      return this.refreshPromise;
     }
 
     this.refreshPromise = this.doRefresh(refreshToken);

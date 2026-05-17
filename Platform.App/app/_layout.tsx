@@ -3,7 +3,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } fro
 import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import 'react-native-reanimated';
 import Toast from 'react-native-toast-message';
@@ -89,19 +89,27 @@ function RootLayoutNavInner() {
   }, []);
 
   // Redirect based on authentication status
+  const lastNavRef = useRef(0);
   useEffect(() => {
-    if (isAuthenticated === null) return; // Still checking
+    if (isAuthenticated === null) return;
+
+    const now = Date.now();
+    if (now - lastNavRef.current < 1000) return;
 
     const inAuthGroup = segments[0] === '(auth)';
 
     if (!isAuthenticated && !inAuthGroup) {
-      // Redirect to login if not authenticated
-      router.replace('/login');
+      authService.isAuthenticated().then((hasToken) => {
+        if (!hasToken) {
+          lastNavRef.current = Date.now();
+          router.replace('/login');
+        }
+      });
     } else if (isAuthenticated && inAuthGroup) {
-      // Redirect to main app if authenticated
+      lastNavRef.current = now;
       router.replace('/');
     }
-    }, [isAuthenticated, segments]);
+  }, [isAuthenticated, segments]);
 
   const toastStyles = useMemo(() => StyleSheet.create({
     successContainer: {

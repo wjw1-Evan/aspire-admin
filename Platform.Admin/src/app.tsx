@@ -415,10 +415,6 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
       if (location.pathname === loginPath) {
         return;
       }
-      if (!initialState?.currentUser) {
-        history.push(loginPath);
-        return;
-      }
       if (!tokenUtils.hasToken()) {
         tokenUtils.clearAllTokens();
         history.push(loginPath);
@@ -427,12 +423,18 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
       if (tokenUtils.isTokenExpired()) {
         const refreshToken = tokenUtils.getRefreshToken();
         if (refreshToken && !tokenUtils.isRefreshTokenExpired()) {
-          // 不阻塞页面导航，异步刷新；API 401 拦截器会兜底重试
           TokenRefreshManager.refresh(refreshToken).catch(() => {});
           return;
         }
         tokenUtils.clearAllTokens();
         history.push(loginPath);
+        return;
+      }
+      if (!initialState?.currentUser) {
+        const hasValidToken = tokenUtils.hasToken() && !tokenUtils.isTokenExpired();
+        if (!hasValidToken) {
+          history.push(loginPath);
+        }
         return;
       }
     },

@@ -223,6 +223,69 @@ export const projectService = {
 - 主题切换：`contexts/ThemeContext.tsx`
 - 页面中使用 `useTheme()` hook 获取当前主题和颜色
 
+### 8.8.1 配色方案（银蕨色主题）
+
+本项目 App 端采用**新西兰银蕨色**作为品牌主色调，所有颜色必须从 `constants/Colors.ts` 和 `constants/AppStyles.ts` 中获取，**禁止在页面中硬编码配色**。
+
+#### 品牌色定义
+
+| 颜色变量 | Light 模式 | Dark 模式 | 用途 |
+|---------|-----------|-----------|------|
+| `primary` | `#4A7C59` | `#6BAF8D` | 主色调（按钮、链接、图标） |
+| `primaryDark` | `#3A6347` | `#4A7C59` | 深色变体 |
+| `primaryLight` | `#6BAF8D` | `#8FC9A5` | 浅色变体 |
+| `tint` | `#4A7C59` | `#6BAF8D` | Tab 图标选中色、强调色 |
+
+#### 语义色
+
+| 颜色变量 | 值 | 用途 |
+|---------|-----|------|
+| `success` | `#10b981` / `#34d399` | 成功状态 |
+| `error` | `#ef4444` / `#f87171` | 错误/危险状态 |
+| `warning` | `#f59e0b` / `#fbbf24` | 警告状态 |
+
+#### 背景与文本
+
+| 颜色变量 | Light 模式 | Dark 模式 |
+|---------|-----------|-----------|
+| `background` | `#ffffff` | `#000000` |
+| `cardBackground` | `#f2f2f7` | `#1c1c1e` |
+| `text` | `#000000` | `#ffffff` |
+| `textSecondary` | `#6e6e73` | `#8e8e93` |
+| `textTertiary` | `#aeaeb2` | `#636366` |
+| `border` | `#d1d1d6` | `#38383a` |
+| `borderLight` | `#e5e5ea` | `#2c2c2e` |
+
+#### 使用示例
+
+```typescript
+// ✅ 正确：从主题中获取颜色
+const { colors } = useTheme();
+<View style={{ backgroundColor: colors.primary }} />
+<Text style={{ color: colors.text }} />
+
+// ✅ 正确：使用 AppStyles 中的颜色
+import { AppStyles } from '../../constants/AppStyles';
+<View style={{ backgroundColor: AppStyles.colors.primary }} />
+
+// ❌ 错误：硬编码颜色
+<View style={{ backgroundColor: '#4A7C59' }} />
+<Text style={{ color: 'red' }} />
+```
+
+#### 状态颜色映射（task.ts）
+
+状态语义色（进行中、已完成等）使用标准 UX 配色，定义在 `utils/task.ts`：
+
+| 状态 | 颜色 | 说明 |
+|------|------|------|
+| Pending | `#999` | 待处理 |
+| Assigned | `#4A7C59` | 已分配（银蕨绿） |
+| InProgress | `#60a5fa` | 进行中（蓝色） |
+| Completed | `#34d399` | 已完成（绿色） |
+| Cancelled/Failed | `#f87171` | 已取消/失败（红色） |
+| Paused | `#fbbf24` | 已暂停（黄色） |
+
 ### 8.9 移动端用户体验设计
 
 #### 触摸交互

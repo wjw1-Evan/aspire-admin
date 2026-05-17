@@ -386,6 +386,63 @@ const { styles } = useStyles();
 <div className={styles.card}>内容</div>
 ```
 
+### 7.11.1 配色方案（银蕨色主题）
+
+本项目采用**新西兰银蕨色**作为品牌主色调。Ant Design 的 `token.colorPrimary` 应在主题配置中统一设置为银蕨色，**禁止在页面中硬编码配色**。
+
+#### 品牌色定义
+
+| 颜色名称 | 色值 | 用途 |
+|---------|------|------|
+| 银蕨绿（主色） | `#4A7C59` | 主按钮、链接、强调色 |
+| 深银蕨绿 | `#3A6347` | 悬停状态、深色变体 |
+| 浅银蕨绿 | `#6BAF8D` | 浅色背景、选中状态 |
+
+#### 语义色
+
+| 颜色名称 | 色值 | 用途 |
+|---------|------|------|
+| 成功绿 | `#10b981` | 成功状态 |
+| 错误红 | `#ef4444` | 错误/危险状态 |
+| 警告黄 | `#f59e0b` | 警告状态 |
+
+#### 使用示例
+
+```tsx
+// ✅ 正确：使用 Ant Design Token
+import { Button } from 'antd';
+<Button type="primary">提交</Button>  // 自动使用主题主色
+
+// ✅ 正确：使用 antd-style 消费 Token
+const useStyles = createStyles(({ token }) => ({
+  customButton: {
+    backgroundColor: token.colorPrimary,
+  },
+}));
+
+// ❌ 错误：硬编码颜色
+<Button style={{ backgroundColor: '#4A7C59' }}>提交</Button>
+<div style={{ color: 'red' }}>错误</div>
+```
+
+#### 主题配置
+
+在 Ant Design 的 `ConfigProvider` 中统一配置主题色：
+
+```typescript
+import { ConfigProvider } from 'antd';
+
+<ConfigProvider
+  theme={{
+    token: {
+      colorPrimary: '#4A7C59',  // 银蕨绿
+    },
+  }}
+>
+  {children}
+</ConfigProvider>
+```
+
 ---
 
 ## 7.12 权限管理

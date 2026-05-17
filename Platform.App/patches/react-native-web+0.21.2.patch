@@ -1,0 +1,45 @@
+diff --git a/node_modules/react-native-web/dist/cjs/modules/createDOMProps/index.js b/node_modules/react-native-web/dist/cjs/modules/createDOMProps/index.js
+index d643013..4db86df 100644
+--- a/node_modules/react-native-web/dist/cjs/modules/createDOMProps/index.js
++++ b/node_modules/react-native-web/dist/cjs/modules/createDOMProps/index.js
+@@ -805,9 +805,6 @@ var createDOMProps = (elementType, props, options) => {
+   }
+ 
+   // Resolve styles
+-  if (pointerEvents != null) {
+-    (0, _warnOnce.warnOnce)('pointerEvents', "props.pointerEvents is deprecated. Use style.pointerEvents");
+-  }
+   var _StyleSheet = (0, _StyleSheet2.default)([style, pointerEvents && pointerEventsStyles[pointerEvents]], (0, _objectSpread2.default)({
+       writingDirection: 'ltr'
+     }, options)),
+diff --git a/node_modules/react-native-web/dist/modules/createDOMProps/index.js b/node_modules/react-native-web/dist/modules/createDOMProps/index.js
+index 18f5e8b..9d4e907 100644
+--- a/node_modules/react-native-web/dist/modules/createDOMProps/index.js
++++ b/node_modules/react-native-web/dist/modules/createDOMProps/index.js
+@@ -801,9 +801,6 @@ var createDOMProps = (elementType, props, options) => {
+   }
+ 
+   // Resolve styles
+-  if (pointerEvents != null) {
+-    warnOnce('pointerEvents', "props.pointerEvents is deprecated. Use style.pointerEvents");
+-  }
+   var _StyleSheet = StyleSheet([style, pointerEvents && pointerEventsStyles[pointerEvents]], _objectSpread({
+       writingDirection: 'ltr'
+     }, options)),
+diff --git a/node_modules/react-native-web/src/modules/createDOMProps/index.js b/node_modules/react-native-web/src/modules/createDOMProps/index.js
+index 4144dbc..993f4b6 100644
+--- a/node_modules/react-native-web/src/modules/createDOMProps/index.js
++++ b/node_modules/react-native-web/src/modules/createDOMProps/index.js
+@@ -873,12 +873,6 @@ const createDOMProps = (elementType, props, options) => {
+   }
+ 
+   // Resolve styles
+-  if (pointerEvents != null) {
+-    warnOnce(
+-      'pointerEvents',
+-      `props.pointerEvents is deprecated. Use style.pointerEvents`
+-    );
+-  }
+ 
+   const [className, inlineStyle] = StyleSheet(
+     [style, pointerEvents && pointerEventsStyles[pointerEvents]],

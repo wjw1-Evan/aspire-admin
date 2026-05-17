@@ -1,293 +1,140 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { StyleSheet, ScrollView, RefreshControl, ActivityIndicator, View as RNView, Text as RNText, TouchableOpacity } from 'react-native';
-import { Text, View } from '@/components/Themed';
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { AppStyles } from '../../constants/AppStyles';
 import { useTheme } from '../../utils/theme';
 import { authService } from '../../services/authService';
 import { taskService } from '../../services/taskService';
 import { projectService } from '../../services/projectService';
 import { sseService } from '../../services/sseService';
-import { User } from '../../types/auth';
 import { ProjectStatus } from '../../types/project';
-import { Link, useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MenuItemCard from '../../components/ui/MenuItemCard';
-import ErrorView from '../../components/ui/ErrorView';
 import { changeLanguage, getCurrentLanguage } from '../../utils/i18n';
 
+const quickActions = [
+  { icon: 'add-circle-outline' as const, key: 'create_task', link: '/task/create' },
+  { icon: 'folder-open-outline' as const, key: 'create_project', link: '/project/create' },
+  { icon: 'checkbox-outline' as const, key: 'my_todo', link: '/(tabs)/tasks' },
+  { icon: 'folder-outline' as const, key: 'active_projects', link: '/(tabs)/projects' },
+  { icon: 'list-outline' as const, key: 'all_tasks', link: '/(tabs)/tasks' },
+  { icon: 'briefcase-outline' as const, key: 'all_projects', link: '/(tabs)/projects' },
+  { icon: 'business-outline' as const, key: 'enterprise_service', link: '/enterprise-service', ns: 'enterprise_service' },
+  { icon: 'chatbubbles-outline' as const, key: 'xiaoke', link: '/xiaoke', ns: 'xiaoke' },
+];
+
 export default function HomeScreen() {
-  const { colors, isDark } = useTheme();
-  const { t, i18n } = useTranslation();
+  const { colors } = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const [currentLang, setCurrentLang] = useState<'zh' | 'en'>(getCurrentLanguage());
-  const styles = useMemo(() => StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    header: {
-      paddingHorizontal: AppStyles.spacing.lg,
-      paddingTop: insets.top + AppStyles.spacing.lg,
-      paddingBottom: AppStyles.spacing.lg,
-    },
-    headerTop: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    greeting: {
-      fontSize: AppStyles.fontSize.sm,
-      color: colors.textSecondary,
-      marginBottom: 4,
-    },
-    userName: {
-      fontSize: AppStyles.fontSize.xxxl,
-      fontWeight: 'bold',
-      color: colors.text,
-    },
-    headerRight: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    noticeButton: {
-      position: 'relative',
-      padding: 8,
-    },
-    noticeBadge: {
-      position: 'absolute',
-      top: 0,
-      right: 0,
-      minWidth: 18,
-      height: 18,
-      borderRadius: 9,
-      backgroundColor: colors.error,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: 4,
-    },
-    noticeBadgeText: {
-      color: colors.white,
-      fontSize: AppStyles.fontSize.xs,
-      fontWeight: '700',
-    },
-    contentSection: {
-      paddingHorizontal: AppStyles.spacing.lg,
-      paddingBottom: 100,
-    },
-  }), [colors, insets]);
-  
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadingTimedOut, setLoadingTimedOut] = useState(false);
-  const loadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+
+  const [user, setUser] = useState<any>(null);
   const [todoCount, setTodoCount] = useState(0);
   const [activeProjectCount, setActiveProjectCount] = useState(0);
-  const [focusCount, setFocusCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [lang, setLang] = useState<'zh' | 'en'>(getCurrentLanguage());
 
-  const toggleLanguage = async () => {
-    const newLang = currentLang === 'zh' ? 'en' : 'zh';
-    await changeLanguage(newLang);
-    setCurrentLang(newLang);
-  };
+  const fetchUser = useCallback(async () => {
+    const res = await authService.getCurrentUser();
+    if (res.success && res.data) setUser(res.data);
+  }, []);
 
   const fetchTodoCount = useCallback(async () => {
     try {
       const res = await taskService.getMyTodoTasks();
-      if (res.success && res.data) {
-        setTodoCount(res.data.length);
-      }
+      if (res.success && res.data) setTodoCount(res.data.length);
     } catch {}
   }, []);
 
   const fetchActiveProjectCount = useCallback(async () => {
     try {
-      const res = await projectService.getProjectList({
-        status: ProjectStatus.InProgress,
-        page: 1,
-        pageSize: 1,
-      });
-      if (res.success && res.data) {
-        setActiveProjectCount(res.data.rowCount || 0);
-      }
+      const res = await projectService.getProjectList({ status: ProjectStatus.InProgress, page: 1, pageSize: 1 });
+      if (res.success && res.data) setActiveProjectCount(res.data.rowCount || 0);
     } catch {}
   }, []);
 
-  const loadData = async () => {
-    try {
-      const userResponse = await authService.getCurrentUser();
-      if (userResponse.success && userResponse.data) {
-        setUser(userResponse.data);
-      }
-    } catch (error) {
-      console.error('Error loading data:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+  const load = useCallback(async () => {
+    await fetchUser();
+    setLoading(false);
+  }, [fetchUser]);
 
-  useEffect(() => {
-    loadData();
+  const refresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([fetchUser(), fetchTodoCount(), fetchActiveProjectCount()]);
+    setRefreshing(false);
+  }, [fetchUser, fetchTodoCount, fetchActiveProjectCount]);
+
+  useEffect(() => { load(); }, [load]);
+
+  useFocusEffect(useCallback(() => {
     fetchTodoCount();
     fetchActiveProjectCount();
-    sseService.connect({
-      onStats: (stats) => {
-        setUnreadCount(stats.UnreadTotal ?? stats.Total ?? 0);
-      },
-    });
-    return () => {
-      sseService.disconnect();
-      if (loadingTimerRef.current) {
-        clearTimeout(loadingTimerRef.current);
-      }
-    };
+  }, [fetchTodoCount, fetchActiveProjectCount]));
+
+  useEffect(() => {
+    sseService.connect({ onStats: (stats) => setUnreadCount(stats.UnreadTotal ?? stats.Total ?? 0) });
+    return () => sseService.disconnect();
   }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      setFocusCount(c => c + 1);
-      fetchTodoCount();
-      fetchActiveProjectCount();
-    }, [fetchTodoCount, fetchActiveProjectCount])
-  );
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadData();
-    fetchTodoCount();
-    fetchActiveProjectCount();
-  };
-
-  useEffect(() => {
-    if (loading) {
-      loadingTimerRef.current = setTimeout(() => {
-        setLoadingTimedOut(true);
-      }, 15000);
-    } else {
-      if (loadingTimerRef.current) {
-        clearTimeout(loadingTimerRef.current);
-        loadingTimerRef.current = null;
-      }
-    }
-    return () => {
-      if (loadingTimerRef.current) {
-        clearTimeout(loadingTimerRef.current);
-      }
-    };
-  }, [loading]);
-
   if (loading) {
-    if (loadingTimedOut) {
-      return (
-        <ErrorView
-          message="加载超时，请检查网络连接后重试"
-          onRetry={() => {
-            setLoadingTimedOut(false);
-            setLoading(true);
-            loadData();
-          }}
-        />
-      );
-    }
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
+  const userName = user?.realName || user?.username || t('home.user');
+
   return (
-    <View style={styles.container} key={`home-${focusCount}`}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="always"
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
       >
-        <View style={styles.header}>
-          <RNView style={styles.headerTop}>
-            <RNView>
-              <RNText style={styles.greeting}>{t('home.greeting')}</RNText>
-              <RNText style={styles.userName}>
-                {user?.realName || user?.username || t('home.user')}
-              </RNText>
-            </RNView>
-            <RNView style={styles.headerRight}>
-              <TouchableOpacity style={styles.noticeButton} onPress={toggleLanguage}>
-                <RNText style={{ fontSize: 14, fontWeight: '600', color: colors.primary }}>
-                  {currentLang === 'zh' ? 'EN' : '中'}
-                </RNText>
+        <View style={{ paddingHorizontal: AppStyles.spacing.lg, paddingTop: insets.top + AppStyles.spacing.lg, paddingBottom: AppStyles.spacing.lg }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View>
+              <Text style={{ fontSize: AppStyles.fontSize.sm, color: colors.textSecondary, marginBottom: 4 }}>{t('home.greeting')}</Text>
+              <Text style={{ fontSize: AppStyles.fontSize.xxxl, fontWeight: 'bold', color: colors.text }}>{userName}</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <TouchableOpacity style={{ padding: 8 }} onPress={() => {
+                const next = lang === 'zh' ? 'en' : 'zh';
+                changeLanguage(next);
+                setLang(next);
+              }}>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: colors.primary }}>{lang === 'zh' ? 'EN' : '中'}</Text>
               </TouchableOpacity>
-              <Link href="/notifications" asChild>
-                <TouchableOpacity style={styles.noticeButton}>
-                  <Ionicons name="notifications-outline" size={24} color={colors.text} />
-                  {unreadCount > 0 && (
-                    <RNView style={styles.noticeBadge}>
-                      <RNText style={styles.noticeBadgeText}>{unreadCount > 99 ? '99+' : unreadCount}</RNText>
-                    </RNView>
-                  )}
-                </TouchableOpacity>
-              </Link>
-            </RNView>
-          </RNView>
+              <TouchableOpacity style={{ padding: 8 }} onPress={() => router.push('/notifications')}>
+                <Ionicons name="notifications-outline" size={24} color={colors.text} />
+                {unreadCount > 0 && (
+                  <View style={{ position: 'absolute', top: 0, right: 0, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: colors.error, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 }}>
+                    <Text style={{ color: '#fff', fontSize: AppStyles.fontSize.xs, fontWeight: '700' }}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
 
-        <View style={styles.contentSection}>
-          <MenuItemCard
-            icon="add-circle-outline"
-            title={t('home.create_task')}
-            description={t('home.create_task_desc')}
-            onPress={() => router.push('/task/create')}
-          />
-          <MenuItemCard
-            icon="folder-open-outline"
-            title={t('home.create_project')}
-            description={t('home.create_project_desc')}
-            onPress={() => router.push('/project/create')}
-          />
-          <MenuItemCard
-            icon="checkbox-outline"
-            title={t('home.my_todo')}
-            description={t('home.my_todo_desc')}
-            badge={todoCount}
-            onPress={() => router.push('/(tabs)/tasks')}
-          />
-          <MenuItemCard
-            icon="folder-outline"
-            title={t('home.active_projects')}
-            description={t('home.active_projects_desc')}
-            badge={activeProjectCount}
-            onPress={() => router.push('/(tabs)/projects')}
-          />
-          <MenuItemCard
-            icon="list-outline"
-            title={t('home.all_tasks')}
-            description={t('home.all_tasks_desc')}
-            onPress={() => router.push('/(tabs)/tasks')}
-          />
-          <MenuItemCard
-            icon="briefcase-outline"
-            title={t('home.all_projects')}
-            description={t('home.all_projects_desc')}
-            onPress={() => router.push('/(tabs)/projects')}
-          />
-          <MenuItemCard
-            icon="business-outline"
-            title={t('enterprise_service.title')}
-            description={t('enterprise_service.list_title')}
-            onPress={() => router.push('/enterprise-service')}
-          />
-          <MenuItemCard
-            icon="chatbubbles-outline"
-            title={t('xiaoke.title')}
-            description={t('xiaoke.subtitle')}
-            onPress={() => router.push('/xiaoke')}
-          />
+        <View style={{ paddingHorizontal: AppStyles.spacing.lg, paddingBottom: 100 }}>
+          {quickActions.map(({ icon, key, link, ns }) => (
+            <MenuItemCard
+              key={key}
+              icon={icon}
+              title={t(`${ns || 'home'}.${key === 'enterprise_service' || key === 'xiaoke' ? 'title' : key}`)}
+              description={t(`${ns || 'home'}.${key === 'enterprise_service' ? 'list_title' : key === 'xiaoke' ? 'subtitle' : key + '_desc'}`)}
+              badge={key === 'my_todo' ? todoCount : key === 'active_projects' ? activeProjectCount : undefined}
+              onPress={() => router.push(link as any)}
+            />
+          ))}
         </View>
       </ScrollView>
     </View>

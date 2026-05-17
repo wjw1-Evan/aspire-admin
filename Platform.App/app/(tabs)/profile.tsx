@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
     StyleSheet,
     ScrollView,
@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 import { AppStyles, createCommonStyles } from '../../constants/AppStyles';
 import { useTheme, ThemeMode } from '../../contexts/ThemeContext';
@@ -299,9 +300,11 @@ export default function ProfileScreen() {
         }
     };
 
-    useEffect(() => {
-        loadData();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            loadData();
+        }, [])
+    );
 
     const handleSwitchCompany = async (companyId: string) => {
         if (companyId === currentCompany?.id) {

@@ -522,6 +522,7 @@ pageTitleRender: false,
             padding: '4px 0',
             lineHeight: 1,
             maxWidth: isMobile ? '160px' : 'none',
+            width: 'fit-content',
             border: 'none',
             background: 'none',
           }}
@@ -567,6 +568,7 @@ pageTitleRender: false,
       );
     },
     menuHeaderRender: false,
+    onMenuHeaderClick: undefined,
     // 🔧 自定义子文件夹渲染
     subMenuItemRender: (item: any, dom: React.ReactNode) => {
       // 如果没有 icon 属性但有 rawIcon，说明是需要手动显示的二级文件夹

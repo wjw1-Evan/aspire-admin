@@ -495,12 +495,13 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
     ],
     links: [],
 pageTitleRender: false,
-     pageContainerProps: {
-       breadcrumbRender: false,
-       header: {
-         title: undefined,
-       },
-     },
+      pageContainerProps: {
+        breadcrumbRender: false,
+        headerBackButtonDisplayMode: 'minimal',
+        header: {
+          title: undefined,
+        },
+      },
     headerTitleRender: (logo: React.ReactNode, _: unknown, props: { collapsed?: boolean }) => {
       const systemName =
         initialState?.currentUser?.currentCompanyDisplayName ||

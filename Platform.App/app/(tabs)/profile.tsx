@@ -171,8 +171,8 @@ export default function ProfileScreen() {
           }} />
 
           <TouchableOpacity style={[st.logoutBtn, { backgroundColor: colors.primary }]} onPress={() => setLogoutVisible(true)}>
-            <Ionicons name="log-out-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
-            <Text style={st.logoutText}>{t('profile.logout')}</Text>
+            <Ionicons name="log-out-outline" size={20} color={colors.white} style={{ marginRight: 8 }} />
+            <Text style={[st.logoutText, { color: colors.white }]}>{t('profile.logout')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

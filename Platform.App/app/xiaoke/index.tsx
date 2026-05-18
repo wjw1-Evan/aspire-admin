@@ -683,7 +683,7 @@ export default function XiaokeChatScreen() {
                         onPress={() => handleRetry(msg)}
                       >
                         <Ionicons name="refresh" size={14} color={colors.error} />
-                        <Text style={styles.retryText}>重试</Text>
+                        <Text style={styles.retryText}>{t('xiaoke.retry')}</Text>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -712,7 +712,7 @@ export default function XiaokeChatScreen() {
               style={styles.textInput}
               value={inputText}
               onChangeText={setInputText}
-              placeholder="输入消息..."
+              placeholder={t('xiaoke.input_placeholder')}
               placeholderTextColor={colors.textTertiary}
               multiline
               editable={!isResponding}

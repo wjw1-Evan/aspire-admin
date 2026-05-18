@@ -187,7 +187,7 @@ export default function ProjectDetailScreen() {
     try {
       await projectService.deleteProject(id);
       router.back();
-    } catch {}
+    } catch (e) { if (__DEV__) console.warn("Operation failed:", e); }
   };
 
   if (loading) return <LoadingView />;

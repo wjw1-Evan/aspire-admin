@@ -10,6 +10,7 @@ import { authService } from '../../services/authService';
 import { taskService } from '../../services/taskService';
 import { projectService } from '../../services/projectService';
 import { ProjectStatus } from '../../types/project';
+import { User } from '../../types/auth';
 import MenuItemCard from '../../components/ui/MenuItemCard';
 import { changeLanguage, getCurrentLanguage } from '../../utils/i18n';
 import { useNotification } from '../../contexts/NotificationContext';
@@ -20,7 +21,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [todoCount, setTodoCount] = useState(0);
   const [activeCount, setActiveCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -29,22 +30,17 @@ export default function HomeScreen() {
   const { unreadCount } = useNotification();
 
   const fetchData = () => {
-    authService.getCurrentUser().then(r => { if (r.success && r.data) setUser(r.data); }).finally(() => setLoading(false));
-    taskService.getMyTodoTasks().then(r => { if (r.success && r.data) setTodoCount(r.data.length); }).catch(() => {});
+    authService.getCurrentUser().then(r => { if (r.success && r.data) setUser(r.data); }).catch(() => { if (__DEV__) console.warn('Failed to fetch user'); }).finally(() => setLoading(false));
+    taskService.getMyTodoTasks().then(r => { if (r.success && r.data) setTodoCount(r.data.length); }).catch(() => { if (__DEV__) console.warn('Failed to fetch todo tasks'); });
     projectService.getProjectList({ status: ProjectStatus.InProgress, page: 1, pageSize: 1 }).then(r => {
       if (r.success && r.data) setActiveCount(r.data.rowCount || 0);
-    }).catch(() => {});
+    }).catch(() => { if (__DEV__) console.warn('Failed to fetch projects'); });
   };
 
   const onRefresh = () => {
     setRefreshing(true);
-    Promise.all([
-      authService.getCurrentUser().then(r => { if (r.success && r.data) setUser(r.data); }),
-      taskService.getMyTodoTasks().then(r => { if (r.success && r.data) setTodoCount(r.data.length); }).catch(() => {}),
-      projectService.getProjectList({ status: ProjectStatus.InProgress, page: 1, pageSize: 1 }).then(r => {
-        if (r.success && r.data) setActiveCount(r.data.rowCount || 0);
-      }).catch(() => {}),
-    ]).finally(() => setRefreshing(false));
+    fetchData();
+    setTimeout(() => setRefreshing(false), 500);
   };
 
   useEffect(() => { fetchData(); }, []);
@@ -80,8 +76,8 @@ export default function HomeScreen() {
                 <View>
                   <Ionicons name="notifications-outline" size={24} color={colors.text} />
                   {unreadCount > 0 && (
-                    <View style={s.badge}>
-                      <Text style={s.badgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+                    <View style={[s.badge, { backgroundColor: colors.error }]}>
+                      <Text style={[s.badgeText, { color: colors.white }]}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
                     </View>
                   )}
                 </View>

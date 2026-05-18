@@ -156,7 +156,9 @@ export default function TasksListScreen() {
         setInProgressCount(res.data.inProgressTasks);
         setCompletedCount(res.data.completedTasks);
       }
-    } catch {}
+    } catch (e) {
+      if (__DEV__) console.warn('Failed to fetch task statistics:', e);
+    }
   }, []);
 
   const fetchProjects = useCallback(async () => {
@@ -165,7 +167,9 @@ export default function TasksListScreen() {
       if (res.success && res.data) {
         setProjects(res.data.queryable || []);
       }
-    } catch {}
+    } catch (e) {
+      if (__DEV__) console.warn('Failed to fetch projects:', e);
+    }
   }, []);
 
   useEffect(() => {

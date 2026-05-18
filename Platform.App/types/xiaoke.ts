@@ -1,13 +1,15 @@
+export type ChatMessageType = 'Text' | 'Image' | 'File' | string;
+
 export interface ChatMessage {
   id: string;
   sessionId: string;
   senderId: string;
   senderName?: string;
   recipientId?: string;
-  type: string;
+  type: ChatMessageType;
   content?: string;
   attachment?: ChatAttachmentInfo;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   isRecalled: boolean;
   clientMessageId?: string;
   createdAt: string;

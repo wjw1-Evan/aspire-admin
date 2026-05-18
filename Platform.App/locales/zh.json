@@ -157,7 +157,9 @@
     "delete_confirm_btn": "删除",
     "load_failed": "加载任务失败",
     "not_found": "任务不存在",
-    "create_failed": "创建失败"
+    "create_failed": "创建失败",
+    "default_task_type": "开发",
+    "datetime_placeholder": "YYYY-MM-DD HH:mm"
   },
   "projects": {
     "title": "项目",
@@ -361,6 +363,7 @@
     "delete_confirm_message": "确定要删除此服务申请吗？此操作不可撤销。",
     "delete_confirm_btn": "删除",
     "load_failed": "加载服务申请失败",
+    "delete_failed": "删除失败",
     "create_success": "创建成功",
     "update_success": "更新成功",
     "delete_success": "删除成功",
@@ -384,6 +387,12 @@
     "retry": "重试",
     "send_failed": "发送失败",
     "assistant_name": "小科"
+  },
+  "fab": {
+    "create_task": "新建任务",
+    "create_project": "新建项目",
+    "my_tasks": "我的任务",
+    "open_menu": "打开快捷操作"
   },
   "not_found": {
     "title": "Oops!",

@@ -22,7 +22,7 @@ export default function CreateTaskScreen() {
   }, []);
 
   const handleSave = async (data: CreateTaskRequest) => {
-    const res = await taskService.createTask(data as any);
+    const res = await taskService.createTask(data);
     if (res.success) {
       router.back();
     } else {
@@ -33,7 +33,7 @@ export default function CreateTaskScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <TaskForm projects={projects} onSave={handleSave as any} onCancel={() => router.back()} />
+      <TaskForm projects={projects} onSave={handleSave} onCancel={() => router.back()} />
     </>
   );
 }

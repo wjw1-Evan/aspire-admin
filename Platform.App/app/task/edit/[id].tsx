@@ -31,7 +31,7 @@ export default function EditTaskScreen() {
   }, [id]);
 
   const handleSave = async (data: UpdateTaskRequest) => {
-    await taskService.updateTask(data as any);
+    await taskService.updateTask(data);
     router.back();
   };
 
@@ -44,7 +44,7 @@ export default function EditTaskScreen() {
       <TaskForm
         initialValues={task}
         projects={projects}
-        onSave={handleSave as any}
+        onSave={handleSave}
         onCancel={() => router.back()}
       />
     </>

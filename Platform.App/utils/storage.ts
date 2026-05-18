@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import { STORAGE_KEYS } from './constants';
 
 const sanitizeKey = (key: string) => key.replace(/[^a-zA-Z0-9._-]/g, '_');
 
@@ -74,11 +75,11 @@ export const storage = {
     async clear(): Promise<void> {
         try {
             const keys = [
-                '@aspire_access_token',
-                '@aspire_refresh_token',
-                '@aspire_user_info',
-                '@aspire_current_company_id',
-                '@aspire_token_expires_at',
+                STORAGE_KEYS.ACCESS_TOKEN,
+                STORAGE_KEYS.REFRESH_TOKEN,
+                STORAGE_KEYS.USER_INFO,
+                STORAGE_KEYS.CURRENT_COMPANY_ID,
+                STORAGE_KEYS.TOKEN_EXPIRES,
                 'app_language',
                 'theme_mode',
             ];

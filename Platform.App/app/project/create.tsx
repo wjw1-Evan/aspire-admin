@@ -10,7 +10,7 @@ export default function CreateProjectScreen() {
   const router = useRouter();
 
   const handleSave = async (data: CreateProjectRequest) => {
-    const res = await projectService.createProject(data as any);
+    const res = await projectService.createProject(data);
     if (res.success) {
       router.back();
     } else {
@@ -21,7 +21,7 @@ export default function CreateProjectScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <ProjectForm onSave={handleSave as any} onCancel={() => router.back()} />
+      <ProjectForm onSave={handleSave} onCancel={() => router.back()} />
     </>
   );
 }

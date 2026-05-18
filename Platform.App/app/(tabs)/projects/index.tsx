@@ -152,7 +152,9 @@ export default function ProjectsListScreen() {
         setInProgressCount(res.data.inProgressProjects);
         setCompletedCount(res.data.completedProjects);
       }
-    } catch {}
+    } catch (e) {
+      if (__DEV__) console.warn('Failed to fetch project statistics:', e);
+    }
   }, []);
 
   useEffect(() => {

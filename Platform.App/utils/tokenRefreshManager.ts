@@ -74,7 +74,8 @@ class TokenRefreshManager {
       }
 
       return { success: false };
-    } catch {
+    } catch (e) {
+      if (__DEV__) console.error('Token refresh failed:', e);
       return { success: false };
     }
   }

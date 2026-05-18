@@ -17,6 +17,7 @@ import { authService } from '../../services/authService';
 import { RegisterRequest } from '../../types/auth';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useTranslation } from 'react-i18next';
+import PasswordEncryption from '../../utils/encryption';
 
 export default function RegisterScreen() {
     const { colors } = useTheme();
@@ -175,9 +176,11 @@ export default function RegisterScreen() {
         setLoading(true);
 
         try {
+            const encryptedPassword = await PasswordEncryption.encrypt(password);
+
             const request: RegisterRequest = {
                 username: username.trim(),
-                password: password,
+                password: encryptedPassword,
                 email: email.trim(),
                 phone: phone.trim() || undefined,
                 realName: realName.trim() || undefined,

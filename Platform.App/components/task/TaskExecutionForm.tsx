@@ -319,7 +319,7 @@ export default function TaskExecutionForm({
                   onPress={() => setExecutionResult(result.value)}
                   disabled={saving}
                 >
-                  <Ionicons name={result.icon as any} size={24} color={result.color} />
+                  <Ionicons name={result.icon as keyof typeof Ionicons.glyphMap} size={24} color={result.color} />
                   <Text style={[styles.resultLabel, { color: result.color }]}>{result.label}</Text>
                 </TouchableOpacity>
               ))}

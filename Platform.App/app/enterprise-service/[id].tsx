@@ -287,7 +287,10 @@ export default function EnterpriseServiceDetailScreen() {
       if (res.success) {
         router.back();
       }
-    } catch {}
+    } catch (e) {
+      if (__DEV__) console.warn('Delete request failed:', e);
+      Alert.alert(t('common.error'), t('enterprise_service.delete_failed'));
+    }
   };
 
   const handleUpdateStatus = async () => {
@@ -303,7 +306,9 @@ export default function EnterpriseServiceDetailScreen() {
         setResolution('');
         await loadData();
       }
-    } catch {} finally {
+    } catch (e) {
+      if (__DEV__) console.warn('Update status failed:', e);
+    } finally {
       setSubmitting(false);
     }
   };
@@ -322,7 +327,9 @@ export default function EnterpriseServiceDetailScreen() {
         setFeedback('');
         await loadData();
       }
-    } catch {} finally {
+    } catch (e) {
+      if (__DEV__) console.warn('Rate request failed:', e);
+    } finally {
       setSubmitting(false);
     }
   };

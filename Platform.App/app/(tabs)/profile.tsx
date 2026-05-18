@@ -11,6 +11,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MenuItemCard from '../../components/ui/MenuItemCard';
 import { useTranslation } from 'react-i18next';
 import { changeLanguage, getCurrentLanguage } from '../../utils/i18n';
+import { User } from '../../types/auth';
+
+interface UserCompany {
+  id: string;
+  name: string;
+  code: string;
+}
+
+interface ProfileEditForm {
+  realName: string;
+  email: string;
+  phone: string;
+}
 
 const themeOrder: ThemeMode[] = ['light', 'dark', 'auto'];
 
@@ -19,13 +32,13 @@ export default function ProfileScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
-  const [user, setUser] = useState<any>(null);
-  const [companies, setCompanies] = useState<any[]>([]);
-  const [currentCompany, setCurrentCompany] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [companies, setCompanies] = useState<UserCompany[]>([]);
+  const [currentCompany, setCurrentCompany] = useState<UserCompany | null>(null);
   const [loading, setLoading] = useState(true);
   const [switching, setSwitching] = useState(false);
   const [editVisible, setEditVisible] = useState(false);
-  const [editForm, setEditForm] = useState<any>({});
+  const [editForm, setEditForm] = useState<ProfileEditForm>({ realName: '', email: '', phone: '' });
   const [saving, setSaving] = useState(false);
   const [logoutVisible, setLogoutVisible] = useState(false);
   const [lang, setLang] = useState<'zh' | 'en'>(getCurrentLanguage());
@@ -36,14 +49,14 @@ export default function ProfileScreen() {
       authService.getCurrentUser(),
       companyService.getCurrentCompany(),
       companyService.getMyCompanies(),
-    ]).then(([userRes, companyRes, companiesRes]: any[]) => {
+    ]).then(([userRes, companyRes, companiesRes]) => {
       if (userRes.success && userRes.data) {
         setUser(userRes.data);
         setEditForm({ realName: userRes.data.realName || userRes.data.name || '', email: userRes.data.email || '', phone: userRes.data.phone || '' });
       }
       if (companyRes.success && companyRes.data) { setCurrentCompany(companyRes.data); }
       if (companiesRes.success && companiesRes.data) { setCompanies(companiesRes.data); }
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch((e) => { if (__DEV__) console.warn('Failed to load profile data:', e); }).finally(() => setLoading(false));
   };
 
   useEffect(() => { loadData(); }, []);
@@ -51,11 +64,12 @@ export default function ProfileScreen() {
   const handleSwitchCompany = (id: string) => {
     if (id === currentCompany?.id || switching) { return; }
     setSwitching(true);
-    companyService.switchCompany(id).then((res: any) => {
+    companyService.switchCompany(id).then((res) => {
       if (res?.success) { authService.getCurrentUser(); loadData(); }
       else { Toast.show({ type: 'error', text1: t('profile.switch_company_failed'), text2: res?.message || t('common.retry'), position: 'top', visibilityTime: 3000 }); }
-    }).catch((err: any) => {
-      Toast.show({ type: 'error', text1: t('profile.switch_company_failed'), text2: err?.message || t('profile.switch_company_error'), position: 'top', visibilityTime: 3000 });
+    }).catch((err: unknown) => {
+      const msg = err instanceof Error ? err.message : t('profile.switch_company_error');
+      Toast.show({ type: 'error', text1: t('profile.switch_company_failed'), text2: msg, position: 'top', visibilityTime: 3000 });
     }).finally(() => setSwitching(false));
   };
 
@@ -65,11 +79,12 @@ export default function ProfileScreen() {
       return;
     }
     setSaving(true);
-    userService.updateProfile(editForm).then((res: any) => {
+    userService.updateProfile(editForm).then((res) => {
       if (res.success) { setEditVisible(false); loadData(); Toast.show({ type: 'success', text1: t('profile.update_success'), text2: t('profile.update_success_message'), position: 'top', visibilityTime: 2000 }); }
       else { Toast.show({ type: 'error', text1: t('profile.update_failed'), text2: res.message || t('common.retry'), position: 'top', visibilityTime: 3000 }); }
-    }).catch((err: any) => {
-      Toast.show({ type: 'error', text1: t('profile.update_failed'), text2: err.message || t('profile.update_failed'), position: 'top', visibilityTime: 3000 });
+    }).catch((err: unknown) => {
+      const msg = err instanceof Error ? err.message : t('profile.update_failed');
+      Toast.show({ type: 'error', text1: t('profile.update_failed'), text2: msg, position: 'top', visibilityTime: 3000 });
     }).finally(() => setSaving(false));
   };
 
@@ -126,15 +141,15 @@ export default function ProfileScreen() {
           {companies.length > 1 && (
             <>
               <Text style={[st.sectionTitle, { color: colors.textSecondary, marginTop: AppStyles.spacing.lg }]}>{t('profile.switch_company')}</Text>
-              {companies.filter((c: any) => c.companyId !== currentCompany?.id).map((c: any, i: number) => (
-                <TouchableOpacity key={`c-${i}`} style={cardBg} onPress={() => handleSwitchCompany(c.companyId)} disabled={switching}>
+              {companies.filter((c) => c.id !== currentCompany?.id).map((c) => (
+                <TouchableOpacity key={c.id} style={cardBg} onPress={() => handleSwitchCompany(c.id)} disabled={switching}>
                   <View style={st.flexRow}>
                     <View style={[st.smallIcon, { borderColor: colors.border, backgroundColor: colors.cardBackground }]}>
-                      <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.textSecondary }}>{c.companyName?.charAt(0) || '?'}</Text>
+                      <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.textSecondary }}>{c.name?.charAt(0) || '?'}</Text>
                     </View>
                     <View>
-                      <Text style={[st.companyName, { color: colors.text }]}>{c.companyName}</Text>
-                      <Text style={[st.companyCode, { color: colors.textSecondary }]}>{c.companyCode}</Text>
+                      <Text style={[st.companyName, { color: colors.text }]}>{c.name}</Text>
+                      <Text style={[st.companyCode, { color: colors.textSecondary }]}>{c.code}</Text>
                     </View>
                   </View>
                 </TouchableOpacity>
@@ -171,12 +186,12 @@ export default function ProfileScreen() {
               <TouchableOpacity onPress={() => setEditVisible(false)}><Ionicons name="close" size={24} color={colors.textSecondary} /></TouchableOpacity>
             </View>
             <ScrollView>
-              {['realName', 'email', 'phone'].map((field) => (
+              {(['realName', 'email', 'phone'] as const).map((field) => (
                 <View key={field} style={st.formGroup}>
                   <Text style={[st.label, { color: colors.textSecondary }]}>{t(`profile.${field}`)}</Text>
                   <TextInput
                     style={[st.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
-                    value={(editForm as any)[field]}
+                    value={editForm[field]}
                     onChangeText={(v: string) => setEditForm({ ...editForm, [field]: v })}
                     placeholder={t(`profile.${field}_placeholder`)}
                     placeholderTextColor={colors.textTertiary}
@@ -191,7 +206,7 @@ export default function ProfileScreen() {
                 <Text style={{ fontSize: 16, fontWeight: '600', color: colors.textSecondary }}>{t('profile.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[btnBase, { backgroundColor: colors.primary }, saving && { opacity: 0.7 }]} onPress={handleUpdateProfile} disabled={saving}>
-                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>{t('profile.save')}</Text>}
+                {saving ? <ActivityIndicator size="small" color={colors.white} /> : <Text style={{ fontSize: 16, fontWeight: '600', color: colors.white }}>{t('profile.save')}</Text>}
               </TouchableOpacity>
             </View>
           </View>
@@ -210,7 +225,7 @@ export default function ProfileScreen() {
                 <Text style={{ fontSize: 16, fontWeight: '600', color: colors.textSecondary }}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[btnBase, { backgroundColor: colors.primary }]} onPress={() => { setLogoutVisible(false); authService.logout(); }}>
-                <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>{t('common.confirm')}</Text>
+                <Text style={{ fontSize: 16, fontWeight: '600', color: colors.white }}>{t('common.confirm')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -241,7 +256,7 @@ const st = StyleSheet.create({
   emptyText: { fontSize: AppStyles.fontSize.sm },
   smallIcon: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   logoutBtn: { borderRadius: AppStyles.borderRadius.lg, padding: AppStyles.spacing.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: AppStyles.spacing.lg },
-  logoutText: { color: '#fff', fontSize: AppStyles.fontSize.md, fontWeight: '600' },
+  logoutText: { fontSize: AppStyles.fontSize.md, fontWeight: '600' },
   modalOverlay: { flex: 1, justifyContent: 'flex-end' },
   modalContent: { borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 24, maxHeight: '80%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },

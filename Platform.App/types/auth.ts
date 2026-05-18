@@ -47,6 +47,14 @@ export interface User {
     menuIds?: string[];
 }
 
+export interface MenuItem {
+    id: string;
+    name: string;
+    path?: string;
+    icon?: string;
+    children?: MenuItem[];
+}
+
 export interface CurrentUserResponse {
     user: User;
     company?: {
@@ -55,7 +63,7 @@ export interface CurrentUserResponse {
         code: string;
     };
     permissions?: string[];
-    menus?: any[];
+    menus?: MenuItem[];
 }
 
 export interface RefreshTokenRequest {

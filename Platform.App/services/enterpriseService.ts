@@ -10,6 +10,22 @@ import {
   ParkTenant,
 } from '../types/enterprise-service';
 
+export interface ServiceRequestListParams {
+  page?: number;
+  pageSize?: number;
+  keyword?: string;
+  status?: string;
+  priority?: string;
+  categoryId?: string;
+  tenantId?: string;
+}
+
+export interface TenantListParams {
+  page?: number;
+  pageSize?: number;
+  keyword?: string;
+}
+
 export const enterpriseService = {
   async getStatistics(): Promise<ApiResponse<ServiceStatisticsResponse>> {
     return await apiClient.get<any, ApiResponse<ServiceStatisticsResponse>>(
@@ -17,7 +33,7 @@ export const enterpriseService = {
     );
   },
 
-  async getRequestList(params: any): Promise<ApiResponse<PagedResult<ServiceRequestDto>>> {
+  async getRequestList(params: ServiceRequestListParams): Promise<ApiResponse<PagedResult<ServiceRequestDto>>> {
     return await apiClient.get<any, ApiResponse<PagedResult<ServiceRequestDto>>>(
       '/api/park/services/requests/list',
       { params },
@@ -79,7 +95,7 @@ export const enterpriseService = {
     );
   },
 
-  async getTenantList(params?: any): Promise<ApiResponse<PagedResult<ParkTenant>>> {
+  async getTenantList(params?: TenantListParams): Promise<ApiResponse<PagedResult<ParkTenant>>> {
     return await apiClient.get<any, ApiResponse<PagedResult<ParkTenant>>>(
       '/api/park/tenants/list',
       { params },

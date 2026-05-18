@@ -187,8 +187,6 @@ export default function LoginScreen() {
 
             const response = await authService.login(request);
 
-            console.log('Login response:', response);
-
             if (response.success) {
                 await authService.getCurrentUser();
 

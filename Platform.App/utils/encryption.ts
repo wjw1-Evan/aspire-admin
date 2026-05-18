@@ -35,31 +35,24 @@ class PasswordEncryption {
     static async encrypt(password: string): Promise<string> {
         if (!password) return '';
 
-        try {
-            const pubKey = await this.getValidPublicKey();
+        const pubKey = await this.getValidPublicKey();
 
-            if (!pubKey) {
-                return password;
-            }
-
-            let hexKey = pubKey;
-
-            let encrypted = sm2.doEncrypt(password, hexKey, 1);
-
-            if (!encrypted) {
-                console.error('SM2 encryption failed');
-                return password;
-            }
-
-            if (!encrypted.startsWith('04')) {
-                encrypted = '04' + encrypted;
-            }
-
-            return encrypted;
-        } catch (err) {
-            console.error('Encryption process error:', err);
-            return password;
+        if (!pubKey) {
+            throw new Error('无法获取加密公钥，请检查网络连接');
         }
+
+        let hexKey = pubKey;
+        let encrypted = sm2.doEncrypt(password, hexKey, 1);
+
+        if (!encrypted) {
+            throw new Error('密码加密失败，请稍后重试');
+        }
+
+        if (!encrypted.startsWith('04')) {
+            encrypted = '04' + encrypted;
+        }
+
+        return encrypted;
     }
 }
 

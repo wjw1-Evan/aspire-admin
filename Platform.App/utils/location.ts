@@ -134,7 +134,7 @@ export async function getCurrentPosition(
  * 检查是否支持位置服务
  */
 export function isLocationSupported(): boolean {
-  return Location.hasServicesEnabledAsync !== undefined;
+  return typeof Location.hasServicesEnabledAsync === 'function';
 }
 
 /**

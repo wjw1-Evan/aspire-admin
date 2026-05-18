@@ -5,7 +5,8 @@ export function getDevServerOrigin(): string {
   if (hostUri) {
     return `http://${hostUri}`;
   }
-  return 'http://localhost:18000';
+  if (__DEV__) {
+    return 'http://localhost:18000';
+  }
+  throw new Error('Unable to determine API origin. Set EXPO_PUBLIC_API_BASE_URL in production.');
 }
-
-export const APIGATEWAY_URL = 'http://localhost:15000';

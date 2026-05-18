@@ -1,20 +1,24 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { Animated, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 const RADIUS = 140;
 
 const ACTIONS = [
-  { name: '报修', icon: 'hammer-outline' as const, color: '#FF6B6B', angle: -45 },
-  { name: '缴费', icon: 'card-outline' as const, color: '#4ECDC4', angle: 0 },
-  { name: '修改信息', icon: 'create-outline' as const, color: '#45B7D1', angle: 45 },
+  { i18nKey: 'fab.create_task', icon: 'add-circle-outline' as const, route: '/task/create', colorKey: 'primary' as const, angle: -45 },
+  { i18nKey: 'fab.create_project', icon: 'folder-open-outline' as const, route: '/project/create', colorKey: 'success' as const, angle: 0 },
+  { i18nKey: 'fab.my_tasks', icon: 'list-outline' as const, route: '/(tabs)/tasks', colorKey: 'warning' as const, angle: 45 },
 ];
 
 export default function FloatingActionMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const animValue = useRef(new Animated.Value(0)).current;
   const { colors } = useTheme();
+  const { t } = useTranslation();
+  const router = useRouter();
 
   const openMenu = useCallback(() => {
     setIsOpen(true);
@@ -45,9 +49,10 @@ export default function FloatingActionMenu() {
     }
   }, [isOpen, openMenu, closeMenu]);
 
-  const handleActionPress = useCallback((actionName: string) => {
+  const handleActionPress = useCallback((route: string) => {
     closeMenu();
-  }, [closeMenu]);
+    router.push(route);
+  }, [closeMenu, router]);
 
   const backdropOpacity = animValue.interpolate({
     inputRange: [0, 1],
@@ -66,7 +71,7 @@ export default function FloatingActionMenu() {
           style={[styles.fab, { backgroundColor: colors.tint }]}
           onPress={toggleMenu}
           activeOpacity={0.8}
-          accessibilityLabel="打开快捷操作"
+          accessibilityLabel={t('fab.open_menu')}
           accessibilityRole="button"
         >
           <Animated.View style={{ transform: [{ rotate: rotation }] }}>
@@ -109,7 +114,7 @@ export default function FloatingActionMenu() {
 
               return (
                 <Animated.View
-                  key={action.name}
+                  key={action.i18nKey}
                   style={[
                     styles.actionItem,
                     {
@@ -124,13 +129,13 @@ export default function FloatingActionMenu() {
                       { color: colors.text, backgroundColor: colors.cardBackground },
                     ]}
                   >
-                    {action.name}
+                    {t(action.i18nKey)}
                   </Text>
                   <TouchableOpacity
-                    style={[styles.actionButton, { backgroundColor: action.color }]}
-                    onPress={() => handleActionPress(action.name)}
+                    style={[styles.actionButton, { backgroundColor: colors[action.colorKey] }]}
+                    onPress={() => handleActionPress(action.route)}
                     activeOpacity={0.8}
-                    accessibilityLabel={action.name}
+                    accessibilityLabel={t(action.i18nKey)}
                   >
                     <Ionicons name={action.icon} size={24} color={colors.white} />
                   </TouchableOpacity>
@@ -159,7 +164,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
     elevation: 8,
   },
   backdrop: {
@@ -193,7 +197,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     opacity: 0.85,
-    boxShadow: '0 2px 4px rgba(0,0,0,0.25)',
     elevation: 4,
   },
 });

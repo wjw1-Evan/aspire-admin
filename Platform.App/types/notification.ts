@@ -14,6 +14,8 @@ export enum NotificationLevel {
   Error = 'Error',
 }
 
+export type NotificationStatus = 'unread' | 'read' | 'archived';
+
 export interface AppNotification {
   id: string;
   senderId: string;
@@ -23,8 +25,8 @@ export interface AppNotification {
   title: string;
   content?: string;
   actionUrl?: string;
-  status: string; // "unread" | "read" | "archived"
-  metadata: Record<string, string>;
+  status: NotificationStatus;
+  metadata: Record<string, unknown>;
   createdAt: string;
   datetime?: string;
   readAt?: string;

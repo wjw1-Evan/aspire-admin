@@ -157,7 +157,9 @@
     "delete_confirm_btn": "Delete",
     "load_failed": "Failed to load task",
     "not_found": "Task not found",
-    "create_failed": "Failed to create task"
+    "create_failed": "Failed to create task",
+    "default_task_type": "Development",
+    "datetime_placeholder": "YYYY-MM-DD HH:mm"
   },
   "projects": {
     "title": "Projects",
@@ -361,6 +363,7 @@
     "delete_confirm_message": "Are you sure you want to delete this request? This action cannot be undone.",
     "delete_confirm_btn": "Delete",
     "load_failed": "Failed to load requests",
+    "delete_failed": "Failed to delete",
     "create_success": "Created successfully",
     "update_success": "Updated successfully",
     "delete_success": "Deleted successfully",
@@ -384,6 +387,12 @@
     "retry": "Retry",
     "send_failed": "Send Failed",
     "assistant_name": "XiaoKe"
+  },
+  "fab": {
+    "create_task": "New Task",
+    "create_project": "New Project",
+    "my_tasks": "My Tasks",
+    "open_menu": "Quick Actions"
   },
   "not_found": {
     "title": "Oops!",

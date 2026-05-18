@@ -278,7 +278,7 @@ export default function TaskDetailScreen() {
     try {
       await taskService.cancelTask(id);
       loadData();
-    } catch {}
+    } catch (e) { if (__DEV__) console.warn("Operation failed:", e); }
   };
 
   const handleDelete = async () => {
@@ -286,7 +286,7 @@ export default function TaskDetailScreen() {
     try {
       await taskService.deleteTask(id);
       router.back();
-    } catch {}
+    } catch (e) { if (__DEV__) console.warn("Operation failed:", e); }
   };
 
   const canExecute = task && (

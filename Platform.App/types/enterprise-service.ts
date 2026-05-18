@@ -1,3 +1,6 @@
+export type ServicePriority = 'Urgent' | 'High' | 'Normal' | 'Low';
+export type ServiceStatus = 'Pending' | 'Processing' | 'Completed' | 'Cancelled';
+
 export interface ServiceRequestDto {
   id: string;
   categoryName?: string;
@@ -7,8 +10,8 @@ export interface ServiceRequestDto {
   description?: string;
   contactPerson?: string;
   contactPhone?: string;
-  priority: string;
-  status: string;
+  priority: ServicePriority;
+  status: ServiceStatus;
   assignedTo?: string;
   assignedToName?: string;
   completedAt?: string;

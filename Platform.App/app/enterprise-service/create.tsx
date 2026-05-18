@@ -193,7 +193,7 @@ export default function CreateEnterpriseServiceScreen() {
       if (res.success && res.data) {
         setTenants(res.data.queryable || []);
       }
-    } catch {}
+    } catch (e) { if (__DEV__) console.warn("Operation failed:", e); }
   }, []);
 
   React.useEffect(() => {
@@ -208,7 +208,7 @@ export default function CreateEnterpriseServiceScreen() {
       if (res.success && res.data?.categoryName) {
         setSuggestedCategory(res.data.categoryName);
       }
-    } catch {} finally {
+    } catch (e) { if (__DEV__) console.warn("Operation failed:", e); } finally {
       setCategorizing(false);
     }
   }, [description, suggestedCategory]);
@@ -229,7 +229,7 @@ export default function CreateEnterpriseServiceScreen() {
             uri: asset.uri,
             type: asset.mimeType || 'image/jpeg',
             name: filename,
-          } as any);
+          });
 
           const uploadRes = await enterpriseService.uploadFile(formData);
           if (uploadRes.success && uploadRes.data) {
@@ -246,7 +246,7 @@ export default function CreateEnterpriseServiceScreen() {
           }
         }
       }
-    } catch {}
+    } catch (e) { if (__DEV__) console.warn("Operation failed:", e); }
   }, []);
 
   const handleRemoveFile = (id: string) => {
@@ -278,7 +278,7 @@ export default function CreateEnterpriseServiceScreen() {
           text1: res.message || t('common.fail'),
         });
       }
-    } catch {} finally {
+    } catch (e) { if (__DEV__) console.warn("Operation failed:", e); } finally {
       setSubmitting(false);
     }
   };

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { notificationService } from '../services/notificationService';
 import { sseService } from '../services/sseService';
 import { authService } from '../services/authService';
+import { NotificationStatistics } from '../types/notification';
 
 interface NotificationContextType {
   unreadCount: number;
@@ -31,9 +32,10 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       await refresh();
 
       sseService.setBaseHandlers({
-        onStats: (stats: any) => {
-          if (stats && typeof stats.UnreadTotal === 'number') {
-            setUnreadCount(stats.UnreadTotal);
+        onStats: (stats: unknown) => {
+          const s = stats as Partial<NotificationStatistics>;
+          if (s && typeof s.UnreadTotal === 'number') {
+            setUnreadCount(s.UnreadTotal);
           }
         },
         onConnected: () => {},
@@ -55,6 +57,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
     return () => {
       authService.removeAuthListener(onAuth);
+      sseService.disconnect();
     };
   }, [refresh]);
 

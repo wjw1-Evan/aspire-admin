@@ -37,11 +37,7 @@ export async function reportUserLocation(): Promise<void> {
       timestamp: position.timestamp,
     });
 
-    console.log('位置上报成功:', {
-      latitude: position.latitude,
-      longitude: position.longitude,
-      accuracy: position.accuracy,
-    });
+    if (__DEV__) console.log('位置上报成功');
   } catch (error: any) {
     // 静默失败，不影响登录流程
     console.warn('位置上报失败:', error.message || error);

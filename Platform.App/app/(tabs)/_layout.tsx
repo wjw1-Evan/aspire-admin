@@ -49,58 +49,53 @@ export default function TabLayout() {
   }), [isDark]);
 
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: colors.tint,
-        headerShown: false,
-        tabBarStyle: tabBarStyles.tabBar,
-        tabBarBackground: () => (
-          <View style={tabBarStyles.tabBarBackground}>
-            <BlurView
-              tint={isDark ? 'dark' : 'light'}
-              intensity={90}
-              style={StyleSheet.absoluteFill}
-            />
-          </View>
-        ),
-        tabBarLabelStyle: tabBarStyles.tabBarLabel,
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: t('tabs.home'),
-          tabBarIcon: ({ color }) => <TabBarIcon name="home-outline" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="tasks"
-        options={{
-          title: t('tabs.tasks'),
-          tabBarIcon: ({ color }) => <TabBarIcon name="checkmark-done-outline" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="add"
-        options={{
-          title: '',
-          tabBarButton: () => <FloatingActionMenu />,
-        }}
-      />
-      <Tabs.Screen
-        name="projects"
-        options={{
-          title: t('tabs.projects'),
-          tabBarIcon: ({ color }) => <TabBarIcon name="folder-outline" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: t('tabs.profile'),
-          tabBarIcon: ({ color }) => <TabBarIcon name="person-outline" color={color} />,
-        }}
-      />
-
-    </Tabs>
+    <>
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: colors.tint,
+          headerShown: false,
+          tabBarStyle: tabBarStyles.tabBar,
+          tabBarBackground: () => (
+            <View style={tabBarStyles.tabBarBackground}>
+              <BlurView
+                tint={isDark ? 'dark' : 'light'}
+                intensity={90}
+                style={StyleSheet.absoluteFill}
+              />
+            </View>
+          ),
+          tabBarLabelStyle: tabBarStyles.tabBarLabel,
+        }}>
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: t('tabs.home'),
+            tabBarIcon: ({ color }) => <TabBarIcon name="home-outline" color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="tasks"
+          options={{
+            title: t('tabs.tasks'),
+            tabBarIcon: ({ color }) => <TabBarIcon name="checkmark-done-outline" color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="projects"
+          options={{
+            title: t('tabs.projects'),
+            tabBarIcon: ({ color }) => <TabBarIcon name="folder-outline" color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: t('tabs.profile'),
+            tabBarIcon: ({ color }) => <TabBarIcon name="person-outline" color={color} />,
+          }}
+        />
+      </Tabs>
+      <FloatingActionMenu />
+    </>
   );
 }

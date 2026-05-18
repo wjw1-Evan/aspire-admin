@@ -152,7 +152,7 @@ export default function EnterpriseServiceListScreen() {
           averageRating: res.data.averageRating,
         });
       }
-    } catch {}
+    } catch (e) { if (__DEV__) console.warn("Operation failed:", e); }
   }, []);
 
   useEffect(() => {

@@ -83,13 +83,25 @@ export const tokenUtils = {
 
   getExpiryFromJwt: async (token: string): Promise<number | null> => {
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
+      const parts = token.split('.');
+      if (parts.length !== 3) return null;
+
+      const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      const payload = JSON.parse(jsonPayload);
       if (payload.exp) {
         const expMs = payload.exp * 1000;
         await storage.set(STORAGE_KEYS.TOKEN_EXPIRES, expMs);
         return expMs;
       }
-    } catch {}
+    } catch (e) {
+      if (__DEV__) console.warn('JWT parse error:', e);
+    }
     return null;
   },
 };

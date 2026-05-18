@@ -56,15 +56,12 @@ export const AppStyles = {
     // 阴影
     shadows: {
         sm: {
-            boxShadow: '0 2px 4px rgba(0,0,0,0.03)',
             elevation: 2,
         },
         md: {
-            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
             elevation: 3,
         },
         lg: {
-            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
             elevation: 5,
         },
     },

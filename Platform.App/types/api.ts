@@ -3,12 +3,16 @@
  * 与后端 Platform.ServiceDefaults.Models.ApiResponse 保持一致
  */
 
-export interface ApiResponse<T = any> {
+export interface ValidationError {
+    [field: string]: string[];
+}
+
+export interface ApiResponse<T = unknown> {
     success: boolean;
     message?: string;
     data?: T;
     errorCode?: string;
-    errors?: any;
+    errors?: ValidationError;
     timestamp?: string;
     traceId?: string;
 }

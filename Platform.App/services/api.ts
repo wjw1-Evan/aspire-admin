@@ -99,7 +99,9 @@ const createApiInstance = (): AxiosInstance => {
           tokenCache = refreshResult.token;
           try {
             return await TokenRefreshManager.retryRequest(originalRequest, refreshResult.token);
-          } catch {}
+          } catch (e) {
+            if (__DEV__) console.warn('Retry request failed:', e);
+          }
         }
 
         tokenCache = null;

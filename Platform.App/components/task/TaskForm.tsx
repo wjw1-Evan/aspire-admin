@@ -191,7 +191,7 @@ export default function TaskForm({
   }), [colors]);
 
   const [taskName, setTaskName] = useState(initialValues?.taskName || '');
-  const [taskType, setTaskType] = useState(initialValues?.taskType || '开发');
+  const [taskType, setTaskType] = useState(initialValues?.taskType || t('tasks.default_task_type'));
   const [priority, setPriority] = useState<TaskPriority>(initialValues?.priority ?? TaskPriority.Medium);
   const [description, setDescription] = useState(initialValues?.description || '');
   const [projectId, setProjectId] = useState(initialValues?.projectId || '');
@@ -366,7 +366,7 @@ export default function TaskForm({
               style={styles.input}
               value={plannedStartTime}
               onChangeText={setPlannedStartTime}
-              placeholder="YYYY-MM-DD HH:mm"
+              placeholder={t('tasks.datetime_placeholder')}
               placeholderTextColor={colors.textTertiary}
               editable={!saving}
             />
@@ -378,7 +378,7 @@ export default function TaskForm({
               style={styles.input}
               value={plannedEndTime}
               onChangeText={setPlannedEndTime}
-              placeholder="YYYY-MM-DD HH:mm"
+              placeholder={t('tasks.datetime_placeholder')}
               placeholderTextColor={colors.textTertiary}
               editable={!saving}
             />

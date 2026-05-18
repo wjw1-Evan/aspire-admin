@@ -23,7 +23,7 @@ export default function EditProjectScreen() {
   }, [id]);
 
   const handleSave = async (data: UpdateProjectRequest) => {
-    await projectService.updateProject(id, data as any);
+    await projectService.updateProject(id, data);
     router.back();
   };
 
@@ -35,7 +35,7 @@ export default function EditProjectScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <ProjectForm
         initialValues={project}
-        onSave={handleSave as any}
+        onSave={handleSave}
         onCancel={() => router.back()}
       />
     </>

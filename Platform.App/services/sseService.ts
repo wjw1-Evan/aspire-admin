@@ -5,7 +5,7 @@ import { tokenUtils } from '../utils/token';
 import TokenRefreshManager from '../utils/tokenRefreshManager';
 import { authService } from './authService';
 
-type SseEventHandler = (data: any) => void;
+type SseEventHandler = (data: unknown) => void;
 
 interface SseEventHandlers {
   onStats?: SseEventHandler;
@@ -53,6 +53,7 @@ class SseService {
   async connect(handlers: SseEventHandlers) {
     this.disconnect();
     this.baseHandlers = handlers;
+    this.reconnectAttempts = 0;
 
     const isExpired = await tokenUtils.isTokenExpired();
     if (isExpired) {
@@ -68,12 +69,10 @@ class SseService {
     const token = await getToken();
     if (!token) return;
 
-    const url = `${API_BASE_URL}/api/stream/sse?token=${encodeURIComponent(token)}`;
-
     if (Platform.OS === 'web' && typeof EventSource !== 'undefined') {
-      this.connectWeb(url);
+      this.connectWeb(`${API_BASE_URL}/api/stream/sse?token=${encodeURIComponent(token)}`);
     } else {
-      this.connectRN(url);
+      this.connectRN(token);
     }
   }
 
@@ -91,38 +90,50 @@ class SseService {
       try {
         const data = JSON.parse(event.data);
         h.onStats?.(data.statistics);
-      } catch {}
+      } catch (e) {
+        if (__DEV__) console.warn('SSE stats parse error:', e);
+      }
     });
 
     es.addEventListener('connected', (event) => {
       try {
         this.connected = true;
         h.onConnected?.(JSON.parse(event.data));
-      } catch {}
+      } catch (e) {
+        if (__DEV__) console.warn('SSE connected parse error:', e);
+      }
     });
 
     es.addEventListener('ReceiveMessage', (event) => {
       try {
         this.chatHandlers?.onReceiveMessage?.(JSON.parse(event.data));
-      } catch {}
+      } catch (e) {
+        if (__DEV__) console.warn('SSE ReceiveMessage parse error:', e);
+      }
     });
 
     es.addEventListener('MessageChunk', (event) => {
       try {
         this.chatHandlers?.onMessageChunk?.(JSON.parse(event.data));
-      } catch {}
+      } catch (e) {
+        if (__DEV__) console.warn('SSE MessageChunk parse error:', e);
+      }
     });
 
     es.addEventListener('MessageComplete', (event) => {
       try {
         this.chatHandlers?.onMessageComplete?.(JSON.parse(event.data));
-      } catch {}
+      } catch (e) {
+        if (__DEV__) console.warn('SSE MessageComplete parse error:', e);
+      }
     });
 
     es.addEventListener('SessionUpdated', (event) => {
       try {
         this.chatHandlers?.onSessionUpdated?.(JSON.parse(event.data));
-      } catch {}
+      } catch (e) {
+        if (__DEV__) console.warn('SSE SessionUpdated parse error:', e);
+      }
     });
 
     es.onerror = () => {
@@ -138,7 +149,7 @@ class SseService {
     };
   }
 
-  private connectRN(url: string) {
+  private connectRN(token: string) {
     let buffer = '';
     let lastIndex = 0;
     let timedOut = false;
@@ -146,9 +157,10 @@ class SseService {
 
     const xhr = new XMLHttpRequest();
     this.xhr = xhr;
-    xhr.open('GET', url);
+    xhr.open('GET', `${API_BASE_URL}/api/stream/sse`);
     xhr.setRequestHeader('Accept', 'text/event-stream');
     xhr.setRequestHeader('Cache-Control', 'no-cache');
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
 
     const timeout = setTimeout(() => {
       timedOut = true;
@@ -221,15 +233,27 @@ class SseService {
       } else if (eventType === 'SessionUpdated') {
         this.chatHandlers?.onSessionUpdated?.(data);
       }
-    } catch {}
+    } catch (e) {
+      if (__DEV__) console.warn('SSE event parse error:', e, eventStr);
+    }
   }
+
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 10;
+  private baseReconnectDelay = 1000;
 
   private scheduleReconnect() {
     if (this.reconnectTimer) return;
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      this.reconnectAttempts = 0;
+      return;
+    }
+    const delay = Math.min(this.baseReconnectDelay * Math.pow(2, this.reconnectAttempts), 30000);
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
+      this.reconnectAttempts++;
       this.connect(this.baseHandlers || {});
-    }, 5000);
+    }, delay);
   }
 
   disconnect() {

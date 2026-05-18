@@ -12,7 +12,7 @@ export const API_BASE_URL = __DEV__
   ? Platform.OS === 'web'
     ? ''
     : getDevServerOrigin()
-  : process.env.EXPO_PUBLIC_API_BASE_URL || 'https://api.yourproduction.com';
+  : (process.env.EXPO_PUBLIC_API_BASE_URL ?? (() => { throw new Error('EXPO_PUBLIC_API_BASE_URL is not configured'); })());
 
 // Storage Keys
 export const STORAGE_KEYS = {

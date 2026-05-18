@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { useColorScheme as useRNColorScheme } from 'react-native';
 import { storage } from '../utils/storage';
 import Colors from '../constants/Colors';
@@ -33,6 +33,8 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
       if (saved && ['light', 'dark', 'auto'].includes(saved)) {
         setModeState(saved);
       }
+    }).catch((e) => {
+      if (__DEV__) console.error('Failed to load theme:', e);
     });
   }, []);
 
@@ -49,8 +51,13 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
     storage.set(STORAGE_KEY, newMode);
   }, []);
 
+  const contextValue = useMemo(
+    () => ({ mode, resolvedTheme, isDark, colors, setThemeMode }),
+    [mode, resolvedTheme, isDark, colors, setThemeMode]
+  );
+
   return (
-    <ThemeContext.Provider value={{ mode, resolvedTheme, isDark, colors, setThemeMode }}>
+    <ThemeContext.Provider value={contextValue}>
       {children}
     </ThemeContext.Provider>
   );

@@ -222,7 +222,7 @@ export default function EditEnterpriseServiceScreen() {
             uri: asset.uri,
             type: asset.mimeType || 'image/jpeg',
             name: filename,
-          } as any);
+          });
 
           const uploadRes = await enterpriseService.uploadFile(formData);
           if (uploadRes.success && uploadRes.data) {
@@ -239,7 +239,7 @@ export default function EditEnterpriseServiceScreen() {
           }
         }
       }
-    } catch {}
+    } catch (e) { if (__DEV__) console.warn("Operation failed:", e); }
   }, []);
 
   const handleRemoveFile = (id: string) => {
@@ -271,7 +271,7 @@ export default function EditEnterpriseServiceScreen() {
           text1: res.message || t('common.fail'),
         });
       }
-    } catch {} finally {
+    } catch (e) { if (__DEV__) console.warn("Operation failed:", e); } finally {
       setSubmitting(false);
     }
   };

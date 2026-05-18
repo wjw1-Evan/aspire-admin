@@ -554,7 +554,7 @@ public class ParkMcpToolHandler : McpToolHandlerBase
                 ContractId = args["contractId"].ToString()!,
                 Amount = decimal.TryParse(args["amount"]?.ToString(), out var amt) ? amt : 0,
                 PaymentDate = DateTime.TryParse(args.GetValueOrDefault("paymentDate")?.ToString(), out var pd) ? pd : DateTime.UtcNow,
-                PaymentType = args.GetValueOrDefault("paymentType")?.ToString()
+                PaymentType = args.GetValueOrDefault("paymentType")?.ToString() ?? ""
             }));
 
         RegisterTool("delete_park_payment_record", "删除指定的付款记录。关键词：删除付款记录",
@@ -712,7 +712,7 @@ public class ParkMcpToolHandler : McpToolHandlerBase
                 Title = args["title"].ToString()!,
                 ManagerName = args["managerName"].ToString()!,
                 VisitDate = DateTime.Parse(args["visitDate"].ToString()!),
-                VisitType = args.GetValueOrDefault("visitType")?.ToString(),
+                VisitType = args.GetValueOrDefault("visitType")?.ToString() ?? "",
                 TenantName = args.GetValueOrDefault("tenantName")?.ToString(),
                 Content = args.GetValueOrDefault("content")?.ToString()
             }));

@@ -13,7 +13,7 @@ export interface LocationOptions {
   enableHighAccuracy?: boolean;
   /** 超时时间（毫秒，默认：15000） */
   timeout?: number;
-  /** 缓存时间（毫秒，默认：60000） */
+  /** 缓存时间（毫秒，默认：60000）—— 仅用于 getLastKnownPositionAsync */
   maximumAge?: number;
 }
 
@@ -87,7 +87,6 @@ export async function getCurrentPosition(
   const {
     enableHighAccuracy = true,
     timeout = 15000,
-    maximumAge = 60000, // 1 分钟缓存
   } = options;
 
   try {
@@ -95,8 +94,7 @@ export async function getCurrentPosition(
       accuracy: enableHighAccuracy
         ? Location.Accuracy.Balanced
         : Location.Accuracy.Low,
-      timeoutInterval: timeout,
-      maximumAge,
+      timeInterval: timeout,
     });
 
     return {

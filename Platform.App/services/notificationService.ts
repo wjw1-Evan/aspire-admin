@@ -25,6 +25,13 @@ export const notificationService = {
         );
     },
 
+    /** 获取通知详情 */
+    async getNotificationById(id: string): Promise<ApiResponse<AppNotification>> {
+        return await apiClient.get<any, ApiResponse<AppNotification>>(
+            `/api/notifications/${id}`
+        );
+    },
+
     /** 标记为已读 */
     async markAsRead(id: string): Promise<ApiResponse<void>> {
         return await apiClient.put<any, ApiResponse<void>>(

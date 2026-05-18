@@ -4,7 +4,7 @@ import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { ActivityIndicator, View, Text, StyleSheet } from 'react-native';
 import { enableScreens } from 'react-native-screens';
 enableScreens(true);
 import Toast from 'react-native-toast-message';
@@ -180,7 +180,7 @@ function RootLayoutNavInner() {
 
   return (
     <NavigationThemeProvider value={resolvedTheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack screenOptions={{ headerBackButtonDisplayMode: 'minimal' }}>
+      <Stack initialRouteName="(auth)" screenOptions={{ headerBackButtonDisplayMode: 'minimal' }}>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="notifications" options={{ title: t('notifications.title') }} />
@@ -199,6 +199,13 @@ function RootLayoutNavInner() {
         <Stack.Screen name="enterprise-service/edit/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
         <Stack.Screen name="xiaoke/index" options={{ title: t('xiaoke.title'), animation: 'slide_from_right' }} />
       </Stack>
+      {isAuthenticated === null && (
+        <View style={StyleSheet.absoluteFill}>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        </View>
+      )}
       <Toast
         config={{
           success: ({ text1, text2 }) => (

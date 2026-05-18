@@ -3,11 +3,11 @@ import React from 'react';
 const QuotaComponent = () => {
     const [quota, setQuota] = React.useState(null);
 
-    const addQuota = async (userId, amount) => {
+    const addQuota = async (userId: string, amount: number) => {
         // Call API to add quota
     };
 
-    const removeQuota = async (userId, amount) => {
+    const removeQuota = async (userId: string, amount: number) => {
         // Call API to remove quota
     };
 

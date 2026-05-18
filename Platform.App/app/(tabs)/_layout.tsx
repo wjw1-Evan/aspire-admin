@@ -81,6 +81,13 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
+          name="add"
+          options={{
+            title: '',
+            tabBarButton: () => <FloatingActionMenu />,
+          }}
+        />
+        <Tabs.Screen
           name="projects"
           options={{
             title: t('tabs.projects'),

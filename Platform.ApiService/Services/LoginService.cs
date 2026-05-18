@@ -181,34 +181,13 @@ if (user == null)
             if (revokedToken != null)
             {
                 _logger.LogWarning("[RefreshToken] 用户 {UserId} 使用了已撤销的 token（原因: {Reason}），仅拒绝此请求，不影响其他端", userId, revokedToken.RevokedReason);
-                throw new ArgumentException("刷新token已使用或已过期，请重新登录");
             }
-
-            _logger.LogWarning("[RefreshToken] 数据库中未找到有效 token，检查是否有旧 token");
-
-            var userTokens = await _context.Set<RefreshToken>().Where(rt => rt.UserId == userId && rt.IsRevoked == false).ToListAsync();
-            _logger.LogWarning("[RefreshToken] 用户 {UserId} 当前有效的 token 数量: {Count}", userId, userTokens.Count);
-            
-            foreach (var token in userTokens)
+            else
             {
-                _logger.LogWarning("[RefreshToken] 旧 token: Token={TokenPrefix}, ExpiresAt={ExpiresAt}, IsRevoked={IsRevoked}", 
-                    token.Token?.Length > 10 ? token.Token?[..10] : token.Token,
-                    token.ExpiresAt,
-                    token.IsRevoked);
+                _logger.LogWarning("[RefreshToken] 用户 {UserId} 的刷新token在数据库中不存在（JWT验证已通过），仅拒绝此请求，不影响其他端", userId);
             }
 
-            if (userTokens.Any())
-            {
-                foreach (var rt in userTokens)
-                {
-                    rt.IsRevoked = true;
-                    rt.RevokedAt = DateTime.UtcNow;
-                    rt.RevokedReason = "检测到旧token重用攻击";
-                }
-                await _context.SaveChangesAsync();
-                _logger.LogWarning("检测到用户 {UserId} 的旧token重用攻击，已撤销所有token", userId);
-            }
-            throw new ArgumentException("刷新token无效或已被撤销");
+            throw new ArgumentException("刷新token已使用或已过期，请重新登录");
         }
 
         if (existingToken.ExpiresAt < DateTime.UtcNow)
